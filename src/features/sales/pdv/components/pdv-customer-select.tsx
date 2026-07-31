@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, UserRound } from "lucide-react";
 import { salesService } from "../../services/sales.service";
 import {
   Select,
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 
 type Props = {
   companyId: string;
@@ -19,8 +18,9 @@ type Props = {
 };
 
 /**
- * PDV — seleção do cliente da venda. Recolhido quando vazio (Sprint 2.9):
- * o balcão opera por padrão com consumidor final. Regras inalteradas.
+ * PDV — seleção do cliente da venda (Sprint 3.1, apenas apresentação).
+ * Recolhido quando vazio: o balcão opera por padrão com consumidor final.
+ * Regras e comportamento inalterados.
  */
 export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
   const [expanded, setExpanded] = useState(!!value);
@@ -36,65 +36,92 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
     enabled: !!companyId && expanded,
   });
 
+  const selected = customers.find((c) => c.id === value) ?? null;
+
   if (!expanded) {
     return (
-      <button
-        id="pdv-customer"
-        type="button"
-        onClick={() => {
-          setExpanded(true);
-          setOpen(true);
-        }}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/50"
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <UserPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="truncate text-sm font-medium">Consumidor final</span>
-        </span>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          Identificar (F2)
-        </span>
-      </button>
+      <div className="rounded-2xl border bg-card p-5 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted">
+            <UserRound
+              className="h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Cliente
+            </span>
+            <span className="block truncate text-sm font-semibold">
+              Consumidor Final
+            </span>
+          </span>
+        </div>
+        <Button
+          id="pdv-customer"
+          type="button"
+          variant="outline"
+          className="mt-4 h-11 w-full"
+          onClick={() => {
+            setExpanded(true);
+            setOpen(true);
+          }}
+        >
+          <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+          Identificar Cliente (F2)
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-1.5 rounded-xl border bg-card p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs text-muted-foreground">Cliente</Label>
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10">
+          <UserRound className="h-4 w-4 text-primary" aria-hidden="true" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Cliente
+          </span>
+          <span className="block truncate text-sm font-semibold">
+            {selected?.name ?? "Selecione o cliente"}
+          </span>
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Select
+          open={open}
+          onOpenChange={setOpen}
+          value={value || undefined}
+          onValueChange={onChange}
+        >
+          <SelectTrigger id="pdv-customer" className="h-11" aria-label="Cliente">
+            <SelectValue
+              placeholder={isLoading ? "Carregando..." : "Selecione o cliente"}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {customers.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          aria-label="Usar consumidor final"
+          className="h-9 w-full text-xs text-muted-foreground"
           onClick={() => {
             onChange("");
             setExpanded(false);
           }}
         >
-          <X className="h-3.5 w-3.5" />
+          Usar Consumidor Final
         </Button>
       </div>
-      <Select
-        open={open}
-        onOpenChange={setOpen}
-        value={value || undefined}
-        onValueChange={onChange}
-      >
-        <SelectTrigger id="pdv-customer" className="h-11">
-          <SelectValue
-            placeholder={isLoading ? "Carregando..." : "Selecione o cliente"}
-          />
-        </SelectTrigger>
-        <SelectContent>
-          {customers.map((c) => (
-            <SelectItem key={c.id} value={c.id}>
-              {c.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }
