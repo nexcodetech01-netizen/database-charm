@@ -25,6 +25,7 @@ import {
 import { pdvCashStatus, resolvePdvStage } from "../lib/layout";
 import { formatOpenedAt } from "@/features/cash";
 import { usePdvFocus } from "../hooks/use-pdv-focus";
+import { usePdvSaleWatch } from "../hooks/use-pdv-sale-watch";
 import { resolveActiveCartKey } from "../lib/cart";
 import {
   usePdvShortcuts,
@@ -59,6 +60,7 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
   );
   const {
     pendingSale,
+    lastSale,
     completed,
     receiptOpen,
     checkoutOpen,
@@ -100,6 +102,18 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     });
     void pdvFiscal.issue(saleId);
   }
+
+  /**
+   * P0.3 — Pagamento assíncrono (PIX / Bella Pay): enquanto o CheckoutDialog
+   * estiver fechado, o PDV acompanha o status da venda no banco. A conclusão
+   * depende da transação, nunca do modal continuar aberto.
+   */
+  usePdvSaleWatch({
+    saleId: lastSale?.id ?? null,
+    enabled: !!lastSale && !completed && !checkoutOpen,
+    onPaid: (saleId, method) =>
+      handlePaid(saleId, method as Parameters<typeof toFinancePaymentMethod>[0]),
+  });
 
   // Foco automático (Sprint 2.8): abrir o PDV, adicionar produto e iniciar
   // nova venda devolvem o cursor para a pesquisa.
@@ -145,7 +159,9 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
   // botões já existentes. Nenhuma regra nova.
   usePdvShortcuts({
     enabled: access.canOperate,
-    context: { dialogOpen: receiptOpen },
+    // P0.1: com qualquer diálogo aberto (recibo ou pagamento) os atalhos da
+    // tela ficam suspensos — nada vaza para trás do modal nem para o browser.
+    context: { dialogOpen: receiptOpen || checkoutOpen },
     handlers: {
       "focus-search": focus.focusSearch,
       "clear-search": () => {
