@@ -33,7 +33,14 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   const { data, isLoading } = useAccountingAiSummary(companyId);
   const s = data as AccountingSummary | undefined;
 
-  const cards = [
+  const cards: {
+    label: string;
+    icon: typeof Wallet;
+    value: string;
+    unavailable: boolean;
+    hint?: string;
+    highlight?: boolean;
+  }[] = [
     { label: "Receita", icon: TrendingUp, ...money(s?.revenue, (d) => d.netRevenue), hint: "Receita líquida do mês" },
     { label: "Lucro bruto", icon: Coins, ...money(s?.profit, (d) => d.grossProfit), hint: s?.profit.data ? pct(s.profit.data.grossMargin) : undefined },
     { label: "Lucro líquido", icon: Calculator, ...money(s?.profit, (d) => d.netProfit), hint: s?.profit.data ? pct(s.profit.data.netMargin) : undefined, highlight: true },
