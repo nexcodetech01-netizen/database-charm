@@ -231,6 +231,8 @@ export async function upsertProviderEnvironment(
 
 export interface BuiltContext {
   payload: NfePayload;
+  /** Modelo do documento: 55 = NF-e, 65 = NFC-e. */
+  model: "55" | "65";
   environment: NfeEnvironment;
   providerId: string;
   apiUrl: string | null;
@@ -246,10 +248,11 @@ async function buildContext(
   companyId: string,
   saleId: string,
   environmentOverride?: NfeEnvironment,
+  model: "55" | "65" = "55",
 ): Promise<BuiltContext> {
   const { data: sale, error: saleErr } = await supabase
     .from("sales")
-    .select("id, grand_total, discount, shipping, customer_id, sale_date")
+    .select("id, grand_total, discount, shipping, customer_id, sale_date, payment_method")
     .eq("company_id", companyId)
     .eq("id", saleId)
     .maybeSingle();
@@ -262,6 +265,7 @@ async function buildContext(
     shipping: number | null;
     customer_id: string | null;
     sale_date: string | null;
+    payment_method: string | null;
   };
 
 
@@ -361,6 +365,9 @@ async function buildContext(
   const st = (settingsRaw ?? null) as {
     nfe_series: number | null;
     nfe_next_number: number | null;
+    nfce_series: number | null;
+    nfce_next_number: number | null;
+    csc_id: string | null;
     default_cfop: string | null;
     default_csosn: string | null;
     default_origem: number | null;
@@ -415,6 +422,12 @@ async function buildContext(
   // embutido em `grand_total` pelo motor de vendas.
   const freight = Number(saleRow.shipping ?? 0);
 
+  // Numeração e série SEMPRE por modelo: NF-e (55) e NFC-e (65) possuem
+  // sequências independentes na mesma configuração fiscal.
+  const seriesFromSettings =
+    (model === "65" ? st?.nfce_series : st?.nfe_series) ?? 1;
+  const nextNumber = (model === "65" ? st?.nfce_next_number : st?.nfe_next_number) ?? null;
+
   const payload: NfePayload = {
     saleId: saleRow.id,
     environment,
@@ -468,15 +481,28 @@ async function buildContext(
       crt: requireCrt(st?.crt),
 
       origem: st?.default_origem ?? 0,
-      series: st?.nfe_series ?? 1,
-      number: st?.nfe_next_number ?? null,
+      series: seriesFromSettings,
+      number: nextNumber,
     },
   };
+
+  // NFC-e (modelo 65): CSC vem do MESMO cofre fiscal usado pelas demais
+  // credenciais (`fiscal_secrets`), isolado por ambiente.
+  if (model === "65") {
+    const cscToken = await readSecret(companyId, "csc_token", null, environment);
+    payload.model = "65";
+    payload.nfce = {
+      cscId: st?.csc_id ?? "",
+      cscToken: cscToken ?? "",
+      paymentMethod: saleRow.payment_method ?? null,
+    };
+  }
 
   const envCfg = await readProviderEnvironment(supabase, companyId, environment);
 
   return {
     payload,
+    model,
     environment,
     providerId: cfg?.provider_id ?? "mock",
     // URL do ambiente selecionado; legado como fallback de compatibilidade.
@@ -484,8 +510,8 @@ async function buildContext(
     certificateId: activeCert?.id ?? null,
     certificateStoragePath: activeCert?.storage_path ?? null,
     emitterCnpj: co.cnpj ?? "",
-    seriesFromSettings: st?.nfe_series ?? 1,
-    nextNumber: st?.nfe_next_number ?? null,
+    seriesFromSettings,
+    nextNumber,
   };
 }
 
@@ -499,11 +525,23 @@ export interface EngineIssue {
 function validatePayload(ctx: BuiltContext): EngineIssue[] {
   const issues: EngineIssue[] = [];
   const p = ctx.payload;
-  if (!p.customer.name) issues.push({ field: "customer.name", message: "Cliente sem nome." });
-  if (!p.customer.document)
-    issues.push({ field: "customer.document", message: "Cliente sem CPF/CNPJ." });
-  if (!p.customer.address)
-    issues.push({ field: "customer.address", message: "Endereço do cliente incompleto." });
+  const isNfce = ctx.model === "65";
+  // NFC-e é venda presencial ao consumidor: identificação do destinatário
+  // é OPCIONAL. Quando informada, precisa estar completa.
+  if (isNfce) {
+    if (p.customer.document && !p.customer.name)
+      issues.push({ field: "customer.name", message: "Cliente sem nome." });
+    if (!p.nfce?.cscId)
+      issues.push({ field: "nfce.cscId", message: "CSC (ID) não configurado para NFC-e." });
+    if (!p.nfce?.cscToken)
+      issues.push({ field: "nfce.cscToken", message: "Token CSC não configurado para NFC-e." });
+  } else {
+    if (!p.customer.name) issues.push({ field: "customer.name", message: "Cliente sem nome." });
+    if (!p.customer.document)
+      issues.push({ field: "customer.document", message: "Cliente sem CPF/CNPJ." });
+    if (!p.customer.address)
+      issues.push({ field: "customer.address", message: "Endereço do cliente incompleto." });
+  }
   if (p.items.length === 0) issues.push({ field: "items", message: "Venda sem itens." });
   p.items.forEach((it, i) => {
     if (!it.description)
@@ -943,13 +981,14 @@ async function allocateNumber(
   companyId: string,
   documentId: string,
   series: number,
+  model: "55" | "65" = "55",
 ): Promise<number> {
   const { data, error } = await (supabase as never as {
     rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
   }).rpc("fiscal_allocate_nfe_number", {
     _company_id: companyId,
     _document_id: documentId,
-    _model: "55",
+    _model: model,
     _series: series,
   });
   if (error) throw error;
@@ -983,6 +1022,8 @@ export interface IssueEngineInput {
   userId: string | null;
   saleId: string;
   environment?: NfeEnvironment;
+  /** Modelo do documento: 55 = NF-e (default), 65 = NFC-e. */
+  model?: "55" | "65";
 }
 
 /**
@@ -1016,7 +1057,8 @@ export async function issueNfeFromSaleEngine(
   const alreadyActive = await findActiveSaleDocument(supabase, companyId, saleId);
   if (alreadyActive) return alreadyActive;
 
-  const ctx = await buildContext(supabase, companyId, saleId, input.environment);
+  const model = input.model ?? "55";
+  const ctx = await buildContext(supabase, companyId, saleId, input.environment, model);
   const credentials = await readProviderCredentials(companyId, ctx.providerId, ctx.environment);
   const provider = resolveFiscalProviderFor({
     providerId: ctx.providerId,
@@ -1038,8 +1080,8 @@ export async function issueNfeFromSaleEngine(
       customer_id: ctx.payload.customer.id || null,
       status: "draft",
       environment: ctx.environment,
-      doc_type: "nfe",
-      model: "55",
+      doc_type: model === "65" ? "nfce" : "nfe",
+      model,
       series: ctx.seriesFromSettings,
       // Número só é reservado imediatamente antes da transmissão (passo 4).
       number: null,
@@ -1154,6 +1196,7 @@ export async function issueNfeFromSaleEngine(
     companyId,
     documentId,
     ctx.seriesFromSettings,
+    model,
   );
   if (ctx.payload.fiscal) ctx.payload.fiscal.number = allocatedNumber;
   await appendEvent(
@@ -1161,7 +1204,7 @@ export async function issueNfeFromSaleEngine(
     companyId,
     documentId,
     "number_allocated",
-    { number: allocatedNumber, series: ctx.seriesFromSettings, model: "55" },
+    { number: allocatedNumber, series: ctx.seriesFromSettings, model },
     userId,
   );
   await patchDocument(supabase, companyId, documentId, { status: "sending" });
@@ -1263,7 +1306,7 @@ export async function issueNfeFromSaleEngine(
       userId,
       kind: "xml_authorized",
       url: result.xmlUrl,
-      objectPath: `nfe/${key}.xml`,
+      objectPath: `${artifactPrefix(model)}/${key}.xml`,
       source: "issue",
     });
     if (r.ok) xmlPath = r.path;
@@ -1283,7 +1326,7 @@ export async function issueNfeFromSaleEngine(
       userId,
       kind: "danfe",
       url: result.danfeUrl,
-      objectPath: `nfe/${key}.pdf`,
+      objectPath: `${artifactPrefix(model)}/${key}.pdf`,
       source: "issue",
     });
     if (r.ok) danfePath = r.path;
@@ -1376,11 +1419,26 @@ async function providerForDocument(
   });
 }
 
-function docRef(doc: Record<string, unknown>): { accessKey?: string; providerRef?: string } {
+/** Modelo persistido do documento (55 = NF-e, 65 = NFC-e). */
+function docModel(doc: Record<string, unknown>): "55" | "65" {
+  return String(doc.model ?? "55") === "65" ? "65" : "55";
+}
+
+/** Prefixo do artefato no bucket, por modelo. */
+function artifactPrefix(model: "55" | "65"): string {
+  return model === "65" ? "nfce" : "nfe";
+}
+
+function docRef(doc: Record<string, unknown>): {
+  accessKey?: string;
+  providerRef?: string;
+  model: "55" | "65";
+} {
   const req = (doc.request_payload ?? null) as { reference?: string; providerRef?: string } | null;
   return {
     accessKey: (doc.access_key as string | null) ?? undefined,
     providerRef: req?.providerRef ?? req?.reference ?? undefined,
+    model: docModel(doc),
   };
 }
 
@@ -1505,7 +1563,7 @@ export async function refreshDocumentStatusEngine(args: {
         userId,
         kind: "xml_authorized",
         url: result.xmlUrl,
-        objectPath: `nfe/${key}.xml`,
+        objectPath: `${artifactPrefix(docModel(doc))}/${key}.xml`,
         source: "status-refresh",
       });
       if (r.ok) {
@@ -1525,7 +1583,7 @@ export async function refreshDocumentStatusEngine(args: {
         userId,
         kind: "danfe",
         url: result.danfeUrl,
-        objectPath: `nfe/${key}.pdf`,
+        objectPath: `${artifactPrefix(docModel(doc))}/${key}.pdf`,
         source: "status-refresh",
       });
       if (r.ok) {

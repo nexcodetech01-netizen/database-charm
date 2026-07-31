@@ -47,6 +47,7 @@ describe("PDV — NFC-e (Sprint 2.10)", () => {
     expect(issue).toHaveBeenCalledWith({
       saleId: "sale-1",
       environment: "production",
+      model: "65",
     });
     expect(outcome).toEqual({
       status: "issued",

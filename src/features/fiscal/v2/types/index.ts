@@ -26,7 +26,11 @@ export {
 export type { NfeEnvironment } from "./environment";
 
 
+/** Modelo do documento fiscal: 55 = NF-e, 65 = NFC-e. */
+export type NfeModel = "55" | "65";
+
 export type NfeStatus =
+
   | "draft"
   | "validating"
   | "signing"
@@ -92,6 +96,21 @@ export interface FiscalEvent {
 export interface NfePayload {
   saleId: string;
   environment?: NfeEnvironment;
+  /**
+   * Modelo do documento: `55` = NF-e, `65` = NFC-e (Sprint 2.7).
+   * Ausente = `55` (compatibilidade com o fluxo original).
+   */
+  model?: NfeModel;
+  /** Dados exclusivos da NFC-e (modelo 65). */
+  nfce?: {
+    /** Identificador do CSC (idCSC/CSCid) cadastrado na SEFAZ. */
+    cscId: string;
+    /** Token CSC em claro — lido do cofre fiscal, NUNCA persistido. */
+    cscToken: string;
+    /** Forma de pagamento da venda (motor de vendas). */
+    paymentMethod?: string | null;
+  };
+
   customer: {
     id: string;
     name: string;

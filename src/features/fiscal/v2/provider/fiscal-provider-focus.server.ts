@@ -105,6 +105,43 @@ function cancellationProtocolOf(json: FocusResponse): string | undefined {
   );
 }
 
+/**
+ * Recurso da API Focus por modelo do documento.
+ * `55` → /v2/nfe (NF-e) · `65` → /v2/nfce (NFC-e). Mesma API, mesmo token.
+ */
+function resourceFor(model: "55" | "65" | undefined): string {
+  return model === "65" ? "nfce" : "nfe";
+}
+
+/**
+ * Código SEFAZ da forma de pagamento (tabela tPag) a partir do meio de
+ * pagamento do motor de vendas. Default 99 (outros) — nunca lança.
+ */
+export function focusPaymentCode(method: string | null | undefined): string {
+  switch ((method ?? "").toLowerCase()) {
+    case "cash":
+    case "dinheiro":
+      return "01";
+    case "credit":
+    case "credit_card":
+    case "cartao_credito":
+      return "03";
+    case "debit":
+    case "debit_card":
+    case "cartao_debito":
+      return "04";
+    case "pix":
+      return "17";
+    case "boleto":
+      return "15";
+    case "transfer":
+    case "transferencia":
+      return "16";
+    default:
+      return "99";
+  }
+}
+
 function digits(value: string | null | undefined): string {
   return (value ?? "").replace(/\D/g, "");
 }
@@ -218,7 +255,7 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
    * transitório. Nunca lança: devolve o último estado observado.
    */
   private async pollStatus(
-    ref: { accessKey?: string; providerRef?: string },
+    ref: { accessKey?: string; providerRef?: string; model?: "55" | "65" },
     isFinal: (r: ProviderStatusResult) => boolean,
     seed: ProviderStatusResult,
     scope: "issue" | "cancel",
@@ -255,7 +292,12 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
     const ref = payload.reference ?? payload.saleId;
     const body = this.buildBody(payload);
 
-    const sent = await this.request("POST", `/v2/nfe?ref=${encodeURIComponent(ref)}`, body);
+    const resource = resourceFor(payload.model);
+    const sent = await this.request(
+      "POST",
+      `/v2/${resource}?ref=${encodeURIComponent(ref)}`,
+      body,
+    );
 
     // 422/400 → rejeição imediata (erro de schema/validação Focus).
     if (sent.httpStatus >= 400 && sent.httpStatus !== 409) {
@@ -271,7 +313,7 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
 
     // Focus processa de forma assíncrona: consulta até obter estado final.
     const last = await this.pollStatus(
-      { providerRef: ref },
+      { providerRef: ref, model: payload.model },
       (r) => r.status !== "sending",
       {
         ok: true,
@@ -312,6 +354,7 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
   async getStatus(ref: {
     accessKey?: string;
     providerRef?: string;
+    model?: "55" | "65";
   }): Promise<ProviderStatusResult> {
     const key = ref.providerRef ?? ref.accessKey;
     if (!key) {
@@ -321,7 +364,10 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
         rejectionReason: "Referência do documento ausente.",
       };
     }
-    const resp = await this.request("GET", `/v2/nfe/${encodeURIComponent(key)}?completa=1`);
+    const resp = await this.request(
+      "GET",
+      `/v2/${resourceFor(ref.model)}/${encodeURIComponent(key)}?completa=1`,
+    );
     if (resp.httpStatus >= 400) {
       return {
         ok: false,
@@ -365,14 +411,16 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
    *   mantém o documento em estado transitório e reconsulta depois.
    */
   async cancelNfe(
-    ref: { accessKey: string; providerRef?: string },
+    ref: { accessKey: string; providerRef?: string; model?: "55" | "65" },
     reason: string,
   ): Promise<ProviderCancelResult> {
     const key = ref.providerRef ?? ref.accessKey;
     const startedAt = Date.now();
-    const resp = await this.request("DELETE", `/v2/nfe/${encodeURIComponent(key)}`, {
-      justificativa: reason,
-    });
+    const resp = await this.request(
+      "DELETE",
+      `/v2/${resourceFor(ref.model)}/${encodeURIComponent(key)}`,
+      { justificativa: reason },
+    );
     console.info("[fiscal] provider.cancel.requested", {
       ref: key,
       httpStatus: resp.httpStatus,
@@ -403,7 +451,7 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
     const last = confirmed(immediate)
       ? immediate
       : await this.pollStatus(
-          { providerRef: key },
+          { providerRef: key, model: ref.model },
           (r) => confirmed(r) || r.status === "rejected" || r.status === "error",
           immediate,
           "cancel",
@@ -557,14 +605,17 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
     const addr = customer.address;
     const doc = digits(customer.document);
 
-    const destinatario: Record<string, unknown> = {
-      nome_destinatario: customer.name,
-      indicador_inscricao_estadual_destinatario: 9,
-    };
+    const destinatario: Record<string, unknown> =
+      payload.model === "65" && !doc
+        ? {}
+        : {
+            nome_destinatario: customer.name,
+            indicador_inscricao_estadual_destinatario: 9,
+          };
     if (doc.length > 11) destinatario.cnpj_destinatario = doc;
-    else destinatario.cpf_destinatario = doc;
-    if (customer.email) destinatario.email_destinatario = customer.email;
-    if (addr) {
+    else if (doc) destinatario.cpf_destinatario = doc;
+    if (customer.email && doc) destinatario.email_destinatario = customer.email;
+    if (addr && doc) {
       Object.assign(destinatario, {
         logradouro_destinatario: addr.street,
         numero_destinatario: addr.number || "S/N",
@@ -630,7 +681,28 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
     });
 
 
+    const isNfce = payload.model === "65";
+    const nfce = isNfce
+      ? {
+          // NFC-e: presencial, consumidor final, sem transporte.
+          presenca_comprador: 1,
+          consumidor_final: 1,
+          modalidade_frete: 9,
+          local_destino: 1,
+          // QR-Code: credenciais CSC vindas do cofre fiscal.
+          ...(payload.nfce?.cscId ? { id_token_csc: payload.nfce.cscId } : {}),
+          ...(payload.nfce?.cscToken ? { csc: payload.nfce.cscToken } : {}),
+          formas_pagamento: [
+            {
+              forma_pagamento: focusPaymentCode(payload.nfce?.paymentMethod),
+              valor_pagamento: round2(Number(payload.totals.total ?? 0)),
+            },
+          ],
+        }
+      : {};
+
     return {
+      modelo: isNfce ? 65 : 55,
       natureza_operacao:
         fiscal?.operationNature ?? "Venda de mercadoria adquirida ou recebida de terceiros",
       data_emissao: payload.issuedAt ?? new Date().toISOString(),
@@ -650,6 +722,7 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
       valor_frete: freight,
       valor_total: payload.totals.total,
       items,
+      ...nfce,
     };
   }
 }
