@@ -81,7 +81,8 @@ describe("accounting-ai · P1 · summary único por pergunta", () => {
     });
     const skill = getAccountingSkill("consultar_lucro")!;
     const direct = await skill.run("c1", { services: makeTestServices(), period });
-    expect(withShared.text).toContain(direct.text);
+    const norm = (t: string) => t.replace(/\s/g, " ");
+    expect(norm(withShared.text)).toContain(norm(direct.text));
   });
 });
 
