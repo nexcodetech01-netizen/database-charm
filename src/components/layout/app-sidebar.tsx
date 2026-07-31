@@ -176,29 +176,30 @@ export function AppSidebar() {
   );
 
   const navList = (
-    <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-6">
+    <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
       {visibleGroups.map((group, i) => (
-        <div key={group.label} className={i > 0 ? "mt-6 border-t border-sidebar-border/50 pt-6" : ""}>
-          <div className="mb-3 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+        <div key={group.label} className={i > 0 ? "mt-3.5 border-t border-sidebar-border/50 pt-3.5" : ""}>
+          <div className="mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
             {group.label}
           </div>
 
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {group.items.map((item) =>
               item.children?.length ? (
                 <li key={item.title}>
-                  <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-semibold text-sidebar-foreground/80">
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-[13.5px] font-semibold text-sidebar-foreground/80">
                     <item.icon
                       className="h-[17px] w-[17px] shrink-0 text-muted-foreground/80"
                       strokeWidth={2}
                     />
                     <span className="flex-1 truncate">{item.title}</span>
                   </div>
-                  <ul className="ml-[26px] mt-1 space-y-1 border-l border-sidebar-border/60 pl-2">
+                  <ul className="ml-[26px] mt-0.5 space-y-0.5 border-l border-sidebar-border/60 pl-2">
                     {item.children.map((child) => (
                       <NavRow
                         key={child.title}
                         item={child}
+                        nested
                         active={currentPath === child.url}
                         onComingSoon={handleComingSoon}
                       />
