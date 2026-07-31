@@ -144,8 +144,33 @@ export type PdvShortcutHandlers = Partial<
 type MinimalEvent = PdvShortcutEvent & { preventDefault?: () => void };
 
 /**
- * Cria o listener de `keydown`. Só chama o handler quando ele existir —
- * é assim que cada atalho fica desabilitado conforme o estado da tela.
+ * Teclas que pertencem ao PDV e NUNCA podem chegar ao navegador enquanto a
+ * tela estiver ativa (RC2 / P0.1): F5 recarregava a página, F3 abria o
+ * "localizar", F2/F4 vazavam. O bloqueio independe da ação estar disponível.
+ *
+ * Teclas de edição de texto (ENTER, ESC, DELETE) só são bloqueadas quando o
+ * PDV realmente as usa — digitar em um campo continua normal.
+ */
+const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5"] as const;
+
+export function isPdvOwnedKey(event: PdvShortcutEvent): boolean {
+  if (event.altKey) return false;
+  const ctrl = Boolean(event.ctrlKey || event.metaKey);
+  if (ctrl) {
+    const key = event.key.toLowerCase();
+    return key === "l" || key === "delete";
+  }
+  return OWNED_FUNCTION_KEYS.includes(
+    event.key as (typeof OWNED_FUNCTION_KEYS)[number],
+  );
+}
+
+/**
+ * Cria o listener de `keydown`.
+ *
+ * O `preventDefault` acontece para toda tecla do PDV (mesmo sem handler
+ * disponível); a ação em si só roda quando o handler existir — é assim que
+ * cada atalho fica desabilitado conforme o estado da tela.
  */
 export function createPdvShortcutHandler(
   getHandlers: () => PdvShortcutHandlers,
@@ -153,13 +178,15 @@ export function createPdvShortcutHandler(
 ) {
   return function onKeyDown(event: MinimalEvent) {
     const action = resolvePdvShortcut(event, getContext());
+    const owned = isPdvOwnedKey(event);
+    if (action || owned) event.preventDefault?.();
     if (!action) return;
     const handler = getHandlers()[action];
     if (!handler) return;
-    event.preventDefault?.();
     handler();
   };
 }
+
 
 export type PdvShortcutTargetLike = {
   addEventListener: (type: string, listener: (event: never) => void) => void;
