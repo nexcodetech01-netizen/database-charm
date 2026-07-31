@@ -27,6 +27,7 @@ import { formatOpenedAt } from "@/features/cash";
 import { usePdvFocus } from "../hooks/use-pdv-focus";
 import { usePdvSaleWatch } from "../hooks/use-pdv-sale-watch";
 import { resolveActiveCartKey } from "../lib/cart";
+import { usePrintPreferences } from "@/features/printing";
 import {
   usePdvShortcuts,
   clickPdvElement,
@@ -222,6 +223,15 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     },
   });
 
+
+  // Sprint 4.0 — impressão automática do cupom após a venda concluída.
+  const { prefs: printPrefs } = usePrintPreferences(companyId);
+  useEffect(() => {
+    if (completed && !receiptOpen && printPrefs.autoPrintAfterSale) {
+      dispatchSession({ type: "OPEN_RECEIPT" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completed?.id, printPrefs.autoPrintAfterSale]);
 
   const blocked = access.state === "blocked";
   useEffect(() => {

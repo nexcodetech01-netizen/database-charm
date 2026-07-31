@@ -89,6 +89,7 @@ export function SaleReceipt({
 
   const sale = saleQ.data;
   const branding = brandingQ.data?.company ?? null;
+  const logoUrl = brandingQ.data?.logoUrl ?? null;
 
   const method = paymentMethod ?? sale?.payment_method ?? null;
   const methodLabel = paymentMethodLabel(method);
@@ -133,6 +134,9 @@ export function SaleReceipt({
     <div className={`receipt receipt-${width === "58mm" ? "58" : "80"}`}>
       {/* Empresa */}
       <header className="receipt-header">
+        {prefs.showLogo && logoUrl ? (
+          <img src={logoUrl} alt="" className="receipt-logo" />
+        ) : null}
         <div className="receipt-title">
           {branding?.trade_name || branding?.name || "—"}
         </div>

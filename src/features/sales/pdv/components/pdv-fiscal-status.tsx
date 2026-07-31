@@ -1,6 +1,7 @@
 import { AlertTriangle, FileText, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DanfeDownloadButton } from "@/features/fiscal/v2/components/artifact-download-button";
+import { DanfePrintButton } from "@/features/printing";
 import {
   PDV_NFCE_FAILURE_MESSAGE,
   type PdvFiscalOutcome,
@@ -42,13 +43,21 @@ export function PDVFiscalStatus({ outcome, isIssuing, onRetry }: Props) {
             {document.accessKey}
           </p>
         )}
-        <DanfeDownloadButton
-          path={document.danfePath}
-          doc={{
-            number: document.number ? Number(document.number) : null,
-            accessKey: document.accessKey,
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <DanfePrintButton path={document.danfePath} />
+          <DanfePrintButton
+            path={document.danfePath}
+            label="Reimprimir"
+            variant="outline"
+          />
+          <DanfeDownloadButton
+            path={document.danfePath}
+            doc={{
+              number: document.number ? Number(document.number) : null,
+              accessKey: document.accessKey,
+            }}
+          />
+        </div>
       </div>
     );
   }

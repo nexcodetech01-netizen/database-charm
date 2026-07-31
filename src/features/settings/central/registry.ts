@@ -13,6 +13,7 @@ import {
   Wallet,
   Smartphone,
   Wand2,
+  Printer,
 } from "lucide-react";
 import type { SettingsSectionDefinition } from "./types";
 import { EmpresaSection } from "./sections/empresa-section";
@@ -29,6 +30,7 @@ import { CustosOperacionaisSection } from "./sections/custos-operacionais-sectio
 import { PaymentMethodsSection } from "@/features/payment-methods";
 import { PwaSection } from "./sections/pwa-section";
 import { SkuCleanupSection } from "./sections/sku-cleanup-section";
+import { PrintSettingsSection } from "@/features/printing";
 
 
 export const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
@@ -53,6 +55,28 @@ export const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     group: "Conta",
     component: CupomSection,
     searchTerms: ["cupom", "recibo", "impressao", "receipt", "vendedor", "qr", "whatsapp", "rodape"],
+  },
+  {
+    id: "impressao",
+    title: "Impressão",
+    description: "Impressora padrão, largura do papel, margens e cópias.",
+    hint: "Cupom térmico 58/80 mm, etiquetas e impressão automática após a venda.",
+    whenToUse: "Ao configurar a impressora do balcão ou o layout de etiquetas.",
+    icon: Printer,
+    group: "Conta",
+    component: PrintSettingsSection,
+    searchTerms: [
+      "impressao",
+      "impressora",
+      "termica",
+      "etiqueta",
+      "danfe",
+      "escpos",
+      "58mm",
+      "80mm",
+      "copias",
+      "margem",
+    ],
   },
   {
     id: "custos-operacionais",
