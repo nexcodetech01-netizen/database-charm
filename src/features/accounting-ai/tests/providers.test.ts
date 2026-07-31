@@ -105,10 +105,17 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
       }),
     },
     sales: {
-      metrics: async () => ({ monthTotal: 11000, monthCount: 44, averageTicket: 250 }),
+      metrics: async () => ({
+        monthTotal: 11000,
+        monthCount: 44,
+        averageTicket: 250,
+        paidTotal: 11000,
+        dayTotal: 800,
+        dayCount: 3,
+      }),
       products: async () => ({
         bestSellers: [{ id: "p1", name: "Produto A", sku: "A", quantity: 10, revenue: 1000 }],
-        worstSellers: [],
+        worstSellers: [{ id: "p8", name: "Produto Y", sku: "Y", quantity: 1, revenue: 20 }],
         noMovement: [{ id: "p9", name: "Produto Z", sku: "Z", stock: 3 }],
       }),
       customers: async () => ({
