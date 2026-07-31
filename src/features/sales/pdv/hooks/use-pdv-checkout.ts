@@ -30,7 +30,8 @@ export function usePdvCheckout({ companyId, cashSessionId, onSuccess }: Options)
           state,
           companyId,
           cashSessionId,
-          create: (payload) => salesService.create(payload),
+          // Origem explícita: habilita venda de consumidor final (sem cliente).
+          create: (payload) => salesService.create(payload, { origin: "pdv" }),
         });
 
         if (!result.ok) {

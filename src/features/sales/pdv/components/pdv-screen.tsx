@@ -147,10 +147,11 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     printPdvReceipt();
   }
 
+  // P0.2 — cliente é opcional no balcão (consumidor final). A regra vive no
+  // ponto único compartilhado (origem "pdv" em salesService.create).
   const canFinalize =
-    pdv.state.items.length > 0 &&
-    !!pdv.state.customerId &&
-    pdv.stockIssues.length === 0;
+    pdv.state.items.length > 0 && pdv.stockIssues.length === 0;
+
 
   const cartEditable =
     pdv.state.items.length > 0 && !pendingSale && !completed;
