@@ -46,7 +46,7 @@ describe("P0.1 — atalhos nunca vazam para o navegador", () => {
   it("executa a ação quando o handler existe", () => {
     let called = 0;
     const handler = createPdvShortcutHandler(() => ({
-      finalize: () => {
+      "open-payment": () => {
         called += 1;
       },
     }));
