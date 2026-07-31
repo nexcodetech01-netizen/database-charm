@@ -12,3 +12,5 @@ export { TrendBadge } from "./trend-badge";
 export type { TrendBadgeProps } from "./trend-badge";
 export { BellaBriefCard } from "./bella-brief-card";
 export type { BellaBriefCardProps } from "./bella-brief-card";
+export { InsightsPanel } from "./insights-panel";
+export type { InsightsPanelProps } from "./insights-panel";
