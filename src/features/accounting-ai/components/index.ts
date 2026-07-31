@@ -8,3 +8,7 @@ export { IndicatorCard } from "./indicator-card";
 export type { IndicatorCardProps } from "./indicator-card";
 export { SummaryGrid } from "./summary-grid";
 export type { SummaryGridProps } from "./summary-grid";
+export { TrendBadge } from "./trend-badge";
+export type { TrendBadgeProps } from "./trend-badge";
+export { BellaBriefCard } from "./bella-brief-card";
+export type { BellaBriefCardProps } from "./bella-brief-card";
