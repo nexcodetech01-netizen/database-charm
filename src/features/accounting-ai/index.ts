@@ -11,6 +11,7 @@ export * from "./providers";
 export { buildAccountingSummary } from "./providers/summary";
 export * from "./skills";
 export * from "./queries";
+export * from "./insights";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
