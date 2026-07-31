@@ -266,6 +266,8 @@ export function AppSidebar() {
       {/* Desktop — sidebar fixa */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 z-30 border-r border-sidebar-border bg-sidebar">
         {brand}
+        {pdvQuickAccess}
+
         {navList}
       </aside>
 
