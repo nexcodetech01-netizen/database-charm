@@ -78,6 +78,7 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
 import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
 import { Route as ApiPublicJobsMercadolivreReconcileRouteImport } from './routes/api/public/jobs/mercadolivre-reconcile'
+import { Route as ApiPublicJobsMarketplaceSyncRouteImport } from './routes/api/public/jobs/marketplace-sync'
 import { Route as ApiPublicJobsHealthRouteImport } from './routes/api/public/jobs/health'
 import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/public/jobs/dlq-reprocess'
 import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
@@ -478,6 +479,12 @@ const ApiPublicJobsMercadolivreReconcileRoute =
     path: '/api/public/jobs/mercadolivre-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsMarketplaceSyncRoute =
+  ApiPublicJobsMarketplaceSyncRouteImport.update({
+    id: '/api/public/jobs/marketplace-sync',
+    path: '/api/public/jobs/marketplace-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsHealthRoute = ApiPublicJobsHealthRouteImport.update({
   id: '/api/public/jobs/health',
   path: '/api/public/jobs/health',
@@ -660,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
+  '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
@@ -748,6 +756,7 @@ export interface FileRoutesByTo {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
+  '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
@@ -838,6 +847,7 @@ export interface FileRoutesById {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
+  '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
@@ -928,6 +938,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/health'
+    | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
@@ -1016,6 +1027,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/health'
+    | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
@@ -1105,6 +1117,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/health'
+    | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
@@ -1134,6 +1147,7 @@ export interface RootRouteChildren {
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
   ApiPublicJobsDlqReprocessRoute: typeof ApiPublicJobsDlqReprocessRoute
   ApiPublicJobsHealthRoute: typeof ApiPublicJobsHealthRoute
+  ApiPublicJobsMarketplaceSyncRoute: typeof ApiPublicJobsMarketplaceSyncRoute
   ApiPublicJobsMercadolivreReconcileRoute: typeof ApiPublicJobsMercadolivreReconcileRoute
   ApiPublicJobsMercadolivreRefreshRoute: typeof ApiPublicJobsMercadolivreRefreshRoute
   ApiPublicMercadolivreWebhookRoute: typeof ApiPublicMercadolivreWebhookRoute
@@ -1629,6 +1643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsMercadolivreReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/marketplace-sync': {
+      id: '/api/public/jobs/marketplace-sync'
+      path: '/api/public/jobs/marketplace-sync'
+      fullPath: '/api/public/jobs/marketplace-sync'
+      preLoaderRoute: typeof ApiPublicJobsMarketplaceSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/health': {
       id: '/api/public/jobs/health'
       path: '/api/public/jobs/health'
@@ -2043,6 +2064,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
   ApiPublicJobsDlqReprocessRoute: ApiPublicJobsDlqReprocessRoute,
   ApiPublicJobsHealthRoute: ApiPublicJobsHealthRoute,
+  ApiPublicJobsMarketplaceSyncRoute: ApiPublicJobsMarketplaceSyncRoute,
   ApiPublicJobsMercadolivreReconcileRoute:
     ApiPublicJobsMercadolivreReconcileRoute,
   ApiPublicJobsMercadolivreRefreshRoute: ApiPublicJobsMercadolivreRefreshRoute,
@@ -2057,3 +2079,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
