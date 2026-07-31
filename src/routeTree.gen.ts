@@ -9,121 +9,97 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as DataDeletionRouteImport } from './routes/data-deletion'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as AuthenticatedAcessoNegadoRouteImport } from './routes/_authenticated/acesso-negado'
-import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
-import { Route as AuthenticatedAutomacoesRouteImport } from './routes/_authenticated/automacoes'
-import { Route as AuthenticatedBellaRouteImport } from './routes/_authenticated/bella'
-import { Route as AuthenticatedBellaAgentDebugRouteImport } from './routes/_authenticated/bella-agent-debug'
-import { Route as AuthenticatedBellaConhecimentoRouteImport } from './routes/_authenticated/bella-conhecimento'
-import { Route as AuthenticatedBellaPayRouteImport } from './routes/_authenticated/bella-pay'
-import { Route as AuthenticatedBellaProcessosRouteImport } from './routes/_authenticated/bella-processos'
-import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
-import { Route as AuthenticatedCampanhasRouteImport } from './routes/_authenticated/campanhas'
-import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
-import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
-import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
-import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
-import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
-import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
-import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
-import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
-import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
-import { Route as AuthenticatedPainelExecutivoRouteImport } from './routes/_authenticated/painel-executivo'
-import { Route as AuthenticatedPdvRouteImport } from './routes/_authenticated/pdv'
-import { Route as AuthenticatedProcessamentosRouteImport } from './routes/_authenticated/processamentos'
-import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
-import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
-import { Route as AuthenticatedSaudePlataformaRouteImport } from './routes/_authenticated/saude-plataforma'
-import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
-import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
-import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as DataDeletionRouteImport } from './routes/data-deletion'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as MercadolivreCallbackRouteImport } from './routes/mercadolivre.callback'
-import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
-import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
-import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authenticated/clientes_.novo'
-import { Route as AuthenticatedComprasPurchaseIdRouteImport } from './routes/_authenticated/compras_.$purchaseId'
-import { Route as AuthenticatedComprasNovoRouteImport } from './routes/_authenticated/compras_.novo'
-import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
-import { Route as AuthenticatedConfiguracoesPrecificacaoRouteImport } from './routes/_authenticated/configuracoes.precificacao'
-import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/_authenticated/estoque.reconciliacao'
-import { Route as AuthenticatedFinanceiroSaudeFiscalRouteImport } from './routes/_authenticated/financeiro.saude-fiscal'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
+import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
+import { Route as AuthenticatedSaudePlataformaRouteImport } from './routes/_authenticated/saude-plataforma'
+import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
+import { Route as AuthenticatedProcessamentosRouteImport } from './routes/_authenticated/processamentos'
+import { Route as AuthenticatedPdvRouteImport } from './routes/_authenticated/pdv'
+import { Route as AuthenticatedPainelExecutivoRouteImport } from './routes/_authenticated/painel-executivo'
+import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
+import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
+import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
+import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
+import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
+import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
+import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
+import { Route as AuthenticatedCampanhasRouteImport } from './routes/_authenticated/campanhas'
+import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
+import { Route as AuthenticatedBellaProcessosRouteImport } from './routes/_authenticated/bella-processos'
+import { Route as AuthenticatedBellaPayRouteImport } from './routes/_authenticated/bella-pay'
+import { Route as AuthenticatedBellaConhecimentoRouteImport } from './routes/_authenticated/bella-conhecimento'
+import { Route as AuthenticatedBellaAgentDebugRouteImport } from './routes/_authenticated/bella-agent-debug'
+import { Route as AuthenticatedBellaRouteImport } from './routes/_authenticated/bella'
+import { Route as AuthenticatedAutomacoesRouteImport } from './routes/_authenticated/automacoes'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAcessoNegadoRouteImport } from './routes/_authenticated/acesso-negado'
 import { Route as AuthenticatedFiscalIndexRouteImport } from './routes/_authenticated/fiscal.index'
-import { Route as AuthenticatedFiscalConfiguracaoRouteImport } from './routes/_authenticated/fiscal.configuracao'
-import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
-import { Route as AuthenticatedFornecedoresSupplierIdRouteImport } from './routes/_authenticated/fornecedores_.$supplierId'
-import { Route as AuthenticatedFornecedoresNovoRouteImport } from './routes/_authenticated/fornecedores_.novo'
-import { Route as AuthenticatedInteligenciaComercialCategoriasRouteImport } from './routes/_authenticated/inteligencia-comercial.categorias'
-import { Route as AuthenticatedInteligenciaComercialDashboardRouteImport } from './routes/_authenticated/inteligencia-comercial.dashboard'
-import { Route as AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport } from './routes/_authenticated/inteligencia-comercial.politica-empresa'
-import { Route as AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.recalcular-precos'
-import { Route as AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.revisao-precos'
-import { Route as AuthenticatedInteligenciaComercialSimuladorRouteImport } from './routes/_authenticated/inteligencia-comercial.simulador'
-import { Route as AuthenticatedProdutosNovoRouteImport } from './routes/_authenticated/produtos_.novo'
-import { Route as AuthenticatedVendasSaleIdRouteImport } from './routes/_authenticated/vendas_.$saleId'
-import { Route as AuthenticatedVendasNovoRouteImport } from './routes/_authenticated/vendas_.novo'
+import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
 import { Route as CatalogoColecaoSlugRouteImport } from './routes/catalogo.colecao.$slug'
-import { Route as AuthenticatedClientesCustomerIdEditarRouteImport } from './routes/_authenticated/clientes_.$customerId.editar'
-import { Route as AuthenticatedComprasPurchaseIdEditarRouteImport } from './routes/_authenticated/compras_.$purchaseId.editar'
-import { Route as AuthenticatedConfiguracoesIntegracoesMetaRouteImport } from './routes/_authenticated/configuracoes.integracoes.meta'
-import { Route as AuthenticatedEstoqueProdutoProductIdRouteImport } from './routes/_authenticated/estoque.produto.$productId'
-import { Route as AuthenticatedFiscalNotasDocumentIdRouteImport } from './routes/_authenticated/fiscal.notas.$documentId'
-import { Route as AuthenticatedFornecedoresSupplierIdEditarRouteImport } from './routes/_authenticated/fornecedores_.$supplierId.editar'
+import { Route as AuthenticatedVendasNovoRouteImport } from './routes/_authenticated/vendas_.novo'
+import { Route as AuthenticatedVendasSaleIdRouteImport } from './routes/_authenticated/vendas_.$saleId'
+import { Route as AuthenticatedProdutosNovoRouteImport } from './routes/_authenticated/produtos_.novo'
+import { Route as AuthenticatedInteligenciaComercialSimuladorRouteImport } from './routes/_authenticated/inteligencia-comercial.simulador'
+import { Route as AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.revisao-precos'
+import { Route as AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.recalcular-precos'
+import { Route as AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport } from './routes/_authenticated/inteligencia-comercial.politica-empresa'
+import { Route as AuthenticatedInteligenciaComercialDashboardRouteImport } from './routes/_authenticated/inteligencia-comercial.dashboard'
+import { Route as AuthenticatedInteligenciaComercialCategoriasRouteImport } from './routes/_authenticated/inteligencia-comercial.categorias'
+import { Route as AuthenticatedFornecedoresNovoRouteImport } from './routes/_authenticated/fornecedores_.novo'
+import { Route as AuthenticatedFornecedoresSupplierIdRouteImport } from './routes/_authenticated/fornecedores_.$supplierId'
+import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
+import { Route as AuthenticatedFiscalConfiguracaoRouteImport } from './routes/_authenticated/fiscal.configuracao'
+import { Route as AuthenticatedFinanceiroSaudeFiscalRouteImport } from './routes/_authenticated/financeiro.saude-fiscal'
+import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/_authenticated/estoque.reconciliacao'
+import { Route as AuthenticatedConfiguracoesPrecificacaoRouteImport } from './routes/_authenticated/configuracoes.precificacao'
+import { Route as AuthenticatedComprasNovoRouteImport } from './routes/_authenticated/compras_.novo'
+import { Route as AuthenticatedComprasPurchaseIdRouteImport } from './routes/_authenticated/compras_.$purchaseId'
+import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authenticated/clientes_.novo'
+import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
+import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
-import { Route as AuthenticatedProdutosProductIdEditarRouteImport } from './routes/_authenticated/produtos_.$productId.editar'
-import { Route as AuthenticatedVendasSaleIdEditarRouteImport } from './routes/_authenticated/vendas_.$saleId.editar'
-import { Route as ApiPublicCatalogSlugRouteImport } from './routes/api/public/catalog/$slug'
-import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
-import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/public/jobs/dlq-reprocess'
-import { Route as ApiPublicJobsHealthRouteImport } from './routes/api/public/jobs/health'
-import { Route as ApiPublicJobsMercadolivreReconcileRouteImport } from './routes/api/public/jobs/mercadolivre-reconcile'
-import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
-import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
-import { Route as ApiPublicBellaPayQrChargeIdRouteImport } from './routes/api/public/bella-pay/qr.$chargeId'
-import { Route as ApiPublicBellaPayWebhookTokenRouteImport } from './routes/api/public/bella-pay/webhook.$token'
-import { Route as ApiPublicMercadolivreOauthCallbackRouteImport } from './routes/api/public/mercadolivre.oauth.callback'
-import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta.oauth.callback'
+import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
+import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
+import { Route as ApiPublicJobsMercadolivreReconcileRouteImport } from './routes/api/public/jobs/mercadolivre-reconcile'
+import { Route as ApiPublicJobsHealthRouteImport } from './routes/api/public/jobs/health'
+import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/public/jobs/dlq-reprocess'
+import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
+import { Route as ApiPublicCatalogSlugRouteImport } from './routes/api/public/catalog/$slug'
+import { Route as AuthenticatedVendasSaleIdEditarRouteImport } from './routes/_authenticated/vendas_.$saleId.editar'
+import { Route as AuthenticatedProdutosProductIdEditarRouteImport } from './routes/_authenticated/produtos_.$productId.editar'
+import { Route as AuthenticatedFornecedoresSupplierIdEditarRouteImport } from './routes/_authenticated/fornecedores_.$supplierId.editar'
+import { Route as AuthenticatedFiscalNotasDocumentIdRouteImport } from './routes/_authenticated/fiscal.notas.$documentId'
+import { Route as AuthenticatedEstoqueProdutoProductIdRouteImport } from './routes/_authenticated/estoque.produto.$productId'
+import { Route as AuthenticatedConfiguracoesIntegracoesMetaRouteImport } from './routes/_authenticated/configuracoes.integracoes.meta'
+import { Route as AuthenticatedComprasPurchaseIdEditarRouteImport } from './routes/_authenticated/compras_.$purchaseId.editar'
+import { Route as AuthenticatedClientesCustomerIdEditarRouteImport } from './routes/_authenticated/clientes_.$customerId.editar'
 import { Route as CatalogoColecaoSlugProdutoProductIdRouteImport } from './routes/catalogo.colecao.$slug.produto.$productId'
+import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta.oauth.callback'
+import { Route as ApiPublicMercadolivreOauthCallbackRouteImport } from './routes/api/public/mercadolivre.oauth.callback'
+import { Route as ApiPublicBellaPayWebhookTokenRouteImport } from './routes/api/public/bella-pay/webhook.$token'
+import { Route as ApiPublicBellaPayQrChargeIdRouteImport } from './routes/api/public/bella-pay/qr.$chargeId'
 import { Route as ApiPublicCatalogSlugProductProductIdRouteImport } from './routes/api/public/catalog/$slug/product/$productId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DataDeletionRoute = DataDeletionRouteImport.update({
-  id: '/data-deletion',
-  path: '/data-deletion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -131,153 +107,53 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAcessoNegadoRoute =
-  AuthenticatedAcessoNegadoRouteImport.update({
-    id: '/acesso-negado',
-    path: '/acesso-negado',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataDeletionRoute = DataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MercadolivreCallbackRoute = MercadolivreCallbackRouteImport.update({
+  id: '/mercadolivre/callback',
+  path: '/mercadolivre/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAutomacoesRoute = AuthenticatedAutomacoesRouteImport.update({
-  id: '/automacoes',
-  path: '/automacoes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBellaRoute = AuthenticatedBellaRouteImport.update({
-  id: '/bella',
-  path: '/bella',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBellaAgentDebugRoute =
-  AuthenticatedBellaAgentDebugRouteImport.update({
-    id: '/bella-agent-debug',
-    path: '/bella-agent-debug',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedBellaConhecimentoRoute =
-  AuthenticatedBellaConhecimentoRouteImport.update({
-    id: '/bella-conhecimento',
-    path: '/bella-conhecimento',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedBellaPayRoute = AuthenticatedBellaPayRouteImport.update({
-  id: '/bella-pay',
-  path: '/bella-pay',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBellaProcessosRoute =
-  AuthenticatedBellaProcessosRouteImport.update({
-    id: '/bella-processos',
-    path: '/bella-processos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
-  id: '/caixa',
-  path: '/caixa',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCampanhasRoute = AuthenticatedCampanhasRouteImport.update({
-  id: '/campanhas',
-  path: '/campanhas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
-  id: '/compras',
-  path: '/compras',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
-  id: '/crm',
-  path: '/crm',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDocumentosRoute = AuthenticatedDocumentosRouteImport.update({
-  id: '/documentos',
-  path: '/documentos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
-  id: '/estoque',
-  path: '/estoque',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFornecedoresRoute =
-  AuthenticatedFornecedoresRouteImport.update({
-    id: '/fornecedores',
-    path: '/fornecedores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedImportacoesRoute =
-  AuthenticatedImportacoesRouteImport.update({
-    id: '/importacoes',
-    path: '/importacoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedIndicadoresRoute =
-  AuthenticatedIndicadoresRouteImport.update({
-    id: '/indicadores',
-    path: '/indicadores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
-  id: '/marketing',
-  path: '/marketing',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPainelExecutivoRoute =
-  AuthenticatedPainelExecutivoRouteImport.update({
-    id: '/painel-executivo',
-    path: '/painel-executivo',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPdvRoute = AuthenticatedPdvRouteImport.update({
-  id: '/pdv',
-  path: '/pdv',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProcessamentosRoute =
-  AuthenticatedProcessamentosRouteImport.update({
-    id: '/processamentos',
-    path: '/processamentos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
-  id: '/produtos',
-  path: '/produtos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
+const AuthenticatedVendasRoute = AuthenticatedVendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSaudePlataformaRoute =
@@ -286,54 +162,154 @@ const AuthenticatedSaudePlataformaRoute =
     path: '/saude-plataforma',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVendasRoute = AuthenticatedVendasRouteImport.update({
-  id: '/vendas',
-  path: '/vendas',
+const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
-  id: '/whatsapp',
-  path: '/whatsapp',
+const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedProcessamentosRoute =
+  AuthenticatedProcessamentosRouteImport.update({
+    id: '/processamentos',
+    path: '/processamentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPdvRoute = AuthenticatedPdvRouteImport.update({
+  id: '/pdv',
+  path: '/pdv',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const MercadolivreCallbackRoute = MercadolivreCallbackRouteImport.update({
-  id: '/mercadolivre/callback',
-  path: '/mercadolivre/callback',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedPainelExecutivoRoute =
+  AuthenticatedPainelExecutivoRouteImport.update({
+    id: '/painel-executivo',
+    path: '/painel-executivo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBellaPayTestRoute =
-  AuthenticatedBellaPayTestRouteImport.update({
-    id: '/test',
-    path: '/test',
-    getParentRoute: () => AuthenticatedBellaPayRoute,
-  } as any)
-const AuthenticatedClientesCustomerIdRoute =
-  AuthenticatedClientesCustomerIdRouteImport.update({
-    id: '/clientes_/$customerId',
-    path: '/clientes/$customerId',
+const AuthenticatedIndicadoresRoute =
+  AuthenticatedIndicadoresRouteImport.update({
+    id: '/indicadores',
+    path: '/indicadores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedClientesNovoRoute =
-  AuthenticatedClientesNovoRouteImport.update({
-    id: '/clientes_/novo',
-    path: '/clientes/novo',
+const AuthenticatedImportacoesRoute =
+  AuthenticatedImportacoesRouteImport.update({
+    id: '/importacoes',
+    path: '/importacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedComprasPurchaseIdRoute =
-  AuthenticatedComprasPurchaseIdRouteImport.update({
-    id: '/compras_/$purchaseId',
-    path: '/compras/$purchaseId',
+const AuthenticatedFornecedoresRoute =
+  AuthenticatedFornecedoresRouteImport.update({
+    id: '/fornecedores',
+    path: '/fornecedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedComprasNovoRoute =
-  AuthenticatedComprasNovoRouteImport.update({
-    id: '/compras_/novo',
-    path: '/compras/novo',
+const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDocumentosRoute = AuthenticatedDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCampanhasRoute = AuthenticatedCampanhasRouteImport.update({
+  id: '/campanhas',
+  path: '/campanhas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
+  id: '/caixa',
+  path: '/caixa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBellaProcessosRoute =
+  AuthenticatedBellaProcessosRouteImport.update({
+    id: '/bella-processos',
+    path: '/bella-processos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBellaPayRoute = AuthenticatedBellaPayRouteImport.update({
+  id: '/bella-pay',
+  path: '/bella-pay',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBellaConhecimentoRoute =
+  AuthenticatedBellaConhecimentoRouteImport.update({
+    id: '/bella-conhecimento',
+    path: '/bella-conhecimento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBellaAgentDebugRoute =
+  AuthenticatedBellaAgentDebugRouteImport.update({
+    id: '/bella-agent-debug',
+    path: '/bella-agent-debug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBellaRoute = AuthenticatedBellaRouteImport.update({
+  id: '/bella',
+  path: '/bella',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAutomacoesRoute = AuthenticatedAutomacoesRouteImport.update({
+  id: '/automacoes',
+  path: '/automacoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAcessoNegadoRoute =
+  AuthenticatedAcessoNegadoRouteImport.update({
+    id: '/acesso-negado',
+    path: '/acesso-negado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalIndexRoute =
+  AuthenticatedFiscalIndexRouteImport.update({
+    id: '/fiscal/',
+    path: '/fiscal/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedConfiguracoesIndexRoute =
@@ -342,88 +318,20 @@ const AuthenticatedConfiguracoesIndexRoute =
     path: '/configuracoes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedConfiguracoesPrecificacaoRoute =
-  AuthenticatedConfiguracoesPrecificacaoRouteImport.update({
-    id: '/configuracoes/precificacao',
-    path: '/configuracoes/precificacao',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedEstoqueReconciliacaoRoute =
-  AuthenticatedEstoqueReconciliacaoRouteImport.update({
-    id: '/reconciliacao',
-    path: '/reconciliacao',
-    getParentRoute: () => AuthenticatedEstoqueRoute,
-  } as any)
-const AuthenticatedFinanceiroSaudeFiscalRoute =
-  AuthenticatedFinanceiroSaudeFiscalRouteImport.update({
-    id: '/saude-fiscal',
-    path: '/saude-fiscal',
-    getParentRoute: () => AuthenticatedFinanceiroRoute,
-  } as any)
-const AuthenticatedFiscalIndexRoute =
-  AuthenticatedFiscalIndexRouteImport.update({
-    id: '/fiscal/',
-    path: '/fiscal/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFiscalConfiguracaoRoute =
-  AuthenticatedFiscalConfiguracaoRouteImport.update({
-    id: '/fiscal/configuracao',
-    path: '/fiscal/configuracao',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFiscalNotasRoute =
-  AuthenticatedFiscalNotasRouteImport.update({
-    id: '/fiscal/notas',
-    path: '/fiscal/notas',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFornecedoresSupplierIdRoute =
-  AuthenticatedFornecedoresSupplierIdRouteImport.update({
-    id: '/fornecedores_/$supplierId',
-    path: '/fornecedores/$supplierId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFornecedoresNovoRoute =
-  AuthenticatedFornecedoresNovoRouteImport.update({
-    id: '/fornecedores_/novo',
-    path: '/fornecedores/novo',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialCategoriasRoute =
-  AuthenticatedInteligenciaComercialCategoriasRouteImport.update({
-    id: '/inteligencia-comercial/categorias',
-    path: '/inteligencia-comercial/categorias',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialDashboardRoute =
-  AuthenticatedInteligenciaComercialDashboardRouteImport.update({
-    id: '/inteligencia-comercial/dashboard',
-    path: '/inteligencia-comercial/dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialPoliticaEmpresaRoute =
-  AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport.update({
-    id: '/inteligencia-comercial/politica-empresa',
-    path: '/inteligencia-comercial/politica-empresa',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialRecalcularPrecosRoute =
-  AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport.update({
-    id: '/inteligencia-comercial/recalcular-precos',
-    path: '/inteligencia-comercial/recalcular-precos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialRevisaoPrecosRoute =
-  AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport.update({
-    id: '/inteligencia-comercial/revisao-precos',
-    path: '/inteligencia-comercial/revisao-precos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInteligenciaComercialSimuladorRoute =
-  AuthenticatedInteligenciaComercialSimuladorRouteImport.update({
-    id: '/inteligencia-comercial/simulador',
-    path: '/inteligencia-comercial/simulador',
+const CatalogoColecaoSlugRoute = CatalogoColecaoSlugRouteImport.update({
+  id: '/catalogo/colecao/$slug',
+  path: '/catalogo/colecao/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVendasNovoRoute = AuthenticatedVendasNovoRouteImport.update({
+  id: '/vendas_/novo',
+  path: '/vendas/novo',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendasSaleIdRoute =
+  AuthenticatedVendasSaleIdRouteImport.update({
+    id: '/vendas_/$saleId',
+    path: '/vendas/$saleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProdutosNovoRoute =
@@ -432,57 +340,113 @@ const AuthenticatedProdutosNovoRoute =
     path: '/produtos/novo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVendasSaleIdRoute =
-  AuthenticatedVendasSaleIdRouteImport.update({
-    id: '/vendas_/$saleId',
-    path: '/vendas/$saleId',
+const AuthenticatedInteligenciaComercialSimuladorRoute =
+  AuthenticatedInteligenciaComercialSimuladorRouteImport.update({
+    id: '/inteligencia-comercial/simulador',
+    path: '/inteligencia-comercial/simulador',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedVendasNovoRoute = AuthenticatedVendasNovoRouteImport.update({
-  id: '/vendas_/novo',
-  path: '/vendas/novo',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const CatalogoColecaoSlugRoute = CatalogoColecaoSlugRouteImport.update({
-  id: '/catalogo/colecao/$slug',
-  path: '/catalogo/colecao/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedClientesCustomerIdEditarRoute =
-  AuthenticatedClientesCustomerIdEditarRouteImport.update({
-    id: '/editar',
-    path: '/editar',
-    getParentRoute: () => AuthenticatedClientesCustomerIdRoute,
-  } as any)
-const AuthenticatedComprasPurchaseIdEditarRoute =
-  AuthenticatedComprasPurchaseIdEditarRouteImport.update({
-    id: '/editar',
-    path: '/editar',
-    getParentRoute: () => AuthenticatedComprasPurchaseIdRoute,
-  } as any)
-const AuthenticatedConfiguracoesIntegracoesMetaRoute =
-  AuthenticatedConfiguracoesIntegracoesMetaRouteImport.update({
-    id: '/configuracoes/integracoes/meta',
-    path: '/configuracoes/integracoes/meta',
+const AuthenticatedInteligenciaComercialRevisaoPrecosRoute =
+  AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport.update({
+    id: '/inteligencia-comercial/revisao-precos',
+    path: '/inteligencia-comercial/revisao-precos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEstoqueProdutoProductIdRoute =
-  AuthenticatedEstoqueProdutoProductIdRouteImport.update({
-    id: '/produto/$productId',
-    path: '/produto/$productId',
+const AuthenticatedInteligenciaComercialRecalcularPrecosRoute =
+  AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport.update({
+    id: '/inteligencia-comercial/recalcular-precos',
+    path: '/inteligencia-comercial/recalcular-precos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInteligenciaComercialPoliticaEmpresaRoute =
+  AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport.update({
+    id: '/inteligencia-comercial/politica-empresa',
+    path: '/inteligencia-comercial/politica-empresa',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInteligenciaComercialDashboardRoute =
+  AuthenticatedInteligenciaComercialDashboardRouteImport.update({
+    id: '/inteligencia-comercial/dashboard',
+    path: '/inteligencia-comercial/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInteligenciaComercialCategoriasRoute =
+  AuthenticatedInteligenciaComercialCategoriasRouteImport.update({
+    id: '/inteligencia-comercial/categorias',
+    path: '/inteligencia-comercial/categorias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFornecedoresNovoRoute =
+  AuthenticatedFornecedoresNovoRouteImport.update({
+    id: '/fornecedores_/novo',
+    path: '/fornecedores/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFornecedoresSupplierIdRoute =
+  AuthenticatedFornecedoresSupplierIdRouteImport.update({
+    id: '/fornecedores_/$supplierId',
+    path: '/fornecedores/$supplierId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalNotasRoute =
+  AuthenticatedFiscalNotasRouteImport.update({
+    id: '/fiscal/notas',
+    path: '/fiscal/notas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalConfiguracaoRoute =
+  AuthenticatedFiscalConfiguracaoRouteImport.update({
+    id: '/fiscal/configuracao',
+    path: '/fiscal/configuracao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroSaudeFiscalRoute =
+  AuthenticatedFinanceiroSaudeFiscalRouteImport.update({
+    id: '/saude-fiscal',
+    path: '/saude-fiscal',
+    getParentRoute: () => AuthenticatedFinanceiroRoute,
+  } as any)
+const AuthenticatedEstoqueReconciliacaoRoute =
+  AuthenticatedEstoqueReconciliacaoRouteImport.update({
+    id: '/reconciliacao',
+    path: '/reconciliacao',
     getParentRoute: () => AuthenticatedEstoqueRoute,
   } as any)
-const AuthenticatedFiscalNotasDocumentIdRoute =
-  AuthenticatedFiscalNotasDocumentIdRouteImport.update({
-    id: '/$documentId',
-    path: '/$documentId',
-    getParentRoute: () => AuthenticatedFiscalNotasRoute,
+const AuthenticatedConfiguracoesPrecificacaoRoute =
+  AuthenticatedConfiguracoesPrecificacaoRouteImport.update({
+    id: '/configuracoes/precificacao',
+    path: '/configuracoes/precificacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedFornecedoresSupplierIdEditarRoute =
-  AuthenticatedFornecedoresSupplierIdEditarRouteImport.update({
-    id: '/editar',
-    path: '/editar',
-    getParentRoute: () => AuthenticatedFornecedoresSupplierIdRoute,
+const AuthenticatedComprasNovoRoute =
+  AuthenticatedComprasNovoRouteImport.update({
+    id: '/compras_/novo',
+    path: '/compras/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedComprasPurchaseIdRoute =
+  AuthenticatedComprasPurchaseIdRouteImport.update({
+    id: '/compras_/$purchaseId',
+    path: '/compras/$purchaseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientesNovoRoute =
+  AuthenticatedClientesNovoRouteImport.update({
+    id: '/clientes_/novo',
+    path: '/clientes/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientesCustomerIdRoute =
+  AuthenticatedClientesCustomerIdRouteImport.update({
+    id: '/clientes_/$customerId',
+    path: '/clientes/$customerId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBellaPayTestRoute =
+  AuthenticatedBellaPayTestRouteImport.update({
+    id: '/test',
+    path: '/test',
+    getParentRoute: () => AuthenticatedBellaPayRoute,
   } as any)
 const AuthenticatedProdutosProductIdIndexRoute =
   AuthenticatedProdutosProductIdIndexRouteImport.update({
@@ -490,49 +454,10 @@ const AuthenticatedProdutosProductIdIndexRoute =
     path: '/produtos/$productId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedProdutosProductIdEditarRoute =
-  AuthenticatedProdutosProductIdEditarRouteImport.update({
-    id: '/produtos_/$productId/editar',
-    path: '/produtos/$productId/editar',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedVendasSaleIdEditarRoute =
-  AuthenticatedVendasSaleIdEditarRouteImport.update({
-    id: '/editar',
-    path: '/editar',
-    getParentRoute: () => AuthenticatedVendasSaleIdRoute,
-  } as any)
-const ApiPublicCatalogSlugRoute = ApiPublicCatalogSlugRouteImport.update({
-  id: '/api/public/catalog/$slug',
-  path: '/api/public/catalog/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicCatalogEntradaRoute = ApiPublicCatalogEntradaRouteImport.update({
-  id: '/api/public/catalog/entrada',
-  path: '/api/public/catalog/entrada',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicJobsDlqReprocessRoute =
-  ApiPublicJobsDlqReprocessRouteImport.update({
-    id: '/api/public/jobs/dlq-reprocess',
-    path: '/api/public/jobs/dlq-reprocess',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicJobsHealthRoute = ApiPublicJobsHealthRouteImport.update({
-  id: '/api/public/jobs/health',
-  path: '/api/public/jobs/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicJobsMercadolivreReconcileRoute =
-  ApiPublicJobsMercadolivreReconcileRouteImport.update({
-    id: '/api/public/jobs/mercadolivre-reconcile',
-    path: '/api/public/jobs/mercadolivre-reconcile',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicJobsMercadolivreRefreshRoute =
-  ApiPublicJobsMercadolivreRefreshRouteImport.update({
-    id: '/api/public/jobs/mercadolivre-refresh',
-    path: '/api/public/jobs/mercadolivre-refresh',
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicMercadolivreWebhookRoute =
@@ -541,22 +466,97 @@ const ApiPublicMercadolivreWebhookRoute =
     path: '/api/public/mercadolivre/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicWhatsappWebhookRoute =
-  ApiPublicWhatsappWebhookRouteImport.update({
-    id: '/api/public/whatsapp/webhook',
-    path: '/api/public/whatsapp/webhook',
+const ApiPublicJobsMercadolivreRefreshRoute =
+  ApiPublicJobsMercadolivreRefreshRouteImport.update({
+    id: '/api/public/jobs/mercadolivre-refresh',
+    path: '/api/public/jobs/mercadolivre-refresh',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBellaPayQrChargeIdRoute =
-  ApiPublicBellaPayQrChargeIdRouteImport.update({
-    id: '/api/public/bella-pay/qr/$chargeId',
-    path: '/api/public/bella-pay/qr/$chargeId',
+const ApiPublicJobsMercadolivreReconcileRoute =
+  ApiPublicJobsMercadolivreReconcileRouteImport.update({
+    id: '/api/public/jobs/mercadolivre-reconcile',
+    path: '/api/public/jobs/mercadolivre-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBellaPayWebhookTokenRoute =
-  ApiPublicBellaPayWebhookTokenRouteImport.update({
-    id: '/api/public/bella-pay/webhook/$token',
-    path: '/api/public/bella-pay/webhook/$token',
+const ApiPublicJobsHealthRoute = ApiPublicJobsHealthRouteImport.update({
+  id: '/api/public/jobs/health',
+  path: '/api/public/jobs/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicJobsDlqReprocessRoute =
+  ApiPublicJobsDlqReprocessRouteImport.update({
+    id: '/api/public/jobs/dlq-reprocess',
+    path: '/api/public/jobs/dlq-reprocess',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCatalogEntradaRoute = ApiPublicCatalogEntradaRouteImport.update({
+  id: '/api/public/catalog/entrada',
+  path: '/api/public/catalog/entrada',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCatalogSlugRoute = ApiPublicCatalogSlugRouteImport.update({
+  id: '/api/public/catalog/$slug',
+  path: '/api/public/catalog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVendasSaleIdEditarRoute =
+  AuthenticatedVendasSaleIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedVendasSaleIdRoute,
+  } as any)
+const AuthenticatedProdutosProductIdEditarRoute =
+  AuthenticatedProdutosProductIdEditarRouteImport.update({
+    id: '/produtos_/$productId/editar',
+    path: '/produtos/$productId/editar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFornecedoresSupplierIdEditarRoute =
+  AuthenticatedFornecedoresSupplierIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedFornecedoresSupplierIdRoute,
+  } as any)
+const AuthenticatedFiscalNotasDocumentIdRoute =
+  AuthenticatedFiscalNotasDocumentIdRouteImport.update({
+    id: '/$documentId',
+    path: '/$documentId',
+    getParentRoute: () => AuthenticatedFiscalNotasRoute,
+  } as any)
+const AuthenticatedEstoqueProdutoProductIdRoute =
+  AuthenticatedEstoqueProdutoProductIdRouteImport.update({
+    id: '/produto/$productId',
+    path: '/produto/$productId',
+    getParentRoute: () => AuthenticatedEstoqueRoute,
+  } as any)
+const AuthenticatedConfiguracoesIntegracoesMetaRoute =
+  AuthenticatedConfiguracoesIntegracoesMetaRouteImport.update({
+    id: '/configuracoes/integracoes/meta',
+    path: '/configuracoes/integracoes/meta',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedComprasPurchaseIdEditarRoute =
+  AuthenticatedComprasPurchaseIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedComprasPurchaseIdRoute,
+  } as any)
+const AuthenticatedClientesCustomerIdEditarRoute =
+  AuthenticatedClientesCustomerIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedClientesCustomerIdRoute,
+  } as any)
+const CatalogoColecaoSlugProdutoProductIdRoute =
+  CatalogoColecaoSlugProdutoProductIdRouteImport.update({
+    id: '/produto/$productId',
+    path: '/produto/$productId',
+    getParentRoute: () => CatalogoColecaoSlugRoute,
+  } as any)
+const ApiPublicMetaOauthCallbackRoute =
+  ApiPublicMetaOauthCallbackRouteImport.update({
+    id: '/api/public/meta/oauth/callback',
+    path: '/api/public/meta/oauth/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicMercadolivreOauthCallbackRoute =
@@ -565,17 +565,17 @@ const ApiPublicMercadolivreOauthCallbackRoute =
     path: '/api/public/mercadolivre/oauth/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMetaOauthCallbackRoute =
-  ApiPublicMetaOauthCallbackRouteImport.update({
-    id: '/api/public/meta/oauth/callback',
-    path: '/api/public/meta/oauth/callback',
+const ApiPublicBellaPayWebhookTokenRoute =
+  ApiPublicBellaPayWebhookTokenRouteImport.update({
+    id: '/api/public/bella-pay/webhook/$token',
+    path: '/api/public/bella-pay/webhook/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CatalogoColecaoSlugProdutoProductIdRoute =
-  CatalogoColecaoSlugProdutoProductIdRouteImport.update({
-    id: '/produto/$productId',
-    path: '/produto/$productId',
-    getParentRoute: () => CatalogoColecaoSlugRoute,
+const ApiPublicBellaPayQrChargeIdRoute =
+  ApiPublicBellaPayQrChargeIdRouteImport.update({
+    id: '/api/public/bella-pay/qr/$chargeId',
+    path: '/api/public/bella-pay/qr/$chargeId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCatalogSlugProductProductIdRoute =
   ApiPublicCatalogSlugProductProductIdRouteImport.update({
@@ -1146,46 +1146,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/data-deletion': {
-      id: '/data-deletion'
-      path: '/data-deletion'
-      fullPath: '/data-deletion'
-      preLoaderRoute: typeof DataDeletionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1195,228 +1160,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/acesso-negado': {
-      id: '/_authenticated/acesso-negado'
-      path: '/acesso-negado'
-      fullPath: '/acesso-negado'
-      preLoaderRoute: typeof AuthenticatedAcessoNegadoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/agenda': {
-      id: '/_authenticated/agenda'
-      path: '/agenda'
-      fullPath: '/agenda'
-      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/data-deletion': {
+      id: '/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof DataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/automacoes': {
-      id: '/_authenticated/automacoes'
-      path: '/automacoes'
-      fullPath: '/automacoes'
-      preLoaderRoute: typeof AuthenticatedAutomacoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/bella': {
-      id: '/_authenticated/bella'
-      path: '/bella'
-      fullPath: '/bella'
-      preLoaderRoute: typeof AuthenticatedBellaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/bella-agent-debug': {
-      id: '/_authenticated/bella-agent-debug'
-      path: '/bella-agent-debug'
-      fullPath: '/bella-agent-debug'
-      preLoaderRoute: typeof AuthenticatedBellaAgentDebugRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/bella-conhecimento': {
-      id: '/_authenticated/bella-conhecimento'
-      path: '/bella-conhecimento'
-      fullPath: '/bella-conhecimento'
-      preLoaderRoute: typeof AuthenticatedBellaConhecimentoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/bella-pay': {
-      id: '/_authenticated/bella-pay'
-      path: '/bella-pay'
-      fullPath: '/bella-pay'
-      preLoaderRoute: typeof AuthenticatedBellaPayRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/bella-processos': {
-      id: '/_authenticated/bella-processos'
-      path: '/bella-processos'
-      fullPath: '/bella-processos'
-      preLoaderRoute: typeof AuthenticatedBellaProcessosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/caixa': {
-      id: '/_authenticated/caixa'
-      path: '/caixa'
-      fullPath: '/caixa'
-      preLoaderRoute: typeof AuthenticatedCaixaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/campanhas': {
-      id: '/_authenticated/campanhas'
-      path: '/campanhas'
-      fullPath: '/campanhas'
-      preLoaderRoute: typeof AuthenticatedCampanhasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/categorias': {
-      id: '/_authenticated/categorias'
-      path: '/categorias'
-      fullPath: '/categorias'
-      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/compras': {
-      id: '/_authenticated/compras'
-      path: '/compras'
-      fullPath: '/compras'
-      preLoaderRoute: typeof AuthenticatedComprasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/crm': {
-      id: '/_authenticated/crm'
-      path: '/crm'
-      fullPath: '/crm'
-      preLoaderRoute: typeof AuthenticatedCrmRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/documentos': {
-      id: '/_authenticated/documentos'
-      path: '/documentos'
-      fullPath: '/documentos'
-      preLoaderRoute: typeof AuthenticatedDocumentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/estoque': {
-      id: '/_authenticated/estoque'
-      path: '/estoque'
-      fullPath: '/estoque'
-      preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/financeiro': {
-      id: '/_authenticated/financeiro'
-      path: '/financeiro'
-      fullPath: '/financeiro'
-      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fornecedores': {
-      id: '/_authenticated/fornecedores'
-      path: '/fornecedores'
-      fullPath: '/fornecedores'
-      preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/importacoes': {
-      id: '/_authenticated/importacoes'
-      path: '/importacoes'
-      fullPath: '/importacoes'
-      preLoaderRoute: typeof AuthenticatedImportacoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/indicadores': {
-      id: '/_authenticated/indicadores'
-      path: '/indicadores'
-      fullPath: '/indicadores'
-      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/marketing': {
-      id: '/_authenticated/marketing'
-      path: '/marketing'
-      fullPath: '/marketing'
-      preLoaderRoute: typeof AuthenticatedMarketingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/painel-executivo': {
-      id: '/_authenticated/painel-executivo'
-      path: '/painel-executivo'
-      fullPath: '/painel-executivo'
-      preLoaderRoute: typeof AuthenticatedPainelExecutivoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/pdv': {
-      id: '/_authenticated/pdv'
-      path: '/pdv'
-      fullPath: '/pdv'
-      preLoaderRoute: typeof AuthenticatedPdvRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/processamentos': {
-      id: '/_authenticated/processamentos'
-      path: '/processamentos'
-      fullPath: '/processamentos'
-      preLoaderRoute: typeof AuthenticatedProcessamentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/produtos': {
-      id: '/_authenticated/produtos'
-      path: '/produtos'
-      fullPath: '/produtos'
-      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/relatorios': {
-      id: '/_authenticated/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/saude-plataforma': {
-      id: '/_authenticated/saude-plataforma'
-      path: '/saude-plataforma'
-      fullPath: '/saude-plataforma'
-      preLoaderRoute: typeof AuthenticatedSaudePlataformaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vendas': {
-      id: '/_authenticated/vendas'
-      path: '/vendas'
-      fullPath: '/vendas'
-      preLoaderRoute: typeof AuthenticatedVendasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/whatsapp': {
-      id: '/_authenticated/whatsapp'
-      path: '/whatsapp'
-      fullPath: '/whatsapp'
-      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mercadolivre/callback': {
@@ -1426,39 +1209,228 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MercadolivreCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/bella-pay/test': {
-      id: '/_authenticated/bella-pay/test'
-      path: '/test'
-      fullPath: '/bella-pay/test'
-      preLoaderRoute: typeof AuthenticatedBellaPayTestRouteImport
-      parentRoute: typeof AuthenticatedBellaPayRoute
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/clientes_/$customerId': {
-      id: '/_authenticated/clientes_/$customerId'
-      path: '/clientes/$customerId'
-      fullPath: '/clientes/$customerId'
-      preLoaderRoute: typeof AuthenticatedClientesCustomerIdRouteImport
+    '/_authenticated/whatsapp': {
+      id: '/_authenticated/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/clientes_/novo': {
-      id: '/_authenticated/clientes_/novo'
-      path: '/clientes/novo'
-      fullPath: '/clientes/novo'
-      preLoaderRoute: typeof AuthenticatedClientesNovoRouteImport
+    '/_authenticated/vendas': {
+      id: '/_authenticated/vendas'
+      path: '/vendas'
+      fullPath: '/vendas'
+      preLoaderRoute: typeof AuthenticatedVendasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/compras_/$purchaseId': {
-      id: '/_authenticated/compras_/$purchaseId'
-      path: '/compras/$purchaseId'
-      fullPath: '/compras/$purchaseId'
-      preLoaderRoute: typeof AuthenticatedComprasPurchaseIdRouteImport
+    '/_authenticated/saude-plataforma': {
+      id: '/_authenticated/saude-plataforma'
+      path: '/saude-plataforma'
+      fullPath: '/saude-plataforma'
+      preLoaderRoute: typeof AuthenticatedSaudePlataformaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/compras_/novo': {
-      id: '/_authenticated/compras_/novo'
-      path: '/compras/novo'
-      fullPath: '/compras/novo'
-      preLoaderRoute: typeof AuthenticatedComprasNovoRouteImport
+    '/_authenticated/relatorios': {
+      id: '/_authenticated/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/produtos': {
+      id: '/_authenticated/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/processamentos': {
+      id: '/_authenticated/processamentos'
+      path: '/processamentos'
+      fullPath: '/processamentos'
+      preLoaderRoute: typeof AuthenticatedProcessamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pdv': {
+      id: '/_authenticated/pdv'
+      path: '/pdv'
+      fullPath: '/pdv'
+      preLoaderRoute: typeof AuthenticatedPdvRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/painel-executivo': {
+      id: '/_authenticated/painel-executivo'
+      path: '/painel-executivo'
+      fullPath: '/painel-executivo'
+      preLoaderRoute: typeof AuthenticatedPainelExecutivoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing': {
+      id: '/_authenticated/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof AuthenticatedMarketingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/indicadores': {
+      id: '/_authenticated/indicadores'
+      path: '/indicadores'
+      fullPath: '/indicadores'
+      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/importacoes': {
+      id: '/_authenticated/importacoes'
+      path: '/importacoes'
+      fullPath: '/importacoes'
+      preLoaderRoute: typeof AuthenticatedImportacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fornecedores': {
+      id: '/_authenticated/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/fornecedores'
+      preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro': {
+      id: '/_authenticated/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estoque': {
+      id: '/_authenticated/estoque'
+      path: '/estoque'
+      fullPath: '/estoque'
+      preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documentos': {
+      id: '/_authenticated/documentos'
+      path: '/documentos'
+      fullPath: '/documentos'
+      preLoaderRoute: typeof AuthenticatedDocumentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crm': {
+      id: '/_authenticated/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/compras': {
+      id: '/_authenticated/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof AuthenticatedComprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes': {
+      id: '/_authenticated/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/categorias': {
+      id: '/_authenticated/categorias'
+      path: '/categorias'
+      fullPath: '/categorias'
+      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campanhas': {
+      id: '/_authenticated/campanhas'
+      path: '/campanhas'
+      fullPath: '/campanhas'
+      preLoaderRoute: typeof AuthenticatedCampanhasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/caixa': {
+      id: '/_authenticated/caixa'
+      path: '/caixa'
+      fullPath: '/caixa'
+      preLoaderRoute: typeof AuthenticatedCaixaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-processos': {
+      id: '/_authenticated/bella-processos'
+      path: '/bella-processos'
+      fullPath: '/bella-processos'
+      preLoaderRoute: typeof AuthenticatedBellaProcessosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-pay': {
+      id: '/_authenticated/bella-pay'
+      path: '/bella-pay'
+      fullPath: '/bella-pay'
+      preLoaderRoute: typeof AuthenticatedBellaPayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-conhecimento': {
+      id: '/_authenticated/bella-conhecimento'
+      path: '/bella-conhecimento'
+      fullPath: '/bella-conhecimento'
+      preLoaderRoute: typeof AuthenticatedBellaConhecimentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-agent-debug': {
+      id: '/_authenticated/bella-agent-debug'
+      path: '/bella-agent-debug'
+      fullPath: '/bella-agent-debug'
+      preLoaderRoute: typeof AuthenticatedBellaAgentDebugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella': {
+      id: '/_authenticated/bella'
+      path: '/bella'
+      fullPath: '/bella'
+      preLoaderRoute: typeof AuthenticatedBellaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/automacoes': {
+      id: '/_authenticated/automacoes'
+      path: '/automacoes'
+      fullPath: '/automacoes'
+      preLoaderRoute: typeof AuthenticatedAutomacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/acesso-negado': {
+      id: '/_authenticated/acesso-negado'
+      path: '/acesso-negado'
+      fullPath: '/acesso-negado'
+      preLoaderRoute: typeof AuthenticatedAcessoNegadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/': {
+      id: '/_authenticated/fiscal/'
+      path: '/fiscal'
+      fullPath: '/fiscal/'
+      preLoaderRoute: typeof AuthenticatedFiscalIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/configuracoes/': {
@@ -1468,109 +1440,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/configuracoes/precificacao': {
-      id: '/_authenticated/configuracoes/precificacao'
-      path: '/configuracoes/precificacao'
-      fullPath: '/configuracoes/precificacao'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesPrecificacaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/catalogo/colecao/$slug': {
+      id: '/catalogo/colecao/$slug'
+      path: '/catalogo/colecao/$slug'
+      fullPath: '/catalogo/colecao/$slug'
+      preLoaderRoute: typeof CatalogoColecaoSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/estoque/reconciliacao': {
-      id: '/_authenticated/estoque/reconciliacao'
-      path: '/reconciliacao'
-      fullPath: '/estoque/reconciliacao'
-      preLoaderRoute: typeof AuthenticatedEstoqueReconciliacaoRouteImport
-      parentRoute: typeof AuthenticatedEstoqueRoute
-    }
-    '/_authenticated/financeiro/saude-fiscal': {
-      id: '/_authenticated/financeiro/saude-fiscal'
-      path: '/saude-fiscal'
-      fullPath: '/financeiro/saude-fiscal'
-      preLoaderRoute: typeof AuthenticatedFinanceiroSaudeFiscalRouteImport
-      parentRoute: typeof AuthenticatedFinanceiroRoute
-    }
-    '/_authenticated/fiscal/': {
-      id: '/_authenticated/fiscal/'
-      path: '/fiscal'
-      fullPath: '/fiscal/'
-      preLoaderRoute: typeof AuthenticatedFiscalIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fiscal/configuracao': {
-      id: '/_authenticated/fiscal/configuracao'
-      path: '/fiscal/configuracao'
-      fullPath: '/fiscal/configuracao'
-      preLoaderRoute: typeof AuthenticatedFiscalConfiguracaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fiscal/notas': {
-      id: '/_authenticated/fiscal/notas'
-      path: '/fiscal/notas'
-      fullPath: '/fiscal/notas'
-      preLoaderRoute: typeof AuthenticatedFiscalNotasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fornecedores_/$supplierId': {
-      id: '/_authenticated/fornecedores_/$supplierId'
-      path: '/fornecedores/$supplierId'
-      fullPath: '/fornecedores/$supplierId'
-      preLoaderRoute: typeof AuthenticatedFornecedoresSupplierIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fornecedores_/novo': {
-      id: '/_authenticated/fornecedores_/novo'
-      path: '/fornecedores/novo'
-      fullPath: '/fornecedores/novo'
-      preLoaderRoute: typeof AuthenticatedFornecedoresNovoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/categorias': {
-      id: '/_authenticated/inteligencia-comercial/categorias'
-      path: '/inteligencia-comercial/categorias'
-      fullPath: '/inteligencia-comercial/categorias'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/dashboard': {
-      id: '/_authenticated/inteligencia-comercial/dashboard'
-      path: '/inteligencia-comercial/dashboard'
-      fullPath: '/inteligencia-comercial/dashboard'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/politica-empresa': {
-      id: '/_authenticated/inteligencia-comercial/politica-empresa'
-      path: '/inteligencia-comercial/politica-empresa'
-      fullPath: '/inteligencia-comercial/politica-empresa'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/recalcular-precos': {
-      id: '/_authenticated/inteligencia-comercial/recalcular-precos'
-      path: '/inteligencia-comercial/recalcular-precos'
-      fullPath: '/inteligencia-comercial/recalcular-precos'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/revisao-precos': {
-      id: '/_authenticated/inteligencia-comercial/revisao-precos'
-      path: '/inteligencia-comercial/revisao-precos'
-      fullPath: '/inteligencia-comercial/revisao-precos'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inteligencia-comercial/simulador': {
-      id: '/_authenticated/inteligencia-comercial/simulador'
-      path: '/inteligencia-comercial/simulador'
-      fullPath: '/inteligencia-comercial/simulador'
-      preLoaderRoute: typeof AuthenticatedInteligenciaComercialSimuladorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/produtos_/novo': {
-      id: '/_authenticated/produtos_/novo'
-      path: '/produtos/novo'
-      fullPath: '/produtos/novo'
-      preLoaderRoute: typeof AuthenticatedProdutosNovoRouteImport
+    '/_authenticated/vendas_/novo': {
+      id: '/_authenticated/vendas_/novo'
+      path: '/vendas/novo'
+      fullPath: '/vendas/novo'
+      preLoaderRoute: typeof AuthenticatedVendasNovoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendas_/$saleId': {
@@ -1580,61 +1461,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendasSaleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/vendas_/novo': {
-      id: '/_authenticated/vendas_/novo'
-      path: '/vendas/novo'
-      fullPath: '/vendas/novo'
-      preLoaderRoute: typeof AuthenticatedVendasNovoRouteImport
+    '/_authenticated/produtos_/novo': {
+      id: '/_authenticated/produtos_/novo'
+      path: '/produtos/novo'
+      fullPath: '/produtos/novo'
+      preLoaderRoute: typeof AuthenticatedProdutosNovoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/catalogo/colecao/$slug': {
-      id: '/catalogo/colecao/$slug'
-      path: '/catalogo/colecao/$slug'
-      fullPath: '/catalogo/colecao/$slug'
-      preLoaderRoute: typeof CatalogoColecaoSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/clientes_/$customerId/editar': {
-      id: '/_authenticated/clientes_/$customerId/editar'
-      path: '/editar'
-      fullPath: '/clientes/$customerId/editar'
-      preLoaderRoute: typeof AuthenticatedClientesCustomerIdEditarRouteImport
-      parentRoute: typeof AuthenticatedClientesCustomerIdRoute
-    }
-    '/_authenticated/compras_/$purchaseId/editar': {
-      id: '/_authenticated/compras_/$purchaseId/editar'
-      path: '/editar'
-      fullPath: '/compras/$purchaseId/editar'
-      preLoaderRoute: typeof AuthenticatedComprasPurchaseIdEditarRouteImport
-      parentRoute: typeof AuthenticatedComprasPurchaseIdRoute
-    }
-    '/_authenticated/configuracoes/integracoes/meta': {
-      id: '/_authenticated/configuracoes/integracoes/meta'
-      path: '/configuracoes/integracoes/meta'
-      fullPath: '/configuracoes/integracoes/meta'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesIntegracoesMetaRouteImport
+    '/_authenticated/inteligencia-comercial/simulador': {
+      id: '/_authenticated/inteligencia-comercial/simulador'
+      path: '/inteligencia-comercial/simulador'
+      fullPath: '/inteligencia-comercial/simulador'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialSimuladorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/estoque/produto/$productId': {
-      id: '/_authenticated/estoque/produto/$productId'
-      path: '/produto/$productId'
-      fullPath: '/estoque/produto/$productId'
-      preLoaderRoute: typeof AuthenticatedEstoqueProdutoProductIdRouteImport
+    '/_authenticated/inteligencia-comercial/revisao-precos': {
+      id: '/_authenticated/inteligencia-comercial/revisao-precos'
+      path: '/inteligencia-comercial/revisao-precos'
+      fullPath: '/inteligencia-comercial/revisao-precos'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inteligencia-comercial/recalcular-precos': {
+      id: '/_authenticated/inteligencia-comercial/recalcular-precos'
+      path: '/inteligencia-comercial/recalcular-precos'
+      fullPath: '/inteligencia-comercial/recalcular-precos'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inteligencia-comercial/politica-empresa': {
+      id: '/_authenticated/inteligencia-comercial/politica-empresa'
+      path: '/inteligencia-comercial/politica-empresa'
+      fullPath: '/inteligencia-comercial/politica-empresa'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inteligencia-comercial/dashboard': {
+      id: '/_authenticated/inteligencia-comercial/dashboard'
+      path: '/inteligencia-comercial/dashboard'
+      fullPath: '/inteligencia-comercial/dashboard'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inteligencia-comercial/categorias': {
+      id: '/_authenticated/inteligencia-comercial/categorias'
+      path: '/inteligencia-comercial/categorias'
+      fullPath: '/inteligencia-comercial/categorias'
+      preLoaderRoute: typeof AuthenticatedInteligenciaComercialCategoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fornecedores_/novo': {
+      id: '/_authenticated/fornecedores_/novo'
+      path: '/fornecedores/novo'
+      fullPath: '/fornecedores/novo'
+      preLoaderRoute: typeof AuthenticatedFornecedoresNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fornecedores_/$supplierId': {
+      id: '/_authenticated/fornecedores_/$supplierId'
+      path: '/fornecedores/$supplierId'
+      fullPath: '/fornecedores/$supplierId'
+      preLoaderRoute: typeof AuthenticatedFornecedoresSupplierIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/notas': {
+      id: '/_authenticated/fiscal/notas'
+      path: '/fiscal/notas'
+      fullPath: '/fiscal/notas'
+      preLoaderRoute: typeof AuthenticatedFiscalNotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/configuracao': {
+      id: '/_authenticated/fiscal/configuracao'
+      path: '/fiscal/configuracao'
+      fullPath: '/fiscal/configuracao'
+      preLoaderRoute: typeof AuthenticatedFiscalConfiguracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/saude-fiscal': {
+      id: '/_authenticated/financeiro/saude-fiscal'
+      path: '/saude-fiscal'
+      fullPath: '/financeiro/saude-fiscal'
+      preLoaderRoute: typeof AuthenticatedFinanceiroSaudeFiscalRouteImport
+      parentRoute: typeof AuthenticatedFinanceiroRoute
+    }
+    '/_authenticated/estoque/reconciliacao': {
+      id: '/_authenticated/estoque/reconciliacao'
+      path: '/reconciliacao'
+      fullPath: '/estoque/reconciliacao'
+      preLoaderRoute: typeof AuthenticatedEstoqueReconciliacaoRouteImport
       parentRoute: typeof AuthenticatedEstoqueRoute
     }
-    '/_authenticated/fiscal/notas/$documentId': {
-      id: '/_authenticated/fiscal/notas/$documentId'
-      path: '/$documentId'
-      fullPath: '/fiscal/notas/$documentId'
-      preLoaderRoute: typeof AuthenticatedFiscalNotasDocumentIdRouteImport
-      parentRoute: typeof AuthenticatedFiscalNotasRoute
+    '/_authenticated/configuracoes/precificacao': {
+      id: '/_authenticated/configuracoes/precificacao'
+      path: '/configuracoes/precificacao'
+      fullPath: '/configuracoes/precificacao'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesPrecificacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/fornecedores_/$supplierId/editar': {
-      id: '/_authenticated/fornecedores_/$supplierId/editar'
-      path: '/editar'
-      fullPath: '/fornecedores/$supplierId/editar'
-      preLoaderRoute: typeof AuthenticatedFornecedoresSupplierIdEditarRouteImport
-      parentRoute: typeof AuthenticatedFornecedoresSupplierIdRoute
+    '/_authenticated/compras_/novo': {
+      id: '/_authenticated/compras_/novo'
+      path: '/compras/novo'
+      fullPath: '/compras/novo'
+      preLoaderRoute: typeof AuthenticatedComprasNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/compras_/$purchaseId': {
+      id: '/_authenticated/compras_/$purchaseId'
+      path: '/compras/$purchaseId'
+      fullPath: '/compras/$purchaseId'
+      preLoaderRoute: typeof AuthenticatedComprasPurchaseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes_/novo': {
+      id: '/_authenticated/clientes_/novo'
+      path: '/clientes/novo'
+      fullPath: '/clientes/novo'
+      preLoaderRoute: typeof AuthenticatedClientesNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes_/$customerId': {
+      id: '/_authenticated/clientes_/$customerId'
+      path: '/clientes/$customerId'
+      fullPath: '/clientes/$customerId'
+      preLoaderRoute: typeof AuthenticatedClientesCustomerIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-pay/test': {
+      id: '/_authenticated/bella-pay/test'
+      path: '/test'
+      fullPath: '/bella-pay/test'
+      preLoaderRoute: typeof AuthenticatedBellaPayTestRouteImport
+      parentRoute: typeof AuthenticatedBellaPayRoute
     }
     '/_authenticated/produtos_/$productId/': {
       id: '/_authenticated/produtos_/$productId/'
@@ -1643,60 +1601,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProdutosProductIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/produtos_/$productId/editar': {
-      id: '/_authenticated/produtos_/$productId/editar'
-      path: '/produtos/$productId/editar'
-      fullPath: '/produtos/$productId/editar'
-      preLoaderRoute: typeof AuthenticatedProdutosProductIdEditarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/vendas_/$saleId/editar': {
-      id: '/_authenticated/vendas_/$saleId/editar'
-      path: '/editar'
-      fullPath: '/vendas/$saleId/editar'
-      preLoaderRoute: typeof AuthenticatedVendasSaleIdEditarRouteImport
-      parentRoute: typeof AuthenticatedVendasSaleIdRoute
-    }
-    '/api/public/catalog/$slug': {
-      id: '/api/public/catalog/$slug'
-      path: '/api/public/catalog/$slug'
-      fullPath: '/api/public/catalog/$slug'
-      preLoaderRoute: typeof ApiPublicCatalogSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/catalog/entrada': {
-      id: '/api/public/catalog/entrada'
-      path: '/api/public/catalog/entrada'
-      fullPath: '/api/public/catalog/entrada'
-      preLoaderRoute: typeof ApiPublicCatalogEntradaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/jobs/dlq-reprocess': {
-      id: '/api/public/jobs/dlq-reprocess'
-      path: '/api/public/jobs/dlq-reprocess'
-      fullPath: '/api/public/jobs/dlq-reprocess'
-      preLoaderRoute: typeof ApiPublicJobsDlqReprocessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/jobs/health': {
-      id: '/api/public/jobs/health'
-      path: '/api/public/jobs/health'
-      fullPath: '/api/public/jobs/health'
-      preLoaderRoute: typeof ApiPublicJobsHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/jobs/mercadolivre-reconcile': {
-      id: '/api/public/jobs/mercadolivre-reconcile'
-      path: '/api/public/jobs/mercadolivre-reconcile'
-      fullPath: '/api/public/jobs/mercadolivre-reconcile'
-      preLoaderRoute: typeof ApiPublicJobsMercadolivreReconcileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/jobs/mercadolivre-refresh': {
-      id: '/api/public/jobs/mercadolivre-refresh'
-      path: '/api/public/jobs/mercadolivre-refresh'
-      fullPath: '/api/public/jobs/mercadolivre-refresh'
-      preLoaderRoute: typeof ApiPublicJobsMercadolivreRefreshRouteImport
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/mercadolivre/webhook': {
@@ -1706,25 +1615,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMercadolivreWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/whatsapp/webhook': {
-      id: '/api/public/whatsapp/webhook'
-      path: '/api/public/whatsapp/webhook'
-      fullPath: '/api/public/whatsapp/webhook'
-      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+    '/api/public/jobs/mercadolivre-refresh': {
+      id: '/api/public/jobs/mercadolivre-refresh'
+      path: '/api/public/jobs/mercadolivre-refresh'
+      fullPath: '/api/public/jobs/mercadolivre-refresh'
+      preLoaderRoute: typeof ApiPublicJobsMercadolivreRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/bella-pay/qr/$chargeId': {
-      id: '/api/public/bella-pay/qr/$chargeId'
-      path: '/api/public/bella-pay/qr/$chargeId'
-      fullPath: '/api/public/bella-pay/qr/$chargeId'
-      preLoaderRoute: typeof ApiPublicBellaPayQrChargeIdRouteImport
+    '/api/public/jobs/mercadolivre-reconcile': {
+      id: '/api/public/jobs/mercadolivre-reconcile'
+      path: '/api/public/jobs/mercadolivre-reconcile'
+      fullPath: '/api/public/jobs/mercadolivre-reconcile'
+      preLoaderRoute: typeof ApiPublicJobsMercadolivreReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/bella-pay/webhook/$token': {
-      id: '/api/public/bella-pay/webhook/$token'
-      path: '/api/public/bella-pay/webhook/$token'
-      fullPath: '/api/public/bella-pay/webhook/$token'
-      preLoaderRoute: typeof ApiPublicBellaPayWebhookTokenRouteImport
+    '/api/public/jobs/health': {
+      id: '/api/public/jobs/health'
+      path: '/api/public/jobs/health'
+      fullPath: '/api/public/jobs/health'
+      preLoaderRoute: typeof ApiPublicJobsHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/jobs/dlq-reprocess': {
+      id: '/api/public/jobs/dlq-reprocess'
+      path: '/api/public/jobs/dlq-reprocess'
+      fullPath: '/api/public/jobs/dlq-reprocess'
+      preLoaderRoute: typeof ApiPublicJobsDlqReprocessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalog/entrada': {
+      id: '/api/public/catalog/entrada'
+      path: '/api/public/catalog/entrada'
+      fullPath: '/api/public/catalog/entrada'
+      preLoaderRoute: typeof ApiPublicCatalogEntradaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalog/$slug': {
+      id: '/api/public/catalog/$slug'
+      path: '/api/public/catalog/$slug'
+      fullPath: '/api/public/catalog/$slug'
+      preLoaderRoute: typeof ApiPublicCatalogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/vendas_/$saleId/editar': {
+      id: '/_authenticated/vendas_/$saleId/editar'
+      path: '/editar'
+      fullPath: '/vendas/$saleId/editar'
+      preLoaderRoute: typeof AuthenticatedVendasSaleIdEditarRouteImport
+      parentRoute: typeof AuthenticatedVendasSaleIdRoute
+    }
+    '/_authenticated/produtos_/$productId/editar': {
+      id: '/_authenticated/produtos_/$productId/editar'
+      path: '/produtos/$productId/editar'
+      fullPath: '/produtos/$productId/editar'
+      preLoaderRoute: typeof AuthenticatedProdutosProductIdEditarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fornecedores_/$supplierId/editar': {
+      id: '/_authenticated/fornecedores_/$supplierId/editar'
+      path: '/editar'
+      fullPath: '/fornecedores/$supplierId/editar'
+      preLoaderRoute: typeof AuthenticatedFornecedoresSupplierIdEditarRouteImport
+      parentRoute: typeof AuthenticatedFornecedoresSupplierIdRoute
+    }
+    '/_authenticated/fiscal/notas/$documentId': {
+      id: '/_authenticated/fiscal/notas/$documentId'
+      path: '/$documentId'
+      fullPath: '/fiscal/notas/$documentId'
+      preLoaderRoute: typeof AuthenticatedFiscalNotasDocumentIdRouteImport
+      parentRoute: typeof AuthenticatedFiscalNotasRoute
+    }
+    '/_authenticated/estoque/produto/$productId': {
+      id: '/_authenticated/estoque/produto/$productId'
+      path: '/produto/$productId'
+      fullPath: '/estoque/produto/$productId'
+      preLoaderRoute: typeof AuthenticatedEstoqueProdutoProductIdRouteImport
+      parentRoute: typeof AuthenticatedEstoqueRoute
+    }
+    '/_authenticated/configuracoes/integracoes/meta': {
+      id: '/_authenticated/configuracoes/integracoes/meta'
+      path: '/configuracoes/integracoes/meta'
+      fullPath: '/configuracoes/integracoes/meta'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesIntegracoesMetaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/compras_/$purchaseId/editar': {
+      id: '/_authenticated/compras_/$purchaseId/editar'
+      path: '/editar'
+      fullPath: '/compras/$purchaseId/editar'
+      preLoaderRoute: typeof AuthenticatedComprasPurchaseIdEditarRouteImport
+      parentRoute: typeof AuthenticatedComprasPurchaseIdRoute
+    }
+    '/_authenticated/clientes_/$customerId/editar': {
+      id: '/_authenticated/clientes_/$customerId/editar'
+      path: '/editar'
+      fullPath: '/clientes/$customerId/editar'
+      preLoaderRoute: typeof AuthenticatedClientesCustomerIdEditarRouteImport
+      parentRoute: typeof AuthenticatedClientesCustomerIdRoute
+    }
+    '/catalogo/colecao/$slug/produto/$productId': {
+      id: '/catalogo/colecao/$slug/produto/$productId'
+      path: '/produto/$productId'
+      fullPath: '/catalogo/colecao/$slug/produto/$productId'
+      preLoaderRoute: typeof CatalogoColecaoSlugProdutoProductIdRouteImport
+      parentRoute: typeof CatalogoColecaoSlugRoute
+    }
+    '/api/public/meta/oauth/callback': {
+      id: '/api/public/meta/oauth/callback'
+      path: '/api/public/meta/oauth/callback'
+      fullPath: '/api/public/meta/oauth/callback'
+      preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/mercadolivre/oauth/callback': {
@@ -1734,19 +1734,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMercadolivreOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/meta/oauth/callback': {
-      id: '/api/public/meta/oauth/callback'
-      path: '/api/public/meta/oauth/callback'
-      fullPath: '/api/public/meta/oauth/callback'
-      preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
+    '/api/public/bella-pay/webhook/$token': {
+      id: '/api/public/bella-pay/webhook/$token'
+      path: '/api/public/bella-pay/webhook/$token'
+      fullPath: '/api/public/bella-pay/webhook/$token'
+      preLoaderRoute: typeof ApiPublicBellaPayWebhookTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalogo/colecao/$slug/produto/$productId': {
-      id: '/catalogo/colecao/$slug/produto/$productId'
-      path: '/produto/$productId'
-      fullPath: '/catalogo/colecao/$slug/produto/$productId'
-      preLoaderRoute: typeof CatalogoColecaoSlugProdutoProductIdRouteImport
-      parentRoute: typeof CatalogoColecaoSlugRoute
+    '/api/public/bella-pay/qr/$chargeId': {
+      id: '/api/public/bella-pay/qr/$chargeId'
+      path: '/api/public/bella-pay/qr/$chargeId'
+      fullPath: '/api/public/bella-pay/qr/$chargeId'
+      preLoaderRoute: typeof ApiPublicBellaPayQrChargeIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/catalog/$slug/product/$productId': {
       id: '/api/public/catalog/$slug/product/$productId'
@@ -2057,3 +2057,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
