@@ -45,7 +45,10 @@ export type AccountingSkillId =
   | "consultar_saude"
   | "consultar_insights"
   | "consultar_alertas"
-  | "consultar_recomendacoes";
+  | "consultar_recomendacoes"
+  | "consultar_retirada"
+  | "consultar_disponibilidade"
+  | "consultar_risco";
 
 export interface AccountingSkillResult {
   ok: boolean;
