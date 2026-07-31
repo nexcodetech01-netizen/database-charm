@@ -15,10 +15,10 @@ describe("Code 128", () => {
 
   it("calcula o checksum conhecido de 'CODE128' (subset B)", () => {
     // start B (104) + C(35)*1 + O(47)*2 + D(36)*3 + E(37)*4 + 1(17)*5
-    // + 2(18)*6 + 8(24)*7 = 875 → 875 % 103 = 52
+    // + 2(18)*6 + 8(24)*7 = 850 → 850 % 103 = 26
     const { subset, checksum } = encodeCode128("CODE128");
     expect(subset).toBe("B");
-    expect(checksum).toBe(52);
+    expect(checksum).toBe(26);
   });
 
   it("codifica em subset C com metade dos símbolos", () => {
