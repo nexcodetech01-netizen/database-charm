@@ -12,6 +12,7 @@ export interface FinancialCardProps {
   label: ReactNode;
   value: ReactNode;
   hint?: ReactNode;
+  trend?: ReactNode;
   icon?: LucideIcon;
   loading?: boolean;
   unavailable?: boolean;
@@ -23,6 +24,7 @@ export function FinancialCard({
   label,
   value,
   hint,
+  trend,
   icon: Icon,
   loading,
   unavailable,
