@@ -5,6 +5,16 @@
  * chamadas para as MESMAS ações já usadas pelos botões do PDV
  * (`usePDV`, checkout, recebimento, conclusão/recibo).
  *
+ * Mapa oficial (Sprint 2.8):
+ *   ENTER   adicionar produto (busca / leitor)
+ *   ESC     limpar pesquisa
+ *   F2      cliente
+ *   F3      quantidade do item ativo
+ *   F4      desconto
+ *   F5      pagamento
+ *   DELETE  remover item ativo
+ *   CTRL+L  limpar carrinho
+ *
  * Rollback: excluir este arquivo e suas referências — nenhum outro módulo
  * depende dele.
  */
@@ -14,21 +24,27 @@ import { useEffect, useRef } from "react";
 export const PDV_SEARCH_INPUT_ID = "pdv-search";
 export const PDV_BARCODE_INPUT_ID = "pdv-barcode";
 export const PDV_CUSTOMER_TRIGGER_ID = "pdv-customer";
+export const PDV_DISCOUNT_INPUT_ID = "pdv-discount";
+export const PDV_FINALIZE_BUTTON_ID = "pdv-finalize";
 export const PDV_SHORTCUT_SAFE_IDS = [
   PDV_SEARCH_INPUT_ID,
   PDV_BARCODE_INPUT_ID,
 ] as const;
 
 export type PdvShortcutAction =
-  | "focus-search"
-  | "focus-barcode"
+  | "add-product"
+  | "clear-search"
   | "open-customer"
+  | "focus-quantity"
+  | "focus-discount"
+  | "open-payment"
+  | "remove-item"
+  | "clear-cart"
+  | "focus-search"
   | "new-sale"
-  | "receive"
   | "print-receipt"
   | "confirm-dialog"
-  | "close-dialog"
-  | "clear-cart";
+  | "close-dialog";
 
 /** Alvo do evento, no mínimo necessário para decidir (sem depender do DOM). */
 export type PdvShortcutTarget = {
@@ -66,18 +82,32 @@ export function isTypingTarget(target: PdvShortcutTarget): boolean {
   return !PDV_SHORTCUT_SAFE_IDS.includes(id as (typeof PDV_SHORTCUT_SAFE_IDS)[number]);
 }
 
+/** `true` quando o alvo é a pesquisa ou o leitor (campos "de operação"). */
+export function isPdvSearchTarget(target: PdvShortcutTarget): boolean {
+  const id = target?.id ?? "";
+  return PDV_SHORTCUT_SAFE_IDS.includes(
+    id as (typeof PDV_SHORTCUT_SAFE_IDS)[number],
+  );
+}
+
 /** Traduz a tecla em ação. Retorna `null` quando nada deve acontecer. */
 export function resolvePdvShortcut(
   event: PdvShortcutEvent,
   context: PdvShortcutContext = {},
 ): PdvShortcutAction | null {
   if (event.altKey) return null;
-  if (isTypingTarget(event.target ?? null)) return null;
 
   const ctrl = Boolean(event.ctrlKey || event.metaKey);
+  const typing = isTypingTarget(event.target ?? null);
 
-  if (event.key === "Delete" && ctrl) return "clear-cart";
+  // CTRL+L / CTRL+DELETE limpam o carrinho de qualquer lugar da tela.
+  if (ctrl && !context.dialogOpen) {
+    const key = event.key.toLowerCase();
+    if (key === "l" || key === "delete") return "clear-cart";
+    return null;
+  }
   if (ctrl) return null;
+  if (typing) return null;
 
   if (context.dialogOpen) {
     if (event.key === "Enter") return "confirm-dialog";
@@ -86,20 +116,22 @@ export function resolvePdvShortcut(
   }
 
   switch (event.key) {
-    case "F2":
-      return "focus-search";
-    case "F3":
-      return "focus-barcode";
-    case "F4":
-      return "open-customer";
-    case "F5":
-      return "new-sale";
-    case "F8":
-      return "receive";
-    case "F9":
-      return "print-receipt";
+    // Leitor USB (keyboard wedge) e digitação manual terminam com ENTER.
+    case "Enter":
+      return "add-product";
     case "Escape":
-      return "close-dialog";
+      return "clear-search";
+    case "F2":
+      return "open-customer";
+    case "F3":
+      return "focus-quantity";
+    case "F4":
+      return "focus-discount";
+    case "F5":
+      return "open-payment";
+    case "Delete":
+      // Dentro da pesquisa, DELETE é edição de texto normal.
+      return isPdvSearchTarget(event.target ?? null) ? null : "remove-item";
     default:
       return null;
   }
@@ -113,7 +145,7 @@ type MinimalEvent = PdvShortcutEvent & { preventDefault?: () => void };
 
 /**
  * Cria o listener de `keydown`. Só chama o handler quando ele existir —
- * é assim que F5/F9/F8 ficam desabilitados conforme o estado da tela.
+ * é assim que cada atalho fica desabilitado conforme o estado da tela.
  */
 export function createPdvShortcutHandler(
   getHandlers: () => PdvShortcutHandlers,
@@ -150,7 +182,9 @@ function elementById(id: string): HTMLElement | null {
 }
 
 export function focusPdvElement(id: string) {
-  elementById(id)?.focus();
+  const el = elementById(id);
+  el?.focus();
+  if (el && el instanceof HTMLInputElement) el.select();
 }
 
 export function clickPdvElement(id: string) {
