@@ -13,6 +13,7 @@ export * from "./skills";
 export * from "./queries";
 export * from "./insights";
 export * from "./advisor";
+export * from "./proactive";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";

@@ -8,6 +8,8 @@ import type { BellaIntentId, ChatAnswer, ChatPlan, ChatSkillOutcome } from "./ty
 const OPENERS: Partial<Record<BellaIntentId, string>> = {
   situacao_geral: "Aqui está o panorama da sua empresa:",
   pontos_atencao: "O que merece a sua atenção agora:",
+  resumo_do_dia: "Resumo do que a Bella percebeu hoje:",
+  consultar_notificacoes: "O que eu percebi sozinha nos seus dados:",
   consultar_retirada: "Sobre a sua retirada:",
   consultar_risco: "Sobre o risco de caixa:",
   consultar_prolabore: "Sobre o pró-labore:",
@@ -18,6 +20,7 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   situacao_geral: "Quer que eu detalhe algum desses pontos?",
   pontos_atencao: "Posso sugerir ações para qualquer um deles.",
+  resumo_do_dia: "Posso detalhar qualquer um desses pontos.",
   consultar_retirada: "Se quiser, posso conferir a reserva recomendada também.",
 };
 
