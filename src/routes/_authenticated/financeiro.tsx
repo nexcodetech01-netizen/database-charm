@@ -40,6 +40,7 @@ import {
   useFinanceOverview,
 } from "@/features/finance";
 import { FinanceBellaHints } from "@/features/bella-ai";
+import { BellaFinancePanel } from "@/features/accounting-ai/finance";
 import type { TransactionType } from "@/features/finance";
 import { formatCurrency } from "@/lib/format";
 
@@ -204,6 +205,7 @@ function FinancePage() {
         </TabsList>
 
         <TabsContent value="summary" className="space-y-6">
+          <BellaFinancePanel companyId={company.id} />
           <FinanceSummaryPanel companyId={company.id} />
           <BellaPayCard />
         </TabsContent>
