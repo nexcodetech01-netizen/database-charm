@@ -63,17 +63,7 @@ const groups: NavGroup[] = [
     label: "Operacional",
     items: [
       { title: "Dashboard", url: ROUTES.dashboard, icon: LayoutDashboard, status: "available", permission: "dashboard.view" },
-      {
-        title: "Vendas",
-        url: ROUTES.sales,
-        icon: Receipt,
-        status: "available",
-        permission: "sales.view",
-        children: [
-          { title: "Pedidos e histórico", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
-          { title: "PDV — Frente de caixa", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
-        ],
-      },
+      { title: "Vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
       { title: "Clientes", url: ROUTES.customers, icon: Users, status: "available", permission: "customers.view" },
       { title: "Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
@@ -81,6 +71,7 @@ const groups: NavGroup[] = [
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
     ],
   },
+
 
   {
     label: "Financeiro & Fiscal",
