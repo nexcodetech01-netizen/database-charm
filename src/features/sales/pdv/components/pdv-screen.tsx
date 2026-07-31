@@ -261,6 +261,8 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             onSearchChange={pdv.setSearch}
             onProduct={handleAddProduct}
             onClearSearch={focus.focusSearch}
+            operatorName={operatorName}
+            sessionLabel={session?.id ? session.id.slice(0, 8) : null}
           />
         }
         cart={
@@ -292,10 +294,13 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             <PDVSummary
               totals={pdv.totals}
               itemCount={pdv.itemCount}
+              lineCount={pdv.state.items.length}
               discountValue={pdv.state.discount}
               discount={pdv.discount}
               onDiscountChange={pdv.setDiscount}
-              onClear={pdv.clear}
+              changeDue={
+                completed && completed.paymentMethod === "dinheiro" ? 0 : null
+              }
               readOnly={cartLocked}
             />
             {completed ? (
@@ -313,11 +318,14 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
                 onFinalize={() => checkout.finalize(pdv.state)}
                 isSaving={checkout.isSaving}
                 disabled={!canFinalize}
+                onCancelSale={handleCancelSale}
+                cancelDisabled={!cartEditable}
               />
             )}
           </>
         }
       />
+
       {pendingSale || completed ? (
         <CheckoutDialog
           open={checkoutOpen}
