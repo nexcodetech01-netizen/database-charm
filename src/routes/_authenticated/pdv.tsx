@@ -33,8 +33,9 @@ function PdvPage() {
     <PageLayout
       icon={MonitorSmartphone}
       title="PDV"
-      description="Monte o carrinho da venda. Pagamento e emissão serão habilitados nas próximas sprints."
+      description="Venda de balcão com leitura por scanner, pagamento pelo checkout do NexOS e emissão de NFC-e."
     >
+
       <PDVScreen
         companyId={company.id}
         operatorId={user.id}
