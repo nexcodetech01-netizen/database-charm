@@ -71,6 +71,8 @@ export function FinancialCard({
         {hint && !loading ? (
           <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>
         ) : null}
+
+        {trend && !loading ? <div className="mt-1">{trend}</div> : null}
       </CardContent>
     </Card>
   );
