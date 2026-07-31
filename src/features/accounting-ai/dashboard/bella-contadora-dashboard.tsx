@@ -20,6 +20,7 @@ import {
   AdvisorCard,
   AlertCard,
   BellaChatPanel,
+  BellaNotificationCenter,
 
   BellaBriefCard,
   FinancialCard,
@@ -29,11 +30,17 @@ import {
   SummaryGrid,
   TrendBadge,
 } from "../components";
+import { useEffect, useMemo } from "react";
 import { useAccountingAiSummary } from "../hooks/use-accounting-ai";
 import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
 import { buildFinancialAdvice } from "../advisor";
+import {
+  bellaNotificationStore,
+  buildBellaNotifications,
+  useBellaNotifications,
+} from "../proactive";
 import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
@@ -149,6 +156,15 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   const insights = buildAccountingInsights(s);
   const advice = s ? buildFinancialAdvice({ summary: s }) : null;
 
+  const proactive = useMemo(
+    () => buildBellaNotifications({ summary: s ?? null, insights, advice }),
+    [s, insights, advice],
+  );
+  useEffect(() => {
+    bellaNotificationStore.setNotifications(proactive);
+  }, [proactive]);
+  const { notifications, dismiss } = useBellaNotifications();
+
   const stagnant = s?.products.data?.stagnant ?? [];
   const champions = s?.products.data?.bestSellers ?? [];
   const worst = s?.products.data?.worstSellers ?? [];
@@ -197,6 +213,13 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
     >
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
+          <BellaNotificationCenter
+            notifications={notifications}
+            loading={isLoading}
+            limit={5}
+            onDismiss={dismiss}
+          />
+
           <BellaBriefCard summary={s} loading={isLoading} />
 
           <BellaChatPanel companyId={companyId} />
