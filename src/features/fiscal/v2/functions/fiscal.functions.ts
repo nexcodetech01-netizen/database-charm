@@ -392,14 +392,17 @@ export const getFiscalDocument = createServerFn({ method: "POST" })
 
 export const issueFiscalFromSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { saleId: string; environment?: NfeEnvironment }) =>
-    z
-      .object({
-        saleId: z.string().uuid(),
-        environment: fiscalEnvironmentSchema.optional(),
-      })
-      .strict()
-      .parse(input),
+  .inputValidator(
+    (input: { saleId: string; environment?: NfeEnvironment; model?: "55" | "65" }) =>
+      z
+        .object({
+          saleId: z.string().uuid(),
+          environment: fiscalEnvironmentSchema.optional(),
+          // 55 = NF-e (default) · 65 = NFC-e (PDV). Mesmo motor.
+          model: z.enum(["55", "65"]).optional(),
+        })
+        .strict()
+        .parse(input),
   )
   .handler(async ({ data, context }): Promise<FiscalDocumentDto> => {
     const supabase = context.supabase as SB;
@@ -424,7 +427,11 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
       .eq("company_id", companyId)
       .eq("sale_id", data.saleId);
     if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
-      throw new Error("Já existe uma NF-e ativa para esta venda.");
+      throw new Error(
+        data.model === "65"
+          ? "Já existe uma NFC-e ativa para esta venda."
+          : "Já existe uma NF-e ativa para esta venda.",
+      );
     }
 
     // Motor real: validação → certificado A1 → provider → persistência.
@@ -435,6 +442,7 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
       userId: context.userId,
       saleId: data.saleId,
       environment: data.environment,
+      model: data.model,
     });
     return mapDocument(doc as unknown as FiscalDocumentRow);
   });

@@ -11,6 +11,9 @@
  *  - garantir que a venda NUNCA seja cancelada por falha fiscal.
  */
 
+/** O PDV emite exclusivamente NFC-e (modelo 65). */
+export const PDV_FISCAL_MODEL = "65" as const;
+
 /** Mensagem única exibida ao operador quando a NFC-e não é emitida. */
 export const PDV_NFCE_FAILURE_MESSAGE =
   "Venda concluída, mas a NFC-e não pôde ser emitida.";
@@ -122,6 +125,8 @@ export async function issuePdvNfce(
     issue: (args: {
       saleId: string;
       environment?: "homologation" | "production";
+      /** Modelo 65 = NFC-e. O PDV nunca emite outro modelo. */
+      model?: "55" | "65";
     }) => Promise<PdvFiscalDocumentLike>;
   },
 ): Promise<PdvFiscalOutcome> {
@@ -131,6 +136,8 @@ export async function issuePdvNfce(
     const doc = await deps.issue({
       saleId: input.saleId,
       environment: input.settings?.defaultEnvironment,
+      // PDV emite EXCLUSIVAMENTE NFC-e (modelo 65) no motor fiscal único.
+      model: PDV_FISCAL_MODEL,
     });
 
     if (!doc) {

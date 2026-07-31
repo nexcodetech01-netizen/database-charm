@@ -2966,6 +2966,8 @@ export type Database = {
           homologation_mode: boolean
           ie_st: string | null
           issue_only_after_payment: boolean
+          nfce_next_number: number
+          nfce_series: number
           nfe_next_number: number
           nfe_series: number
           operation_nature: string
@@ -2994,6 +2996,8 @@ export type Database = {
           homologation_mode?: boolean
           ie_st?: string | null
           issue_only_after_payment?: boolean
+          nfce_next_number?: number
+          nfce_series?: number
           nfe_next_number?: number
           nfe_series?: number
           operation_nature?: string
@@ -3022,6 +3026,8 @@ export type Database = {
           homologation_mode?: boolean
           ie_st?: string | null
           issue_only_after_payment?: boolean
+          nfce_next_number?: number
+          nfce_series?: number
           nfe_next_number?: number
           nfe_series?: number
           operation_nature?: string

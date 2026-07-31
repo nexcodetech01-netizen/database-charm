@@ -58,13 +58,18 @@ export interface FiscalProvider {
    * Consulta status atual no provedor / SEFAZ.
    * Não precisa persistir — o Service decide o que fazer com o resultado.
    */
-  getStatus(ref: { accessKey?: string; providerRef?: string }): Promise<ProviderStatusResult>;
+  getStatus(ref: {
+    accessKey?: string;
+    providerRef?: string;
+    /** Modelo do documento: 55 = NF-e, 65 = NFC-e. Ausente = 55. */
+    model?: "55" | "65";
+  }): Promise<ProviderStatusResult>;
 
   /**
    * Cancela a NF-e autorizada dentro do prazo legal (24h padrão).
    */
   cancelNfe(
-    ref: { accessKey: string; providerRef?: string },
+    ref: { accessKey: string; providerRef?: string; model?: "55" | "65" },
     reason: string,
   ): Promise<ProviderCancelResult>;
 
