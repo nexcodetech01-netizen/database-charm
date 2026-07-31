@@ -84,24 +84,33 @@ const saleItemSchema = z.object({
   discount: z.number().nonnegative().optional(),
 }).passthrough();
 
-const saleCreateSchema = z
-  .object({
-    company_id: z.string().uuid("Empresa inválida."),
-    customer_id: z.string().uuid().nullable().optional(),
-    status: z.string().trim().min(1).optional(),
-    items: z.array(saleItemSchema).min(1, "Inclua ao menos um item na venda."),
-  })
-  .passthrough()
-  .superRefine((val, ctx) => {
-    const status = String(val.status ?? "pending").toLowerCase();
-    if (status !== "draft" && status !== "cancelled" && !val.customer_id) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["customer_id"],
-        message: "Selecione um cliente para finalizar a venda.",
-      });
-    }
-  });
+/**
+ * Schema de criação por origem (RC2 / P0.2).
+ *
+ * A obrigatoriedade do cliente é decidida em um ÚNICO lugar
+ * (`saleRequiresCustomer`) a partir da origem explícita da venda. O balcão
+ * (PDV) grava consumidor final com `customer_id = null`; formulário,
+ * marketplace, API e demais fluxos seguem exigindo cliente como hoje.
+ */
+export function buildSaleCreateSchema(origin: SaleOrigin = DEFAULT_SALE_ORIGIN) {
+  return z
+    .object({
+      company_id: z.string().uuid("Empresa inválida."),
+      customer_id: z.string().uuid().nullable().optional(),
+      status: z.string().trim().min(1).optional(),
+      items: z.array(saleItemSchema).min(1, "Inclua ao menos um item na venda."),
+    })
+    .passthrough()
+    .superRefine((val, ctx) => {
+      if (saleRequiresCustomer(origin, val.status) && !val.customer_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["customer_id"],
+          message: "Selecione um cliente para finalizar a venda.",
+        });
+      }
+    });
+}
 
 export type SalesStatusBreakdownRow = {
   status: string;
@@ -479,7 +488,10 @@ export const salesService = {
     input: Omit<SaleInsert, "items_total" | "grand_total"> & {
       items: SaleItemDraft[];
     },
+    /** Origem explícita da venda — define se o cliente é obrigatório. */
+    options?: { origin?: SaleOrigin },
   ) {
+    const origin = options?.origin ?? DEFAULT_SALE_ORIGIN;
     // ================= BUG-VENDA-PERSIST — trilha de auditoria =================
     // Logs temporários por etapa: ENTRADA → PAYLOAD → RESULTADO → ERRO → COMMIT.
     const trace = `sale-create:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
@@ -491,14 +503,21 @@ export const salesService = {
       company_id: input.company_id,
       number: input.number,
       customer_id: input.customer_id,
+      origin,
       status: input.status,
       payment_method: input.payment_method,
       cash_session_id: input.cash_session_id,
       items: input.items?.length ?? 0,
     });
 
+    // Cliente ausente chega como "" em alguns formulários: normaliza para
+    // null antes de validar (o banco já aceita customer_id nulo).
+    if (typeof input.customer_id === "string" && !input.customer_id.trim()) {
+      input = { ...input, customer_id: null };
+    }
+
     // Validação Zod antes de qualquer INSERT.
-    const parsed = saleCreateSchema.safeParse(input);
+    const parsed = buildSaleCreateSchema(origin).safeParse(input);
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => i.message).join(" · ");
       // eslint-disable-next-line no-console
