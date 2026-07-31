@@ -145,6 +145,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   ];
 
   const insights = buildAccountingInsights(s);
+  const advice = s ? buildFinancialAdvice({ summary: s }) : null;
 
   const stagnant = s?.products.data?.stagnant ?? [];
   const champions = s?.products.data?.bestSellers ?? [];
