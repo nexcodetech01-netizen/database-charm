@@ -49,6 +49,8 @@ type NavItem = {
   status: ModuleStatus;
   /** Permission code (view) required to see this item. Omit for always-visible. */
   permission?: string;
+  /** Submenu visual (UX apenas) — herda a rota própria de cada filho. */
+  children?: NavItem[];
 };
 
 type NavGroup = {
@@ -61,8 +63,17 @@ const groups: NavGroup[] = [
     label: "Operacional",
     items: [
       { title: "Dashboard", url: ROUTES.dashboard, icon: LayoutDashboard, status: "available", permission: "dashboard.view" },
-      { title: "Vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
-      { title: "PDV", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
+      {
+        title: "Vendas",
+        url: ROUTES.sales,
+        icon: Receipt,
+        status: "available",
+        permission: "sales.view",
+        children: [
+          { title: "Gestão de vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
+          { title: "PDV", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
+        ],
+      },
       { title: "Clientes", url: ROUTES.customers, icon: Users, status: "available", permission: "customers.view" },
       { title: "Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
@@ -70,6 +81,7 @@ const groups: NavGroup[] = [
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
     ],
   },
+
   {
     label: "Financeiro & Fiscal",
     items: [
