@@ -32,7 +32,16 @@ export interface SalesPort {
   metrics(
     companyId: string,
     period: AccountingPeriod,
-  ): Promise<{ monthTotal: number; monthCount: number; averageTicket: number }>;
+  ): Promise<{
+    monthTotal: number;
+    monthCount: number;
+    averageTicket: number;
+    /** Total pago dentro do intervalo consultado (já apurado pelo serviço). */
+    paidTotal: number;
+    /** Vendas pagas de hoje (data operacional resolvida no servidor). */
+    dayTotal: number;
+    dayCount: number;
+  }>;
   products(companyId: string, period: AccountingPeriod): Promise<ProductsReport>;
   customers(companyId: string, period: AccountingPeriod): Promise<CustomersReport>;
 }

@@ -119,6 +119,7 @@ export interface MarginSnapshot {
 
 export interface ProductRanking {
   bestSellers: { id: string; name: string; sku: string | null; quantity: number; revenue: number }[];
+  worstSellers: { id: string; name: string; sku: string | null; quantity: number; revenue: number }[];
   stagnant: { id: string; name: string; sku: string | null; stock: number }[];
   lowStock: { id: string; name: string; sku: string | null; stock: number; min_stock: number }[];
 }
@@ -163,12 +164,41 @@ export interface BusinessHealth {
   warnings: string[];
 }
 
+/** Faturamento do dia — vindo das métricas de vendas já existentes. */
+export interface DailyRevenue {
+  date: string;
+  total: number;
+  count: number;
+}
+
+export type TrendDirection = "up" | "down" | "flat" | "unknown";
+
+/** Comparação entre período atual e anterior (sem estimativa). */
+export interface TrendComparison {
+  current: number;
+  previous: number | null;
+  delta: number | null;
+  deltaPercent: number | null;
+  direction: TrendDirection;
+  hasHistory: boolean;
+  label: string;
+}
+
+/** Comparativos exibidos no dashboard. */
+export interface AccountingTrends {
+  todayVsYesterday: TrendComparison;
+  monthVsPreviousRevenue: TrendComparison;
+  monthVsPreviousProfit: TrendComparison;
+}
+
 /** Resumo consolidado exibido pelo dashboard da Bella Contadora. */
 export interface AccountingSummary {
   companyId: string;
   period: AccountingPeriod;
   generatedAt: string;
   revenue: ProviderResult<RevenueSnapshot>;
+  today: ProviderResult<DailyRevenue>;
+  trends: ProviderResult<AccountingTrends>;
   profit: ProviderResult<ProfitAnalysis>;
   expenses: ProviderResult<ExpenseSnapshot>;
   cash: ProviderResult<CashSnapshot>;

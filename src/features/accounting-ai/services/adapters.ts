@@ -47,6 +47,9 @@ export const salesAdapter: SalesPort = {
       monthTotal: m.monthTotal,
       monthCount: m.monthCount,
       averageTicket: m.averageTicket,
+      paidTotal: m.paidTotal,
+      dayTotal: m.dayTotal,
+      dayCount: m.dayCount,
     };
   },
   products: (companyId, period) => reportsService.products(companyId, toRange(period)),

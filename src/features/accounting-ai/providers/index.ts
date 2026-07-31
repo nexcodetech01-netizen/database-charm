@@ -8,10 +8,12 @@
  */
 import type {
   AccountingPeriod,
+  AccountingTrends,
   BusinessHealth,
   CashProjection,
   CashSnapshot,
   CustomerSnapshot,
+  DailyRevenue,
   ExpenseSnapshot,
   InventorySnapshot,
   MarginSnapshot,
@@ -25,13 +27,24 @@ import type {
 } from "../types";
 import type { AccountingAiServices } from "../services/ports";
 import { accountingAiServices } from "../services/adapters";
-import { currentPeriod, readSafely, unavailable } from "../lib/helpers";
+import {
+  currentPeriod,
+  dayPeriod,
+  previousDayISO,
+  previousMonthPeriod,
+  readSafely,
+  todayISO,
+  unavailable,
+} from "../lib/helpers";
+import { computeTrend } from "../lib/trend";
 import { computeFinancialHealth } from "../lib/health";
 import { suggestPayroll } from "../lib/payroll";
 
 export interface ProviderDeps {
   services?: AccountingAiServices;
   period?: AccountingPeriod;
+  /** Data operacional (ISO). Quando ausente, usa a data local. */
+  today?: string;
 }
 
 function resolve(deps?: ProviderDeps) {
@@ -243,6 +256,7 @@ export async function productsProvider(
     ]);
     return {
       bestSellers: report.bestSellers.slice(0, 5),
+      worstSellers: report.worstSellers.slice(0, 5),
       stagnant: (report.noMovement.length ? report.noMovement : inventory.stagnant).slice(0, 5),
       lowStock: inventory.belowMin.slice(0, 5),
     };
@@ -310,4 +324,58 @@ export async function healthProvider(
     return health;
   });
   return result.data ? result : unavailable<BusinessHealth>("accounting");
+}
+
+/**
+ * Receita de hoje — lida das métricas de vendas (data operacional
+ * resolvida no servidor pelo próprio serviço de vendas).
+ */
+export async function todayProvider(
+  companyId: string,
+  deps?: ProviderDeps,
+): Promise<ProviderResult<DailyRevenue>> {
+  const { services } = resolve(deps);
+  const date = deps?.today ?? todayISO();
+  return readSafely("sales", async () => {
+    const m = await services.sales.metrics(companyId, dayPeriod(date));
+    return { date, total: m.dayTotal, count: m.dayCount };
+  });
+}
+
+/**
+ * Comparativos hoje x ontem e mês atual x mês anterior.
+ * Quando o motor de origem não devolve histórico, a comparação fica
+ * marcada como `hasHistory: false` ("sem histórico suficiente").
+ */
+export async function trendsProvider(
+  companyId: string,
+  deps?: ProviderDeps,
+): Promise<ProviderResult<AccountingTrends>> {
+  const { services, period } = resolve(deps);
+  const date = deps?.today ?? todayISO();
+  const previous = previousMonthPeriod(period);
+
+  return readSafely("accounting", async () => {
+    const [todayMetrics, yesterdayTotal, currentDre, previousDre] = await Promise.all([
+      services.sales.metrics(companyId, dayPeriod(date)),
+      services.sales
+        .metrics(companyId, dayPeriod(previousDayISO(date)))
+        .then((m) => m.paidTotal as number | null)
+        .catch(() => null),
+      services.accounting.dre(companyId, period),
+      services.accounting.dre(companyId, previous).catch(() => null),
+    ]);
+
+    return {
+      todayVsYesterday: computeTrend(todayMetrics.dayTotal, yesterdayTotal),
+      monthVsPreviousRevenue: computeTrend(
+        currentDre.netRevenue,
+        previousDre ? previousDre.netRevenue : null,
+      ),
+      monthVsPreviousProfit: computeTrend(
+        currentDre.netProfit,
+        previousDre ? previousDre.netProfit : null,
+      ),
+    };
+  });
 }

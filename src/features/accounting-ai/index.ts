@@ -10,6 +10,7 @@ export * from "./services";
 export * from "./providers";
 export { buildAccountingSummary } from "./providers/summary";
 export * from "./skills";
+export * from "./queries";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";

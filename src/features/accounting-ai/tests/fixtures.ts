@@ -1,0 +1,166 @@
+/**
+ * Fixtures compartilhadas dos testes da Bella Contadora.
+ * Serviços falsos com o mesmo shape das portas (nenhum acesso a rede).
+ */
+import type { AccountingAiServices } from "../services/ports";
+import { buildAccountingSummary } from "../providers/summary";
+import type { AccountingSummary } from "../types";
+
+export const testPeriod = { start: "2026-01-01", end: "2026-01-31", label: "01/2026" };
+export const testToday = "2026-01-20";
+
+export const testDre = {
+  period: { start: testPeriod.start, end: testPeriod.end },
+  grossRevenue: 12000,
+  deductions: 1000,
+  netRevenue: 11000,
+  cogs: 4000,
+  grossProfit: 7000,
+  operatingExpenses: 3000,
+  operatingResult: 4000,
+  financialExpenses: 500,
+  otherRevenues: 0,
+  otherExpenses: 200,
+  resultBeforeTaxes: 3300,
+  netProfit: 3000,
+  depreciation: 100,
+  ebitda: 4100,
+  grossMargin: 63.6,
+  operatingMargin: 36.4,
+  netMargin: 27.3,
+  ebitdaMargin: 37.3,
+  lines: [],
+};
+
+export const testKpis = {
+  period: { start: testPeriod.start, end: testPeriod.end },
+  currentLiquidity: 1.8,
+  workingCapital: 8000,
+  debtRatio: 30,
+  grossMargin: 63.6,
+  operatingMargin: 36.4,
+  netMargin: 27.3,
+  ebitda: 4100,
+  ebitdaMargin: 37.3,
+  roi: 12,
+  roe: 15,
+  averageTicket: 250,
+  salesCount: 44,
+  cogsRatio: 36,
+  expenseRatio: 27,
+  breakEven: 9000,
+};
+
+export interface FixtureOptions {
+  /** Faz o serviço financeiro falhar (teste de falha parcial). */
+  breakFinance?: boolean;
+  /** Remove o histórico do mês anterior. */
+  noHistory?: boolean;
+  /** Receita paga do dia anterior. */
+  yesterdayTotal?: number;
+}
+
+export function makeTestServices(opts: FixtureOptions = {}): AccountingAiServices {
+  return {
+    accounting: {
+      dre: async (_companyId, period) => {
+        if (period.start !== testPeriod.start) {
+          if (opts.noHistory) throw new Error("sem histórico");
+          return { ...testDre, netRevenue: 8000, netProfit: 2000 };
+        }
+        return testDre;
+      },
+      balanceSheet: async () => ({
+        asOf: testPeriod.end,
+        assets: 20000,
+        liabilities: 8000,
+        equity: 12000,
+        equityCapital: 9000,
+        periodResult: 3000,
+        balanced: true,
+        difference: 0,
+        lines: [],
+      }),
+      kpis: async () => testKpis,
+      monthlyEvolution: async () => [{ label: "01/2026", dre: testDre }],
+    },
+    finance: {
+      snapshot: async () => {
+        if (opts.breakFinance) throw new Error("financeiro indisponível");
+        return {
+          overview: {
+            currentBalance: 5000,
+            receivable: 3000,
+            receivableOverdue: 400,
+            receivableDue30: 2000,
+            receivableDue60Plus: 600,
+            payable: 1500,
+            projected: 6500,
+            monthIncome: 9000,
+            monthExpense: 4000,
+            receiptsToday: 300,
+            receiptsTodayCount: 2,
+            pendingReceivable: 2600,
+            pendingReceivableCount: 5,
+            upcomingIncome: [],
+            upcomingExpense: [],
+          },
+          overdueCount: 1,
+          overdueAmount: 400,
+          forecast30d: { incoming: 2000, outgoing: 900, net: 1100 },
+          hasData: true,
+        };
+      },
+    },
+    sales: {
+      metrics: async (_companyId, period) => {
+        const isYesterday = period.start === "2026-01-19";
+        return {
+          monthTotal: 11000,
+          monthCount: 44,
+          averageTicket: 250,
+          paidTotal: isYesterday ? (opts.yesterdayTotal ?? 500) : 11000,
+          dayTotal: 800,
+          dayCount: 3,
+        };
+      },
+      products: async () => ({
+        bestSellers: [{ id: "p1", name: "Produto A", sku: "A", quantity: 10, revenue: 1000 }],
+        worstSellers: [{ id: "p8", name: "Produto Y", sku: "Y", quantity: 1, revenue: 20 }],
+        noMovement: [{ id: "p9", name: "Produto Z", sku: "Z", stock: 3 }],
+      }),
+      customers: async () => ({
+        metrics: { total: 50, active: 20, newInRange: 5, recurring: 8, inactive: 30 },
+        daily: [],
+        topCustomers: [
+          { id: "c1", name: "Cliente A", purchases: 4, revenue: 2000 },
+          { id: "c2", name: "Cliente B", purchases: 9, revenue: 1200 },
+        ],
+      }),
+    },
+    inventory: {
+      metrics: async () => ({
+        productCount: 30,
+        totalItems: 500,
+        inventoryValue: 25000,
+        belowMin: [{ id: "p2", name: "Produto B", sku: "B", stock: 1, min_stock: 5 }],
+        stagnant: [{ id: "p3", name: "Produto C", sku: "C", stock: 7 }],
+      }),
+    },
+    fiscal: {
+      monthlyRevenue: async () => 11000,
+      apportionments: async () => [],
+    },
+    cash: {
+      listSessions: async () => [{ status: "open" }, { status: "closed" }],
+    },
+  };
+}
+
+export function makeSummary(opts: FixtureOptions = {}): Promise<AccountingSummary> {
+  return buildAccountingSummary("c1", {
+    services: makeTestServices(opts),
+    period: testPeriod,
+    today: testToday,
+  });
+}

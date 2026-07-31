@@ -16,6 +16,35 @@ export function currentPeriod(reference = new Date()): AccountingPeriod {
   return { start: r.start, end: r.end, label: r.label };
 }
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Data local no formato ISO `YYYY-MM-DD`. */
+export function todayISO(reference = new Date()): string {
+  return `${reference.getFullYear()}-${pad(reference.getMonth() + 1)}-${pad(reference.getDate())}`;
+}
+
+/** Período de um único dia. */
+export function dayPeriod(dateISO: string): AccountingPeriod {
+  return { start: dateISO, end: dateISO, label: dateISO };
+}
+
+/** Dia anterior a uma data ISO (puro, sem fuso). */
+export function previousDayISO(dateISO: string): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const ref = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1));
+  ref.setUTCDate(ref.getUTCDate() - 1);
+  return ref.toISOString().slice(0, 10);
+}
+
+/** Mês imediatamente anterior ao período informado. */
+export function previousMonthPeriod(period: AccountingPeriod): AccountingPeriod {
+  const [y, m] = period.start.split("-").map(Number);
+  const year = m === 1 ? (y ?? 1970) - 1 : (y ?? 1970);
+  const month = m === 1 ? 12 : (m ?? 1) - 1;
+  const r = monthRange(year, month);
+  return { start: r.start, end: r.end, label: r.label };
+}
+
 export function ok<T>(
   data: T,
   source: AccountingDataSource,

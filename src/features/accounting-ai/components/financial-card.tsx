@@ -12,6 +12,7 @@ export interface FinancialCardProps {
   label: ReactNode;
   value: ReactNode;
   hint?: ReactNode;
+  trend?: ReactNode;
   icon?: LucideIcon;
   loading?: boolean;
   unavailable?: boolean;
@@ -23,6 +24,7 @@ export function FinancialCard({
   label,
   value,
   hint,
+  trend,
   icon: Icon,
   loading,
   unavailable,
@@ -69,6 +71,8 @@ export function FinancialCard({
         {hint && !loading ? (
           <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>
         ) : null}
+
+        {trend && !loading ? <div className="mt-1">{trend}</div> : null}
       </CardContent>
     </Card>
   );

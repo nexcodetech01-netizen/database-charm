@@ -18,6 +18,8 @@ import {
   revenueProvider,
   taxesProvider,
   ticketProvider,
+  todayProvider,
+  trendsProvider,
   type ProviderDeps,
 } from "./index";
 
@@ -30,6 +32,8 @@ export async function buildAccountingSummary(
 
   const [
     revenue,
+    today,
+    trends,
     profit,
     expenses,
     cash,
@@ -44,6 +48,8 @@ export async function buildAccountingSummary(
     health,
   ] = await Promise.all([
     revenueProvider(companyId, scoped),
+    todayProvider(companyId, scoped),
+    trendsProvider(companyId, scoped),
     profitProvider(companyId, scoped),
     expensesProvider(companyId, scoped),
     cashProvider(companyId, scoped),
@@ -63,6 +69,8 @@ export async function buildAccountingSummary(
     period,
     generatedAt: new Date().toISOString(),
     revenue,
+    today,
+    trends,
     profit,
     expenses,
     cash,
