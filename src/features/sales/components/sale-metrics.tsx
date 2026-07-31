@@ -229,7 +229,7 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
         </div>
 
 
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border/70 bg-card p-5">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold tracking-tight">
               Comparativo por status
