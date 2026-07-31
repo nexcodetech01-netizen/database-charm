@@ -114,6 +114,8 @@ export function AppSidebar() {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const { has, isLoading: permsLoading } = usePermissions();
   const { open: mobileOpen, setOpen: setMobileOpen } = useMobileNav();
+  /** Indicador visual (sessão) de notificações críticas da Bella Contadora. */
+  const bellaCritical = useBellaCriticalCount();
 
   const handleComingSoon = (title: string) => setComingSoon(title);
 
