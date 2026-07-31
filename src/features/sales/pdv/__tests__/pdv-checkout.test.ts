@@ -33,13 +33,13 @@ describe("PDV — persistência da venda", () => {
     );
   });
 
-  it("bloqueia venda sem cliente", () => {
+  it("permite venda sem cliente (consumidor final — P0.2)", () => {
     const check = validatePdvSale(
       createSaleDraftState({ number: "PDV-1", items: [item()] }),
     );
-    expect(check.ok).toBe(false);
-    if (!check.ok) expect(check.code).toBe("customer_required");
+    expect(check.ok).toBe(true);
   });
+
 
   it("bloqueia venda sem itens", () => {
     const check = validatePdvSale(
