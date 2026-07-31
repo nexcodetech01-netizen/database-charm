@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, FileText, MessageCircle, Plus, Printer, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SaleReceipt, type ReceiptWidth } from "./sale-receipt";
+import { applyThermalPageStyle, usePrintPreferences } from "@/features/printing";
 import {
   buildReceiptWhatsAppMessage,
   openWhatsAppWithMessage,
@@ -37,7 +38,9 @@ interface Props {
 
 export function ReceiptDialog(props: Props) {
   const { open, onOpenChange, onViewSale, onNewSale, ...receiptProps } = props;
-  const [width, setWidth] = useState<ReceiptWidth>("80mm");
+  const { prefs: printPrefs } = usePrintPreferences(props.companyId);
+  const [width, setWidth] = useState<ReceiptWidth | null>(null);
+  const effectiveWidth: ReceiptWidth = width ?? printPrefs.paperWidth;
   const [printed, setPrinted] = useState(false);
   const [waLoading, setWaLoading] = useState(false);
   const [phonePrompt, setPhonePrompt] = useState<{ message: string } | null>(null);
@@ -46,15 +49,27 @@ export function ReceiptDialog(props: Props) {
   useEffect(() => {
     if (!open) {
       setPrinted(false);
+      setWidth(null);
       setPhonePrompt(null);
       setPhoneInput("");
     }
   }, [open]);
 
-  function handlePrint() {
-    window.print();
+  const handlePrint = useCallback(() => {
+    applyThermalPageStyle({
+      paperWidth: effectiveWidth,
+      marginMm: printPrefs.marginMm,
+    });
+    for (let i = 0; i < printPrefs.copies; i += 1) window.print();
     setPrinted(true);
-  }
+  }, [effectiveWidth, printPrefs.copies, printPrefs.marginMm]);
+
+  // Impressão automática após a venda (preferência do operador).
+  useEffect(() => {
+    if (!open || printed || !printPrefs.autoPrintAfterSale) return;
+    const t = window.setTimeout(() => handlePrint(), 400);
+    return () => window.clearTimeout(t);
+  }, [open, printed, printPrefs.autoPrintAfterSale, handlePrint]);
 
   async function handleSendWhatsApp() {
     try {
@@ -104,7 +119,7 @@ export function ReceiptDialog(props: Props) {
                   type="button"
                   onClick={() => setWidth(w)}
                   className={`rounded px-2 py-0.5 font-mono transition ${
-                    width === w
+                    effectiveWidth === w
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted"
                   }`}
@@ -127,7 +142,7 @@ export function ReceiptDialog(props: Props) {
 
         <div className="flex-1 overflow-y-auto bg-muted/30 p-4 no-print-bg">
           <div className="receipt-print-area mx-auto">
-            <SaleReceipt {...receiptProps} width={width} />
+            <SaleReceipt {...receiptProps} width={effectiveWidth} />
           </div>
         </div>
 

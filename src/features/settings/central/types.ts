@@ -4,6 +4,7 @@ import type { ComponentType } from "react";
 export type SettingsSectionId =
   | "empresa"
   | "cupom"
+  | "impressao"
   | "usuarios"
   | "custos-operacionais"
   | "integracoes"

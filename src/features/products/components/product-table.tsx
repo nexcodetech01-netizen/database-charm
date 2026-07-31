@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Package, ShoppingBag, MoreHorizontal, PowerOff } from "lucide-react";
+import { Package, ShoppingBag, MoreHorizontal, PowerOff, Tag } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -35,6 +35,7 @@ import { MercadoLivreBadge } from "./mercadolivre-badge";
 import { PublishToMercadoLivreDialog } from "./publish-to-ml-dialog";
 import { useSignedImageUrls, useDeactivateProduct } from "../hooks/use-products";
 import type { Product } from "../types";
+import { LabelPrintDialog } from "@/features/printing";
 
 
 type Row = Product & {
@@ -55,6 +56,7 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const [publishTarget, setPublishTarget] = useState<Product | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
+  const [labelTarget, setLabelTarget] = useState<Product | null>(null);
   const deactivate = useDeactivateProduct();
 
 
@@ -163,19 +165,28 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
                           <ShoppingBag className="mr-1.5 h-4 w-4" />
                           {mlItemId ? "Reanunciar" : "Anunciar no ML"}
                         </Button>
-                        {p.status === "active" ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => e.stopPropagation()}
-                                title="Mais ações"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Mais ações"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setLabelTarget(p as Product);
+                              }}
+                            >
+                              <Tag className="mr-2 h-4 w-4" />
+                              Imprimir etiqueta
+                            </DropdownMenuItem>
+                            {p.status === "active" ? (
                               <DropdownMenuItem
                                 onSelect={(e) => {
                                   e.preventDefault();
@@ -186,9 +197,9 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
                                 <PowerOff className="mr-2 h-4 w-4" />
                                 Inativar produto
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : null}
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
 
@@ -226,6 +237,22 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
           </Button>
         </div>
       </div>
+
+      {labelTarget ? (
+        <LabelPrintDialog
+          open={!!labelTarget}
+          onOpenChange={(open) => {
+            if (!open) setLabelTarget(null);
+          }}
+          companyId={labelTarget.company_id}
+          item={{
+            name: labelTarget.name,
+            sku: labelTarget.sku,
+            barcode: labelTarget.barcode,
+            price: Number(labelTarget.price),
+          }}
+        />
+      ) : null}
 
       {publishTarget ? (
         <PublishToMercadoLivreDialog
