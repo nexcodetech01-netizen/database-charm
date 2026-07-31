@@ -16,6 +16,10 @@ export function useAccountingAiSummary(
     queryKey: ["accounting-ai", "summary", companyId, resolved.start, resolved.end],
     enabled: !!companyId,
     staleTime: 60_000,
+    gcTime: 15 * 60_000,
+    // Mantém o último resumo visível na troca de período/rota (sem skeleton piscando).
+    placeholderData: (previous) => previous,
+    refetchOnWindowFocus: false,
     queryFn: () => buildAccountingSummary(companyId as string, { period: resolved }),
   });
 }
