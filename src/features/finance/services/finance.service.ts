@@ -1,0 +1,657 @@
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import type {
+  FinanceOverview,
+  FinancialAccountInsert,
+  FinancialAccountUpdate,
+  FinancialCategoryInsert,
+  FinancialCategoryUpdate,
+  FinancialTransactionInsert,
+  FinancialTransactionUpdate,
+  TransactionListFilters,
+  TransactionWithMeta,
+  SettleTransactionInput,
+  CompleteSettlementInput,
+  IncompleteSettlement,
+} from "../types";
+
+// Fonte única de tratamento temporal do Financeiro — nunca duplicar aqui.
+import {
+  DEFAULT_COMPANY_TZ,
+  addDaysStr,
+  companyDayKey,
+  companyDayStartUtc,
+  tzOffsetMs,
+} from "../lib/company-time";
+
+
+
+
+/**
+ * HOTFIX — timestamp real da liquidação no fuso da empresa.
+ *
+ * A UI envia apenas a data (`YYYY-MM-DD`) já no fuso da empresa. O `paid_at`
+ * gravado precisa representar esse dia local com a hora corrente da empresa,
+ * convertido para UTC. A implementação anterior usava `new Date(y, m-1, d, ...)`
+ * (fuso local do processo) e `now.toISOString()` como fallback, ambos avaliados
+ * no fuso do servidor (UTC em produção). À noite no Brasil (ex.: 21h BRT ≈ 00h
+ * UTC do dia seguinte), isso empurrava o `paid_at` para o dia UTC posterior,
+ * jogando o registro para fora da janela da sessão de caixa.
+ */
+function toSettlementTimestamp(paidAt: string): string {
+  const tz = DEFAULT_COMPANY_TZ;
+  const now = new Date();
+
+  if (paidAt && !/^\d{4}-\d{2}-\d{2}$/.test(paidAt)) {
+    // Já veio um timestamp completo — repassa/normaliza.
+    return new Date(paidAt).toISOString();
+  }
+
+  // Data local (na empresa) que a UI selecionou; se vazio, "hoje" na empresa.
+  const localDate = paidAt || companyDayKey(now, tz);
+
+  // Hora corrente no fuso da empresa (não do processo).
+  const localNowParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    fractionalSecondDigits: 3,
+  }).formatToParts(now);
+  const get = (t: string) => localNowParts.find((p) => p.type === t)?.value ?? "0";
+  const hh = Number(get("hour")) === 24 ? 0 : Number(get("hour"));
+  const mm = Number(get("minute"));
+  const ss = Number(get("second"));
+  const ms = Number(get("fractionalSecond") ?? 0);
+
+  // Constrói o instante UTC correspondente a `localDate localTime` no fuso.
+  // Dupla passada cobre transições de horário de verão.
+  const [y, mo, d] = localDate.split("-").map(Number);
+  const naive = Date.UTC(y, mo - 1, d, hh, mm, ss, ms);
+  const first = naive - tzOffsetMs(new Date(naive), tz);
+  const utcMs = naive - tzOffsetMs(new Date(first), tz);
+  return new Date(utcMs).toISOString();
+}
+
+// P1.2 — Validação server-side de lançamentos financeiros.
+const financialTransactionCreateSchema = z
+  .object({
+    company_id: z.string().uuid("Empresa inválida."),
+    type: z.enum(["income", "expense"], {
+      message: "Selecione se é receita ou despesa.",
+    }),
+    description: z
+      .string()
+      .trim()
+      .min(1, "Descrição é obrigatória.")
+      .max(500, "Descrição muito longa."),
+    amount: z.number().positive("Valor deve ser maior que zero."),
+    transaction_date: z.string().trim().min(1, "Data é obrigatória."),
+  })
+  .passthrough();
+
+
+export const financeService = {
+  // ---------- Accounts ----------
+  async listAccounts(companyId: string) {
+    const { data, error } = await supabase
+      .from("financial_accounts")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+  async createAccount(input: FinancialAccountInsert) {
+    const payload = {
+      ...input,
+      current_balance: input.current_balance ?? input.initial_balance ?? 0,
+    };
+    const { data, error } = await supabase
+      .from("financial_accounts")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  async updateAccount(id: string, input: FinancialAccountUpdate) {
+    const { data, error } = await supabase
+      .from("financial_accounts")
+      .update(input)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  async removeAccount(id: string) {
+    const { error } = await supabase.from("financial_accounts").delete().eq("id", id);
+    if (error) throw error;
+  },
+
+  // ---------- Categories ----------
+  async listCategories(companyId: string) {
+    const { data, error } = await supabase
+      .from("financial_categories")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("kind", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+  async createCategory(input: FinancialCategoryInsert) {
+    const { data, error } = await supabase
+      .from("financial_categories")
+      .insert(input)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  async updateCategory(id: string, input: FinancialCategoryUpdate) {
+    const { data, error } = await supabase
+      .from("financial_categories")
+      .update(input)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  async removeCategory(id: string) {
+    const { error } = await supabase.from("financial_categories").delete().eq("id", id);
+    if (error) throw error;
+  },
+
+  // ---------- Transactions ----------
+  async listTransactions(companyId: string, filters: TransactionListFilters) {
+    let q = supabase
+      .from("financial_transactions")
+      .select("*", { count: "exact" })
+      .eq("company_id", companyId);
+
+    if (filters.search.trim()) {
+      const s = `%${filters.search.trim()}%`;
+      q = q.or(`description.ilike.${s},notes.ilike.${s},reference_number.ilike.${s}`);
+    }
+    if (filters.type) q = q.eq("type", filters.type);
+    if (filters.status) q = q.eq("status", filters.status);
+    if (filters.accountId) q = q.eq("account_id", filters.accountId);
+    if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+
+    q = q.order("transaction_date", { ascending: false }).order("created_at", { ascending: false });
+
+    const from = (filters.page - 1) * filters.pageSize;
+    const to = from + filters.pageSize - 1;
+    q = q.range(from, to);
+
+    const { data, error, count } = await q;
+    if (error) throw error;
+
+    const rows = data ?? [];
+    if (rows.length === 0) {
+      return { rows: [] as TransactionWithMeta[], total: count ?? 0 };
+    }
+
+    const accountIds = Array.from(
+      new Set(rows.map((r) => r.account_id).filter((v): v is string => !!v)),
+    );
+    const categoryIds = Array.from(
+      new Set(rows.map((r) => r.category_id).filter((v): v is string => !!v)),
+    );
+
+    const [accRes, catRes] = await Promise.all([
+      accountIds.length
+        ? supabase.from("financial_accounts").select("id,name").in("id", accountIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null }),
+      categoryIds.length
+        ? supabase.from("financial_categories").select("id,name").in("id", categoryIds)
+        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null }),
+    ]);
+    if (accRes.error) throw accRes.error;
+    if (catRes.error) throw catRes.error;
+
+    const accMap = new Map((accRes.data ?? []).map((a) => [a.id, a.name]));
+    const catMap = new Map((catRes.data ?? []).map((c) => [c.id, c.name]));
+
+    return {
+      rows: rows.map<TransactionWithMeta>((r) => ({
+        ...r,
+        account_name: r.account_id ? (accMap.get(r.account_id) ?? null) : null,
+        category_name: r.category_id ? (catMap.get(r.category_id) ?? null) : null,
+      })),
+      total: count ?? 0,
+    };
+  },
+
+  /**
+   * Criação de lançamento manual. O INSERT NUNCA grava `status = 'paid'`:
+   * todo lançamento nasce em aberto (`pending`) e a baixa é feita
+   * exclusivamente pelo motor (`settle_financial_transaction`).
+   */
+  async createTransaction(input: FinancialTransactionInsert) {
+    const parsed = financialTransactionCreateSchema.safeParse(input);
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
+    }
+    const { status: _status, paid_at: _paidAt, ...rest } = input as
+      FinancialTransactionInsert & { status?: unknown; paid_at?: unknown };
+    void _status;
+    void _paidAt;
+    const payload = {
+      ...rest,
+      status: _status === "cancelled" ? "cancelled" : "pending",
+    } as FinancialTransactionInsert;
+
+    const { data, error } = await supabase
+      .from("financial_transactions")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Cadastro manual já pago: cria o lançamento em aberto e, na sequência,
+   * executa o motor de liquidação. Não existe caminho de INSERT direto com
+   * `status = 'paid'`.
+   */
+  async createAndSettleTransaction(
+    input: FinancialTransactionInsert,
+    settle: SettleTransactionInput,
+  ) {
+    const created = await this.createTransaction(input);
+    await this.settleTransaction(created.id, settle);
+    return created;
+  },
+
+
+  /**
+   * Edição cadastral do lançamento (descrição, valor, contas, categoria,
+   * datas, notas). `status` e `paid_at` são SEMPRE descartados: a mudança de
+   * situação financeira pertence exclusivamente ao motor
+   * (`settle_financial_transaction` / `reverse_financial_transaction`) e,
+   * no caso de cancelamento, a `setTransactionStatus`.
+   */
+  async updateTransaction(id: string, input: FinancialTransactionUpdate) {
+    const {
+      status: _status,
+      paid_at: _paidAt,
+      ...safeInput
+    } = input as FinancialTransactionUpdate & { status?: unknown; paid_at?: unknown };
+    void _status;
+    void _paidAt;
+
+    const { data, error } = await supabase
+      .from("financial_transactions")
+      .update(safeInput as FinancialTransactionUpdate)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  /**
+   * Cancelamento de lançamento em aberto. Único status admitido: `cancelled`.
+   * Baixa e estorno passam obrigatoriamente pelas RPCs do motor financeiro.
+   */
+  async setTransactionStatus(id: string, status: string) {
+    if (status !== "cancelled") {
+      throw new Error(
+        "Alteração de situação não permitida por esta via. Utilize a baixa financeira (receber/pagar) ou o estorno. Este método só cancela lançamentos em aberto.",
+      );
+    }
+    const patch: FinancialTransactionUpdate = { status: "cancelled" };
+    const { data, error } = await supabase
+      .from("financial_transactions")
+      .update(patch)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Motor único de estorno. Desfaz a liquidação (cash_out espelhado, reversão
+   * do saldo da conta e volta para pending). Nunca alterar `status` direto.
+   */
+  async reverseTransaction(id: string, notes?: string) {
+    const { data, error } = await supabase.rpc("reverse_financial_transaction", {
+      _transaction_id: id,
+      _notes: notes?.trim() ? notes.trim() : undefined,
+    });
+    if (error) {
+      if (error.message?.includes("CAIXA_FECHADO")) {
+        throw new Error(
+          "Não há caixa aberto. Abra o caixa para estornar este recebimento.",
+        );
+      }
+      throw error;
+    }
+    return data;
+  },
+
+  /**
+   * Baixa de um lançamento registrando a forma de recebimento/pagamento.
+   * Não altera `sales.payment_method` — a sincronização com a venda continua
+   * a cargo dos triggers existentes.
+   */
+  async settleTransaction(id: string, input: SettleTransactionInput) {
+    // Regra de negócio única (RPC): valida caixa aberto quando a conta é do
+    // tipo Caixa, cria o cash_movement, atualiza o saldo da conta e baixa o
+    // lançamento. Nunca duplicar essa lógica no cliente.
+    const { data, error } = await supabase.rpc("settle_financial_transaction", {
+      _transaction_id: id,
+      _payment_method: input.paymentMethod,
+      _account_id: input.accountId,
+      // HOTFIX: `paid_at` precisa ser o instante real da liquidação.
+      // A tela informa apenas a data; a hora é a do momento da baixa.
+      _paid_at: toSettlementTimestamp(input.paidAt),
+      _notes: input.notes?.trim() ? input.notes.trim() : undefined,
+      // Desconto/acréscimo: valor realmente recebido nesta baixa.
+      _settled_amount:
+        typeof input.settledAmount === "number" && Number.isFinite(input.settledAmount)
+          ? input.settledAmount
+          : undefined,
+
+    });
+    if (error) {
+      if (error.message?.includes("CAIXA_FECHADO")) {
+        throw new Error(
+          "Não há caixa aberto. Abra o caixa para receber nesta conta.",
+        );
+      }
+      throw error;
+    }
+    return data;
+  },
+
+  // ---------- Saneamento de baixas antigas ----------
+  /**
+   * Lançamentos já baixados (status = 'paid') que ficaram sem forma de
+   * recebimento e/ou sem conta de destino (baixas anteriores à migração).
+   */
+  async listIncompleteSettlements(companyId: string): Promise<IncompleteSettlement[]> {
+    const { data, error } = await supabase
+      .from("financial_transactions")
+      .select(
+        "id, description, amount, type, paid_at, transaction_date, payment_method, account_id, source, reference_id",
+      )
+      .eq("company_id", companyId)
+      .eq("status", "paid")
+      .or("payment_method.is.null,account_id.is.null")
+      .order("paid_at", { ascending: false, nullsFirst: false })
+      .limit(500);
+    if (error) throw error;
+
+    const rows = data ?? [];
+    const accountIds = [...new Set(rows.map((r) => r.account_id).filter(Boolean))] as string[];
+    const saleIds = [
+      ...new Set(
+        rows.filter((r) => r.source === "sale" && r.reference_id).map((r) => r.reference_id as string),
+      ),
+    ];
+
+    const [accountsRes, salesRes] = await Promise.all([
+      accountIds.length
+        ? supabase.from("financial_accounts").select("id, name").in("id", accountIds)
+        : Promise.resolve({ data: [], error: null } as const),
+      saleIds.length
+        ? supabase.from("sales").select("id, number, customer_id").in("id", saleIds)
+        : Promise.resolve({ data: [], error: null } as const),
+    ]);
+
+    const accountName = new Map((accountsRes.data ?? []).map((a) => [a.id, a.name]));
+    const sales = salesRes.data ?? [];
+    const customerIds = [...new Set(sales.map((s) => s.customer_id).filter(Boolean))] as string[];
+    const customersRes = customerIds.length
+      ? await supabase.from("customers").select("id, name").in("id", customerIds)
+      : ({ data: [] } as { data: { id: string; name: string }[] });
+    const customerName = new Map((customersRes.data ?? []).map((c) => [c.id, c.name]));
+    const saleMap = new Map(
+      sales.map((s) => [
+        s.id,
+        {
+          sale_number: (s.number as string | null) ?? null,
+          customer_name: s.customer_id ? customerName.get(s.customer_id) ?? null : null,
+        },
+      ]),
+    );
+
+    return rows.map((r) => {
+      const sale = r.source === "sale" && r.reference_id ? saleMap.get(r.reference_id) : undefined;
+      return {
+        id: r.id,
+        description: r.description,
+        amount: Number(r.amount ?? 0),
+        type: r.type,
+        paid_at: r.paid_at,
+        transaction_date: r.transaction_date,
+        payment_method: r.payment_method,
+        account_id: r.account_id,
+        account_name: r.account_id ? accountName.get(r.account_id) ?? null : null,
+        sale_number: sale?.sale_number ?? null,
+        customer_name: sale?.customer_name ?? null,
+      } satisfies IncompleteSettlement;
+    });
+  },
+
+  /**
+   * Complementa uma baixa antiga. A RPC só contabiliza saldo/cash_movement
+   * quando o lançamento não tinha conta definida (evita duplicidade).
+   */
+  async completeSettlement(id: string, input: CompleteSettlementInput) {
+    const { data, error } = await supabase.rpc("complete_settlement_data", {
+      _transaction_id: id,
+      _payment_method: input.paymentMethod,
+      _account_id: input.accountId,
+      _notes: input.notes?.trim() ? input.notes.trim() : undefined,
+    });
+    if (error) {
+      if (error.message?.includes("CAIXA_FECHADO")) {
+        throw new Error("Não há caixa aberto. Abra o caixa para regularizar nesta conta.");
+      }
+      throw error;
+    }
+    return data;
+  },
+
+  /**
+   * Exclusão restrita a lançamentos manuais ainda não liquidados.
+   * Títulos gerados por processos de negócio (venda, crediário, devolução,
+   * compra, Bella Pay, transferência) ou já pagos nunca podem ser apagados —
+   * isso deixaria saldo e caixa inconsistentes. Para desfazer uma baixa use
+   * `reverseTransaction` (motor único de estorno).
+   */
+  async removeTransaction(id: string) {
+    const { data: tx, error: readErr } = await supabase
+      .from("financial_transactions")
+      .select("id,status,source")
+      .eq("id", id)
+      .maybeSingle();
+    if (readErr) throw readErr;
+    if (!tx) throw new Error("Lançamento financeiro não encontrado.");
+
+    if (tx.status === "paid") {
+      throw new Error(
+        "Lançamento já liquidado não pode ser excluído. Faça o estorno antes (motor financeiro).",
+      );
+    }
+
+    const source = (tx.source ?? "manual").toLowerCase();
+    if (source !== "manual") {
+      throw new Error(
+        "Lançamentos originados por processos de negócio (venda, crediário, devolução, compra, Bella Pay, transferência) não podem ser excluídos pelo Financeiro.",
+      );
+    }
+
+    const { error } = await supabase.from("financial_transactions").delete().eq("id", id);
+    if (error) throw error;
+  },
+
+
+  // ---------- Overview / Cash Flow ----------
+  async overview(companyId: string): Promise<FinanceOverview> {
+    const [accountsRes, txRes, todayRes, companyRes] = await Promise.all([
+      supabase
+        .from("financial_accounts")
+        .select("current_balance,status")
+        .eq("company_id", companyId),
+      supabase
+        .from("financial_transactions")
+        .select("id,type,status,amount,transaction_date,due_date,description,paid_at")
+        .eq("company_id", companyId)
+        .neq("status", "cancelled"),
+      // P2.4 — "hoje" no fuso horário da empresa (fonte da verdade no servidor)
+      supabase.rpc("company_today", { _company_id: companyId }),
+      supabase.from("companies").select("timezone").eq("id", companyId).maybeSingle(),
+    ]);
+    if (accountsRes.error) throw accountsRes.error;
+    if (txRes.error) throw txRes.error;
+
+    const todayStr =
+      (typeof todayRes.data === "string" && todayRes.data) ||
+      new Date().toISOString().slice(0, 10);
+    const today = new Date(`${todayStr}T00:00:00`);
+    const companyTz = companyRes.data?.timezone?.trim() || DEFAULT_COMPANY_TZ;
+    // HOTFIX — "hoje" por INSTANTES (mesmo critério do Caixa), nunca por string.
+    const dayStart = companyDayStartUtc(todayStr, companyTz);
+    const dayEnd = companyDayStartUtc(addDaysStr(todayStr, 1), companyTz);
+
+    const in30 = new Date(today);
+    in30.setDate(in30.getDate() + 30);
+
+    const currentBalance = (accountsRes.data ?? [])
+      .filter((a) => a.status === "active")
+      .reduce((s, a) => s + Number(a.current_balance ?? 0), 0);
+
+    const tx = txRes.data ?? [];
+    // Não pagos e não estornados/cancelados — usados nas 3 faixas.
+    const openIncome = tx.filter(
+      (t) =>
+        t.type === "income" &&
+        t.status !== "paid" &&
+        t.status !== "refunded",
+    );
+    const receivable = openIncome.reduce(
+      (s, t) => s + Number(t.amount ?? 0),
+      0,
+    );
+    let receivableOverdue = 0;
+    let receivableDue30 = 0;
+    let receivableDue60Plus = 0;
+    for (const t of openIncome) {
+      const ref = t.due_date ?? t.transaction_date;
+      const amt = Number(t.amount ?? 0);
+      const d = ref ? new Date(`${ref}T00:00:00`) : null;
+      if (!d || d < today) receivableOverdue += amt;
+      else if (d <= in30) receivableDue30 += amt;
+      else receivableDue60Plus += amt;
+    }
+
+    const payable = tx
+      .filter(
+        (t) =>
+          t.type === "expense" &&
+          t.status !== "paid" &&
+          t.status !== "refunded",
+      )
+      .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+    const projected = currentBalance + receivable - payable;
+
+    // Realizado do mês — critério ÚNICO do dashboard: paid_at por INSTANTE
+    // no fuso da empresa (mesmo tratamento de receiptsToday). Nunca
+    // transaction_date, que representa competência/previsão.
+    const monthStartStr = `${todayStr.slice(0, 7)}-01`;
+    const monthStart = companyDayStartUtc(monthStartStr, companyTz);
+    const paidInMonth = (t: { paid_at: string | null }) => {
+      if (!t.paid_at) return false;
+      const ts = new Date(t.paid_at).getTime();
+      // Limite superior = início do dia seguinte a hoje no fuso da empresa
+      // (mesmo `dayEnd` usado por receiptsToday), garantindo consistência.
+      return Number.isFinite(ts) && ts >= monthStart && ts < dayEnd;
+    };
+
+    const monthIncome = tx
+      .filter((t) => t.type === "income" && t.status === "paid" && paidInMonth(t))
+      .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+    const monthExpense = tx
+      .filter((t) => t.type === "expense" && t.status === "paid" && paidInMonth(t))
+      .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+
+
+    // Recebimentos de hoje = dinheiro que efetivamente entrou (baixas do dia).
+    // Comparação por INSTANTE no fuso da empresa: dayStart <= paid_at < dayEnd.
+    const paidToday = (t: { paid_at: string | null }) => {
+      if (!t.paid_at) return false;
+      const ts = new Date(t.paid_at).getTime();
+      return Number.isFinite(ts) && ts >= dayStart && ts < dayEnd;
+    };
+
+    const receiptsToday = tx
+      .filter((t) => t.type === "income" && t.status === "paid" && paidToday(t))
+      .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+    const receiptsTodayCount = tx.filter(
+      (t) => t.type === "income" && t.status === "paid" && paidToday(t),
+    ).length;
+
+
+    // KPI Home "Dinheiro para entrar" — estritamente status = 'pending'
+    // (não inclui overdue/refunded/cancelled) e sempre em financial_transactions.
+    const pendingIncome = tx.filter(
+      (t) => t.type === "income" && t.status === "pending",
+    );
+    const pendingReceivable = pendingIncome.reduce(
+      (s, t) => s + Number(t.amount ?? 0),
+      0,
+    );
+
+    const sortByDate = <T extends { due_date: string | null; transaction_date: string }>(a: T, b: T) =>
+      (a.due_date ?? a.transaction_date).localeCompare(b.due_date ?? b.transaction_date);
+
+    const upcoming = tx
+      .filter((t) => t.status === "pending" || t.status === "overdue")
+      .sort(sortByDate)
+      .slice(0, 20);
+
+    return {
+      currentBalance,
+      receivable,
+      receivableOverdue,
+      receivableDue30,
+      receivableDue60Plus,
+      payable,
+      projected,
+      monthIncome,
+      monthExpense,
+      receiptsToday,
+      receiptsTodayCount,
+      pendingReceivable,
+      pendingReceivableCount: pendingIncome.length,
+
+      upcomingIncome: upcoming
+        .filter((t) => t.type === "income")
+        .slice(0, 5)
+        .map((t) => ({
+          id: t.id,
+          description: t.description,
+          date: t.due_date ?? t.transaction_date,
+          amount: Number(t.amount ?? 0),
+        })),
+      upcomingExpense: upcoming
+        .filter((t) => t.type === "expense")
+        .slice(0, 5)
+        .map((t) => ({
+          id: t.id,
+          description: t.description,
+          date: t.due_date ?? t.transaction_date,
+          amount: Number(t.amount ?? 0),
+        })),
+    };
+  },
+};

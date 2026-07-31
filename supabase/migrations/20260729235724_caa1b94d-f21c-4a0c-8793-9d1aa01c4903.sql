@@ -1,0 +1,1 @@
+ALTER TABLE public.fiscal_settings ADD COLUMN IF NOT EXISTS issue_only_after_payment boolean NOT NULL DEFAULT false;

@@ -1,0 +1,41 @@
+name: CI Guards
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  security-guards:
+    name: Security Guards (grep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Block supabaseAdmin usage outside *.server.ts / src/routes/api
+        run: |
+          set -euo pipefail
+          # Match real usages (call/import), not doc comments.
+          if rg -nP --glob '!**/*.server.ts' --glob '!src/routes/api/**' --glob '!docs/**' --glob '!.github/**' '(\bsupabaseAdmin\s*[\.\(])|from\s+["'"'"'][^"'"'"']*client\.server' src/; then
+            echo "::error::supabaseAdmin used outside *.server.ts / src/routes/api (see ADR-016)."
+            exit 1
+          fi
+
+      - name: Block SERVICE_ROLE key access in client code
+        run: |
+          set -euo pipefail
+          if rg -nP --glob '!**/*.server.ts' --glob '!docs/**' --glob '!.github/**' '(process\.env|import\.meta\.env)\.[A-Z_]*SERVICE_ROLE' src/; then
+            echo "::error::SERVICE_ROLE key referenced outside *.server.ts (see ADR-016)."
+            exit 1
+          fi
+
+      - name: Block VITE_*SERVICE_ROLE* env access
+        run: |
+          set -euo pipefail
+          if rg -n 'VITE_[A-Z_]*SERVICE_ROLE' src/; then
+            echo "::error::VITE_*SERVICE_ROLE* env var must never exist."
+            exit 1
+          fi

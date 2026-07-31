@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.reverse_financial_transaction(uuid, text) FROM anon;

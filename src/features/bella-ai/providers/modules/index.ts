@@ -1,0 +1,10 @@
+export * from "./base";
+export { salesProvider } from "./sales.provider";
+export { financeProvider } from "./finance.provider";
+export { financeRealProvider, generateFinancialInsights } from "./finance-real.provider";
+export { inventoryProvider } from "./inventory.provider";
+export { customerProvider } from "./customer.provider";
+export { marketingProvider } from "./marketing.provider";
+export { accountingProvider, accountingQuery } from "./accounting.provider";
+export type { AccountingSnapshot } from "./accounting.provider";
+export { BellaProviderRegistry } from "./registry";

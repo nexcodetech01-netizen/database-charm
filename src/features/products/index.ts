@@ -1,0 +1,13 @@
+export * from "./types";
+export { ProductMetrics } from "./components/product-metrics";
+export { ProductFilters } from "./components/product-filters";
+export { ProductTable } from "./components/product-table";
+export { ProductStatusBadge } from "./components/product-status-badge";
+export { ProductForm } from "./components/product-form";
+export { ProductImageUploader } from "./components/product-image-uploader";
+export { ProductThumb } from "./components/product-thumb";
+export { BulkNcmDialog } from "./components/bulk-ncm-dialog";
+export type { ProductThumbSize } from "./components/product-thumb";
+export * from "./hooks/use-products";
+export { productsService } from "./services/products.service";
+export { productImagesService } from "./services/product-images.service";

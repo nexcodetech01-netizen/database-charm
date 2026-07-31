@@ -1,0 +1,585 @@
+/**
+ * WhatsApp inbound router — server-only.
+ *
+ * Fio único que conecta a Meta Cloud API à Bella IA já existente.
+ * NÃO altera Skills, Providers, Services, Gateway ou Action Engine —
+ * apenas os orquestra na ordem correta e persiste histórico.
+ *
+ * Fluxo por mensagem:
+ *   parse → dedupe → resolve tenant → contact/conversation upsert →
+ *   persist inbound → restore Bella context → run engine → (fallback AI Gateway
+ *   se UNKNOWN) → sendWhatsAppText → persist outbound → snapshot Bella state.
+ */
+import { BellaActionEngine } from "@/features/bella-ai/actions";
+import { bellaConversationManager } from "@/features/bella-ai/context";
+import type { BellaConversationPatch } from "@/features/bella-ai/context/types";
+import type { BellaActionResponse } from "@/features/bella-ai/actions/types";
+import { bellaAIGateway } from "@/features/bella-ai/ai/gateway";
+import { sendWhatsAppText } from "@/lib/whatsapp.server";
+
+type Any = Record<string, unknown>;
+
+/** Locks in-memory por contato — serializa requisições concorrentes do mesmo WA id. */
+const contactLocks = new Map<string, Promise<unknown>>();
+function withContactLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const prev = contactLocks.get(key) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(fn);
+  contactLocks.set(
+    key,
+    next.finally(() => {
+      if (contactLocks.get(key) === next) contactLocks.delete(key);
+    }),
+  );
+  return next;
+}
+
+interface ParsedTextMessage {
+  waMessageId: string;
+  waContactId: string;
+  phone: string;
+  profileName: string | null;
+  timestamp: number;
+  text: string;
+  phoneNumberId: string;
+}
+
+/**
+ * Gera variantes de um número BR com e sem o 9º dígito de celular.
+ * A Meta pode entregar o mesmo contato ora como "5511987654321" ora como
+ * "551187654321" — normalizamos para casar com o contato existente.
+ */
+function phoneVariants(raw: string): string[] {
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  const set = new Set<string>();
+  if (digits) set.add(digits);
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    const cc = digits.slice(0, 2); // "55"
+    const ddd = digits.slice(2, 4);
+    const rest = digits.slice(4);
+    if (digits.length === 13 && rest.startsWith("9")) {
+      set.add(`${cc}${ddd}${rest.slice(1)}`); // remove 9
+    }
+    if (digits.length === 12) {
+      set.add(`${cc}${ddd}9${rest}`); // adiciona 9
+    }
+  }
+  return Array.from(set);
+}
+
+
+function parseInboundPayload(payload: Any): ParsedTextMessage[] {
+  const out: ParsedTextMessage[] = [];
+  const entries = (payload?.entry ?? []) as Any[];
+  for (const entry of entries) {
+    const changes = (entry?.changes ?? []) as Any[];
+    for (const change of changes) {
+      if (change?.field !== "messages") continue;
+      const value = (change?.value ?? {}) as Any;
+      const meta = (value?.metadata ?? {}) as Any;
+      const phoneNumberId = String(meta?.phone_number_id ?? "");
+      const contacts = (value?.contacts ?? []) as Any[];
+      const nameByWaId = new Map<string, string>();
+      for (const c of contacts) {
+        const waId = String((c as Any)?.wa_id ?? "");
+        const profile = ((c as Any)?.profile ?? {}) as Any;
+        const name = typeof profile?.name === "string" ? (profile.name as string) : "";
+        if (waId) nameByWaId.set(waId, name);
+      }
+      const messages = (value?.messages ?? []) as Any[];
+      for (const m of messages) {
+        if ((m as Any)?.type !== "text") continue;
+        const textObj = ((m as Any)?.text ?? {}) as Any;
+        const body = typeof textObj?.body === "string" ? (textObj.body as string).trim() : "";
+        if (!body) continue;
+        const waMessageId = String((m as Any)?.id ?? "");
+        const from = String((m as Any)?.from ?? "");
+        if (!waMessageId || !from || !phoneNumberId) continue;
+        out.push({
+          waMessageId,
+          waContactId: from,
+          phone: from,
+          profileName: nameByWaId.get(from) ?? null,
+          timestamp: Number((m as Any)?.timestamp ?? 0) * 1000 || Date.now(),
+          text: body,
+          phoneNumberId,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+function formatBellaResponse(r: BellaActionResponse): string {
+  const parts: string[] = [];
+  if (r.title && r.title !== "Ação executada") parts.push(`*${r.title}*`);
+  if (r.description) parts.push(r.description);
+  if (r.metrics?.length) {
+    for (const m of r.metrics.slice(0, 6) as unknown as Any[]) {
+      const label = m?.label ?? m?.name ?? "";
+      const value = m?.value ?? "";
+      if (label && value !== undefined) parts.push(`• ${String(label)}: ${String(value)}`);
+    }
+  }
+  if (r.suggestions?.length) {
+    parts.push("");
+    parts.push("_Sugestões:_");
+    for (const s of r.suggestions.slice(0, 3)) parts.push(`› ${s.title}`);
+  }
+  return parts.join("\n").trim() || "Ok.";
+}
+
+interface ParsedStatusEvent {
+  waMessageId: string;
+  status: string; // sent | delivered | read | failed
+  timestamp: number;
+  phoneNumberId: string;
+  recipientId: string | null;
+  errorCode: number | null;
+  errorTitle: string | null;
+  errorMessage: string | null;
+  errorDetails: string | null;
+  raw: Any;
+}
+
+function parseStatusEvents(payload: Any): ParsedStatusEvent[] {
+  const out: ParsedStatusEvent[] = [];
+  const entries = (payload?.entry ?? []) as Any[];
+  for (const entry of entries) {
+    const changes = (entry?.changes ?? []) as Any[];
+    for (const change of changes) {
+      if (change?.field !== "messages") continue;
+      const value = (change?.value ?? {}) as Any;
+      const meta = (value?.metadata ?? {}) as Any;
+      const phoneNumberId = String(meta?.phone_number_id ?? "");
+      const statuses = (value?.statuses ?? []) as Any[];
+      for (const s of statuses) {
+        const waMessageId = String((s as Any)?.id ?? "");
+        const status = String((s as Any)?.status ?? "");
+        if (!waMessageId || !status) continue;
+        const errors = ((s as Any)?.errors ?? []) as Any[];
+        const err0 = (errors[0] ?? null) as Any | null;
+        const errData = (err0?.error_data ?? {}) as Any;
+        out.push({
+          waMessageId,
+          status,
+          timestamp: Number((s as Any)?.timestamp ?? 0) * 1000 || Date.now(),
+          phoneNumberId,
+          recipientId: (s as Any)?.recipient_id ? String((s as Any).recipient_id) : null,
+          errorCode: err0?.code != null ? Number(err0.code) : null,
+          errorTitle: err0?.title ? String(err0.title) : null,
+          errorMessage: err0?.message ? String(err0.message) : null,
+          errorDetails: errData?.details ? String(errData.details) : null,
+          raw: s,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+async function processStatusEvents(
+  db: { from: (t: string) => any },
+  events: ParsedStatusEvent[],
+): Promise<void> {
+  for (const ev of events) {
+    try {
+      if (ev.status === "failed" || ev.errorCode != null) {
+        console.error("[whatsapp.status] falha da Meta", {
+          waMessageId: ev.waMessageId,
+          status: ev.status,
+          phoneNumberId: ev.phoneNumberId,
+          recipientId: ev.recipientId,
+          errorCode: ev.errorCode,
+          errorTitle: ev.errorTitle,
+          errorMessage: ev.errorMessage,
+          errorDetails: ev.errorDetails,
+        });
+      } else {
+        console.log("[whatsapp.status] evento recebido", {
+          waMessageId: ev.waMessageId,
+          status: ev.status,
+          phoneNumberId: ev.phoneNumberId,
+        });
+      }
+
+      // Resolve empresa pelo phone_number_id para escopar o update.
+      let companyId: string | null = null;
+      if (ev.phoneNumberId) {
+        const { data: company } = await db
+          .from("companies")
+          .select("id")
+          .eq("whatsapp_phone_number_id", ev.phoneNumberId)
+          .maybeSingle();
+        companyId = company?.id ? (company.id as string) : null;
+      }
+
+      const errorText = ev.errorCode != null || ev.errorMessage
+        ? [
+            ev.errorCode != null ? `code=${ev.errorCode}` : null,
+            ev.errorTitle,
+            ev.errorMessage,
+            ev.errorDetails,
+          ]
+            .filter(Boolean)
+            .join(" | ")
+        : null;
+
+      const updatePayload: Record<string, unknown> = { status: ev.status };
+      if (errorText) updatePayload.error = errorText;
+
+      let updateQuery = db
+        .from("whatsapp_messages")
+        .update(updatePayload)
+        .eq("wa_message_id", ev.waMessageId);
+      if (companyId) updateQuery = updateQuery.eq("company_id", companyId);
+      const { error: updErr } = await updateQuery;
+      if (updErr) {
+        console.error("[whatsapp.status] update falhou", {
+          waMessageId: ev.waMessageId,
+          error: updErr.message ?? String(updErr),
+        });
+      }
+
+      // Registro de auditoria agregado (best-effort).
+      if (companyId) {
+        await db.from("whatsapp_message_events").insert({
+          company_id: companyId,
+          direction: "outbound",
+          wa_message_id: ev.waMessageId,
+          status: ev.status,
+          sent_at: new Date(ev.timestamp).toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error("[whatsapp.status] erro processando evento", {
+        waMessageId: ev.waMessageId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+}
+
+export async function handleWhatsAppInboundPayload(payload: Any): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as unknown as {
+    from: (t: string) => any;
+  };
+
+  const statusEvents = parseStatusEvents(payload);
+  if (statusEvents.length > 0) {
+    console.log("[whatsapp.inbound] status events", { count: statusEvents.length });
+    await processStatusEvents(db, statusEvents);
+  }
+
+  const messages = parseInboundPayload(payload);
+  console.log("[whatsapp.inbound] payload recebido", {
+    entries: Array.isArray((payload as Any)?.entry) ? ((payload as Any).entry as unknown[]).length : 0,
+    textMessages: messages.length,
+    statusEvents: statusEvents.length,
+  });
+  if (messages.length === 0) return;
+
+
+  // Cache tenant lookup por phone_number_id dentro da mesma entrega.
+  const tenantCache = new Map<string, { companyId: string; companyName: string | null } | null>();
+
+  for (const msg of messages) {
+    const started = Date.now();
+    console.log("[whatsapp.inbound] mensagem recebida", {
+      from: msg.phone,
+      variants: phoneVariants(msg.phone),
+      phoneNumberId: msg.phoneNumberId,
+      waMessageId: msg.waMessageId,
+      body: msg.text,
+    });
+    try {
+
+    let tenant = tenantCache.get(msg.phoneNumberId);
+      if (tenant === undefined) {
+        const { data: company } = await db
+          .from("companies")
+          .select("id, name")
+          .eq("whatsapp_phone_number_id", msg.phoneNumberId)
+          .maybeSingle();
+        tenant = company
+          ? { companyId: company.id as string, companyName: (company.name as string) ?? null }
+          : null;
+        tenantCache.set(msg.phoneNumberId, tenant);
+      }
+      if (!tenant) {
+        console.warn(
+          JSON.stringify({
+            scope: "whatsapp.inbound",
+            level: "warn",
+            msg: "tenant não resolvido — nenhuma empresa mapeia este phone_number_id",
+            phoneNumberId: msg.phoneNumberId,
+          }),
+        );
+        continue;
+      }
+
+
+
+      const resolvedTenant = tenant;
+      const lockKey = `${resolvedTenant.companyId}:${msg.waContactId}`;
+      await withContactLock(lockKey, () =>
+        processOneMessage({ db, msg, tenant: resolvedTenant, startedAt: started }),
+      );
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          scope: "whatsapp.inbound",
+          level: "error",
+          msg: "falha ao processar mensagem",
+          error: err instanceof Error ? err.message : String(err),
+          processingMs: Date.now() - started,
+        }),
+      );
+    }
+  }
+}
+
+interface ProcessArgs {
+  db: { from: (t: string) => any };
+  msg: ParsedTextMessage;
+  tenant: { companyId: string; companyName: string | null };
+  startedAt: number;
+}
+
+async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): Promise<void> {
+  // 1) Resolve contato considerando variantes com/sem 9º dígito (BR).
+  const variants = phoneVariants(msg.waContactId);
+  const canonical = variants.find((v) => v.startsWith("55") && v.length === 13) ?? msg.waContactId;
+
+  const { data: existingContacts } = await db
+    .from("whatsapp_contacts")
+    .select("id, wa_id")
+    .eq("company_id", tenant.companyId)
+    .in("wa_id", variants)
+    .limit(1);
+  console.log("Resultado da busca de contato:", {
+    from: msg.waContactId,
+    variants,
+    companyId: tenant.companyId,
+    found: Array.isArray(existingContacts) ? existingContacts[0] ?? null : null,
+  });
+
+  let contactId: string;
+  const existing = Array.isArray(existingContacts) ? existingContacts[0] : null;
+  if (existing?.id) {
+    contactId = existing.id as string;
+    await db
+      .from("whatsapp_contacts")
+      .update({
+        phone: existing.wa_id ?? canonical,
+        profile_name: msg.profileName,
+        last_seen_at: new Date(msg.timestamp).toISOString(),
+      })
+      .eq("id", contactId);
+  } else {
+    const { data: created } = await db
+      .from("whatsapp_contacts")
+      .upsert(
+        {
+          company_id: tenant.companyId,
+          wa_id: canonical,
+          phone: canonical,
+          profile_name: msg.profileName,
+          last_seen_at: new Date(msg.timestamp).toISOString(),
+        },
+        { onConflict: "company_id,wa_id" },
+      )
+      .select("id")
+      .single();
+    if (!created) return;
+    contactId = created.id as string;
+  }
+
+
+  // 2) Upsert conversa (preserva status e assignment já definidos pelo operador).
+  const { data: conversation } = await db
+    .from("whatsapp_conversations")
+    .upsert(
+      {
+        company_id: tenant.companyId,
+        contact_id: contactId,
+        last_inbound_at: new Date(msg.timestamp).toISOString(),
+      },
+      { onConflict: "company_id,contact_id" },
+    )
+    .select("id, bella_state, status, unread_count")
+    .single();
+  if (!conversation) return;
+  const conversationId = conversation.id as string;
+  const savedState = (conversation.bella_state ?? {}) as BellaConversationPatch;
+  const conversationStatus = String(conversation.status ?? "open");
+
+  console.log("[whatsapp.inbound] conversa resolvida", {
+    from: msg.phone,
+    canonical,
+    companyId: tenant.companyId,
+    contactId,
+    conversationId,
+    status: conversationStatus,
+    body: msg.text,
+  });
+
+
+  // 3) Persist inbound + dedupe (unique company_id + wa_message_id)
+  const { error: dedupErr } = await db.from("whatsapp_messages").insert({
+    company_id: tenant.companyId,
+    conversation_id: conversationId,
+    contact_id: contactId,
+    direction: "inbound",
+    wa_message_id: msg.waMessageId,
+    text: msg.text,
+    payload: null,
+    status: "received",
+  });
+  if (dedupErr && (dedupErr.code === "23505" || String(dedupErr.message ?? "").includes("duplicate"))) {
+    console.log(
+      JSON.stringify({
+        scope: "whatsapp.inbound",
+        level: "info",
+        msg: "duplicado ignorado",
+        waMessageId: msg.waMessageId,
+      }),
+    );
+    return;
+  }
+
+  // 3b) Incrementa não lidas para o console (não bloqueia o fluxo).
+  await db
+    .from("whatsapp_conversations")
+    .update({ unread_count: (Number(conversation.unread_count) || 0) + 1 })
+    .eq("id", conversationId);
+
+  // 3c) Se a conversa foi assumida por operador (ou arquivada/resolvida),
+  // a Bella pausa: apenas persistimos a mensagem, sem responder.
+  if (
+    conversationStatus === "human" ||
+    conversationStatus === "resolved" ||
+    conversationStatus === "archived"
+  ) {
+    console.log(
+      JSON.stringify({
+        scope: "whatsapp.inbound",
+        level: "info",
+        msg: "Bella pausada — conversa sob operador/encerrada",
+        conversationId,
+        status: conversationStatus,
+      }),
+    );
+    return;
+  }
+
+
+  // 4) Restaura o contexto Bella deste contato no singleton do engine.
+  const engineKey = tenant.companyId; // Skills usam este id (empresa real)
+  bellaConversationManager.clear(engineKey);
+  if (savedState && Object.keys(savedState).length > 0) {
+    bellaConversationManager.update(engineKey, savedState);
+  }
+
+  // 5) Roda o Action Engine (Skills + confirmação + memória curta).
+  let response: BellaActionResponse;
+  let providerId = "engine";
+  let skillId: string | null = null;
+  try {
+    response = await BellaActionEngine.run(msg.text, {
+      companyId: tenant.companyId,
+      userId: null,
+    });
+    // 5b) UNKNOWN → tenta chat livre via AI Gateway (Gemini ou Mock).
+    if (response.action === "UNKNOWN") {
+      const ai = await bellaAIGateway.chat({
+        userMessage: msg.text,
+        companyName: tenant.companyName,
+      });
+      providerId = ai.provider;
+      response = {
+        action: "UNKNOWN",
+        title: "",
+        description: ai.response || response.description,
+        metrics: [],
+        priority: "low",
+        suggestions: [],
+      };
+    } else if (response.action === "EXECUTE_SKILL") {
+      skillId = "execute_skill";
+    }
+  } catch (err) {
+    response = {
+      action: "UNKNOWN",
+      title: "Não consegui processar",
+      description:
+        "Tive um problema para entender agora. Pode reformular em uma frase curta?",
+      metrics: [],
+      priority: "high",
+      suggestions: [],
+    };
+    console.error(
+      JSON.stringify({
+        scope: "whatsapp.bella",
+        level: "error",
+        msg: "engine.run falhou",
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+  }
+
+  // 6) Snapshot do contexto atualizado → persistência por contato.
+  const snapshot = bellaConversationManager.get(engineKey);
+  const stateToSave: Record<string, unknown> = {};
+  if (snapshot) {
+    if (snapshot.lastModule) stateToSave.lastModule = snapshot.lastModule;
+    if (snapshot.lastAction) stateToSave.lastAction = snapshot.lastAction;
+    if (snapshot.lastProvider) stateToSave.lastProvider = snapshot.lastProvider;
+    if (snapshot.pendingSkill) stateToSave.pendingSkill = snapshot.pendingSkill;
+  }
+  bellaConversationManager.clear(engineKey);
+
+  await db
+    .from("whatsapp_conversations")
+    .update({ bella_state: stateToSave })
+    .eq("id", conversationId);
+
+  // 7) Envia resposta pelo WhatsApp (texto livre — janela de 24h).
+  const outText = formatBellaResponse(response);
+  const sent = await sendWhatsAppText({ to: msg.phone, text: outText });
+
+  // 8) Persist outbound + evento agregado.
+  await db.from("whatsapp_messages").insert({
+    company_id: tenant.companyId,
+    conversation_id: conversationId,
+    contact_id: contactId,
+    direction: "outbound",
+    wa_message_id: sent.waMessageId,
+    text: outText,
+    status: sent.ok ? "sent" : "failed",
+    error: sent.error,
+    processing_ms: Date.now() - startedAt,
+    provider: providerId,
+    skill_id: skillId,
+  });
+  if (sent.ok) {
+    await db
+      .from("whatsapp_conversations")
+      .update({ last_outbound_at: new Date().toISOString() })
+      .eq("id", conversationId);
+  }
+
+  console.log(
+    JSON.stringify({
+      scope: "whatsapp.inbound",
+      level: "info",
+      msg: "mensagem respondida",
+      companyId: tenant.companyId,
+      waMessageId: msg.waMessageId,
+      provider: providerId,
+      action: response.action,
+      processingMs: Date.now() - startedAt,
+      sent: sent.ok,
+    }),
+  );
+}

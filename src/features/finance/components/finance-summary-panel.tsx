@@ -1,0 +1,155 @@
+import { ArrowDownRight, ArrowUpRight, CalendarClock } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useFinanceOverview } from "../hooks/use-finance";
+import { MonthlyIncomeExpenseChart } from "./finance-charts";
+
+export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
+  const { data, isLoading } = useFinanceOverview(companyId);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-success" />
+          <div>
+            <h3 className="text-sm font-semibold">Contas a receber por vencimento</h3>
+            <p className="text-xs text-muted-foreground">
+              Títulos em aberto (não pagos e não cancelados) segmentados pela data de vencimento.
+            </p>
+          </div>
+        </div>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <MiniStat
+              label="Vencidas"
+              value={formatCurrency(data?.receivableOverdue ?? 0)}
+              tone="text-destructive"
+            />
+            <MiniStat
+              label="A vencer (até 30 dias)"
+              value={formatCurrency(data?.receivableDue30 ?? 0)}
+              tone="text-warning"
+            />
+            <MiniStat
+              label="A vencer (> 30 dias)"
+              value={formatCurrency(data?.receivableDue60Plus ?? 0)}
+              tone="text-success"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Section
+          title="Próximos recebimentos"
+          empty="Sem contas a receber programadas."
+          icon={<ArrowDownRight className="h-4 w-4 text-success" />}
+          loading={isLoading}
+          items={data?.upcomingIncome ?? []}
+          tone="text-success"
+        />
+        <Section
+          title="Próximos pagamentos"
+          empty="Sem contas a pagar programadas."
+          icon={<ArrowUpRight className="h-4 w-4 text-destructive" />}
+          loading={isLoading}
+          items={data?.upcomingExpense ?? []}
+          tone="text-destructive"
+        />
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold">Resumo do mês</h3>
+          <p className="text-xs text-muted-foreground">Somente movimentações pagas.</p>
+        </div>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <MiniStat
+              label="Entradas"
+              value={formatCurrency(data?.monthIncome ?? 0)}
+              tone="text-success"
+            />
+            <MiniStat
+              label="Saídas"
+              value={formatCurrency(data?.monthExpense ?? 0)}
+              tone="text-destructive"
+            />
+            <MiniStat
+              label="Resultado"
+              value={formatCurrency((data?.monthIncome ?? 0) - (data?.monthExpense ?? 0))}
+              tone="text-primary"
+            />
+          </div>
+        )}
+      </div>
+
+      <MonthlyIncomeExpenseChart companyId={companyId} />
+    </div>
+  );
+}
+
+function Section({
+  title,
+  icon,
+  loading,
+  items,
+  empty,
+  tone,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  loading: boolean;
+  items: { id: string; description: string; date: string; amount: number }[];
+  empty: string;
+  tone: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-6">
+      <div className="mb-4 flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="space-y-1">
+          {items.map((it) => (
+            <li
+              key={it.id}
+              className="flex items-center justify-between rounded-md px-2 py-2 text-sm hover:bg-muted/50"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{it.description}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(it.date)}</p>
+              </div>
+              <span className={`tabular-nums font-medium ${tone}`}>
+                {formatCurrency(it.amount)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function MiniStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-xl font-semibold tabular-nums ${tone}`}>{value}</p>
+    </div>
+  );
+}
