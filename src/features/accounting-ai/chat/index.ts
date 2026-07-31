@@ -7,6 +7,7 @@
  * Nenhum cálculo financeiro novo. Nenhuma IA generativa. Somente leitura.
  */
 import type { ProviderDeps } from "../providers";
+import { buildAccountingSummary } from "../providers/summary";
 import { detectIntent } from "./intent-engine";
 import { planIntent } from "./planner";
 import { executePlan } from "./router";
