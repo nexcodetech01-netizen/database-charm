@@ -142,6 +142,19 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     focus.notify("new-sale");
   }
 
+  /**
+   * Cancelar venda em andamento — mesma ação já existente de limpar o
+   * carrinho (nenhuma venda foi gravada ainda). UX apenas.
+   */
+  function handleCancelSale() {
+    if (typeof window !== "undefined" && !window.confirm("Cancelar a venda?")) {
+      return;
+    }
+    pdv.clear();
+    setActiveKey(null);
+    focus.focusSearch();
+  }
+
   function handlePrintReceipt() {
     dispatchSession({ type: "OPEN_RECEIPT" });
     printPdvReceipt();
