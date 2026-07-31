@@ -43,6 +43,7 @@ import { Route as AuthenticatedCampanhasRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
 import { Route as AuthenticatedBellaProcessosRouteImport } from './routes/_authenticated/bella-processos'
 import { Route as AuthenticatedBellaPayRouteImport } from './routes/_authenticated/bella-pay'
+import { Route as AuthenticatedBellaContadoraRouteImport } from './routes/_authenticated/bella-contadora'
 import { Route as AuthenticatedBellaConhecimentoRouteImport } from './routes/_authenticated/bella-conhecimento'
 import { Route as AuthenticatedBellaAgentDebugRouteImport } from './routes/_authenticated/bella-agent-debug'
 import { Route as AuthenticatedBellaRouteImport } from './routes/_authenticated/bella'
@@ -274,6 +275,12 @@ const AuthenticatedBellaPayRoute = AuthenticatedBellaPayRouteImport.update({
   path: '/bella-pay',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBellaContadoraRoute =
+  AuthenticatedBellaContadoraRouteImport.update({
+    id: '/bella-contadora',
+    path: '/bella-contadora',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBellaConhecimentoRoute =
   AuthenticatedBellaConhecimentoRouteImport.update({
     id: '/bella-conhecimento',
@@ -605,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -694,6 +702,7 @@ export interface FileRoutesByTo {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -785,6 +794,7 @@ export interface FileRoutesById {
   '/_authenticated/bella': typeof AuthenticatedBellaRoute
   '/_authenticated/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/_authenticated/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
+  '/_authenticated/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/_authenticated/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/_authenticated/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
@@ -876,6 +886,7 @@ export interface FileRouteTypes {
     | '/bella'
     | '/bella-agent-debug'
     | '/bella-conhecimento'
+    | '/bella-contadora'
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
@@ -965,6 +976,7 @@ export interface FileRouteTypes {
     | '/bella'
     | '/bella-agent-debug'
     | '/bella-conhecimento'
+    | '/bella-contadora'
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
@@ -1055,6 +1067,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bella'
     | '/_authenticated/bella-agent-debug'
     | '/_authenticated/bella-conhecimento'
+    | '/_authenticated/bella-contadora'
     | '/_authenticated/bella-pay'
     | '/_authenticated/bella-processos'
     | '/_authenticated/caixa'
@@ -1396,6 +1409,13 @@ declare module '@tanstack/react-router' {
       path: '/bella-pay'
       fullPath: '/bella-pay'
       preLoaderRoute: typeof AuthenticatedBellaPayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bella-contadora': {
+      id: '/_authenticated/bella-contadora'
+      path: '/bella-contadora'
+      fullPath: '/bella-contadora'
+      preLoaderRoute: typeof AuthenticatedBellaContadoraRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bella-conhecimento': {
@@ -1903,6 +1923,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBellaRoute: typeof AuthenticatedBellaRoute
   AuthenticatedBellaAgentDebugRoute: typeof AuthenticatedBellaAgentDebugRoute
   AuthenticatedBellaConhecimentoRoute: typeof AuthenticatedBellaConhecimentoRoute
+  AuthenticatedBellaContadoraRoute: typeof AuthenticatedBellaContadoraRoute
   AuthenticatedBellaPayRoute: typeof AuthenticatedBellaPayRouteWithChildren
   AuthenticatedBellaProcessosRoute: typeof AuthenticatedBellaProcessosRoute
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
@@ -1959,6 +1980,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBellaRoute: AuthenticatedBellaRoute,
   AuthenticatedBellaAgentDebugRoute: AuthenticatedBellaAgentDebugRoute,
   AuthenticatedBellaConhecimentoRoute: AuthenticatedBellaConhecimentoRoute,
+  AuthenticatedBellaContadoraRoute: AuthenticatedBellaContadoraRoute,
   AuthenticatedBellaPayRoute: AuthenticatedBellaPayRouteWithChildren,
   AuthenticatedBellaProcessosRoute: AuthenticatedBellaProcessosRoute,
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
