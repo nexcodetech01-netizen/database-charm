@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,14 +24,15 @@ import {
 } from "../lib/completion";
 import { pdvCashStatus, resolvePdvStage } from "../lib/layout";
 import { formatOpenedAt } from "@/features/cash";
+import { usePdvFocus } from "../hooks/use-pdv-focus";
+import { resolveActiveCartKey } from "../lib/cart";
 import {
   usePdvShortcuts,
-  focusPdvElement,
   clickPdvElement,
-  PDV_SEARCH_INPUT_ID,
-  PDV_BARCODE_INPUT_ID,
   PDV_CUSTOMER_TRIGGER_ID,
+  PDV_FINALIZE_BUTTON_ID,
 } from "../hooks/use-pdv-shortcuts";
+
 
 type Props = {
   companyId: string;
@@ -100,10 +101,31 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     void pdvFiscal.issue(saleId);
   }
 
+  // Foco automático (Sprint 2.8): abrir o PDV, adicionar produto e iniciar
+  // nova venda devolvem o cursor para a pesquisa.
+  const focus = usePdvFocus({ enabled: access.canOperate });
+
+  // Item ativo do carrinho — alvo de F3 (quantidade) e DELETE (remover).
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const effectiveActiveKey = useMemo(
+    () => resolveActiveCartKey(pdv.state.items, activeKey),
+    [pdv.state.items, activeKey],
+  );
+
+  const handleAddProduct = useCallback(
+    (product: Parameters<typeof pdv.addProduct>[0]) => {
+      pdv.addProduct(product);
+      focus.notify("product-added");
+    },
+    [focus, pdv],
+  );
+
   function handleNewSale() {
     // Limpa recibo, venda concluída e carrinho. O caixa permanece aberto.
     pdv.clear();
     dispatchSession({ type: "NEW_SALE" });
+    setActiveKey(null);
+    focus.notify("new-sale");
   }
 
   function handlePrintReceipt() {
@@ -116,41 +138,60 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     !!pdv.state.customerId &&
     pdv.stockIssues.length === 0;
 
+  const cartEditable =
+    pdv.state.items.length > 0 && !pendingSale && !completed;
+
   // Atalhos de teclado (Sprint 2.8) — apenas disparam as MESMAS ações dos
   // botões já existentes. Nenhuma regra nova.
-  const canNewSale = !!completed || pdv.state.items.length === 0;
   usePdvShortcuts({
     enabled: access.canOperate,
     context: { dialogOpen: receiptOpen },
     handlers: {
-      "focus-search": () => focusPdvElement(PDV_SEARCH_INPUT_ID),
-      "focus-barcode": () => focusPdvElement(PDV_BARCODE_INPUT_ID),
+      "focus-search": focus.focusSearch,
+      "clear-search": () => {
+        pdv.setSearch("");
+        focus.notify("search-cleared");
+      },
       "open-customer": () => clickPdvElement(PDV_CUSTOMER_TRIGGER_ID),
-      "new-sale": canNewSale ? handleNewSale : undefined,
-      receive:
+      "focus-quantity": cartEditable
+        ? () => focus.focusQuantity(effectiveActiveKey)
+        : undefined,
+      "focus-discount": cartEditable ? focus.focusDiscount : undefined,
+      "open-payment":
         completed || pendingSale
           ? undefined
           : canFinalize && !checkout.isSaving
-            ? () => checkout.finalize(pdv.state)
+            ? () => clickPdvElement(PDV_FINALIZE_BUTTON_ID)
             : undefined,
+      "remove-item":
+        cartEditable && effectiveActiveKey
+          ? () => {
+              pdv.removeItem(effectiveActiveKey);
+              setActiveKey(null);
+              focus.focusSearch();
+            }
+          : undefined,
+      "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
       "print-receipt": completed ? handlePrintReceipt : undefined,
       "confirm-dialog": receiptOpen ? printPdvReceipt : undefined,
       "close-dialog": receiptOpen
         ? () => dispatchSession({ type: "CLOSE_RECEIPT" })
         : undefined,
-      "clear-cart":
-        pdv.state.items.length > 0 && !pendingSale && !completed
-          ? () => {
-              if (
-                typeof window === "undefined" ||
-                window.confirm("Limpar o carrinho?")
-              ) {
-                pdv.clear();
-              }
+      "clear-cart": cartEditable
+        ? () => {
+            if (
+              typeof window === "undefined" ||
+              window.confirm("Limpar o carrinho?")
+            ) {
+              pdv.clear();
+              setActiveKey(null);
+              focus.focusSearch();
             }
-          : undefined,
+          }
+        : undefined,
     },
   });
+
 
   const blocked = access.state === "blocked";
   useEffect(() => {
@@ -201,7 +242,8 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             cashStatus={cashStatus}
             search={pdv.search}
             onSearchChange={pdv.setSearch}
-            onProduct={(product) => pdv.addProduct(product)}
+            onProduct={handleAddProduct}
+            onClearSearch={focus.focusSearch}
           />
         }
         cart={
@@ -210,8 +252,11 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
               items={pdv.state.items}
               onQuantityChange={pdv.setItemQuantity}
               onRemove={pdv.removeItem}
+              activeKey={effectiveActiveKey}
+              onActivate={setActiveKey}
               readOnly={cartLocked}
             />
+
             {pdv.stockIssues.length > 0 && (
               <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive">
                 Há {pdv.stockIssues.length} item(ns) com quantidade acima do

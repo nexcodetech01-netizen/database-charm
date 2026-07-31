@@ -38,3 +38,25 @@ export function findCartItemByProduct(
 export function countCartUnits(items: SaleItemDraft[]): number {
   return items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
 }
+
+/** Chave do item de carrinho (mesma usada como `key` de renderização). */
+export function cartItemKey(item: SaleItemDraft): string {
+  return item.ui_key ?? item.product_id ?? item.description;
+}
+
+/**
+ * Item "ativo" do carrinho — alvo dos atalhos F3 (quantidade) e DELETE.
+ *
+ * Regra de UX (não de negócio): usa o item selecionado quando ele ainda
+ * existe; caso contrário, o último item adicionado.
+ */
+export function resolveActiveCartKey(
+  items: SaleItemDraft[],
+  selectedKey?: string | null,
+): string | null {
+  if (items.length === 0) return null;
+  if (selectedKey && items.some((it) => cartItemKey(it) === selectedKey)) {
+    return selectedKey;
+  }
+  return cartItemKey(items[items.length - 1]);
+}

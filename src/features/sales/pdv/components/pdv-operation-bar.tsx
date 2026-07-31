@@ -1,7 +1,7 @@
+import { memo } from "react";
 import { MonitorSmartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PDVSearch } from "./pdv-search";
-import { PDVBarcodeInput } from "./pdv-barcode-input";
 import {
   PDV_STATUS_TONE_CLASS,
   PDV_STAGE_LABEL,
@@ -18,15 +18,19 @@ type Props = {
   search: string;
   onSearchChange: (value: string) => void;
   onProduct: (product: PDVProductOption) => void;
+  onClearSearch?: () => void;
 };
 
 /**
  * PDV — Barra de operação (Sprint 2.9).
  *
- * Somente apresentação: reúne a busca e o leitor já existentes e exibe o
- * status do caixa e o número da venda. Nenhuma ação nova.
+ * Somente apresentação: reúne a busca (que também recebe o leitor USB) e
+ * exibe o status do caixa e o número da venda. Nenhuma ação nova.
+ *
+ * Memoizada: só muda quando o termo, o estágio ou o status do caixa mudam —
+ * não re-renderiza a cada alteração do carrinho.
  */
-export function PDVOperationBar({
+export const PDVOperationBar = memo(function PDVOperationBar({
   companyId,
   saleNumber,
   stage,
@@ -34,6 +38,7 @@ export function PDVOperationBar({
   search,
   onSearchChange,
   onProduct,
+  onClearSearch,
 }: Props) {
   return (
     <header className="rounded-xl border bg-card p-4 shadow-sm">
@@ -78,15 +83,20 @@ export function PDVOperationBar({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <PDVBarcodeInput companyId={companyId} onProduct={onProduct} />
+      <div className="mt-4">
         <PDVSearch
           companyId={companyId}
           value={search}
           onChange={onSearchChange}
           onSelect={onProduct}
+          onClear={onClearSearch}
+          disabled={stage !== "cart"}
         />
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          ENTER adiciona · ESC limpa · F2 cliente · F3 quantidade · F4 desconto
+          · F5 pagamento · DELETE remove item · CTRL+L limpa carrinho
+        </p>
       </div>
     </header>
   );
-}
+});
