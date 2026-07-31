@@ -14,9 +14,9 @@ import {
   updateContext,
 } from "../chat";
 import type { ChatPlan } from "../chat/types";
-import { makeServices } from "./fixtures";
+import { makeTestServices } from "./fixtures";
 
-const deps = () => ({ services: makeServices() });
+const deps = () => ({ services: makeTestServices() });
 
 describe("accounting-ai · chat · intent engine", () => {
   it("reconhece intenções pontuais", () => {
