@@ -243,6 +243,7 @@ export async function productsProvider(
     ]);
     return {
       bestSellers: report.bestSellers.slice(0, 5),
+      worstSellers: report.worstSellers.slice(0, 5),
       stagnant: (report.noMovement.length ? report.noMovement : inventory.stagnant).slice(0, 5),
       lowStock: inventory.belowMin.slice(0, 5),
     };
