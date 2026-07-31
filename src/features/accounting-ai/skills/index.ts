@@ -28,6 +28,7 @@ import {
 } from "../insights";
 import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
+import { advisorQueries, buildFinancialAdvice } from "../advisor";
 
 export type AccountingSkillId =
   | "consultar_lucro"
@@ -44,7 +45,10 @@ export type AccountingSkillId =
   | "consultar_saude"
   | "consultar_insights"
   | "consultar_alertas"
-  | "consultar_recomendacoes";
+  | "consultar_recomendacoes"
+  | "consultar_retirada"
+  | "consultar_disponibilidade"
+  | "consultar_risco";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -338,6 +342,59 @@ export const consultarRecomendacoesSkill: AccountingSkill = {
   },
 };
 
+/** Consultoria financeira (Sprint 5.3) — advisor puro sobre o resumo lido. */
+async function readAdvice(companyId: string, deps?: ProviderDeps) {
+  const summary = await readSummary(companyId, deps);
+  return { summary, advice: buildFinancialAdvice({ summary }) };
+}
+
+export const consultarRetiradaSkill: AccountingSkill = {
+  id: "consultar_retirada",
+  name: "Consultar retirada segura",
+  description: "Quanto pode ser retirado do caixa hoje sem comprometer a operação.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const { advice } = await readAdvice(companyId, deps);
+    if (!advice.available) return empty("retirada segura");
+    const answer = advisorQueries.quantoPossoRetirar(advice);
+    return { ok: true, text: answer.text, data: advice.withdrawal };
+  },
+};
+
+export const consultarDisponibilidadeSkill: AccountingSkill = {
+  id: "consultar_disponibilidade",
+  name: "Consultar disponibilidade",
+  description: "Caixa disponível hoje versus compromissos assumidos.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const { advice } = await readAdvice(companyId, deps);
+    if (!advice.available) return empty("disponibilidade");
+    const disponivel = advisorQueries.quantoDisponivel(advice);
+    const comprometido = advisorQueries.quantoComprometido(advice);
+    return {
+      ok: true,
+      text: `${disponivel.text} ${comprometido.text}`,
+      data: { availableCash: advice.availableCash, commitments: advice.commitments },
+    };
+  },
+};
+
+export const consultarRiscoSkill: AccountingSkill = {
+  id: "consultar_risco",
+  name: "Consultar risco de caixa",
+  description: "Nível de risco financeiro apurado para retiradas.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const { advice } = await readAdvice(companyId, deps);
+    if (!advice.available) return empty("risco de caixa");
+    return {
+      ok: true,
+      text: `Risco ${advice.risk.label} (${advice.risk.score}/100). ${advice.risk.reasons.join(" ")}`,
+      data: advice.risk,
+    };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -354,7 +411,11 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarInsightsSkill,
   consultarAlertasSkill,
   consultarRecomendacoesSkill,
+  consultarRetiradaSkill,
+  consultarDisponibilidadeSkill,
+  consultarRiscoSkill,
 ];
+
 
 export function getAccountingSkill(id: AccountingSkillId): AccountingSkill | undefined {
   return accountingAiSkills.find((s) => s.id === id);

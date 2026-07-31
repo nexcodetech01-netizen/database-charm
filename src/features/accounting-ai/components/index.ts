@@ -14,3 +14,5 @@ export { BellaBriefCard } from "./bella-brief-card";
 export type { BellaBriefCardProps } from "./bella-brief-card";
 export { InsightsPanel } from "./insights-panel";
 export type { InsightsPanelProps } from "./insights-panel";
+export { AdvisorCard } from "./advisor-card";
+export type { AdvisorCardProps } from "./advisor-card";

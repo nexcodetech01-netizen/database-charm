@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  AdvisorCard,
   AlertCard,
   BellaBriefCard,
   FinancialCard,
@@ -30,6 +31,7 @@ import { useAccountingAiSummary } from "../hooks/use-accounting-ai";
 import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
+import { buildFinancialAdvice } from "../advisor";
 import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
@@ -143,6 +145,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   ];
 
   const insights = buildAccountingInsights(s);
+  const advice = s ? buildFinancialAdvice({ summary: s }) : null;
 
   const stagnant = s?.products.data?.stagnant ?? [];
   const champions = s?.products.data?.bestSellers ?? [];
@@ -193,6 +196,8 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
           <BellaBriefCard summary={s} loading={isLoading} />
+
+          <AdvisorCard advice={advice} loading={isLoading} />
 
           <InsightsPanel insights={insights} loading={isLoading} />
 
