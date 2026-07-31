@@ -1,7 +1,8 @@
 /**
  * Bella Contadora — helpers puros (sem IO, sem regra de negócio nova).
  */
-import { currentMonthRange, lastNMonths, monthRange } from "@/features/accounting";
+import { currentMonthRange, lastNMonths } from "@/features/accounting";
+import { monthRange } from "@/features/accounting/lib/periods";
 import type {
   AccountingDataSource,
   AccountingPeriod,
