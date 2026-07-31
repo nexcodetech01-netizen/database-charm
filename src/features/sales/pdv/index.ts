@@ -15,7 +15,27 @@ export { PDVCustomerSelect } from "./components/pdv-customer-select";
 export { nextPdvSaleNumber, validatePdvSale, submitPdvSale } from "./lib/checkout";
 export { resolvePdvCashAccess } from "./lib/cash-access";
 export type { PdvCashAccess, PdvCashState } from "./lib/cash-access";
-export { toCartItem, findCartItemByProduct, countCartUnits } from "./lib/cart";
+export {
+  toCartItem,
+  findCartItemByProduct,
+  countCartUnits,
+  cartItemKey,
+  resolveActiveCartKey,
+} from "./lib/cart";
+export {
+  resolvePdvFocus,
+  createPdvFocusController,
+  pdvQuantityInputId,
+  PDV_FOCUS_IDS,
+} from "./lib/focus";
+export type { PdvFocusEvent, PdvFocusId } from "./lib/focus";
+export {
+  createSearchCache,
+  searchCacheKey,
+  pickSearchProduct,
+} from "./lib/search-cache";
+export type { PdvSearchOption, SearchCache } from "./lib/search-cache";
+export { usePdvFocus } from "./hooks/use-pdv-focus";
 export type { PDVCartItem, PDVProductOption } from "./types";
 export { PDVCompletedPanel } from "./components/pdv-completed-panel";
 export {
@@ -46,11 +66,14 @@ export {
   createPdvShortcutHandler,
   registerPdvShortcuts,
   isTypingTarget,
+  isPdvSearchTarget,
   focusPdvElement,
   clickPdvElement,
   PDV_SEARCH_INPUT_ID,
   PDV_BARCODE_INPUT_ID,
   PDV_CUSTOMER_TRIGGER_ID,
+  PDV_DISCOUNT_INPUT_ID,
+  PDV_FINALIZE_BUTTON_ID,
 } from "./hooks/use-pdv-shortcuts";
 export type {
   PdvShortcutAction,
