@@ -26,6 +26,8 @@ export type BellaIntentId =
   | "consultar_retirada"
   | "consultar_disponibilidade"
   | "consultar_risco"
+  | "consultar_notificacoes"
+  | "resumo_do_dia"
   | "situacao_geral"
   | "pontos_atencao"
   | "desconhecida";

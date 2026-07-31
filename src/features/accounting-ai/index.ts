@@ -13,6 +13,22 @@ export * from "./skills";
 export * from "./queries";
 export * from "./insights";
 export * from "./advisor";
+export {
+  buildBellaNotifications,
+  buildTopNotifications,
+  countCriticalNotifications,
+  bellaNotificationStore,
+  useBellaNotifications,
+  useBellaCriticalCount,
+  PROACTIVE_REGISTRY,
+} from "./proactive";
+export type {
+  BellaNotification,
+  NotificationCategory,
+  NotificationSeverity,
+  ProactiveInput,
+  ProactiveOptions,
+} from "./proactive";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";

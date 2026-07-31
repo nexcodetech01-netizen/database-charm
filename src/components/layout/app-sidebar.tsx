@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/rbac";
 import { ROUTES } from "@/config/routes";
+import { useBellaCriticalCount } from "@/features/accounting-ai/proactive";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -113,6 +114,8 @@ export function AppSidebar() {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const { has, isLoading: permsLoading } = usePermissions();
   const { open: mobileOpen, setOpen: setMobileOpen } = useMobileNav();
+  /** Indicador visual (sessão) de notificações críticas da Bella Contadora. */
+  const bellaCritical = useBellaCriticalCount();
 
   const handleComingSoon = (title: string) => setComingSoon(title);
 
@@ -240,6 +243,7 @@ export function AppSidebar() {
                         item={child}
                         nested
                         active={currentPath === child.url}
+                        alertCount={child.url === ROUTES.bellaAccountant ? bellaCritical : 0}
                         onComingSoon={handleComingSoon}
                       />
                     ))}
@@ -250,6 +254,7 @@ export function AppSidebar() {
                   key={item.title}
                   item={item}
                   active={currentPath === item.url}
+                  alertCount={item.url === ROUTES.bellaAccountant ? bellaCritical : 0}
                   onComingSoon={handleComingSoon}
                 />
               ),
@@ -336,10 +341,13 @@ function NavRow({
   item,
   active,
   nested,
+  alertCount = 0,
   onComingSoon,
 }: {
   item: NavItem;
   active: boolean;
+  /** Indicador de notificação crítica da Bella (somente visual). */
+  alertCount?: number;
   /** Subitem de um grupo (ex.: PDV dentro de Vendas) — indentação e escala menores. */
   nested?: boolean;
   onComingSoon: (title: string) => void;
@@ -376,6 +384,15 @@ function NavRow({
       >
         {item.title}
       </span>
+      {alertCount > 0 ? (
+        <span
+          className="ml-auto grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-destructive px-1 text-[9px] font-semibold leading-none text-destructive-foreground"
+          title={`${alertCount} alerta(s) crítico(s) da Bella`}
+          aria-label={`${alertCount} alerta crítico da Bella`}
+        >
+          {alertCount > 9 ? "9+" : alertCount}
+        </span>
+      ) : null}
       <StatusBadge status={item.status} />
     </>
   );

@@ -15,6 +15,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_alertas",
   ],
   pontos_atencao: ["consultar_alertas", "consultar_insights"],
+  resumo_do_dia: [
+    "consultar_alertas",
+    "consultar_insights",
+    "consultar_recomendacoes",
+    "consultar_notificacoes",
+  ],
+  consultar_notificacoes: ["consultar_notificacoes"],
   consultar_receita: ["consultar_receita"],
   consultar_lucro: ["consultar_lucro"],
   consultar_caixa: ["consultar_caixa"],
@@ -41,6 +48,7 @@ const REASONS: Partial<Record<AccountingSkillId, string>> = {
   consultar_receita: "Receita apurada",
   consultar_insights: "Insights determinísticos",
   consultar_alertas: "Alertas críticos",
+  consultar_notificacoes: "Notificações proativas da Bella",
   consultar_retirada: "Consultoria de retirada",
   consultar_lucro: "Lucro apurado",
 };
