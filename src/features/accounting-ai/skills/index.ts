@@ -9,11 +9,17 @@ import type { ProviderDeps } from "../providers";
 import {
   cashFlowProvider,
   cashProvider,
+  customersProvider,
+  healthProvider,
   payrollProvider,
   productsProvider,
   profitProvider,
+  revenueProvider,
   taxesProvider,
+  ticketProvider,
+  todayProvider,
 } from "../providers";
+import { healthLabel } from "../lib/health";
 import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
 
@@ -25,7 +31,11 @@ export type AccountingSkillId =
   | "consultar_impostos"
   | "consultar_prolabore"
   | "consultar_reserva"
-  | "consultar_produtos";
+  | "consultar_produtos"
+  | "consultar_receita"
+  | "consultar_ticket"
+  | "consultar_clientes"
+  | "consultar_saude";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -183,6 +193,84 @@ export const consultarProdutosSkill: AccountingSkill = {
   },
 };
 
+export const consultarReceitaSkill: AccountingSkill = {
+  id: "consultar_receita",
+  name: "Consultar receita",
+  description: "Receita de hoje e receita líquida do período.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const [today, month] = await Promise.all([
+      todayProvider(companyId, deps),
+      revenueProvider(companyId, deps),
+    ]);
+    if (!today.data && !month.data) return empty("receita");
+    const parts: string[] = [];
+    if (today.data) {
+      parts.push(
+        `Hoje: ${formatCurrency(today.data.total)} em ${today.data.count} venda(s).`,
+      );
+    }
+    if (month.data) {
+      parts.push(`No período: receita líquida ${formatCurrency(month.data.netRevenue)}.`);
+    }
+    return { ok: true, text: parts.join(" "), data: { today: today.data, month: month.data } };
+  },
+};
+
+export const consultarTicketSkill: AccountingSkill = {
+  id: "consultar_ticket",
+  name: "Consultar ticket médio",
+  description: "Ticket médio e quantidade de vendas do período.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await ticketProvider(companyId, deps);
+    if (!res.data) return empty("ticket médio");
+    return {
+      ok: true,
+      text: `Ticket médio ${formatCurrency(res.data.averageTicket)} em ${res.data.salesCount} venda(s) (total ${formatCurrency(res.data.monthTotal)}).`,
+      data: res.data,
+    };
+  },
+};
+
+export const consultarClientesSkill: AccountingSkill = {
+  id: "consultar_clientes",
+  name: "Consultar clientes",
+  description: "Clientes ativos, recorrentes e maiores compradores.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await customersProvider(companyId, deps);
+    if (!res.data) return empty("clientes");
+    const byRevenue = [...res.data.topCustomers].sort((a, b) => b.revenue - a.revenue)[0];
+    const byPurchases = [...res.data.topCustomers].sort((a, b) => b.purchases - a.purchases)[0];
+    const parts = [
+      `${res.data.active} cliente(s) ativos de ${res.data.total} cadastrados.`,
+    ];
+    if (byRevenue) parts.push(`Maior faturamento: ${byRevenue.name} (${formatCurrency(byRevenue.revenue)}).`);
+    if (byPurchases) parts.push(`Mais compras: ${byPurchases.name} (${byPurchases.purchases}).`);
+    return { ok: true, text: parts.join(" "), data: res.data };
+  },
+};
+
+export const consultarSaudeSkill: AccountingSkill = {
+  id: "consultar_saude",
+  name: "Consultar saúde financeira",
+  description: "Score de saúde apurado pelos helpers da Bella.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await healthProvider(companyId, deps);
+    if (!res.data) return empty("saúde financeira");
+    const warnings = res.data.warnings.length
+      ? ` Pontos de atenção: ${res.data.warnings.join(" ")}`
+      : "";
+    return {
+      ok: true,
+      text: `Saúde financeira ${healthLabel(res.data)} (${res.data.score}/100).${warnings}`,
+      data: res.data,
+    };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -192,6 +280,10 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarProlaboreSkill,
   consultarReservaSkill,
   consultarProdutosSkill,
+  consultarReceitaSkill,
+  consultarTicketSkill,
+  consultarClientesSkill,
+  consultarSaudeSkill,
 ];
 
 export function getAccountingSkill(id: AccountingSkillId): AccountingSkill | undefined {
