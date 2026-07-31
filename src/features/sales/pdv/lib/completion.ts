@@ -23,6 +23,14 @@ export type PdvCompletedSale = PdvPendingSale & {
 export type PdvSessionState = {
   /** Venda criada aguardando recebimento. */
   pendingSale: PdvPendingSale | null;
+  /**
+   * Última venda criada nesta sessão do balcão (RC2 / P0.3).
+   *
+   * Sobrevive ao fechamento do CheckoutDialog: a conclusão da venda passa a
+   * depender do estado da transação (pagamento confirmado), nunca da
+   * existência do modal. Só é zerada em "Nova venda".
+   */
+  lastSale: PdvPendingSale | null;
   /** Venda recebida, aguardando recibo / nova venda. */
   completed: PdvCompletedSale | null;
   /** Diálogo de recibo aberto. */
@@ -37,6 +45,7 @@ export type PdvSessionState = {
 
 export const PDV_SESSION_INITIAL: PdvSessionState = {
   pendingSale: null,
+  lastSale: null,
   completed: null,
   receiptOpen: false,
   checkoutOpen: false,
@@ -67,16 +76,20 @@ export function pdvSessionReducer(
       return {
         ...PDV_SESSION_INITIAL,
         pendingSale: action.sale,
+        lastSale: action.sale,
         checkoutOpen: true,
       };
     case "SALE_RECEIVED": {
-      if (!state.pendingSale) return state;
+      // P0.3: usa a venda corrente OU a última venda criada — o pagamento
+      // assíncrono (PIX/Bella Pay) pode confirmar com o diálogo já fechado.
+      const sale = state.pendingSale ?? state.lastSale;
+      if (!sale || state.completed) return state;
       return {
         ...state,
         pendingSale: null,
         receiptOpen: false,
         completed: {
-          ...state.pendingSale,
+          ...sale,
           paymentMethod: action.paymentMethod,
           receivedAt: action.receivedAt ?? new Date().toISOString(),
         },

@@ -6,6 +6,7 @@ import {
   searchCacheKey,
   type PdvSearchOption,
 } from "../lib/search-cache";
+import { usePdvCatalogIndex } from "./use-pdv-catalog-index";
 
 /**
  * Busca de produtos do PDV.
@@ -16,10 +17,18 @@ import {
  * Sprint 2.8: resultados ficam em cache de curto prazo (por termo) e
  * requisições simultâneas para o mesmo termo são compartilhadas, evitando
  * consultas repetidas durante a operação contínua.
+ *
+ * RC2 (P0.4): o catálogo ativo é pré-carregado uma vez e indexado em
+ * memória. Um bipe com casamento EXATO (código de barras / SKU / referência)
+ * é resolvido localmente, sem round-trip. Termos ambíguos seguem para a
+ * busca no servidor, com a mesma estratégia de sempre.
  */
 export function usePdvProductSearch(companyId: string, term: string) {
   const [options, setOptions] = useState<PdvSearchOption[]>([]);
   const [isSearching, setSearching] = useState(false);
+  const catalogIndex = usePdvCatalogIndex(companyId);
+  const indexRef = useRef(catalogIndex);
+  indexRef.current = catalogIndex;
 
   const cache = useMemo(
     () => createSearchCache<PdvSearchOption[]>({ ttlMs: 30_000, max: 40 }),
@@ -36,6 +45,10 @@ export function usePdvProductSearch(companyId: string, term: string) {
 
       const cached = cache.get(key);
       if (cached) return cached;
+
+      // Resposta instantânea do índice local (leitor USB).
+      const local = indexRef.current.match(key);
+      if (local) return [local];
 
       const pending = inflight.current.get(key);
       if (pending) return pending;
