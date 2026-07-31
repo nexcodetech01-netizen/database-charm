@@ -3500,6 +3500,59 @@ export type Database = {
           },
         ]
       }
+      marketplace_sync_queue: {
+        Row: {
+          attempts: number
+          company_id: string
+          created_at: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          marketplace: string
+          processed_at: string | null
+          product_id: string
+          reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          marketplace?: string
+          processed_at?: string | null
+          product_id: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          marketplace?: string
+          processed_at?: string | null
+          product_id?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_sync_queue_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mercadolivre_integrations: {
         Row: {
           access_token_encrypted: string | null
