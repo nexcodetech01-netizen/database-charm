@@ -20,6 +20,12 @@ import {
   todayProvider,
 } from "../providers";
 import { healthLabel } from "../lib/health";
+import { buildAccountingSummary } from "../providers/summary";
+import {
+  buildAccountingAlerts,
+  buildAccountingInsights,
+  buildAccountingRecommendations,
+} from "../insights";
 import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
 
@@ -35,7 +41,10 @@ export type AccountingSkillId =
   | "consultar_receita"
   | "consultar_ticket"
   | "consultar_clientes"
-  | "consultar_saude";
+  | "consultar_saude"
+  | "consultar_insights"
+  | "consultar_alertas"
+  | "consultar_recomendacoes";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -271,6 +280,64 @@ export const consultarSaudeSkill: AccountingSkill = {
   },
 };
 
+/** Leitura consolidada usada pelas skills de insights (somente leitura). */
+async function readSummary(companyId: string, deps?: ProviderDeps) {
+  return buildAccountingSummary(companyId, deps);
+}
+
+export const consultarInsightsSkill: AccountingSkill = {
+  id: "consultar_insights",
+  name: "Consultar insights",
+  description: "Interpretação dos números do período (Insight Engine puro).",
+  readOnly: true,
+  async run(companyId, deps) {
+    const summary = await readSummary(companyId, deps);
+    const insights = buildAccountingInsights(summary);
+    if (insights.length === 0) return empty("insights");
+    return {
+      ok: true,
+      text: insights.map((i) => `${i.title}: ${i.description}`).join(" "),
+      data: insights,
+    };
+  },
+};
+
+export const consultarAlertasSkill: AccountingSkill = {
+  id: "consultar_alertas",
+  name: "Consultar alertas",
+  description: "Somente insights críticos e de atenção.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const summary = await readSummary(companyId, deps);
+    const alerts = buildAccountingAlerts(summary);
+    if (alerts.length === 0) {
+      return { ok: true, text: "Nenhum alerta no período.", data: [] };
+    }
+    return {
+      ok: true,
+      text: alerts.map((i) => `${i.title}: ${i.description}`).join(" "),
+      data: alerts,
+    };
+  },
+};
+
+export const consultarRecomendacoesSkill: AccountingSkill = {
+  id: "consultar_recomendacoes",
+  name: "Consultar recomendações",
+  description: "Ações sugeridas a partir dos insights — nenhuma é executada.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const summary = await readSummary(companyId, deps);
+    const recs = buildAccountingRecommendations(summary);
+    if (recs.length === 0) return empty("recomendações");
+    return {
+      ok: true,
+      text: recs.map((r) => `${r.action.label}: ${r.recommendation}`).join(" "),
+      data: recs,
+    };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -284,6 +351,9 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarTicketSkill,
   consultarClientesSkill,
   consultarSaudeSkill,
+  consultarInsightsSkill,
+  consultarAlertasSkill,
+  consultarRecomendacoesSkill,
 ];
 
 export function getAccountingSkill(id: AccountingSkillId): AccountingSkill | undefined {
