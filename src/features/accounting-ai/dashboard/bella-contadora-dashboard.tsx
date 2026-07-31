@@ -66,7 +66,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   const trends = s?.trends.data;
   const health = s?.health.data;
 
-  const cards: {
+  const cards = useMemo<{
     label: string;
     icon: typeof Wallet;
     value: string;
@@ -74,7 +74,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
     hint?: string;
     trend?: TrendComparison | null;
     highlight?: boolean;
-  }[] = [
+  }[]>(() => [
     {
       label: "Receita hoje",
       icon: TrendingUp,
@@ -151,10 +151,10 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       ...money(s?.taxes, (d) => d.taxAmount),
       hint: s?.taxes.data ? `Competência ${s.taxes.data.competence}` : undefined,
     },
-  ];
+  ], [s, trends, health]);
 
-  const insights = buildAccountingInsights(s);
-  const advice = s ? buildFinancialAdvice({ summary: s }) : null;
+  const insights = useMemo(() => buildAccountingInsights(s), [s]);
+  const advice = useMemo(() => (s ? buildFinancialAdvice({ summary: s }) : null), [s]);
 
   const proactive = useMemo(
     () => buildBellaNotifications({ summary: s ?? null, insights, advice }),
@@ -171,15 +171,19 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   const topCustomers = s?.customers.data?.topCustomers ?? [];
   const warnings = health?.warnings ?? [];
 
-  const highlights = s
-    ? [
-        accountingQueries.produtoMaisVendido(s),
-        accountingQueries.produtoMenosVendido(s),
-        accountingQueries.clienteQueMaisCompra(s),
-        accountingQueries.clienteMaiorFaturamento(s),
-        accountingQueries.valorParadoEmEstoque(s),
-      ]
-    : [];
+  const highlights = useMemo(
+    () =>
+      s
+        ? [
+            accountingQueries.produtoMaisVendido(s),
+            accountingQueries.produtoMenosVendido(s),
+            accountingQueries.clienteQueMaisCompra(s),
+            accountingQueries.clienteMaiorFaturamento(s),
+            accountingQueries.valorParadoEmEstoque(s),
+          ]
+        : [],
+    [s],
+  );
 
   return (
     <PageLayout

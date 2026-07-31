@@ -5,7 +5,7 @@
  * websocket nem realtime: o dashboard publica o que já calculou e a sidebar
  * apenas lê o indicador crítico.
  */
-import { useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { countCritical, filterDismissed, sortNotifications } from "./helpers";
 import type { BellaNotification } from "./types";
 
@@ -31,6 +31,24 @@ function subscribe(listener: () => void): () => void {
 function sameIds(a: readonly BellaNotification[], b: readonly BellaNotification[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((n, i) => n.id === b[i]!.id && n.priority === b[i]!.priority);
+}
+
+/**
+ * Derivações memoizadas por identidade de estado (Sprint 6.1.6 — P2/P3).
+ * Enquanto o objeto de estado não muda, `visible` e `criticalCount` não são
+ * recalculados. O comportamento observável é idêntico.
+ */
+let derivedFor: StoreState | null = null;
+let derivedVisible: BellaNotification[] = [];
+let derivedCritical = 0;
+
+function derive(snapshot: StoreState) {
+  if (derivedFor !== snapshot) {
+    derivedFor = snapshot;
+    derivedVisible = filterDismissed(snapshot.notifications, snapshot.dismissed);
+    derivedCritical = countCritical(derivedVisible);
+  }
+  return { visible: derivedVisible, critical: derivedCritical };
 }
 
 export const bellaNotificationStore = {
@@ -64,10 +82,10 @@ export const bellaNotificationStore = {
     emit();
   },
   visible(): BellaNotification[] {
-    return filterDismissed(state.notifications, state.dismissed);
+    return derive(state).visible;
   },
   criticalCount(): number {
-    return countCritical(this.visible());
+    return derive(state).critical;
   },
   subscribe,
 };
@@ -84,20 +102,24 @@ export function useBellaNotifications(): {
     () => state,
     () => state,
   );
-  return {
-    notifications: filterDismissed(snapshot.notifications, snapshot.dismissed),
-    dismissed: snapshot.dismissed,
-    dismiss: (id: string) => bellaNotificationStore.dismiss(id),
-    clearDismissed: () => bellaNotificationStore.clearDismissed(),
-  };
+  const notifications = useMemo(() => derive(snapshot).visible, [snapshot]);
+  const dismiss = useCallback((id: string) => bellaNotificationStore.dismiss(id), []);
+  const clearDismissed = useCallback(() => bellaNotificationStore.clearDismissed(), []);
+  return useMemo(
+    () => ({ notifications, dismissed: snapshot.dismissed, dismiss, clearDismissed }),
+    [notifications, snapshot.dismissed, dismiss, clearDismissed],
+  );
 }
 
-/** Indicador de notificação crítica (sidebar). */
+/**
+ * Indicador de notificação crítica (sidebar).
+ * O snapshot já devolve o número: alterações em notificações não críticas
+ * não provocam re-render do consumidor.
+ */
 export function useBellaCriticalCount(): number {
-  const snapshot = useSyncExternalStore(
+  return useSyncExternalStore(
     subscribe,
-    () => state,
-    () => state,
+    () => derive(state).critical,
+    () => derive(state).critical,
   );
-  return countCritical(filterDismissed(snapshot.notifications, snapshot.dismissed));
 }

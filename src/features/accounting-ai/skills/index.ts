@@ -78,7 +78,7 @@ export const consultarLucroSkill: AccountingSkill = {
   description: "Lucro bruto, operacional e líquido do período.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await profitProvider(companyId, deps);
+    const res = deps?.summary?.profit ?? (await profitProvider(companyId, deps));
     if (!res.data) return empty("lucro");
     return {
       ok: true,
@@ -94,7 +94,7 @@ export const consultarFluxoSkill: AccountingSkill = {
   description: "Entradas e saídas previstas para os próximos 30 dias.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await cashFlowProvider(companyId, deps);
+    const res = deps?.summary?.cashFlow ?? (await cashFlowProvider(companyId, deps));
     if (!res.data) return empty("fluxo de caixa");
     return {
       ok: true,
@@ -131,7 +131,7 @@ export const consultarCaixaSkill: AccountingSkill = {
   description: "Saldo atual, a receber e a pagar.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await cashProvider(companyId, deps);
+    const res = deps?.summary?.cash ?? (await cashProvider(companyId, deps));
     if (!res.data) return empty("caixa");
     return {
       ok: true,
@@ -147,7 +147,7 @@ export const consultarImpostosSkill: AccountingSkill = {
   description: "Apuração fiscal da competência (motor fiscal existente).",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await taxesProvider(companyId, deps);
+    const res = deps?.summary?.taxes ?? (await taxesProvider(companyId, deps));
     if (!res.data) return empty("impostos");
     return {
       ok: true,
@@ -163,7 +163,7 @@ export const consultarProlaboreSkill: AccountingSkill = {
   description: "Sugestão indicativa de retirada sobre o lucro apurado.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await payrollProvider(companyId, deps);
+    const res = deps?.summary?.payroll ?? (await payrollProvider(companyId, deps));
     if (!res.data) return empty("pró-labore");
     return {
       ok: true,
@@ -179,7 +179,7 @@ export const consultarReservaSkill: AccountingSkill = {
   description: "Reserva sugerida sobre o lucro apurado.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await payrollProvider(companyId, deps);
+    const res = deps?.summary?.payroll ?? (await payrollProvider(companyId, deps));
     if (!res.data) return empty("reserva financeira");
     return {
       ok: true,
@@ -195,7 +195,7 @@ export const consultarProdutosSkill: AccountingSkill = {
   description: "Campeões de venda, sem giro e abaixo do mínimo.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await productsProvider(companyId, deps);
+    const res = deps?.summary?.products ?? (await productsProvider(companyId, deps));
     if (!res.data) return empty("produtos");
     const top = res.data.bestSellers[0];
     return {
@@ -214,10 +214,12 @@ export const consultarReceitaSkill: AccountingSkill = {
   description: "Receita de hoje e receita líquida do período.",
   readOnly: true,
   async run(companyId, deps) {
-    const [today, month] = await Promise.all([
-      todayProvider(companyId, deps),
-      revenueProvider(companyId, deps),
-    ]);
+    const [today, month] = deps?.summary
+      ? [deps.summary.today, deps.summary.revenue]
+      : await Promise.all([
+          todayProvider(companyId, deps),
+          revenueProvider(companyId, deps),
+        ]);
     if (!today.data && !month.data) return empty("receita");
     const parts: string[] = [];
     if (today.data) {
@@ -238,7 +240,7 @@ export const consultarTicketSkill: AccountingSkill = {
   description: "Ticket médio e quantidade de vendas do período.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await ticketProvider(companyId, deps);
+    const res = deps?.summary?.ticket ?? (await ticketProvider(companyId, deps));
     if (!res.data) return empty("ticket médio");
     return {
       ok: true,
@@ -254,7 +256,7 @@ export const consultarClientesSkill: AccountingSkill = {
   description: "Clientes ativos, recorrentes e maiores compradores.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await customersProvider(companyId, deps);
+    const res = deps?.summary?.customers ?? (await customersProvider(companyId, deps));
     if (!res.data) return empty("clientes");
     const byRevenue = [...res.data.topCustomers].sort((a, b) => b.revenue - a.revenue)[0];
     const byPurchases = [...res.data.topCustomers].sort((a, b) => b.purchases - a.purchases)[0];
@@ -273,7 +275,7 @@ export const consultarSaudeSkill: AccountingSkill = {
   description: "Score de saúde apurado pelos helpers da Bella.",
   readOnly: true,
   async run(companyId, deps) {
-    const res = await healthProvider(companyId, deps);
+    const res = deps?.summary?.health ?? (await healthProvider(companyId, deps));
     if (!res.data) return empty("saúde financeira");
     const warnings = res.data.warnings.length
       ? ` Pontos de atenção: ${res.data.warnings.join(" ")}`
@@ -286,9 +288,13 @@ export const consultarSaudeSkill: AccountingSkill = {
   },
 };
 
-/** Leitura consolidada usada pelas skills de insights (somente leitura). */
+/**
+ * Leitura consolidada usada pelas skills (somente leitura).
+ * Sprint 6.1.6 — P1: quando o chamador já agregou o resumo (`deps.summary`),
+ * nenhuma skill reconstrói o `AccountingSummary`.
+ */
 async function readSummary(companyId: string, deps?: ProviderDeps) {
-  return buildAccountingSummary(companyId, deps);
+  return deps?.summary ?? buildAccountingSummary(companyId, deps);
 }
 
 export const consultarInsightsSkill: AccountingSkill = {
