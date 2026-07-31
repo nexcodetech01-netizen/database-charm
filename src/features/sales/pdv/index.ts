@@ -67,6 +67,7 @@ export {
   registerPdvShortcuts,
   isTypingTarget,
   isPdvSearchTarget,
+  isPdvOwnedKey,
   focusPdvElement,
   clickPdvElement,
   PDV_SEARCH_INPUT_ID,
@@ -75,6 +76,13 @@ export {
   PDV_DISCOUNT_INPUT_ID,
   PDV_FINALIZE_BUTTON_ID,
 } from "./hooks/use-pdv-shortcuts";
+export {
+  buildCatalogIndex,
+  EMPTY_CATALOG_INDEX,
+  type PdvCatalogIndex,
+} from "./lib/catalog-index";
+export { usePdvCatalogIndex } from "./hooks/use-pdv-catalog-index";
+export { usePdvSaleWatch } from "./hooks/use-pdv-sale-watch";
 export type {
   PdvShortcutAction,
   PdvShortcutHandlers,
