@@ -29,6 +29,7 @@ import {
 import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
 import { advisorQueries, buildFinancialAdvice } from "../advisor";
+import { buildBellaNotifications } from "../proactive";
 
 export type AccountingSkillId =
   | "consultar_lucro"
@@ -48,7 +49,8 @@ export type AccountingSkillId =
   | "consultar_recomendacoes"
   | "consultar_retirada"
   | "consultar_disponibilidade"
-  | "consultar_risco";
+  | "consultar_risco"
+  | "consultar_notificacoes";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -395,6 +397,28 @@ export const consultarRiscoSkill: AccountingSkill = {
   },
 };
 
+export const consultarNotificacoesSkill: AccountingSkill = {
+  id: "consultar_notificacoes",
+  name: "Consultar notificações",
+  description: "Notificações proativas da Bella — apenas recomendações.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const summary = await readSummary(companyId, deps);
+    const notifications = buildBellaNotifications({ summary });
+    if (notifications.length === 0) {
+      return { ok: true, text: "Nada exigindo atenção agora.", data: [] };
+    }
+    return {
+      ok: true,
+      text: notifications
+        .slice(0, 5)
+        .map((n) => `${n.title}: ${n.message}`)
+        .join(" "),
+      data: notifications,
+    };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -414,6 +438,7 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarRetiradaSkill,
   consultarDisponibilidadeSkill,
   consultarRiscoSkill,
+  consultarNotificacoesSkill,
 ];
 
 

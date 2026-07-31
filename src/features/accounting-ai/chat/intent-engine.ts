@@ -89,6 +89,27 @@ const RULES: IntentRule[] = [
     ],
   },
   {
+    intent: "resumo_do_dia",
+    weight: 13,
+    terms: [
+      [
+        "o que aconteceu hoje",
+        "o que aconteceu",
+        "novidades",
+        "tem alguma novidade",
+        "resumo do dia",
+        "como foi o dia",
+        "me atualiza",
+        "o que mudou hoje",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_notificacoes",
+    weight: 10,
+    terms: [["notificacao", "notificacoes", "avisos", "o que voce percebeu hoje"]],
+  },
+  {
     intent: "pontos_atencao",
     weight: 11,
     terms: [
