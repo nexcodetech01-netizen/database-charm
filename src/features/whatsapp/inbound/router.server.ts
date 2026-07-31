@@ -514,6 +514,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  // 4) Restaura o contexto Bella deste contato no singleton do engine.
 
   const engineKey = tenant.companyId; // Skills usam este id (empresa real)
   bellaConversationManager.clear(engineKey);
