@@ -238,6 +238,22 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
         </div>
       </div>
 
+      {labelTarget ? (
+        <LabelPrintDialog
+          open={!!labelTarget}
+          onOpenChange={(open) => {
+            if (!open) setLabelTarget(null);
+          }}
+          companyId={labelTarget.company_id}
+          item={{
+            name: labelTarget.name,
+            sku: labelTarget.sku,
+            barcode: labelTarget.barcode,
+            price: Number(labelTarget.price),
+          }}
+        />
+      ) : null}
+
       {publishTarget ? (
         <PublishToMercadoLivreDialog
           product={publishTarget}
