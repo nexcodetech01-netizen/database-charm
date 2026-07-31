@@ -134,8 +134,16 @@ export function AppSidebar() {
   };
 
   const visibleGroups = groups
-    .map((g) => ({ ...g, items: g.items.filter(canSee) }))
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(canSee).map((item) =>
+        item.children
+          ? { ...item, children: item.children.filter(canSee) }
+          : item,
+      ),
+    }))
     .filter((g) => g.items.length > 0);
+
 
   // Auto-fecha drawer mobile em QUALQUER transição de rota (inclusive quando
   // o pathname é o mesmo — clique no item já ativo, mudança apenas de search
