@@ -91,31 +91,34 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
   const items = [
     {
       label: "Vendas do dia",
-      value: data
-        ? `${formatNumber(data.dayCount)} · ${formatCurrency(data.dayTotal)}`
-        : undefined,
+      value: data ? formatCurrency(data.dayTotal) : undefined,
+      badge: data ? `${formatNumber(data.dayCount)} pedidos` : undefined,
       icon: CalendarDays,
+      iconTone: "bg-primary/10 text-primary ring-primary/15",
     },
     {
       label: "Vendas do mês",
-      value: data
-        ? `${formatNumber(data.monthCount)} · ${formatCurrency(data.monthTotal)}`
-        : undefined,
+      value: data ? formatCurrency(data.monthTotal) : undefined,
+      badge: data ? `${formatNumber(data.monthCount)} pedidos` : undefined,
       icon: Receipt,
-      tone: "text-primary",
+      iconTone: "bg-primary/10 text-primary ring-primary/15",
     },
     {
       label: "Ticket médio",
       value: data ? formatCurrency(data.averageTicket) : undefined,
+      badge: undefined,
       icon: TrendingUp,
+      iconTone: "bg-accent text-accent-foreground ring-border",
     },
     {
       label: "Total faturado",
       value: data ? formatCurrency(data.paidTotal) : undefined,
+      badge: undefined,
       icon: DollarSign,
-      tone: "text-success",
+      iconTone: "bg-success/10 text-success ring-success/20",
     },
   ];
+
 
   // Breakdown dinâmico vindo da RPC (GROUP BY status no banco).
   const breakdown = data?.breakdown ?? [];
