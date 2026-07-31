@@ -1,0 +1,1 @@
+ALTER TABLE public.fiscal_certificates DROP COLUMN IF EXISTS password_encrypted;

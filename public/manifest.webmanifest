@@ -1,0 +1,54 @@
+{
+  "id": "/",
+  "name": "NexOS — Gestão Inteligente",
+  "short_name": "NexOS",
+  "description": "ERP inteligente com Bella IA — vendas, clientes, financeiro e catálogo em um só lugar.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#0b1220",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "finance"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Visão geral do negócio",
+      "url": "/dashboard?source=pwa-shortcut",
+      "icons": [{ "src": "/shortcuts/dashboard.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Nova Venda",
+      "short_name": "Nova Venda",
+      "description": "Registrar uma nova venda no PDV",
+      "url": "/vendas/novo?source=pwa-shortcut",
+      "icons": [{ "src": "/shortcuts/venda.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Clientes",
+      "short_name": "Clientes",
+      "description": "Gerenciar clientes e CRM",
+      "url": "/clientes?source=pwa-shortcut",
+      "icons": [{ "src": "/shortcuts/clientes.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Bella IA",
+      "short_name": "Bella IA",
+      "description": "Conversar com a assistente Bella",
+      "url": "/bella?source=pwa-shortcut",
+      "icons": [{ "src": "/shortcuts/bella.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

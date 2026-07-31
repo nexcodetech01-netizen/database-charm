@@ -1,0 +1,12 @@
+export * from "./types";
+export { InventoryMetrics } from "./components/inventory-metrics";
+export { MovementFormDialog } from "./components/movement-form-dialog";
+export { MovementsTable } from "./components/movements-table";
+export { MovementsTimeline } from "./components/movements-timeline";
+export { MovementFilters } from "./components/movement-filters";
+export { MovementTypeBadge } from "./components/movement-type-badge";
+export { LowStockAlerts, StagnantProducts } from "./components/inventory-alerts";
+export * from "./hooks/use-inventory";
+export { inventoryService } from "./services/inventory.service";
+export * from "./lib/ledger";
+export { InventoryReconciliationWorkspace } from "./components/reconciliation-workspace";

@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS apply_inv_mov_after_insert ON public.inventory_movements;

@@ -1,0 +1,11 @@
+export * from "./types";
+export { customersService } from "./services/customers.service";
+export * from "./hooks/use-customers";
+export { CustomerStatusBadge } from "./components/customer-status-badge";
+export { CustomerMetrics } from "./components/customer-metrics";
+export { CustomerFilters } from "./components/customer-filters";
+export { CustomerTable } from "./components/customer-table";
+export { CustomerForm } from "./components/customer-form";
+export { InteractionTimeline } from "./components/interaction-timeline";
+export { InteractionForm } from "./components/interaction-form";
+export { Customer360Panel } from "./components/customer-360-panel";

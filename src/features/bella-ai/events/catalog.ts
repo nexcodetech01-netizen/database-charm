@@ -1,0 +1,248 @@
+import type {
+  BellaEventModule,
+  BellaEventSeverity,
+  BellaEventType,
+} from "./BellaEventTypes";
+
+/**
+ * Metadados padrão por tipo de evento.
+ *
+ * Centraliza módulo, severidade default, título e descrição amigável.
+ * O emissor pode sobrescrever severity/title/description na chamada
+ * `emit`, mas não precisa.
+ */
+export interface BellaEventTypeMeta {
+  module: BellaEventModule;
+  defaultSeverity: BellaEventSeverity;
+  title: string;
+  description: string;
+  /** Texto curto de recomendação, exibido em cartões compactos. */
+  defaultRecommendation?: string;
+}
+
+export const BELLA_EVENT_CATALOG: Record<BellaEventType, BellaEventTypeMeta> = {
+  // ============ Financeiro ============
+  "finance.invoice.overdue": {
+    module: "finance",
+    defaultSeverity: "critical",
+    title: "Conta vencida",
+    description: "Uma cobrança ultrapassou a data de vencimento.",
+    defaultRecommendation: "Enviar cobrança automática ao cliente.",
+  },
+  "finance.cashflow.negative": {
+    module: "finance",
+    defaultSeverity: "critical",
+    title: "Caixa negativo",
+    description: "As saídas superaram as entradas no período analisado.",
+    defaultRecommendation: "Revisar despesas registradas hoje.",
+  },
+  "finance.revenue.above_average": {
+    module: "finance",
+    defaultSeverity: "success",
+    title: "Receita acima da média",
+    description: "A receita do período supera a média histórica.",
+    defaultRecommendation: "Analisar categorias em alta e reforçar estoque.",
+  },
+  "finance.revenue.below_average": {
+    module: "finance",
+    defaultSeverity: "warning",
+    title: "Receita abaixo da média",
+    description: "A receita do período está abaixo da média histórica.",
+    defaultRecommendation: "Revisar campanhas ativas e agenda comercial.",
+  },
+  "finance.expense.out_of_pattern": {
+    module: "finance",
+    defaultSeverity: "warning",
+    title: "Despesa fora do padrão",
+    description: "Uma despesa destoa significativamente do padrão da categoria.",
+    defaultRecommendation: "Investigar lançamentos da categoria.",
+  },
+  "finance.expense.elevated": {
+    module: "finance",
+    defaultSeverity: "warning",
+    title: "Despesa elevada",
+    description: "O total de despesas do período está acima do esperado.",
+    defaultRecommendation: "Revisar contas a pagar e priorizar cortes.",
+  },
+
+  // ============ Financeiro v2 (Sprint 006) ============
+  "finance.receivable.created": {
+    module: "finance",
+    defaultSeverity: "info",
+    title: "Conta a receber criada",
+    description: "Um novo lançamento a receber foi registrado.",
+  },
+  "finance.receivable.paid": {
+    module: "finance",
+    defaultSeverity: "success",
+    title: "Recebimento confirmado",
+    description: "Uma conta a receber foi liquidada.",
+  },
+  "finance.payable.created": {
+    module: "finance",
+    defaultSeverity: "info",
+    title: "Conta a pagar criada",
+    description: "Um novo lançamento a pagar foi registrado.",
+  },
+  "finance.payable.paid": {
+    module: "finance",
+    defaultSeverity: "success",
+    title: "Pagamento efetuado",
+    description: "Uma conta a pagar foi liquidada.",
+  },
+  "finance.cash.updated": {
+    module: "finance",
+    defaultSeverity: "info",
+    title: "Caixa atualizado",
+    description: "A posição de caixa foi alterada por um evento financeiro.",
+  },
+
+
+  // ============ Clientes ============
+  "customers.became_delinquent": {
+    module: "customers",
+    defaultSeverity: "warning",
+    title: "Cliente ficou inadimplente",
+    description: "Um cliente passou a ter cobranças em aberto vencidas.",
+    defaultRecommendation: "Iniciar régua de cobrança amigável.",
+  },
+  "customers.birthday": {
+    module: "customers",
+    defaultSeverity: "info",
+    title: "Aniversário de cliente",
+    description: "Um cliente ativo faz aniversário hoje.",
+    defaultRecommendation: "Enviar mensagem personalizada.",
+  },
+  "customers.returned_to_buy": {
+    module: "customers",
+    defaultSeverity: "success",
+    title: "Cliente voltou a comprar",
+    description: "Cliente inativo realizou uma nova compra.",
+    defaultRecommendation: "Registrar follow-up e oferecer benefício.",
+  },
+  "customers.vip.inactive": {
+    module: "customers",
+    defaultSeverity: "warning",
+    title: "Cliente VIP sem comprar",
+    description: "Cliente VIP está há muito tempo sem realizar compras.",
+    defaultRecommendation: "Enviar campanha de recuperação.",
+  },
+
+  // ============ Estoque ============
+  "inventory.min_stock_reached": {
+    module: "inventory",
+    defaultSeverity: "warning",
+    title: "Estoque crítico",
+    description: "Produto atingiu o nível mínimo de estoque configurado.",
+    defaultRecommendation: "Gerar pedido ao fornecedor.",
+  },
+  "inventory.slow_moving": {
+    module: "inventory",
+    defaultSeverity: "info",
+    title: "Produto sem venda",
+    description: "Produto sem giro relevante no período monitorado.",
+    defaultRecommendation: "Avaliar campanha ou reprecificação.",
+  },
+  "inventory.out_of_stock": {
+    module: "inventory",
+    defaultSeverity: "critical",
+    title: "Produto esgotado",
+    description: "Produto está com estoque zerado.",
+    defaultRecommendation: "Gerar pedido de urgência.",
+  },
+
+  // ============ Vendas ============
+  "sales.goal_reached": {
+    module: "sales",
+    defaultSeverity: "success",
+    title: "Meta atingida",
+    description: "A meta de vendas do período foi atingida.",
+    defaultRecommendation: "Reconhecer a equipe e comunicar o resultado.",
+  },
+  "sales.above_average": {
+    module: "sales",
+    defaultSeverity: "success",
+    title: "Venda acima da média",
+    description: "O ticket ou volume do período supera a média histórica.",
+    defaultRecommendation: "Analisar canais e produtos em alta.",
+  },
+  "sales.decline": {
+    module: "sales",
+    defaultSeverity: "warning",
+    title: "Queda nas vendas",
+    description: "Detectada queda relevante nas vendas em relação ao período anterior.",
+    defaultRecommendation: "Analisar categorias com maior queda.",
+  },
+  "sales.average_ticket.drop": {
+    module: "sales",
+    defaultSeverity: "warning",
+    title: "Ticket médio caiu",
+    description: "O ticket médio do período está abaixo do padrão recente.",
+    defaultRecommendation: "Revisar mix e sugerir upsell no PDV.",
+  },
+
+  // ============ Vendas v2 (Sprint 005) ============
+  "sale.created": {
+    module: "sales",
+    defaultSeverity: "info",
+    title: "Venda criada",
+    description: "Um novo pedido foi registrado no sistema.",
+  },
+  "sale.approved": {
+    module: "sales",
+    defaultSeverity: "info",
+    title: "Venda aprovada",
+    description: "O pedido foi aprovado e está pronto para reserva/faturamento.",
+  },
+  "sale.reserved": {
+    module: "sales",
+    defaultSeverity: "info",
+    title: "Estoque reservado",
+    description: "O estoque foi reservado para atender ao pedido.",
+  },
+  "sale.invoiced": {
+    module: "sales",
+    defaultSeverity: "success",
+    title: "Venda faturada",
+    description: "O pedido foi faturado e baixado do estoque.",
+  },
+  "sale.cancelled": {
+    module: "sales",
+    defaultSeverity: "warning",
+    title: "Venda cancelada",
+    description: "Um pedido foi cancelado; estoque e financeiro foram revertidos.",
+  },
+
+  // ============ Fiscal v2 (Sprint 007) ============
+  "fiscal.nfe.created": {
+    module: "fiscal",
+    defaultSeverity: "info",
+    title: "NF-e criada",
+    description: "Uma nova NF-e foi registrada em rascunho.",
+  },
+  "fiscal.nfe.sent": {
+    module: "fiscal",
+    defaultSeverity: "info",
+    title: "NF-e enviada",
+    description: "A NF-e foi assinada e transmitida ao provedor fiscal.",
+  },
+  "fiscal.nfe.authorized": {
+    module: "fiscal",
+    defaultSeverity: "success",
+    title: "NF-e autorizada",
+    description: "A SEFAZ autorizou a NF-e e emitiu o protocolo.",
+  },
+  "fiscal.nfe.rejected": {
+    module: "fiscal",
+    defaultSeverity: "critical",
+    title: "NF-e rejeitada",
+    description: "A NF-e foi rejeitada pela SEFAZ.",
+    defaultRecommendation: "Revisar motivo de rejeição e reenviar.",
+  },
+  "fiscal.nfe.cancelled": {
+    module: "fiscal",
+    defaultSeverity: "warning",
+    title: "NF-e cancelada",
+    description: "A NF-e autorizada foi cancelada dentro do prazo.",
+  },
+};

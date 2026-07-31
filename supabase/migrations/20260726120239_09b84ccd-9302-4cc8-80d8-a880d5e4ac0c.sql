@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_cancel_credit_on_sale_cancel ON public.sales;

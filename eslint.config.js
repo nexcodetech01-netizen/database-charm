@@ -36,5 +36,44 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  // ADR-016 — bloqueia service_role fora de *.server.ts / src/routes/api/**
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["**/*.server.ts", "src/routes/api/**", "src/integrations/supabase/client.server.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "server-only",
+              message: "Use `*.server.ts` naming instead.",
+            },
+            {
+              name: "@/integrations/supabase/client.server",
+              message:
+                "supabaseAdmin é proibido nesta camada (ADR-016). Use ExecutionContext.supabase (RLS) ou mova para um arquivo *.server.ts dedicado.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/client.server"],
+              message:
+                "Import de admin client apenas em *.server.ts / src/routes/api (ADR-016).",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "MemberExpression[property.name=/SERVICE_ROLE/]",
+          message:
+            "SERVICE_ROLE só pode ser acessado em arquivos *.server.ts (ADR-016).",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

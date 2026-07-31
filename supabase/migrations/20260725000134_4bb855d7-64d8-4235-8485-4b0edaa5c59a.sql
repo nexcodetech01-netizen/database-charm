@@ -1,0 +1,2 @@
+ALTER TABLE public.financial_transactions DROP CONSTRAINT financial_transactions_source_check;
+ALTER TABLE public.financial_transactions ADD CONSTRAINT financial_transactions_source_check CHECK (source = ANY (ARRAY['manual'::text, 'sale'::text, 'sale_cancellation'::text, 'purchase'::text, 'bella_pay'::text, 'transfer'::text]));
