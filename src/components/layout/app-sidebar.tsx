@@ -184,15 +184,38 @@ export function AppSidebar() {
           </div>
 
           <ul className="space-y-1">
-            {group.items.map((item) => (
-              <NavRow
-                key={item.title}
-                item={item}
-                active={currentPath === item.url}
-                onComingSoon={handleComingSoon}
-              />
-            ))}
+            {group.items.map((item) =>
+              item.children?.length ? (
+                <li key={item.title}>
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-semibold text-sidebar-foreground/80">
+                    <item.icon
+                      className="h-[17px] w-[17px] shrink-0 text-muted-foreground/80"
+                      strokeWidth={2}
+                    />
+                    <span className="flex-1 truncate">{item.title}</span>
+                  </div>
+                  <ul className="ml-[26px] mt-1 space-y-1 border-l border-sidebar-border/60 pl-2">
+                    {item.children.map((child) => (
+                      <NavRow
+                        key={child.title}
+                        item={child}
+                        active={currentPath === child.url}
+                        onComingSoon={handleComingSoon}
+                      />
+                    ))}
+                  </ul>
+                </li>
+              ) : (
+                <NavRow
+                  key={item.title}
+                  item={item}
+                  active={currentPath === item.url}
+                  onComingSoon={handleComingSoon}
+                />
+              ),
+            )}
           </ul>
+
         </div>
       ))}
     </nav>
