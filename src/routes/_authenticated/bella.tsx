@@ -1,16 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Sparkles,
-  Lightbulb,
-  Zap,
-  Wallet,
-  TrendingUp,
-  AlertTriangle,
-  PiggyBank,
-  Plus,
-  Cog,
-  type LucideIcon,
-} from "lucide-react";
+import { Sparkles, Lightbulb, Plus, Cog } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { cn } from "@/lib/utils";
 import {
-  BellaExecutiveNarrative,
-  BellaPrioritiesToday,
   BellaAskPanel,
   BellaOverviewGrid,
   BellaInsightsGrid,
@@ -32,11 +19,10 @@ import {
   BellaHistoryTimeline,
   BellaRecentConversations,
   InsightsPanel,
-  BellaDailyBriefCard,
-  BellaPriorityCenterCard,
-  BellaMetricsStrip,
+  BellaKpiRow,
+  BellaExecutiveStrip,
+  BellaPrioritiesBlock,
   useBellaHomeSnapshot,
-  ExecutiveSummaryCard,
 } from "@/features/bella-ai";
 import { NexosEventsPanel } from "@/features/bella-ai/events/components/NexosEventsPanel";
 import { requirePermission } from "@/features/rbac";
@@ -58,22 +44,6 @@ export const Route = createFileRoute("/_authenticated/bella")({
  * conteúdo sem duplicação. Nenhuma regra de negócio, provider ou skill
  * foi tocada — apenas a organização visual da UI.
  */
-
-interface CompactKpi {
-  key: string;
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone: string;
-}
-
-// KPIs principais: Receita, Lucro, Caixa, Alertas.
-const COMPACT_KPIS: CompactKpi[] = [
-  { key: "revenue", label: "Receita do mês", value: "R$ 0,00", icon: TrendingUp, tone: "bg-primary/10 text-primary" },
-  { key: "profit", label: "Lucro estimado", value: "R$ 0,00", icon: PiggyBank, tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  { key: "cash", label: "Caixa disponível", value: "R$ 0,00", icon: Wallet, tone: "bg-primary/10 text-primary" },
-  { key: "alerts", label: "Alertas críticos", value: "0", icon: AlertTriangle, tone: "bg-danger/10 text-danger" },
-];
 
 function BellaPage() {
   const { company } = Route.useRouteContext();
@@ -102,30 +72,10 @@ function BellaPage() {
           </Button>
         </div>
       }
-      kpis={
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {COMPACT_KPIS.map(({ key, label, value, icon: Icon, tone }) => (
-            <div
-              key={key}
-              className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-card px-3 py-2"
-            >
-              <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-md", tone)}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  {label}
-                </div>
-                <div className="truncate text-sm font-semibold tracking-tight">
-                  {value}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      }
+      kpis={<BellaKpiRow />}
+      asideWidth="wide"
       aside={
-        // Coluna direita — destaque total para "Pergunte para Bella".
+        // Coluna direita (4/12) — barra fixa da Bella IA.
         <div className="space-y-4">
           <BellaAskPanel />
         </div>
@@ -141,19 +91,15 @@ function BellaPage() {
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
 
-        {/* HOME — 0. Resumo Executivo · 1. Daily Brief · 2. Prioridades · 3. KPIs · 4. Contexto extra */}
-        <TabsContent value="overview" className="space-y-4">
-          <ExecutiveSummaryCard period="month" />
-          <BellaDailyBriefCard brief={snapshot.brief} />
-          <BellaPriorityCenterCard priorities={snapshot.priorities} />
-          <BellaMetricsStrip metrics={snapshot.metrics} />
-          <BellaExecutiveNarrative />
-          <BellaPrioritiesToday />
-          <NexosEventsPanel companyId={company.id} />
+        {/* HOME — KPIs (topo) · Resumo executivo enxuto · Prioridades de hoje */}
+        <TabsContent value="overview" className="space-y-6">
+          <BellaExecutiveStrip period="month" />
+          <BellaPrioritiesBlock priorities={snapshot.priorities} />
         </TabsContent>
 
         {/* INSIGHTS — crítico, atenção, oportunidade + insights ativos. */}
         <TabsContent value="insights" className="space-y-6">
+          <NexosEventsPanel companyId={company.id} />
           <BellaOverviewGrid />
           <InsightsPanel />
           <BellaInsightsGrid />

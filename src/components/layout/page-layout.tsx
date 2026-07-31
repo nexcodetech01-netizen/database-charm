@@ -29,6 +29,8 @@ export interface PageLayoutProps {
   toolbar?: ReactNode;
   /** Painel lateral fixo (ex.: detalhes / filtros avançados). */
   aside?: ReactNode;
+  /** Largura do painel lateral: `default` (320px) ou `wide` (grid 8/4). */
+  asideWidth?: "default" | "wide";
   /** Conteúdo principal da página. */
   children: ReactNode;
   showBreadcrumb?: boolean;
@@ -45,6 +47,7 @@ export function PageLayout({
   kpis,
   toolbar,
   aside,
+  asideWidth = "default",
   children,
   showBreadcrumb = true,
   className,
@@ -63,9 +66,31 @@ export function PageLayout({
       {kpis}
       {toolbar}
       {aside ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className={cn("min-w-0 space-y-4", contentClassName)}>{children}</div>
-          <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">{aside}</aside>
+        <div
+          className={cn(
+            "grid gap-6",
+            asideWidth === "wide"
+              ? "lg:grid-cols-12"
+              : "lg:grid-cols-[minmax(0,1fr)_320px]",
+          )}
+        >
+          <div
+            className={cn(
+              "min-w-0 space-y-4",
+              asideWidth === "wide" && "lg:col-span-8",
+              contentClassName,
+            )}
+          >
+            {children}
+          </div>
+          <aside
+            className={cn(
+              "space-y-4 lg:sticky lg:top-20 lg:self-start",
+              asideWidth === "wide" && "lg:col-span-4",
+            )}
+          >
+            {aside}
+          </aside>
         </div>
       ) : (
         <div className={cn("space-y-4", contentClassName)}>{children}</div>
