@@ -96,6 +96,7 @@ const groups: NavGroup[] = [
     items: [
       { title: "WhatsApp", url: ROUTES.whatsapp, icon: MessageCircle, status: "available" },
       { title: "Bella IA", url: ROUTES.bella, icon: Sparkles, status: "available", permission: "bella_ia.view" },
+      { title: "Bella Contadora", url: ROUTES.bellaAccountant, icon: Calculator, status: "available", permission: "reports.view" },
       { title: "Conhecimento Bella", url: ROUTES.bellaKnowledge, icon: BookOpen, status: "available", permission: "bella_ia.view" },
       { title: "Marketing", url: ROUTES.marketing, icon: Megaphone, status: "available", permission: "marketing.view" },
     ],

@@ -33,6 +33,7 @@ export const ROUTES = {
   indicators: "/indicadores",
 
   bella: "/bella",
+  bellaAccountant: "/bella-contadora",
   bellaKnowledge: "/bella-conhecimento",
   settings: "/configuracoes",
   processes: "/processamentos",
