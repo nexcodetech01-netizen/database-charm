@@ -13,6 +13,11 @@ import type {
 
 import { computeItemTotal, computeTotals, computeItemMargin } from "../types";
 import { applyDataScope, type DataScope } from "../lib/test-data-scope";
+import {
+  DEFAULT_SALE_ORIGIN,
+  saleRequiresCustomer,
+  type SaleOrigin,
+} from "./sale-origin";
 import { buildCostSnapshot } from "@/features/inventory/lib/ledger";
 import {
   FISCAL_DELETE_BLOCKED_MESSAGE,

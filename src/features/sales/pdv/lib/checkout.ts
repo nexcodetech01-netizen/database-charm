@@ -15,12 +15,17 @@ export function nextPdvSaleNumber(now: Date = new Date()): string {
   return `PDV-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
-/** Validação do carrinho — exclusivamente via SaleEngine. */
+/**
+ * Validação do carrinho — exclusivamente via SaleEngine.
+ *
+ * RC2 (P0.2): o PDV não pré-valida cliente. A obrigatoriedade (ou não) é
+ * decidida no ponto único compartilhado, dentro de `salesService.create`,
+ * a partir da origem explícita `pdv`. O `SaleEngine` não foi alterado e
+ * segue exigindo cliente no formulário tradicional.
+ */
 export function validatePdvSale(state: SaleDraftState): SaleCheck {
   const identity = SaleEngine.validateIdentity(state);
   if (!identity.ok) return identity;
-  const customer = SaleEngine.validateCustomer(state);
-  if (!customer.ok) return customer;
   return SaleEngine.validateItems(state.items);
 }
 
