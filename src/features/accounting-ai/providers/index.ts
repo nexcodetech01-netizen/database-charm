@@ -8,6 +8,7 @@
  */
 import type {
   AccountingPeriod,
+  AccountingSummary,
   AccountingTrends,
   BusinessHealth,
   CashProjection,
@@ -42,6 +43,12 @@ import { suggestPayroll } from "../lib/payroll";
 
 export interface ProviderDeps {
   services?: AccountingAiServices;
+  /**
+   * Resumo consolidado já agregado (Sprint 6.1.6 — P1).
+   * Quando presente, skills e consumidores reutilizam este objeto em vez de
+   * reconstruir `buildAccountingSummary`. Nenhum provider recalcula nada.
+   */
+  summary?: AccountingSummary | null;
   period?: AccountingPeriod;
   /** Data operacional (ISO). Quando ausente, usa a data local. */
   today?: string;
