@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, XCircle } from "lucide-react";
+import { Loader2, CreditCard } from "lucide-react";
 
 type Props = {
   onFinalize?: () => void;
@@ -13,7 +13,7 @@ type Props = {
 /**
  * Painel de finalização do PDV.
  * Grava a venda pelo fluxo existente e abre o CheckoutDialog (motor único
- * de pagamentos do NexOS). Sprint 2.9: botões padronizados e destacados.
+ * de pagamentos do NexOS). Sprint 3.1: uma única ação em destaque.
  */
 export function PDVPaymentPanel({
   onFinalize,
@@ -23,39 +23,37 @@ export function PDVPaymentPanel({
   cancelDisabled,
 }: Props = {}) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <p className="text-sm font-semibold">Finalização</p>
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        Ao finalizar, o checkout do NexOS abre com todas as formas de
-        pagamento: dinheiro (com troco), PIX, cartão, crediário, link e boleto.
-      </p>
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
       <Button
         id="pdv-finalize"
-        className="mt-3 h-12 w-full text-base font-semibold"
+        className="h-14 w-full text-base font-semibold"
         onClick={onFinalize}
         disabled={disabled || isSaving || !onFinalize}
       >
         {isSaving ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Gravando...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+            Processando venda...
           </>
         ) : (
           <>
-            <CreditCard className="mr-2 h-4 w-4" />
+            <CreditCard className="mr-2 h-5 w-5" aria-hidden="true" />
             Finalizar Venda (F5)
           </>
         )}
       </Button>
+      <p className="mt-3 text-xs text-muted-foreground">
+        O checkout abre com todas as formas de pagamento: dinheiro (com troco),
+        PIX, cartão, crediário, link e boleto.
+      </p>
       <Button
         type="button"
-        variant="outline"
-        className="mt-2 h-11 w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        variant="ghost"
+        className="mt-2 h-9 w-full text-xs text-muted-foreground hover:text-destructive"
         onClick={onCancelSale}
         disabled={cancelDisabled || !onCancelSale}
       >
-        <XCircle className="mr-2 h-4 w-4" />
-        Cancelar Venda
+        Cancelar venda
       </Button>
     </div>
   );

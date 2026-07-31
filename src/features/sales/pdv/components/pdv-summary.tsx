@@ -38,14 +38,14 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-muted-foreground">{label}</span>
-      <span className="tabular-nums">{value}</span>
+      <span className="font-medium tabular-nums">{value}</span>
     </div>
   );
 }
 
 /**
- * Resumo compacto do PDV — apresenta os valores já calculados pelo SaleEngine.
- * Nenhum total é recalculado aqui.
+ * Painel financeiro do PDV — apresenta os valores já calculados pelo
+ * SaleEngine. Nenhum total é recalculado aqui.
  */
 export function PDVSummary({
   totals,
@@ -60,12 +60,12 @@ export function PDVSummary({
   const hint = discountHint(discount);
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <p className="text-sm font-semibold">Resumo</p>
+    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+      <p className="text-sm font-semibold">Resumo da venda</p>
 
-      <div className="mt-3 space-y-2 text-sm">
-        <Row label="Quantidade total" value={String(itemCount)} />
+      <div className="mt-4 space-y-2.5 text-sm">
         <Row label="Itens" value={String(lineCount ?? itemCount)} />
+        <Row label="Quantidade" value={String(itemCount)} />
         <Row label="Subtotal" value={formatCurrency(totals.items_total)} />
 
         <div className="flex items-center justify-between gap-3">
@@ -80,7 +80,7 @@ export function PDVSummary({
             disabled={readOnly}
             value={discountValue || ""}
             onChange={(e) => onDiscountChange(Number(e.target.value) || 0)}
-            className="h-10 w-32 text-right text-base tabular-nums"
+            className="h-11 w-32 text-right text-base tabular-nums"
           />
         </div>
         {hint && (
@@ -100,18 +100,16 @@ export function PDVSummary({
         )}
       </div>
 
-      <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
-          <span className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Total da venda
-          </span>
-          <span
-            data-testid="pdv-grand-total"
-            className="shrink-0 text-3xl font-bold tabular-nums text-primary"
-          >
-            {formatCurrency(totals.grand_total)}
-          </span>
-        </div>
+      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 px-5 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Total da venda
+        </p>
+        <p
+          data-testid="pdv-grand-total"
+          className="mt-1 truncate text-4xl font-bold leading-none tabular-nums text-primary"
+        >
+          {formatCurrency(totals.grand_total)}
+        </p>
       </div>
     </div>
   );

@@ -70,8 +70,8 @@ const groups: NavGroup[] = [
         status: "available",
         permission: "sales.view",
         children: [
-          { title: "Gestão de vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
-          { title: "PDV", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
+          { title: "Pedidos e histórico", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
+          { title: "PDV — Frente de caixa", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
         ],
       },
       { title: "Clientes", url: ROUTES.customers, icon: Users, status: "available", permission: "customers.view" },

@@ -81,6 +81,30 @@ export const PDV_STATUS_TONE_CLASS: Record<PdvStatusTone, string> = {
 };
 
 /**
+ * Estado visual da operação (Sprint 3.1) — SOMENTE apresentação.
+ * Deriva de flags já existentes na tela; não altera nenhum fluxo.
+ */
+export type PdvActivity = {
+  label: string;
+  tone: PdvStatusTone;
+};
+
+export function pdvActivity(input: {
+  saving?: boolean;
+  fiscalPending?: boolean;
+  stage: PdvStage;
+}): PdvActivity {
+  if (input.saving) return { label: "Processando venda", tone: "pending" };
+  if (input.fiscalPending) return { label: "Emitindo NFC-e", tone: "pending" };
+  if (input.stage === "receiving")
+    return { label: "Pagamento em andamento", tone: "pending" };
+  if (input.stage === "completed")
+    return { label: "Venda concluída", tone: "done" };
+  return { label: "Montando carrinho", tone: "open" };
+}
+
+
+/**
  * Read model da futura segunda tela do cliente.
  *
  * PREPARAÇÃO APENAS — nenhuma tela é renderizada nesta sprint. O objetivo é

@@ -22,7 +22,7 @@ import {
   pdvSessionReducer,
   printPdvReceipt,
 } from "../lib/completion";
-import { pdvCashStatus, resolvePdvStage } from "../lib/layout";
+import { pdvActivity, pdvCashStatus, resolvePdvStage } from "../lib/layout";
 import { formatOpenedAt } from "@/features/cash";
 import { usePdvFocus } from "../hooks/use-pdv-focus";
 import { usePdvSaleWatch } from "../hooks/use-pdv-sale-watch";
@@ -276,6 +276,11 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             onClearSearch={focus.focusSearch}
             operatorName={operatorName}
             sessionLabel={session?.id ? session.id.slice(0, 8) : null}
+            activity={pdvActivity({
+              saving: checkout.isSaving,
+              fiscalPending,
+              stage,
+            })}
           />
         }
         cart={

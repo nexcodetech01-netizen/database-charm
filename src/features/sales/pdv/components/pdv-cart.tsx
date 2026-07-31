@@ -55,9 +55,9 @@ const PDVCartRow = memo(function PDVCartRow({
       data-active={active || undefined}
       onFocus={activate}
       onMouseDown={activate}
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
-      <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
+      <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted/40">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -66,15 +66,18 @@ const PDVCartRow = memo(function PDVCartRow({
             className="h-full w-full object-cover"
           />
         ) : (
-          <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
+          <ImageIcon
+            className="h-5 w-5 text-muted-foreground/60"
+            aria-hidden="true"
+          />
         )}
       </div>
 
       <div className="min-w-0">
-        <p className="truncate text-[15px] font-medium leading-tight">
+        <p className="truncate text-[15px] font-semibold leading-tight">
           {item.description}
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
           <span className="font-mono">{item.sku ?? "sem SKU"}</span>
           <span aria-hidden="true">·</span>
           <span className={lowStock ? "font-medium text-destructive" : ""}>
@@ -87,15 +90,15 @@ const PDVCartRow = memo(function PDVCartRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
-        <div className="flex items-center gap-1 rounded-lg border p-1">
+      <div className="flex shrink-0 items-center gap-4">
+        <div className="flex items-center gap-1 rounded-xl border bg-background p-1">
           <Button
             type="button"
             size="icon"
             variant="ghost"
             className="h-9 w-9"
             disabled={readOnly}
-            aria-label="Diminuir quantidade"
+            aria-label={`Diminuir quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity - 1)}
           >
             <Minus className="h-4 w-4" />
@@ -119,7 +122,7 @@ const PDVCartRow = memo(function PDVCartRow({
             variant="ghost"
             className="h-9 w-9"
             disabled={readOnly}
-            aria-label="Aumentar quantidade"
+            aria-label={`Aumentar quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
           >
             <Plus className="h-4 w-4" />
@@ -127,7 +130,7 @@ const PDVCartRow = memo(function PDVCartRow({
         </div>
 
         <div className="w-28 text-right">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Subtotal
           </p>
           <p className="text-base font-semibold tabular-nums">
@@ -139,9 +142,9 @@ const PDVCartRow = memo(function PDVCartRow({
           type="button"
           size="icon"
           variant="ghost"
-          className="h-9 w-9 text-destructive"
+          className="h-9 w-9 text-muted-foreground hover:text-destructive"
           disabled={readOnly}
-          aria-label="Remover item"
+          aria-label={`Remover ${item.description}`}
           onClick={() => onRemove(uiKey)}
         >
           <Trash2 className="h-4 w-4" />
@@ -153,7 +156,7 @@ const PDVCartRow = memo(function PDVCartRow({
 
 /**
  * Carrinho do PDV — manipula apenas o draft canônico da venda.
- * Sprint 2.9: linhas com imagem, SKU, estoque, preço e subtotal.
+ * Sprint 3.1: hierarquia visual, respiro e empty state profissional.
  */
 export function PDVCart({
   items,
@@ -164,10 +167,13 @@ export function PDVCart({
   readOnly,
 }: Props) {
   return (
-    <div className="flex flex-col rounded-xl border bg-card shadow-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-5 py-3">
+    <div className="flex flex-col rounded-2xl border bg-card shadow-sm">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-5 py-4">
         <div className="flex min-w-0 items-center gap-2">
-          <ShoppingCart className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ShoppingCart
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
           <p className="truncate text-sm font-semibold">Carrinho</p>
         </div>
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
@@ -176,11 +182,22 @@ export function PDVCart({
       </div>
 
       {items.length === 0 ? (
-        <div className="flex min-h-80 flex-col items-center justify-center gap-2 p-10 text-center">
-          <Package className="h-9 w-9 text-muted-foreground/50" />
-          <p className="text-sm font-medium">Carrinho vazio</p>
+        <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-12 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-muted">
+            <Package
+              className="h-8 w-8 text-muted-foreground/70"
+              aria-hidden="true"
+            />
+          </div>
+          <p className="text-base font-semibold">Carrinho vazio</p>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            Passe o leitor de código de barras ou pesquise um produto.
+          </p>
           <p className="text-xs text-muted-foreground">
-            Bipe um produto ou digite o código na pesquisa e pressione ENTER.
+            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase">
+              Enter
+            </kbd>{" "}
+            adiciona automaticamente
           </p>
         </div>
       ) : (
