@@ -140,16 +140,16 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Período
             </span>
             <Select
               value={rangeKey}
               onValueChange={(v) => setRangeKey(v as RangeKey)}
             >
-              <SelectTrigger className="h-8 w-[180px] text-sm">
+              <SelectTrigger className="h-9 w-[180px] rounded-xl text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -161,8 +161,8 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Info className="h-3.5 w-3.5" />
+          <div className="col-span-2 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground sm:col-auto">
+            <Info className="h-3.5 w-3.5 shrink-0" />
             <span>Faturamento e contagem consideram apenas vendas pagas.</span>
           </div>
         </div>
@@ -173,11 +173,11 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
             return (
               <div
                 key={it.label}
-                className="rounded-xl border border-border bg-card p-6"
+                className="rounded-2xl border border-border/70 bg-card p-5 transition-shadow hover:shadow-sm"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm text-muted-foreground">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="truncate text-sm font-medium text-muted-foreground">
                       {it.label}
                     </span>
                     <Tooltip>
@@ -185,7 +185,7 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
                         <button
                           type="button"
                           aria-label="Como esta métrica é calculada"
-                          className="text-muted-foreground/70 transition hover:text-foreground"
+                          className="shrink-0 text-muted-foreground/70 transition hover:text-foreground"
                         >
                           <Info className="h-3.5 w-3.5" />
                         </button>
@@ -195,23 +195,39 @@ export function SaleMetrics({ companyId }: { companyId: string }) {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <div className="grid h-8 w-8 place-items-center rounded-md bg-accent">
-                    <Icon className={`h-4 w-4 ${it.tone ?? "text-primary"}`} />
+                  <div
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ${it.iconTone}`}
+                  >
+                    <Icon className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-3">
+
+                <div className="mt-4 space-y-2">
                   {isLoading ? (
-                    <Skeleton className="h-8 w-32" />
+                    <>
+                      <Skeleton className="h-8 w-32" />
+                      {it.badge !== undefined ? (
+                        <Skeleton className="h-5 w-24 rounded-lg" />
+                      ) : null}
+                    </>
                   ) : (
-                    <span className="text-2xl font-semibold tracking-tight">
-                      {it.value ?? "—"}
-                    </span>
+                    <>
+                      <p className="text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums">
+                        {it.value ?? "—"}
+                      </p>
+                      {it.badge ? (
+                        <span className="inline-flex items-center rounded-lg bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums">
+                          {it.badge}
+                        </span>
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>
             );
           })}
         </div>
+
 
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-3 flex items-center justify-between">
