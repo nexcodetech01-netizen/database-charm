@@ -26,6 +26,11 @@ export interface AskBellaOptions {
   deps?: ProviderDeps;
 }
 
+/**
+ * Sprint 6.1.6 — P1: o resumo consolidado é agregado UMA única vez por
+ * pergunta e injetado em `ProviderDeps`. Todas as skills do plano leem
+ * exatamente o mesmo `AccountingSummary`; nenhuma reconstrói a agregação.
+ */
 export async function askBella(
   question: string,
   companyId: string,
@@ -34,6 +39,11 @@ export async function askBella(
   const match = detectIntent(question, { context: options.context ?? null });
   const plan = planIntent(match);
   if (plan.shape === "none") return buildAnswer(plan, []);
-  const outcomes = await executePlan(plan, companyId, { deps: options.deps });
+
+  const baseDeps = options.deps;
+  const summary = baseDeps?.summary ?? (await buildAccountingSummary(companyId, baseDeps));
+  const deps: ProviderDeps = { ...baseDeps, summary, period: summary.period };
+
+  const outcomes = await executePlan(plan, companyId, { deps });
   return buildAnswer(plan, outcomes);
 }
