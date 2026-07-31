@@ -15,12 +15,18 @@ export function nextPdvSaleNumber(now: Date = new Date()): string {
   return `PDV-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
-/** Validação do carrinho — exclusivamente via SaleEngine. */
+/**
+ * Validação do carrinho — exclusivamente via SaleEngine.
+ *
+ * RC2 (P0.2): no balcão o cliente é OPCIONAL. Sem cliente a venda é de
+ * consumidor final e grava `customer_id = null` (coluna já nullable), o que
+ * a NFC-e modelo 65 aceita sem identificação. Nenhuma regra do SaleEngine
+ * foi alterada: o PDV apenas não aplica `validateCustomer`, que segue
+ * valendo para o formulário de vendas.
+ */
 export function validatePdvSale(state: SaleDraftState): SaleCheck {
   const identity = SaleEngine.validateIdentity(state);
   if (!identity.ok) return identity;
-  const customer = SaleEngine.validateCustomer(state);
-  if (!customer.ok) return customer;
   return SaleEngine.validateItems(state.items);
 }
 
@@ -53,8 +59,15 @@ export async function submitPdvSale(input: {
     cashSessionId: input.cashSessionId,
   });
 
+  // Consumidor final: sem cliente selecionado, grava `null` (nunca "").
+  const customerId = (payload.customer_id ?? "").trim() || null;
+
   try {
-    const sale = await input.create({ ...payload, items: input.state.items });
+    const sale = await input.create({
+      ...payload,
+      customer_id: customerId as unknown as string,
+      items: input.state.items,
+    });
     return { ok: true, sale };
   } catch (err) {
     return {
