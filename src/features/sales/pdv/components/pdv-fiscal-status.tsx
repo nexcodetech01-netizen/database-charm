@@ -31,7 +31,7 @@ export function PDVFiscalStatus({ outcome, isIssuing, onRetry }: Props) {
   if (outcome.status === "issued") {
     const { document } = outcome;
     return (
-      <div className="space-y-2 rounded-lg border border-border/60 bg-background/60 p-3">
+      <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
         <p className="flex items-center gap-2 text-sm font-medium">
           <FileText className="h-4 w-4" />
           {document.pending
@@ -63,7 +63,7 @@ export function PDVFiscalStatus({ outcome, isIssuing, onRetry }: Props) {
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+    <div className="space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3">
       <p className="flex items-center gap-2 text-sm font-medium text-amber-700">
         <AlertTriangle className="h-4 w-4" /> {PDV_NFCE_FAILURE_MESSAGE}
       </p>

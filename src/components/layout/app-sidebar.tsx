@@ -176,29 +176,30 @@ export function AppSidebar() {
   );
 
   const navList = (
-    <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-6">
+    <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
       {visibleGroups.map((group, i) => (
-        <div key={group.label} className={i > 0 ? "mt-6 border-t border-sidebar-border/50 pt-6" : ""}>
-          <div className="mb-3 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+        <div key={group.label} className={i > 0 ? "mt-3.5 border-t border-sidebar-border/50 pt-3.5" : ""}>
+          <div className="mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
             {group.label}
           </div>
 
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {group.items.map((item) =>
               item.children?.length ? (
                 <li key={item.title}>
-                  <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-semibold text-sidebar-foreground/80">
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-[13.5px] font-semibold text-sidebar-foreground/80">
                     <item.icon
                       className="h-[17px] w-[17px] shrink-0 text-muted-foreground/80"
                       strokeWidth={2}
                     />
                     <span className="flex-1 truncate">{item.title}</span>
                   </div>
-                  <ul className="ml-[26px] mt-1 space-y-1 border-l border-sidebar-border/60 pl-2">
+                  <ul className="ml-[26px] mt-0.5 space-y-0.5 border-l border-sidebar-border/60 pl-2">
                     {item.children.map((child) => (
                       <NavRow
                         key={child.title}
                         item={child}
+                        nested
                         active={currentPath === child.url}
                         onComingSoon={handleComingSoon}
                       />
@@ -291,10 +292,13 @@ function StatusBadge({ status }: { status: ModuleStatus }) {
 function NavRow({
   item,
   active,
+  nested,
   onComingSoon,
 }: {
   item: NavItem;
   active: boolean;
+  /** Subitem de um grupo (ex.: PDV dentro de Vendas) — indentação e escala menores. */
+  nested?: boolean;
   onComingSoon: (title: string) => void;
 }) {
   const Icon = item.icon;
@@ -302,17 +306,19 @@ function NavRow({
 
   const content = (
     <>
-      {/* Barra vertical de destaque à esquerda no item ativo */}
+      {/* Indicador de item ativo: barra à esquerda (topo) ou traço sutil (subitem) */}
       <span
         aria-hidden="true"
         className={cn(
-          "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary transition-all duration-200",
+          "absolute top-1/2 -translate-y-1/2 rounded-r-full bg-primary transition-all duration-200",
+          nested ? "-left-2 h-4 w-[2px]" : "left-0 h-5 w-[3px]",
           active ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50",
         )}
       />
       <Icon
         className={cn(
-          "h-[17px] w-[17px] shrink-0 transition-colors duration-200",
+          "shrink-0 transition-colors duration-200",
+          nested ? "h-[15px] w-[15px]" : "h-[17px] w-[17px]",
           active
             ? "text-primary"
             : "text-muted-foreground/80 group-hover:text-sidebar-foreground",
@@ -332,11 +338,15 @@ function NavRow({
   );
 
   const className = cn(
-    "group relative flex w-full items-center gap-3 rounded-lg pl-3 pr-2.5 py-2.5 text-[13.5px] text-left transition-all duration-200",
+    "group relative flex w-full items-center rounded-lg text-left transition-all duration-200",
+    nested
+      ? "gap-2.5 pl-2.5 pr-2 py-1.5 text-[13px]"
+      : "gap-3 pl-3 pr-2.5 py-2 text-[13.5px]",
     active
       ? "bg-sidebar-accent/70 text-sidebar-foreground shadow-sm ring-1 ring-sidebar-border/50"
       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
   );
+
 
 
   if (isComingSoon) {

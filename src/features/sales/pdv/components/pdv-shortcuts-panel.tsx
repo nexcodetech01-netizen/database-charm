@@ -50,7 +50,7 @@ export const PDVShortcutsDialog = memo(function PDVShortcutsDialog() {
             Operação completa pelo teclado, sem tirar a mão do leitor.
           </DialogDescription>
         </DialogHeader>
-        <ul aria-label="Atalhos do PDV" className="divide-y rounded-lg border">
+        <ul aria-label="Atalhos do PDV" className="divide-y rounded-xl border">
           {PDV_SHORTCUTS.map((s) => (
             <li
               key={s.key}

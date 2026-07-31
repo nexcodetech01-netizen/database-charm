@@ -17,7 +17,7 @@ export function PDVBarcodeInput({ companyId, onProduct }: Props) {
   const barcode = usePdvBarcode({ companyId, onProduct });
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-xl border bg-background p-3">
       <Label htmlFor="pdv-barcode" className="text-xs text-muted-foreground">
         Leitor de código de barras
       </Label>
