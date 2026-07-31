@@ -167,6 +167,51 @@ export function AppSidebar() {
     </div>
   );
 
+  const canSeePdv = permsLoading || has("sales.view");
+  const pdvActive = currentPath === ROUTES.pdv;
+
+  const pdvQuickAccess = canSeePdv ? (
+    <div className="px-3 pt-3">
+      <Link
+        to={ROUTES.pdv}
+        className={cn(
+          "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
+          pdvActive
+            ? "bg-primary text-primary-foreground shadow-md"
+            : "bg-primary/10 text-primary ring-1 ring-primary/20 hover:bg-primary/15 hover:shadow-sm",
+        )}
+      >
+        <span
+          className={cn(
+            "grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors",
+            pdvActive ? "bg-primary-foreground/15" : "bg-primary/15",
+          )}
+        >
+          <MonitorSmartphone className="h-[18px] w-[18px]" strokeWidth={2.1} />
+        </span>
+        <span className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate text-[13.5px] font-semibold">PDV</span>
+          <span
+            className={cn(
+              "truncate text-[11px] font-medium",
+              pdvActive ? "text-primary-foreground/75" : "text-primary/70",
+            )}
+          >
+            Frente de caixa
+          </span>
+        </span>
+        <Zap
+          className={cn(
+            "ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+            pdvActive ? "text-primary-foreground/80" : "text-primary/70",
+          )}
+          strokeWidth={2.2}
+        />
+      </Link>
+    </div>
+  ) : null;
+
+
   const navList = (
     <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
       {visibleGroups.map((group, i) => (
