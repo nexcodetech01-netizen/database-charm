@@ -8,10 +8,12 @@
  */
 import type {
   AccountingPeriod,
+  AccountingTrends,
   BusinessHealth,
   CashProjection,
   CashSnapshot,
   CustomerSnapshot,
+  DailyRevenue,
   ExpenseSnapshot,
   InventorySnapshot,
   MarginSnapshot,
@@ -25,13 +27,24 @@ import type {
 } from "../types";
 import type { AccountingAiServices } from "../services/ports";
 import { accountingAiServices } from "../services/adapters";
-import { currentPeriod, readSafely, unavailable } from "../lib/helpers";
+import {
+  currentPeriod,
+  dayPeriod,
+  previousDayISO,
+  previousMonthPeriod,
+  readSafely,
+  todayISO,
+  unavailable,
+} from "../lib/helpers";
+import { computeTrend } from "../lib/trend";
 import { computeFinancialHealth } from "../lib/health";
 import { suggestPayroll } from "../lib/payroll";
 
 export interface ProviderDeps {
   services?: AccountingAiServices;
   period?: AccountingPeriod;
+  /** Data operacional (ISO). Quando ausente, usa a data local. */
+  today?: string;
 }
 
 function resolve(deps?: ProviderDeps) {
