@@ -474,7 +474,47 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
 
 
-  // 4) Restaura o contexto Bella deste contato no singleton do engine.
+  // 3d) Navegação do catálogo: categorias antes dos produtos.
+  const catalogTurn = await handleCatalogTurn({
+    db,
+    companyId: tenant.companyId,
+    text: msg.text,
+    state: (savedState as Record<string, unknown>).catalog as CatalogNavState | null | undefined,
+  });
+  if (catalogTurn) {
+    await db
+      .from("whatsapp_conversations")
+      .update({
+        bella_state: catalogTurn.state
+          ? { ...savedState, catalog: catalogTurn.state }
+          : { ...savedState, catalog: null },
+      })
+      .eq("id", conversationId);
+
+    const catalogSent = await sendWhatsAppText({ to: msg.phone, text: catalogTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: catalogSent.waMessageId,
+      text: catalogTurn.text,
+      status: catalogSent.ok ? "sent" : "failed",
+      error: catalogSent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.browse",
+    });
+    if (catalogSent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
+  }
+
+
   const engineKey = tenant.companyId; // Skills usam este id (empresa real)
   bellaConversationManager.clear(engineKey);
   if (savedState && Object.keys(savedState).length > 0) {
