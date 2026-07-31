@@ -305,7 +305,7 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             />
 
             {pdv.stockIssues.length > 0 && (
-              <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive">
+              <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive">
                 Há {pdv.stockIssues.length} item(ns) com quantidade acima do
                 estoque disponível.
               </p>
