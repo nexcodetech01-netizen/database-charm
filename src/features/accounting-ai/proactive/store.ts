@@ -33,6 +33,24 @@ function sameIds(a: readonly BellaNotification[], b: readonly BellaNotification[
   return a.every((n, i) => n.id === b[i]!.id && n.priority === b[i]!.priority);
 }
 
+/**
+ * Derivações memoizadas por identidade de estado (Sprint 6.1.6 — P2/P3).
+ * Enquanto o objeto de estado não muda, `visible` e `criticalCount` não são
+ * recalculados. O comportamento observável é idêntico.
+ */
+let derivedFor: StoreState | null = null;
+let derivedVisible: BellaNotification[] = [];
+let derivedCritical = 0;
+
+function derive(snapshot: StoreState) {
+  if (derivedFor !== snapshot) {
+    derivedFor = snapshot;
+    derivedVisible = filterDismissed(snapshot.notifications, snapshot.dismissed);
+    derivedCritical = countCritical(derivedVisible);
+  }
+  return { visible: derivedVisible, critical: derivedCritical };
+}
+
 export const bellaNotificationStore = {
   getState(): StoreState {
     return state;
@@ -64,31 +82,13 @@ export const bellaNotificationStore = {
     emit();
   },
   visible(): BellaNotification[] {
-    return filterDismissed(state.notifications, state.dismissed);
+    return derive(state).visible;
   },
   criticalCount(): number {
-    return countCritical(this.visible());
+    return derive(state).critical;
   },
   subscribe,
 };
-
-/**
- * Derivações memoizadas por identidade de estado (Sprint 6.1.6 — P2/P3).
- * Enquanto o objeto de estado não muda, `visible` e `criticalCount` não são
- * recalculados. O comportamento observável é idêntico.
- */
-let derivedFor: StoreState | null = null;
-let derivedVisible: BellaNotification[] = [];
-let derivedCritical = 0;
-
-function derive(snapshot: StoreState) {
-  if (derivedFor !== snapshot) {
-    derivedFor = snapshot;
-    derivedVisible = filterDismissed(snapshot.notifications, snapshot.dismissed);
-    derivedCritical = countCritical(derivedVisible);
-  }
-  return { visible: derivedVisible, critical: derivedCritical };
-}
 
 /** Lista visível (sem as fechadas na sessão). */
 export function useBellaNotifications(): {
