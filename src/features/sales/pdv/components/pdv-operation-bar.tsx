@@ -1,7 +1,8 @@
 import { memo } from "react";
-import { MonitorSmartphone } from "lucide-react";
+import { MonitorSmartphone, User, Wallet, Hash, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PDVSearch } from "./pdv-search";
+import { PDVShortcutsPanel } from "./pdv-shortcuts-panel";
 import {
   PDV_STATUS_TONE_CLASS,
   PDV_STAGE_LABEL,
@@ -19,16 +20,46 @@ type Props = {
   onSearchChange: (value: string) => void;
   onProduct: (product: PDVProductOption) => void;
   onClearSearch?: () => void;
+  /** Operador logado no balcão (apenas exibição). */
+  operatorName?: string;
+  /** Identificador curto da sessão de caixa vigente (apenas exibição). */
+  sessionLabel?: string | null;
 };
+
+function MetaItem({
+  icon: Icon,
+  label,
+  value,
+  mono,
+}: {
+  icon: typeof User;
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "truncate text-xs font-medium",
+          mono && "font-mono tabular-nums",
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
 
 /**
  * PDV — Barra de operação (Sprint 2.9).
  *
  * Somente apresentação: reúne a busca (que também recebe o leitor USB) e
- * exibe o status do caixa e o número da venda. Nenhuma ação nova.
- *
- * Memoizada: só muda quando o termo, o estágio ou o status do caixa mudam —
- * não re-renderiza a cada alteração do carrinho.
+ * exibe caixa, operador, sessão e número da venda. Nenhuma ação nova.
  */
 export const PDVOperationBar = memo(function PDVOperationBar({
   companyId,
@@ -39,6 +70,8 @@ export const PDVOperationBar = memo(function PDVOperationBar({
   onSearchChange,
   onProduct,
   onClearSearch,
+  operatorName,
+  sessionLabel,
 }: Props) {
   return (
     <header className="rounded-xl border bg-card p-4 shadow-sm">
@@ -49,10 +82,10 @@ export const PDVOperationBar = memo(function PDVOperationBar({
           </div>
           <div className="min-w-0">
             <p className="truncate text-base font-semibold leading-tight">
-              PDV · Atendimento de balcão
+              Venda
             </p>
-            <p className="truncate font-mono text-xs text-muted-foreground">
-              Venda {saleNumber}
+            <p className="truncate text-xs text-muted-foreground">
+              Origem: PDV · Atendimento de balcão
             </p>
           </div>
         </div>
@@ -83,6 +116,18 @@ export const PDVOperationBar = memo(function PDVOperationBar({
         </div>
       </div>
 
+      <div className="mt-3 grid gap-x-6 gap-y-2 border-t pt-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetaItem icon={Wallet} label="Caixa" value={cashStatus.label} />
+        <MetaItem icon={User} label="Operador" value={operatorName || "—"} />
+        <MetaItem
+          icon={Clock}
+          label="Sessão"
+          value={sessionLabel || "—"}
+          mono
+        />
+        <MetaItem icon={Hash} label="Venda" value={saleNumber} mono />
+      </div>
+
       <div className="mt-4">
         <PDVSearch
           companyId={companyId}
@@ -92,10 +137,9 @@ export const PDVOperationBar = memo(function PDVOperationBar({
           onClear={onClearSearch}
           disabled={stage !== "cart"}
         />
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          ENTER adiciona · ESC limpa · F2 cliente · F3 quantidade · F4 desconto
-          · F5 pagamento · DELETE remove item · CTRL+L limpa carrinho
-        </p>
+        <div className="mt-2.5">
+          <PDVShortcutsPanel />
+        </div>
       </div>
     </header>
   );

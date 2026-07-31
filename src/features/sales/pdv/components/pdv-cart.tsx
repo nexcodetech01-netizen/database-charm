@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
@@ -28,6 +28,11 @@ type RowProps = {
   onActivate?: (uiKey: string) => void;
 };
 
+function stockLabel(stock: number | null | undefined): string {
+  if (stock == null) return "Estoque —";
+  return `Estoque ${stock}`;
+}
+
 /**
  * Linha do carrinho. Memoizada porque o carrinho é re-renderizado a cada
  * leitura do scanner: sem memo, todas as linhas re-renderizam a cada bipe.
@@ -42,21 +47,44 @@ const PDVCartRow = memo(function PDVCartRow({
   onActivate,
 }: RowProps) {
   const activate = useCallback(() => onActivate?.(uiKey), [onActivate, uiKey]);
+  const stock = item.stock_available;
+  const lowStock = stock != null && stock < item.quantity;
 
   return (
     <li
       data-active={active || undefined}
       onFocus={activate}
       onMouseDown={activate}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50"
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
+      <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
+        {item.image_url ? (
+          <img
+            src={item.image_url}
+            alt={item.description}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
+        )}
+      </div>
+
       <div className="min-w-0">
-        <p className="truncate text-base font-medium leading-tight">
+        <p className="truncate text-[15px] font-medium leading-tight">
           {item.description}
         </p>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {item.sku ?? "sem SKU"} · {formatCurrency(item.unit_price)}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+          <span className="font-mono">{item.sku ?? "sem SKU"}</span>
+          <span aria-hidden="true">·</span>
+          <span className={lowStock ? "font-medium text-destructive" : ""}>
+            {stockLabel(stock)}
+          </span>
+          <span aria-hidden="true">·</span>
+          <span className="tabular-nums">
+            {formatCurrency(item.unit_price)}
+          </span>
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
@@ -98,9 +126,14 @@ const PDVCartRow = memo(function PDVCartRow({
           </Button>
         </div>
 
-        <span className="w-28 text-right text-base font-semibold tabular-nums">
-          {formatCurrency(computeItemTotal(item))}
-        </span>
+        <div className="w-28 text-right">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Subtotal
+          </p>
+          <p className="text-base font-semibold tabular-nums">
+            {formatCurrency(computeItemTotal(item))}
+          </p>
+        </div>
 
         <Button
           type="button"
@@ -120,8 +153,7 @@ const PDVCartRow = memo(function PDVCartRow({
 
 /**
  * Carrinho do PDV — manipula apenas o draft canônico da venda.
- * Sprint 2.9: linhas maiores, quantidade e subtotal destacados.
- * Sprint 2.8: quantidade editável inline e item ativo para atalhos.
+ * Sprint 2.9: linhas com imagem, SKU, estoque, preço e subtotal.
  */
 export function PDVCart({
   items,
@@ -144,8 +176,8 @@ export function PDVCart({
       </div>
 
       {items.length === 0 ? (
-        <div className="flex min-h-64 flex-col items-center justify-center gap-2 p-10 text-center">
-          <ShoppingCart className="h-8 w-8 text-muted-foreground/60" />
+        <div className="flex min-h-80 flex-col items-center justify-center gap-2 p-10 text-center">
+          <Package className="h-9 w-9 text-muted-foreground/50" />
           <p className="text-sm font-medium">Carrinho vazio</p>
           <p className="text-xs text-muted-foreground">
             Bipe um produto ou digite o código na pesquisa e pressione ENTER.

@@ -49,6 +49,8 @@ type NavItem = {
   status: ModuleStatus;
   /** Permission code (view) required to see this item. Omit for always-visible. */
   permission?: string;
+  /** Submenu visual (UX apenas) — herda a rota própria de cada filho. */
+  children?: NavItem[];
 };
 
 type NavGroup = {
@@ -61,8 +63,17 @@ const groups: NavGroup[] = [
     label: "Operacional",
     items: [
       { title: "Dashboard", url: ROUTES.dashboard, icon: LayoutDashboard, status: "available", permission: "dashboard.view" },
-      { title: "Vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
-      { title: "PDV", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
+      {
+        title: "Vendas",
+        url: ROUTES.sales,
+        icon: Receipt,
+        status: "available",
+        permission: "sales.view",
+        children: [
+          { title: "Gestão de vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
+          { title: "PDV", url: ROUTES.pdv, icon: MonitorSmartphone, status: "available", permission: "sales.view" },
+        ],
+      },
       { title: "Clientes", url: ROUTES.customers, icon: Users, status: "available", permission: "customers.view" },
       { title: "Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
@@ -70,6 +81,7 @@ const groups: NavGroup[] = [
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
     ],
   },
+
   {
     label: "Financeiro & Fiscal",
     items: [
@@ -122,8 +134,16 @@ export function AppSidebar() {
   };
 
   const visibleGroups = groups
-    .map((g) => ({ ...g, items: g.items.filter(canSee) }))
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(canSee).map((item) =>
+        item.children
+          ? { ...item, children: item.children.filter(canSee) }
+          : item,
+      ),
+    }))
     .filter((g) => g.items.length > 0);
+
 
   // Auto-fecha drawer mobile em QUALQUER transição de rota (inclusive quando
   // o pathname é o mesmo — clique no item já ativo, mudança apenas de search
@@ -164,15 +184,38 @@ export function AppSidebar() {
           </div>
 
           <ul className="space-y-1">
-            {group.items.map((item) => (
-              <NavRow
-                key={item.title}
-                item={item}
-                active={currentPath === item.url}
-                onComingSoon={handleComingSoon}
-              />
-            ))}
+            {group.items.map((item) =>
+              item.children?.length ? (
+                <li key={item.title}>
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-semibold text-sidebar-foreground/80">
+                    <item.icon
+                      className="h-[17px] w-[17px] shrink-0 text-muted-foreground/80"
+                      strokeWidth={2}
+                    />
+                    <span className="flex-1 truncate">{item.title}</span>
+                  </div>
+                  <ul className="ml-[26px] mt-1 space-y-1 border-l border-sidebar-border/60 pl-2">
+                    {item.children.map((child) => (
+                      <NavRow
+                        key={child.title}
+                        item={child}
+                        active={currentPath === child.url}
+                        onComingSoon={handleComingSoon}
+                      />
+                    ))}
+                  </ul>
+                </li>
+              ) : (
+                <NavRow
+                  key={item.title}
+                  item={item}
+                  active={currentPath === item.url}
+                  onComingSoon={handleComingSoon}
+                />
+              ),
+            )}
           </ul>
+
         </div>
       ))}
     </nav>
