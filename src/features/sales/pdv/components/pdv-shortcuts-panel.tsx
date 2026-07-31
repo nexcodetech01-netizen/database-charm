@@ -1,6 +1,16 @@
-import { memo } from "react";
+import { memo, useState } from "react";
+import { Keyboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-/** Atalhos exibidos no painel discreto do PDV (somente leitura). */
+/** Atalhos exibidos no diálogo do PDV (somente leitura). */
 export const PDV_SHORTCUTS: { key: string; label: string }[] = [
   { key: "ENTER", label: "Adicionar" },
   { key: "F2", label: "Cliente" },
@@ -13,23 +23,47 @@ export const PDV_SHORTCUTS: { key: string; label: string }[] = [
 ];
 
 /**
- * PDVShortcutsPanel — painel visual discreto dos atalhos (Sprint 2.9).
- * Puramente informativo: não registra nenhum listener nem dispara ações.
+ * PDVShortcutsDialog — botão discreto "Atalhos" (Sprint 3.1) que abre a lista
+ * completa em diálogo. Puramente informativo: não registra nenhum listener
+ * nem dispara ações; o mapa de teclas continua no hook de atalhos.
  */
-export const PDVShortcutsPanel = memo(function PDVShortcutsPanel() {
+export const PDVShortcutsDialog = memo(function PDVShortcutsDialog() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <ul
-      aria-label="Atalhos do PDV"
-      className="flex flex-wrap items-center gap-x-3 gap-y-1.5"
-    >
-      {PDV_SHORTCUTS.map((s) => (
-        <li key={s.key} className="flex items-center gap-1.5">
-          <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-muted-foreground">
-            {s.key}
-          </kbd>
-          <span className="text-[11px] text-muted-foreground">{s.label}</span>
-        </li>
-      ))}
-    </ul>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 shrink-0"
+        >
+          <Keyboard className="mr-2 h-4 w-4" aria-hidden="true" />
+          Atalhos
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Atalhos do PDV</DialogTitle>
+          <DialogDescription>
+            Operação completa pelo teclado, sem tirar a mão do leitor.
+          </DialogDescription>
+        </DialogHeader>
+        <ul aria-label="Atalhos do PDV" className="divide-y rounded-lg border">
+          {PDV_SHORTCUTS.map((s) => (
+            <li
+              key={s.key}
+              className="flex items-center justify-between gap-3 px-4 py-2.5"
+            >
+              <span className="text-sm">{s.label}</span>
+              <kbd className="rounded border bg-muted px-2 py-1 font-mono text-[11px] font-semibold uppercase text-muted-foreground">
+                {s.key}
+              </kbd>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
   );
 });
