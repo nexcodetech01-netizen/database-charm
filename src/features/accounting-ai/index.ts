@@ -16,5 +16,7 @@ export * from "./advisor";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
+export * from "./chat";
 export { useAccountingAiSummary } from "./hooks/use-accounting-ai";
+export { useBellaChat } from "./hooks/use-bella-chat";
 export { BellaContadoraDashboard } from "./dashboard";

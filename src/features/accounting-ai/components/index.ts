@@ -16,3 +16,5 @@ export { InsightsPanel } from "./insights-panel";
 export type { InsightsPanelProps } from "./insights-panel";
 export { AdvisorCard } from "./advisor-card";
 export type { AdvisorCardProps } from "./advisor-card";
+export { BellaChatPanel } from "./bella-chat-panel";
+export type { BellaChatPanelProps } from "./bella-chat-panel";

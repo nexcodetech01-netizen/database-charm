@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   AdvisorCard,
   AlertCard,
+  BellaChatPanel,
+
   BellaBriefCard,
   FinancialCard,
   IndicatorCard,
@@ -197,7 +199,10 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
         <div className="space-y-3 lg:col-span-2">
           <BellaBriefCard summary={s} loading={isLoading} />
 
+          <BellaChatPanel companyId={companyId} />
+
           <AdvisorCard advice={advice} loading={isLoading} />
+
 
           <InsightsPanel insights={insights} loading={isLoading} />
 
