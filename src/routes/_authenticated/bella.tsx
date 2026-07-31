@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Sparkles, Lightbulb, Zap, Plus, Cog } from "lucide-react";
+import { Sparkles, Lightbulb, Plus, Cog } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
