@@ -282,6 +282,8 @@ export function AppSidebar() {
           </SheetHeader>
           <div className="flex h-full flex-col">
             {brand}
+            {pdvQuickAccess}
+
             {navList}
           </div>
         </SheetContent>
