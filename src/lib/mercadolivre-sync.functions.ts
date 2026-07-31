@@ -13,9 +13,6 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { integrationFetch } from "@/lib/http-client.server";
-
-const ML_API = "https://api.mercadolibre.com";
 
 export const syncProductToMercadoLivre = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -26,69 +23,6 @@ export const syncProductToMercadoLivre = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    const { data: product, error: prodErr } = await supabase
-      .from("products")
-      .select("id, company_id, price, stock, ml_item_id")
-      .eq("id", data.productId)
-      .maybeSingle();
-    if (prodErr) throw prodErr;
-    const p = product as {
-      id: string;
-      company_id: string;
-      price: number | null;
-      stock: number | null;
-      ml_item_id: string | null;
-    } | null;
-    if (!p?.ml_item_id) return { ok: true, skipped: "no-ml-item" as const };
-
-    // Garante token fresco antes de chamar a API
-    const { ensureFreshAccessToken } = await import("./mercadolivre.server");
-    await ensureFreshAccessToken(supabase, p.company_id, userId);
-
-    const { data: integ, error: iErr } = await supabase
-      .from("mercadolivre_integrations")
-      .select("access_token_encrypted, token_expires_at")
-      .eq("company_id", p.company_id)
-      .maybeSingle();
-    if (iErr) throw iErr;
-    const enc = (integ as { access_token_encrypted: string | null } | null)
-      ?.access_token_encrypted;
-    if (!enc) return { ok: false, skipped: "no-token" as const };
-
-    const { decryptToken } = await import("./meta-crypto.server");
-    const accessToken = decryptToken(enc);
-
-    const price = p.price != null ? Number(p.price) : null;
-    const availableQuantity = Math.max(0, Math.floor(Number(p.stock ?? 0)));
-    const patch: Record<string, unknown> = {};
-    if (availableQuantity >= 0) patch.available_quantity = availableQuantity;
-    if (price != null && price > 0) patch.price = Math.round(price * 100) / 100;
-    if (Object.keys(patch).length === 0) {
-      return { ok: true, skipped: "nothing-to-sync" as const };
-    }
-
-    const res = await integrationFetch(
-      `${ML_API}/items/${p.ml_item_id}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(patch),
-      },
-      { integration: "mercadolivre:sync-item", timeoutMs: 20_000 },
-    );
-    const text = await res.text();
-    if (!res.ok) {
-      // Não relançamos — chamada é fire-and-forget do lado do cliente.
-      // Loga para inspeção via logs de server function.
-      console.warn(
-        `[mercadolivre-sync] PUT /items/${p.ml_item_id} falhou (${res.status}): ${text.slice(0, 300)}`,
-      );
-      return { ok: false, status: res.status } as const;
-    }
-    return { ok: true } as const;
+    const { syncProductToMercadoLivreCore } = await import("@/lib/marketplace-sync.server");
+    return syncProductToMercadoLivreCore(supabase, { productId: data.productId, userId });
   });
