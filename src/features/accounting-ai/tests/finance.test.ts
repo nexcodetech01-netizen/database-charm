@@ -40,7 +40,9 @@ function insight(over: Partial<AccountingInsight> = {}): AccountingInsight {
   };
 }
 
-function notification(over: Partial<BellaNotification> = {}): BellaNotification {
+function notification(
+  over: Partial<Parameters<typeof makeNotification>[0]> = {},
+): BellaNotification {
   return makeNotification({
     id: "n1",
     category: "caixa",
@@ -48,11 +50,10 @@ function notification(over: Partial<BellaNotification> = {}): BellaNotification 
     title: "Caixa crítico",
     message: "Saldo abaixo do necessário",
     recommendation: "Priorize recebimentos",
-    action: { id: "cobrar_cliente", label: "Cobrar cliente" },
-    icon: "wallet",
+    action: "cobrar_cliente",
     createdAt: NOW,
     ...over,
-  } as Parameters<typeof makeNotification>[0]);
+  });
 }
 
 describe("accounting-ai · finance · links", () => {
