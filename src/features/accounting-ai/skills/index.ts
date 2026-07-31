@@ -28,6 +28,7 @@ import {
 } from "../insights";
 import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
+import { advisorQueries, buildFinancialAdvice } from "../advisor";
 
 export type AccountingSkillId =
   | "consultar_lucro"
