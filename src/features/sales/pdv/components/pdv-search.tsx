@@ -119,7 +119,7 @@ export function PDVSearch({
           )}
         >
           <ScanLine className="h-3.5 w-3.5" aria-hidden="true" />
-          {focused && !disabled ? "Scanner pronto" : "Clique ou pressione F1 para focar"}
+          {focused && !disabled ? "Scanner pronto" : "Clique para focar a pesquisa"}
         </span>
         <span className="text-xs text-muted-foreground">
           ENTER adiciona automaticamente
