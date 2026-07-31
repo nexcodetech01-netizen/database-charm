@@ -29,6 +29,7 @@ export type {
   ProactiveInput,
   ProactiveOptions,
 } from "./proactive";
+export * from "./finance";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
