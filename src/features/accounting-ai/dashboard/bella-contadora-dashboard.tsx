@@ -17,6 +17,7 @@ import { formatCurrency } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  AdvisorCard,
   AlertCard,
   BellaBriefCard,
   FinancialCard,
@@ -30,6 +31,7 @@ import { useAccountingAiSummary } from "../hooks/use-accounting-ai";
 import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
+import { buildFinancialAdvice } from "../advisor";
 import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
