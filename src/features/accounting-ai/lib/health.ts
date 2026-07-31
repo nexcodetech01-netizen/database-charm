@@ -60,3 +60,16 @@ export function computeFinancialHealth(input: HealthInput): FinancialHealth {
     reasons,
   };
 }
+
+/**
+ * Rótulo em português exibido na UI. É apenas apresentação sobre o
+ * resultado já produzido por `computeFinancialHealth` — nenhuma regra
+ * financeira nova é introduzida aqui.
+ */
+export function healthLabel(health: { level: HealthLevel; financial?: { reasons: string[] } ; reasons?: string[] }): string {
+  const reasons = health.financial?.reasons ?? health.reasons ?? [];
+  if (health.level === "healthy") return reasons.length === 0 ? "Excelente" : "Boa";
+  if (health.level === "attention") return "Atenção";
+  if (health.level === "critical") return "Crítica";
+  return "Sem dados";
+}
