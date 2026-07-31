@@ -6,16 +6,16 @@ const decryptToken = vi.fn(() => "TOKEN");
 const recordDeadLetter = vi.fn();
 
 vi.mock("@/lib/http-client.server", () => ({
-  integrationFetch: (...args: unknown[]) => integrationFetch(...args),
+  integrationFetch: (url: unknown, init: unknown, opts?: unknown) => integrationFetch(url, init, opts),
 }));
 vi.mock("@/lib/mercadolivre.server", () => ({
-  ensureFreshAccessToken: (...args: unknown[]) => ensureFreshAccessToken(...args),
+  ensureFreshAccessToken: (...args: unknown[]) => ensureFreshAccessToken(args),
 }));
 vi.mock("@/lib/meta-crypto.server", () => ({
-  decryptToken: (...args: unknown[]) => decryptToken(...args),
+  decryptToken: (value: unknown) => decryptToken(),
 }));
 vi.mock("@/lib/dead-letter.server", () => ({
-  recordDeadLetter: (...args: unknown[]) => recordDeadLetter(...args),
+  recordDeadLetter: (input: unknown) => recordDeadLetter(input),
 }));
 
 interface QueueRow {
