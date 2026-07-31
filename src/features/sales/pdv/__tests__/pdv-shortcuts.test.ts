@@ -105,14 +105,15 @@ describe("PDV — atalhos de teclado (Sprint 2.8)", () => {
     expect(preventDefault).toHaveBeenCalledTimes(1);
   });
 
-  it("não dispara quando a ação está indisponível no estado atual", () => {
+  it("não dispara a ação indisponível, mas ainda bloqueia o navegador (P0.1)", () => {
     const onKeyDown = createPdvShortcutHandler(() => ({
       "remove-item": undefined,
     }));
     const preventDefault = vi.fn();
     onKeyDown({ key: "Delete", preventDefault });
-    expect(preventDefault).not.toHaveBeenCalled();
+    expect(preventDefault).toHaveBeenCalledTimes(1);
   });
+
 
   it("registra o listener e remove ao desmontar", () => {
     const add = vi.fn();
