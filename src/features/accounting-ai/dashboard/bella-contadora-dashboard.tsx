@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   AdvisorCard,
   AlertCard,
+  BellaChatPanel,
+
   BellaBriefCard,
   FinancialCard,
   IndicatorCard,
