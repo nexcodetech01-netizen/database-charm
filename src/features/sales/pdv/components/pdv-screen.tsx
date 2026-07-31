@@ -299,8 +299,9 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
               discount={pdv.discount}
               onDiscountChange={pdv.setDiscount}
               changeDue={
-                completed && completed.paymentMethod === "dinheiro" ? 0 : null
+                completed && completed.paymentMethod === "cash" ? 0 : null
               }
+
               readOnly={cartLocked}
             />
             {completed ? (
