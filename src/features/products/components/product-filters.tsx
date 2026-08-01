@@ -122,6 +122,7 @@ export function ProductFilters({ companyId, filters, onChange, onReset }: Props)
           </Button>
         </div>
       ) : null}
-    </div>
+    </Panel>
+
   );
 }
