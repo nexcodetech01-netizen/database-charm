@@ -59,6 +59,8 @@ function InventoryPage() {
       }
       kpis={<InventoryMetrics companyId={company.id} />}
     >
+      <BellaInventoryPanel companyId={company.id} />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <MovementsTimeline
