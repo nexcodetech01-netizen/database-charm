@@ -14,7 +14,6 @@ import {
   UserPlus,
   Wallet,
 } from "lucide-react";
-import { PageLayout } from "@/components/layout";
 import {
   ActionToolbar,
   EntityHeader,
@@ -151,12 +150,11 @@ function DashboardPage() {
   const isLoading = salesMetrics.isLoading || finance.isLoading || inventory.isLoading;
 
   return (
-    <PageLayout
-      title="Dashboard"
-      description="O que preciso resolver hoje?"
-      showBreadcrumb={false}
-      contentClassName={SPACING_TOKENS.relaxed.stack}
-      header={null}
+    <div
+      className={cn(
+        "mx-auto w-full max-w-7xl p-4 sm:p-6",
+        SPACING_TOKENS.relaxed.stack,
+      )}
     >
       {/* 1 — EntityHeader */}
       <EntityHeader
@@ -376,6 +374,6 @@ function DashboardPage() {
           ]}
         />
       </Section>
-    </PageLayout>
+    </div>
   );
 }
