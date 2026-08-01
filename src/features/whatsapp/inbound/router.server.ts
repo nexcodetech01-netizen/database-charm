@@ -21,6 +21,7 @@ import { handlePhotoTurn } from "./product-photos.server";
 import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn } from "./checkout-session.server";
+import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
 import type { CatalogNavState } from "./catalog-nav";
 
 
