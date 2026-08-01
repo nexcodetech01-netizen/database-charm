@@ -15,9 +15,11 @@ import { bellaConversationManager } from "@/features/bella-ai/context";
 import type { BellaConversationPatch } from "@/features/bella-ai/context/types";
 import type { BellaActionResponse } from "@/features/bella-ai/actions/types";
 import { bellaAIGateway } from "@/features/bella-ai/ai/gateway";
-import { sendWhatsAppText } from "@/lib/whatsapp.server";
+import { sendWhatsAppText, sendWhatsAppImage } from "@/lib/whatsapp.server";
 import { handleCatalogTurn } from "./catalog-nav.server";
+import { handlePhotoTurn } from "./product-photos.server";
 import type { CatalogNavState } from "./catalog-nav";
+
 
 type Any = Record<string, unknown>;
 
