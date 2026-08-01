@@ -107,11 +107,25 @@ export async function handleCatalogTurn(args: {
 
   const categories = await listCategoriesWithActiveProducts(db, companyId);
   const chosen = matchCategory(text, categories);
-  if (!chosen) return null;
+  if (chosen) {
+    const products = await listActiveProductsByCategory(db, companyId, chosen.id);
+    return {
+      text: formatProductsMessage(chosen.name, products),
+      state: {
+        step: "products",
+        categoryId: chosen.id,
+        categoryIds: categories.map((c) => c.id),
+      },
+    };
+  }
 
-  const products = await listActiveProductsByCategory(db, companyId, chosen.id);
-  return {
-    text: formatProductsMessage(chosen.name, products),
-    state: { step: "products", categoryId: chosen.id, categoryIds: categories.map((c) => c.id) },
-  };
+  // Sprint 6.7 — busca inteligente: só produtos ativos, sem tocar no cadastro.
+  const search = await handleProductSearchTurn({
+    db,
+    companyId,
+    text,
+    categories,
+    inCatalog,
+  });
+  return search ? { text: search.text, state: search.state } : null;
 }
