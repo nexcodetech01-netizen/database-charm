@@ -854,7 +854,7 @@ function ProductDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-    </PageLayout>
+    </div>
     <MovementFormDialog
       open={movementOpen}
       onOpenChange={setMovementOpen}
