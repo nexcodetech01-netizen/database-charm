@@ -1,19 +1,22 @@
 import {
-  Flame,
   AlertTriangle,
-  PackageMinus,
-  Users,
-  TrendingUp,
   FileText,
+  Flame,
+  PackageMinus,
+  TrendingUp,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Section, StatusBadge } from "@/components/design";
+import { RADIUS_TOKENS, TEXT_TOKENS, statusToken, type StatusToken } from "@/design";
+import { BellaEmptyState } from "./bella-empty-state";
 import type { BellaPriorityItem } from "../dashboard";
 import type { BellaEventModule, EventPriority } from "../events";
 
 interface Props {
   priorities: BellaPriorityItem[];
-  /** Máximo de cards exibidos — evita rolagem infinita na Home. */
+  /** Máximo de itens exibidos — evita rolagem infinita na Home. */
   limit?: number;
 }
 
@@ -25,92 +28,88 @@ const MODULE_ICON: Record<BellaEventModule, LucideIcon> = {
   fiscal: FileText,
 };
 
-const PRIORITY_META: Record<EventPriority, { label: string; badge: string; tone: string }> = {
-  CRITICAL: {
-    label: "Alta",
-    badge: "bg-danger/10 text-danger",
-    tone: "bg-danger/10 text-danger",
-  },
-  HIGH: {
-    label: "Alta",
-    badge: "bg-warning/10 text-warning",
-    tone: "bg-warning/10 text-warning",
-  },
-  MEDIUM: {
-    label: "Média",
-    badge: "bg-primary/10 text-primary",
-    tone: "bg-primary/10 text-primary",
-  },
-  LOW: {
-    label: "Baixa",
-    badge: "bg-muted text-muted-foreground",
-    tone: "bg-muted text-muted-foreground",
-  },
+const PRIORITY_META: Record<EventPriority, { label: string; status: StatusToken }> = {
+  CRITICAL: { label: "Crítico", status: "critical" },
+  HIGH: { label: "Alta", status: "warning" },
+  MEDIUM: { label: "Média", status: "info" },
+  LOW: { label: "Baixa", status: "neutral" },
 };
 
 /**
- * Bloco único de "Prioridades de hoje".
- * Consolida a antiga Central de Prioridades, as Prioridades do dia e a
- * Leitura da Bella em uma só seção — apenas apresentação.
+ * Prioridades de hoje em formato de Timeline (UI.2.2).
+ *
+ * Apenas apresentação — os itens continuam vindo do snapshot da Bella,
+ * sem qualquer alteração de regra, engine ou provider.
  */
 export function BellaPrioritiesBlock({ priorities, limit = 4 }: Props) {
   const visible = priorities.slice(0, limit);
 
   return (
-    <section className="space-y-3">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Flame className="h-4 w-4 text-danger" />
-          <h2 className="text-sm font-semibold tracking-tight">Prioridades de hoje</h2>
-        </div>
-        <span className="text-[11px] text-muted-foreground">
-          {priorities.length === 0
-            ? "Nada crítico agora"
-            : `${priorities.length} priorizada${priorities.length > 1 ? "s" : ""} por Bella`}
+    <Section
+      title={
+        <span className="flex items-center gap-2">
+          <Flame className="h-4 w-4 text-status-danger" aria-hidden="true" />
+          Prioridades de hoje
         </span>
-      </header>
-
+      }
+      description={
+        priorities.length === 0
+          ? "Nada crítico agora"
+          : `${priorities.length} priorizada${priorities.length > 1 ? "s" : ""} por Bella`
+      }
+      flushBody={visible.length === 0}
+    >
       {visible.length === 0 ? (
-        <div className="rounded-2xl bg-card p-8 text-center text-xs text-muted-foreground shadow-sm ring-1 ring-border/50">
-          Nenhum evento crítico no momento. A Bella avisará assim que algo demandar atenção.
-        </div>
+        <BellaEmptyState
+          icon={Flame}
+          title="Nenhum evento crítico no momento"
+          description="A Bella avisará assim que algo demandar atenção."
+        />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <ol data-testid="bella-priorities-timeline" className="relative space-y-6">
+          <span aria-hidden="true" className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
           {visible.map((item) => {
             const Icon = MODULE_ICON[item.module];
             const meta = PRIORITY_META[item.priority];
+            const token = statusToken(meta.status);
             return (
-              <article
+              <li
                 key={item.id}
-                className="flex items-start gap-3 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border/50 transition-colors hover:ring-primary/30"
+                data-testid="bella-timeline-item"
+                data-priority={item.priority}
+                className="relative flex min-w-0 gap-4"
               >
-                <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", meta.tone)}>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "relative z-10 grid h-10 w-10 shrink-0 place-items-center border border-border bg-card",
+                    RADIUS_TOKENS.lg,
+                    token.text,
+                  )}
+                >
                   <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1 space-y-1.5">
+                </span>
+                <div className="min-w-0 flex-1 space-y-1.5 pb-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-medium text-foreground">{item.title}</h3>
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        meta.badge,
-                      )}
-                    >
+                    <h3 className={cn("min-w-0 font-medium", TEXT_TOKENS.sm)}>{item.title}</h3>
+                    <StatusBadge status={meta.status} withDot>
                       {meta.label}
-                    </span>
+                    </StatusBadge>
                   </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
-                  {item.recommendation && (
-                    <p className="text-[11px] italic text-muted-foreground">
+                  <p className={cn("leading-relaxed text-muted-foreground", TEXT_TOKENS.xs)}>
+                    {item.description}
+                  </p>
+                  {item.recommendation ? (
+                    <p className={cn("italic text-muted-foreground", TEXT_TOKENS.xs)}>
                       Sugestão: {item.recommendation}
                     </p>
-                  )}
+                  ) : null}
                 </div>
-              </article>
+              </li>
             );
           })}
-        </div>
+        </ol>
       )}
-    </section>
+    </Section>
   );
 }
