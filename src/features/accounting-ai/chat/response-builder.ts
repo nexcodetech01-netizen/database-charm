@@ -3,6 +3,8 @@
  * em uma resposta em linguagem natural. Nenhum número é recalculado aqui:
  * todo texto vem das skills.
  */
+import { polish } from "../lib/response-format";
+import type { BellaAnswerTrace } from "../telemetry/types";
 import type { BellaIntentId, ChatAnswer, ChatPlan, ChatSkillOutcome } from "./types";
 
 const OPENERS: Partial<Record<BellaIntentId, string>> = {
@@ -58,14 +60,27 @@ export const FALLBACK_UNKNOWN =
   "Ainda não sei responder isso. Posso falar sobre receita, lucro, caixa, fluxo, impostos, retirada, pró-labore, reserva, produtos, clientes, alertas e recomendações.";
 
 export const FALLBACK_NO_DATA =
-  "Não encontrei dados suficientes no período para responder com segurança.";
+  "Não encontrei dados suficientes para responder com segurança.";
+
+/** Sprint 7.4 — baixa confiança usa exatamente a mesma resposta. */
+export const FALLBACK_LOW_CONFIDENCE = FALLBACK_NO_DATA;
 
 function clean(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
+  return polish(text);
 }
 
-export function buildAnswer(plan: ChatPlan, outcomes: ChatSkillOutcome[]): ChatAnswer {
+export interface BuildAnswerOptions {
+  /** Sprint 7.4 — metadados internos de rastreabilidade (não exibidos). */
+  trace?: BellaAnswerTrace;
+}
+
+export function buildAnswer(
+  plan: ChatPlan,
+  outcomes: ChatSkillOutcome[],
+  options: BuildAnswerOptions = {},
+): ChatAnswer {
   const skills = plan.steps.map((s) => s.skillId);
+  const trace = options.trace;
 
   if (plan.intent === "desconhecida" || plan.shape === "none") {
     return {
@@ -75,6 +90,7 @@ export function buildAnswer(plan: ChatPlan, outcomes: ChatSkillOutcome[]): ChatA
       outcomes,
       answered: false,
       amount: plan.amount,
+      trace,
     };
   }
 
@@ -87,6 +103,21 @@ export function buildAnswer(plan: ChatPlan, outcomes: ChatSkillOutcome[]): ChatA
       outcomes,
       answered: false,
       amount: plan.amount,
+      trace,
+    };
+  }
+
+  // Sprint 7.4 — sem confiança suficiente a Bella não tenta completar
+  // a informação: ela avisa que não sabe.
+  if (trace?.lowConfidence) {
+    return {
+      intent: plan.intent,
+      text: FALLBACK_LOW_CONFIDENCE,
+      skills,
+      outcomes,
+      answered: false,
+      amount: plan.amount,
+      trace,
     };
   }
 
@@ -107,5 +138,6 @@ export function buildAnswer(plan: ChatPlan, outcomes: ChatSkillOutcome[]): ChatA
     outcomes,
     answered: true,
     amount: plan.amount,
+    trace,
   };
 }

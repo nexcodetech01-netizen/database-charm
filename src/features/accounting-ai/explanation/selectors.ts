@@ -7,6 +7,12 @@
  *   Resumo → 3 principais causas → dados que comprovam → recomendação
  */
 import {
+  evidenceList,
+  formatSections,
+  numbered,
+  polish,
+} from "../lib/response-format";
+import {
   EXPLANATION_TOPIC_LABELS,
   NO_EVIDENCE,
   type Explanation,
@@ -19,23 +25,17 @@ import {
 export function describeExplanation(explanation: Explanation | null): string {
   if (!explanation || !explanation.available) return NO_EVIDENCE;
 
-  const causes = explanation.causes
-    .map((c, index) => `${index + 1}. ${c.detail}`)
-    .join(" ");
-  const evidence = explanation.evidence
-    .map((e) => `${e.label}: ${e.value}`)
-    .join(" · ");
+  const causes = numbered(explanation.causes.map((c) => c.detail));
   const biggest = explanation.biggestImpact
     ? ` Maior impacto: ${explanation.biggestImpact.label}.`
     : "";
-  const recommendation = explanation.recommendation
-    ? ` Recomendação: ${explanation.recommendation}`
-    : "";
 
-  return `${explanation.summary} Principais causas: ${causes}${biggest} Dados: ${evidence}.${recommendation}`.replace(
-    /\s+/g,
-    " ",
-  );
+  return formatSections({
+    summary: explanation.summary,
+    explanation: `${causes}${biggest}`,
+    evidence: evidenceList(explanation.evidence),
+    recommendation: explanation.recommendation ?? null,
+  });
 }
 
 /** Explicação de um tema dentro do retrato. */
@@ -60,9 +60,11 @@ export function describeImpactRanking(
 ): string {
   const ranking = snapshot?.ranking ?? [];
   if (ranking.length === 0) return NO_EVIDENCE;
-  const items = ranking.map((c, index) => `${index + 1}. ${c.detail}`).join(" ");
   const top = ranking[0]!;
-  return `Maiores impactos do período: ${items} Maior impacto: ${top.label} (${top.effect}).`;
+  return formatSections({
+    summary: `Maiores impactos do período — o de maior peso foi ${top.label} (${top.effect}).`,
+    explanation: numbered(ranking.map((c) => c.detail)),
+  });
 }
 
 /** Panorama dos temas explicáveis com evidência disponível. */
@@ -76,7 +78,7 @@ export function describeIndicators(
     .filter((e): e is Explanation => Boolean(e?.available))
     .map((e) => `${EXPLANATION_TOPIC_LABELS[e.topic]}: ${e.headline}`);
   if (lines.length === 0) return NO_EVIDENCE;
-  return lines.join(" ");
+  return polish(lines.join(" "));
 }
 
 /** Maior causa negativa de um tema (usado pelo motor proativo). */

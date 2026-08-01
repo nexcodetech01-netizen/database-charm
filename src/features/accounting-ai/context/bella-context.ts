@@ -21,6 +21,7 @@ import type { ProviderDeps } from "../providers";
 import type { AccountingAiServices } from "../services/ports";
 import { accountingAiServices } from "../services/adapters";
 import { currentPeriod, todayISO } from "../lib/helpers";
+import { bellaTelemetry, now } from "../telemetry";
 import type { AccountingPeriod, AccountingSummary, ProviderResult } from "../types";
 
 export interface BellaContextInput {
@@ -63,17 +64,51 @@ export interface BellaContext {
   readonly stats: { summary: number; tax: number; audit: number };
 }
 
-function memoize<T>(load: () => Promise<T>, onLoad: () => void, initial?: T | null) {
+function memoize<T>(
+  load: () => Promise<T>,
+  onLoad: () => void,
+  initial: T | null | undefined,
+  /** Sprint 7.4 — telemetria de cache (somente leitura). */
+  kind: "summary" | "tax" | "audit",
+  providers: number,
+) {
   let cached: Promise<T> | null =
     initial === undefined || initial === null ? null : Promise.resolve(initial);
   return () => {
     if (!cached) {
       onLoad();
-      cached = load().catch((error) => {
-        cached = null;
-        throw error;
-      });
+      const started = now();
+      cached = load()
+        .then((value) => {
+          bellaTelemetry.record({
+            kind,
+            label: `${kind}_snapshot`,
+            durationMs: now() - started,
+            cache: "miss",
+            providers,
+          });
+          return value;
+        })
+        .catch((error) => {
+          bellaTelemetry.record({
+            kind,
+            label: `${kind}_snapshot`,
+            durationMs: now() - started,
+            cache: "miss",
+            providers,
+            ok: false,
+          });
+          cached = null;
+          throw error;
+        });
+      return cached;
     }
+    bellaTelemetry.record({
+      kind,
+      label: `${kind}_snapshot`,
+      durationMs: 0,
+      cache: "hit",
+    });
     return cached;
   };
 }
@@ -106,6 +141,8 @@ export function createBellaContext(input: BellaContextInput): BellaContext {
       stats.summary += 1;
     },
     resolvedSummary,
+    "summary",
+    15,
   );
 
   const tax = memoize<ProviderResult<BellaTaxSnapshot>>(
@@ -118,6 +155,8 @@ export function createBellaContext(input: BellaContextInput): BellaContext {
       stats.tax += 1;
     },
     resolvedTax,
+    "tax",
+    1,
   );
 
   const audit = memoize<ProviderResult<AuditSnapshot>>(
@@ -130,6 +169,8 @@ export function createBellaContext(input: BellaContextInput): BellaContext {
       stats.audit += 1;
     },
     resolvedAudit,
+    "audit",
+    1,
   );
 
   return {
@@ -142,7 +183,14 @@ export function createBellaContext(input: BellaContextInput): BellaContext {
     tax,
     audit,
     async snapshots() {
+      const started = now();
       const [s, t, a] = await Promise.all([summary(), tax(), audit()]);
+      bellaTelemetry.record({
+        kind: "dashboard",
+        label: "snapshots",
+        durationMs: now() - started,
+        providers: 3,
+      });
       return { summary: s, tax: t, audit: a };
     },
     toDeps(overrides) {
