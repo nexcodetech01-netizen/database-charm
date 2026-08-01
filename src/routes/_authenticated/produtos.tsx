@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Package, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Package } from "lucide-react";
 import { PageLayout } from "@/components/layout";
+import { ActionToolbar } from "@/components/design";
 import {
   ProductMetrics,
   ProductFilters,
@@ -49,16 +49,13 @@ function ProductsPage() {
       title="Produtos"
       description="Quanto vender? Cadastre o produto e o NexOS sugere o preço ideal por canal."
       actions={
-        <div className="flex items-center gap-2">
+        <ActionToolbar
+          createLabel="Novo produto"
+          onCreate={() => navigate({ to: "/produtos/novo" })}
+        >
           <BulkNcmDialog companyId={company.id} />
           <ImportCsvDialog companyId={company.id} />
-
-          <Button size="sm" asChild>
-            <Link to="/produtos/novo">
-              <Plus className="mr-1.5 h-4 w-4" /> Novo produto
-            </Link>
-          </Button>
-        </div>
+        </ActionToolbar>
       }
       kpis={<ProductMetrics companyId={company.id} />}
     >
