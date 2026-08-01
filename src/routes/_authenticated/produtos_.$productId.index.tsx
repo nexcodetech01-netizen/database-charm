@@ -149,8 +149,13 @@ function ProductDetailPage() {
     stock,
     minStock,
     stockValue,
-    marginPctStored: margin,
+    marginPctReal,
   } = financials!;
+
+  // Margem exibida = (Preço − Custo Total) / Preço, com arredondamento
+  // matemático padrão em 2 casas (evita truncamento tipo 47,40% vs 47,49%).
+  const margin = Math.round(marginPctReal * 100) / 100;
+
 
   // Estoque: reservado / máx / última entrada / última venda (derivados de movements)
   const reserved = movements
