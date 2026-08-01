@@ -9,7 +9,7 @@ import { RADIUS_TOKENS, SHADOW_TOKENS, SPACING_TOKENS, type SpacingToken } from 
  * Sem lógica de negócio.
  */
 export interface PanelProps {
-  children: ReactNode;
+  children?: ReactNode;
   /** Densidade do padding/stack interno. */
   density?: SpacingToken;
   /** Nível de elevação (tokens UI.1.1). */
