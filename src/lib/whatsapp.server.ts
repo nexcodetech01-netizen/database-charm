@@ -12,6 +12,58 @@ import { integrationFetch } from "@/lib/http-client.server";
 
 const GRAPH_VERSION = "v20.0";
 
+/** Código estável para "integração ainda não configurada" (não é falha de envio). */
+export const WHATSAPP_NOT_CONFIGURED = "whatsapp_not_configured";
+
+/** Mensagem amigável exibida ao operador quando faltam os secrets. */
+export const WHATSAPP_PENDING_MESSAGE =
+  "Configuração do WhatsApp pendente. Cadastre WHATSAPP_PHONE_NUMBER_ID e WHATSAPP_ACCESS_TOKEN em Configurações › WhatsApp para habilitar o envio.";
+
+export interface WhatsAppCredentials {
+  configured: boolean;
+  phoneNumberId: string | null;
+  accessToken: string | null;
+  /** Nomes dos secrets ausentes, na ordem de configuração. */
+  missing: string[];
+}
+
+/**
+ * Lê as credenciais da Cloud API. Nunca lança: quando algo falta, o chamador
+ * devolve um aviso amigável em vez de quebrar o fluxo de envio.
+ */
+export function getWhatsAppCredentials(): WhatsAppCredentials {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? null;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN ?? null;
+  const missing: string[] = [];
+  if (!phoneNumberId) missing.push("WHATSAPP_PHONE_NUMBER_ID");
+  if (!accessToken) missing.push("WHATSAPP_ACCESS_TOKEN");
+  return {
+    configured: missing.length === 0,
+    phoneNumberId,
+    accessToken,
+    missing,
+  };
+}
+
+/** Resposta padrão (não-fatal) quando a integração ainda não foi configurada. */
+export function whatsAppNotConfiguredResult(to: string, missing: string[]) {
+  console.warn(
+    JSON.stringify({
+      scope: "whatsapp",
+      event: "not_configured",
+      missing,
+    }),
+  );
+  return {
+    ok: false as const,
+    waMessageId: null,
+    to,
+    error: WHATSAPP_PENDING_MESSAGE,
+    code: WHATSAPP_NOT_CONFIGURED,
+    missing,
+  };
+}
+
 export interface SendTemplateInput {
   /** Destino em qualquer formato — será normalizado para E.164 sem "+". */
   to: string;
@@ -36,6 +88,10 @@ export interface SendTemplateResult {
   error: string | null;
   status?: number;
   raw?: unknown;
+  /** `whatsapp_not_configured` quando faltam secrets — não é erro de envio. */
+  code?: string | null;
+  /** Secrets ausentes, quando `code === "whatsapp_not_configured"`. */
+  missing?: string[];
 }
 
 /**
@@ -58,20 +114,11 @@ export function normalizeBrazilianPhone(input: string): string {
 export async function sendWhatsAppTemplateRaw(
   input: SendTemplateInput,
 ): Promise<SendTemplateResult> {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
   const languageCode = input.languageCode ?? "pt_BR";
 
-  if (!phoneNumberId || !accessToken) {
-    return {
-      ok: false,
-      waMessageId: null,
-      to,
-      error:
-        "Credenciais WhatsApp ausentes (WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN).",
-    };
-  }
+  if (!configured) return whatsAppNotConfiguredResult(to, missing);
   if (!to) {
     return { ok: false, waMessageId: null, to, error: "Telefone inválido." };
   }
@@ -221,22 +268,18 @@ export interface SendTextResult {
   to: string;
   error: string | null;
   status?: number;
+  /** `whatsapp_not_configured` quando faltam secrets — não é erro de envio. */
+  code?: string | null;
+  /** Secrets ausentes, quando `code === "whatsapp_not_configured"`. */
+  missing?: string[];
 }
 
 export async function sendWhatsAppText(input: SendTextInput): Promise<SendTextResult> {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
   const text = (input.text ?? "").slice(0, 4096);
 
-  if (!phoneNumberId || !accessToken) {
-    return {
-      ok: false,
-      waMessageId: null,
-      to,
-      error: "Credenciais WhatsApp ausentes.",
-    };
-  }
+  if (!configured) return whatsAppNotConfiguredResult(to, missing);
   if (!to) return { ok: false, waMessageId: null, to, error: "Telefone inválido." };
   if (!text) return { ok: false, waMessageId: null, to, error: "Texto vazio." };
 
@@ -295,14 +338,11 @@ export interface SendImageInput {
 }
 
 export async function sendWhatsAppImage(input: SendImageInput): Promise<SendTextResult> {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
   const link = (input.imageUrl ?? "").trim();
 
-  if (!phoneNumberId || !accessToken) {
-    return { ok: false, waMessageId: null, to, error: "Credenciais WhatsApp ausentes." };
-  }
+  if (!configured) return whatsAppNotConfiguredResult(to, missing);
   if (!to) return { ok: false, waMessageId: null, to, error: "Telefone inválido." };
   if (!link) return { ok: false, waMessageId: null, to, error: "Imagem vazia." };
 
