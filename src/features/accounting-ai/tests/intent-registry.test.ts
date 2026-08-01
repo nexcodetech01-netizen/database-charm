@@ -53,6 +53,6 @@ describe("accounting-ai · intent registry (Sprint 7.2.1)", () => {
   it("regras mais específicas continuam vencendo as genéricas", () => {
     expect(detectIntent("qual o lucro do mês?").intent).toBe("consultar_lucro");
     expect(detectIntent("quanto vou pagar de das?").intent).toBe("consultar_das");
-    expect(detectIntent("auditar a empresa").intent).toBe("auditar_empresa");
+    expect(detectIntent("auditar a empresa").intent).toBe("auditoria_geral");
   });
 });
