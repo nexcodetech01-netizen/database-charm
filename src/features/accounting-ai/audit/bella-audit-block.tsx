@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useBellaAudit } from "./use-bella-audit";
+import { useBellaAudit, type UseBellaAuditOptions } from "./use-bella-audit";
 import { AUDIT_SEVERITY_LABELS } from "./selectors";
 import type { AuditSeverity } from "./types";
 
 export interface BellaAuditBlockProps {
   companyId: string;
   className?: string;
+  /** Retrato já lido pelo dashboard (evita consulta duplicada). */
+  preloaded?: UseBellaAuditOptions["preloaded"];
+  loading?: boolean;
 }
 
 const SEVERITY_TONES: Record<AuditSeverity, string> = {
@@ -25,8 +28,16 @@ const SEVERITY_TONES: Record<AuditSeverity, string> = {
  * Bloco "Saúde Operacional" — leitura pura da auditoria da Bella.
  * Nenhum botão corrige dados: apenas navegação para os módulos oficiais.
  */
-export function BellaAuditBlock({ companyId, className }: BellaAuditBlockProps) {
-  const { view, isLoading } = useBellaAudit(companyId);
+export function BellaAuditBlock({
+  companyId,
+  className,
+  preloaded,
+  loading,
+}: BellaAuditBlockProps) {
+  const { view, isLoading } = useBellaAudit(
+    companyId,
+    preloaded === undefined ? {} : { preloaded, loading },
+  );
 
   return (
     <Card className={cn("rounded-2xl", className)} data-testid="bella-audit-block">
