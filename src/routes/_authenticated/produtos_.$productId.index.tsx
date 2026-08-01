@@ -683,9 +683,8 @@ function ProductDetailPage() {
                 highlight
               />
             </div>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
 
       {/* Movimentações */}
