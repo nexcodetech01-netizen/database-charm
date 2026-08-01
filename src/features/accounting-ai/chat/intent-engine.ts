@@ -497,7 +497,7 @@ const FOLLOW_UP_ONLY = /^(e|entao|ok|certo|mas|sim)?\s*(ai|agora|dai|entao|isso|
 
 /** Extrai um crescimento percentual citado ("crescer 20%", "20 por cento"). */
 export function extractGrowthPct(raw: string): number | null {
-  const text = normalize(raw);
+  const text = `${normalize(raw)} | ${raw.toLowerCase()}`;
   const match = text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:%|por cento|porcento)/);
   if (!match?.[1]) return null;
   const value = Number(match[1].replace(",", "."));
