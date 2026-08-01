@@ -14,6 +14,7 @@ import {
   type CatalogNavState,
   type CatalogProductOption,
 } from "./catalog-nav";
+import { handleProductSearchTurn } from "./product-search.server";
 
 type Db = { from: (t: string) => any };
 
@@ -103,10 +104,11 @@ export async function handleCatalogTurn(args: {
     };
   }
 
-  if (!inCatalog) return null;
-
   const categories = await listCategoriesWithActiveProducts(db, companyId);
-  const chosen = matchCategory(text, categories);
+  if (categories.length === 0) return null;
+
+  // Escolha por número/nome só vale dentro do fluxo de catálogo.
+  const chosen = inCatalog ? matchCategory(text, categories) : null;
   if (chosen) {
     const products = await listActiveProductsByCategory(db, companyId, chosen.id);
     return {
