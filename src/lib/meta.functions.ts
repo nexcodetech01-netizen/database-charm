@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHost } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveCompanyId } from "@/lib/company-resolver.server";
 
 const CALLBACK_PATH = "/api/public/meta/oauth/callback";
 
@@ -16,20 +17,21 @@ function buildRedirectUri(): string {
   return `${proto}://${host}${CALLBACK_PATH}`;
 }
 
+/**
+ * Empresa ativa do usuário. RC.0.2: delega ao resolver oficial, que só
+ * devolve empresa com vínculo real (owner ou user_roles) — nunca confia
+ * em `profiles.current_company_id` isoladamente.
+ */
 async function requireCurrentCompanyId(
-  supabase: { from: (t: string) => any },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
   userId: string,
 ): Promise<string> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("current_company_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data?.current_company_id) {
+  try {
+    return await resolveCompanyId(supabase, userId);
+  } catch {
     throw new Error("Nenhuma empresa ativa. Complete o onboarding antes de conectar a Meta.");
   }
-  return data.current_company_id as string;
 }
 
 /** Returns the OAuth authorization URL the browser must open. */
