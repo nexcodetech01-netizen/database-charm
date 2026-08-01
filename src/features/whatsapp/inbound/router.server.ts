@@ -630,6 +630,37 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         .update({ last_outbound_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
+
+    // 3d-bis) Sugestões complementares após escolha/adição (somente leitura).
+    const upsellTurn = await handleUpsellTurn({
+      db,
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      text: msg.text,
+      lastProductIds: catalogTurn.state?.lastProductIds ?? null,
+    });
+    if (upsellTurn) {
+      const upsellSent = await sendWhatsAppText({ to: msg.phone, text: upsellTurn.text });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: upsellSent.waMessageId,
+        text: upsellTurn.text,
+        status: upsellSent.ok ? "sent" : "failed",
+        error: upsellSent.error,
+        processing_ms: Date.now() - startedAt,
+        provider: "catalog-nav",
+        skill_id: "catalog.upsell",
+      });
+      if (upsellSent.ok) {
+        await db
+          .from("whatsapp_conversations")
+          .update({ last_outbound_at: new Date().toISOString() })
+          .eq("id", conversationId);
+      }
+    }
     return;
   }
 
