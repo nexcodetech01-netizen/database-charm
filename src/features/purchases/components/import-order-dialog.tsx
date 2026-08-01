@@ -187,6 +187,33 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
   );
 }
 
+/** Limite máximo de espera pela leitura por IA (servidor responde antes, em 45s). */
+const CLIENT_TIMEOUT_MS = 60_000;
+
+class TimeoutError extends Error {
+  constructor() {
+    super("Tempo de leitura esgotado.");
+    this.name = "TimeoutError";
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new TimeoutError()), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
