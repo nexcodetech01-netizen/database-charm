@@ -167,7 +167,6 @@ const RULES: IntentRule[] = [
         "o que mais vende",
         "o que mais vendeu",
         "melhor cliente",
-        "ticket medio",
         "vendas caindo",
         "cai as vendas",
         "caiu as vendas",
