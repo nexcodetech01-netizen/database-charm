@@ -403,8 +403,8 @@ function ProductDetailPage() {
       kpis={kpis}
     >
       {/* Informações principais — reconstruído: foto 35% + dados 65% */}
-      <Card>
-        <CardContent className="p-6 lg:p-8">
+      <Section flushBody className="p-6 lg:p-8">
+
           <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
             {/* Coluna esquerda: foto */}
             <div className="space-y-3">
