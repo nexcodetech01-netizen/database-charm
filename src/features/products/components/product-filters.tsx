@@ -116,13 +116,23 @@ export function ProductFilters({ companyId, filters, onChange, onReset }: Props)
         </Select>
       </div>
 
-      {hasFilter ? (
-        <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="include-inactive"
+            checked={!!filters.includeInactive}
+            onCheckedChange={(v) => onChange({ includeInactive: v, page: 1 })}
+          />
+          <Label htmlFor="include-inactive" className="text-sm text-muted-foreground">
+            Exibir inativos
+          </Label>
+        </div>
+        {hasFilter ? (
           <Button variant="ghost" size="sm" onClick={onReset}>
             <X className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
           </Button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </Panel>
 
   );
