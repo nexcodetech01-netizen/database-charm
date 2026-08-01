@@ -19,6 +19,7 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
   situacao_estoque: "Sobre o seu estoque:",
   situacao_vendas: "Sobre as suas vendas:",
   situacao_compras: "Sobre as suas compras:",
+  situacao_crm: "Sobre os seus clientes:",
 };
 
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {
@@ -30,6 +31,7 @@ const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   situacao_estoque: "Você pode ver os detalhes no módulo Estoque.",
   situacao_vendas: "Você pode ver os detalhes no módulo Vendas.",
   situacao_compras: "Você pode ver os detalhes no módulo Compras.",
+  situacao_crm: "Você pode ver os detalhes no módulo Clientes.",
 };
 
 export const FALLBACK_UNKNOWN =

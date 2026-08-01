@@ -15,6 +15,7 @@ import {
   useRestoreCustomer,
 } from "@/features/customers";
 import type { Customer, CustomerListFilters } from "@/features/customers";
+import { BellaCrmPanel } from "@/features/accounting-ai/crm";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
@@ -93,6 +94,8 @@ function CustomersPage() {
       }
       kpis={<CustomerMetrics companyId={company.id} />}
     >
+      <BellaCrmPanel companyId={company.id} />
+
       <CustomerFilters
         filters={filters}
         onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
