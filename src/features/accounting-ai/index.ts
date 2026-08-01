@@ -35,6 +35,7 @@ export * from "./inventory";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
+export * from "./audit";
 export * from "./chat";
 export { useAccountingAiSummary } from "./hooks/use-accounting-ai";
 export { useBellaChat } from "./hooks/use-bella-chat";
