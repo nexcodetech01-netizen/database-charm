@@ -76,6 +76,22 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
   consultar_retirada: ["consultar_retirada"],
   consultar_disponibilidade: ["consultar_disponibilidade"],
   consultar_risco: ["consultar_risco"],
+  /** Sprint 7.1 — tributário: skills que leem o motor oficial do Simples. */
+  situacao_tributaria: [
+    "consultar_das",
+    "consultar_rbt12",
+    "consultar_faixa",
+    "consultar_aliquota",
+    "consultar_vencimento_das",
+  ],
+  consultar_das: ["consultar_das"],
+  consultar_rbt12: ["consultar_rbt12"],
+  consultar_anexo: ["consultar_anexo"],
+  consultar_aliquota: ["consultar_aliquota"],
+  consultar_faixa: ["consultar_faixa"],
+  consultar_vencimento_das: ["consultar_vencimento_das"],
+  simular_das: ["simular_tributos"],
+  simular_faturamento: ["simular_tributos"],
 };
 
 const REASONS: Partial<Record<AccountingSkillId, string>> = {
@@ -88,6 +104,12 @@ const REASONS: Partial<Record<AccountingSkillId, string>> = {
   consultar_retirada: "Consultoria de retirada",
   consultar_lucro: "Lucro apurado",
   consultar_produtos: "Ranking de produtos e estoque",
+  consultar_das: "DAS da competência (motor oficial)",
+  consultar_rbt12: "RBT12 e uso do teto do Simples",
+  consultar_faixa: "Faixa do Simples",
+  consultar_aliquota: "Alíquota efetiva",
+  consultar_vencimento_das: "Vencimento do DAS",
+  simular_tributos: "Simulação tributária oficial",
 };
 
 export interface PlanOptions {
@@ -101,12 +123,24 @@ export function planIntent(match: IntentMatch, options: PlanOptions = {}): ChatP
   );
 
   if (match.intent === "desconhecida") {
-    return { intent: match.intent, steps: [], shape: "none", amount: match.amount };
+    return {
+      intent: match.intent,
+      steps: [],
+      shape: "none",
+      amount: match.amount,
+      growthPct: match.growthPct ?? null,
+    };
   }
 
   const skills = (PLANS[match.intent] ?? []).filter((id) => available.has(id));
   if (skills.length === 0) {
-    return { intent: match.intent, steps: [], shape: "none", amount: match.amount };
+    return {
+      intent: match.intent,
+      steps: [],
+      shape: "none",
+      amount: match.amount,
+      growthPct: match.growthPct ?? null,
+    };
   }
 
   return {
@@ -117,5 +151,6 @@ export function planIntent(match: IntentMatch, options: PlanOptions = {}): ChatP
     })),
     shape: skills.length > 1 ? "composite" : "single",
     amount: match.amount,
+    growthPct: match.growthPct ?? null,
   };
 }

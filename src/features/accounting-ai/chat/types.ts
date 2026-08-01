@@ -35,6 +35,15 @@ export type BellaIntentId =
   | "situacao_compras"
   | "situacao_crm"
   | "pontos_atencao"
+  | "situacao_tributaria"
+  | "consultar_das"
+  | "consultar_rbt12"
+  | "consultar_anexo"
+  | "consultar_aliquota"
+  | "consultar_faixa"
+  | "consultar_vencimento_das"
+  | "simular_das"
+  | "simular_faturamento"
   | "desconhecida";
 
 export interface IntentMatch {
@@ -47,6 +56,8 @@ export interface IntentMatch {
   amount: number | null;
   /** true quando a intenção veio do contexto da conversa. */
   fromContext: boolean;
+  /** Sprint 7.1 — crescimento percentual citado ("crescer 20%"). */
+  growthPct?: number | null;
 }
 
 export interface ChatPlanStep {
@@ -60,6 +71,8 @@ export interface ChatPlan {
   /** Resposta consolidada (vários skills) ou pontual (um skill). */
   shape: "single" | "composite" | "none";
   amount: number | null;
+  /** Sprint 7.1 — crescimento percentual citado, quando houver. */
+  growthPct?: number | null;
 }
 
 export interface ChatSkillOutcome {

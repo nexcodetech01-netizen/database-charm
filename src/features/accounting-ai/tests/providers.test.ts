@@ -16,6 +16,7 @@ import {
   ticketProvider,
 } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
+import { makeTestFiscalPort } from "./fixtures";
 
 const period = { start: "2026-01-01", end: "2026-01-31", label: "01/2026" };
 
@@ -133,10 +134,7 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
         stagnant: [{ id: "p3", name: "Produto C", sku: "C", stock: 7 }],
       }),
     },
-    fiscal: {
-      monthlyRevenue: async () => 11000,
-      apportionments: async () => [],
-    },
+    fiscal: makeTestFiscalPort(),
     cash: {
       listSessions: async () => [{ status: "open" }, { status: "closed" }],
     },

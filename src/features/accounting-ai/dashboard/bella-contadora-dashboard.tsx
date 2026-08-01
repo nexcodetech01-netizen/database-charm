@@ -36,6 +36,7 @@ import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
 import { buildFinancialAdvice } from "../advisor";
+import { BellaTaxBlock } from "../tax";
 import {
   bellaNotificationStore,
   buildBellaNotifications,
@@ -225,6 +226,8 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
           />
 
           <BellaBriefCard summary={s} loading={isLoading} />
+
+          <BellaTaxBlock companyId={companyId} />
 
           <BellaChatPanel companyId={companyId} />
 

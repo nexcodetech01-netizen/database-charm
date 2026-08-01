@@ -71,6 +71,148 @@ interface IntentRule {
 /** Cada entrada de `terms` é um conjunto de termos alternativos (OR). */
 const RULES: IntentRule[] = [
   {
+    /** Sprint 7.1 — simulação tributária (motor oficial de projeções). */
+    intent: "simular_faturamento",
+    weight: 22,
+    terms: [
+      [
+        "se eu faturar",
+        "se eu vender",
+        "e se eu faturar",
+        "simular faturamento",
+        "simule um faturamento",
+        "simulacao de faturamento",
+        "quanto pagaria se",
+        "se crescer",
+        "se eu crescer",
+        "crescer",
+        "crescimento de",
+        "aumentar o faturamento",
+      ],
+    ],
+  },
+  {
+    intent: "simular_das",
+    weight: 21,
+    terms: [
+      [
+        "simular das",
+        "simule o das",
+        "simulacao do das",
+        "simular imposto",
+        "simular tributos",
+        "simulacao tributaria",
+        "cenarios de imposto",
+        "cenario tributario",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_vencimento_das",
+    weight: 20,
+    terms: [
+      [
+        "quando vence o das",
+        "vencimento do das",
+        "quando pagar o das",
+        "prazo do das",
+        "data do das",
+        "quando vence o imposto",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_rbt12",
+    weight: 20,
+    terms: [
+      [
+        "rbt12",
+        "rbt 12",
+        "receita bruta acumulada",
+        "faturamento dos ultimos 12 meses",
+        "ultimos 12 meses",
+        "teto do simples",
+        "limite do simples",
+        "quanto falta para estourar",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_faixa",
+    weight: 20,
+    terms: [
+      [
+        "qual minha faixa",
+        "minha faixa",
+        "faixa do simples",
+        "mudar de faixa",
+        "mudanca de faixa",
+        "proxima faixa",
+        "vou mudar de faixa",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_anexo",
+    weight: 19,
+    terms: [
+      [
+        "qual meu anexo",
+        "meu anexo",
+        "anexo do simples",
+        "qual anexo",
+        "meu regime",
+        "qual meu regime",
+        "regime tributario",
+        "estou no simples",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_aliquota",
+    weight: 19,
+    terms: [
+      [
+        "aliquota",
+        "aliquota efetiva",
+        "qual minha aliquota",
+        "quanto por cento de imposto",
+        "percentual de imposto",
+        "carga tributaria",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_das",
+    weight: 19,
+    terms: [
+      [
+        "quanto vou pagar de das",
+        "pagar de das",
+        "meu das",
+        "valor do das",
+        "das do mes",
+        "das da competencia",
+        "guia do simples",
+        "simples nacional",
+      ],
+    ],
+  },
+  {
+    intent: "situacao_tributaria",
+    weight: 18,
+    terms: [
+      [
+        "situacao tributaria",
+        "como esta meu tributario",
+        "como esta o tributario",
+        "meu tributario",
+        "resumo tributario",
+        "panorama tributario",
+      ],
+    ],
+  },
+  {
     intent: "situacao_geral",
     weight: 12,
     terms: [
@@ -353,6 +495,15 @@ const RULES: IntentRule[] = [
 /** Perguntas de seguimento sem sujeito próprio ("e agora?", "e daí?"). */
 const FOLLOW_UP_ONLY = /^(e|entao|ok|certo|mas|sim)?\s*(ai|agora|dai|entao|isso|e ai)?\s*[.?!]*$/;
 
+/** Extrai um crescimento percentual citado ("crescer 20%", "20 por cento"). */
+export function extractGrowthPct(raw: string): number | null {
+  const text = `${normalize(raw)} | ${raw.toLowerCase()}`;
+  const match = text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:%|por cento|porcento)/);
+  if (!match?.[1]) return null;
+  const value = Number(match[1].replace(",", "."));
+  return Number.isFinite(value) ? value : null;
+}
+
 export interface DetectIntentOptions {
   context?: ChatContextState | null;
 }
@@ -360,6 +511,7 @@ export interface DetectIntentOptions {
 export function detectIntent(raw: string, options: DetectIntentOptions = {}): IntentMatch {
   const text = normalize(raw);
   const amount = extractAmount(raw);
+  const growthPct = extractGrowthPct(raw);
   const context = options.context ?? null;
 
   if (!text) {
@@ -391,6 +543,7 @@ export function detectIntent(raw: string, options: DetectIntentOptions = {}): In
       confidence: Number(confidence.toFixed(2)),
       matched: best.matched,
       amount,
+      growthPct,
       fromContext: false,
     };
   }
@@ -402,9 +555,10 @@ export function detectIntent(raw: string, options: DetectIntentOptions = {}): In
       confidence: 0.4,
       matched: [],
       amount: amount ?? context.lastAmount,
+      growthPct,
       fromContext: true,
     };
   }
 
-  return { intent: "desconhecida", confidence: 0, matched: [], amount, fromContext: false };
+  return { intent: "desconhecida", confidence: 0, matched: [], amount, growthPct, fromContext: false };
 }

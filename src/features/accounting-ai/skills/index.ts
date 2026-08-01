@@ -30,6 +30,16 @@ import { accountingAdapter } from "../services/adapters";
 import { currentPeriod } from "../lib/helpers";
 import { advisorQueries, buildFinancialAdvice } from "../advisor";
 import { buildBellaNotifications } from "../proactive";
+import { taxRegimeProvider, taxSimulationProvider } from "../tax/provider";
+import {
+  describeAnnex,
+  describeBracket,
+  describeDas,
+  describeDueDate,
+  describeRate,
+  describeRbt12,
+  describeSimulation,
+} from "../tax/selectors";
 
 export type AccountingSkillId =
   | "consultar_lucro"
@@ -50,7 +60,14 @@ export type AccountingSkillId =
   | "consultar_retirada"
   | "consultar_disponibilidade"
   | "consultar_risco"
-  | "consultar_notificacoes";
+  | "consultar_notificacoes"
+  | "consultar_das"
+  | "consultar_rbt12"
+  | "consultar_anexo"
+  | "consultar_aliquota"
+  | "consultar_faixa"
+  | "consultar_vencimento_das"
+  | "simular_tributos";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -425,6 +442,97 @@ export const consultarNotificacoesSkill: AccountingSkill = {
   },
 };
 
+/* ───────────── Sprint 7.1 — skills tributárias (motor oficial) ───────────── */
+
+/** Lê o retrato tributário uma única vez por pergunta. */
+async function readTaxSnapshot(companyId: string, deps?: ProviderDeps) {
+  return deps?.taxSnapshot ?? (await taxRegimeProvider(companyId, deps));
+}
+
+export const consultarDasSkill: AccountingSkill = {
+  id: "consultar_das",
+  name: "Consultar DAS",
+  description: "DAS apurado ou previsto pelo motor oficial do Simples.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("DAS");
+    return { ok: true, text: describeDas(res.data), data: res.data };
+  },
+};
+
+export const consultarRbt12Skill: AccountingSkill = {
+  id: "consultar_rbt12",
+  name: "Consultar RBT12",
+  description: "Receita bruta dos últimos 12 meses e uso do teto do Simples.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("RBT12");
+    return { ok: true, text: describeRbt12(res.data), data: res.data };
+  },
+};
+
+export const consultarAnexoSkill: AccountingSkill = {
+  id: "consultar_anexo",
+  name: "Consultar anexo e regime",
+  description: "Regime tributário e anexo do Simples do perfil oficial.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("regime tributário");
+    return { ok: true, text: describeAnnex(res.data), data: res.data };
+  },
+};
+
+export const consultarAliquotaSkill: AccountingSkill = {
+  id: "consultar_aliquota",
+  name: "Consultar alíquota efetiva",
+  description: "Alíquota efetiva, nominal e dedução da faixa atual.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("alíquota");
+    return { ok: true, text: describeRate(res.data), data: res.data };
+  },
+};
+
+export const consultarFaixaSkill: AccountingSkill = {
+  id: "consultar_faixa",
+  name: "Consultar faixa do Simples",
+  description: "Faixa atual, teto da faixa e distância para a próxima.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("faixa do Simples");
+    return { ok: true, text: describeBracket(res.data), data: res.data };
+  },
+};
+
+export const consultarVencimentoDasSkill: AccountingSkill = {
+  id: "consultar_vencimento_das",
+  name: "Consultar vencimento do DAS",
+  description: "Data de vencimento do DAS da competência.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readTaxSnapshot(companyId, deps);
+    if (!res.data) return empty("vencimento do DAS");
+    return { ok: true, text: describeDueDate(res.data), data: res.data };
+  },
+};
+
+export const simularTributosSkill: AccountingSkill = {
+  id: "simular_tributos",
+  name: "Simular tributos",
+  description: "Cenários de faturamento e DAS via motor oficial de projeções.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await taxSimulationProvider(companyId, deps?.simulation ?? {}, deps);
+    if (!res.data) return empty("simulação tributária");
+    return { ok: true, text: describeSimulation(res.data), data: res.data };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -445,6 +553,13 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarDisponibilidadeSkill,
   consultarRiscoSkill,
   consultarNotificacoesSkill,
+  consultarDasSkill,
+  consultarRbt12Skill,
+  consultarAnexoSkill,
+  consultarAliquotaSkill,
+  consultarFaixaSkill,
+  consultarVencimentoDasSkill,
+  simularTributosSkill,
 ];
 
 

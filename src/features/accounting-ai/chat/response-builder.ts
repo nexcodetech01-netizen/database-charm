@@ -20,6 +20,9 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
   situacao_vendas: "Sobre as suas vendas:",
   situacao_compras: "Sobre as suas compras:",
   situacao_crm: "Sobre os seus clientes:",
+  situacao_tributaria: "Sobre a sua situação tributária:",
+  simular_das: "Simulação tributária:",
+  simular_faturamento: "Simulação tributária:",
 };
 
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {
@@ -32,6 +35,9 @@ const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   situacao_vendas: "Você pode ver os detalhes no módulo Vendas.",
   situacao_compras: "Você pode ver os detalhes no módulo Compras.",
   situacao_crm: "Você pode ver os detalhes no módulo Clientes.",
+  situacao_tributaria: "Os detalhes estão no módulo Fiscal › Tributário.",
+  simular_das: "Simulação indicativa, calculada pelo motor oficial do Simples.",
+  simular_faturamento: "Simulação indicativa, calculada pelo motor oficial do Simples.",
 };
 
 export const FALLBACK_UNKNOWN =
