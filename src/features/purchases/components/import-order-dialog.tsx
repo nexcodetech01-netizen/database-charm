@@ -51,11 +51,20 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
         extracted = parseNfeXml(text);
       } else {
         const dataUrl = await fileToDataUrl(file);
-        const res = await parseDoc({
-          data: { kind: tab === "image" ? "image" : "pdf", dataUrl, filename: file.name },
-        });
+        // Timeout do cliente: a UI nunca fica presa em "Processando…".
+        const res = await withTimeout(
+          parseDoc({
+            data: { kind: tab === "image" ? "image" : "pdf", dataUrl, filename: file.name },
+          }),
+          CLIENT_TIMEOUT_MS,
+        );
+        if (res.error) {
+          toast.error(res.error);
+          return;
+        }
         extracted = res.items;
       }
+
 
       if (extracted.length === 0) {
         toast.warning("Nenhum item identificado no arquivo.");
@@ -91,12 +100,19 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Falha ao processar arquivo.");
+      toast.error(
+        err instanceof TimeoutError
+          ? "A leitura do arquivo demorou demais. Tente novamente com um arquivo menor."
+          : err instanceof Error && err.message
+            ? err.message
+            : "Falha ao processar arquivo. Tente novamente.",
+      );
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
+
 
   const accept =
     tab === "pdf" ? "application/pdf" : tab === "xml" ? ".xml,text/xml,application/xml" : "image/*";
@@ -170,6 +186,33 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
     </Dialog>
   );
 }
+
+/** Limite máximo de espera pela leitura por IA (servidor responde antes, em 45s). */
+const CLIENT_TIMEOUT_MS = 60_000;
+
+class TimeoutError extends Error {
+  constructor() {
+    super("Tempo de leitura esgotado.");
+    this.name = "TimeoutError";
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new TimeoutError()), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
