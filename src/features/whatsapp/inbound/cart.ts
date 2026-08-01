@@ -161,7 +161,9 @@ export function money(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(Number.isFinite(value) ? value : 0);
+  })
+    .format(Number.isFinite(value) ? value : 0)
+    .replace(/\u00a0/g, " ");
 }
 
 export function formatCartLines(cart: readonly CartLine[]): string[] {
