@@ -12,6 +12,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { integrationFetch } from "@/lib/http-client.server";
+import { resolveCompanyId } from "@/lib/company-resolver.server";
 
 export const mlAttributeSchema = z
   .object({
@@ -348,14 +349,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    // 1. Empresa ativa
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("current_company_id")
-      .eq("id", userId)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    const companyId = profile?.current_company_id as string | undefined;
+    // 1. Empresa ativa — RC.0.2: exige vínculo real (owner / user_roles).
+    const companyId = await resolveCompanyId(supabase, userId);
     if (!companyId) throw new Error("Nenhuma empresa ativa.");
 
     // 2. Produto
