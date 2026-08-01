@@ -283,3 +283,77 @@ export async function sendWhatsAppText(input: SendTextInput): Promise<SendTextRe
     };
   }
 }
+
+/**
+ * Envia uma imagem (por URL pública/assinada) pelo WhatsApp Cloud API.
+ * Mesmas regras da janela de 24h do `sendWhatsAppText`.
+ */
+export interface SendImageInput {
+  to: string;
+  imageUrl: string;
+  caption?: string;
+}
+
+export async function sendWhatsAppImage(input: SendImageInput): Promise<SendTextResult> {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const to = normalizeBrazilianPhone(input.to);
+  const link = (input.imageUrl ?? "").trim();
+
+  if (!phoneNumberId || !accessToken) {
+    return { ok: false, waMessageId: null, to, error: "Credenciais WhatsApp ausentes." };
+  }
+  if (!to) return { ok: false, waMessageId: null, to, error: "Telefone inválido." };
+  if (!link) return { ok: false, waMessageId: null, to, error: "Imagem vazia." };
+
+  try {
+    const res = await integrationFetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to,
+          type: "image",
+          image: {
+            link,
+            ...(input.caption ? { caption: input.caption.slice(0, 1024) } : {}),
+          },
+        }),
+      },
+      { integration: "whatsapp:image", timeoutMs: 20_000 },
+    );
+    const json = (await res.json().catch(() => ({}))) as {
+      messages?: Array<{ id: string }>;
+      error?: { message?: string };
+    };
+    if (!res.ok) {
+      return {
+        ok: false,
+        waMessageId: null,
+        to,
+        error: json.error?.message ?? `HTTP ${res.status}`,
+        status: res.status,
+      };
+    }
+    return {
+      ok: true,
+      waMessageId: json.messages?.[0]?.id ?? null,
+      to,
+      error: null,
+      status: res.status,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      waMessageId: null,
+      to,
+      error: err instanceof Error ? err.message : "Erro desconhecido",
+    };
+  }
+}
