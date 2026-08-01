@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import {
-  AlertTriangle,
   ArrowRight,
   FileClock,
   PackageMinus,
@@ -8,8 +7,17 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Section, StatusBadge } from "@/components/design";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import {
+  RADIUS_TOKENS,
+  SPACING_TOKENS,
+  TEXT_TOKENS,
+  statusToken,
+  type StatusToken,
+} from "@/design";
 import { ROUTES } from "@/config/routes";
 import { useSaleMetrics, useSalesList } from "@/features/sales/hooks/use-sales";
 import { useInventoryMetrics } from "@/features/inventory/hooks/use-inventory";
@@ -30,16 +38,10 @@ interface ActionItem {
 }
 
 
-const TONE_BADGE: Record<ActionTone, string> = {
-  danger: "border-destructive/40 bg-destructive/10 text-destructive",
-  warning: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  info: "border-primary/30 bg-primary/10 text-primary",
-};
-
-const TONE_ICON: Record<ActionTone, string> = {
-  danger: "bg-destructive/15 text-destructive",
-  warning: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  info: "bg-primary/15 text-primary",
+const TONE_STATUS: Record<ActionTone, StatusToken> = {
+  danger: "danger",
+  warning: "warning",
+  info: "info",
 };
 
 const TONE_LABEL: Record<ActionTone, string> = {
@@ -184,92 +186,90 @@ export function ActionCenter({ companyId }: { companyId: string }) {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-        <div>
-          <CardTitle className="text-base">O que preciso resolver hoje</CardTitle>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Pendências, alertas e recomendações — tudo com ação direta.
-          </p>
-        </div>
-        <Badge variant="outline" className="text-xs">
+    <Section
+      title="Prioridades"
+      description="Pendências, alertas e recomendações — com ação direta."
+      density="comfortable"
+      actions={
+        <StatusBadge status={items.length > 0 ? "warning" : "success"} withDot>
           {items.length} {items.length === 1 ? "item" : "itens"}
-        </Badge>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-2">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-16 animate-pulse rounded-lg border border-border bg-muted/30" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="text-3xl" aria-hidden>🎉</div>
-            <p className="mt-3 text-base font-semibold">Parabéns!</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Sua empresa está organizada.
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Bella encontrou apenas uma oportunidade:
-            </p>
-            <Link
-              to={ROUTES.marketing}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
-            >
-              <Sparkles className="h-3 w-3" /> Criar campanha
+        </StatusBadge>
+      }
+    >
+      {isLoading ? (
+        <div className={SPACING_TOKENS.compact.stack}>
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "grid h-10 w-10 place-items-center",
+              RADIUS_TOKENS.lg,
+              statusToken("success").soft,
+            )}
+          >
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <p className={cn("mt-3 font-semibold", TEXT_TOKENS.base)}>Tudo em dia</p>
+          <p className={cn("mt-1 text-muted-foreground", TEXT_TOKENS.sm)}>
+            Nenhuma pendência exige sua atenção agora.
+          </p>
+          <Button size="sm" variant="outline" asChild className="mt-4">
+            <Link to={ROUTES.marketing}>
+              <Sparkles className="mr-1.5 h-4 w-4" /> Criar campanha
             </Link>
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {items.map((it) => {
-              const Icon = it.icon;
-              return (
-                <li
-                  key={it.id}
-                  className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center"
+          </Button>
+        </div>
+      ) : (
+        <ul className={SPACING_TOKENS.compact.stack}>
+          {items.map((it) => {
+            const Icon = it.icon;
+            const token = statusToken(TONE_STATUS[it.tone]);
+            return (
+              <li
+                key={it.id}
+                data-testid="action-center-item"
+                className={cn(
+                  "flex flex-col gap-3 border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center",
+                  RADIUS_TOKENS.lg,
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "grid h-9 w-9 shrink-0 place-items-center",
+                    RADIUS_TOKENS.lg,
+                    token.soft,
+                  )}
                 >
-                  <div
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ${TONE_ICON[it.tone]}`}
-                  >
-                    <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className={cn("font-medium leading-tight", TEXT_TOKENS.sm)}>{it.title}</p>
+                    <StatusBadge status={TONE_STATUS[it.tone]}>
+                      {TONE_LABEL[it.tone]}
+                    </StatusBadge>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium leading-tight">{it.title}</p>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] uppercase tracking-wider ${TONE_BADGE[it.tone]}`}
-                      >
-                        {TONE_LABEL[it.tone]}
-                      </Badge>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{it.detail}</p>
-                  </div>
-                  <Link
-                    to={it.to}
-                    search={it.search as never}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    {it.cta ?? "Resolver agora"}
-                    <ArrowRight className="h-3 w-3" />
+                  <p className={cn("mt-0.5 truncate text-muted-foreground", TEXT_TOKENS.xs)}>
+                    {it.detail}
+                  </p>
+                </div>
+                <Button size="sm" asChild className="shrink-0">
+                  <Link to={it.to} search={it.search as never}>
+                    {it.cta ?? "Resolver"}
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>
-
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        {!isLoading && items.length > 0 && (
-          <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/20 p-2.5">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <p className="text-[11px] text-muted-foreground">
-              A Bella IA atualiza esta lista automaticamente conforme seu negócio movimenta.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Section>
   );
 }

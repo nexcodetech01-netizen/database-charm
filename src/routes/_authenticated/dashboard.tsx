@@ -1,12 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
+  AlertTriangle,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   DollarSign,
   LineChart,
   Package,
+  PackageMinus,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
@@ -14,13 +14,26 @@ import {
   UserPlus,
   Wallet,
 } from "lucide-react";
-import { PageLayout } from "@/components/layout";
-import { MetricCard, MetricGrid } from "@/components/design";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ActionToolbar,
+  EntityHeader,
+  MetricCard,
+  MetricGrid,
+  Panel,
+  Section,
+  StatStack,
+  StatusBadge,
+} from "@/components/design";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { SPACING_TOKENS, TEXT_TOKENS } from "@/design";
+import { cn } from "@/lib/utils";
 import { ROUTES } from "@/config/routes";
 import { ActionCenter } from "@/features/dashboard/components/action-center";
+import { HeroMetric } from "@/features/dashboard/components/hero-metric";
+import {
+  InsightCards,
+  type InsightCardItem,
+} from "@/features/dashboard/components/insight-cards";
 import { useSaleMetrics, salesKeys } from "@/features/sales/hooks/use-sales";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -37,7 +50,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-
 function timeGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Bom dia";
@@ -45,15 +57,23 @@ function timeGreeting() {
   return "Boa noite";
 }
 
+/**
+ * Dashboard Executivo (EPIC UI.2 · Sprint UI.2.1).
+ *
+ * Reescrita **exclusivamente visual**: hooks, queries, permissões, serviços e
+ * cálculos permanecem exatamente os mesmos da versão anterior. A sprint apenas
+ * reorganiza a hierarquia (EntityHeader → Hero KPI → MetricGrid → 2 colunas →
+ * Eventos → Atividade) usando o Design System UI.1.
+ */
 function DashboardPage() {
   const { user, company } = Route.useRouteContext();
+  const navigate = useNavigate();
   const first =
     ((user.user_metadata?.full_name as string | undefined) ||
       user.email?.split("@")[0] ||
       "por aí")
       .split(" ")[0];
 
-  const [showNumbers, setShowNumbers] = useState(false);
   // Isolamento de homologação: por padrão os indicadores ignoram vendas de teste.
   const [includeHomologation, setIncludeHomologation] = useState(false);
 
@@ -85,220 +105,275 @@ function DashboardPage() {
   const receivable = finance.data?.pendingReceivable ?? 0;
   const receivableCount = finance.data?.pendingReceivableCount ?? 0;
 
+  const productCount = inventory.data?.productCount ?? 0;
+  const belowMin = inventory.data?.belowMin ?? [];
+  const stagnant = inventory.data?.stagnant ?? [];
 
+  const insights: InsightCardItem[] = [
+    {
+      id: "sales-today",
+      label: "Vendas de hoje",
+      value: dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Nenhuma venda",
+      hint: dayCount > 0 ? formatCurrency(dayTotal) : "Abra o PDV para começar o dia",
+      icon: ShoppingCart,
+      status: dayCount > 0 ? "success" : "neutral",
+    },
+    {
+      id: "receipts",
+      label: "Recebimentos de hoje",
+      value: formatCurrency(receiptsToday),
+      hint:
+        receiptsTodayCount > 0
+          ? `${receiptsTodayCount} baixa${receiptsTodayCount > 1 ? "s" : ""} confirmada${receiptsTodayCount > 1 ? "s" : ""}`
+          : "Nenhuma baixa registrada",
+      icon: Wallet,
+      status: receiptsToday > 0 ? "success" : "neutral",
+    },
+    {
+      id: "below-min",
+      label: "Estoque abaixo do mínimo",
+      value: `${belowMin.length} produto${belowMin.length === 1 ? "" : "s"}`,
+      hint: belowMin.length > 0 ? "Reabasteça para não perder venda" : "Estoque saudável",
+      icon: PackageMinus,
+      status: belowMin.length > 0 ? "warning" : "success",
+    },
+    {
+      id: "stagnant",
+      label: "Produtos parados",
+      value: `${stagnant.length} produto${stagnant.length === 1 ? "" : "s"}`,
+      hint: stagnant.length > 0 ? "Sem giro há 90 dias" : "Todo o catálogo com giro",
+      icon: Package,
+      status: stagnant.length > 0 ? "info" : "success",
+    },
+  ];
+
+  const isLoading = salesMetrics.isLoading || finance.isLoading || inventory.isLoading;
 
   return (
-    <PageLayout
-      icon={BarChart3}
-      title="Dashboard"
-      description="O que preciso resolver hoje?"
-      meta={
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">{company.name}</span>
-          <Badge variant="outline" className="text-xs">
-            {timeGreeting()}, {first}
-          </Badge>
+    <div
+      className={cn(
+        "mx-auto w-full max-w-7xl p-4 sm:p-6",
+        SPACING_TOKENS.relaxed.stack,
+      )}
+    >
+      {/* 1 — EntityHeader */}
+      <EntityHeader
+        icon={BarChart3}
+        title="Dashboard"
+        description={`${timeGreeting()}, ${first}. Um resumo executivo do seu negócio agora.`}
+        status={{ label: company.name, status: "info" }}
+        actions={
+          <ActionToolbar
+            createLabel="Nova venda"
+            onCreate={() => navigate({ to: ROUTES.sales })}
+            moreActions={[
+              { label: "Nova compra", icon: ShoppingBag, onSelect: () => navigate({ to: ROUTES.purchases }) },
+              { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
+              { label: "Novo cliente", icon: UserPlus, onSelect: () => navigate({ to: ROUTES.customers }) },
+            ]}
+          />
+        }
+      />
+
+      {/* 2 — Hero KPI: receita do período domina a tela */}
+      <HeroMetric
+        label="Receita do período · hoje"
+        value={formatCurrency(dayTotal)}
+        caption={
+          dayCount > 0
+            ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no dia de hoje.`
+            : "Nenhuma venda faturada hoje até agora."
+        }
+        icon={DollarSign}
+        status={dayTotal > 0 ? "success" : "neutral"}
+        loading={salesMetrics.isLoading}
+        side={
+          <StatStack
+            orientation="vertical"
+            density="normal"
+            loading={finance.isLoading}
+            items={[
+              { label: "Recebido hoje", value: formatCurrency(receiptsToday), icon: Wallet, status: "success" },
+              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: "info" },
+            ]}
+          />
+        }
+      />
+
+      {/* 3 — MetricGrid: Receita, Resultado a receber, Caixa, Alertas */}
+      <MetricGrid columns={4} label="Indicadores principais">
+        <MetricCard
+          title="Receita hoje"
+          value={formatCurrency(dayTotal)}
+          icon={DollarSign}
+          status="success"
+          loading={salesMetrics.isLoading}
+          footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Sem vendas hoje"}
+        />
+        <MetricCard
+          title="Dinheiro para entrar"
+          value={formatCurrency(receivable)}
+          icon={TrendingUp}
+          status="info"
+          loading={finance.isLoading}
+          footer={
+            receivableCount > 0
+              ? `${receivableCount} título${receivableCount > 1 ? "s" : ""} em aberto`
+              : "Nenhuma cobrança em aberto"
+          }
+        />
+        <MetricCard
+          title="Caixa disponível"
+          value={formatCurrency(cash)}
+          icon={Wallet}
+          status="neutral"
+          loading={finance.isLoading}
+          footer="Saldo consolidado"
+        />
+        <MetricCard
+          title="Alertas de estoque"
+          value={String(belowMin.length)}
+          icon={AlertTriangle}
+          status={belowMin.length > 0 ? "warning" : "success"}
+          loading={inventory.isLoading}
+          footer={belowMin.length > 0 ? "Produtos abaixo do mínimo" : "Nenhum alerta de estoque"}
+        />
+      </MetricGrid>
+
+      {/* 4 — Duas colunas: Resumo Executivo + Insights | Bella + Prioridades */}
+      <div className={cn("grid items-start lg:grid-cols-2", SPACING_TOKENS.relaxed.gap)}>
+        <div className={SPACING_TOKENS.relaxed.stack}>
+          <Section
+            title="Resumo executivo"
+            description="Os números oficiais consolidados do dia."
+            actions={
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="include-homologation"
+                  checked={includeHomologation}
+                  onCheckedChange={setIncludeHomologation}
+                />
+                <Label htmlFor="include-homologation" className={TEXT_TOKENS.xs}>
+                  Incluir homologação
+                </Label>
+              </div>
+            }
+            footer={
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={ROUTES.reports}>
+                    <LineChart className="mr-1.5 h-4 w-4" /> Relatórios
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={ROUTES.executivePanel}>
+                    <BarChart3 className="mr-1.5 h-4 w-4" /> Painel executivo
+                  </Link>
+                </Button>
+              </div>
+            }
+          >
+            <StatStack
+              orientation="horizontal"
+              loading={isLoading}
+              items={[
+                { label: "Faturamento", value: formatCurrency(dayTotal), status: "success" },
+                { label: "A receber", value: formatCurrency(receivable), status: "info" },
+                { label: "Caixa", value: formatCurrency(cash), status: "neutral" },
+                { label: "Produtos", value: String(productCount), status: "neutral" },
+              ]}
+            />
+          </Section>
+
+          <Section title="Insights" description="Leitura rápida do que mudou.">
+            <InsightCards items={insights} loading={isLoading} />
+          </Section>
         </div>
-      }
-      actions={
-        <Button size="sm" asChild className="gap-1.5">
-          <Link to={ROUTES.sales}>
-            <ShoppingCart className="h-4 w-4" /> Nova venda
-          </Link>
-        </Button>
-      }
-    >
-      {/* Lembrete de fechamento de caixa (a partir das 19:15) */}
-      <CashClosingReminder companyId={company.id} operatorId={user.id} />
 
-      {/* CENTRAL DE AÇÕES — o coração do NexOS 3.0 */}
-      <ActionCenter companyId={company.id} />
-
-      {/* Atalhos essenciais — 1 clique para o que mais importa */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Começar rápido</CardTitle>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Os quatro caminhos que todo dia importam.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Shortcut to={ROUTES.sales} icon={ShoppingCart} label="Vender" />
-            <Shortcut to={ROUTES.purchases} icon={ShoppingBag} label="Comprar" />
-            <Shortcut to={ROUTES.products} icon={Package} label="Produto" />
-            <Shortcut to={ROUTES.customers} icon={UserPlus} label="Cliente" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Monitoramento de mensagens WhatsApp */}
-      <WhatsAppUsageCard companyId={company.id} />
-
-      {/* Bella em destaque */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card">
-        <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/15 text-primary">
-              <Sparkles className="h-5 w-5" />
+        <div className={SPACING_TOKENS.relaxed.stack}>
+          {/* Bella — mais destaque, menos bordas */}
+          <Panel
+            elevation="floating"
+            className="border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <span
+                  aria-hidden="true"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary"
+                >
+                  <Sparkles className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className={cn("font-semibold", TEXT_TOKENS.base)}>Fale com a Bella</p>
+                  <p className={cn("mt-1 text-muted-foreground", TEXT_TOKENS.sm)}>
+                    Pergunte sobre vendas, caixa, impostos e estoque em linguagem natural.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" asChild className="shrink-0">
+                <Link to={ROUTES.bella}>Abrir Bella</Link>
+              </Button>
             </div>
-            <div>
-              <p className="text-sm font-medium">Fale com a Bella</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                "Como estão minhas vendas hoje?", "Quais produtos estão parados?"
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={ROUTES.bella}>Abrir Bella</Link>
-          </Button>
-        </CardContent>
-      </Card>
+          </Panel>
 
-      {/* Números do dia — colapsável, secundário */}
-      <Card>
-        <CardHeader
-          className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer"
-          onClick={() => setShowNumbers((v) => !v)}
-        >
-          <div>
-            <CardTitle className="text-base">Ver números do dia</CardTitle>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Faturamento, caixa e estoque em tempo real.
-            </p>
-          </div>
-          <Button variant="ghost" size="sm" className="gap-1.5">
-            {showNumbers ? (
-              <>
-                Ocultar <ChevronUp className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Mostrar <ChevronDown className="h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </CardHeader>
-        {showNumbers && (
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="include-homologation"
-                checked={includeHomologation}
-                onCheckedChange={setIncludeHomologation}
-              />
-              <Label htmlFor="include-homologation" className="text-xs">
-                Incluir dados de homologação
-              </Label>
-            </div>
-            <MetricGrid columns={4}>
-              <MetricCard
-                title="Faturamento hoje"
-                value={formatCurrency(dayTotal)}
-                icon={DollarSign}
-                footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Sem vendas hoje"}
-              />
-              <MetricCard
-                title="Recebimentos hoje"
-                value={formatCurrency(receiptsToday)}
-                icon={Wallet}
-                footer={
-                  receiptsTodayCount > 0
-                    ? `${receiptsTodayCount} baixa${receiptsTodayCount > 1 ? "s" : ""} hoje`
-                    : "Nenhum recebimento hoje"
-                }
-              />
-
-              <MetricCard
-                title="Dinheiro para entrar"
-                value={formatCurrency(receivable)}
-                icon={TrendingUp}
-                footer={
-                  receivableCount > 0
-                    ? `${receivableCount} título${receivableCount > 1 ? "s" : ""} em aberto`
-                    : "Nenhuma cobrança em aberto"
-                }
-              />
-              <MetricCard
-                title="Caixa disponível"
-                value={formatCurrency(cash)}
-                icon={Wallet}
-                footer="Saldo consolidado"
-              />
-              <MetricCard
-                title="Produtos"
-                value={String(inventory.data?.productCount ?? 0)}
-                icon={Package}
-                footer={`${inventory.data?.belowMin.length ?? 0} abaixo do mínimo`}
-              />
-            </MetricGrid>
-
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <MiniPanel
-                title="Ver relatórios completos"
-                description="Análise de vendas, financeiro e estoque."
-                to={ROUTES.reports}
-                icon={LineChart}
-              />
-              <MiniPanel
-                title="Painel executivo"
-                description="KPIs consolidados para tomada de decisão."
-                to={ROUTES.executivePanel}
-                icon={BarChart3}
-              />
-            </div>
-          </CardContent>
-        )}
-      </Card>
-    </PageLayout>
-  );
-}
-
-function Shortcut({
-  to,
-  icon: Icon,
-  label,
-}: {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="group flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary/40 hover:bg-accent"
-    >
-      <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-        <Icon className="h-5 w-5" />
+          {/* Prioridades — Action Center (lógica intacta) */}
+          <ActionCenter companyId={company.id} />
+        </div>
       </div>
-      <span className="text-sm font-medium leading-tight">{label}</span>
-    </Link>
-  );
-}
 
-function MiniPanel({
-  title,
-  description,
-  to,
-  icon: Icon,
-}: {
-  title: string;
-  description: string;
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-accent"
-    >
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </div>
-    </Link>
+      {/* 5 — Eventos inteligentes */}
+      <Section
+        title="Eventos inteligentes"
+        description="Monitoramentos automáticos do NexOS."
+        density="comfortable"
+      >
+        <div className={SPACING_TOKENS.comfortable.stack}>
+          <CashClosingReminder companyId={company.id} operatorId={user.id} />
+          <WhatsAppUsageCard companyId={company.id} />
+        </div>
+      </Section>
+
+      {/* 6 — Atividade recente */}
+      <Section
+        title="Atividade recente"
+        description="Movimentações registradas no dia de hoje."
+        density="comfortable"
+        actions={
+          <StatusBadge status={dayCount + receiptsTodayCount > 0 ? "success" : "neutral"} withDot>
+            {dayCount + receiptsTodayCount > 0 ? "Com movimento" : "Sem movimento"}
+          </StatusBadge>
+        }
+      >
+        <StatStack
+          orientation="horizontal"
+          density="normal"
+          loading={isLoading}
+          items={[
+            {
+              label: "Vendas faturadas",
+              value: String(dayCount),
+              hint: formatCurrency(dayTotal),
+              icon: ShoppingCart,
+              status: dayCount > 0 ? "success" : "neutral",
+            },
+            {
+              label: "Baixas financeiras",
+              value: String(receiptsTodayCount),
+              hint: formatCurrency(receiptsToday),
+              icon: Wallet,
+              status: receiptsTodayCount > 0 ? "success" : "neutral",
+            },
+            {
+              label: "Títulos em aberto",
+              value: String(receivableCount),
+              hint: formatCurrency(receivable),
+              icon: TrendingUp,
+              status: receivableCount > 0 ? "pending" : "neutral",
+            },
+          ]}
+        />
+      </Section>
+    </div>
   );
 }
