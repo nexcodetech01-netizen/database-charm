@@ -15,7 +15,7 @@ import {
   useCustomersList,
   type CustomerListFilters,
 } from "@/features/customers";
-import { useCustomersReport } from "@/features/reports";
+import { useCustomersReport } from "@/features/reports/hooks/use-reports";
 import { useSalesList } from "@/features/sales";
 import type { SaleListFilters } from "@/features/sales";
 import { useAccountingAiSummary } from "../hooks/use-accounting-ai";
