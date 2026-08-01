@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { HeartHandshake, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Panel } from "@/components/design";
+import { Section } from "@/components/design";
 import { useProductInterests } from "../hooks/use-interests";
 import { summarizeInterests, stockBackInterestNotice } from "../lib/interest-insights";
 import { InterestForm } from "./interest-form";
@@ -27,7 +27,7 @@ export function ProductInterestPanel({
   const notice = stockBackInterestNotice({ stock, waiting: summary.openCount });
 
   return (
-    <Panel
+    <Section
       title="Clientes aguardando"
       description="Interesses registrados para este produto. Não reserva estoque."
       actions={
@@ -66,6 +66,6 @@ export function ProductInterestPanel({
         open={open}
         onOpenChange={setOpen}
       />
-    </Panel>
+    </Section>
   );
 }
