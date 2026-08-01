@@ -1,15 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-  addToCart,
-  cartTotal,
-  formatAddedMessage,
+  CART_SESSION_TTL_MS,
+  addProduct,
+  clearCartSession,
+  createCartSession,
+  isCartSessionExpired,
+  removeAt,
+  removeProductById,
+  cartItemCount,
+} from "../cart-session";
+import {
   formatCartMessage,
+  formatCartUpdatedMessage,
   hasAddIntent,
+  isAnaphoricAdd,
   matchProduct,
   parseCartCommand,
+  parseOrdinal,
   parseQuantity,
-  removeFromCart,
 } from "../cart";
+import { getCartSession, resetCartSessions, saveCartSession } from "../cart-session.server";
 import { handleCatalogTurn } from "../catalog-nav.server";
 import type { ProductSearchItem } from "../product-search";
 
@@ -18,69 +28,6 @@ const products: ProductSearchItem[] = [
   { id: "p2", name: "Bolsa Marina", price: 249.9, brand: null, categoryId: "cat-bolsa", unit: null },
   { id: "p3", name: "Perfume Floral 100ml", price: 119.9, brand: "Dior", categoryId: "cat-perfume", unit: null },
 ];
-
-describe("cart — parser", () => {
-  it("identifica o produto pelo nome completo", () => {
-    expect(matchProduct("Quero a Bolsa Helena.", products)?.id).toBe("p1");
-  });
-
-  it("não adivinha quando há empate entre produtos", () => {
-    expect(matchProduct("quero uma bolsa", products)).toBeNull();
-  });
-
-  it("lê quantidade explícita", () => {
-    expect(parseQuantity("quero 2 Bolsa Helena")).toBe(2);
-    expect(parseQuantity("quero duas bolsas")).toBe(2);
-    expect(parseQuantity("quero a Bolsa Helena")).toBe(1);
-  });
-
-  it("reconhece intenção de adicionar", () => {
-    expect(hasAddIntent("Quero a Bolsa Helena")).toBe(true);
-    expect(hasAddIntent("bom dia")).toBe(false);
-  });
-
-  it("reconhece comandos do pedido", () => {
-    expect(parseCartCommand("ver pedido")).toEqual({ kind: "view" });
-    expect(parseCartCommand("limpar pedido")).toEqual({ kind: "clear" });
-    expect(parseCartCommand("remover bolsa helena")).toEqual({
-      kind: "remove",
-      text: "bolsa helena",
-    });
-    expect(parseCartCommand("oi tudo bem")).toBeNull();
-  });
-});
-
-describe("cart — estado puro", () => {
-  it("adiciona, soma quantidade e calcula total", () => {
-    let cart = addToCart([], products[0]!, 1);
-    cart = addToCart(cart, products[0]!, 2);
-    expect(cart).toHaveLength(1);
-    expect(cart[0]!.qty).toBe(3);
-    expect(cartTotal(cart)).toBeCloseTo(569.7, 2);
-  });
-
-  it("remove item pelo nome", () => {
-    const cart = addToCart(addToCart([], products[0]!), products[1]!);
-    const { cart: next, removed } = removeFromCart(cart, "bolsa helena");
-    expect(removed?.productId).toBe("p1");
-    expect(next.map((l) => l.productId)).toEqual(["p2"]);
-  });
-
-  it("formata a mensagem de confirmação", () => {
-    const msg = formatAddedMessage(addToCart([], products[0]!));
-    expect(msg).toContain("Perfeito!");
-    expect(msg).toContain("Adicionei ao seu pedido.");
-    expect(msg).toContain("Bolsa Helena — R$ 189,90");
-    expect(msg).toContain("Total: R$ 189,90");
-    expect(msg).toContain("Você deseja ver mais algum produto?");
-  });
-
-  it("informa pedido vazio", () => {
-    expect(formatCartMessage([])).toContain("vazio");
-  });
-});
-
-// --- Integração com o turno de catálogo (db mockado, somente leitura) ---
 
 function makeDb() {
   return {
@@ -113,76 +60,214 @@ function makeDb() {
   };
 }
 
-describe("cart — turno conversacional", () => {
-  it("adiciona o produto pedido e responde com o pedido atual", async () => {
-    const result = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "Quero a Bolsa Helena.",
-      state: null,
-    });
-    expect(result).not.toBeNull();
-    expect(result!.text).toContain("Bolsa Helena — R$ 189,90");
-    expect(result!.text).toContain("Total: R$ 189,90");
-    expect(result!.state?.cart).toEqual([
-      { productId: "p1", name: "Bolsa Helena", price: 189.9, qty: 1 },
-    ]);
+beforeEach(() => resetCartSessions());
+
+// ------------------------------------------------------------------ parsing
+
+describe("carrinho — interpretação de frases", () => {
+  it("reconhece intenções de adicionar", () => {
+    for (const t of ["Quero essa", "Pode adicionar", "Levo essa", "Quero duas"]) {
+      expect(hasAddIntent(t)).toBe(true);
+    }
+    expect(hasAddIntent("bom dia")).toBe(false);
   });
 
-  it("acumula itens no mesmo pedido", async () => {
-    const first = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "Quero a Bolsa Helena.",
-      state: null,
+  it("reconhece referência ao último produto mostrado", () => {
+    expect(isAnaphoricAdd("Quero essa")).toBe(true);
+    expect(isAnaphoricAdd("Pode adicionar")).toBe(true);
+    expect(isAnaphoricAdd("Quero a Bolsa Helena")).toBe(false);
+  });
+
+  it("lê quantidade", () => {
+    expect(parseQuantity("Quero duas")).toBe(2);
+    expect(parseQuantity("quero 3 bolsas")).toBe(3);
+    expect(parseQuantity("Quero essa")).toBe(1);
+  });
+
+  it("lê comandos de remover, mostrar e limpar", () => {
+    expect(parseCartCommand("Tira essa")).toEqual({ kind: "remove", text: "essa", ordinal: null });
+    expect(parseCartCommand("Remover a segunda")).toEqual({
+      kind: "remove",
+      text: null,
+      ordinal: 2,
     });
-    const second = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "Perfume Floral 100ml",
-      state: first!.state,
+    expect(parseCartCommand("Mostrar meu pedido")).toEqual({ kind: "view" });
+    expect(parseCartCommand("Limpar pedido")).toEqual({ kind: "clear" });
+    expect(parseCartCommand("bom dia")).toBeNull();
+    expect(parseOrdinal("remover a terceira")).toBe(3);
+  });
+
+  it("casa o produto pelo nome e não adivinha em empate", () => {
+    expect(matchProduct("Quero a Bolsa Helena", products)?.id).toBe("p1");
+    expect(matchProduct("quero uma bolsa", products)).toBeNull();
+  });
+});
+
+// ------------------------------------------------------- sessão pura (estado)
+
+describe("carrinho — sessão temporária", () => {
+  it("guarda empresa, telefone, preço do momento, subtotal, total e timestamp", () => {
+    const s = addProduct(createCartSession("c1", "5511999", 1000), products[0]!, 1, 1000);
+    expect(s.companyId).toBe("c1");
+    expect(s.phone).toBe("5511999");
+    expect(s.items[0]).toEqual({
+      productId: "p1",
+      name: "Bolsa Helena",
+      qty: 1,
+      unitPrice: 189.9,
+      subtotal: 189.9,
     });
-    expect(second!.state?.cart?.map((l) => l.productId)).toEqual(["p1", "p3"]);
-    expect(second!.text).toContain("Total: R$ 309,80");
+    expect(s.total).toBe(189.9);
+    expect(s.createdAt).toBe(1000);
+    expect(s.updatedAt).toBe(1000);
+  });
+
+  it("soma quantidade do mesmo produto e recalcula o total", () => {
+    let s = addProduct(createCartSession("c1", "p", 0), products[0]!, 1, 0);
+    s = addProduct(s, products[0]!, 2, 10);
+    expect(s.items[0]!.qty).toBe(3);
+    expect(s.items[0]!.subtotal).toBe(569.7);
+    expect(s.total).toBe(569.7);
+    expect(cartItemCount(s)).toBe(3);
+  });
+
+  it("calcula o total com múltiplos itens", () => {
+    let s = addProduct(createCartSession("c1", "p", 0), products[0]!);
+    s = addProduct(s, products[2]!, 2);
+    expect(s.total).toBe(189.9 + 239.8);
+  });
+
+  it("remove por posição e por produto, atualizando o total", () => {
+    let s = addProduct(createCartSession("c1", "p", 0), products[0]!);
+    s = addProduct(s, products[2]!);
+    const byIndex = removeAt(s, 1);
+    expect(byIndex.removed?.productId).toBe("p3");
+    expect(byIndex.session.total).toBe(189.9);
+    const byId = removeProductById(s, "p1");
+    expect(byId.session.items.map((i) => i.productId)).toEqual(["p3"]);
+    expect(removeAt(s, 9).removed).toBeNull();
+  });
+
+  it("limpa o carrinho zerando o total", () => {
+    const s = clearCartSession(addProduct(createCartSession("c1", "p", 0), products[0]!));
+    expect(s.items).toEqual([]);
+    expect(s.total).toBe(0);
+  });
+
+  it("expira o contexto após o TTL", () => {
+    const s = addProduct(createCartSession("c1", "p", 0), products[0]!, 1, 0);
+    expect(isCartSessionExpired(s, CART_SESSION_TTL_MS - 1)).toBe(false);
+    expect(isCartSessionExpired(s, CART_SESSION_TTL_MS + 1)).toBe(true);
+    expect(isCartSessionExpired(null)).toBe(true);
+  });
+
+  it("descarta a sessão expirada no store e devolve carrinho vazio", () => {
+    saveCartSession(addProduct(createCartSession("c1", "5511", 0), products[0]!, 1, 0));
+    const revived = getCartSession("c1", "5511", CART_SESSION_TTL_MS + 5000);
+    expect(revived.items).toEqual([]);
+    expect(revived.total).toBe(0);
+  });
+});
+
+// ------------------------------------------------------------- formatação
+
+describe("carrinho — mensagens", () => {
+  it("formata o pedido atualizado no padrão da Bella", () => {
+    const msg = formatCartUpdatedMessage(
+      addProduct(createCartSession("c1", "p", 0), products[0]!),
+    );
+    expect(msg).toContain("🛍️ *Pedido atualizado*");
+    expect(msg).toContain("• Bolsa Helena");
+    expect(msg).toContain("Qtd: 1");
+    expect(msg).toContain("R$ 189,90");
+    expect(msg).toContain("Total:");
+    expect(msg).toContain("Deseja continuar comprando ou finalizar?");
+  });
+
+  it("mostra o resumo completo com mais de um item", () => {
+    let s = addProduct(createCartSession("c1", "p", 0), products[0]!);
+    s = addProduct(s, products[2]!, 2);
+    const msg = formatCartMessage(s);
+    expect(msg).toContain("• Bolsa Helena");
+    expect(msg).toContain("• Perfume Floral 100ml");
+    expect(msg).toContain("Qtd: 2");
+    expect(msg).toContain("R$ 429,70");
+  });
+
+  it("informa carrinho vazio", () => {
+    expect(formatCartMessage(createCartSession("c1", "p", 0))).toContain("vazio");
+  });
+});
+
+// --------------------------------------------------- turno conversacional
+
+describe("carrinho — turno conversacional", () => {
+  const base = { db: makeDb(), companyId: "c1", phone: "5511999" };
+
+  it("adiciona produto citado pelo nome", async () => {
+    const r = await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
+    expect(r!.text).toContain("🛍️ *Pedido atualizado*");
+    expect(r!.text).toContain("Qtd: 1");
+    expect(getCartSession("c1", "5511999").total).toBe(189.9);
+  });
+
+  it("adiciona quantidade sobre o item já existente", async () => {
+    await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
+    const r = await handleCatalogTurn({
+      ...base,
+      text: "Quero duas Bolsa Helena",
+      state: { step: "cart" },
+    });
+    expect(r!.text).toContain("Qtd: 3");
+    expect(getCartSession("c1", "5511999").total).toBe(569.7);
+  });
+
+  it('entende "Quero essa" após mostrar um único produto', async () => {
+    const r = await handleCatalogTurn({
+      ...base,
+      text: "Quero essa",
+      state: { step: "products", lastProductIds: ["p1"] },
+    });
+    expect(r!.text).toContain("• Bolsa Helena");
+    expect(getCartSession("c1", "5511999").items).toHaveLength(1);
+  });
+
+  it("remove item pela posição citada", async () => {
+    await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
+    await handleCatalogTurn({
+      ...base,
+      text: "Quero o Perfume Floral 100ml",
+      state: { step: "cart" },
+    });
+    const r = await handleCatalogTurn({
+      ...base,
+      text: "Remover a segunda",
+      state: { step: "cart" },
+    });
+    expect(r!.text).toContain("Removi *Perfume Floral 100ml*");
+    expect(getCartSession("c1", "5511999").total).toBe(189.9);
   });
 
   it("mostra e limpa o pedido", async () => {
-    const added = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "Quero a Bolsa Helena.",
-      state: null,
-    });
+    await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
     const view = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "ver pedido",
-      state: added!.state,
+      ...base,
+      text: "Mostrar meu pedido",
+      state: { step: "cart" },
     });
     expect(view!.text).toContain("Bolsa Helena");
 
     const cleared = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "limpar pedido",
-      state: view!.state,
+      ...base,
+      text: "Limpar pedido",
+      state: { step: "cart" },
     });
-    expect(cleared!.state?.cart).toEqual([]);
+    expect(cleared!.text).toContain("limpei seu pedido");
+    expect(getCartSession("c1", "5511999").items).toEqual([]);
   });
 
-  it("preserva o pedido ao voltar para as categorias", async () => {
-    const added = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "Quero a Bolsa Helena.",
-      state: null,
-    });
-    const back = await handleCatalogTurn({
-      db: makeDb(),
-      companyId: "c1",
-      text: "voltar",
-      state: added!.state,
-    });
-    expect(back!.state?.cart?.map((l) => l.productId)).toEqual(["p1"]);
+  it("isola carrinhos de telefones diferentes", async () => {
+    await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
+    expect(getCartSession("c1", "5522888").items).toEqual([]);
   });
 });
