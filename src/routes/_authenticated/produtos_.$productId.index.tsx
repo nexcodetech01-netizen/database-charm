@@ -116,40 +116,11 @@ function ProductDetailPage() {
   if (isLoading || isRemoving) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
-        <Skeleton className="h-8 w-40" />
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="grid gap-6 lg:grid-cols-[minmax(224px,288px)_minmax(0,1fr)]">
-              <Skeleton className="aspect-square w-full rounded-xl" />
-              <div className="space-y-4">
-                <Skeleton className="h-5 w-40" />
-                <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border/60 pb-2"
-                    >
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-4 w-full max-w-[10rem] justify-self-end" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <LoadingSurface variant="detail" rows={6} />
       </div>
     );
   }
+
   if (!product) throw notFound();
 
   const handleDelete = async () => {
