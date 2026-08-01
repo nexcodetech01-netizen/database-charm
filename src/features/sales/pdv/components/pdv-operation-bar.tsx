@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { MonitorSmartphone, User, Wallet, Hash, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PDVSearch } from "./pdv-search";
@@ -28,7 +28,7 @@ type Props = {
   /** Estado visual da operação (processando, emitindo NFC-e, concluída). */
   activity?: PdvActivity | null;
   /** Botão/menu operacional do caixa (somente UX). */
-  cashMenu?: React.ReactNode;
+  cashMenu?: ReactNode;
 };
 
 function MetaItem({

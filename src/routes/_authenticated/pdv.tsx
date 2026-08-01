@@ -40,6 +40,7 @@ function PdvPage() {
         companyId={company.id}
         operatorId={user.id}
         operatorName={operatorName}
+        companyName={company.trade_name ?? company.name ?? "NexOS"}
       />
     </PageLayout>
   );
