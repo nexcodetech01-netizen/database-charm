@@ -44,6 +44,7 @@ import { WhatsAppUsageCard } from "@/features/whatsapp";
 import { CashClosingReminder } from "@/features/cash";
 import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh";
 import { requirePermission } from "@/features/rbac";
+import { InterestDashboardCard } from "@/features/interests";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: requirePermission("dashboard.view"),

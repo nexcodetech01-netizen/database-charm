@@ -21,6 +21,7 @@ import {
 import type { MovementListFilters } from "@/features/inventory";
 import { BellaInventoryPanel } from "@/features/accounting-ai/inventory";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useInterestSummary } from "@/features/interests";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
   beforeLoad: requirePermission("inventory.view"),
@@ -40,6 +41,8 @@ function InventoryPage() {
   const list = useMovementsList(company.id, effective);
   const recent = useRecentMovements(company.id, 8);
   const metrics = useInventoryMetrics(company.id);
+  // Lista de Interesse: apenas leitura para apoiar a sugestão de compra.
+  const { waitingByProduct } = useInterestSummary(company.id);
 
   return (
     <PageLayout
@@ -71,7 +74,10 @@ function InventoryPage() {
           />
         </div>
         <div className="space-y-4">
-          <LowStockAlerts items={metrics.data?.belowMin ?? []} />
+          <LowStockAlerts
+            items={metrics.data?.belowMin ?? []}
+            waitingByProduct={waitingByProduct}
+          />
           <StagnantProducts items={metrics.data?.stagnant ?? []} />
         </div>
       </div>
