@@ -8,6 +8,7 @@
  */
 import { getCartSession } from "./cart-session.server";
 import type { CartSession } from "./cart-session";
+import { lookupCep } from "@/lib/cep.service";
 import {
   CHECKOUT_SESSION_TTL_MS,
   EMPTY_CART_MESSAGE,
@@ -16,6 +17,7 @@ import {
   createCheckoutSession,
   isCheckoutIntent,
   isCheckoutSessionExpired,
+  type CepResolver,
   type CheckoutSession,
 } from "./checkout-session";
 
@@ -56,6 +58,18 @@ export function resetCheckoutSessions(): void {
   sessions.clear();
 }
 
+const defaultCepResolver: CepResolver = async (cep) => {
+  const found = await lookupCep(cep);
+  return found
+    ? {
+        street: found.street,
+        neighborhood: found.neighborhood,
+        city: found.city,
+        state: found.state,
+      }
+    : null;
+};
+
 export interface CheckoutTurnResult {
   text: string;
   session: CheckoutSession | null;
@@ -67,13 +81,15 @@ export interface CheckoutTurnResult {
  * Resolve o turno de fechamento. Retorna `null` quando não há fluxo ativo
  * e a mensagem não é um pedido de fechamento — o fluxo normal segue.
  */
-export function handleCheckoutTurn(args: {
+export async function handleCheckoutTurn(args: {
   companyId: string;
   phone: string;
   text: string;
   cart?: CartSession;
   now?: number;
-}): CheckoutTurnResult | null {
+  /** Consulta de CEP (padrão: ViaCEP). Injetável nos testes. */
+  resolveCep?: CepResolver;
+}): Promise<CheckoutTurnResult | null> {
   const now = args.now ?? Date.now();
   const cart = args.cart ?? getCartSession(args.companyId, args.phone, now);
   const active = peekCheckoutSession(args.companyId, args.phone, now);
@@ -89,7 +105,13 @@ export function handleCheckoutTurn(args: {
     return { text: PROMPTS.buyer_name, session: fresh, step: fresh.step };
   }
 
-  const result = advanceCheckout({ session: active, cart, text: args.text, now });
+  const result = await advanceCheckout({
+    session: active,
+    cart,
+    text: args.text,
+    now,
+    resolveCep: args.resolveCep ?? defaultCepResolver,
+  });
   if (result.session.step === "done") {
     dropCheckoutSession(args.companyId, args.phone);
     return { text: result.text, session: null, step: null };
