@@ -14,8 +14,8 @@ import {
   UserPlus,
   Wallet,
 } from "lucide-react";
-import { PageLayout, KpiSection } from "@/components/layout";
-import { MetricCard } from "@/components/design";
+import { PageLayout } from "@/components/layout";
+import { MetricCard, MetricGrid } from "@/components/design";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -191,7 +191,7 @@ function DashboardPage() {
                 Incluir dados de homologação
               </Label>
             </div>
-            <KpiSection columns={4}>
+            <MetricGrid columns={4}>
               <MetricCard
                 title="Faturamento hoje"
                 value={formatCurrency(dayTotal)}
@@ -231,7 +231,7 @@ function DashboardPage() {
                 icon={Package}
                 footer={`${inventory.data?.belowMin.length ?? 0} abaixo do mínimo`}
               />
-            </KpiSection>
+            </MetricGrid>
 
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <MiniPanel

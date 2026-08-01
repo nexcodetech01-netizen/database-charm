@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Plus, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout";
+import { ActionToolbar } from "@/components/design";
 import {
   CustomerFilters,
   CustomerMetrics,
@@ -36,6 +36,7 @@ const DEFAULT: CustomerListFilters = {
 
 function CustomersPage() {
   const { company } = Route.useRouteContext();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<CustomerListFilters>(DEFAULT);
   const debounced = useDebouncedValue(filters.search, 300);
   const effective = useMemo(
@@ -86,11 +87,10 @@ function CustomersPage() {
       title="Clientes"
       description="Quem são meus clientes? Cadastre, segmente e acompanhe cada relacionamento."
       actions={
-        <Button size="sm" asChild>
-          <Link to="/clientes/novo">
-            <Plus className="mr-1.5 h-4 w-4" /> Novo cliente
-          </Link>
-        </Button>
+        <ActionToolbar
+          createLabel="Novo cliente"
+          onCreate={() => navigate({ to: "/clientes/novo" })}
+        />
       }
       kpis={<CustomerMetrics companyId={company.id} />}
     >
