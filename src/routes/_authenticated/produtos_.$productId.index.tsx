@@ -481,7 +481,7 @@ function ProductDetailPage() {
 
             title="Estoque"
             description="Disponibilidade, limites e valor imobilizado."
-            aside={
+            actions={
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   size="sm"
@@ -665,7 +665,7 @@ function ProductDetailPage() {
 
             title="Movimentações"
             description="Últimos eventos de estoque, compras e vendas deste produto."
-            aside={
+            actions={
               <Button asChild variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
                 <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
                   <History className="mr-1.5 h-4 w-4" /> Ver todas
