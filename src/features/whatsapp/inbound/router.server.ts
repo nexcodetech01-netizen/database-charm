@@ -20,6 +20,7 @@ import { handleCatalogTurn } from "./catalog-nav.server";
 import { handlePhotoTurn } from "./product-photos.server";
 import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
+import { handleCheckoutTurn } from "./checkout-session.server";
 import type { CatalogNavState } from "./catalog-nav";
 
 
@@ -479,7 +480,38 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  // 3c-pre) Fechamento conversacional (somente memória: sem venda/estoque/ERP).
+  const checkoutTurn = handleCheckoutTurn({
+    companyId: tenant.companyId,
+    phone: msg.phone,
+    text: msg.text,
+  });
+  if (checkoutTurn) {
+    const checkoutSent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: checkoutSent.waMessageId,
+      text: checkoutTurn.text,
+      status: checkoutSent.ok ? "sent" : "failed",
+      error: checkoutSent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.checkout",
+    });
+    if (checkoutSent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
+  }
+
   // 3c-ante) Recomendação de produtos semelhantes (rejeição / pedido de alternativa).
+
   const recommendationTurn = await handleRecommendationTurn({
     db,
     storage: (
