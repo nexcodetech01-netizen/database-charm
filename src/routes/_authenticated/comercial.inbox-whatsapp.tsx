@@ -151,16 +151,15 @@ function CommercialInboxPage() {
                           Abrir venda
                         </Link>
                       </Button>
-                    ) : (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        asChild
-                        disabled={!canConvert(t)}
-                      >
+                    ) : canConvert(t) ? (
+                      <Button variant="default" size="sm" asChild>
                         <Link to="/vendas/novo" search={{ inboxId: t.id }}>
                           Converter em venda
                         </Link>
+                      </Button>
+                    ) : (
+                      <Button variant="default" size="sm" disabled>
+                        Converter em venda
                       </Button>
                     )}
                     <Button
