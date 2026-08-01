@@ -44,6 +44,9 @@ export type BellaIntentId =
   | "consultar_vencimento_das"
   | "simular_das"
   | "simular_faturamento"
+  | "auditoria_geral"
+  | "consultar_inconsistencias"
+  | "consultar_saude_operacional"
   | "desconhecida";
 
 export interface IntentMatch {

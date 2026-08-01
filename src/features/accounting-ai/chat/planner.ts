@@ -92,6 +92,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
   consultar_vencimento_das: ["consultar_vencimento_das"],
   simular_das: ["simular_tributos"],
   simular_faturamento: ["simular_tributos"],
+  /** Sprint 7.2 — auditoria: skills de leitura pura. */
+  auditoria_geral: ["auditar_empresa", "consultar_inconsistencias"],
+  consultar_inconsistencias: ["consultar_inconsistencias"],
+  consultar_saude_operacional: [
+    "consultar_saude_operacional",
+    "consultar_inconsistencias",
+  ],
 };
 
 const REASONS: Partial<Record<AccountingSkillId, string>> = {
@@ -110,6 +117,9 @@ const REASONS: Partial<Record<AccountingSkillId, string>> = {
   consultar_aliquota: "Alíquota efetiva",
   consultar_vencimento_das: "Vencimento do DAS",
   simular_tributos: "Simulação tributária oficial",
+  auditar_empresa: "Auditoria completa dos dados oficiais",
+  consultar_inconsistencias: "Inconsistências encontradas",
+  consultar_saude_operacional: "Saúde operacional da empresa",
 };
 
 export interface PlanOptions {

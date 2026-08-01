@@ -16,7 +16,7 @@ import {
   ticketProvider,
 } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
-import { makeTestFiscalPort } from "./fixtures";
+import { makeTestAuditPort, makeTestFiscalPort } from "./fixtures";
 
 const period = { start: "2026-01-01", end: "2026-01-31", label: "01/2026" };
 
@@ -64,6 +64,7 @@ const kpis = {
 
 function makeServices(overrides: Partial<AccountingAiServices> = {}): AccountingAiServices {
   return {
+    audit: makeTestAuditPort(),
     accounting: {
       dre: async () => dre,
       balanceSheet: async () => ({

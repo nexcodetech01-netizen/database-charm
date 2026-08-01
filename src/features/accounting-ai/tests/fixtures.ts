@@ -4,7 +4,19 @@
  */
 import { computeSimples } from "@/features/tax";
 import type { CompanyTaxProfile, TaxApportionment } from "@/features/tax";
-import type { AccountingAiServices, FiscalPort } from "../services/ports";
+import type {
+  AccountingAiServices,
+  AuditCashSessionRow,
+  AuditCustomerRow,
+  AuditFiscalDefaults,
+  AuditFiscalDocumentRow,
+  AuditPort,
+  AuditProductRow,
+  AuditSaleRow,
+  AuditStagnantProductRow,
+  AuditTransactionRow,
+  FiscalPort,
+} from "../services/ports";
 import { buildAccountingSummary } from "../providers/summary";
 import type { AccountingSummary } from "../types";
 
@@ -75,6 +87,140 @@ export function makeTestFiscalPort(options: FiscalPortOptions = {}): FiscalPort 
   };
 }
 
+export interface AuditPortOptions {
+  transactions?: AuditTransactionRow[];
+  sales?: AuditSaleRow[];
+  cashSessions?: AuditCashSessionRow[];
+  products?: AuditProductRow[];
+  customers?: AuditCustomerRow[];
+  fiscalDocuments?: AuditFiscalDocumentRow[];
+  fiscalDefaults?: AuditFiscalDefaults | null;
+  stagnant?: AuditStagnantProductRow[];
+  /** Faz a leitura de auditoria falhar (teste de degradação). */
+  fail?: boolean;
+}
+
+/** Produto saudável usado como base nos testes de auditoria. */
+export function makeAuditProduct(patch: Partial<AuditProductRow> = {}): AuditProductRow {
+  return {
+    id: "p1",
+    name: "Produto A",
+    sku: "A",
+    status: "active",
+    stock: 10,
+    minStock: 2,
+    cost: 5,
+    price: 12,
+    unit: "un",
+    ncm: "61091000",
+    categoryId: "cat1",
+    marketplaceId: null,
+    ...patch,
+  };
+}
+
+export function makeAuditCustomer(patch: Partial<AuditCustomerRow> = {}): AuditCustomerRow {
+  return {
+    id: "c1",
+    name: "Cliente A",
+    document: "39053344705",
+    phone: "11999990000",
+    whatsapp: null,
+    status: "active",
+    ...patch,
+  };
+}
+
+export function makeAuditTransaction(
+  patch: Partial<AuditTransactionRow> = {},
+): AuditTransactionRow {
+  return {
+    id: "t1",
+    type: "income",
+    status: "paid",
+    amount: 100,
+    description: "Venda 1",
+    dueDate: "2026-01-10",
+    transactionDate: "2026-01-10",
+    paidAt: "2026-01-10",
+    referenceId: "s1",
+    referenceNumber: "1",
+    source: "sale",
+    ...patch,
+  };
+}
+
+export function makeAuditSale(patch: Partial<AuditSaleRow> = {}): AuditSaleRow {
+  return {
+    id: "s1",
+    number: "1",
+    status: "paid",
+    total: 100,
+    saleDate: "2026-01-10",
+    customerId: "c1",
+    paidAt: "2026-01-10",
+    settledAt: "2026-01-10",
+    ...patch,
+  };
+}
+
+export function makeAuditCashSession(
+  patch: Partial<AuditCashSessionRow> = {},
+): AuditCashSessionRow {
+  return {
+    id: "sess-0001",
+    status: "closed",
+    openedAt: "2026-01-20T09:00:00.000Z",
+    closedAt: "2026-01-20T18:00:00.000Z",
+    expectedCash: 500,
+    countedCash: 500,
+    difference: 0,
+    ...patch,
+  };
+}
+
+/** Porta de auditoria falsa — empresa saudável por padrão. */
+export function makeTestAuditPort(options: AuditPortOptions = {}): AuditPort {
+  const boom = async () => {
+    throw new Error("serviço indisponível");
+  };
+  if (options.fail) {
+    return {
+      transactions: boom,
+      sales: boom,
+      cashSessions: boom,
+      products: boom,
+      customers: boom,
+      fiscalDocuments: boom,
+      fiscalDefaults: boom,
+      stagnantProducts: boom,
+    } as unknown as AuditPort;
+  }
+  return {
+    transactions: async () =>
+      options.transactions ?? [
+        makeAuditTransaction(),
+        makeAuditTransaction({
+          id: "t2",
+          type: "expense",
+          description: "Pró-labore janeiro",
+          amount: 3000,
+          referenceId: null,
+        }),
+      ],
+    sales: async () => options.sales ?? [makeAuditSale()],
+    cashSessions: async () => options.cashSessions ?? [makeAuditCashSession()],
+    products: async () => options.products ?? [makeAuditProduct()],
+    customers: async () => options.customers ?? [makeAuditCustomer()],
+    fiscalDocuments: async () => options.fiscalDocuments ?? [],
+    fiscalDefaults: async () =>
+      options.fiscalDefaults === undefined
+        ? { defaultCst: "102" }
+        : options.fiscalDefaults,
+    stagnantProducts: async () => options.stagnant ?? [],
+  };
+}
+
 export const testDre = {
   period: { start: testPeriod.start, end: testPeriod.end },
   grossRevenue: 12000,
@@ -124,6 +270,8 @@ export interface FixtureOptions {
   noHistory?: boolean;
   /** Receita paga do dia anterior. */
   yesterdayTotal?: number;
+  /** Overrides da porta de auditoria (Sprint 7.2). */
+  audit?: AuditPortOptions;
 }
 
 export function makeTestServices(opts: FixtureOptions = {}): AccountingAiServices {
@@ -217,6 +365,7 @@ export function makeTestServices(opts: FixtureOptions = {}): AccountingAiService
     cash: {
       listSessions: async () => [{ status: "open" }, { status: "closed" }],
     },
+    audit: makeTestAuditPort(opts.audit),
   };
 }
 

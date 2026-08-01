@@ -92,6 +92,110 @@ export interface CashPort {
   listSessions(companyId: string, limit?: number): Promise<{ status: string }[]>;
 }
 
+/* ───────────── Sprint 7.2 — Auditoria (somente leitura) ───────────── */
+
+export interface AuditTransactionRow {
+  id: string;
+  type: string;
+  status: string;
+  amount: number;
+  description: string;
+  dueDate: string | null;
+  transactionDate: string | null;
+  paidAt: string | null;
+  referenceId: string | null;
+  referenceNumber: string | null;
+  source: string | null;
+}
+
+export interface AuditSaleRow {
+  id: string;
+  number: string | null;
+  status: string;
+  total: number;
+  saleDate: string | null;
+  customerId: string | null;
+  /** Baixa registrada na própria venda. */
+  paidAt: string | null;
+  /** Liquidação financeira oficial (financial_transactions.paid_at). */
+  settledAt: string | null;
+}
+
+export interface AuditCashSessionRow {
+  id: string;
+  status: string;
+  openedAt: string | null;
+  closedAt: string | null;
+  expectedCash: number | null;
+  countedCash: number | null;
+  difference: number | null;
+}
+
+export interface AuditProductRow {
+  id: string;
+  name: string;
+  sku: string | null;
+  status: string | null;
+  stock: number;
+  minStock: number;
+  cost: number | null;
+  price: number | null;
+  unit: string | null;
+  ncm: string | null;
+  categoryId: string | null;
+  /** Anúncio ativo em marketplace (Mercado Livre). */
+  marketplaceId: string | null;
+}
+
+export interface AuditCustomerRow {
+  id: string;
+  name: string;
+  document: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  status: string | null;
+}
+
+export interface AuditFiscalDocumentRow {
+  id: string;
+  number: number | null;
+  status: string;
+  saleId: string | null;
+  xmlAuthorizedPath: string | null;
+  danfePath: string | null;
+  rejectionReason: string | null;
+}
+
+export interface AuditFiscalDefaults {
+  /** CST/CSOSN padrão configurado em `fiscal_settings`. */
+  defaultCst: string | null;
+}
+
+export interface AuditStagnantProductRow {
+  id: string;
+  name: string;
+  sku: string | null;
+  stock: number;
+}
+
+/**
+ * Porta de auditoria — LEITURA pura sobre serviços já existentes.
+ * Nenhum método pode gravar, corrigir ou recalcular qualquer dado.
+ */
+export interface AuditPort {
+  transactions(companyId: string, limit?: number): Promise<AuditTransactionRow[]>;
+  sales(companyId: string, limit?: number): Promise<AuditSaleRow[]>;
+  cashSessions(companyId: string, limit?: number): Promise<AuditCashSessionRow[]>;
+  products(companyId: string, limit?: number): Promise<AuditProductRow[]>;
+  customers(companyId: string, limit?: number): Promise<AuditCustomerRow[]>;
+  fiscalDocuments(
+    companyId: string,
+    limit?: number,
+  ): Promise<AuditFiscalDocumentRow[]>;
+  fiscalDefaults(companyId: string): Promise<AuditFiscalDefaults | null>;
+  stagnantProducts(companyId: string): Promise<AuditStagnantProductRow[]>;
+}
+
 /** Bundle único injetado nos providers (facilita testes com fakes). */
 export interface AccountingAiServices {
   readonly accounting: AccountingPort;
@@ -100,4 +204,6 @@ export interface AccountingAiServices {
   readonly inventory: InventoryPort;
   readonly fiscal: FiscalPort;
   readonly cash: CashPort;
+  readonly audit: AuditPort;
 }
+
