@@ -100,6 +100,24 @@ import {
 
 
 
+export interface SaleFormPrefillItem {
+  productId: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+/**
+ * Pré-preenchimento externo (ex.: Inbox WhatsApp → Nova Venda).
+ * É apenas estado inicial do formulário: nada é persistido até o operador
+ * finalizar a venda pelo fluxo oficial.
+ */
+export interface SaleFormPrefill {
+  customerId?: string | null;
+  notes?: string | null;
+  items: SaleFormPrefillItem[];
+}
+
 interface Props {
   companyId: string;
   sale?: SaleWithItems;
@@ -109,7 +127,11 @@ interface Props {
   backLabel?: string;
   /** Se informado, adiciona automaticamente o produto ao carrinho (qtd. 1). */
   initialProductId?: string;
+  prefill?: SaleFormPrefill;
+  /** Chamado SOMENTE após a venda ser criada com sucesso pelo fluxo oficial. */
+  onSaleCreated?: (saleId: string) => void;
 }
+
 
 // TZ-002 — `sale_date` NÃO é editável pelo operador. Representa exclusivamente
 // a data em que a venda ocorreu e é resolvida pela data operacional da empresa
