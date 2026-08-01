@@ -15,6 +15,7 @@ import {
   useSetSaleStatus,
 } from "@/features/sales";
 import { SalesBellaHints } from "@/features/bella-ai";
+import { BellaSalesPanel } from "@/features/accounting-ai/sales";
 import type { SaleListFilters, SaleWithMeta } from "@/features/sales";
 import { SettleTransactionDialog } from "@/features/finance/components/settle-transaction-dialog";
 import type { FinancialTransaction } from "@/features/finance/types";
@@ -200,6 +201,8 @@ function SalesPage() {
       }
       kpis={<SaleMetrics companyId={company.id} />}
     >
+      <BellaSalesPanel companyId={company.id} />
+
       <SalesBellaHints companyId={company.id} />
 
       <SaleFilters
