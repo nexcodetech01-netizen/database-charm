@@ -11,6 +11,7 @@ import {
   type CommercialInboxStatus,
   type CommercialTicketItem,
 } from "@/features/whatsapp/inbound/commercial-inbox";
+import { buildConversionPatch } from "@/features/whatsapp/inbound/inbox-conversion";
 
 export interface CommercialInboxTicket {
   id: string;
@@ -30,6 +31,8 @@ export interface CommercialInboxTicket {
   origin: string;
   status: CommercialInboxStatus;
   created_at: string;
+  sale_id: string | null;
+  converted_at: string | null;
   full_name: string | null;
   person_type: "pf" | "pj" | null;
   cpf: string | null;
@@ -81,3 +84,63 @@ export function useUpdateCommercialInboxStatus() {
 }
 
 export { COMMERCIAL_INBOX_STATUS };
+
+/* ------------------------------------------------------------------ *
+ * Conversão em venda (Sprint 6.8.4)
+ * Nenhuma venda é criada aqui. Apenas leitura do atendimento e, DEPOIS
+ * que o fluxo oficial de vendas criou a venda, o vínculo no Inbox.
+ * ------------------------------------------------------------------ */
+
+export function useCommercialInboxTicket(id: string | null) {
+  return useQuery({
+    queryKey: [...KEY, "ticket", id],
+    enabled: Boolean(id),
+    queryFn: async (): Promise<CommercialInboxTicket | null> => {
+      const { data, error } = await supabase
+        .from("whatsapp_commercial_inbox")
+        .select("*")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as CommercialInboxTicket | null;
+    },
+  });
+}
+
+/** Candidatos a cliente para tentar identificar o comprador do atendimento. */
+export function useCustomerCandidates(companyId: string | null) {
+  return useQuery({
+    queryKey: ["customers", "conversion-candidates", companyId],
+    enabled: Boolean(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,phone,whatsapp,document")
+        .eq("company_id", companyId!)
+        .neq("status", "archived")
+        .limit(1000);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useMarkInboxConverted() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; saleId: string }) => {
+      const patch = buildConversionPatch(input.saleId);
+      const { error } = await supabase
+        .from("whatsapp_commercial_inbox")
+        .update(patch)
+        .eq("id", input.id)
+        // Idempotência: um atendimento já convertido não é reescrito.
+        .is("sale_id", null);
+      if (error) throw error;
+      return input;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}

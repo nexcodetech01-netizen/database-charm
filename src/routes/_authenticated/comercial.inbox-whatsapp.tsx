@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Inbox } from "lucide-react";
 import { requirePermission } from "@/features/rbac";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
@@ -36,6 +36,10 @@ import {
   useUpdateCommercialInboxStatus,
   type CommercialInboxTicket,
 } from "@/features/whatsapp/hooks/use-commercial-inbox";
+import {
+  canConvert,
+  isConverted,
+} from "@/features/whatsapp/inbound/inbox-conversion";
 
 export const Route = createFileRoute("/_authenticated/comercial/inbox-whatsapp")({
   beforeLoad: requirePermission("sales.view"),
@@ -68,6 +72,7 @@ function money(value: number): string {
 
 function statusVariant(status: string) {
   if (status === COMMERCIAL_INBOX_STATUS.attended) return "secondary" as const;
+  if (status === COMMERCIAL_INBOX_STATUS.converted) return "secondary" as const;
   if (status === COMMERCIAL_INBOX_STATUS.cancelled) return "outline" as const;
   return "default" as const;
 }
@@ -137,6 +142,26 @@ function CommercialInboxPage() {
                     <Button variant="ghost" size="sm" onClick={() => setSelected(t)}>
                       Abrir
                     </Button>
+                    {isConverted(t) && t.sale_id ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          to="/vendas/$saleId"
+                          params={{ saleId: t.sale_id }}
+                        >
+                          Abrir venda
+                        </Link>
+                      </Button>
+                    ) : canConvert(t) ? (
+                      <Button variant="default" size="sm" asChild>
+                        <Link to="/vendas/novo" search={{ inboxId: t.id }}>
+                          Converter em venda
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button variant="default" size="sm" disabled>
+                        Converter em venda
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

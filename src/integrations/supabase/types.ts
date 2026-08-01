@@ -5712,6 +5712,7 @@ export type Database = {
           cnpj: string | null
           company_id: string
           complement: string | null
+          converted_at: string | null
           cpf: string | null
           created_at: string
           delivery: Json
@@ -5726,6 +5727,7 @@ export type Database = {
           payment: string | null
           person_type: string | null
           phone: string
+          sale_id: string | null
           state: string | null
           status: string
           street: string | null
@@ -5740,6 +5742,7 @@ export type Database = {
           cnpj?: string | null
           company_id: string
           complement?: string | null
+          converted_at?: string | null
           cpf?: string | null
           created_at?: string
           delivery?: Json
@@ -5754,6 +5757,7 @@ export type Database = {
           payment?: string | null
           person_type?: string | null
           phone: string
+          sale_id?: string | null
           state?: string | null
           status?: string
           street?: string | null
@@ -5768,6 +5772,7 @@ export type Database = {
           cnpj?: string | null
           company_id?: string
           complement?: string | null
+          converted_at?: string | null
           cpf?: string | null
           created_at?: string
           delivery?: Json
@@ -5782,6 +5787,7 @@ export type Database = {
           payment?: string | null
           person_type?: string | null
           phone?: string
+          sale_id?: string | null
           state?: string | null
           status?: string
           street?: string | null
@@ -5795,6 +5801,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_commercial_inbox_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
             referencedColumns: ["id"]
           },
         ]

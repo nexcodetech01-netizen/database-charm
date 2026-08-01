@@ -14,6 +14,7 @@ export const COMMERCIAL_INBOX_STATUS = {
   waiting: "aguardando_atendimento",
   attended: "atendido",
   cancelled: "cancelado",
+  converted: "convertido",
 } as const;
 
 export type CommercialInboxStatus =
@@ -133,6 +134,7 @@ export const COMMERCIAL_STATUS_LABEL: Record<CommercialInboxStatus, string> = {
   aguardando_atendimento: "Aguardando atendimento",
   atendido: "Atendido",
   cancelado: "Cancelado",
+  convertido: "Convertido em venda",
 };
 
 export const FULFILLMENT_LABEL: Record<"pickup" | "delivery", string> = {
