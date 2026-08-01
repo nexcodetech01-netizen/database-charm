@@ -501,9 +501,8 @@ function ProductDetailPage() {
 
 
       {/* Estoque */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Estoque"
             description="Disponibilidade, limites e valor imobilizado."
             aside={
