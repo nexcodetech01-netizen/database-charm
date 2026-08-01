@@ -6583,7 +6583,28 @@ export type Database = {
         }
         Returns: string
       }
+      merge_duplicate_products: {
+        Args: {
+          _company_id: string
+          _delete_unused?: boolean
+          _dry_run?: boolean
+        }
+        Returns: Json
+      }
       nexos_jobs_status: { Args: never; Returns: Json }
+      preview_duplicate_products: {
+        Args: { _company_id: string }
+        Returns: {
+          duplicates: Json
+          keeper_id: string
+          keeper_name: string
+          keeper_sku: string
+          keeper_stock: number
+          merged_stock: number
+          name_key: string
+        }[]
+      }
+      product_name_key: { Args: { _name: string }; Returns: string }
       products_inventory_metrics: {
         Args: { _company_id: string }
         Returns: Json
