@@ -186,7 +186,49 @@ function CommercialInboxPage() {
             </DialogDescription>
           </DialogHeader>
           {selected ? (
-            <div className="space-y-3 text-sm">
+            <div className="space-y-4 text-sm">
+              <section className="space-y-1 rounded-md border p-3">
+                <h3 className="font-semibold">Dados do Cliente</h3>
+                <p className="text-muted-foreground">
+                  Nome: {selected.full_name ?? selected.buyer_name ?? "—"}
+                </p>
+                <p className="text-muted-foreground">
+                  {selected.person_type === "pj" ? "CNPJ" : "CPF"}:{" "}
+                  {selected.person_type === "pj"
+                    ? (selected.cnpj ?? "—")
+                    : (selected.cpf ?? "—")}
+                </p>
+                <p className="text-muted-foreground">
+                  Nascimento:{" "}
+                  {selected.birth_date
+                    ? new Date(`${selected.birth_date}T00:00:00`).toLocaleDateString("pt-BR")
+                    : "—"}
+                </p>
+                <p className="text-muted-foreground">CEP: {selected.zip_code ?? "—"}</p>
+                <p className="text-muted-foreground">
+                  Cidade:{" "}
+                  {[selected.city, selected.state].filter(Boolean).join("/") || "—"}
+                </p>
+                <p className="text-muted-foreground">
+                  Endereço:{" "}
+                  {[
+                    [selected.street, selected.number].filter(Boolean).join(", "),
+                    selected.complement,
+                    selected.district,
+                  ]
+                    .filter(Boolean)
+                    .join(" — ") || "—"}
+                </p>
+                <p className="text-muted-foreground">
+                  Entrega: {FULFILLMENT_LABEL[selected.fulfillment]}
+                </p>
+                <p className="text-muted-foreground">
+                  Pagamento:{" "}
+                  {selected.payment
+                    ? (PAYMENT_LABEL[selected.payment] ?? selected.payment)
+                    : "—"}
+                </p>
+              </section>
               <ul className="space-y-1">
                 {selected.items.map((i) => (
                   <li key={i.productId} className="flex justify-between gap-4">
