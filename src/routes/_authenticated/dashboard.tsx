@@ -322,6 +322,9 @@ function DashboardPage() {
         </div>
       </div>
 
+      {/* 5 — Lista de interesse (potencial de vendas) */}
+      <InterestDashboardCard companyId={company.id} />
+
       {/* 5 — Eventos inteligentes */}
       <Section
         title="Eventos inteligentes"

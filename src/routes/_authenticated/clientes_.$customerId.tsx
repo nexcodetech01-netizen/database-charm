@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomerInterestsPanel } from "@/features/interests";
 import {
   Sheet,
   SheetContent,
@@ -177,6 +178,7 @@ function CustomerDetailPage() {
           <TabsTrigger value="overview">Visão 360°</TabsTrigger>
           <TabsTrigger value="data">Dados</TabsTrigger>
           <TabsTrigger value="timeline">Interações</TabsTrigger>
+          <TabsTrigger value="interests">Interesses</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -217,6 +219,14 @@ function CustomerDetailPage() {
         <TabsContent value="timeline" className="mt-4 space-y-4">
           <InteractionForm companyId={company.id} customerId={customerId} />
           <InteractionTimeline customerId={customerId} />
+        </TabsContent>
+
+        <TabsContent value="interests" className="mt-4">
+          <CustomerInterestsPanel
+            companyId={company.id}
+            customerId={customerId}
+            customerName={c.name}
+          />
         </TabsContent>
       </Tabs>
 
