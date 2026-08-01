@@ -182,7 +182,10 @@ export function SaleForm({
   backHref = "/vendas",
   backLabel = "Vendas",
   initialProductId,
+  prefill,
+  onSaleCreated,
 }: Props) {
+
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
