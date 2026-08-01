@@ -1,14 +1,12 @@
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { Archive, MoreHorizontal, Pencil, RotateCcw, Trash2, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Archive, Pencil, RotateCcw, Trash2, Eye, Users } from "lucide-react";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+  DataTableActions,
+  EnterpriseDataTable,
+  type DataTableColumn,
+} from "@/components/design";
 import { CustomerStatusBadge } from "./customer-status-badge";
 import type { Customer } from "../types";
 
@@ -42,132 +40,116 @@ export function CustomerTable({
 }: Props) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">Cliente</th>
-              <th className="px-4 py-3 text-left font-medium">Contato</th>
-              <th className="px-4 py-3 text-left font-medium">Cidade/UF</th>
-              <th className="px-4 py-3 text-left font-medium">Segmento</th>
-              <th className="px-4 py-3 text-left font-medium">Última interação</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
-              <th className="w-10 px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td colSpan={7} className="px-4 py-3">
-                    <Skeleton className="h-6 w-full" />
-                  </td>
-                </tr>
-              ))
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-14 text-center text-muted-foreground">
-                  Nenhum cliente encontrado.
-                </td>
-              </tr>
-            ) : (
-              rows.map((c) => (
-                <tr key={c.id} className="border-t border-border hover:bg-muted/30">
-                  <td className="px-4 py-3">
-                    <Link
-                      to="/clientes/$customerId"
-                      params={{ customerId: c.id }}
-                      className="font-medium text-foreground hover:text-primary"
-                    >
-                      {c.name}
-                    </Link>
-                    {c.document ? (
-                      <div className="text-xs text-muted-foreground">{c.document}</div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    <div className="truncate">{c.email ?? "—"}</div>
-                    <div className="text-xs">{c.phone ?? c.whatsapp ?? ""}</div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {c.city ? `${c.city}${c.state ? ` / ${c.state}` : ""}` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{c.segment ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {fmtDate(c.last_interaction_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <CustomerStatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link to="/clientes/$customerId" params={{ customerId: c.id }}>
-                            <Eye className="mr-2 h-4 w-4" /> Ver detalhes
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/clientes/$customerId/editar" params={{ customerId: c.id }}>
-                            <Pencil className="mr-2 h-4 w-4" /> Editar
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {c.status === "archived" ? (
-                          <DropdownMenuItem onClick={() => onRestore(c)}>
-                            <RotateCcw className="mr-2 h-4 w-4" /> Restaurar
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => onArchive(c)}>
-                            <Archive className="mr-2 h-4 w-4" /> Arquivar
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => onDelete(c)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+  const columns: DataTableColumn<Customer>[] = useMemo(
+    () => [
+      {
+        id: "name",
+        header: "Cliente",
+        cell: (c) => (
+          <>
+            <Link
+              to="/clientes/$customerId"
+              params={{ customerId: c.id }}
+              className="font-medium text-foreground hover:text-primary"
+            >
+              {c.name}
+            </Link>
+            {c.document ? (
+              <div className="text-xs text-muted-foreground">{c.document}</div>
+            ) : null}
+          </>
+        ),
+      },
+      {
+        id: "contact",
+        header: "Contato",
+        className: "text-muted-foreground",
+        cell: (c) => (
+          <>
+            <div className="truncate">{c.email ?? "—"}</div>
+            <div className="text-xs">{c.phone ?? c.whatsapp ?? ""}</div>
+          </>
+        ),
+      },
+      {
+        id: "city",
+        header: "Cidade/UF",
+        className: "text-muted-foreground",
+        hideBelow: "md",
+        cell: (c) => (c.city ? `${c.city}${c.state ? ` / ${c.state}` : ""}` : "—"),
+      },
+      {
+        id: "segment",
+        header: "Segmento",
+        className: "text-muted-foreground",
+        hideBelow: "lg",
+        cell: (c) => c.segment ?? "—",
+      },
+      {
+        id: "last_interaction",
+        header: "Última interação",
+        className: "text-muted-foreground",
+        hideBelow: "md",
+        cell: (c) => fmtDate(c.last_interaction_at),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: (c) => <CustomerStatusBadge status={c.status} />,
+      },
+    ],
+    [],
+  );
 
-      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted-foreground">
-        <span>
-          {total} cliente{total === 1 ? "" : "s"} · página {page} de {totalPages}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
+  return (
+    <EnterpriseDataTable<Customer>
+      rows={rows}
+      columns={columns}
+      getRowId={(c) => c.id}
+      isLoading={isLoading}
+      skeletonRows={6}
+      empty={{
+        icon: Users,
+        title: "Nenhum cliente encontrado",
+        description: "Ajuste os filtros ou cadastre um novo cliente.",
+      }}
+      pagination={{
+        page,
+        pageSize,
+        total,
+        onPageChange,
+        summary: `${total} cliente${total === 1 ? "" : "s"} · página ${page} de ${totalPages}`,
+      }}
+      rowActions={(c) => (
+        <DataTableActions>
+          <DropdownMenuItem asChild>
+            <Link to="/clientes/$customerId" params={{ customerId: c.id }}>
+              <Eye className="mr-2 h-4 w-4" /> Ver detalhes
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/clientes/$customerId/editar" params={{ customerId: c.id }}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {c.status === "archived" ? (
+            <DropdownMenuItem onClick={() => onRestore(c)}>
+              <RotateCcw className="mr-2 h-4 w-4" /> Restaurar
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => onArchive(c)}>
+              <Archive className="mr-2 h-4 w-4" /> Arquivar
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => onDelete(c)}
+            className="text-destructive focus:text-destructive"
           >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
-      </div>
-    </div>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          </DropdownMenuItem>
+        </DataTableActions>
+      )}
+    />
   );
 }
