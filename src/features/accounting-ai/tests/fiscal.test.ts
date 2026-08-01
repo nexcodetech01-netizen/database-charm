@@ -54,8 +54,8 @@ function insight(over: Partial<AccountingInsight> = {}): AccountingInsight {
     description: "Competência aberta",
     recommendation: "Reserve o valor do imposto",
     priority: 70,
-    action: { id: "programar_imposto", label: "Programar imposto" },
-    sourceProvider: "tax",
+    action: { id: "acompanhar", label: "Acompanhar impostos" },
+    sourceProvider: "taxes",
     createdAt: NOW,
     ...over,
   };
@@ -170,8 +170,8 @@ describe("accounting-ai · fiscal · resumo", () => {
     expect(details.find((d) => d.id === "ultimo_cancelamento")!.available).toBe(true);
   });
 
-  it("usa a saúde já apurada pelo resumo contábil", () => {
-    const health = buildFiscalHealth(makeSummary());
+  it("usa a saúde já apurada pelo resumo contábil", async () => {
+    const health = buildFiscalHealth(await makeSummary());
     expect(health === null || typeof health.score === "number").toBe(true);
     expect(buildFiscalHealth(null)).toBeNull();
   });
@@ -266,15 +266,15 @@ describe("accounting-ai · fiscal · recomendações e filtros", () => {
   it("converte insights fiscais em recomendações navegáveis", () => {
     const recs = buildFiscalRecommendations([insight(), insight({ id: "i2", category: "estoque" })]);
     expect(recs).toHaveLength(1);
-    expect(recs[0]!.link.href).toBe("/fiscal/configuracao");
+    expect(recs[0]!.link.href).toBe("/fiscal");
   });
 });
 
 describe("accounting-ai · fiscal · view", () => {
-  it("monta a view completa a partir de dados existentes", () => {
+  it("monta a view completa a partir de dados existentes", async () => {
     const view = buildBellaFiscalView(
       {
-        summary: makeSummary(),
+        summary: await makeSummary(),
         documents: [doc(), doc({ id: "2", status: "rejected", protocolAt: null })],
         certificates: [{ id: "c", isActive: true, validTo: "2027-01-01T00:00:00.000Z" }],
         readiness: { percent: 100, blockers: 0, warnings: 0, ready: true, environment: "production" },
