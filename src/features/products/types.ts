@@ -49,4 +49,6 @@ export interface ProductListFilters {
   sortDir: SortDir;
   page: number;
   pageSize: number;
+  /** Quando false (padrão), lista apenas produtos ativos e ignora SKUs mesclados. */
+  includeInactive?: boolean;
 }

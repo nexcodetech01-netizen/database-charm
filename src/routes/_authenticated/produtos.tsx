@@ -31,6 +31,7 @@ const DEFAULT: ProductListFilters = {
   sortDir: "desc",
   page: 1,
   pageSize: 20,
+  includeInactive: false,
 };
 
 function ProductsPage() {
