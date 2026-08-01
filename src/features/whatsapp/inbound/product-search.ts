@@ -39,7 +39,10 @@ export function stem(word: string): string {
   if (w.length > 4 && w.endsWith("oes")) return `${w.slice(0, -3)}ao`;
   if (w.length > 4 && w.endsWith("aes")) return `${w.slice(0, -3)}ao`;
   if (w.length > 4 && w.endsWith("eis")) return `${w.slice(0, -3)}el`;
-  if (w.length > 3 && w.endsWith("es")) return w.slice(0, -2);
+  // "flores" → "flor", mas "perfumes" → "perfume".
+  if (w.length > 4 && w.endsWith("es") && /[rzsn]/.test(w[w.length - 3] ?? "")) {
+    return w.slice(0, -2);
+  }
   if (w.length > 3 && w.endsWith("s")) return w.slice(0, -1);
   return w;
 }
