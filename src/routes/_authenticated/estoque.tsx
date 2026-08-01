@@ -19,6 +19,7 @@ import {
   DEFAULT_MOVEMENT_FILTERS,
 } from "@/features/inventory";
 import type { MovementListFilters } from "@/features/inventory";
+import { BellaInventoryPanel } from "@/features/accounting-ai/inventory";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
