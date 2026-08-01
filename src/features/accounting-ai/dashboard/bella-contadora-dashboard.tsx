@@ -31,7 +31,7 @@ import {
   TrendBadge,
 } from "../components";
 import { useEffect, useMemo } from "react";
-import { useAccountingAiSummary } from "../hooks/use-accounting-ai";
+import { useBellaDashboard } from "../hooks/use-bella-dashboard";
 import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
@@ -228,9 +228,9 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
 
           <BellaBriefCard summary={s} loading={isLoading} />
 
-          <BellaTaxBlock companyId={companyId} />
+          <BellaTaxBlock companyId={companyId} preloaded={tax} loading={isLoading} />
 
-          <BellaAuditBlock companyId={companyId} />
+          <BellaAuditBlock companyId={companyId} preloaded={audit} loading={isLoading} />
 
           <BellaChatPanel companyId={companyId} />
 

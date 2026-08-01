@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useBellaTax } from "./use-bella-tax";
+import { useBellaTax, type UseBellaTaxOptions } from "./use-bella-tax";
 
 export interface BellaTaxBlockProps {
   companyId: string;
   className?: string;
+  /** Retrato já lido pelo dashboard (evita consulta duplicada). */
+  preloaded?: UseBellaTaxOptions["preloaded"];
+  loading?: boolean;
 }
 
 const ALERT_TONES: Record<string, string> = {
@@ -22,8 +25,16 @@ const ALERT_TONES: Record<string, string> = {
  * Bloco tributário da Bella — leitura do motor oficial do Simples.
  * Nenhum botão executa apuração ou pagamento: apenas navegação.
  */
-export function BellaTaxBlock({ companyId, className }: BellaTaxBlockProps) {
-  const { view, isLoading } = useBellaTax(companyId);
+export function BellaTaxBlock({
+  companyId,
+  className,
+  preloaded,
+  loading,
+}: BellaTaxBlockProps) {
+  const { view, isLoading } = useBellaTax(
+    companyId,
+    preloaded === undefined ? {} : { preloaded, loading },
+  );
 
   return (
     <Card className={cn("rounded-2xl", className)} data-testid="bella-tax-block">
