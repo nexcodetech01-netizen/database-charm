@@ -37,6 +37,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_clientes",
     "consultar_recomendacoes",
   ],
+  /** Sprint 6.5 — "como estão minhas compras?": só skills já existentes. */
+  situacao_compras: [
+    "consultar_produtos",
+    "consultar_alertas",
+    "consultar_recomendacoes",
+    "consultar_notificacoes",
+  ],
   resumo_do_dia: [
     "consultar_alertas",
     "consultar_insights",

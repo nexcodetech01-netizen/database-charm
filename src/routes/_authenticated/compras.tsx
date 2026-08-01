@@ -14,6 +14,7 @@ import {
   useSetPurchaseStatus,
 } from "@/features/purchases";
 import { PurchasesBellaHints } from "@/features/bella-ai";
+import { BellaPurchasesPanel } from "@/features/accounting-ai/purchases";
 import type { PurchaseListFilters, PurchaseWithMeta } from "@/features/purchases";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useNextAction } from "@/components/feedback/next-action-provider";
@@ -101,6 +102,8 @@ function PurchasesPage() {
       }
       kpis={<PurchaseMetrics companyId={company.id} />}
     >
+      <BellaPurchasesPanel companyId={company.id} />
+
       <PurchasesBellaHints companyId={company.id} />
 
       <PurchaseFilters
