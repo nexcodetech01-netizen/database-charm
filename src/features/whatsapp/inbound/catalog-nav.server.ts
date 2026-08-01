@@ -16,18 +16,25 @@ import {
 } from "./catalog-nav";
 import { handleProductSearchTurn, listActiveProducts } from "./product-search.server";
 import {
-  addToCart,
-  formatAddedMessage,
+  findCartItemIndex,
+  formatAmbiguousAddMessage,
   formatCartMessage,
+  formatCartUpdatedMessage,
   formatClearedMessage,
   formatRemovedMessage,
   hasAddIntent,
+  isAnaphoricAdd,
   matchProduct,
   parseCartCommand,
   parseQuantity,
-  removeFromCart,
-  type CartLine,
 } from "./cart";
+import {
+  addProduct,
+  clearCartSession,
+  removeAt,
+  type CartSession,
+} from "./cart-session";
+import { getCartSession, saveCartSession } from "./cart-session.server";
 
 type Db = { from: (t: string) => any };
 
@@ -98,31 +105,46 @@ export async function handleCatalogTurn(args: {
   companyId: string;
   text: string;
   state: CatalogNavState | null | undefined;
+  /** Telefone do cliente — chave da sessão efêmera de carrinho. */
+  phone?: string;
 }): Promise<CatalogTurnResult | null> {
   const { db, companyId, text } = args;
   const state = args.state ?? null;
   const inCatalog = Boolean(state);
-  const cart: CartLine[] = state?.cart ?? [];
-  const keep = (next: CatalogNavState | null): CatalogNavState | null =>
-    next ? { ...next, cart: next.cart ?? cart } : null;
+  const phone = args.phone ?? "unknown";
+  const session: CartSession = getCartSession(companyId, phone);
 
   // Comandos do pedido conversacional (ver / limpar / remover).
   const command = parseCartCommand(text);
-  if (command && (inCatalog || cart.length > 0 || command.kind === "view")) {
+  if (command && (inCatalog || session.items.length > 0)) {
     if (command.kind === "view") {
-      return { text: formatCartMessage(cart), state: keep({ step: "cart" }) };
+      return { text: formatCartMessage(session), state: { ...(state ?? {}), step: "cart" } };
     }
     if (command.kind === "clear") {
+      saveCartSession(clearCartSession(session));
       return {
         text: formatClearedMessage(),
-        state: { ...(state ?? { step: "cart" }), step: "cart", cart: [] },
+        state: { ...(state ?? {}), step: "cart" },
       };
     }
-    const { cart: nextCart, removed } = removeFromCart(cart, command.text);
+    const index =
+      command.ordinal !== null
+        ? command.ordinal - 1
+        : command.text
+          ? findCartItemIndex(session, command.text)
+          : -1;
+    const { session: next, removed } = removeAt(session, index);
     if (removed) {
+      saveCartSession(next);
       return {
-        text: formatRemovedMessage(removed, nextCart),
-        state: { ...(state ?? { step: "cart" }), step: "cart", cart: nextCart },
+        text: formatRemovedMessage(removed, next),
+        state: { ...(state ?? {}), step: "cart" },
+      };
+    }
+    if (session.items.length > 0) {
+      return {
+        text: formatRemovedMessage(null, session),
+        state: { ...(state ?? {}), step: "cart" },
       };
     }
   }
@@ -134,29 +156,43 @@ export async function handleCatalogTurn(args: {
     const categories = await listCategoriesWithActiveProducts(db, companyId);
     return {
       text: formatCategoriesMessage(categories),
-      state: keep(
+      state:
         categories.length > 0
           ? { step: "categories", categoryIds: categories.map((c) => c.id) }
           : null,
-      ),
     };
   }
 
   const categories = await listCategoriesWithActiveProducts(db, companyId);
   if (categories.length === 0) return null;
 
-  // Adicionar produto ao pedido: nome do produto (ativo) na mensagem.
+  // Adicionar produto ao pedido: nome do produto (ativo) na mensagem,
+  // ou referência ao último produto mostrado ("quero essa").
   const activeProducts = await listActiveProducts(db, companyId);
-  const productHit = matchProduct(text, activeProducts);
+  let productHit = matchProduct(text, activeProducts);
+
+  if (!productHit && isAnaphoricAdd(text)) {
+    const lastIds = state?.lastProductIds ?? [];
+    if (lastIds.length === 1) {
+      productHit = activeProducts.find((p) => p.id === lastIds[0]) ?? null;
+    }
+    if (!productHit) {
+      return {
+        text: formatAmbiguousAddMessage(),
+        state: { ...(state ?? {}), step: "cart" },
+      };
+    }
+  }
+
   if (productHit && (inCatalog || hasAddIntent(text))) {
-    const nextCart = addToCart(cart, productHit, parseQuantity(text));
+    const next = saveCartSession(addProduct(session, productHit, parseQuantity(text)));
     return {
-      text: formatAddedMessage(nextCart),
+      text: formatCartUpdatedMessage(next),
       state: {
         step: "cart",
         categoryIds: categories.map((c) => c.id),
         categoryId: productHit.categoryId ?? undefined,
-        cart: nextCart,
+        lastProductIds: [productHit.id],
       },
     };
   }
@@ -167,11 +203,12 @@ export async function handleCatalogTurn(args: {
     const products = await listActiveProductsByCategory(db, companyId, chosen.id);
     return {
       text: formatProductsMessage(chosen.name, products),
-      state: keep({
+      state: {
         step: "products",
         categoryId: chosen.id,
         categoryIds: categories.map((c) => c.id),
-      }),
+        lastProductIds: products.map((p) => p.id),
+      },
     };
   }
 
@@ -183,5 +220,12 @@ export async function handleCatalogTurn(args: {
     categories,
     inCatalog,
   });
-  return search ? { text: search.text, state: keep(search.state) } : null;
+  return search
+    ? {
+        text: search.text,
+        state: search.state
+          ? { ...search.state, lastProductIds: search.products.map((p) => p.id) }
+          : null,
+      }
+    : null;
 }

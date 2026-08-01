@@ -478,6 +478,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
   // 3d) Navegação do catálogo: categorias antes dos produtos.
   const catalogTurn = await handleCatalogTurn({
+    phone: msg.phone,
     db,
     companyId: tenant.companyId,
     text: msg.text,
