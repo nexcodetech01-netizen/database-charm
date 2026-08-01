@@ -153,6 +153,28 @@ const RULES: IntentRule[] = [
     ],
   },
   {
+    intent: "situacao_vendas",
+    weight: 15,
+    terms: [
+      [
+        "como estao minhas vendas",
+        "como estao as vendas",
+        "como esta minha venda",
+        "situacao das vendas",
+        "situacao de vendas",
+        "minhas vendas",
+        "as vendas",
+        "o que mais vende",
+        "o que mais vendeu",
+        "melhor cliente",
+        "vendas caindo",
+        "cai as vendas",
+        "caiu as vendas",
+        "vendas canceladas",
+      ],
+    ],
+  },
+  {
     intent: "consultar_notificacoes",
     weight: 10,
     terms: [["notificacao", "notificacoes", "avisos", "o que voce percebeu hoje"]],
