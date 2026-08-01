@@ -18,7 +18,7 @@ const WIDTH_CLASS: Record<FormLayoutWidth, string> = {
 };
 
 export interface FormLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
   /** Coluna lateral (resumo, ajuda, metadados). */
   sidebar?: ReactNode;
   footer?: ReactNode;
@@ -74,7 +74,7 @@ export function FormLayout({
 export interface FormGroupProps {
   title?: ReactNode;
   description?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
   /** Colunas do grid de campos (padrão 2 a partir de `sm`). */
   columns?: 1 | 2 | 3;
   density?: SpacingToken;

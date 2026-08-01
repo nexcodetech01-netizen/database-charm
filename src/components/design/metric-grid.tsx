@@ -9,7 +9,7 @@ import { SPACING_TOKENS, type SpacingToken } from "@/design";
  * Sem hooks, serviços, rotas ou regra de negócio.
  */
 export interface MetricGridProps {
-  children: ReactNode;
+  children?: ReactNode;
   /** Colunas no breakpoint largo. 2, 3, 4 ou 5 (padrão 4). */
   columns?: 2 | 3 | 4 | 5;
   /** Densidade do espaçamento entre cards. */
