@@ -47,9 +47,7 @@ export function EntityHeader({
     <span className="flex min-w-0 flex-wrap items-center gap-2">
       <span className="truncate">{title}</span>
       {status ? (
-        <StatusBadge status={status.status} data-testid="entity-header-status">
-          {status.label}
-        </StatusBadge>
+        <StatusBadge status={status.status}>{status.label}</StatusBadge>
       ) : null}
     </span>
   );
