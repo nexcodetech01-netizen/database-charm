@@ -25,7 +25,9 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/vendas_/novo")({
   beforeLoad: requirePermission("sales.view"),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { productId?: string; inboxId?: string } => ({
     productId: typeof search.productId === "string" ? search.productId : undefined,
     inboxId: typeof search.inboxId === "string" ? search.inboxId : undefined,
   }),
