@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Package } from "lucide-react";
-import { PageLayout } from "@/components/layout";
-import { ActionToolbar } from "@/components/design";
+import { BreadcrumbNav } from "@/components/layout";
+import { ActionToolbar, EntityHeader, Section } from "@/components/design";
 import {
   ProductMetrics,
   ProductFilters,
@@ -45,21 +45,26 @@ function ProductsPage() {
   const { data, isLoading } = useProductsList(company.id, effective);
 
   return (
-    <PageLayout
-      icon={Package}
-      title="Produtos"
-      description="Quanto vender? Cadastre o produto e o NexOS sugere o preço ideal por canal."
-      actions={
-        <ActionToolbar
-          createLabel="Novo produto"
-          onCreate={() => navigate({ to: "/produtos/novo" })}
-        >
-          <BulkNcmDialog companyId={company.id} />
-          <ImportCsvDialog companyId={company.id} />
-        </ActionToolbar>
-      }
-      kpis={<ProductMetrics companyId={company.id} />}
-    >
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
+      <BreadcrumbNav />
+
+      <EntityHeader
+        icon={Package}
+        title="Produtos"
+        description="Quanto vender? Cadastre o produto e o NexOS sugere o preço ideal por canal."
+        actions={
+          <ActionToolbar
+            createLabel="Novo produto"
+            onCreate={() => navigate({ to: "/produtos/novo" })}
+          >
+            <BulkNcmDialog companyId={company.id} />
+            <ImportCsvDialog companyId={company.id} />
+          </ActionToolbar>
+        }
+      />
+
+      <ProductMetrics companyId={company.id} />
+
       <ProductsBellaHints companyId={company.id} />
 
       <ProductFilters
@@ -69,14 +74,21 @@ function ProductsPage() {
         onReset={() => setFilters(DEFAULT)}
       />
 
-      <ProductTable
-        rows={data?.rows ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        page={filters.page}
-        pageSize={filters.pageSize}
-        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-      />
-    </PageLayout>
+      <Section
+        title="Catálogo"
+        description="Produtos cadastrados nesta empresa."
+        flushBody
+      >
+        <ProductTable
+          rows={data?.rows ?? []}
+          total={data?.total ?? 0}
+          isLoading={isLoading}
+          page={filters.page}
+          pageSize={filters.pageSize}
+          onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+        />
+      </Section>
+    </div>
   );
 }
+
