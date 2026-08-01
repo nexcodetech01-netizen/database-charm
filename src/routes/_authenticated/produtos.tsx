@@ -35,6 +35,7 @@ const DEFAULT: ProductListFilters = {
 
 function ProductsPage() {
   const { company } = Route.useRouteContext();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ProductListFilters>(DEFAULT);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
   const effective = useMemo(
