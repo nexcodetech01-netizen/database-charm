@@ -51,6 +51,12 @@ export const productsService = {
     if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
     if (filters.supplierId) q = q.eq("supplier_id", filters.supplierId);
     if (filters.status) q = q.eq("status", filters.status);
+    else if (!filters.includeInactive) q = q.eq("status", "active");
+
+    // Produtos inativados por mesclagem recebem sufixo -MERGED no SKU.
+    if (!filters.includeInactive) {
+      q = q.or("sku.is.null,and(sku.not.ilike.%-MERGED,sku.not.ilike.%_MERGED)");
+    }
 
     if (filters.stock === "out") q = q.lte("stock", 0);
     else if (filters.stock === "low") q = q.gt("stock", 0);
