@@ -5706,52 +5706,88 @@ export type Database = {
       }
       whatsapp_commercial_inbox: {
         Row: {
+          birth_date: string | null
           buyer_name: string | null
+          city: string | null
+          cnpj: string | null
           company_id: string
+          complement: string | null
+          cpf: string | null
           created_at: string
           delivery: Json
+          district: string | null
           fulfillment: string
+          full_name: string | null
           id: string
           item_count: number
           items: Json
+          number: string | null
           origin: string
           payment: string | null
+          person_type: string | null
           phone: string
+          state: string | null
           status: string
+          street: string | null
           total: number
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
+          birth_date?: string | null
           buyer_name?: string | null
+          city?: string | null
+          cnpj?: string | null
           company_id: string
+          complement?: string | null
+          cpf?: string | null
           created_at?: string
           delivery?: Json
+          district?: string | null
           fulfillment?: string
+          full_name?: string | null
           id?: string
           item_count?: number
           items?: Json
+          number?: string | null
           origin?: string
           payment?: string | null
+          person_type?: string | null
           phone: string
+          state?: string | null
           status?: string
+          street?: string | null
           total?: number
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
+          birth_date?: string | null
           buyer_name?: string | null
+          city?: string | null
+          cnpj?: string | null
           company_id?: string
+          complement?: string | null
+          cpf?: string | null
           created_at?: string
           delivery?: Json
+          district?: string | null
           fulfillment?: string
+          full_name?: string | null
           id?: string
           item_count?: number
           items?: Json
+          number?: string | null
           origin?: string
           payment?: string | null
+          person_type?: string | null
           phone?: string
+          state?: string | null
           status?: string
+          street?: string | null
           total?: number
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: [
           {
