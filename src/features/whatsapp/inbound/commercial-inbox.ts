@@ -47,10 +47,27 @@ export interface CommercialTicketItem {
   subtotal: number;
 }
 
+export interface CommercialCustomerData {
+  fullName: string | null;
+  personType: "pf" | "pj" | null;
+  cpf: string | null;
+  cnpj: string | null;
+  birthDate: string | null;
+  zipCode: string | null;
+  state: string | null;
+  city: string | null;
+  district: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+}
+
 export interface CommercialTicketDraft {
   companyId: string;
   phone: string;
   buyerName: string | null;
+  /** Dados básicos do cliente — vivem SOMENTE no atendimento do Inbox. */
+  customer: CommercialCustomerData;
   items: CommercialTicketItem[];
   itemCount: number;
   total: number;
@@ -81,10 +98,25 @@ export function buildCommercialTicketDraft(args: {
     unitPrice: i.unitPrice,
     subtotal: i.subtotal,
   }));
+  const c = session.customer;
   return {
     companyId: session.companyId,
     phone: session.phone,
-    buyerName: session.buyerName,
+    buyerName: c.fullName ?? session.buyerName,
+    customer: {
+      fullName: c.fullName ?? session.buyerName,
+      personType: c.personType,
+      cpf: c.cpf,
+      cnpj: c.cnpj,
+      birthDate: c.birthDate,
+      zipCode: c.zipCode,
+      state: c.state,
+      city: c.city,
+      district: c.district,
+      street: c.street,
+      number: c.number,
+      complement: c.complement,
+    },
     items,
     itemCount: items.reduce((sum, i) => sum + i.qty, 0),
     total: cart.total,

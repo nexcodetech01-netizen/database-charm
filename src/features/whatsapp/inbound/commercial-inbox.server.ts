@@ -36,6 +36,18 @@ function toRow(draft: CommercialTicketDraft) {
     payment: draft.payment,
     origin: draft.origin,
     status: draft.status,
+    full_name: draft.customer.fullName,
+    person_type: draft.customer.personType,
+    cpf: draft.customer.cpf,
+    cnpj: draft.customer.cnpj,
+    birth_date: draft.customer.birthDate,
+    zip_code: draft.customer.zipCode,
+    state: draft.customer.state,
+    city: draft.customer.city,
+    district: draft.customer.district,
+    street: draft.customer.street,
+    number: draft.customer.number,
+    complement: draft.customer.complement,
   };
 }
 

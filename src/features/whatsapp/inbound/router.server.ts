@@ -513,7 +513,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
 
   // 3c-pre) Fechamento conversacional (somente memória: sem venda/estoque/ERP).
-  const checkoutTurn = handleCheckoutTurn({
+  const checkoutTurn = await handleCheckoutTurn({
     companyId: tenant.companyId,
     phone: msg.phone,
     text: msg.text,
