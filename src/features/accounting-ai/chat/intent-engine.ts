@@ -71,6 +71,60 @@ interface IntentRule {
 /** Cada entrada de `terms` é um conjunto de termos alternativos (OR). */
 const RULES: IntentRule[] = [
   {
+    /** Sprint 7.2 — auditoria: pergunta aberta sobre inconsistências. */
+    intent: "auditoria_geral",
+    weight: 24,
+    terms: [
+      [
+        "o que esta errado",
+        "o que está errado",
+        "auditar",
+        "auditoria",
+        "faca uma auditoria",
+        "faça uma auditoria",
+        "audite a empresa",
+        "revisar meus dados",
+        "revise meus dados",
+        "conferir meus dados",
+        "tem algo errado",
+        "algo errado",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_inconsistencias",
+    weight: 23,
+    terms: [
+      [
+        "inconsistencia",
+        "inconsistencias",
+        "inconsistência",
+        "inconsistências",
+        "erros nos dados",
+        "erros no sistema",
+        "problemas nos dados",
+        "divergencias",
+        "divergências",
+        "o que preciso corrigir",
+        "o que devo corrigir",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_saude_operacional",
+    weight: 23,
+    terms: [
+      [
+        "saude operacional",
+        "saúde operacional",
+        "como esta a operacao",
+        "como está a operação",
+        "qualidade dos dados",
+        "score operacional",
+      ],
+    ],
+  },
+  {
     /** Sprint 7.1 — simulação tributária (motor oficial de projeções). */
     intent: "simular_faturamento",
     weight: 22,
