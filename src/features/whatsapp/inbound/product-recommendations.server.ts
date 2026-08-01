@@ -149,6 +149,10 @@ export async function handleRecommendationTurn(args: {
     text: formatRecommendationsMessage(products),
     products,
     media,
-    state: { ...(state ?? {}), lastProductIds: products.map((p) => p.id) },
+    state: {
+      ...(state ?? {}),
+      step: state?.step ?? "products",
+      lastProductIds: products.map((p) => p.id),
+    },
   };
 }
