@@ -8,6 +8,7 @@ export * from "./types";
 export * from "./lib";
 export * from "./services";
 export * from "./providers";
+export * from "./context";
 export { buildAccountingSummary } from "./providers/summary";
 export * from "./skills";
 export * from "./queries";
@@ -38,5 +39,9 @@ export * from "./components";
 export * from "./audit";
 export * from "./chat";
 export { useAccountingAiSummary } from "./hooks/use-accounting-ai";
+export {
+  useBellaDashboard,
+  bellaDashboardQueryOptions,
+} from "./hooks/use-bella-dashboard";
 export { useBellaChat } from "./hooks/use-bella-chat";
 export { BellaContadoraDashboard } from "./dashboard";
