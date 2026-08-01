@@ -609,9 +609,8 @@ function ProductDetailPage() {
                 icon={Clock}
               />
             </div>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       {/* Política de margem aplicada — categoria vs personalizada */}
       <AppliedMarginPolicyCard
