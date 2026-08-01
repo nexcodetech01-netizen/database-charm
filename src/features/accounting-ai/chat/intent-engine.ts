@@ -3,6 +3,7 @@
  * Apenas identifica a intenção; não executa nada e não calcula nada.
  */
 import type { BellaIntentId, ChatContextState, IntentMatch } from "./types";
+import { intentRegistryByPriority, type IntentRule } from "./intent-registry";
 
 export function normalize(text: string): string {
   return text
@@ -60,8 +61,6 @@ export function extractAmount(raw: string): number | null {
   const amount = total + current;
   return found && amount > 0 ? amount : null;
 }
-
-import { intentRegistryByPriority } from "./intent-registry";
 
 const RULES = intentRegistryByPriority();
 
