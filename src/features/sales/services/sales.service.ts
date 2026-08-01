@@ -397,7 +397,7 @@ export const salesService = {
     let kpiQuery = applyDataScope(
       supabase
         .from("sales")
-        .select("status,grand_total,sale_date")
+        .select("status,grand_total,sale_date,created_at")
         .eq("company_id", companyId),
       scope,
     );
@@ -414,9 +414,10 @@ export const salesService = {
     }));
 
     // P2.4 — data/mês vindos do servidor no fuso da empresa (não do browser).
-    const [{ data: todayRpc }, { data: monthRpc }] = await Promise.all([
+    const [{ data: todayRpc }, { data: monthRpc }, { data: tzRpc }] = await Promise.all([
       supabase.rpc("company_today", { _company_id: companyId }),
       supabase.rpc("company_month_start", { _company_id: companyId }),
+      supabase.rpc("company_timezone", { _company_id: companyId }),
     ]);
     const todayISO =
       (typeof todayRpc === "string" && todayRpc) ||
@@ -424,8 +425,27 @@ export const salesService = {
     const monthStartISO =
       (typeof monthRpc === "string" && monthRpc) ||
       `${todayISO.slice(0, 7)}-01`;
+    const timeZone =
+      (typeof tzRpc === "string" && tzRpc) || "America/Sao_Paulo";
+
+    // Data local (fuso da empresa) em que a venda foi efetivamente criada.
+    const localDate = (iso: string | null | undefined) => {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return null;
+      try {
+        return new Intl.DateTimeFormat("en-CA", { timeZone }).format(d);
+      } catch {
+        return d.toISOString().slice(0, 10);
+      }
+    };
+
     const paid = kpiRows.filter((r) => r.status === "paid");
-    const today = paid.filter((r) => r.sale_date === todayISO);
+    // Receita do dia = vendas PAGAS criadas HOJE (created_at), não sale_date —
+    // sale_date pode ser retroativo/futuro e inflava o card.
+    const today = paid.filter(
+      (r) => localDate((r as { created_at?: string }).created_at) === todayISO,
+    );
     const month = paid.filter(
       (r) => !!r.sale_date && r.sale_date >= monthStartISO,
     );
@@ -439,6 +459,7 @@ export const salesService = {
     return {
       dayCount: today.length,
       dayTotal: today.reduce((s, r) => s + Number(r.grand_total ?? 0), 0),
+
       monthCount: month.length,
       monthTotal,
       averageTicket: month.length > 0 ? monthTotal / month.length : 0,
