@@ -134,7 +134,7 @@ describe("carrinho — sessão temporária", () => {
   it("calcula o total com múltiplos itens", () => {
     let s = addProduct(createCartSession("c1", "p", 0), products[0]!);
     s = addProduct(s, products[2]!, 2);
-    expect(s.total).toBe(189.9 + 239.8);
+    expect(s.total).toBe(429.7);
   });
 
   it("remove por posição e por produto, atualizando o total", () => {
