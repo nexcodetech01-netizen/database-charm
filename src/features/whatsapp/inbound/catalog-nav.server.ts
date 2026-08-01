@@ -14,6 +14,7 @@ import {
   type CatalogNavState,
   type CatalogProductOption,
 } from "./catalog-nav";
+import { handleProductSearchTurn } from "./product-search.server";
 
 type Db = { from: (t: string) => any };
 
@@ -103,15 +104,30 @@ export async function handleCatalogTurn(args: {
     };
   }
 
-  if (!inCatalog) return null;
-
   const categories = await listCategoriesWithActiveProducts(db, companyId);
-  const chosen = matchCategory(text, categories);
-  if (!chosen) return null;
+  if (categories.length === 0) return null;
 
-  const products = await listActiveProductsByCategory(db, companyId, chosen.id);
-  return {
-    text: formatProductsMessage(chosen.name, products),
-    state: { step: "products", categoryId: chosen.id, categoryIds: categories.map((c) => c.id) },
-  };
+  // Escolha por número/nome só vale dentro do fluxo de catálogo.
+  const chosen = inCatalog ? matchCategory(text, categories) : null;
+  if (chosen) {
+    const products = await listActiveProductsByCategory(db, companyId, chosen.id);
+    return {
+      text: formatProductsMessage(chosen.name, products),
+      state: {
+        step: "products",
+        categoryId: chosen.id,
+        categoryIds: categories.map((c) => c.id),
+      },
+    };
+  }
+
+  // Sprint 6.7 — busca inteligente: só produtos ativos, sem tocar no cadastro.
+  const search = await handleProductSearchTurn({
+    db,
+    companyId,
+    text,
+    categories,
+    inCatalog,
+  });
+  return search ? { text: search.text, state: search.state } : null;
 }
