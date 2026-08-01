@@ -14,7 +14,8 @@ import {
   UserPlus,
   Wallet,
 } from "lucide-react";
-import { PageLayout, KpiSection, KpiCard } from "@/components/layout";
+import { PageLayout, KpiSection } from "@/components/layout";
+import { MetricCard } from "@/components/design";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -191,44 +192,44 @@ function DashboardPage() {
               </Label>
             </div>
             <KpiSection columns={4}>
-              <KpiCard
-                label="Faturamento hoje"
+              <MetricCard
+                title="Faturamento hoje"
                 value={formatCurrency(dayTotal)}
                 icon={DollarSign}
-                hint={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Sem vendas hoje"}
+                footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Sem vendas hoje"}
               />
-              <KpiCard
-                label="Recebimentos hoje"
+              <MetricCard
+                title="Recebimentos hoje"
                 value={formatCurrency(receiptsToday)}
                 icon={Wallet}
-                hint={
+                footer={
                   receiptsTodayCount > 0
                     ? `${receiptsTodayCount} baixa${receiptsTodayCount > 1 ? "s" : ""} hoje`
                     : "Nenhum recebimento hoje"
                 }
               />
 
-              <KpiCard
-                label="Dinheiro para entrar"
+              <MetricCard
+                title="Dinheiro para entrar"
                 value={formatCurrency(receivable)}
                 icon={TrendingUp}
-                hint={
+                footer={
                   receivableCount > 0
                     ? `${receivableCount} título${receivableCount > 1 ? "s" : ""} em aberto`
                     : "Nenhuma cobrança em aberto"
                 }
               />
-              <KpiCard
-                label="Caixa disponível"
+              <MetricCard
+                title="Caixa disponível"
                 value={formatCurrency(cash)}
                 icon={Wallet}
-                hint="Saldo consolidado"
+                footer="Saldo consolidado"
               />
-              <KpiCard
-                label="Produtos"
+              <MetricCard
+                title="Produtos"
                 value={String(inventory.data?.productCount ?? 0)}
                 icon={Package}
-                hint={`${inventory.data?.belowMin.length ?? 0} abaixo do mínimo`}
+                footer={`${inventory.data?.belowMin.length ?? 0} abaixo do mínimo`}
               />
             </KpiSection>
 
