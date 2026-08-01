@@ -23,7 +23,7 @@ describe("accounting-ai · arquitetura", () => {
     expect(getAccountingAutomation("monthly_closing")?.cadence).toBe("monthly");
   });
 
-  it("expõe as 26 skills e todas são somente leitura", () => {
+  it("expõe as 29 skills e todas são somente leitura", () => {
     expect(accountingAiSkills.map((s) => s.id)).toEqual([
       "consultar_lucro",
       "consultar_fluxo",
