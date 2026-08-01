@@ -14,7 +14,20 @@ import {
   type CatalogNavState,
   type CatalogProductOption,
 } from "./catalog-nav";
-import { handleProductSearchTurn } from "./product-search.server";
+import { handleProductSearchTurn, listActiveProducts } from "./product-search.server";
+import {
+  addToCart,
+  formatAddedMessage,
+  formatCartMessage,
+  formatClearedMessage,
+  formatRemovedMessage,
+  hasAddIntent,
+  matchProduct,
+  parseCartCommand,
+  parseQuantity,
+  removeFromCart,
+  type CartLine,
+} from "./cart";
 
 type Db = { from: (t: string) => any };
 
@@ -89,6 +102,30 @@ export async function handleCatalogTurn(args: {
   const { db, companyId, text } = args;
   const state = args.state ?? null;
   const inCatalog = Boolean(state);
+  const cart: CartLine[] = state?.cart ?? [];
+  const keep = (next: CatalogNavState | null): CatalogNavState | null =>
+    next ? { ...next, cart: next.cart ?? cart } : null;
+
+  // Comandos do pedido conversacional (ver / limpar / remover).
+  const command = parseCartCommand(text);
+  if (command && (inCatalog || cart.length > 0 || command.kind === "view")) {
+    if (command.kind === "view") {
+      return { text: formatCartMessage(cart), state: keep({ step: "cart" }) };
+    }
+    if (command.kind === "clear") {
+      return {
+        text: formatClearedMessage(),
+        state: { ...(state ?? { step: "cart" }), step: "cart", cart: [] },
+      };
+    }
+    const { cart: nextCart, removed } = removeFromCart(cart, command.text);
+    if (removed) {
+      return {
+        text: formatRemovedMessage(removed, nextCart),
+        state: { ...(state ?? { step: "cart" }), step: "cart", cart: nextCart },
+      };
+    }
+  }
 
   const wantsCategories =
     isCatalogIntent(text) || (inCatalog && isBackIntent(text));
@@ -97,15 +134,32 @@ export async function handleCatalogTurn(args: {
     const categories = await listCategoriesWithActiveProducts(db, companyId);
     return {
       text: formatCategoriesMessage(categories),
-      state:
+      state: keep(
         categories.length > 0
           ? { step: "categories", categoryIds: categories.map((c) => c.id) }
           : null,
+      ),
     };
   }
 
   const categories = await listCategoriesWithActiveProducts(db, companyId);
   if (categories.length === 0) return null;
+
+  // Adicionar produto ao pedido: nome do produto (ativo) na mensagem.
+  const activeProducts = await listActiveProducts(db, companyId);
+  const productHit = matchProduct(text, activeProducts);
+  if (productHit && (inCatalog || hasAddIntent(text))) {
+    const nextCart = addToCart(cart, productHit, parseQuantity(text));
+    return {
+      text: formatAddedMessage(nextCart),
+      state: {
+        step: "cart",
+        categoryIds: categories.map((c) => c.id),
+        categoryId: productHit.categoryId ?? undefined,
+        cart: nextCart,
+      },
+    };
+  }
 
   // Escolha por número/nome só vale dentro do fluxo de catálogo.
   const chosen = inCatalog ? matchCategory(text, categories) : null;
@@ -113,11 +167,11 @@ export async function handleCatalogTurn(args: {
     const products = await listActiveProductsByCategory(db, companyId, chosen.id);
     return {
       text: formatProductsMessage(chosen.name, products),
-      state: {
+      state: keep({
         step: "products",
         categoryId: chosen.id,
         categoryIds: categories.map((c) => c.id),
-      },
+      }),
     };
   }
 
@@ -129,5 +183,5 @@ export async function handleCatalogTurn(args: {
     categories,
     inCatalog,
   });
-  return search ? { text: search.text, state: search.state } : null;
+  return search ? { text: search.text, state: keep(search.state) } : null;
 }
