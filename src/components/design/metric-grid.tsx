@@ -22,7 +22,7 @@ export interface MetricGridProps {
 const COLUMN_CLASS: Record<NonNullable<MetricGridProps["columns"]>, string> = {
   2: "lg:grid-cols-2",
   3: "lg:grid-cols-3",
-  4: "lg:grid-cols-2 xl:grid-cols-4",
+  4: "lg:grid-cols-4",
   5: "lg:grid-cols-3 xl:grid-cols-5",
 };
 
