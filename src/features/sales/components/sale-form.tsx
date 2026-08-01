@@ -203,13 +203,13 @@ export function SaleForm({
 
   const [form, setForm] = useState<FormState>(() => ({
     number: sale?.number ?? nextNumber(),
-    customer_id: sale?.customer_id ?? "",
+    customer_id: sale?.customer_id ?? prefill?.customerId ?? "",
     sale_date: sale?.sale_date ?? "",
     payment_method: sale?.payment_method ?? "pix_manual",
     status: sale?.status ?? "draft",
     discount: String(sale?.discount ?? 0),
     shipping: String(sale?.shipping ?? 0),
-    notes: sale?.notes ?? "",
+    notes: sale?.notes ?? prefill?.notes ?? "",
   }));
 
   // TZ-001 — preenche a data operacional assim que o servidor responde
@@ -300,6 +300,44 @@ export function SaleForm({
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProductId, isEdit]);
+
+  // Pré-preenchimento externo (Inbox WhatsApp → Nova Venda). Apenas monta o
+  // carrinho inicial em memória: nenhuma venda, item, estoque ou financeiro é
+  // criado aqui. Tudo permanece editável até "Finalizar Venda".
+  const prefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (isEdit || !prefill || prefill.items.length === 0) return;
+    if (prefillAppliedRef.current) return;
+    prefillAppliedRef.current = true;
+    (async () => {
+      const ids = prefill.items.map((i) => i.productId);
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,sku,price,cost,stock,unit")
+        .in("id", ids);
+      const byId = new Map((data ?? []).map((p) => [p.id, p]));
+      const drafts: SaleItemDraft[] = prefill.items.map((i) => {
+        const p = byId.get(i.productId);
+        return {
+          ui_key:
+            globalThis.crypto?.randomUUID?.() ??
+            `item-${Date.now()}-${Math.random()}`,
+          product_id: i.productId,
+          description: p?.name ?? i.description,
+          quantity: i.quantity,
+          unit_price:
+            i.unitPrice > 0 ? i.unitPrice : p?.price != null ? Number(p.price) : 0,
+          discount: 0,
+          sku: p?.sku ?? null,
+          unit_cost: p?.cost != null ? Number(p.cost) : null,
+          stock_available: p?.stock != null ? Number(p.stock) : null,
+          unit: p?.unit ?? null,
+        };
+      });
+      setItems((curr) => (curr.length > 0 ? curr : drafts));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill, isEdit]);
 
 
   // OFFLINE-001 — Rascunho automático (somente em nova venda).
@@ -947,6 +985,8 @@ export function SaleForm({
         toast.success(
           `Venda ${savedNumber ?? payload.number} criada com sucesso.`,
         );
+        // Conversão do Inbox: notificado SOMENTE após a venda oficial existir.
+        onSaleCreated?.(savedId);
         // OFFLINE-001 / BUG-PDV-016 — venda persistida: desliga o autosave
         // ANTES de qualquer setState (para o debounce não regravar) e
         // apaga o rascunho existente.
