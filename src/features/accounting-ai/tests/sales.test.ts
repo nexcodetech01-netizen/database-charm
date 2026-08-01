@@ -289,7 +289,7 @@ describe("accounting-ai · vendas · chat", () => {
     for (const q of [
       "Como estão minhas vendas?",
       "O que mais vende?",
-      "Quanto vendi hoje?",
+      "Situação das vendas",
       "Qual meu ticket médio?",
     ]) {
       expect(detectIntent(q).intent).toBe("situacao_vendas");
