@@ -1,7 +1,8 @@
 import { Package, CheckCircle2, AlertTriangle, Wallet } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useProductMetrics } from "../hooks/use-products";
-import { Skeleton } from "@/components/ui/skeleton";
+import { MetricCard, MetricGrid } from "@/components/design";
+import type { StatusToken } from "@/design";
 
 interface Props {
   companyId: string;
@@ -10,7 +11,12 @@ interface Props {
 export function ProductMetrics({ companyId }: Props) {
   const { data, isLoading } = useProductMetrics(companyId);
 
-  const items = [
+  const items: {
+    label: string;
+    value: string;
+    icon: typeof Package;
+    status?: StatusToken;
+  }[] = [
     {
       label: "Total de produtos",
       value: data ? formatNumber(data.total) : "—",
@@ -20,13 +26,13 @@ export function ProductMetrics({ companyId }: Props) {
       label: "Produtos ativos",
       value: data ? formatNumber(data.active) : "—",
       icon: CheckCircle2,
-      tone: "text-success",
+      status: "success",
     },
     {
       label: "Estoque crítico",
       value: data ? formatNumber(data.critical) : "—",
       icon: AlertTriangle,
-      tone: "text-warning",
+      status: "warning",
     },
     {
       label: "Valor em estoque",
@@ -36,30 +42,17 @@ export function ProductMetrics({ companyId }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map((it) => {
-        const Icon = it.icon;
-        return (
-          <div
-            key={it.label}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{it.label}</span>
-              <div className="grid h-8 w-8 place-items-center rounded-md bg-accent">
-                <Icon className={`h-4 w-4 ${it.tone ?? "text-primary"}`} />
-              </div>
-            </div>
-            <div className="mt-3">
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <span className="text-2xl font-semibold tracking-tight">{it.value}</span>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <MetricGrid columns={4}>
+      {items.map((it) => (
+        <MetricCard
+          key={it.label}
+          title={it.label}
+          value={it.value}
+          icon={it.icon}
+          status={it.status}
+          loading={isLoading}
+        />
+      ))}
+    </MetricGrid>
   );
 }
