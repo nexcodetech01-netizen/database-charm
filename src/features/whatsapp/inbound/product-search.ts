@@ -192,10 +192,14 @@ export function scoreProduct(product: ProductSearchItem, filters: ProductSearchF
     }
   }
 
-  if (filters.priceMax !== null && product.price <= filters.priceMax) score += 5;
-  if (filters.priceMin !== null && product.price >= filters.priceMin) score += 5;
+  let priceBonus = 0;
+  if (filters.priceMax !== null && product.price <= filters.priceMax) priceBonus += 5;
+  if (filters.priceMin !== null && product.price >= filters.priceMin) priceBonus += 5;
 
-  return score;
+  // Preço sozinho só gera relevância quando é o único filtro do pedido.
+  const anchored = Boolean(filters.categoryId || filters.brand || filters.text);
+  if (score > 0) return score + priceBonus;
+  return anchored ? 0 : priceBonus;
 }
 
 /** Aplica os filtros de preço e ordena por relevância (depois nome). */
