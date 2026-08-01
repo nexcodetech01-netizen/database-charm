@@ -22,6 +22,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_recomendacoes",
     "consultar_notificacoes",
   ],
+  /** Sprint 6.3 — "como está meu estoque?": só skills já existentes. */
+  situacao_estoque: [
+    "consultar_produtos",
+    "consultar_alertas",
+    "consultar_recomendacoes",
+    "consultar_notificacoes",
+  ],
   resumo_do_dia: [
     "consultar_alertas",
     "consultar_insights",
@@ -58,6 +65,7 @@ const REASONS: Partial<Record<AccountingSkillId, string>> = {
   consultar_notificacoes: "Notificações proativas da Bella",
   consultar_retirada: "Consultoria de retirada",
   consultar_lucro: "Lucro apurado",
+  consultar_produtos: "Ranking de produtos e estoque",
 };
 
 export interface PlanOptions {

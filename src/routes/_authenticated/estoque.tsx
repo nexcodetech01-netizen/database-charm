@@ -19,6 +19,7 @@ import {
   DEFAULT_MOVEMENT_FILTERS,
 } from "@/features/inventory";
 import type { MovementListFilters } from "@/features/inventory";
+import { BellaInventoryPanel } from "@/features/accounting-ai/inventory";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
@@ -59,6 +60,8 @@ function InventoryPage() {
       }
       kpis={<InventoryMetrics companyId={company.id} />}
     >
+      <BellaInventoryPanel companyId={company.id} />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <MovementsTimeline

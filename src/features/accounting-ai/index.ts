@@ -31,6 +31,7 @@ export type {
 } from "./proactive";
 export * from "./finance";
 export * from "./fiscal";
+export * from "./inventory";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
