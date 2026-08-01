@@ -395,15 +395,23 @@ function ProductDetailPage() {
 
   return (
     <>
-    <PageLayout
-      title={product.name}
-      description={product.brand || undefined}
-      meta={meta}
-      actions={actions}
-      kpis={kpis}
-    >
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
+      <EntityHeader
+        icon={Package}
+        title={product.name}
+        description={product.brand || undefined}
+        actions={actions}
+        extra={
+          <div className="space-y-4">
+            {meta}
+            {kpis}
+          </div>
+        }
+      />
+
       {/* Informações principais — reconstruído: foto 35% + dados 65% */}
-      <Section flushBody className="p-6 lg:p-8">
+      <Section flushBody bodyClassName="p-6 lg:p-8">
+
 
           <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
             {/* Coluna esquerda: foto */}
