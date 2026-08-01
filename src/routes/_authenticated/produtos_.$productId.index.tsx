@@ -778,9 +778,8 @@ function ProductDetailPage() {
                 </p>
               </li>
             </ol>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
