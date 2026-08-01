@@ -18,3 +18,19 @@ export { ChartCard } from "./chart-card";
 export type { ChartCardProps } from "./chart-card";
 export { Panel } from "./panel";
 export type { PanelProps } from "./panel";
+export {
+  EnterpriseDataTable,
+  DataTableToolbar,
+  DataTableFilters,
+  DataTablePagination,
+  DataTableEmpty,
+  DataTableLoading,
+  DataTableActions,
+} from "./enterprise-data-table";
+export type {
+  EnterpriseDataTableProps,
+  DataTableColumn,
+  DataTableAlign,
+  DataTablePaginationProps,
+  DataTableToolbarProps,
+} from "./enterprise-data-table";
