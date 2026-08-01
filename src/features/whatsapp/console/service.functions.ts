@@ -425,8 +425,23 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada.");
 
     const to = (conv.contact?.phone as string) || (conv.contact?.wa_id as string);
-    const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
+    const { sendWhatsAppText, WHATSAPP_NOT_CONFIGURED } = await import(
+      "@/lib/whatsapp.server"
+    );
     const sent = await sendWhatsAppText({ to, text: data.text });
+
+    // Integração ainda não configurada: não é falha de envio. Devolvemos um
+    // aviso amigável, sem lançar erro e sem poluir a timeline com uma
+    // mensagem "falhada" que nunca chegou a ser tentada na Meta.
+    if (!sent.ok && sent.code === WHATSAPP_NOT_CONFIGURED) {
+      return {
+        ok: false as const,
+        waMessageId: null,
+        code: WHATSAPP_NOT_CONFIGURED,
+        message: sent.error,
+        missing: sent.missing ?? [],
+      };
+    }
 
     await db.from("whatsapp_messages").insert({
       company_id: conv.company_id,
@@ -449,7 +464,13 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
     await db.from("whatsapp_conversations").update(patch).eq("id", conv.id);
 
     if (!sent.ok) throw new Error(sent.error ?? "Falha ao enviar pelo WhatsApp.");
-    return { ok: true, waMessageId: sent.waMessageId };
+    return {
+      ok: true as const,
+      waMessageId: sent.waMessageId,
+      code: null,
+      message: null,
+      missing: [] as string[],
+    };
   });
 
 /* -------------------- DELETE CONVERSATION -------------------- */
