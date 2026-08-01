@@ -689,9 +689,8 @@ function ProductDetailPage() {
 
 
       {/* Movimentações */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Movimentações"
             description="Últimos eventos de estoque, compras e vendas deste produto."
             aside={
