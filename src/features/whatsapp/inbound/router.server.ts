@@ -18,6 +18,7 @@ import { bellaAIGateway } from "@/features/bella-ai/ai/gateway";
 import { sendWhatsAppText, sendWhatsAppImage } from "@/lib/whatsapp.server";
 import { handleCatalogTurn } from "./catalog-nav.server";
 import { handlePhotoTurn } from "./product-photos.server";
+import { handleRecommendationTurn } from "./product-recommendations.server";
 import type { CatalogNavState } from "./catalog-nav";
 
 
@@ -474,6 +475,68 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         status: conversationStatus,
       }),
     );
+    return;
+  }
+
+  // 3c-ante) Recomendação de produtos semelhantes (rejeição / pedido de alternativa).
+  const recommendationTurn = await handleRecommendationTurn({
+    db,
+    storage: (
+      await import("@/integrations/supabase/client.server")
+    ).supabaseAdmin.storage as never,
+    companyId: tenant.companyId,
+    phone: msg.phone,
+    text: msg.text,
+    state: (savedState as Record<string, unknown>).catalog as CatalogNavState | null | undefined,
+  });
+  if (recommendationTurn) {
+    await db
+      .from("whatsapp_conversations")
+      .update({
+        bella_state: { ...savedState, catalog: recommendationTurn.state },
+      })
+      .eq("id", conversationId);
+
+    for (const item of recommendationTurn.media) {
+      const imgSent = await sendWhatsAppImage({
+        to: msg.phone,
+        imageUrl: item.imageUrl,
+        caption: item.caption,
+      });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: imgSent.waMessageId,
+        text: item.caption,
+        status: imgSent.ok ? "sent" : "failed",
+        error: imgSent.error,
+        processing_ms: Date.now() - startedAt,
+        provider: "catalog-nav",
+        skill_id: "catalog.recommendations",
+      });
+    }
+    const recSent = await sendWhatsAppText({ to: msg.phone, text: recommendationTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: recSent.waMessageId,
+      text: recommendationTurn.text,
+      status: recSent.ok ? "sent" : "failed",
+      error: recSent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.recommendations",
+    });
+    if (recSent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
     return;
   }
 
