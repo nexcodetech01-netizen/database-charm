@@ -115,7 +115,7 @@ describe("UI.1.3 — EnterpriseDataTable", () => {
       }),
     );
     // única página: ambos os botões desabilitados
-    expect(first.match(/disabled/g)?.length).toBe(2);
+    expect(first.match(/disabled=""/g)?.length).toBe(2);
   });
 
   it("aceita resumo customizado na paginação", () => {
