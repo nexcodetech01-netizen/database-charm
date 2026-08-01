@@ -45,7 +45,11 @@ export function BellaGreetingHero({
         <div className="flex items-center gap-3">
           <span
             aria-hidden="true"
-            className={cn("grid h-10 w-10 shrink-0 place-items-center", RADIUS_TOKENS.lg, token.soft)}
+            className={cn(
+              "grid h-10 w-10 shrink-0 place-items-center",
+              RADIUS_TOKENS.lg,
+              token.soft,
+            )}
           >
             <Sparkles className="h-5 w-5" />
           </span>

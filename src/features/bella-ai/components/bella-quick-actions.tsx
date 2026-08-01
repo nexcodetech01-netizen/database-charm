@@ -11,7 +11,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Section } from "@/components/design";
-import { INTERACTION_TOKENS, RADIUS_TOKENS, TEXT_TOKENS, statusToken, type StatusToken } from "@/design";
+import {
+  INTERACTION_TOKENS,
+  RADIUS_TOKENS,
+  TEXT_TOKENS,
+  statusToken,
+  type StatusToken,
+} from "@/design";
 
 /**
  * BellaQuickActions (UI.2.2) — atalhos operacionais da Home da Bella.
@@ -29,13 +35,62 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "sales", label: "Consultar vendas", hint: "Relatórios comerciais", to: "/relatorios", icon: Receipt, status: "info" },
-  { id: "cash", label: "Consultar caixa", hint: "Sessão e movimentos", to: "/caixa", icon: Wallet, status: "success" },
-  { id: "invoice", label: "Emitir nota", hint: "Documentos fiscais", to: "/fiscal/notas", icon: FileText, status: "processing" },
-  { id: "product", label: "Cadastrar produto", hint: "Novo item no catálogo", to: "/produtos/novo", icon: Boxes, status: "neutral" },
-  { id: "customer", label: "Cadastrar cliente", hint: "Nova ficha de cliente", to: "/clientes/novo", icon: UserPlus, status: "neutral" },
-  { id: "charge", label: "Cobrar cliente", hint: "Bella Pay", to: "/bella-pay", icon: Landmark, status: "warning" },
-  { id: "pdv", label: "Abrir PDV", hint: "Frente de caixa", to: "/pdv", icon: MonitorSmartphone, status: "info" },
+  {
+    id: "sales",
+    label: "Consultar vendas",
+    hint: "Relatórios comerciais",
+    to: "/relatorios",
+    icon: Receipt,
+    status: "info",
+  },
+  {
+    id: "cash",
+    label: "Consultar caixa",
+    hint: "Sessão e movimentos",
+    to: "/caixa",
+    icon: Wallet,
+    status: "success",
+  },
+  {
+    id: "invoice",
+    label: "Emitir nota",
+    hint: "Documentos fiscais",
+    to: "/fiscal/notas",
+    icon: FileText,
+    status: "processing",
+  },
+  {
+    id: "product",
+    label: "Cadastrar produto",
+    hint: "Novo item no catálogo",
+    to: "/produtos/novo",
+    icon: Boxes,
+    status: "neutral",
+  },
+  {
+    id: "customer",
+    label: "Cadastrar cliente",
+    hint: "Nova ficha de cliente",
+    to: "/clientes/novo",
+    icon: UserPlus,
+    status: "neutral",
+  },
+  {
+    id: "charge",
+    label: "Cobrar cliente",
+    hint: "Bella Pay",
+    to: "/bella-pay",
+    icon: Landmark,
+    status: "warning",
+  },
+  {
+    id: "pdv",
+    label: "Abrir PDV",
+    hint: "Frente de caixa",
+    to: "/pdv",
+    icon: MonitorSmartphone,
+    status: "info",
+  },
 ];
 
 export interface BellaQuickActionsProps {
@@ -70,7 +125,11 @@ export function BellaQuickActions({ className }: BellaQuickActionsProps) {
             >
               <span
                 aria-hidden="true"
-                className={cn("grid h-10 w-10 shrink-0 place-items-center", RADIUS_TOKENS.lg, token.soft)}
+                className={cn(
+                  "grid h-10 w-10 shrink-0 place-items-center",
+                  RADIUS_TOKENS.lg,
+                  token.soft,
+                )}
               >
                 <Icon className="h-5 w-5" />
               </span>

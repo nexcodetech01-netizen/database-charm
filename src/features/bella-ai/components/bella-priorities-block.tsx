@@ -67,10 +67,7 @@ export function BellaPrioritiesBlock({ priorities, limit = 4 }: Props) {
         />
       ) : (
         <ol data-testid="bella-priorities-timeline" className="relative space-y-6">
-          <span
-            aria-hidden="true"
-            className="absolute left-[19px] top-2 bottom-2 w-px bg-border"
-          />
+          <span aria-hidden="true" className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
           {visible.map((item) => {
             const Icon = MODULE_ICON[item.module];
             const meta = PRIORITY_META[item.priority];

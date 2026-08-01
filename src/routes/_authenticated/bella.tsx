@@ -34,7 +34,6 @@ export const Route = createFileRoute("/_authenticated/bella")({
   component: BellaPage,
 });
 
-
 /**
  * Bella IA — Home reorganizada
  *
@@ -168,9 +167,8 @@ function IntegrationsMovedNote() {
       </CardHeader>
       <CardContent className="pt-0">
         <p className="text-xs text-muted-foreground">
-          A configuração de provedores (OpenAI, Gemini, Claude, Azure e modelos
-          locais) foi movida para{" "}
-          <span className="font-medium text-foreground">Configurações → Bella IA</span>.
+          A configuração de provedores (OpenAI, Gemini, Claude, Azure e modelos locais) foi movida
+          para <span className="font-medium text-foreground">Configurações → Bella IA</span>.
         </p>
       </CardContent>
     </Card>

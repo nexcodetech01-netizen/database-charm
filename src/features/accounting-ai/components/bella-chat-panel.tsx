@@ -15,7 +15,10 @@ export interface BellaChatPanelProps {
 
 /** Nome amigável de uma skill técnica — apenas apresentação. */
 export function friendlySkillName(skillId: string): string {
-  const cleaned = skillId.replace(/^consultar_/, "").replace(/[_-]+/g, " ").trim();
+  const cleaned = skillId
+    .replace(/^consultar_/, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
   if (!cleaned) return skillId;
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
@@ -65,7 +68,8 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
               className={cn(
                 "flex min-w-0 flex-col gap-2",
                 m.role === "user" ? "items-end" : "items-start",
-                m.id === lastMessageId && `animate-in fade-in-0 slide-in-from-bottom-1 ${MOTION_TOKENS.normal}`,
+                m.id === lastMessageId &&
+                  `animate-in fade-in-0 slide-in-from-bottom-1 ${MOTION_TOKENS.normal}`,
               )}
             >
               {/* Bloco de texto */}
@@ -88,7 +92,12 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
                   className="grid w-full max-w-[85%] gap-2 sm:grid-cols-2"
                 >
                   {m.skills.map((s) => (
-                    <BellaSkillCard key={s} name={friendlySkillName(s)} result="Dados consultados" status="success" />
+                    <BellaSkillCard
+                      key={s}
+                      name={friendlySkillName(s)}
+                      result="Dados consultados"
+                      status="success"
+                    />
                   ))}
                 </div>
               )}
@@ -112,7 +121,11 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
               type="button"
               variant="outline"
               size="sm"
-              className={cn("h-8 rounded-full font-normal", TEXT_TOKENS.xs, INTERACTION_TOKENS.hover)}
+              className={cn(
+                "h-8 rounded-full font-normal",
+                TEXT_TOKENS.xs,
+                INTERACTION_TOKENS.hover,
+              )}
               disabled={isThinking}
               onClick={() => submit(s)}
             >

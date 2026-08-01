@@ -70,7 +70,10 @@ export function BellaSkillCard({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p data-testid="bella-skill-name" className={cn("min-w-0 truncate font-medium", TEXT_TOKENS.sm)}>
+          <p
+            data-testid="bella-skill-name"
+            className={cn("min-w-0 truncate font-medium", TEXT_TOKENS.sm)}
+          >
             {name}
           </p>
           <StatusBadge status={meta.token}>{meta.label}</StatusBadge>

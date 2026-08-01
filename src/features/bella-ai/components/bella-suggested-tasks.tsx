@@ -46,7 +46,11 @@ export function BellaSuggestedTasks() {
               <div className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
-                  className={cn("grid h-9 w-9 shrink-0 place-items-center", RADIUS_TOKENS.lg, token.soft)}
+                  className={cn(
+                    "grid h-9 w-9 shrink-0 place-items-center",
+                    RADIUS_TOKENS.lg,
+                    token.soft,
+                  )}
                 >
                   <Icon className="h-4 w-4" />
                 </span>
