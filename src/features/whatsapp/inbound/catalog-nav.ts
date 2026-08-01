@@ -22,10 +22,12 @@ export interface CatalogProductOption {
 
 /** Estado curto guardado em `whatsapp_conversations.bella_state.catalog`. */
 export interface CatalogNavState {
-  step: "categories" | "products";
+  step: "categories" | "products" | "cart";
   /** Ordem exibida na última listagem de categorias (para escolha por número). */
   categoryIds?: string[];
   categoryId?: string;
+  /** Pedido conversacional (só estado da conversa, nada é gravado no ERP). */
+  cart?: import("./cart").CartLine[];
 }
 
 const ICON_EMOJI: Record<string, string> = {
