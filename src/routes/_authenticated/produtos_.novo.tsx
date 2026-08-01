@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Package } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { EntityHeader, FormLayout, LoadingSurface } from "@/components/design";
 import { ProductForm, useProduct } from "@/features/products";
 
 const searchSchema = z.object({
@@ -23,31 +24,38 @@ function NewProductPage() {
   const ready = !isDuplicating || (!!source && !isLoading);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/produtos">
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Produtos
-          </Link>
-        </Button>
-      </div>
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {isDuplicating ? "Duplicar produto" : "Novo produto"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isDuplicating
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
+      <EntityHeader
+        icon={Package}
+        title={isDuplicating ? "Duplicar produto" : "Novo produto"}
+        description={
+          isDuplicating
             ? "Revise os dados, ajuste cor/imagens e salve para criar um novo produto."
-            : "Preencha as informações abaixo para adicionar um produto ao catálogo."}
-        </p>
-      </div>
+            : "Preencha as informações abaixo para adicionar um produto ao catálogo."
+        }
+        status={
+          isDuplicating
+            ? { label: "Duplicação", status: "info" }
+            : { label: "Rascunho", status: "draft" }
+        }
+        breadcrumb={
+          <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Link to="/produtos">
+              <ArrowLeft className="mr-1.5 h-4 w-4" /> Produtos
+            </Link>
+          </Button>
+        }
+      />
+
       {ready ? (
-        <ProductForm
-          companyId={company.id}
-          duplicateOf={isDuplicating ? source ?? undefined : undefined}
-        />
+        <FormLayout width="full">
+          <ProductForm
+            companyId={company.id}
+            duplicateOf={isDuplicating ? source ?? undefined : undefined}
+          />
+        </FormLayout>
       ) : (
-        <p className="text-sm text-muted-foreground">Carregando produto de origem…</p>
+        <LoadingSurface variant="form" rows={6} />
       )}
     </div>
   );

@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -58,12 +57,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  PageLayout,
-  KpiSection,
-  KpiCard,
-  FormSection,
-} from "@/components/layout";
+import { KpiSection, KpiCard } from "@/components/layout";
+import { EntityHeader, Section, LoadingSurface } from "@/components/design";
+
 import {
   ProductStatusBadge,
   useProduct,
@@ -117,40 +113,11 @@ function ProductDetailPage() {
   if (isLoading || isRemoving) {
     return (
       <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
-        <Skeleton className="h-8 w-40" />
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="grid gap-6 lg:grid-cols-[minmax(224px,288px)_minmax(0,1fr)]">
-              <Skeleton className="aspect-square w-full rounded-xl" />
-              <div className="space-y-4">
-                <Skeleton className="h-5 w-40" />
-                <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border/60 pb-2"
-                    >
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-4 w-full max-w-[10rem] justify-self-end" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <LoadingSurface variant="detail" rows={6} />
       </div>
     );
   }
+
   if (!product) throw notFound();
 
   const handleDelete = async () => {
@@ -396,16 +363,24 @@ function ProductDetailPage() {
 
   return (
     <>
-    <PageLayout
-      title={product.name}
-      description={product.brand || undefined}
-      meta={meta}
-      actions={actions}
-      kpis={kpis}
-    >
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
+      <EntityHeader
+        icon={Package}
+        title={product.name}
+        description={product.brand || undefined}
+        actions={actions}
+        extra={
+          <div className="space-y-4">
+            {meta}
+            {kpis}
+          </div>
+        }
+      />
+
       {/* Informações principais — reconstruído: foto 35% + dados 65% */}
-      <Card>
-        <CardContent className="p-6 lg:p-8">
+      <Section flushBody bodyClassName="p-6 lg:p-8">
+
+
           <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
             {/* Coluna esquerda: foto */}
             <div className="space-y-3">
@@ -496,18 +471,17 @@ function ProductDetailPage() {
               ) : null}
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </Section>
+
 
 
 
       {/* Estoque */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Estoque"
             description="Disponibilidade, limites e valor imobilizado."
-            aside={
+            actions={
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   size="sm"
@@ -610,9 +584,8 @@ function ProductDetailPage() {
                 icon={Clock}
               />
             </div>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       {/* Política de margem aplicada — categoria vs personalizada */}
       <AppliedMarginPolicyCard
@@ -649,9 +622,8 @@ function ProductDetailPage() {
 
 
       {/* Precificação */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Precificação"
             description="Composição de custos e margem aplicada."
           >
@@ -684,18 +656,16 @@ function ProductDetailPage() {
                 highlight
               />
             </div>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
 
       {/* Movimentações */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Movimentações"
             description="Últimos eventos de estoque, compras e vendas deste produto."
-            aside={
+            actions={
               <Button asChild variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
                 <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
                   <History className="mr-1.5 h-4 w-4" /> Ver todas
@@ -747,14 +717,12 @@ function ProductDetailPage() {
                 })}
               </ol>
             )}
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       {/* Histórico */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Histórico"
             description="Eventos recentes deste produto."
           >
@@ -779,9 +747,8 @@ function ProductDetailPage() {
                 </p>
               </li>
             </ol>
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -855,7 +822,7 @@ function ProductDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-    </PageLayout>
+    </div>
     <MovementFormDialog
       open={movementOpen}
       onOpenChange={setMovementOpen}

@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Panel } from "@/components/design";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -30,7 +31,7 @@ export function ProductFilters({ companyId, filters, onChange, onReset }: Props)
     filters.stock !== "all";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <Panel density="comfortable" className="flex flex-col gap-3">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -122,6 +123,7 @@ export function ProductFilters({ companyId, filters, onChange, onReset }: Props)
           </Button>
         </div>
       ) : null}
-    </div>
+    </Panel>
+
   );
 }

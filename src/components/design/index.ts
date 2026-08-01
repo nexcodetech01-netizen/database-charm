@@ -48,3 +48,5 @@ export { StatStack } from "./stat-stack";
 export type { StatStackProps, StatStackItem } from "./stat-stack";
 export { Section } from "./section";
 export type { SectionProps } from "./section";
+export { LoadingSurface } from "./loading-surface";
+export type { LoadingSurfaceProps, LoadingSurfaceVariant } from "./loading-surface";

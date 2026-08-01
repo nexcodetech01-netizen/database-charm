@@ -1,12 +1,17 @@
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/design";
+import type { StatusToken } from "@/design";
 
-const MAP: Record<string, { label: string; variant: "success" | "secondary" | "outline" }> = {
-  active: { label: "Ativo", variant: "success" },
-  inactive: { label: "Inativo", variant: "secondary" },
-  draft: { label: "Rascunho", variant: "outline" },
+const MAP: Record<string, { label: string; status: StatusToken }> = {
+  active: { label: "Ativo", status: "success" },
+  inactive: { label: "Inativo", status: "neutral" },
+  draft: { label: "Rascunho", status: "draft" },
 };
 
 export function ProductStatusBadge({ status }: { status: string }) {
-  const cfg = MAP[status] ?? { label: status, variant: "secondary" as const };
-  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
+  const cfg = MAP[status] ?? { label: status, status: "neutral" as StatusToken };
+  return (
+    <StatusBadge status={cfg.status} withDot>
+      {cfg.label}
+    </StatusBadge>
+  );
 }
