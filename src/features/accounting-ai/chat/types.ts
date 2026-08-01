@@ -30,6 +30,7 @@ export type BellaIntentId =
   | "resumo_do_dia"
   | "situacao_geral"
   | "situacao_fiscal"
+  | "situacao_estoque"
   | "pontos_atencao"
   | "desconhecida";
 
