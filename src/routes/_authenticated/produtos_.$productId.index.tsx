@@ -648,9 +648,8 @@ function ProductDetailPage() {
 
 
       {/* Precificação */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Precificação"
             description="Composição de custos e margem aplicada."
           >
