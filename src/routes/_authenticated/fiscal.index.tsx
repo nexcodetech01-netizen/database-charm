@@ -72,6 +72,8 @@ function FiscalDashboardPage() {
 
       <FiscalOverviewCard />
 
+      <BellaFiscalPanel companyId={company.id} />
+
       {hasDocuments ? (
         <>
           <FiscalDashboardCards data={dashboard.data} />
