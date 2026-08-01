@@ -751,9 +751,8 @@ function ProductDetailPage() {
       </Card>
 
       {/* Histórico */}
-      <Card>
-        <CardContent className="p-6">
-          <FormSection
+      <Section
+
             title="Histórico"
             description="Eventos recentes deste produto."
           >
