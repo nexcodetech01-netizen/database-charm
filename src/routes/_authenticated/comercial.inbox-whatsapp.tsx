@@ -37,7 +37,7 @@ import {
   type CommercialInboxTicket,
 } from "@/features/whatsapp/hooks/use-commercial-inbox";
 
-export const Route = createFileRoute("/_authenticated/comercial.inbox-whatsapp")({
+export const Route = createFileRoute("/_authenticated/comercial/inbox-whatsapp")({
   beforeLoad: requirePermission("sales.view"),
   component: CommercialInboxPage,
   head: () => ({
@@ -83,9 +83,8 @@ function CommercialInboxPage() {
 
   return (
     <div className="space-y-6">
-      <BreadcrumbNav
-        items={[{ label: "Comercial" }, { label: "Inbox WhatsApp" }]}
-      />
+      <BreadcrumbNav />
+
       <PageHeader
         title="Inbox WhatsApp"
         description="Atendimentos encaminhados pela Bella. Nenhuma venda é criada automaticamente."

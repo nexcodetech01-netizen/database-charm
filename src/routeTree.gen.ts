@@ -71,6 +71,7 @@ import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/
 import { Route as AuthenticatedConfiguracoesPrecificacaoRouteImport } from './routes/_authenticated/configuracoes.precificacao'
 import { Route as AuthenticatedComprasNovoRouteImport } from './routes/_authenticated/compras_.novo'
 import { Route as AuthenticatedComprasPurchaseIdRouteImport } from './routes/_authenticated/compras_.$purchaseId'
+import { Route as AuthenticatedComercialInboxWhatsappRouteImport } from './routes/_authenticated/comercial.inbox-whatsapp'
 import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authenticated/clientes_.novo'
 import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
 import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
@@ -438,6 +439,12 @@ const AuthenticatedComprasPurchaseIdRoute =
     path: '/compras/$purchaseId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedComercialInboxWhatsappRoute =
+  AuthenticatedComercialInboxWhatsappRouteImport.update({
+    id: '/comercial/inbox-whatsapp',
+    path: '/comercial/inbox-whatsapp',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClientesNovoRoute =
   AuthenticatedClientesNovoRouteImport.update({
     id: '/clientes_/novo',
@@ -642,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
+  '/comercial/inbox-whatsapp': typeof AuthenticatedComercialInboxWhatsappRoute
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
@@ -732,6 +740,7 @@ export interface FileRoutesByTo {
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
+  '/comercial/inbox-whatsapp': typeof AuthenticatedComercialInboxWhatsappRoute
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
@@ -824,6 +833,7 @@ export interface FileRoutesById {
   '/_authenticated/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/_authenticated/clientes_/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/_authenticated/clientes_/novo': typeof AuthenticatedClientesNovoRoute
+  '/_authenticated/comercial/inbox-whatsapp': typeof AuthenticatedComercialInboxWhatsappRoute
   '/_authenticated/compras_/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/_authenticated/compras_/novo': typeof AuthenticatedComprasNovoRoute
   '/_authenticated/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
@@ -916,6 +926,7 @@ export interface FileRouteTypes {
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
+    | '/comercial/inbox-whatsapp'
     | '/compras/$purchaseId'
     | '/compras/novo'
     | '/configuracoes/precificacao'
@@ -1006,6 +1017,7 @@ export interface FileRouteTypes {
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
+    | '/comercial/inbox-whatsapp'
     | '/compras/$purchaseId'
     | '/compras/novo'
     | '/configuracoes/precificacao'
@@ -1097,6 +1109,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bella-pay/test'
     | '/_authenticated/clientes_/$customerId'
     | '/_authenticated/clientes_/novo'
+    | '/_authenticated/comercial/inbox-whatsapp'
     | '/_authenticated/compras_/$purchaseId'
     | '/_authenticated/compras_/novo'
     | '/_authenticated/configuracoes/precificacao'
@@ -1607,6 +1620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComprasPurchaseIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/comercial/inbox-whatsapp': {
+      id: '/_authenticated/comercial/inbox-whatsapp'
+      path: '/comercial/inbox-whatsapp'
+      fullPath: '/comercial/inbox-whatsapp'
+      preLoaderRoute: typeof AuthenticatedComercialInboxWhatsappRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes_/novo': {
       id: '/_authenticated/clientes_/novo'
       path: '/clientes/novo'
@@ -1950,6 +1970,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedClientesCustomerIdRoute: typeof AuthenticatedClientesCustomerIdRouteWithChildren
   AuthenticatedClientesNovoRoute: typeof AuthenticatedClientesNovoRoute
+  AuthenticatedComercialInboxWhatsappRoute: typeof AuthenticatedComercialInboxWhatsappRoute
   AuthenticatedComprasPurchaseIdRoute: typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   AuthenticatedComprasNovoRoute: typeof AuthenticatedComprasNovoRoute
   AuthenticatedConfiguracoesPrecificacaoRoute: typeof AuthenticatedConfiguracoesPrecificacaoRoute
@@ -2008,6 +2029,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesCustomerIdRoute:
     AuthenticatedClientesCustomerIdRouteWithChildren,
   AuthenticatedClientesNovoRoute: AuthenticatedClientesNovoRoute,
+  AuthenticatedComercialInboxWhatsappRoute:
+    AuthenticatedComercialInboxWhatsappRoute,
   AuthenticatedComprasPurchaseIdRoute:
     AuthenticatedComprasPurchaseIdRouteWithChildren,
   AuthenticatedComprasNovoRoute: AuthenticatedComprasNovoRoute,
