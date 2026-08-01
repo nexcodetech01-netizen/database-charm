@@ -105,6 +105,26 @@ const RULES: IntentRule[] = [
     ],
   },
   {
+    intent: "situacao_fiscal",
+    weight: 14,
+    terms: [
+      [
+        "como esta meu fiscal",
+        "como esta o fiscal",
+        "situacao fiscal",
+        "minha situacao fiscal",
+        "como estao minhas notas",
+        "como estao as notas",
+        "minhas notas fiscais",
+        "notas fiscais",
+        "nfe",
+        "nfc e",
+        "nota rejeitada",
+        "notas rejeitadas",
+      ],
+    ],
+  },
+  {
     intent: "consultar_notificacoes",
     weight: 10,
     terms: [["notificacao", "notificacoes", "avisos", "o que voce percebeu hoje"]],

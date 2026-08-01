@@ -30,6 +30,7 @@ export type {
   ProactiveOptions,
 } from "./proactive";
 export * from "./finance";
+export * from "./fiscal";
 export * from "./reports";
 export * from "./automations";
 export * from "./components";
