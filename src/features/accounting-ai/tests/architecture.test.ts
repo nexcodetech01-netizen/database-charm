@@ -51,6 +51,9 @@ describe("accounting-ai · arquitetura", () => {
       "consultar_faixa",
       "consultar_vencimento_das",
       "simular_tributos",
+      "auditar_empresa",
+      "consultar_inconsistencias",
+      "consultar_saude_operacional",
     ]);
     expect(accountingAiSkills.every((s) => s.readOnly)).toBe(true);
     expect(getAccountingSkill("consultar_caixa")?.name).toBe("Consultar caixa");
