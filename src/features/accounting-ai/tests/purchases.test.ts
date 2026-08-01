@@ -30,7 +30,7 @@ import {
   type BellaPurchasesMetricsLike,
 } from "../purchases";
 import { detectIntent, planIntent } from "../chat";
-import { makeNotification, type BellaNotification } from "../proactive";
+import type { BellaNotification } from "../proactive";
 import type { AccountingInsight } from "../insights";
 import { makeSummary } from "./fixtures";
 
@@ -113,20 +113,21 @@ function insight(over: Partial<AccountingInsight> = {}): AccountingInsight {
   };
 }
 
-function notification(
-  over: Partial<Parameters<typeof makeNotification>[0]> = {},
-): BellaNotification {
-  return makeNotification({
+function notification(over: Partial<BellaNotification> = {}): BellaNotification {
+  return {
     id: "n1",
     category: "estoque",
     severity: "critical",
     title: "Ruptura iminente",
     message: "Produto sem saldo",
     recommendation: "Compre agora",
-    action: "comprar_estoque",
+    action: { id: "comprar_estoque", label: "Comprar estoque" },
+    priority: 90,
     createdAt: NOW,
+    dismissible: true,
+    persistent: false,
     ...over,
-  });
+  };
 }
 
 const baseInput = (over: Partial<BellaPurchasesInput> = {}): BellaPurchasesInput => ({
