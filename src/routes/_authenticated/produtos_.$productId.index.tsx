@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { KpiSection, KpiCard } from "@/components/layout";
 import { EntityHeader, Section, LoadingSurface } from "@/components/design";
+import { ProductInterestPanel } from "@/features/interests";
 
 import {
   ProductStatusBadge,
@@ -606,6 +607,13 @@ function ProductDetailPage() {
         useCategoryMargin={
           (product as { use_category_margin?: boolean | null }).use_category_margin ?? false
         }
+      />
+
+      {/* Lista de Interesse — clientes aguardando este produto */}
+      <ProductInterestPanel
+        companyId={company.id}
+        productId={product.id}
+        stock={Number(stock) || 0}
       />
 
       {/* Inteligência Comercial — política aplicada e sugestão de preço */}

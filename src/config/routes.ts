@@ -41,6 +41,7 @@ export const ROUTES = {
   platformHealth: "/saude-plataforma",
   whatsapp: "/whatsapp",
   commercialInbox: "/comercial/inbox-whatsapp",
+  commercialInterests: "/comercial/lista-interesse",
   commercialDashboard: "/inteligencia-comercial/dashboard",
   commercialPolicy: "/inteligencia-comercial/politica-empresa",
   commercialCategories: "/inteligencia-comercial/categorias",

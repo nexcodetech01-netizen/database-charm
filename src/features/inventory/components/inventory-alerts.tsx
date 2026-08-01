@@ -11,7 +11,14 @@ interface Item {
   min_stock?: number;
 }
 
-export function LowStockAlerts({ items }: { items: Item[] }) {
+export function LowStockAlerts({
+  items,
+  waitingByProduct,
+}: {
+  items: Item[];
+  /** Clientes aguardando (Lista de Interesse) por produto — apenas informativo. */
+  waitingByProduct?: Record<string, number>;
+}) {
   return (
     <Card className="border-border/60">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -45,6 +52,11 @@ export function LowStockAlerts({ items }: { items: Item[] }) {
               <p className="text-[11px] text-muted-foreground">
                 mín. {Number(p.min_stock).toLocaleString("pt-BR")}
               </p>
+              {(waitingByProduct?.[p.id] ?? 0) > 0 && (
+                <p className="text-[11px] font-medium text-primary">
+                  {waitingByProduct?.[p.id]} aguardando
+                </p>
+              )}
             </div>
           </Link>
         ))}

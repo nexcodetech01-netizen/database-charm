@@ -44,6 +44,7 @@ import { WhatsAppUsageCard } from "@/features/whatsapp";
 import { CashClosingReminder } from "@/features/cash";
 import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh";
 import { requirePermission } from "@/features/rbac";
+import { InterestDashboardCard } from "@/features/interests";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: requirePermission("dashboard.view"),
@@ -321,6 +322,9 @@ function DashboardPage() {
           <ActionCenter companyId={company.id} />
         </div>
       </div>
+
+      {/* 5 — Lista de interesse (potencial de vendas) */}
+      <InterestDashboardCard companyId={company.id} />
 
       {/* 5 — Eventos inteligentes */}
       <Section

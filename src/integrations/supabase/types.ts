@@ -4470,6 +4470,76 @@ export type Database = {
           },
         ]
       }
+      product_interests: {
+        Row: {
+          channel: Database["public"]["Enums"]["interest_channel"]
+          company_id: string
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          id: string
+          interest_date: string
+          notes: string | null
+          phone: string | null
+          product_id: string
+          responsible_user_id: string | null
+          status: Database["public"]["Enums"]["interest_status"]
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["interest_channel"]
+          company_id: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          id?: string
+          interest_date?: string
+          notes?: string | null
+          phone?: string | null
+          product_id: string
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["interest_status"]
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["interest_channel"]
+          company_id?: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          id?: string
+          interest_date?: string
+          notes?: string | null
+          phone?: string | null
+          product_id?: string
+          responsible_user_id?: string | null
+          status?: Database["public"]["Enums"]["interest_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_interests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_pricing_policies: {
         Row: {
           company_id: string
@@ -6698,7 +6768,19 @@ export type Database = {
       user_owns_company: { Args: { _company_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      interest_channel:
+        | "facebook"
+        | "instagram"
+        | "whatsapp"
+        | "loja"
+        | "telefone"
+        | "outro"
+      interest_status:
+        | "aguardando"
+        | "disponivel"
+        | "avisado"
+        | "concluido"
+        | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6825,6 +6907,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      interest_channel: [
+        "facebook",
+        "instagram",
+        "whatsapp",
+        "loja",
+        "telefone",
+        "outro",
+      ],
+      interest_status: [
+        "aguardando",
+        "disponivel",
+        "avisado",
+        "concluido",
+        "cancelado",
+      ],
+    },
   },
 } as const
