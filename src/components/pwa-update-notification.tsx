@@ -22,10 +22,13 @@ export function PWAUpdateNotification() {
 
   // Override local para preview do banner via botão/console de teste.
   const [forceShow, setForceShow] = useState(false);
+  // Evita mismatch de hidratação: o botão de teste depende de `window`.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const isDevOrPreview =
-    import.meta.env.DEV ||
-    (typeof window !== "undefined" &&
+    mounted &&
+    (import.meta.env.DEV ||
       /localhost|127\.0\.0\.1|preview--|id-preview--|lovableproject|beta\.lovable\.dev/.test(
         window.location.hostname,
       ));
