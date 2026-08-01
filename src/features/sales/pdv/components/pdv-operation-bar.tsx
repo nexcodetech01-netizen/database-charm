@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { MonitorSmartphone, User, Wallet, Hash, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PDVSearch } from "./pdv-search";
@@ -27,6 +27,8 @@ type Props = {
   sessionLabel?: string | null;
   /** Estado visual da operação (processando, emitindo NFC-e, concluída). */
   activity?: PdvActivity | null;
+  /** Botão/menu operacional do caixa (somente UX). */
+  cashMenu?: ReactNode;
 };
 
 function MetaItem({
@@ -80,6 +82,7 @@ export const PDVOperationBar = memo(function PDVOperationBar({
   operatorName,
   sessionLabel,
   activity,
+  cashMenu,
 }: Props) {
   return (
     <header className="rounded-2xl border bg-card p-5 shadow-sm">
@@ -125,14 +128,16 @@ export const PDVOperationBar = memo(function PDVOperationBar({
               {PDV_STAGE_LABEL[stage]}
             </span>
           )}
-          <span
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium",
-              PDV_STATUS_TONE_CLASS[cashStatus.tone],
-            )}
-          >
-            {cashStatus.label}
-          </span>
+          {cashMenu ?? (
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium",
+                PDV_STATUS_TONE_CLASS[cashStatus.tone],
+              )}
+            >
+              {cashStatus.label}
+            </span>
+          )}
         </div>
       </div>
 

@@ -12,6 +12,7 @@
  *   F3      quantidade do item ativo
  *   F4      desconto
  *   F5      pagamento
+ *   F12     fechamento de caixa (abre o diálogo existente)
  *   DELETE  remover item ativo
  *   CTRL+L  limpar carrinho
  *
@@ -44,7 +45,8 @@ export type PdvShortcutAction =
   | "new-sale"
   | "print-receipt"
   | "confirm-dialog"
-  | "close-dialog";
+  | "close-dialog"
+  | "close-cash";
 
 /** Alvo do evento, no mínimo necessário para decidir (sem depender do DOM). */
 export type PdvShortcutTarget = {
@@ -129,6 +131,8 @@ export function resolvePdvShortcut(
       return "focus-discount";
     case "F5":
       return "open-payment";
+    case "F12":
+      return "close-cash";
     case "Delete":
       // Dentro da pesquisa, DELETE é edição de texto normal.
       return isPdvSearchTarget(event.target ?? null) ? null : "remove-item";
@@ -151,7 +155,7 @@ type MinimalEvent = PdvShortcutEvent & { preventDefault?: () => void };
  * Teclas de edição de texto (ENTER, ESC, DELETE) só são bloqueadas quando o
  * PDV realmente as usa — digitar em um campo continua normal.
  */
-const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5"] as const;
+const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5", "F12"] as const;
 
 export function isPdvOwnedKey(event: PdvShortcutEvent): boolean {
   if (event.altKey) return false;

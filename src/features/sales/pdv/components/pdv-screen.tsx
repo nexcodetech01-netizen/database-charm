@@ -40,19 +40,29 @@ type Props = {
   companyId: string;
   operatorId: string;
   operatorName: string;
+  companyName?: string;
 };
 
 /**
  * PDVScreen — sessão de venda em memória (Sprint 2.2) com guarda de caixa
  * reutilizando o fluxo existente (Sprint 2.3). Nenhuma venda é persistida.
  */
-export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
+export function PDVScreen({
+  companyId,
+  operatorId,
+  operatorName,
+  companyName,
+}: Props) {
   const pdv = usePDV(companyId);
-  const { access, session, requestOpenCash, cashDialogs } = usePdvCash({
-    companyId,
-    operatorId,
-    operatorName,
-  });
+  const {
+    access,
+    session,
+    requestOpenCash,
+    requestCloseCash,
+    closeCashOpen,
+    cashMenu,
+    cashDialogs,
+  } = usePdvCash({ companyId, operatorId, operatorName, companyName });
 
   // Sessão do balcão: venda criada -> recebida -> recibo (Sprints 2.5/2.6).
   const [pdvSession, dispatchSession] = useReducer(
@@ -176,7 +186,7 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
     enabled: access.canOperate,
     // P0.1: com qualquer diálogo aberto (recibo ou pagamento) os atalhos da
     // tela ficam suspensos — nada vaza para trás do modal nem para o browser.
-    context: { dialogOpen: receiptOpen || checkoutOpen },
+    context: { dialogOpen: receiptOpen || checkoutOpen || closeCashOpen },
     handlers: {
       "focus-search": focus.focusSearch,
       "clear-search": () => {
@@ -204,6 +214,8 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
           : undefined,
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
       "print-receipt": completed ? handlePrintReceipt : undefined,
+      // F12 apenas ABRE o diálogo de fechamento existente.
+      "close-cash": session ? requestCloseCash : undefined,
       "confirm-dialog": receiptOpen ? printPdvReceipt : undefined,
       "close-dialog": receiptOpen
         ? () => dispatchSession({ type: "CLOSE_RECEIPT" })
@@ -286,6 +298,7 @@ export function PDVScreen({ companyId, operatorId, operatorName }: Props) {
             onClearSearch={focus.focusSearch}
             operatorName={operatorName}
             sessionLabel={session?.id ? session.id.slice(0, 8) : null}
+            cashMenu={cashMenu}
             activity={pdvActivity({
               saving: checkout.isSaving,
               fiscalPending,
