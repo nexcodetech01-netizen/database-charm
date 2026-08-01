@@ -74,20 +74,15 @@ function ProductsPage() {
         onReset={() => setFilters(DEFAULT)}
       />
 
-      <Section
-        title="Catálogo"
-        description="Produtos cadastrados nesta empresa."
-        flushBody
-      >
-        <ProductTable
-          rows={data?.rows ?? []}
-          total={data?.total ?? 0}
-          isLoading={isLoading}
-          page={filters.page}
-          pageSize={filters.pageSize}
-          onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-        />
-      </Section>
+      <ProductTable
+        rows={data?.rows ?? []}
+        total={data?.total ?? 0}
+        isLoading={isLoading}
+        page={filters.page}
+        pageSize={filters.pageSize}
+        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+      />
+
     </div>
   );
 }
