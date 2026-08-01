@@ -15,7 +15,7 @@ import {
 import { PageLayout } from "@/components/layout";
 import { formatCurrency } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/design";
 import {
   AdvisorCard,
   AlertCard,
@@ -197,9 +197,9 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       description="Leitura contábil e financeira consolidada — somente leitura, a partir dos motores já existentes do NexOS."
       meta={
         s?.period ? (
-          <Badge variant="outline" className="rounded-lg font-normal">
+          <StatusBadge status="neutral" appearance="outline" className="font-normal">
             {s.period.label ?? `${s.period.start} → ${s.period.end}`}
-          </Badge>
+          </StatusBadge>
         ) : null
       }
       kpis={
