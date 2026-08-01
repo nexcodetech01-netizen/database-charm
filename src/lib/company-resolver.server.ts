@@ -5,8 +5,13 @@
  * porque o transform `tss-serverfn-split` remove declarações irmãs usadas
  * apenas dentro de handlers (gerando `ReferenceError` em runtime).
  *
- * Ordem de resolução (mecanismo vigente do projeto):
- *   1. `profiles.current_company_id`
+ * SEGURANÇA (RC.0.2 — Multi-Tenant Hardening):
+ * `profiles.current_company_id` é uma PREFERÊNCIA do usuário, não uma
+ * credencial. Mesmo com o guard no banco, esta camada NUNCA devolve uma
+ * empresa sem confirmar vínculo real (`user_roles` ou `companies.owner_id`).
+ *
+ * Ordem de resolução:
+ *   1. `profiles.current_company_id` — apenas se houver vínculo real
  *   2. vínculo em `user_roles.company_id`
  *   3. propriedade em `companies.owner_id`
  */
@@ -15,6 +20,63 @@ import type { Database } from "@/integrations/supabase/types";
 
 type SB = SupabaseClient<Database>;
 
+/** Erro de isolamento multiempresa (tenant boundary). */
+export class CompanyAccessError extends Error {
+  readonly code = "COMPANY_ACCESS_DENIED";
+  constructor(message = "Empresa não vinculada ao usuário.") {
+    super(message);
+    this.name = "CompanyAccessError";
+  }
+}
+
+/**
+ * `true` quando o usuário é dono da empresa OU possui vínculo em
+ * `user_roles`. Fonte da verdade: as mesmas tabelas usadas pela RLS
+ * (`public.user_has_company_access`).
+ */
+export async function userHasCompanyAccess(
+  supabase: SB,
+  userId: string,
+  companyId: string,
+): Promise<boolean> {
+  if (!userId || !companyId) return false;
+
+  const { data: owned, error: ownedError } = await supabase
+    .from("companies")
+    .select("id")
+    .eq("id", companyId)
+    .eq("owner_id", userId)
+    .maybeSingle();
+  if (ownedError) throw ownedError;
+  if (owned?.id) return true;
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("user_roles")
+    .select("company_id")
+    .eq("user_id", userId)
+    .eq("company_id", companyId)
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+
+  return Boolean(membership?.company_id);
+}
+
+/**
+ * Garante o vínculo antes de qualquer operação escopada por empresa.
+ * Use sempre que o `companyId` vier de input do cliente ou de um campo
+ * editável pelo usuário.
+ */
+export async function assertCompanyAccess(
+  supabase: SB,
+  userId: string,
+  companyId: string,
+): Promise<string> {
+  const allowed = await userHasCompanyAccess(supabase, userId, companyId);
+  if (!allowed) throw new CompanyAccessError();
+  return companyId;
+}
+
 export async function resolveCompanyId(supabase: SB, userId: string): Promise<string> {
   const { data: profile, error } = await supabase
     .from("profiles")
@@ -22,7 +84,11 @@ export async function resolveCompanyId(supabase: SB, userId: string): Promise<st
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
-  if (profile?.current_company_id) return profile.current_company_id as string;
+
+  const preferred = profile?.current_company_id as string | null | undefined;
+  if (preferred && (await userHasCompanyAccess(supabase, userId, preferred))) {
+    return preferred;
+  }
 
   const { data: membership, error: membershipError } = await supabase
     .from("user_roles")
