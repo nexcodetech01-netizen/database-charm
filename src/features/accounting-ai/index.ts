@@ -37,6 +37,7 @@ export * from "./reports";
 export * from "./automations";
 export * from "./components";
 export * from "./audit";
+export * from "./explanation";
 export * from "./chat";
 export { useAccountingAiSummary } from "./hooks/use-accounting-ai";
 export {

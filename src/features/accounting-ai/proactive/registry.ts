@@ -14,7 +14,11 @@ import {
   estoqueBaixoRule,
   impostoProximoRule,
   lucroCaindoRule,
+  maiorCrescimentoRule,
+  maiorDespesaRule,
+  maiorEconomiaRule,
   margemBaixaRule,
+  motivoQuedaLucroRule,
   muitasDespesasRule,
   produtoParadoRule,
   prolaboreAcimaRule,
@@ -42,6 +46,10 @@ export const PROACTIVE_REGISTRY: ProactiveRuleDescriptor[] = [
   { id: "prolabore_acima", category: "financeiro", description: "Pró-labore sugerido acima da retirada segura.", run: prolaboreAcimaRule },
   { id: "retirada_risco", category: "caixa", description: "Retirada em zona de risco ou sem margem.", run: retiradaRiscoRule },
   { id: "dados_incompletos", category: "sistema", description: "Providers sem dados no período.", run: dadosIncompletosRule },
+  { id: "motivo_queda_lucro", category: "lucro", description: "Maior motivo da queda do lucro (explicações oficiais).", run: motivoQuedaLucroRule },
+  { id: "maior_crescimento_mes", category: "receita", description: "Maior crescimento do mês (explicações oficiais).", run: maiorCrescimentoRule },
+  { id: "maior_despesa", category: "financeiro", description: "Maior despesa apurada no período.", run: maiorDespesaRule },
+  { id: "maior_economia", category: "financeiro", description: "Maior economia apurada no período.", run: maiorEconomiaRule },
 ];
 
 export function getProactiveRule(id: string): ProactiveRuleDescriptor | undefined {

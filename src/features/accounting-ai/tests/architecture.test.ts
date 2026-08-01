@@ -23,7 +23,7 @@ describe("accounting-ai · arquitetura", () => {
     expect(getAccountingAutomation("monthly_closing")?.cadence).toBe("monthly");
   });
 
-  it("expõe as 29 skills e todas são somente leitura", () => {
+  it("expõe as 38 skills e todas são somente leitura", () => {
     expect(accountingAiSkills.map((s) => s.id)).toEqual([
       "consultar_lucro",
       "consultar_fluxo",
@@ -54,6 +54,15 @@ describe("accounting-ai · arquitetura", () => {
       "auditar_empresa",
       "consultar_inconsistencias",
       "consultar_saude_operacional",
+      "explicar_lucro",
+      "explicar_caixa",
+      "explicar_receita",
+      "explicar_despesas",
+      "explicar_impostos",
+      "explicar_ticket",
+      "explicar_estoque",
+      "explicar_resultado",
+      "explicar_indicadores",
     ]);
     expect(accountingAiSkills.every((s) => s.readOnly)).toBe(true);
     expect(getAccountingSkill("consultar_caixa")?.name).toBe("Consultar caixa");

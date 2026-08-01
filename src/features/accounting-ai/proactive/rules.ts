@@ -344,6 +344,90 @@ export const dadosIncompletosRule: ProactiveRule = (ctx) => {
   });
 };
 
+/* ───────── Sprint 7.3 — regras derivadas das explicações oficiais ───────── */
+
+/** Maior motivo da queda do lucro (causa negativa de maior impacto). */
+export const motivoQuedaLucroRule: ProactiveRule = (ctx) => {
+  const explanation = ctx.explanation?.explanations.lucro ?? null;
+  if (!explanation?.available) return null;
+  const trend = explanation.trend;
+  if (!trend?.hasHistory || trend.direction !== "down") return null;
+  const cause = explanation.causes.find((c) => c.effect === "negativo");
+  if (!cause) return null;
+  return makeNotification({
+    id: "motivo_queda_lucro",
+    category: "lucro",
+    severity: "warning",
+    title: "Maior motivo da queda do lucro",
+    message: `${cause.label} foi o que mais pesou: ${formatCurrency(Math.abs(cause.impact))} de impacto no período.`,
+    recommendation: explanation.recommendation ?? "Revisar a causa de maior impacto no resultado.",
+    action: "revisar_preco",
+    magnitude: Math.abs(trend.deltaPercent ?? 0),
+    createdAt: ctx.createdAt,
+  });
+};
+
+/** Maior crescimento do mês (causa positiva de maior impacto). */
+export const maiorCrescimentoRule: ProactiveRule = (ctx) => {
+  const ranking = ctx.explanation?.ranking ?? [];
+  const best = ranking.find((c) => c.effect === "positivo" && c.impact > 0);
+  if (!best) return null;
+  return makeNotification({
+    id: "maior_crescimento_mes",
+    category: "receita",
+    severity: "success",
+    title: "Maior crescimento do mês",
+    message: `${best.label} cresceu ${formatCurrency(Math.abs(best.impact))} frente ao período anterior.`,
+    recommendation: "Mantenha o que está funcionando e acompanhe o efeito no resultado.",
+    action: "manter_ritmo",
+    createdAt: ctx.createdAt,
+  });
+};
+
+/** Maior despesa do período (valor apurado na DRE oficial). */
+export const maiorDespesaRule: ProactiveRule = (ctx) => {
+  const facts = ctx.explanation?.dataset.current ?? null;
+  if (!facts) return null;
+  const items: Array<[string, number]> = [
+    ["CMV", facts.cogs],
+    ["Despesas operacionais", facts.operatingExpenses],
+    ["Despesas financeiras", facts.financialExpenses],
+    ["Outras despesas", facts.otherExpenses],
+  ];
+  const biggest = items.sort((a, b) => b[1] - a[1])[0];
+  if (!biggest || biggest[1] <= 0) return null;
+  return makeNotification({
+    id: "maior_despesa",
+    category: "financeiro",
+    severity: "info",
+    title: "Maior despesa do período",
+    message: `${biggest[0]} foi a maior saída do período: ${formatCurrency(biggest[1])}.`,
+    recommendation: "Confira se essa despesa está compatível com a receita apurada.",
+    action: "reduzir_despesas",
+    createdAt: ctx.createdAt,
+  });
+};
+
+/** Maior economia do período (despesa que mais caiu). */
+export const maiorEconomiaRule: ProactiveRule = (ctx) => {
+  const despesas = ctx.explanation?.explanations.despesas ?? null;
+  if (!despesas?.available) return null;
+  const saving = despesas.causes
+    .filter((c) => c.effect === "positivo" && c.impact < 0)
+    .sort((a, b) => b.weight - a.weight)[0];
+  if (!saving) return null;
+  return makeNotification({
+    id: "maior_economia",
+    category: "financeiro",
+    severity: "success",
+    title: "Maior economia do período",
+    message: `${saving.label} caiu ${formatCurrency(Math.abs(saving.impact))} em relação ao período anterior.`,
+    recommendation: "Mantenha o controle que gerou essa economia.",
+    action: "acompanhar",
+    createdAt: ctx.createdAt,
+  });
+};
+
 /** Todas as regras, na ordem de declaração. */
 export const PROACTIVE_RULES: ProactiveRule[] = [
   receitaCrescendoRule,
@@ -363,6 +447,10 @@ export const PROACTIVE_RULES: ProactiveRule[] = [
   prolaboreAcimaRule,
   retiradaRiscoRule,
   dadosIncompletosRule,
+  motivoQuedaLucroRule,
+  maiorCrescimentoRule,
+  maiorDespesaRule,
+  maiorEconomiaRule,
 ];
 
 /** Executa uma regra isolada com proteção — usado pelo engine. */

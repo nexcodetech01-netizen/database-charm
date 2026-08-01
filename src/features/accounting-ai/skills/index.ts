@@ -41,6 +41,13 @@ import {
   describeSimulation,
 } from "../tax/selectors";
 import { auditProvider } from "../audit/provider";
+import { explanationProvider } from "../explanation/provider";
+import {
+  describeImpactRanking,
+  describeIndicators,
+  describeTopic,
+} from "../explanation/selectors";
+import { NO_EVIDENCE, type ExplanationTopic } from "../explanation/types";
 import {
   describeAudit,
   describeFindings,
@@ -76,7 +83,16 @@ export type AccountingSkillId =
   | "simular_tributos"
   | "auditar_empresa"
   | "consultar_inconsistencias"
-  | "consultar_saude_operacional";
+  | "consultar_saude_operacional"
+  | "explicar_lucro"
+  | "explicar_caixa"
+  | "explicar_receita"
+  | "explicar_despesas"
+  | "explicar_impostos"
+  | "explicar_ticket"
+  | "explicar_estoque"
+  | "explicar_resultado"
+  | "explicar_indicadores";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -589,6 +605,121 @@ export const consultarSaudeOperacionalSkill: AccountingSkill = {
   },
 };
 
+/* ───────────────── Sprint 7.3 — Bella Explica (somente leitura) ───────────────── */
+
+async function readExplanation(companyId: string, deps?: ProviderDeps) {
+  return deps?.explanation ?? (await explanationProvider(companyId, deps));
+}
+
+/** Fábrica das skills de explicação — todas leem o MESMO retrato oficial. */
+function makeExplanationSkill(
+  id: AccountingSkillId,
+  name: string,
+  description: string,
+  topic: ExplanationTopic,
+): AccountingSkill {
+  return {
+    id,
+    name,
+    description,
+    readOnly: true,
+    async run(companyId, deps) {
+      const res = await readExplanation(companyId, deps);
+      const explanation = res.data?.explanations[topic] ?? null;
+      if (!explanation || !explanation.available) {
+        return { ok: false, text: NO_EVIDENCE, data: null };
+      }
+      return {
+        ok: true,
+        text: describeTopic(res.data, topic),
+        data: explanation,
+      };
+    },
+  };
+}
+
+export const explicarLucroSkill = makeExplanationSkill(
+  "explicar_lucro",
+  "Explicar lucro",
+  "Explica a variação do lucro com base na DRE oficial.",
+  "lucro",
+);
+
+export const explicarCaixaSkill = makeExplanationSkill(
+  "explicar_caixa",
+  "Explicar caixa",
+  "Explica a posição de caixa com base no financeiro oficial.",
+  "caixa",
+);
+
+export const explicarReceitaSkill = makeExplanationSkill(
+  "explicar_receita",
+  "Explicar receita",
+  "Explica a variação da receita com base na DRE e nas vendas oficiais.",
+  "receita",
+);
+
+export const explicarDespesasSkill = makeExplanationSkill(
+  "explicar_despesas",
+  "Explicar despesas",
+  "Explica a variação das despesas com base na DRE oficial.",
+  "despesas",
+);
+
+export const explicarImpostosSkill = makeExplanationSkill(
+  "explicar_impostos",
+  "Explicar impostos",
+  "Explica o DAS com base no motor tributário oficial.",
+  "impostos",
+);
+
+export const explicarTicketSkill = makeExplanationSkill(
+  "explicar_ticket",
+  "Explicar ticket médio",
+  "Explica a variação do ticket médio com base nas métricas de vendas.",
+  "ticket",
+);
+
+export const explicarEstoqueSkill = makeExplanationSkill(
+  "explicar_estoque",
+  "Explicar estoque",
+  "Explica a situação do estoque com base no motor de estoque oficial.",
+  "estoque",
+);
+
+export const explicarResultadoSkill: AccountingSkill = {
+  id: "explicar_resultado",
+  name: "Explicar resultado",
+  description: "Rankeia os maiores impactos do período (dados oficiais).",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readExplanation(companyId, deps);
+    if (!res.data || res.data.ranking.length === 0) {
+      return { ok: false, text: NO_EVIDENCE, data: null };
+    }
+    return {
+      ok: true,
+      text: describeImpactRanking(res.data),
+      data: res.data.ranking,
+    };
+  },
+};
+
+export const explicarIndicadoresSkill: AccountingSkill = {
+  id: "explicar_indicadores",
+  name: "Explicar indicadores",
+  description: "Panorama explicado dos principais indicadores do período.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readExplanation(companyId, deps);
+    const text = describeIndicators(res.data);
+    if (!res.data || text === NO_EVIDENCE) {
+      return { ok: false, text: NO_EVIDENCE, data: null };
+    }
+    return { ok: true, text, data: res.data.explanations };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -619,6 +750,15 @@ export const accountingAiSkills: AccountingSkill[] = [
   auditarEmpresaSkill,
   consultarInconsistenciasSkill,
   consultarSaudeOperacionalSkill,
+  explicarLucroSkill,
+  explicarCaixaSkill,
+  explicarReceitaSkill,
+  explicarDespesasSkill,
+  explicarImpostosSkill,
+  explicarTicketSkill,
+  explicarEstoqueSkill,
+  explicarResultadoSkill,
+  explicarIndicadoresSkill,
 ];
 
 

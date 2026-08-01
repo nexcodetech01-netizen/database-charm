@@ -197,6 +197,46 @@ export interface AuditPort {
 }
 
 /** Bundle único injetado nos providers (facilita testes com fakes). */
+/* ───────────── Sprint 7.3 — Explicações (somente leitura) ───────────── */
+
+/**
+ * Números oficiais de um período, usados pela camada de explicações.
+ * Todos os campos vêm de motores já existentes (DRE, KPIs, vendas,
+ * relatório de clientes). Nenhum valor é calculado nesta porta.
+ */
+export interface ExplanationPeriodFactsRow {
+  period: AccountingPeriod;
+  grossRevenue: number;
+  deductions: number;
+  netRevenue: number;
+  cogs: number;
+  operatingExpenses: number;
+  financialExpenses: number;
+  otherExpenses: number;
+  grossProfit: number;
+  operatingResult: number;
+  netProfit: number;
+  grossMargin: number;
+  netMargin: number;
+  cogsRatio: number;
+  expenseRatio: number;
+  averageTicket: number;
+  salesCount: number;
+  paidTotal: number;
+  customersActive: number;
+  customersNew: number;
+  customersRecurring: number;
+}
+
+/** Porta de explicações — leitura comparativa entre períodos. */
+export interface ExplanationPort {
+  periodFacts(
+    companyId: string,
+    period: AccountingPeriod,
+  ): Promise<ExplanationPeriodFactsRow>;
+}
+
+/** Bundle único injetado nos providers (facilita testes com fakes). */
 export interface AccountingAiServices {
   readonly accounting: AccountingPort;
   readonly finance: FinancePort;
@@ -205,5 +245,7 @@ export interface AccountingAiServices {
   readonly fiscal: FiscalPort;
   readonly cash: CashPort;
   readonly audit: AuditPort;
+  readonly explanation: ExplanationPort;
 }
+
 

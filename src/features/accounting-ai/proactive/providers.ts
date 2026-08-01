@@ -20,7 +20,9 @@ export function buildProactiveContext(
   const advice = input.advice ?? buildFinancialAdvice({ summary });
   const health = input.health ?? summary.health.data?.financial ?? null;
 
-  return { summary, insights, advice, health, createdAt };
+  const explanation = input.explanation ?? null;
+
+  return { summary, insights, advice, health, explanation, createdAt };
 }
 
 /** Lista dos providers indisponíveis no resumo (usado pela regra "sistema"). */

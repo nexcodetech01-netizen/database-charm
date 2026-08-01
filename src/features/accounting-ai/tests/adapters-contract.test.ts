@@ -4,6 +4,7 @@ import {
   accountingAiServices,
   auditAdapter,
   cashAdapter,
+  explanationAdapter,
   financeAdapter,
   fiscalAdapter,
   inventoryAdapter,
@@ -33,6 +34,7 @@ const CONTRACT: Record<string, string[]> = {
     "projectScenarios",
   ],
   cash: ["listSessions"],
+  explanation: ["periodFacts"],
   audit: [
     "transactions",
     "sales",
@@ -52,6 +54,7 @@ const REAL: Record<string, Record<string, unknown>> = {
   inventory: inventoryAdapter as unknown as Record<string, unknown>,
   fiscal: fiscalAdapter as unknown as Record<string, unknown>,
   cash: cashAdapter as unknown as Record<string, unknown>,
+  explanation: explanationAdapter as unknown as Record<string, unknown>,
   audit: auditAdapter as unknown as Record<string, unknown>,
 };
 
