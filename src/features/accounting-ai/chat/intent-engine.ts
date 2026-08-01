@@ -179,6 +179,7 @@ const RULES: IntentRule[] = [
       ],
     ],
   },
+  {
     intent: "consultar_notificacoes",
     weight: 10,
     terms: [["notificacao", "notificacoes", "avisos", "o que voce percebeu hoje"]],
