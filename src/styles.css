@@ -262,6 +262,45 @@
   --warning-foreground: #0f172a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+
+  /* Status (UI.1.1) — dark */
+  --status-info: #3b82f6;
+  --status-info-foreground: #ffffff;
+  --status-info-surface: rgb(59 130 246 / 15%);
+  --status-success: #22c55e;
+  --status-success-foreground: #04120a;
+  --status-success-surface: rgb(34 197 94 / 15%);
+  --status-warning: #f59e0b;
+  --status-warning-foreground: #0f172a;
+  --status-warning-surface: rgb(245 158 11 / 15%);
+  --status-danger: #ef4444;
+  --status-danger-foreground: #ffffff;
+  --status-danger-surface: rgb(239 68 68 / 15%);
+  --status-neutral: #94a3b8;
+  --status-neutral-foreground: #0f172a;
+  --status-neutral-surface: rgb(148 163 184 / 15%);
+  --status-critical: #f87171;
+  --status-critical-foreground: #0f172a;
+  --status-critical-surface: rgb(248 113 113 / 18%);
+  --status-pending: #f59e0b;
+  --status-pending-foreground: #0f172a;
+  --status-pending-surface: rgb(245 158 11 / 15%);
+  --status-processing: #38bdf8;
+  --status-processing-foreground: #0f172a;
+  --status-processing-surface: rgb(56 189 248 / 15%);
+  --status-approved: #22c55e;
+  --status-approved-foreground: #04120a;
+  --status-approved-surface: rgb(34 197 94 / 15%);
+  --status-rejected: #ef4444;
+  --status-rejected-foreground: #ffffff;
+  --status-rejected-surface: rgb(239 68 68 / 15%);
+  --status-cancelled: #94a3b8;
+  --status-cancelled-foreground: #0f172a;
+  --status-cancelled-surface: rgb(148 163 184 / 12%);
+  --status-draft: #64748b;
+  --status-draft-foreground: #f8fafc;
+  --status-draft-surface: rgb(100 116 139 / 15%);
+
   --border: rgb(255 255 255 / 8%);
   --input: rgb(255 255 255 / 12%);
   --ring: #3b82f6;
