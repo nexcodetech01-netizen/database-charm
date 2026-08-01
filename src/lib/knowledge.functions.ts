@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireServerPermission } from "@/features/rbac/guards/server-guards";
+import { resolveCompanyId } from "@/lib/company-resolver.server";
 import type { Database } from "@/integrations/supabase/types";
 import { chunkText } from "@/features/bella-ai/knowledge/KnowledgeChunker";
 import {
@@ -38,18 +39,19 @@ const uploadSchema = z.object({
   content: z.string().min(1).max(2_000_000),
 });
 
+/**
+ * RC.0.2: a empresa vem do resolver oficial, que exige vínculo real
+ * (owner ou user_roles) — `profiles.current_company_id` sozinho não basta.
+ */
 async function getCurrentCompanyId(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("current_company_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.current_company_id) throw new Error("Empresa atual não definida.");
-  return data.current_company_id;
+  try {
+    return await resolveCompanyId(supabase, userId);
+  } catch {
+    throw new Error("Empresa atual não definida.");
+  }
 }
 
 function mapDocumentRow(row: Record<string, unknown>): KnowledgeDocument {

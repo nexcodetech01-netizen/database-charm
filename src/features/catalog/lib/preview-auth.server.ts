@@ -39,16 +39,26 @@ export async function authorizePreview(
   if (error || !userData?.user) return { ok: false, reason: "invalid_token" };
 
   const userId = userData.user.id;
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("current_company_id")
-    .eq("id", userId)
-    .maybeSingle<{ current_company_id: string | null }>();
+  // RC.0.2: vínculo real (owner ou user_roles) — nunca
+  // `profiles.current_company_id`, que é editável pelo usuário.
+  const { data: owned } = await supabaseAdmin
+    .from("companies")
+    .select("id")
+    .eq("id", companyId)
+    .eq("owner_id", userId)
+    .maybeSingle<{ id: string }>();
 
-  if (!profile?.current_company_id) return { ok: false, reason: "no_company" };
-  if (profile.current_company_id !== companyId) {
-    return { ok: false, reason: "forbidden" };
-  }
+  if (owned?.id) return { ok: true, userId, companyId };
+
+  const { data: membership } = await supabaseAdmin
+    .from("user_roles")
+    .select("company_id")
+    .eq("user_id", userId)
+    .eq("company_id", companyId)
+    .limit(1)
+    .maybeSingle<{ company_id: string }>();
+
+  if (!membership?.company_id) return { ok: false, reason: "forbidden" };
   return { ok: true, userId, companyId };
 }
 
