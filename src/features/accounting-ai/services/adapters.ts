@@ -64,6 +64,15 @@ export const fiscalAdapter: FiscalPort = {
   monthlyRevenue: (companyId, competence) =>
     taxService.monthlyRevenue(companyId, competence || toCompetence()),
   apportionments: (companyId, limit) => taxService.listApportionments(companyId, limit),
+  profile: (companyId) => taxService.getProfile(companyId),
+  rbt12: (companyId, competence) =>
+    taxService.rbt12(companyId, competence || toCompetence()),
+  apportionment: (companyId, competence) =>
+    taxService.getApportionment(companyId, competence || toCompetence()),
+  simulateSimples: (annex, rbt12, revenue) =>
+    taxService.simulateSimples(annex, rbt12, revenue),
+  projectScenarios: (companyId, competence, growths) =>
+    taxService.projectScenarios(companyId, competence || toCompetence(), growths),
 };
 
 export const cashAdapter: CashPort = {

@@ -8,6 +8,7 @@
  */
 import type { ProviderDeps } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
+import { taxRegimeProvider } from "../tax/provider";
 import { detectIntent } from "./intent-engine";
 import { planIntent } from "./planner";
 import { executePlan } from "./router";
@@ -43,7 +44,35 @@ export async function askBella(
 
   const baseDeps = options.deps;
   const summary = baseDeps?.summary ?? (await buildAccountingSummary(companyId, baseDeps));
-  const deps: ProviderDeps = { ...baseDeps, summary, period: summary.period };
+  const simulation =
+    plan.intent === "simular_das" || plan.intent === "simular_faturamento"
+      ? {
+          growthPct: plan.growthPct ?? null,
+          targetRevenue: plan.growthPct == null ? plan.amount : null,
+        }
+      : (baseDeps?.simulation ?? null);
+
+  const deps: ProviderDeps = {
+    ...baseDeps,
+    summary,
+    period: summary.period,
+    simulation,
+  };
+
+  // Sprint 7.1 — o retrato tributário é lido UMA vez por pergunta e
+  // compartilhado entre as skills do plano (nenhum recálculo, nenhum
+  // segundo motor).
+  const TAX_SKILLS = new Set([
+    "consultar_das",
+    "consultar_rbt12",
+    "consultar_anexo",
+    "consultar_aliquota",
+    "consultar_faixa",
+    "consultar_vencimento_das",
+  ]);
+  if (!deps.taxSnapshot && plan.steps.some((s) => TAX_SKILLS.has(s.skillId))) {
+    deps.taxSnapshot = await taxRegimeProvider(companyId, deps);
+  }
 
   const outcomes = await executePlan(plan, companyId, { deps });
   return buildAnswer(plan, outcomes);

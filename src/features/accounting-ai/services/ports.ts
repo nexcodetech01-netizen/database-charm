@@ -11,7 +11,13 @@ import type {
 } from "@/features/accounting";
 import type { FinanceSnapshot } from "@/features/finance";
 import type { CustomersReport, ProductsReport } from "@/features/reports";
-import type { TaxApportionment } from "@/features/tax";
+import type {
+  CompanyTaxProfile,
+  SimplesAnnex,
+  SimplesComputation,
+  TaxApportionment,
+  TaxProjection,
+} from "@/features/tax";
 import type { AccountingPeriod } from "../types";
 
 export interface AccountingPort {
@@ -59,6 +65,27 @@ export interface InventoryPort {
 export interface FiscalPort {
   monthlyRevenue(companyId: string, competence: string): Promise<number>;
   apportionments(companyId: string, limit?: number): Promise<TaxApportionment[]>;
+  /** Perfil tributário oficial (regime, anexo, dia de vencimento). */
+  profile(companyId: string): Promise<CompanyTaxProfile | null>;
+  /** Receita bruta acumulada 12 meses — RPC `company_rbt12`. */
+  rbt12(companyId: string, competence: string): Promise<number>;
+  /** Apuração já existente da competência (nunca gera nova). */
+  apportionment(
+    companyId: string,
+    competence: string,
+  ): Promise<TaxApportionment | null>;
+  /** Motor oficial do Simples — RPC `simples_compute`. */
+  simulateSimples(
+    annex: SimplesAnnex,
+    rbt12: number,
+    revenue: number,
+  ): Promise<SimplesComputation>;
+  /** Projeções oficiais — RPC `project_tax_scenarios`. */
+  projectScenarios(
+    companyId: string,
+    competence: string,
+    growths?: number[],
+  ): Promise<TaxProjection>;
 }
 
 export interface CashPort {

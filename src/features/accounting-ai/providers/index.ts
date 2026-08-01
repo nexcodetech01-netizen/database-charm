@@ -27,6 +27,7 @@ import type {
   TicketSnapshot,
 } from "../types";
 import type { AccountingAiServices } from "../services/ports";
+import type { BellaTaxSimulationInput, BellaTaxSnapshot } from "../tax/types";
 import { accountingAiServices } from "../services/adapters";
 import {
   currentPeriod,
@@ -52,6 +53,13 @@ export interface ProviderDeps {
   period?: AccountingPeriod;
   /** Data operacional (ISO). Quando ausente, usa a data local. */
   today?: string;
+  /**
+   * Sprint 7.1 — retrato tributário já lido nesta pergunta. Evita repetir
+   * as chamadas ao motor oficial quando várias skills o consomem.
+   */
+  taxSnapshot?: ProviderResult<BellaTaxSnapshot> | null;
+  /** Sprint 7.1 — parâmetros de simulação tributária vindos do chat/UI. */
+  simulation?: BellaTaxSimulationInput | null;
 }
 
 function resolve(deps?: ProviderDeps) {

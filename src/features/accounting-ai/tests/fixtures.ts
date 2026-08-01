@@ -2,12 +2,78 @@
  * Fixtures compartilhadas dos testes da Bella Contadora.
  * Serviços falsos com o mesmo shape das portas (nenhum acesso a rede).
  */
-import type { AccountingAiServices } from "../services/ports";
+import { computeSimples } from "@/features/tax";
+import type { CompanyTaxProfile, TaxApportionment } from "@/features/tax";
+import type { AccountingAiServices, FiscalPort } from "../services/ports";
 import { buildAccountingSummary } from "../providers/summary";
 import type { AccountingSummary } from "../types";
 
 export const testPeriod = { start: "2026-01-01", end: "2026-01-31", label: "01/2026" };
 export const testToday = "2026-01-20";
+
+export const testTaxProfile: CompanyTaxProfile = {
+  id: "tp1",
+  companyId: "c1",
+  taxRegime: "simples_nacional",
+  simplesAnnex: "I",
+  rbt12: 1_200_000,
+  effectiveRate: 8.825,
+  nominalRate: 10.7,
+  icmsRegime: "simples",
+  pisRegime: "simples",
+  cofinsRegime: "simples",
+  issRegime: "nao_aplicavel",
+  ipiRegime: "nao_aplicavel",
+  dueDay: 20,
+  startDate: "2024-01-01",
+  active: true,
+};
+
+export interface FiscalPortOptions {
+  profile?: CompanyTaxProfile | null;
+  rbt12?: number;
+  monthlyRevenue?: number;
+  apportionment?: TaxApportionment | null;
+  apportionments?: TaxApportionment[];
+}
+
+/**
+ * Porta fiscal falsa. Os números do Simples vêm de `computeSimples`
+ * (motor oficial), nunca de fórmulas escritas nos testes.
+ */
+export function makeTestFiscalPort(options: FiscalPortOptions = {}): FiscalPort {
+  const rbt12 = options.rbt12 ?? 1_200_000;
+  const revenue = options.monthlyRevenue ?? 11000;
+  return {
+    monthlyRevenue: async () => revenue,
+    apportionments: async () => options.apportionments ?? [],
+    profile: async () =>
+      options.profile === undefined ? testTaxProfile : options.profile,
+    rbt12: async () => rbt12,
+    apportionment: async () => options.apportionment ?? null,
+    simulateSimples: async (annex, r12, rev) => computeSimples(annex, r12, rev),
+    projectScenarios: async (_companyId, competence, growths = [0, 10, 20, 30]) => ({
+      competence,
+      baseRevenue: revenue,
+      rbt12,
+      scenarios: growths.map((growthPct) => {
+        const projected = revenue * (1 + growthPct / 100);
+        const c = computeSimples("I", rbt12 + (projected - revenue), projected);
+        return {
+          growthPct,
+          revenue: projected,
+          taxAmount: c.taxAmount,
+          effectiveRate: c.effectiveRate,
+          bracket: c.bracket,
+          cogs: projected * 0.35,
+          operatingExpenses: 3000,
+          netProfit: projected - projected * 0.35 - 3000 - c.taxAmount,
+          netMargin: 0,
+        };
+      }),
+    }),
+  };
+}
 
 export const testDre = {
   period: { start: testPeriod.start, end: testPeriod.end },
@@ -147,10 +213,7 @@ export function makeTestServices(opts: FixtureOptions = {}): AccountingAiService
         stagnant: [{ id: "p3", name: "Produto C", sku: "C", stock: 7 }],
       }),
     },
-    fiscal: {
-      monthlyRevenue: async () => 11000,
-      apportionments: async () => [],
-    },
+    fiscal: makeTestFiscalPort(),
     cash: {
       listSessions: async () => [{ status: "open" }, { status: "closed" }],
     },
