@@ -18,6 +18,7 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
   situacao_fiscal: "Sobre a sua situação fiscal:",
   situacao_estoque: "Sobre o seu estoque:",
   situacao_vendas: "Sobre as suas vendas:",
+  situacao_compras: "Sobre as suas compras:",
 };
 
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {

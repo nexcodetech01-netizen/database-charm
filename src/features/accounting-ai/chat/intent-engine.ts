@@ -153,6 +153,34 @@ const RULES: IntentRule[] = [
     ],
   },
   {
+    /** Sprint 6.5 — Bella Compras: pedidos, fornecedores e reposição. */
+    intent: "situacao_compras",
+    weight: 16,
+    terms: [
+      [
+        "como estao minhas compras",
+        "como estao as compras",
+        "situacao das compras",
+        "situacao de compras",
+        "minhas compras",
+        "as compras",
+        "pedidos atrasados",
+        "pedido atrasado",
+        "tenho pedidos atrasados",
+        "pedidos pendentes",
+        "pedido pendente",
+        "aguardando recebimento",
+        "qual fornecedor compra mais",
+        "melhor fornecedor",
+        "fornecedor que mais compro",
+        "meus fornecedores",
+        "produtos precisam de reposicao",
+        "precisam de reposicao",
+        "quais produtos repor",
+      ],
+    ],
+  },
+  {
     intent: "situacao_vendas",
     weight: 15,
     terms: [
