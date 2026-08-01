@@ -5,6 +5,7 @@ import { PageLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { requirePermission } from "@/features/rbac";
+import { BellaFiscalPanel } from "@/features/accounting-ai/fiscal";
 import {
   useFiscalDashboard,
   useFiscalDocuments,
@@ -70,6 +71,8 @@ function FiscalDashboardPage() {
       <FiscalTabs />
 
       <FiscalOverviewCard />
+
+      <BellaFiscalPanel companyId={company.id} />
 
       {hasDocuments ? (
         <>

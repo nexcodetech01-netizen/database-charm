@@ -15,6 +15,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_alertas",
   ],
   pontos_atencao: ["consultar_alertas", "consultar_insights"],
+  /** Sprint 6.2 — "como está meu fiscal?": só skills já existentes. */
+  situacao_fiscal: [
+    "consultar_saude",
+    "consultar_alertas",
+    "consultar_recomendacoes",
+    "consultar_notificacoes",
+  ],
   resumo_do_dia: [
     "consultar_alertas",
     "consultar_insights",
