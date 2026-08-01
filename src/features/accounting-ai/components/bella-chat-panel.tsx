@@ -1,15 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, RotateCcw, Send } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Section } from "@/components/design";
+import { INTERACTION_TOKENS, MOTION_TOKENS, RADIUS_TOKENS, TEXT_TOKENS } from "@/design";
+import { BellaSkillCard } from "@/features/bella-ai/components/bella-skill-card";
 import { useBellaChat } from "../hooks/use-bella-chat";
 
 export interface BellaChatPanelProps {
   companyId: string;
   className?: string;
+}
+
+/** Nome amigável de uma skill técnica — apenas apresentação. */
+export function friendlySkillName(skillId: string): string {
+  const cleaned = skillId.replace(/^consultar_/, "").replace(/[_-]+/g, " ").trim();
+  if (!cleaned) return skillId;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
@@ -26,50 +34,74 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
     setValue("");
   };
 
+  const lastMessageId = useMemo(() => messages[messages.length - 1]?.id, [messages]);
+
   return (
-    <Card className={cn("rounded-2xl", className)}>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold">
-          <MessageCircle className="h-4 w-4 text-primary" aria-hidden />
+    <Section
+      title={
+        <span className="flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-primary" aria-hidden="true" />
           Conversar com a Bella
-        </CardTitle>
+        </span>
+      }
+      actions={
         <Button variant="ghost" size="sm" onClick={reset} aria-label="Reiniciar conversa">
-          <RotateCcw className="h-4 w-4" aria-hidden />
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
         </Button>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      }
+      className={className}
+    >
+      <div className="space-y-5">
         <div
           ref={scrollRef}
-          className="flex max-h-80 min-h-48 flex-col gap-3 overflow-y-auto pr-1"
+          data-testid="bella-chat-scroll"
+          className="flex max-h-96 min-h-56 scroll-smooth flex-col gap-6 overflow-y-auto pr-1"
         >
           {messages.map((m) => (
             <div
               key={m.id}
-              className={cn("flex flex-col gap-1", m.role === "user" ? "items-end" : "items-start")}
+              data-testid="bella-chat-message"
+              data-role={m.role}
+              className={cn(
+                "flex min-w-0 flex-col gap-2",
+                m.role === "user" ? "items-end" : "items-start",
+                m.id === lastMessageId && `animate-in fade-in-0 slide-in-from-bottom-1 ${MOTION_TOKENS.normal}`,
+              )}
             >
+              {/* Bloco de texto */}
               <div
                 className={cn(
-                  "max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm leading-relaxed",
+                  "max-w-[85%] whitespace-pre-line leading-relaxed",
+                  TEXT_TOKENS.sm,
                   m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted/50 text-foreground",
+                    ? cn("bg-primary px-4 py-2.5 text-primary-foreground", RADIUS_TOKENS.xl)
+                    : "text-foreground",
                 )}
               >
                 {m.text}
               </div>
+
+              {/* Bloco de skills executadas */}
               {m.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1">
+                <div
+                  data-testid="bella-chat-skills"
+                  className="grid w-full max-w-[85%] gap-2 sm:grid-cols-2"
+                >
                   {m.skills.map((s) => (
-                    <Badge key={s} variant="outline" className="text-[10px] font-normal">
-                      {s.replace("consultar_", "")}
-                    </Badge>
+                    <BellaSkillCard key={s} name={friendlySkillName(s)} result="Dados consultados" status="success" />
                   ))}
                 </div>
               )}
             </div>
           ))}
+
           {isThinking && (
-            <p className="animate-pulse text-sm text-muted-foreground">Bella está consultando…</p>
+            <p
+              data-testid="bella-chat-loading"
+              className={cn("animate-pulse text-muted-foreground", TEXT_TOKENS.sm)}
+            >
+              Bella está consultando…
+            </p>
           )}
         </div>
 
@@ -80,7 +112,7 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 rounded-full text-xs font-normal"
+              className={cn("h-8 rounded-full font-normal", TEXT_TOKENS.xs, INTERACTION_TOKENS.hover)}
               disabled={isThinking}
               onClick={() => submit(s)}
             >
@@ -104,11 +136,11 @@ export function BellaChatPanel({ companyId, className }: BellaChatPanelProps) {
             disabled={isThinking}
           />
           <Button type="submit" size="icon" disabled={isThinking || !value.trim()}>
-            <Send className="h-4 w-4" aria-hidden />
+            <Send className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Enviar</span>
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   );
 }
