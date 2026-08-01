@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Wallet } from "lucide-react";
@@ -11,6 +11,15 @@ import {
 } from "@/features/cash";
 
 import { PageLayout } from "@/components/layout";
+import {
+  useCommercialInboxTicket,
+  useCustomerCandidates,
+  useMarkInboxConverted,
+} from "@/features/whatsapp/hooks/use-commercial-inbox";
+import {
+  buildSalePrefill,
+  pickMatchingCustomer,
+} from "@/features/whatsapp/inbound/inbox-conversion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -18,13 +27,14 @@ export const Route = createFileRoute("/_authenticated/vendas_/novo")({
   beforeLoad: requirePermission("sales.view"),
   validateSearch: (search: Record<string, unknown>) => ({
     productId: typeof search.productId === "string" ? search.productId : undefined,
+    inboxId: typeof search.inboxId === "string" ? search.inboxId : undefined,
   }),
   component: NewSalePage,
 });
 
 function NewSalePage() {
   const { company, user } = Route.useRouteContext();
-  const { productId } = Route.useSearch();
+  const { productId, inboxId } = Route.useSearch();
   const navigate = useNavigate();
   const { data: openSession, isLoading } = useOpenCashSession(
     company.id,
@@ -97,5 +107,65 @@ function NewSalePage() {
   }
 
 
+  if (inboxId) {
+    return <SaleFromInbox companyId={company.id} inboxId={inboxId} />;
+  }
+
   return <SaleForm companyId={company.id} initialProductId={productId} />;
+}
+
+/**
+ * Conversão do Inbox WhatsApp → Nova Venda (Sprint 6.8.4).
+ *
+ * Reutiliza integralmente o formulário oficial de vendas: aqui só montamos o
+ * pré-preenchimento. Nenhuma venda é criada ao abrir a tela; o Inbox só é
+ * atualizado depois que o fluxo oficial confirmar a criação da venda.
+ */
+function SaleFromInbox({
+  companyId,
+  inboxId,
+}: {
+  companyId: string;
+  inboxId: string;
+}) {
+  const { data: ticket, isLoading } = useCommercialInboxTicket(inboxId);
+  const { data: candidates = [] } = useCustomerCandidates(companyId);
+  const markConverted = useMarkInboxConverted();
+
+  const prefill = useMemo(() => {
+    if (!ticket) return null;
+    const base = buildSalePrefill(ticket);
+    const customerId = pickMatchingCustomer(
+      candidates.map((c) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone ?? c.whatsapp,
+        document: c.document,
+      })),
+      base,
+    );
+    return {
+      customerId,
+      notes: base.notes,
+      items: base.items,
+    };
+  }, [ticket, candidates]);
+
+  if (isLoading || !prefill) {
+    return (
+      <PageLayout title="Nova venda" description="Carregando atendimento...">
+        <Card className="p-10 text-center text-sm text-muted-foreground">
+          Carregando...
+        </Card>
+      </PageLayout>
+    );
+  }
+
+  return (
+    <SaleForm
+      companyId={companyId}
+      prefill={prefill}
+      onSaleCreated={(saleId) => markConverted.mutate({ id: inboxId, saleId })}
+    />
+  );
 }
