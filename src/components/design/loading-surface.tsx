@@ -67,14 +67,11 @@ export function LoadingSurface({
 
   if (variant === "table") {
     return (
-      <Panel
-        data-testid="loading-surface"
-        className={className}
-      >
-        <div data-testid="loading-surface-body" data-variant={variant}>
+      <div data-testid="loading-surface" data-variant={variant} className={className}>
+        <Panel>
           <RowsSkeleton count={rows} />
-        </div>
-      </Panel>
+        </Panel>
+      </div>
     );
   }
 
