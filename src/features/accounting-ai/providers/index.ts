@@ -6,6 +6,7 @@
  *  - nenhum provider recalcula imposto, custo, estoque ou resultado;
  *  - toda leitura passa pelas portas (`AccountingAiServices`).
  */
+import type { AuditSnapshot } from "../audit/types";
 import type {
   AccountingPeriod,
   AccountingSummary,
