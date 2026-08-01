@@ -51,11 +51,20 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
         extracted = parseNfeXml(text);
       } else {
         const dataUrl = await fileToDataUrl(file);
-        const res = await parseDoc({
-          data: { kind: tab === "image" ? "image" : "pdf", dataUrl, filename: file.name },
-        });
+        // Timeout do cliente: a UI nunca fica presa em "Processando…".
+        const res = await withTimeout(
+          parseDoc({
+            data: { kind: tab === "image" ? "image" : "pdf", dataUrl, filename: file.name },
+          }),
+          CLIENT_TIMEOUT_MS,
+        );
+        if (res.error) {
+          toast.error(res.error);
+          return;
+        }
         extracted = res.items;
       }
+
 
       if (extracted.length === 0) {
         toast.warning("Nenhum item identificado no arquivo.");
