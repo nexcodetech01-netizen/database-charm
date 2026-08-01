@@ -36,7 +36,16 @@ describe("RC.0.2 — isolamento multiempresa (estático)", () => {
     const offenders = walk(SRC)
       .filter((file) => /\.server\.ts$|\.functions\.ts$|\.service\.ts$/.test(file))
       .filter((file) => !ALLOWLIST.some((allowed) => file.includes(allowed)))
-      .filter((file) => readFileSync(file, "utf8").includes("current_company_id"));
+      // Ignora comentários: só interessa leitura real do campo.
+      .filter((file) =>
+        readFileSync(file, "utf8")
+          .split("\n")
+          .some((line) => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("//") || trimmed.startsWith("*")) return false;
+            return trimmed.includes("current_company_id");
+          }),
+      );
 
     expect(offenders).toEqual([]);
   });
