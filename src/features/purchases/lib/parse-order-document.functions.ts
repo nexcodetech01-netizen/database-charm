@@ -41,12 +41,10 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
       filename: input.filename?.toString().slice(0, 120) || "pedido",
     } as Input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ items: ParsedOrderItem[]; error?: string }> => {
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada.");
-
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const model = gateway("google/gemini-2.5-flash");
+    if (!apiKey)
+      return { items: [], error: "Serviço de leitura por IA não está configurado." };
 
     const system = [
       "Você extrai itens de pedidos de compra a partir de PDFs, imagens ou notas.",
@@ -61,7 +59,7 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
     ].join("\n");
 
     const match = /^data:([^;]+);base64,(.+)$/.exec(data.dataUrl);
-    if (!match) throw new Error("Data URL inválido.");
+    if (!match) return { items: [], error: "Arquivo inválido — não foi possível ler o conteúdo." };
     const mediaType = match[1];
     const base64 = match[2];
 
@@ -81,13 +79,20 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
             { type: "image" as const, image: data.dataUrl },
           ];
 
+    // Timeout de servidor: nunca deixa a requisição pendurada sem resposta.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SERVER_TIMEOUT_MS);
+
     try {
+      const gateway = createLovableAiGatewayProvider(apiKey);
+      const model = gateway("google/gemini-2.5-flash");
       const { output } = await generateText({
         model,
         system,
         messages: [{ role: "user", content: userContent }],
         temperature: 0.1,
         output: Output.object({ schema: OutputSchema }),
+        abortSignal: controller.signal,
       });
       return { items: sanitize(output.items) };
     } catch (err) {
@@ -100,9 +105,24 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
           /* ignore */
         }
       }
-      throw err;
+      console.error("[parseOrderDocument] falha na leitura por IA", err);
+      const aborted =
+        controller.signal.aborted ||
+        (err instanceof Error && /abort|timeout/i.test(err.name + err.message));
+      return {
+        items: [],
+        error: aborted
+          ? "A leitura demorou demais e foi cancelada. Tente uma imagem menor ou mais nítida."
+          : "Não foi possível ler o arquivo agora. Tente novamente em instantes.",
+      };
+    } finally {
+      clearTimeout(timer);
     }
   });
+
+/** Timeout do lado servidor (menor que o do cliente, para responder JSON válido). */
+const SERVER_TIMEOUT_MS = 45_000;
+
 
 function sanitize(items: unknown[]): ParsedOrderItem[] {
   if (!Array.isArray(items)) return [];
