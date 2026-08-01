@@ -788,10 +788,17 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
         // Fluxo de edição: toast leve e volta para a lista de produtos.
         toast.success("Produto atualizado com sucesso!");
         navigate({ to: "/produtos" });
+      } else if (duplicateProduct) {
+        // UPSERT: produto já existia — atualizado e estoque somado.
+        toast.success(
+          `Produto já cadastrado (${duplicateProduct.name}) — dados atualizados e estoque somado.`,
+        );
+        navigate({ to: "/produtos" });
       } else {
         // Fluxo de criação: novo modal de próximos passos.
         setCreatedProduct({ id: savedId, name: basePayload.name ?? form.name });
       }
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar");
     }
