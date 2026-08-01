@@ -79,6 +79,68 @@
     0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
   --shadow-xl:
     0 20px 25px -5px rgb(15 23 42 / 0.10), 0 8px 10px -6px rgb(15 23 42 / 0.05);
+
+  /* Elevation tokens (UI.1.1) — the only four allowed levels.
+     surface → flat blocks · card → cards/painéis · floating → dropdowns/popovers ·
+     overlay → dialogs/sheets. */
+  --shadow-surface: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-floating:
+    0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
+  --shadow-overlay:
+    0 20px 25px -5px rgb(15 23 42 / 0.10), 0 8px 10px -6px rgb(15 23 42 / 0.05);
+
+  /* Motion tokens (UI.1.1) */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --animate-duration-fast: 120ms;
+  --animate-duration-normal: 200ms;
+  --animate-duration-slow: 320ms;
+
+  /* Spacing tokens (UI.1.1) — densidade de blocos */
+  --spacing-compact: 0.5rem;
+  --spacing-normal: 0.75rem;
+  --spacing-comfortable: 1rem;
+  --spacing-relaxed: 1.5rem;
+
+  /* Status tokens (UI.1.1) — cor semântica única do NexOS.
+     Nunca usar emerald/green/red/yellow/rose/amber diretamente. */
+  --color-status-info: var(--status-info);
+  --color-status-info-foreground: var(--status-info-foreground);
+  --color-status-info-surface: var(--status-info-surface);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-success-surface: var(--status-success-surface);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-warning-surface: var(--status-warning-surface);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-danger-surface: var(--status-danger-surface);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-status-neutral-surface: var(--status-neutral-surface);
+  --color-status-critical: var(--status-critical);
+  --color-status-critical-foreground: var(--status-critical-foreground);
+  --color-status-critical-surface: var(--status-critical-surface);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-pending-surface: var(--status-pending-surface);
+  --color-status-processing: var(--status-processing);
+  --color-status-processing-foreground: var(--status-processing-foreground);
+  --color-status-processing-surface: var(--status-processing-surface);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-foreground: var(--status-approved-foreground);
+  --color-status-approved-surface: var(--status-approved-surface);
+  --color-status-rejected: var(--status-rejected);
+  --color-status-rejected-foreground: var(--status-rejected-foreground);
+  --color-status-rejected-surface: var(--status-rejected-surface);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+  --color-status-cancelled-surface: var(--status-cancelled-surface);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-foreground: var(--status-draft-foreground);
+  --color-status-draft-surface: var(--status-draft-surface);
 }
 
 :root {
