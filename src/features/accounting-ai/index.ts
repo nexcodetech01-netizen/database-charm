@@ -46,3 +46,4 @@ export {
 } from "./hooks/use-bella-dashboard";
 export { useBellaChat } from "./hooks/use-bella-chat";
 export { BellaContadoraDashboard } from "./dashboard";
+export * from "./telemetry";

@@ -196,11 +196,11 @@ describe("Bella Explica · ranking e formato", () => {
   it("o texto segue Resumo → causas → dados → recomendação", async () => {
     const snapshot = buildExplanationSnapshot(await makeDataset());
     const text = describeExplanation(snapshot.explanations.lucro);
-    expect(text).toContain("Principais causas:");
-    expect(text).toContain("Dados:");
+    expect(text).toContain("Explicação:");
+    expect(text).toContain("Evidências:");
     expect(text).toContain("Recomendação:");
-    expect(text.indexOf("Principais causas:")).toBeLessThan(text.indexOf("Dados:"));
-    expect(text.indexOf("Dados:")).toBeLessThan(text.indexOf("Recomendação:"));
+    expect(text.indexOf("Explicação:")).toBeLessThan(text.indexOf("Evidências:"));
+    expect(text.indexOf("Evidências:")).toBeLessThan(text.indexOf("Recomendação:"));
   });
 
   it("ranking e indicadores degradam sem dados", () => {
@@ -283,7 +283,7 @@ describe("Bella Explica · chat", () => {
     });
     expect(answer.intent).toBe("explicar_lucro");
     expect(answer.answered).toBe(true);
-    expect(answer.text).toContain("Principais causas:");
+    expect(answer.text).toContain("Explicação:");
     expect(answer.text).toContain("Recomendação:");
   });
 

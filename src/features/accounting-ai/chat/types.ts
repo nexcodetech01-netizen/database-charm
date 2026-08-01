@@ -5,6 +5,7 @@
  * escolhe skills existentes, executa e traduz o resultado em texto.
  */
 import type { AccountingSkillId } from "../skills";
+import type { BellaAnswerTrace } from "../telemetry/types";
 
 /** Intenções reconhecidas pelo motor de intenção. */
 export type BellaIntentId =
@@ -103,6 +104,11 @@ export interface ChatAnswer {
   /** true quando ao menos uma skill respondeu com dados. */
   answered: boolean;
   amount: number | null;
+  /**
+   * Sprint 7.4 — rastreabilidade interna (snapshots, providers, KPIs,
+   * confiança e tempo). Nunca exibida ao usuário.
+   */
+  trace?: BellaAnswerTrace;
 }
 
 export type ChatRole = "user" | "bella";
