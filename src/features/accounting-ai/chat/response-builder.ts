@@ -23,6 +23,15 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
   situacao_tributaria: "Sobre a sua situação tributária:",
   simular_das: "Simulação tributária:",
   simular_faturamento: "Simulação tributária:",
+  explicar_lucro: "Sobre o seu lucro:",
+  explicar_caixa: "Sobre o seu caixa:",
+  explicar_receita: "Sobre a sua receita:",
+  explicar_despesas: "Sobre as suas despesas:",
+  explicar_impostos: "Sobre os seus impostos:",
+  explicar_ticket: "Sobre o seu ticket médio:",
+  explicar_estoque: "Sobre o seu estoque:",
+  explicar_resultado: "Sobre o resultado do período:",
+  explicar_indicadores: "Sobre os seus indicadores:",
 };
 
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {
@@ -38,6 +47,11 @@ const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   situacao_tributaria: "Os detalhes estão no módulo Fiscal › Tributário.",
   simular_das: "Simulação indicativa, calculada pelo motor oficial do Simples.",
   simular_faturamento: "Simulação indicativa, calculada pelo motor oficial do Simples.",
+  explicar_lucro: "Todos os números vêm da DRE oficial do período.",
+  explicar_receita: "Todos os números vêm da DRE e das métricas de vendas oficiais.",
+  explicar_despesas: "Todos os números vêm da DRE oficial do período.",
+  explicar_impostos: "Todos os números vêm do motor tributário oficial.",
+  explicar_resultado: "Ranking calculado sobre os números oficiais do período.",
 };
 
 export const FALLBACK_UNKNOWN =

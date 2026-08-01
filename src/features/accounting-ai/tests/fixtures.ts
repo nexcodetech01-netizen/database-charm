@@ -17,6 +17,7 @@ import type {
   AuditTransactionRow,
   FiscalPort,
 } from "../services/ports";
+import { createExplanationPort } from "../services/adapters";
 import { buildAccountingSummary } from "../providers/summary";
 import type { AccountingSummary } from "../types";
 
@@ -275,7 +276,7 @@ export interface FixtureOptions {
 }
 
 export function makeTestServices(opts: FixtureOptions = {}): AccountingAiServices {
-  return {
+  const base: Omit<AccountingAiServices, "explanation"> = {
     accounting: {
       dre: async (_companyId, period) => {
         if (period.start !== testPeriod.start) {
@@ -367,6 +368,7 @@ export function makeTestServices(opts: FixtureOptions = {}): AccountingAiService
     },
     audit: makeTestAuditPort(opts.audit),
   };
+  return { ...base, explanation: createExplanationPort(base) };
 }
 
 export function makeSummary(opts: FixtureOptions = {}): Promise<AccountingSummary> {

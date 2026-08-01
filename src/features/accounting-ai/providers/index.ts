@@ -7,6 +7,7 @@
  *  - toda leitura passa pelas portas (`AccountingAiServices`).
  */
 import type { AuditSnapshot } from "../audit/types";
+import type { ExplanationSnapshot } from "../explanation/types";
 import type {
   AccountingPeriod,
   AccountingSummary,
@@ -63,6 +64,8 @@ export interface ProviderDeps {
   simulation?: BellaTaxSimulationInput | null;
   /** Sprint 7.2 — retrato de auditoria já lido (evita releitura por pergunta). */
   auditSnapshot?: ProviderResult<AuditSnapshot> | null;
+  /** Sprint 7.3 — retrato de explicações já lido (evita releitura por pergunta). */
+  explanation?: ProviderResult<ExplanationSnapshot> | null;
 }
 
 function resolve(deps?: ProviderDeps) {

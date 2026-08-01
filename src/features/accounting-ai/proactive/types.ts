@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import type { AccountingInsight } from "../insights";
 import type { FinancialAdvice } from "../advisor";
+import type { ExplanationSnapshot } from "../explanation/types";
 
 /** Severidade da notificação (define a ordenação padrão). */
 export type NotificationSeverity = "critical" | "warning" | "success" | "info";
@@ -86,6 +87,11 @@ export interface ProactiveInput {
   insights?: readonly AccountingInsight[];
   advice?: FinancialAdvice | null;
   health?: FinancialHealth | null;
+  /**
+   * Sprint 7.3 — retrato de explicações já apurado. Opcional: quando
+   * ausente, as regras de explicação simplesmente não disparam.
+   */
+  explanation?: ExplanationSnapshot | null;
 }
 
 export interface ProactiveOptions {
@@ -102,6 +108,8 @@ export interface ProactiveContext {
   insights: readonly AccountingInsight[];
   advice: FinancialAdvice | null;
   health: FinancialHealth | null;
+  /** Sprint 7.3 — explicações já apuradas (null quando não foram lidas). */
+  explanation: ExplanationSnapshot | null;
   createdAt: string;
 }
 

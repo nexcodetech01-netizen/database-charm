@@ -17,6 +17,163 @@ export interface IntentRule {
 
 /** Cada entrada de `terms` é um conjunto de termos alternativos (OR). */
 export const INTENT_REGISTRY: readonly IntentRule[] = [
+  /* ───── Sprint 7.3 — Bella Explica: "por quê?" vence "quanto?" ───── */
+  {
+    intent: "explicar_resultado",
+    priority: 34,
+    terms: [
+      [
+        "maior impacto",
+        "qual foi o maior impacto",
+        "o que mais impactou",
+        "o que mais pesou",
+        "principais impactos",
+        "explique o resultado",
+        "explicar o resultado",
+        "por que meu resultado",
+        "porque meu resultado",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_lucro",
+    priority: 33,
+    terms: [
+      [
+        "por que meu lucro",
+        "porque meu lucro",
+        "por que o lucro",
+        "porque o lucro",
+        "por que a margem",
+        "porque a margem",
+        "explique meu lucro",
+        "explicar o lucro",
+        "motivo da queda do lucro",
+        "lucro caiu por que",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_caixa",
+    priority: 33,
+    terms: [
+      [
+        "por que meu caixa",
+        "porque meu caixa",
+        "por que o caixa",
+        "porque o caixa",
+        "por que meu saldo",
+        "porque meu saldo",
+        "explique meu caixa",
+        "explicar o caixa",
+        "cade meu dinheiro",
+        "onde foi meu dinheiro",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_receita",
+    priority: 33,
+    terms: [
+      [
+        "por que minha receita",
+        "porque minha receita",
+        "por que a receita",
+        "porque a receita",
+        "por que vendi menos",
+        "porque vendi menos",
+        "por que vendi mais",
+        "porque vendi mais",
+        "por que meu faturamento",
+        "porque meu faturamento",
+        "explique minha receita",
+        "explicar a receita",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_despesas",
+    priority: 33,
+    terms: [
+      [
+        "por que minhas despesas",
+        "porque minhas despesas",
+        "por que as despesas",
+        "porque as despesas",
+        "por que meus custos",
+        "porque meus custos",
+        "por que o cmv",
+        "porque o cmv",
+        "explique minhas despesas",
+        "explicar as despesas",
+        "gastei mais por que",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_impostos",
+    priority: 33,
+    terms: [
+      [
+        "por que meu das",
+        "porque meu das",
+        "por que o das",
+        "porque o das",
+        "por que meu imposto",
+        "porque meu imposto",
+        "por que os impostos",
+        "porque os impostos",
+        "explique meu das",
+        "explicar o das",
+        "das aumentou",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_ticket",
+    priority: 33,
+    terms: [
+      [
+        "por que meu ticket",
+        "porque meu ticket",
+        "por que o ticket",
+        "porque o ticket",
+        "explique o ticket",
+        "explicar o ticket medio",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_estoque",
+    priority: 33,
+    terms: [
+      [
+        "por que meu estoque",
+        "porque meu estoque",
+        "por que o estoque",
+        "porque o estoque",
+        "explique meu estoque",
+        "explicar o estoque",
+      ],
+    ],
+  },
+  {
+    intent: "explicar_indicadores",
+    priority: 32,
+    terms: [
+      [
+        "explique meus indicadores",
+        "explicar os indicadores",
+        "me explique os numeros",
+        "explique os numeros",
+        "por que meus numeros",
+        "porque meus numeros",
+        "me explica",
+        "pode explicar",
+        "explique",
+      ],
+    ],
+  },
   {
     /** Sprint 7.2 — auditoria: pergunta aberta sobre inconsistências. */
     intent: "auditoria_geral",

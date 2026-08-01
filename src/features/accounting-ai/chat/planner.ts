@@ -99,6 +99,16 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_saude_operacional",
     "consultar_inconsistencias",
   ],
+  /** Sprint 7.3 — Bella Explica: explicações sobre dados oficiais. */
+  explicar_lucro: ["explicar_lucro"],
+  explicar_caixa: ["explicar_caixa"],
+  explicar_receita: ["explicar_receita"],
+  explicar_despesas: ["explicar_despesas"],
+  explicar_impostos: ["explicar_impostos"],
+  explicar_ticket: ["explicar_ticket"],
+  explicar_estoque: ["explicar_estoque"],
+  explicar_resultado: ["explicar_resultado"],
+  explicar_indicadores: ["explicar_indicadores"],
 };
 
 const REASONS: Partial<Record<AccountingSkillId, string>> = {
@@ -120,6 +130,15 @@ const REASONS: Partial<Record<AccountingSkillId, string>> = {
   auditar_empresa: "Auditoria completa dos dados oficiais",
   consultar_inconsistencias: "Inconsistências encontradas",
   consultar_saude_operacional: "Saúde operacional da empresa",
+  explicar_lucro: "Explicação da variação do lucro",
+  explicar_caixa: "Explicação da posição de caixa",
+  explicar_receita: "Explicação da variação da receita",
+  explicar_despesas: "Explicação da variação das despesas",
+  explicar_impostos: "Explicação do imposto apurado",
+  explicar_ticket: "Explicação do ticket médio",
+  explicar_estoque: "Explicação da situação do estoque",
+  explicar_resultado: "Ranking dos maiores impactos do período",
+  explicar_indicadores: "Panorama explicado dos indicadores",
 };
 
 export interface PlanOptions {

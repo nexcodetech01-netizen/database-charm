@@ -9,6 +9,7 @@
 import type { ProviderDeps } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
 import { taxRegimeProvider } from "../tax/provider";
+import { explanationProvider } from "../explanation/provider";
 import { detectIntent } from "./intent-engine";
 import { planIntent } from "./planner";
 import { executePlan } from "./router";
@@ -72,6 +73,26 @@ export async function askBella(
   ]);
   if (!deps.taxSnapshot && plan.steps.some((s) => TAX_SKILLS.has(s.skillId))) {
     deps.taxSnapshot = await taxRegimeProvider(companyId, deps);
+  }
+
+  // Sprint 7.3 — o retrato de explicações também é lido UMA vez por
+  // pergunta. Ele apenas compara números já apurados pelos motores.
+  const EXPLAIN_SKILLS = new Set([
+    "explicar_lucro",
+    "explicar_caixa",
+    "explicar_receita",
+    "explicar_despesas",
+    "explicar_impostos",
+    "explicar_ticket",
+    "explicar_estoque",
+    "explicar_resultado",
+    "explicar_indicadores",
+  ]);
+  if (!deps.explanation && plan.steps.some((s) => EXPLAIN_SKILLS.has(s.skillId))) {
+    if (!deps.taxSnapshot) {
+      deps.taxSnapshot = await taxRegimeProvider(companyId, deps);
+    }
+    deps.explanation = await explanationProvider(companyId, deps);
   }
 
   const outcomes = await executePlan(plan, companyId, { deps });

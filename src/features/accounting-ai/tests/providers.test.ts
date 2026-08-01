@@ -16,6 +16,7 @@ import {
   ticketProvider,
 } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
+import { createExplanationPort } from "../services/adapters";
 import { makeTestAuditPort, makeTestFiscalPort } from "./fixtures";
 
 const period = { start: "2026-01-01", end: "2026-01-31", label: "01/2026" };
@@ -63,7 +64,7 @@ const kpis = {
 };
 
 function makeServices(overrides: Partial<AccountingAiServices> = {}): AccountingAiServices {
-  return {
+  const built = {
     audit: makeTestAuditPort(),
     accounting: {
       dre: async () => dre,
@@ -139,6 +140,10 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
     cash: {
       listSessions: async () => [{ status: "open" }, { status: "closed" }],
     },
+  };
+  return {
+    ...built,
+    explanation: createExplanationPort(built),
     ...overrides,
   };
 }

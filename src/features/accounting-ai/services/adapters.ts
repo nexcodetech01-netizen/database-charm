@@ -22,6 +22,7 @@ import type {
   AccountingPort,
   AuditPort,
   CashPort,
+  ExplanationPort,
   FinancePort,
   FiscalPort,
   InventoryPort,
@@ -226,13 +227,63 @@ export const auditAdapter: AuditPort = {
   },
 };
 
+/**
+ * Sprint 7.3 — porta de explicações. É apenas uma COMPOSIÇÃO de leituras
+ * já existentes (DRE, KPIs, métricas de vendas, relatório de clientes).
+ * Nenhum indicador novo é calculado aqui.
+ */
+export function createExplanationPort(
+  services: Pick<AccountingAiServices, "accounting" | "sales">,
+): ExplanationPort {
+  return {
+    async periodFacts(companyId, period) {
+      const [dre, kpis, metrics, customers] = await Promise.all([
+        services.accounting.dre(companyId, period),
+        services.accounting.kpis(companyId, period),
+        services.sales.metrics(companyId, period),
+        services.sales.customers(companyId, period).catch(() => null),
+      ]);
+      return {
+        period,
+        grossRevenue: dre.grossRevenue,
+        deductions: dre.deductions,
+        netRevenue: dre.netRevenue,
+        cogs: dre.cogs,
+        operatingExpenses: dre.operatingExpenses,
+        financialExpenses: dre.financialExpenses,
+        otherExpenses: dre.otherExpenses,
+        grossProfit: dre.grossProfit,
+        operatingResult: dre.operatingResult,
+        netProfit: dre.netProfit,
+        grossMargin: dre.grossMargin,
+        netMargin: dre.netMargin,
+        cogsRatio: kpis.cogsRatio,
+        expenseRatio: kpis.expenseRatio,
+        averageTicket: metrics.averageTicket,
+        salesCount: metrics.monthCount,
+        paidTotal: metrics.paidTotal,
+        customersActive: customers?.metrics.active ?? 0,
+        customersNew: customers?.metrics.newInRange ?? 0,
+        customersRecurring: customers?.metrics.recurring ?? 0,
+      };
+    },
+  };
+}
+
+export const explanationAdapter: ExplanationPort = createExplanationPort({
+  accounting: accountingAdapter,
+  sales: salesAdapter,
+});
+
 /** Bundle padrão de produção. Testes injetam fakes com o mesmo shape. */
 export const accountingAiServices: AccountingAiServices = {
   accounting: accountingAdapter,
   finance: financeAdapter,
+
   sales: salesAdapter,
   inventory: inventoryAdapter,
   fiscal: fiscalAdapter,
   cash: cashAdapter,
   audit: auditAdapter,
+  explanation: explanationAdapter,
 };

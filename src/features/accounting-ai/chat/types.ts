@@ -47,6 +47,15 @@ export type BellaIntentId =
   | "auditoria_geral"
   | "consultar_inconsistencias"
   | "consultar_saude_operacional"
+  | "explicar_lucro"
+  | "explicar_caixa"
+  | "explicar_receita"
+  | "explicar_despesas"
+  | "explicar_impostos"
+  | "explicar_ticket"
+  | "explicar_estoque"
+  | "explicar_resultado"
+  | "explicar_indicadores"
   | "desconhecida";
 
 export interface IntentMatch {
