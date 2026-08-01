@@ -62,8 +62,11 @@ export interface BellaContadoraDashboardProps {
 }
 
 export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardProps) {
-  const { data, isLoading } = useAccountingAiSummary(companyId);
-  const s = data as AccountingSummary | undefined;
+  // Sprint 7.2.1: uma única leitura resolve summary + tributário + auditoria
+  // em paralelo (Promise.all no BellaContext), sem waterfalls entre blocos.
+  const { summary, tax, audit, isLoading } = useBellaDashboard(companyId);
+  const s = (summary ?? undefined) as AccountingSummary | undefined;
+
 
   const trends = s?.trends.data;
   const health = s?.health.data;
