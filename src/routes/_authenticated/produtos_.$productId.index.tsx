@@ -746,9 +746,8 @@ function ProductDetailPage() {
                 })}
               </ol>
             )}
-          </FormSection>
-        </CardContent>
-      </Card>
+      </Section>
+
 
       {/* Histórico */}
       <Section
