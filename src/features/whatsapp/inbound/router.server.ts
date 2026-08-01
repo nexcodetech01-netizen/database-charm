@@ -19,6 +19,7 @@ import { sendWhatsAppText, sendWhatsAppImage } from "@/lib/whatsapp.server";
 import { handleCatalogTurn } from "./catalog-nav.server";
 import { handlePhotoTurn } from "./product-photos.server";
 import { handleRecommendationTurn } from "./product-recommendations.server";
+import { handleUpsellTurn } from "./product-upsell.server";
 import type { CatalogNavState } from "./catalog-nav";
 
 
