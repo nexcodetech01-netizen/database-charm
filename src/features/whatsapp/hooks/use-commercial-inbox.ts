@@ -30,6 +30,18 @@ export interface CommercialInboxTicket {
   origin: string;
   status: CommercialInboxStatus;
   created_at: string;
+  full_name: string | null;
+  person_type: "pf" | "pj" | null;
+  cpf: string | null;
+  cnpj: string | null;
+  birth_date: string | null;
+  zip_code: string | null;
+  state: string | null;
+  city: string | null;
+  district: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
 }
 
 const KEY = ["whatsapp-commercial-inbox"] as const;
