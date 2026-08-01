@@ -178,6 +178,45 @@
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
+  /* Status (UI.1.1) — base / texto / superfície suave */
+  --status-info: #2563eb;
+  --status-info-foreground: #ffffff;
+  --status-info-surface: #eff6ff;
+  --status-success: #16a34a;
+  --status-success-foreground: #ffffff;
+  --status-success-surface: #ecfdf5;
+  --status-warning: #b45309;
+  --status-warning-foreground: #ffffff;
+  --status-warning-surface: #fffbeb;
+  --status-danger: #dc2626;
+  --status-danger-foreground: #ffffff;
+  --status-danger-surface: #fef2f2;
+  --status-neutral: #64748b;
+  --status-neutral-foreground: #ffffff;
+  --status-neutral-surface: #f1f5f9;
+  --status-critical: #b91c1c;
+  --status-critical-foreground: #ffffff;
+  --status-critical-surface: #fee2e2;
+  --status-pending: #b45309;
+  --status-pending-foreground: #ffffff;
+  --status-pending-surface: #fffbeb;
+  --status-processing: #0ea5e9;
+  --status-processing-foreground: #ffffff;
+  --status-processing-surface: #f0f9ff;
+  --status-approved: #16a34a;
+  --status-approved-foreground: #ffffff;
+  --status-approved-surface: #ecfdf5;
+  --status-rejected: #dc2626;
+  --status-rejected-foreground: #ffffff;
+  --status-rejected-surface: #fef2f2;
+  --status-cancelled: #475569;
+  --status-cancelled-foreground: #ffffff;
+  --status-cancelled-surface: #f1f5f9;
+  --status-draft: #94a3b8;
+  --status-draft-foreground: #0f172a;
+  --status-draft-surface: #f8fafc;
+
+
   /* Structural */
   --border: #e2e8f0;
   --input: #e2e8f0;
