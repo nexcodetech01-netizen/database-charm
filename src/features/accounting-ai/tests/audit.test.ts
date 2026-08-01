@@ -64,7 +64,15 @@ describe("Sprint 7.2 — motor de auditoria", () => {
     const snapshot = run({
       products: [makeAuditProduct()],
       customers: [makeAuditCustomer()],
-      transactions: [makeAuditTransaction()],
+      transactions: [
+        makeAuditTransaction(),
+        makeAuditTransaction({
+          id: "t-pro",
+          type: "expense",
+          description: "Pró-labore fevereiro",
+          referenceId: null,
+        }),
+      ],
       sales: [makeAuditSale()],
       cashSessions: [makeAuditCashSession()],
     });
@@ -239,7 +247,7 @@ describe("Sprint 7.2 — verificações comerciais", () => {
     const snapshot = run({
       customers: [
         makeAuditCustomer({ id: "pf", document: null }),
-        makeAuditCustomer({ id: "pj", name: "Loja X LTDA", document: null }),
+        makeAuditCustomer({ id: "pj", name: "Loja X LTDA", document: "123456789012" }),
       ],
     });
     const ids = findingIds(snapshot);
