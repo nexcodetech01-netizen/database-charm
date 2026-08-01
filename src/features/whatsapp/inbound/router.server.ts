@@ -18,6 +18,7 @@ import { bellaAIGateway } from "@/features/bella-ai/ai/gateway";
 import { sendWhatsAppText, sendWhatsAppImage } from "@/lib/whatsapp.server";
 import { handleCatalogTurn } from "./catalog-nav.server";
 import { handlePhotoTurn } from "./product-photos.server";
+import { handleRecommendationTurn } from "./product-recommendations.server";
 import type { CatalogNavState } from "./catalog-nav";
 
 
