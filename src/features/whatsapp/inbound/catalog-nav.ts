@@ -26,8 +26,8 @@ export interface CatalogNavState {
   /** Ordem exibida na última listagem de categorias (para escolha por número). */
   categoryIds?: string[];
   categoryId?: string;
-  /** Pedido conversacional (só estado da conversa, nada é gravado no ERP). */
-  cart?: import("./cart").CartLine[];
+  /** Últimos produtos mostrados (para entender "quero essa"). */
+  lastProductIds?: string[];
 }
 
 const ICON_EMOJI: Record<string, string> = {
