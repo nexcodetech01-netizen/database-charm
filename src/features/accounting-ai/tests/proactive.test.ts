@@ -207,7 +207,7 @@ describe("proactive · engine e regras", () => {
 
   it("registro cobre todas as regras executadas", () => {
     expect(PROACTIVE_REGISTRY).toHaveLength(PROACTIVE_RULE_COUNT);
-    expect(PROACTIVE_RULES).toHaveLength(17);
+    expect(PROACTIVE_RULES).toHaveLength(21);
     expect(listProactiveRuleIds()).toContain("retirada_risco");
     expect(getProactiveRule("caixa_critico")?.category).toBe("caixa");
     expect(getProactiveRule("inexistente")).toBeUndefined();
