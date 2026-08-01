@@ -162,7 +162,7 @@ export const productsService = {
         if (movError) throw movError;
       }
 
-      return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as typeof updated;
+      return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as unknown as typeof updated;
     }
 
     const { data, error } = await supabase
