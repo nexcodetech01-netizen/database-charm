@@ -85,7 +85,7 @@ const ACTION_LINKS: Partial<Record<BellaPurchasesActionId, BellaPurchasesLinkId>
   comprar_estoque: "abrir_compras",
   revisar_mix: "abrir_produtos",
   revisar_preco: "abrir_produtos",
-  revisar_custos: "abrir_compras",
+  negociar_prazos: "abrir_fornecedores",
   reduzir_despesas: "abrir_compras",
   acompanhar: "abrir_compras",
   conferir_dados: "abrir_relatorios",
