@@ -15,6 +15,7 @@ const OPENERS: Partial<Record<BellaIntentId, string>> = {
   consultar_prolabore: "Sobre o pró-labore:",
   consultar_reserva: "Sobre a sua reserva:",
   consultar_saude: "Sobre a saúde financeira:",
+  situacao_fiscal: "Sobre a sua situação fiscal:",
 };
 
 const CLOSERS: Partial<Record<BellaIntentId, string>> = {
@@ -22,6 +23,7 @@ const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   pontos_atencao: "Posso sugerir ações para qualquer um deles.",
   resumo_do_dia: "Posso detalhar qualquer um desses pontos.",
   consultar_retirada: "Se quiser, posso conferir a reserva recomendada também.",
+  situacao_fiscal: "Você pode ver os detalhes no módulo Fiscal.",
 };
 
 export const FALLBACK_UNKNOWN =
