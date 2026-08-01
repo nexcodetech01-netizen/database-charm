@@ -113,7 +113,6 @@ export async function handleCatalogTurn(args: {
   const inCatalog = Boolean(state);
   const phone = args.phone ?? "unknown";
   const session: CartSession = getCartSession(companyId, phone);
-  const keep = (next: CatalogNavState | null): CatalogNavState | null => next;
 
   // Comandos do pedido conversacional (ver / limpar / remover).
   const command = parseCartCommand(text);
@@ -157,11 +156,10 @@ export async function handleCatalogTurn(args: {
     const categories = await listCategoriesWithActiveProducts(db, companyId);
     return {
       text: formatCategoriesMessage(categories),
-      state: keep(
+      state:
         categories.length > 0
           ? { step: "categories", categoryIds: categories.map((c) => c.id) }
           : null,
-      ),
     };
   }
 
