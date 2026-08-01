@@ -60,6 +60,8 @@ export interface ProviderDeps {
   taxSnapshot?: ProviderResult<BellaTaxSnapshot> | null;
   /** Sprint 7.1 — parâmetros de simulação tributária vindos do chat/UI. */
   simulation?: BellaTaxSimulationInput | null;
+  /** Sprint 7.2 — retrato de auditoria já lido (evita releitura por pergunta). */
+  auditSnapshot?: ProviderResult<AuditSnapshot> | null;
 }
 
 function resolve(deps?: ProviderDeps) {

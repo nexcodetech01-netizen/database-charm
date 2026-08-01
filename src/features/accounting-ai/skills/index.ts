@@ -40,6 +40,12 @@ import {
   describeRbt12,
   describeSimulation,
 } from "../tax/selectors";
+import { auditProvider } from "../audit/provider";
+import {
+  describeAudit,
+  describeFindings,
+  describeOperationalHealth,
+} from "../audit/selectors";
 
 export type AccountingSkillId =
   | "consultar_lucro"
@@ -67,7 +73,10 @@ export type AccountingSkillId =
   | "consultar_aliquota"
   | "consultar_faixa"
   | "consultar_vencimento_das"
-  | "simular_tributos";
+  | "simular_tributos"
+  | "auditar_empresa"
+  | "consultar_inconsistencias"
+  | "consultar_saude_operacional";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -533,6 +542,53 @@ export const simularTributosSkill: AccountingSkill = {
   },
 };
 
+/* ───────────── Sprint 7.2 — skills de auditoria (somente leitura) ───────────── */
+
+/** Lê o retrato de auditoria uma única vez por pergunta. */
+async function readAuditSnapshot(companyId: string, deps?: ProviderDeps) {
+  return deps?.auditSnapshot ?? (await auditProvider(companyId, deps));
+}
+
+export const auditarEmpresaSkill: AccountingSkill = {
+  id: "auditar_empresa",
+  name: "Auditar empresa",
+  description: "Auditoria completa de inconsistências (nunca corrige dados).",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readAuditSnapshot(companyId, deps);
+    if (!res.data) return empty("auditoria");
+    return { ok: true, text: describeAudit(res.data), data: res.data };
+  },
+};
+
+export const consultarInconsistenciasSkill: AccountingSkill = {
+  id: "consultar_inconsistencias",
+  name: "Consultar inconsistências",
+  description: "Lista as inconsistências encontradas pela auditoria.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readAuditSnapshot(companyId, deps);
+    if (!res.data) return empty("inconsistências");
+    return { ok: true, text: describeFindings(res.data), data: res.data.findings };
+  },
+};
+
+export const consultarSaudeOperacionalSkill: AccountingSkill = {
+  id: "consultar_saude_operacional",
+  name: "Consultar saúde operacional",
+  description: "Score de saúde operacional derivado da auditoria.",
+  readOnly: true,
+  async run(companyId, deps) {
+    const res = await readAuditSnapshot(companyId, deps);
+    if (!res.data) return empty("saúde operacional");
+    return {
+      ok: true,
+      text: describeOperationalHealth(res.data),
+      data: res.data.health,
+    };
+  },
+};
+
 export const accountingAiSkills: AccountingSkill[] = [
   consultarLucroSkill,
   consultarFluxoSkill,
@@ -560,6 +616,9 @@ export const accountingAiSkills: AccountingSkill[] = [
   consultarFaixaSkill,
   consultarVencimentoDasSkill,
   simularTributosSkill,
+  auditarEmpresaSkill,
+  consultarInconsistenciasSkill,
+  consultarSaudeOperacionalSkill,
 ];
 
 
