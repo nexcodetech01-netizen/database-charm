@@ -475,8 +475,59 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  // 3c-bis) Fotos do produto em contexto (imagens já cadastradas).
+  const photoTurn = await handlePhotoTurn({
+    db,
+    storage: (
+      await import("@/integrations/supabase/client.server")
+    ).supabaseAdmin.storage as never,
+    companyId: tenant.companyId,
+    phone: msg.phone,
+    text: msg.text,
+    state: (savedState as Record<string, unknown>).catalog as CatalogNavState | null | undefined,
+  });
+  if (photoTurn) {
+    for (const url of photoTurn.images) {
+      const imgSent = await sendWhatsAppImage({ to: msg.phone, imageUrl: url });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: imgSent.waMessageId,
+        text: "[imagem do produto]",
+        status: imgSent.ok ? "sent" : "failed",
+        error: imgSent.error,
+        processing_ms: Date.now() - startedAt,
+        provider: "catalog-nav",
+        skill_id: "catalog.photos",
+      });
+    }
+    const photoSent = await sendWhatsAppText({ to: msg.phone, text: photoTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: photoSent.waMessageId,
+      text: photoTurn.text,
+      status: photoSent.ok ? "sent" : "failed",
+      error: photoSent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.photos",
+    });
+    if (photoSent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
+  }
 
   // 3d) Navegação do catálogo: categorias antes dos produtos.
+
   const catalogTurn = await handleCatalogTurn({
     phone: msg.phone,
     db,
