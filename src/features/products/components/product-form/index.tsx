@@ -627,10 +627,25 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       }
     }
 
+    // UPSERT — em criação, verifica se já existe produto equivalente
+    // (Nome OU SKU OU Código de barras). Se existir, reaproveitamos o SKU
+    // do registro existente: nunca geramos um SKU novo para o mesmo produto.
+    let duplicateProduct: { id: string; name: string; sku: string | null } | null = null;
+    if (!product && companyId) {
+      const { findDuplicateProduct } = await import("../../lib/product-dedupe");
+      duplicateProduct = await findDuplicateProduct(companyId, {
+        name: form.name,
+        sku: form.sku,
+        barcode: form.barcode,
+      });
+    }
+
     // Fallback: se o usuário deixou o SKU em branco, gera automaticamente
     // no momento de salvar (garante rastreabilidade em Mercado Livre e afins).
     let effectiveSku = form.sku.trim();
-    if (!effectiveSku && form.name.trim() && companyId) {
+    if (duplicateProduct?.sku) {
+      effectiveSku = duplicateProduct.sku;
+    } else if (!effectiveSku && form.name.trim() && companyId) {
       const generated = await generateNextSku(companyId, form.name, categoryName);
       if (generated) effectiveSku = generated;
     }
@@ -638,7 +653,8 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     // Verificação anti-colisão: revalida contra o banco e re-gera incrementando
     // o sufixo numérico até encontrar um SKU livre (protege contra corridas
     // entre múltiplos cadastros simultâneos e edições concorrentes).
-    if (effectiveSku && companyId) {
+    // Não se aplica quando o produto já existe (fluxo de UPSERT).
+    if (effectiveSku && companyId && !duplicateProduct) {
       const bumpSuffix = (sku: string): string => {
         const m = sku.match(/^(.*?)-(\d+)$/);
         if (m) {
@@ -669,10 +685,11 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos");
       return;
     }
-    if (companyId && (await isSkuTaken(companyId, effectiveSku, product?.id))) {
+    if (companyId && !duplicateProduct && (await isSkuTaken(companyId, effectiveSku, product?.id))) {
       toast.error("Este SKU já está em uso por outro produto");
       return;
     }
+
     // Validação explícita do Preço de Venda — bloqueia salvamento e mantém o
     // formulário aberto até que o usuário informe um valor numérico válido.
     const parsedPrice = num(form.price);
@@ -771,10 +788,17 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
         // Fluxo de edição: toast leve e volta para a lista de produtos.
         toast.success("Produto atualizado com sucesso!");
         navigate({ to: "/produtos" });
+      } else if (duplicateProduct) {
+        // UPSERT: produto já existia — atualizado e estoque somado.
+        toast.success(
+          `Produto já cadastrado (${duplicateProduct.name}) — dados atualizados e estoque somado.`,
+        );
+        navigate({ to: "/produtos" });
       } else {
         // Fluxo de criação: novo modal de próximos passos.
         setCreatedProduct({ id: savedId, name: basePayload.name ?? form.name });
       }
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar");
     }

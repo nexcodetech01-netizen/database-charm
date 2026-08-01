@@ -108,11 +108,63 @@ export const productsService = {
     return data;
   },
 
+  /**
+   * Criação com UPSERT: se já existir produto com o mesmo Nome, SKU ou
+   * Código de Barras na empresa, o registro existente é atualizado
+   * (custo/preço/dados do novo lançamento) e a quantidade informada entra
+   * como movimentação de estoque — nunca é criado um duplicado.
+   */
   async create(input: ProductInsert) {
     const parsed = productCreateSchema.safeParse(input);
     if (!parsed.success) {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
     }
+
+    const { findDuplicateProduct } = await import("../lib/product-dedupe");
+    const duplicate = await findDuplicateProduct(input.company_id, {
+      name: input.name,
+      sku: input.sku ?? null,
+      barcode: (input as { barcode?: string | null }).barcode ?? null,
+    });
+
+    if (duplicate) {
+      const { stock, company_id: _companyId, sku, ...rest } = input as ProductInsert & {
+        stock?: number | null;
+      };
+
+      // Atualiza o registro existente com os dados do novo lançamento.
+      // O SKU original é preservado (não geramos SKU novo para o mesmo produto).
+      const patch = {
+        ...rest,
+        ...(duplicate.sku ? {} : { sku: sku ?? null }),
+      } as ProductUpdate;
+
+      const { data: updated, error: updateError } = await supabase
+        .from("products")
+        .update(patch)
+        .eq("id", duplicate.id)
+        .select()
+        .single();
+      if (updateError) throw updateError;
+
+      // Estoque: sempre pelo motor oficial (inventory_movements).
+      const qty = Number(stock ?? 0);
+      if (Number.isFinite(qty) && qty > 0) {
+        const { error: movError } = await supabase.from("inventory_movements").insert({
+          company_id: input.company_id,
+          product_id: duplicate.id,
+          quantity: qty,
+          type: "in",
+          source: "product_upsert",
+          reason: "Entrada por cadastro/importação de produto existente",
+          movement_date: new Date().toISOString(),
+        });
+        if (movError) throw movError;
+      }
+
+      return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as unknown as typeof updated;
+    }
+
     const { data, error } = await supabase
       .from("products")
       .insert(input)
@@ -121,6 +173,7 @@ export const productsService = {
     if (error) throw error;
     return data;
   },
+
 
 
   async update(id: string, input: ProductUpdate) {

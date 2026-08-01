@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.find_existing_product(uuid, text, text, text) FROM authenticated, anon, public;
+GRANT EXECUTE ON FUNCTION public.find_existing_product(uuid, text, text, text) TO service_role;

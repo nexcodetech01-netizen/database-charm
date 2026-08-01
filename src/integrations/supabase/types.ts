@@ -6455,6 +6455,15 @@ export type Database = {
         Args: { _company_id: string; _end: string; _start: string }
         Returns: Json
       }
+      find_existing_product: {
+        Args: {
+          _barcode?: string
+          _company_id: string
+          _name: string
+          _sku?: string
+        }
+        Returns: string
+      }
       fiscal_allocate_nfe_number: {
         Args: {
           _company_id: string
