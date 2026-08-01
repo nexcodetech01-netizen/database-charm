@@ -57,12 +57,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  PageLayout,
-  KpiSection,
-  KpiCard,
-  FormSection,
-} from "@/components/layout";
+import { KpiSection, KpiCard } from "@/components/layout";
+import { EntityHeader, Section, LoadingSurface } from "@/components/design";
+
 import {
   ProductStatusBadge,
   useProduct,
