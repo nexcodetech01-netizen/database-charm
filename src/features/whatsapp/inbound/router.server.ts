@@ -480,6 +480,37 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
+  const commercialTurn = await handleCommercialConfirmationTurn({
+    db,
+    companyId: tenant.companyId,
+    phone: msg.phone,
+    text: msg.text,
+  });
+  if (commercialTurn) {
+    const sent = await sendWhatsAppText({ to: msg.phone, text: commercialTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: sent.waMessageId,
+      text: commercialTurn.text,
+      status: sent.ok ? "sent" : "failed",
+      error: sent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.commercial_inbox",
+    });
+    if (sent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
+  }
+
   // 3c-pre) Fechamento conversacional (somente memória: sem venda/estoque/ERP).
   const checkoutTurn = handleCheckoutTurn({
     companyId: tenant.companyId,
