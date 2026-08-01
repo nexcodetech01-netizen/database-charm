@@ -22,6 +22,7 @@ import {
   HeartPulse,
   Activity,
   MonitorSmartphone,
+  HeartHandshake,
   Zap,
 
 } from "lucide-react";
