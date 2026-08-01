@@ -58,7 +58,19 @@ export function ConversationView({
     if (!value) return;
     try {
       if (tab === "reply") {
-        await mutations.sendMessage.mutateAsync({ conversationId: conv.id, text: value });
+        const result = await mutations.sendMessage.mutateAsync({
+          conversationId: conv.id,
+          text: value,
+        });
+        if (result && result.ok === false) {
+          // Integração pendente: aviso amigável, texto preservado no campo.
+          toast.warning("Configuração do WhatsApp pendente", {
+            description:
+              result.message ??
+              "Cadastre as credenciais da Cloud API para habilitar o envio.",
+          });
+          return;
+        }
         toast.success("Mensagem enviada.");
       } else {
         await mutations.addNote.mutateAsync({ conversationId: conv.id, text: value });
