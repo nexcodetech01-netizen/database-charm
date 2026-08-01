@@ -100,12 +100,19 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Falha ao processar arquivo.");
+      toast.error(
+        err instanceof TimeoutError
+          ? "A leitura do arquivo demorou demais. Tente novamente com um arquivo menor."
+          : err instanceof Error && err.message
+            ? err.message
+            : "Falha ao processar arquivo. Tente novamente.",
+      );
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
+
 
   const accept =
     tab === "pdf" ? "application/pdf" : tab === "xml" ? ".xml,text/xml,application/xml" : "image/*";
