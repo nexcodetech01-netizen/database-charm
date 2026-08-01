@@ -1,52 +1,67 @@
 /**
- * Pedido conversacional da Bella (WhatsApp inbound).
+ * Pedido conversacional da Bella (WhatsApp inbound) — parsing e formatação.
  *
- * Camada PURA: interpreta a intenção de adicionar/remover/ver o pedido e
- * formata as mensagens. NÃO cria venda, não altera estoque, preço, cadastro
- * nem qualquer motor do ERP — o pedido vive apenas no estado da conversa.
+ * Camada PURA: interpreta a intenção (adicionar / remover / ver / limpar) e
+ * formata as mensagens. O estado do carrinho vive em `cart-session.ts`.
+ * NÃO cria venda, não reserva estoque, não altera financeiro, CRM, catálogo,
+ * cadastro nem qualquer motor oficial do ERP.
  */
 import { normalize } from "./catalog-nav";
+import type { CartSession, CartSessionItem } from "./cart-session";
 import type { ProductSearchItem } from "./product-search";
-
-export interface CartLine {
-  productId: string;
-  name: string;
-  price: number;
-  qty: number;
-}
 
 export type CartCommand =
   | { kind: "view" }
   | { kind: "clear" }
-  | { kind: "remove"; text: string }
+  | { kind: "remove"; text: string | null; ordinal: number | null }
   | null;
 
 const VIEW_RE =
-  /\b(ver|meu|mostrar?|qual)\s+(o\s+)?(pedido|carrinho|sacola)\b|^\s*(pedido|carrinho|sacola)\s*$/;
+  /\b(ver|mostrar?|mostra|meu|qual)\s+(o\s+|meu\s+)?(pedido|carrinho|sacola)\b|^\s*(pedido|carrinho|sacola)\s*$/;
 const CLEAR_RE =
-  /\b(limpar|zerar|cancelar|esvaziar|apagar)\s+(o\s+|meu\s+)?(pedido|carrinho|sacola)\b/;
+  /\b(limpar|limpa|zerar|cancelar|esvaziar|apagar)\s+(o\s+|meu\s+)?(pedido|carrinho|sacola)\b/;
 const REMOVE_RE =
-  /\b(remover|remove|tirar?|tire|retirar|excluir)\s+(o\s+|a\s+|os\s+|as\s+)?(.+)$/;
+  /\b(remover|remove|tira|tirar|tire|retirar|excluir|exclui)\s+(o\s+|a\s+|os\s+|as\s+)?(.*)$/;
 
 const ADD_RE =
-  /\b(quero|queria|vou querer|me ve|me da|adiciona(r)?|inclui(r)?|coloca(r)?|manda|pode ser|leva(r)?)\b/;
+  /\b(quero|queria|vou querer|me ve|me da|adiciona(r)?|adicione|inclui(r)?|coloca(r)?|manda|pode ser|pode adicionar|leva(r)?|levo|aceito|fico com)\b/;
 
-/** Quantidade explícita: "2 bolsas", "adiciona 3 ...", "x2". */
+/** "essa", "esse", "essa aí", "esta" → refere-se ao último produto mostrado. */
+const ANAPHORA_RE = /\b(essa|esse|esta|este|isso|ela|ele|a mesma|o mesmo)\b/;
+
+const ORDINALS: Record<string, number> = {
+  primeira: 1, primeiro: 1, segunda: 2, segundo: 2, terceira: 3, terceiro: 3,
+  quarta: 4, quarto: 4, quinta: 5, quinto: 5, sexta: 6, sexto: 6,
+};
+
+const NUMBER_WORDS: Record<string, number> = {
+  um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5,
+  seis: 6, sete: 7, oito: 8, nove: 9, dez: 10,
+};
+
+/** Quantidade explícita: "2 bolsas", "quero duas", "x2". */
 export function parseQuantity(text: string): number {
   const t = normalize(text);
-  const words: Record<string, number> = {
-    um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5,
-    seis: 6, sete: 7, oito: 8, nove: 9, dez: 10,
-  };
   const digits = t.match(/(?:^|\s)x?\s*(\d{1,2})(?:\s|$)/);
   if (digits) {
     const n = Number(digits[1]);
     if (n >= 1 && n <= 99) return n;
   }
-  for (const [w, n] of Object.entries(words)) {
-    if (new RegExp(`(^|\\s)${w}(\\s|$)`).test(t) && n > 1) return n;
+  for (const [w, n] of Object.entries(NUMBER_WORDS)) {
+    if (n > 1 && new RegExp(`(^|\\s)${w}(\\s|$)`).test(t)) return n;
   }
   return 1;
+}
+
+/** Posição citada pelo cliente: "remover a segunda", "tira o item 2". */
+export function parseOrdinal(text: string): number | null {
+  const t = normalize(text);
+  for (const [w, n] of Object.entries(ORDINALS)) {
+    if (new RegExp(`(^|\\s)${w}(\\s|$)`).test(t)) return n;
+  }
+  const item = t.match(/\bitem\s+(\d{1,2})\b/);
+  if (item) return Number(item[1]);
+  return null;
 }
 
 export function parseCartCommand(text: string): CartCommand {
@@ -55,15 +70,34 @@ export function parseCartCommand(text: string): CartCommand {
   if (CLEAR_RE.test(t)) return { kind: "clear" };
   if (VIEW_RE.test(t)) return { kind: "view" };
   const rm = t.match(REMOVE_RE);
-  if (rm?.[3]) return { kind: "remove", text: rm[3].trim() };
+  if (rm) {
+    const rest = (rm[3] ?? "").trim();
+    return {
+      kind: "remove",
+      text: rest && !parseOrdinal(rest) ? rest : null,
+      ordinal: parseOrdinal(t),
+    };
+  }
   return null;
 }
 
+export function hasAddIntent(text: string): boolean {
+  return ADD_RE.test(normalize(text));
+}
+
+/** "Quero essa" / "Pode adicionar" — sem nome de produto na frase. */
+export function isAnaphoricAdd(text: string): boolean {
+  const t = normalize(text);
+  if (!hasAddIntent(t)) return false;
+  return ANAPHORA_RE.test(t) || /^(pode adicionar|adiciona|adicionar|aceito|levo)\b/.test(t);
+}
+
 const STOP = new Set([
-  "quero", "queria", "vou", "me", "ve", "da", "de", "do", "da", "das", "dos",
-  "o", "a", "os", "as", "um", "uma", "adicionar", "adiciona", "incluir",
-  "inclui", "colocar", "coloca", "manda", "pode", "ser", "levar", "leva",
-  "por", "favor", "e", "com", "no", "na", "pedido", "carrinho", "sacola",
+  "quero", "queria", "vou", "me", "ve", "da", "de", "do", "das", "dos",
+  "o", "a", "os", "as", "um", "uma", "adicionar", "adiciona", "adicione",
+  "incluir", "inclui", "colocar", "coloca", "manda", "pode", "ser", "levar",
+  "leva", "levo", "aceito", "fico", "com", "por", "favor", "e", "no", "na",
+  "pedido", "carrinho", "sacola", "essa", "esse", "esta", "este", "isso",
 ]);
 
 function tokens(text: string): string[] {
@@ -74,8 +108,8 @@ function tokens(text: string): string[] {
 }
 
 /**
- * Casa a mensagem com UM produto ativo. Retorna `null` quando não há certeza
- * (nenhum ou vários candidatos igualmente prováveis).
+ * Casa a mensagem com UM produto ativo. Retorna `null` se não houver certeza
+ * (nenhum candidato ou empate entre produtos).
  */
 export function matchProduct(
   text: string,
@@ -95,67 +129,37 @@ export function matchProduct(
   const words = tokens(text);
   if (words.length === 0) return null;
 
-  let best: { product: ProductSearchItem; score: number }[] = [];
+  const scored: { product: ProductSearchItem; score: number }[] = [];
   for (const product of products) {
     const nameWords = new Set(tokens(product.name));
     if (nameWords.size === 0) continue;
     let hits = 0;
     for (const w of words) if (nameWords.has(w)) hits += 1;
     if (hits === 0) continue;
-    const score = hits / nameWords.size + hits / words.length;
-    best.push({ product, score });
+    scored.push({ product, score: hits / nameWords.size + hits / words.length });
   }
-  if (best.length === 0) return null;
-  best.sort((a, b) => b.score - a.score);
-  const top = best[0]!;
-  // Exige cobertura razoável do nome do produto e ausência de empate.
+  if (scored.length === 0) return null;
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored[0]!;
   if (top.score < 1) return null;
-  if (best[1] && best[1].score === top.score) return null;
+  if (scored[1] && scored[1].score === top.score) return null;
   return top.product;
 }
 
-export function hasAddIntent(text: string): boolean {
-  return ADD_RE.test(normalize(text));
-}
-
-export function addToCart(
-  cart: readonly CartLine[] | null | undefined,
-  product: ProductSearchItem,
-  qty = 1,
-): CartLine[] {
-  const lines = [...(cart ?? [])];
-  const idx = lines.findIndex((l) => l.productId === product.id);
-  if (idx >= 0) {
-    lines[idx] = { ...lines[idx]!, qty: lines[idx]!.qty + qty };
-  } else {
-    lines.push({
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      qty,
-    });
-  }
-  return lines;
-}
-
-export function removeFromCart(
-  cart: readonly CartLine[] | null | undefined,
+/** Localiza um item do carrinho por texto livre. */
+export function findCartItemIndex(
+  session: CartSession,
   text: string,
-): { cart: CartLine[]; removed: CartLine | null } {
-  const lines = [...(cart ?? [])];
+): number {
   const t = normalize(text);
-  const idx = lines.findIndex((l) => {
-    const n = normalize(l.name);
+  if (!t) return -1;
+  return session.items.findIndex((i) => {
+    const n = normalize(i.name);
     return n === t || n.includes(t) || t.includes(n);
   });
-  if (idx < 0) return { cart: lines, removed: null };
-  const [removed] = lines.splice(idx, 1);
-  return { cart: lines, removed: removed ?? null };
 }
 
-export function cartTotal(cart: readonly CartLine[] | null | undefined): number {
-  return (cart ?? []).reduce((sum, l) => sum + l.price * l.qty, 0);
-}
+// ---------------------------------------------------------------- formatação
 
 export function money(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -166,38 +170,28 @@ export function money(value: number): string {
     .replace(/\u00a0/g, " ");
 }
 
-export function formatCartLines(cart: readonly CartLine[]): string[] {
-  return cart.map((l) =>
-    l.qty > 1
-      ? `• ${l.name} — ${l.qty}x ${money(l.price)} = ${money(l.price * l.qty)}`
-      : `• ${l.name} — ${money(l.price)}`,
-  );
+function itemBlock(item: CartSessionItem): string[] {
+  return [`• ${item.name}`, `Qtd: ${item.qty}`, money(item.subtotal)];
 }
 
-/** Bloco padrão "🛍️ Pedido atual" + total. */
-export function formatCartBlock(cart: readonly CartLine[]): string {
+/** Resumo padrão do pedido: itens + total. */
+export function formatCartSummary(session: CartSession): string {
+  const blocks = session.items.map((i) => itemBlock(i).join("\n"));
+  return [...blocks, "", "Total:", money(session.total)].join("\n");
+}
+
+export function formatCartUpdatedMessage(session: CartSession): string {
   return [
-    "🛍️ *Pedido atual*",
-    ...formatCartLines(cart),
+    "🛍️ *Pedido atualizado*",
     "",
-    `*Total: ${money(cartTotal(cart))}*`,
+    formatCartSummary(session),
+    "",
+    "Deseja continuar comprando ou finalizar?",
   ].join("\n");
 }
 
-export function formatAddedMessage(cart: readonly CartLine[]): string {
-  return [
-    "Perfeito! 💕",
-    "",
-    "Adicionei ao seu pedido.",
-    "",
-    formatCartBlock(cart),
-    "",
-    "Você deseja ver mais algum produto?",
-  ].join("\n");
-}
-
-export function formatCartMessage(cart: readonly CartLine[]): string {
-  if (cart.length === 0) {
+export function formatCartMessage(session: CartSession): string {
+  if (session.items.length === 0) {
     return [
       "Seu pedido ainda está vazio. 🛍️",
       "",
@@ -205,25 +199,39 @@ export function formatCartMessage(cart: readonly CartLine[]): string {
     ].join("\n");
   }
   return [
-    formatCartBlock(cart),
+    "🛍️ *Seu pedido*",
     "",
-    "_Digite *finalizar* para concluir ou o nome de outro produto para adicionar._",
+    formatCartSummary(session),
+    "",
+    "Deseja continuar comprando ou finalizar?",
   ].join("\n");
 }
 
 export function formatRemovedMessage(
-  removed: CartLine | null,
-  cart: readonly CartLine[],
+  removed: CartSessionItem | null,
+  session: CartSession,
 ): string {
   if (!removed) {
     return "Não encontrei esse item no seu pedido. Pode me dizer o nome do produto?";
   }
-  if (cart.length === 0) {
+  if (session.items.length === 0) {
     return `Removi *${removed.name}*. Seu pedido está vazio agora. 🛍️`;
   }
-  return [`Removi *${removed.name}*.`, "", formatCartBlock(cart)].join("\n");
+  return [
+    `Removi *${removed.name}*.`,
+    "",
+    "🛍️ *Pedido atualizado*",
+    "",
+    formatCartSummary(session),
+    "",
+    "Deseja continuar comprando ou finalizar?",
+  ].join("\n");
 }
 
 export function formatClearedMessage(): string {
   return "Pronto, limpei seu pedido. 🛍️\n\n_Digite *catálogo* quando quiser recomeçar._";
+}
+
+export function formatAmbiguousAddMessage(): string {
+  return "Claro! Me diga o nome do produto que você quer adicionar. 💕";
 }
