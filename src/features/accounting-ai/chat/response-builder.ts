@@ -31,6 +31,7 @@ const CLOSERS: Partial<Record<BellaIntentId, string>> = {
   situacao_estoque: "Você pode ver os detalhes no módulo Estoque.",
   situacao_vendas: "Você pode ver os detalhes no módulo Vendas.",
   situacao_compras: "Você pode ver os detalhes no módulo Compras.",
+  situacao_crm: "Você pode ver os detalhes no módulo Clientes.",
 };
 
 export const FALLBACK_UNKNOWN =
