@@ -755,7 +755,7 @@ const rbt12MudancaFaixa: AuditRule = {
 
 /* ──────────────────────────── CONTÁBIL ──────────────────────────── */
 
-const PROLABORE_RX = /pro\s?-?labore/i;
+const PROLABORE_RX = /pr[oó]\s?-?labore/i;
 const DISTRIBUICAO_RX = /(distribui|dividend|lucros? dos? s[oó]cios?)/i;
 
 const prolaboreNaoRegistrado: AuditRule = {
