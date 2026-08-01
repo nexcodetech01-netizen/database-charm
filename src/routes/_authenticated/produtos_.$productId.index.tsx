@@ -495,8 +495,8 @@ function ProductDetailPage() {
               ) : null}
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </Section>
+
 
 
 
