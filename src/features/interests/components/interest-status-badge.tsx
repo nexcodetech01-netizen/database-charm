@@ -1,7 +1,7 @@
 import { StatusBadge } from "@/components/design";
 import { INTEREST_STATUS_LABEL, type InterestStatus } from "../types";
 
-const TONE: Record<InterestStatus, "warning" | "success" | "info" | "neutral" | "danger"> = {
+const TONE: Record<InterestStatus, string> = {
   aguardando: "warning",
   disponivel: "success",
   avisado: "info",
@@ -10,5 +10,5 @@ const TONE: Record<InterestStatus, "warning" | "success" | "info" | "neutral" | 
 };
 
 export function InterestStatusBadge({ status }: { status: InterestStatus }) {
-  return <StatusBadge tone={TONE[status]} label={INTEREST_STATUS_LABEL[status]} />;
+  return <StatusBadge status={TONE[status]} label={INTEREST_STATUS_LABEL[status]} />;
 }
