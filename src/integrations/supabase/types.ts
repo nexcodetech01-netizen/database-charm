@@ -5704,6 +5704,65 @@ export type Database = {
           },
         ]
       }
+      whatsapp_commercial_inbox: {
+        Row: {
+          buyer_name: string | null
+          company_id: string
+          created_at: string
+          delivery: Json
+          fulfillment: string
+          id: string
+          item_count: number
+          items: Json
+          origin: string
+          payment: string | null
+          phone: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_name?: string | null
+          company_id: string
+          created_at?: string
+          delivery?: Json
+          fulfillment?: string
+          id?: string
+          item_count?: number
+          items?: Json
+          origin?: string
+          payment?: string | null
+          phone: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_name?: string | null
+          company_id?: string
+          created_at?: string
+          delivery?: Json
+          fulfillment?: string
+          id?: string
+          item_count?: number
+          items?: Json
+          origin?: string
+          payment?: string | null
+          phone?: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_commercial_inbox_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_contacts: {
         Row: {
           company_id: string
