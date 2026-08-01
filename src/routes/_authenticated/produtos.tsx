@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Package } from "lucide-react";
 import { BreadcrumbNav } from "@/components/layout";
-import { ActionToolbar, EntityHeader, Section } from "@/components/design";
+import { ActionToolbar, EntityHeader } from "@/components/design";
 import {
   ProductMetrics,
   ProductFilters,
