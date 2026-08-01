@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   BELLA_CRM_LINKS,
   BELLA_CRM_LINK_ORDER,
@@ -87,9 +87,15 @@ function sales(): BellaCrmSaleLike[] {
   ];
 }
 
+let summary: Awaited<ReturnType<typeof makeSummary>>;
+
+beforeAll(async () => {
+  summary = await makeSummary();
+});
+
 function input(over: Partial<BellaCrmInput> = {}): BellaCrmInput {
   return {
-    summary: makeSummary(),
+    summary,
     metrics,
     report,
     customers: customers(),
@@ -288,7 +294,7 @@ describe("Bella CRM — filtros, recomendações e saúde", () => {
   });
 
   it("expõe a saúde já calculada pelo resumo contábil", () => {
-    expect(buildCrmHealth(makeSummary())).not.toBeNull();
+    expect(buildCrmHealth(summary)).not.toBeNull();
     expect(buildCrmHealth(null)).toBeNull();
   });
 });
