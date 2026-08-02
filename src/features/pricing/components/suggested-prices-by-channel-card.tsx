@@ -152,6 +152,8 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const companyId = !isLocal ? props.companyId : "";
   const productId = !isLocal ? props.productId : "";
   const queryKey = ["pricing", "product-intelligence", companyId, productId] as const;
+  // FASE 4 — taxas SEMPRE da tabela única da empresa.
+  const { feeTable } = useCompanyFeeTable(companyId);
 
   const query = useQuery({
     queryKey,
