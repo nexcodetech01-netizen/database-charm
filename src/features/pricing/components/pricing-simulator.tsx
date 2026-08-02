@@ -6,7 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { usePricingPolicy } from "../hooks/use-pricing-policy";
-import { computePricing } from "../calculator";
+import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
+import { computeOfficialPricing } from "../official";
+import { worstCaseFee, effectiveFeePct } from "../official/fees";
+import { toRoundingPolicySpec } from "../types";
 
 const num = (s: string): number => {
   if (typeof s !== "string" || s.length === 0) return 0;
