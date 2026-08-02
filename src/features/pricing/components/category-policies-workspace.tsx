@@ -183,12 +183,18 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_categories")
-        .select("id, auto_pricing_policy")
+        .select("id, auto_pricing_policy, margin_policy_source")
         .eq("company_id", companyId);
       if (error) throw error;
       return Object.fromEntries(
-        (data ?? []).map((c) => [c.id, c.auto_pricing_policy !== false]),
-      ) as Record<string, boolean>;
+        (data ?? []).map((c) => [
+          c.id,
+          {
+            auto: c.auto_pricing_policy !== false,
+            confirmed: c.margin_policy_source === "empresa",
+          },
+        ]),
+      ) as Record<string, { auto: boolean; confirmed: boolean }>;
     },
     enabled: Boolean(companyId),
   });
@@ -270,8 +276,18 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
       });
     },
     onSuccess: async () => {
-      toast.success("Política da categoria salva");
+      // Salvar é a confirmação explícita do usuário: a categoria deixa de
+      // exibir "sugestão inicial" e passa a valer como política da empresa.
+      if (selected) {
+        await supabase
+          .from("product_categories")
+          .update({ margin_policy_source: "empresa" })
+          .eq("id", selected.category.id)
+          .eq("company_id", companyId);
+      }
+      toast.success("Política da categoria confirmada (nenhum produto foi alterado)");
       await qc.invalidateQueries({ queryKey });
+      await qc.invalidateQueries({ queryKey: ["pricing", "category-auto-policy", companyId] });
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : "Falha ao salvar";
@@ -373,7 +389,17 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                         </div>
                       </TableCell>
                       <TableCell>
-                        <OriginBadge row={row} />
+                        <div className="flex flex-wrap items-center gap-1">
+                          <OriginBadge row={row} />
+                          {autoPolicyQuery.data?.[row.category.id]?.confirmed === false ? (
+                            <Badge
+                              variant="outline"
+                              className="gap-1 border-amber-500/40 text-[10px] text-amber-600"
+                            >
+                              Sugestão inicial
+                            </Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {effMin != null ? `${effMin}%` : "—"}
@@ -528,13 +554,21 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                     </p>
                   </div>
                   <Switch
-                    checked={autoPolicyQuery.data?.[selected.category.id] !== false}
+                    checked={autoPolicyQuery.data?.[selected.category.id]?.auto !== false}
                     disabled={autoPolicyMutation.isPending}
                     onCheckedChange={(v) =>
                       autoPolicyMutation.mutate({ categoryId: selected.category.id, enabled: v })
                     }
                   />
                 </div>
+
+                {autoPolicyQuery.data?.[selected.category.id]?.confirmed === false ? (
+                  <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400">
+                    As margens desta categoria ainda são <strong>sugestão inicial</strong>. Revise
+                    os valores e salve para confirmá-los como política da empresa. Salvar não altera
+                    nenhum produto nem recalcula preços.
+                  </p>
+                ) : null}
 
                 <BellaMarginReferenceCard
                   companyId={companyId}
