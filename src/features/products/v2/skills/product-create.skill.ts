@@ -11,7 +11,7 @@ import type { Product } from "../../types";
 export const productCreateSchema = z
   .object({
     name: z.string().trim().min(1).max(200),
-    price: z.number().nonnegative(),
+    price: z.number().nonnegative().optional(),
     cost: z.number().nonnegative().optional(),
     sku: z.string().trim().max(64).optional(),
     unit: z.string().trim().max(8).optional(),
