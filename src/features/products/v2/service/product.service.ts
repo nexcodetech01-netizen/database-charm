@@ -7,7 +7,7 @@
  */
 import { BaseService } from "@/features/bella-ai/agent/infrastructure/base-service";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
-import { priceForMargin } from "@/features/pricing/calculator";
+import { computeOfficialPricing } from "@/features/pricing/official";
 import { fetchCompanyCostDefaults } from "@/features/pricing/lib/company-cost-defaults";
 import type { Product, ProductInsert } from "../../types";
 import {
