@@ -22,6 +22,8 @@ export interface DuplicateProduct {
   name: string;
   sku: string | null;
   barcode: string | null;
+  price: number | null;
+  cost: number | null;
   matchedBy: "sku" | "barcode" | "name";
 }
 
