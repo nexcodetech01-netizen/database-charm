@@ -16,7 +16,7 @@ import {
 
 export interface CreateProductInput {
   name: string;
-  price: number;
+  price?: number | null;
   cost?: number | null;
   sku?: string | null;
   unit?: string | null;
