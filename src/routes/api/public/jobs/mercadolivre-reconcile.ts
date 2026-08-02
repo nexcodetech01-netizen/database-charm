@@ -11,6 +11,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { authorizeJobRequest } from "@/lib/job-auth.server";
 import { enforceRateLimit } from "@/lib/rate-limit.server";
 import { runJob } from "@/lib/job-runs.server";
+import { requireServiceKey } from "@/lib/job-admin.server";
 
 const ML_API = "https://api.mercadolibre.com";
 const WINDOW_HOURS = 24;
@@ -33,6 +34,9 @@ export const Route = createFileRoute("/api/public/jobs/mercadolivre-reconcile")(
 
         const denied = authorizeJobRequest(request);
         if (denied) return denied;
+
+        const noServiceKey = requireServiceKey("mercadolivre-reconcile");
+        if (noServiceKey) return noServiceKey;
 
         return runJob("mercadolivre-reconcile", async () => {
 

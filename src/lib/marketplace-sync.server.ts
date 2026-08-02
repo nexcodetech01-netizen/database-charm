@@ -18,7 +18,12 @@ const ML_API = "https://api.mercadolibre.com";
 
 export type MarketplaceSyncOutcome =
   | { ok: true; skipped?: "no-ml-item" | "nothing-to-sync" }
-  | { ok: false; skipped?: "no-token"; status?: number; error?: string };
+  | {
+      ok: false;
+      skipped?: "no-token" | "reconnect-required";
+      status?: number;
+      error?: string;
+    };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any;
@@ -62,8 +67,16 @@ export async function syncProductToMercadoLivreCore(
     ?.access_token_encrypted;
   if (!enc) return { ok: false, skipped: "no-token", error: "sem token do Mercado Livre" };
 
-  const { decryptToken } = await import("./meta-crypto.server");
-  const accessToken = decryptToken(enc);
+  const { tryDecryptToken } = await import("./meta-crypto.server");
+  const accessToken = tryDecryptToken(enc);
+  if (!accessToken) {
+    // Token cifrado com outra chave: nada a retentar até reconectar.
+    return {
+      ok: false,
+      skipped: "reconnect-required",
+      error: "token do Mercado Livre não decifrável — reconecte a integração",
+    };
+  }
 
   const price = p.price != null ? Number(p.price) : null;
   const availableQuantity = Math.max(0, Math.floor(Number(p.stock ?? 0)));
@@ -143,6 +156,16 @@ export async function drainMarketplaceSyncQueue(
             attempts: row.attempts + 1,
             last_error: null,
           })
+          .eq("id", row.id);
+        continue;
+      }
+      // Integração desconectada/reconexão pendente: não queima tentativas
+      // nem alimenta a DLQ — o item volta para `pending` intacto.
+      if (outcome.skipped === "no-token" || outcome.skipped === "reconnect-required") {
+        skipped += 1;
+        await db
+          .from("marketplace_sync_queue")
+          .update({ status: "pending", last_error: outcome.error ?? null })
           .eq("id", row.id);
         continue;
       }

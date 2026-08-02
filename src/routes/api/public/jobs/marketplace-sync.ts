@@ -11,6 +11,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { authorizeJobRequest } from "@/lib/job-auth.server";
 import { enforceRateLimit } from "@/lib/rate-limit.server";
 import { runJob } from "@/lib/job-runs.server";
+import { requireServiceKey } from "@/lib/job-admin.server";
 
 export const Route = createFileRoute("/api/public/jobs/marketplace-sync")({
   server: {
@@ -25,6 +26,9 @@ export const Route = createFileRoute("/api/public/jobs/marketplace-sync")({
 
         const denied = authorizeJobRequest(request);
         if (denied) return denied;
+
+        const noServiceKey = requireServiceKey("marketplace-sync");
+        if (noServiceKey) return noServiceKey;
 
         return runJob("marketplace-sync", async () => {
           const { drainMarketplaceSyncQueue } = await import("@/lib/marketplace-sync.server");

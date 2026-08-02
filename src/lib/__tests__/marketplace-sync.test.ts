@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const integrationFetch = vi.fn();
 const ensureFreshAccessToken = vi.fn();
 const decryptToken = vi.fn(() => "TOKEN");
+const tryDecryptToken = vi.fn<(v: unknown) => string | null>(() => "TOKEN");
 const recordDeadLetter = vi.fn();
 
 vi.mock("@/lib/http-client.server", () => ({
@@ -13,6 +14,7 @@ vi.mock("@/lib/mercadolivre.server", () => ({
 }));
 vi.mock("@/lib/meta-crypto.server", () => ({
   decryptToken: (value: unknown) => decryptToken(),
+  tryDecryptToken: (value: unknown) => tryDecryptToken(value),
 }));
 vi.mock("@/lib/dead-letter.server", () => ({
   recordDeadLetter: (input: unknown) => recordDeadLetter(input),
@@ -88,6 +90,8 @@ beforeEach(() => {
   integrationFetch.mockReset();
   ensureFreshAccessToken.mockReset();
   recordDeadLetter.mockReset();
+  tryDecryptToken.mockReset();
+  tryDecryptToken.mockImplementation(() => "TOKEN");
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -161,12 +165,32 @@ describe("drainMarketplaceSyncQueue", () => {
     expect(recordDeadLetter).toHaveBeenCalledTimes(1);
   });
 
-  it("token ausente não derruba o job", async () => {
+  it("token ausente não derruba o job nem queima tentativas", async () => {
     integrationRow = { access_token_encrypted: null };
     queueRows = [{ id: "q1", company_id: "c1", product_id: "p1", marketplace: "mercadolivre", attempts: 0 }];
     const { drainMarketplaceSyncQueue } = await core();
     const summary = await drainMarketplaceSyncQueue();
-    expect(summary.failed).toBe(1);
+    expect(summary).toMatchObject({ processed: 1, failed: 0, skipped: 1 });
     expect(integrationFetch).not.toHaveBeenCalled();
+    expect(queueUpdates.at(-1)).toMatchObject({ status: "pending" });
+    expect(recordDeadLetter).not.toHaveBeenCalled();
+  });
+
+  it("token não decifrável exige reconexão sem alimentar a DLQ", async () => {
+    tryDecryptToken.mockImplementation(() => null);
+    queueRows = [{ id: "q1", company_id: "c1", product_id: "p1", marketplace: "mercadolivre", attempts: 4 }];
+    const { drainMarketplaceSyncQueue } = await core();
+    const summary = await drainMarketplaceSyncQueue();
+    expect(summary).toMatchObject({ processed: 1, failed: 0, skipped: 1 });
+    expect(integrationFetch).not.toHaveBeenCalled();
+    expect(queueUpdates.at(-1)).toMatchObject({ status: "pending" });
+    expect(recordDeadLetter).not.toHaveBeenCalled();
+  });
+
+  it("core devolve reconnect-required quando o token não decifra", async () => {
+    tryDecryptToken.mockImplementation(() => null);
+    const { syncProductToMercadoLivreCore } = await core();
+    const out = await syncProductToMercadoLivreCore(makeClient(), { productId: "p1" });
+    expect(out).toMatchObject({ ok: false, skipped: "reconnect-required" });
   });
 });
