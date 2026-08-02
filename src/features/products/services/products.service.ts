@@ -134,14 +134,36 @@ export const productsService = {
     });
 
     if (duplicate) {
-      const { stock, company_id: _companyId, sku, ...rest } = input as ProductInsert & {
+      const {
+        stock,
+        company_id: _companyId,
+        sku,
+        // Mesmo produto: a descrição já salva no banco nunca é sobrescrita.
+        description: _ignoredDescription,
+        price: incomingPrice,
+        cost: incomingCost,
+        ...rest
+      } = input as ProductInsert & {
         stock?: number | null;
+        description?: string | null;
+        price?: number | null;
+        cost?: number | null;
       };
+
+      const num = (v: unknown) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      };
+      // Só sobrescreve price/cost quando o novo lançamento traz valor > 0.
+      const nextPrice = num(incomingPrice) > 0 ? num(incomingPrice) : num(duplicate.price);
+      const nextCost = num(incomingCost) > 0 ? num(incomingCost) : num(duplicate.cost);
 
       // Atualiza o registro existente com os dados do novo lançamento.
       // O SKU original é preservado (não geramos SKU novo para o mesmo produto).
       const patch = {
         ...rest,
+        price: nextPrice,
+        cost: nextCost,
         ...(duplicate.sku ? {} : { sku: sku ?? null }),
       } as ProductUpdate;
 

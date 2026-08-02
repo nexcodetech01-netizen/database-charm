@@ -22,6 +22,8 @@ export interface DuplicateProduct {
   name: string;
   sku: string | null;
   barcode: string | null;
+  price: number | null;
+  cost: number | null;
   matchedBy: "sku" | "barcode" | "name";
 }
 
@@ -59,7 +61,7 @@ export async function findDuplicateProduct(
   for (const check of checks) {
     let q = supabase
       .from("products")
-      .select("id, name, sku, barcode")
+      .select("id, name, sku, barcode, price, cost")
       .eq("company_id", companyId)
       .ilike(check.column, escapeLike(check.value))
       .order("created_at", { ascending: true })
@@ -76,6 +78,8 @@ export async function findDuplicateProduct(
         name: row.name,
         sku: row.sku ?? null,
         barcode: row.barcode ?? null,
+        price: row.price ?? null,
+        cost: row.cost ?? null,
         matchedBy: check.column,
       };
     }
