@@ -22,8 +22,6 @@ import {
   Percent,
   Boxes,
   Truck,
-  Shield,
-  MoreHorizontal,
   Tag,
   TrendingUp,
   Package,
