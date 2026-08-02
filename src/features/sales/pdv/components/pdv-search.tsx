@@ -86,13 +86,13 @@ export function PDVSearch({
   return (
     <div
       className={cn(
-        "rounded-xl border-2 bg-background p-3 transition-colors",
-        focused && !disabled ? "border-primary/60" : "border-border",
+        "relative rounded-lg border bg-background transition-colors",
+        focused && !disabled ? "border-primary/60 ring-1 ring-primary/30" : "border-border",
       )}
     >
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
         />
         <Input
@@ -106,28 +106,23 @@ export function PDVSearch({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Pesquisar produto • Código • SKU • Nome"
-          className="h-14 pl-12 pr-4 text-lg font-medium"
+          className="h-11 border-0 pl-9 pr-32 text-base font-medium shadow-none focus-visible:ring-0"
         />
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-3 px-1">
         <span
           aria-live="polite"
           className={cn(
-            "flex items-center gap-1.5 text-xs font-medium",
-            focused && !disabled ? "text-emerald-600" : "text-muted-foreground",
+            "pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1.5 text-[11px] font-medium sm:flex",
+            focused && !disabled ? "text-status-success" : "text-muted-foreground",
           )}
         >
           <ScanLine className="h-3.5 w-3.5" aria-hidden="true" />
-          {focused && !disabled ? "Scanner pronto" : "Clique para focar a pesquisa"}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          ENTER adiciona automaticamente
+          {focused && !disabled ? "Scanner pronto" : "ENTER adiciona"}
         </span>
       </div>
 
+
       {value.trim().length >= 2 && (
-        <div className="mt-3 space-y-1">
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg">
           {(isSearching || isAdding) && (
             <p className="text-sm text-muted-foreground">Buscando…</p>
           )}
@@ -141,7 +136,7 @@ export function PDVSearch({
               key={product.id}
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-between px-3 py-2.5 text-left"
+              className="h-auto w-full justify-between px-2 py-1.5 text-left"
               onClick={() => {
                 onSelect(product);
                 onChange("");

@@ -55,9 +55,9 @@ const PDVCartRow = memo(function PDVCartRow({
       data-active={active || undefined}
       onFocus={activate}
       onMouseDown={activate}
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
-      <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted/40">
+      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -67,17 +67,17 @@ const PDVCartRow = memo(function PDVCartRow({
           />
         ) : (
           <ImageIcon
-            className="h-5 w-5 text-muted-foreground/60"
+            className="h-4 w-4 text-muted-foreground/60"
             aria-hidden="true"
           />
         )}
       </div>
 
       <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold leading-tight">
+        <p className="truncate text-sm font-semibold leading-tight">
           {item.description}
         </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-x-1.5 truncate text-[11px] leading-tight text-muted-foreground">
           <span className="font-mono">{item.sku ?? "sem SKU"}</span>
           <span aria-hidden="true">·</span>
           <span className={lowStock ? "font-medium text-destructive" : ""}>
@@ -90,13 +90,13 @@ const PDVCartRow = memo(function PDVCartRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4">
-        <div className="flex items-center gap-1 rounded-xl border bg-background p-1">
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="flex items-center rounded-lg border bg-background">
           <Button
             type="button"
             size="icon"
             variant="ghost"
-            className="h-9 w-9"
+            className="h-7 w-7"
             disabled={readOnly}
             aria-label={`Diminuir quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity - 1)}
@@ -114,13 +114,13 @@ const PDVCartRow = memo(function PDVCartRow({
             aria-label={`Quantidade de ${item.description}`}
             value={item.quantity}
             onChange={(e) => onQuantityChange(uiKey, Number(e.target.value))}
-            className="h-9 w-16 border-0 px-1 text-center text-lg font-semibold tabular-nums shadow-none focus-visible:ring-1"
+            className="h-7 w-12 border-0 px-0 text-center text-sm font-semibold tabular-nums shadow-none focus-visible:ring-1"
           />
           <Button
             type="button"
             size="icon"
             variant="ghost"
-            className="h-9 w-9"
+            className="h-7 w-7"
             disabled={readOnly}
             aria-label={`Aumentar quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
@@ -129,20 +129,15 @@ const PDVCartRow = memo(function PDVCartRow({
           </Button>
         </div>
 
-        <div className="w-28 text-right">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Subtotal
-          </p>
-          <p className="text-base font-semibold tabular-nums">
-            {formatCurrency(computeItemTotal(item))}
-          </p>
-        </div>
+        <p className="w-24 text-right text-sm font-semibold tabular-nums">
+          {formatCurrency(computeItemTotal(item))}
+        </p>
 
         <Button
           type="button"
           size="icon"
           variant="ghost"
-          className="h-9 w-9 text-muted-foreground hover:text-destructive"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
           disabled={readOnly}
           aria-label={`Remover ${item.description}`}
           onClick={() => onRemove(uiKey)}
@@ -167,37 +162,31 @@ export function PDVCart({
   readOnly,
 }: Props) {
   return (
-    <div className="flex flex-col rounded-2xl border bg-card shadow-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-5 py-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <ShoppingCart
-            className="h-4 w-4 shrink-0 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <p className="truncate text-sm font-semibold">Carrinho</p>
-        </div>
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-          {items.length} linha(s)
+    <div className="flex flex-col rounded-xl border bg-card shadow-sm">
+      <div className="flex items-center gap-2 border-b px-3 py-1.5">
+        <ShoppingCart
+          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Carrinho
+        </p>
+        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">
+          {items.length}
         </span>
       </div>
 
       {items.length === 0 ? (
-        <div className="flex min-h-96 flex-col items-center justify-center gap-3 p-12 text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-muted">
+        <div className="flex min-h-56 flex-col items-center justify-center gap-2 p-8 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-xl bg-muted">
             <Package
-              className="h-8 w-8 text-muted-foreground/70"
+              className="h-6 w-6 text-muted-foreground/70"
               aria-hidden="true"
             />
           </div>
-          <p className="text-base font-semibold">Carrinho vazio</p>
-          <p className="max-w-xs text-sm text-muted-foreground">
+          <p className="text-sm font-semibold">Carrinho vazio</p>
+          <p className="max-w-xs text-xs text-muted-foreground">
             Passe o leitor de código de barras ou pesquise um produto.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase">
-              Enter
-            </kbd>{" "}
-            adiciona automaticamente
           </p>
         </div>
       ) : (

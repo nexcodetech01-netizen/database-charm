@@ -9,6 +9,7 @@ import { PDVCustomerSelect } from "./pdv-customer-select";
 import { PDVHeader } from "./pdv-header";
 import { PDVCart } from "./pdv-cart";
 import { PDVWorkspace } from "./pdv-workspace";
+import { PDVShortcutBar } from "./pdv-shortcut-bar";
 import { PDVOperationBar } from "./pdv-operation-bar";
 import { PDVSummary } from "./pdv-summary";
 import { PDVPaymentPanel } from "./pdv-payment-panel";
@@ -366,7 +367,9 @@ export function PDVScreen({
             )}
           </>
         }
+        footer={<PDVShortcutBar />}
       />
+
 
       {pendingSale || completed ? (
         <CheckoutDialog

@@ -23,10 +23,10 @@ export function PDVPaymentPanel({
   cancelDisabled,
 }: Props = {}) {
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
       <Button
         id="pdv-finalize"
-        className="h-14 w-full text-base font-semibold"
+        className="h-12 w-full text-base font-semibold"
         onClick={onFinalize}
         disabled={disabled || isSaving || !onFinalize}
       >
@@ -42,14 +42,10 @@ export function PDVPaymentPanel({
           </>
         )}
       </Button>
-      <p className="mt-3 text-xs text-muted-foreground">
-        O checkout abre com todas as formas de pagamento: dinheiro (com troco),
-        PIX, cartão, crediário, link e boleto.
-      </p>
       <Button
         type="button"
         variant="ghost"
-        className="mt-2 h-9 w-full text-xs text-muted-foreground hover:text-destructive"
+        className="mt-1.5 h-8 w-full text-xs text-muted-foreground hover:text-destructive"
         onClick={onCancelSale}
         disabled={cancelDisabled || !onCancelSale}
       >

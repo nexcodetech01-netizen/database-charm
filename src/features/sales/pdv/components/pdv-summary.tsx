@@ -44,7 +44,7 @@ function Row({
   strong?: boolean;
 }) {
   return (
-    <div className="flex h-9 items-center justify-between gap-3">
+    <div className="flex h-7 items-center justify-between gap-3">
       <span className="text-muted-foreground">{label}</span>
       <span
         className={
@@ -76,15 +76,15 @@ export function PDVSummary({
   const hint = discountHint(discount);
 
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <p className="text-sm font-semibold tracking-tight">Resumo da venda</p>
-
-      <div className="mt-4 space-y-1 text-sm">
-        <Row label="Itens" value={String(lineCount ?? itemCount)} />
-        <Row label="Quantidade" value={String(itemCount)} />
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="space-y-0.5 text-[13px]">
+        <Row
+          label="Itens"
+          value={`${lineCount ?? itemCount} · ${itemCount} un`}
+        />
         <Row label="Subtotal" value={formatCurrency(totals.items_total)} strong />
 
-        <div className="flex h-9 items-center justify-between gap-3">
+        <div className="flex h-8 items-center justify-between gap-3">
           <label htmlFor="pdv-discount" className="text-muted-foreground">
             Desconto
           </label>
@@ -97,7 +97,7 @@ export function PDVSummary({
             value={discountValue || ""}
             onChange={(e) => onDiscountChange(Number(e.target.value) || 0)}
             placeholder="0,00"
-            className="h-9 w-32 rounded-xl text-right text-sm font-medium tabular-nums"
+            className="h-8 w-28 rounded-lg text-right text-sm font-medium tabular-nums"
           />
         </div>
         {hint && (
@@ -117,13 +117,13 @@ export function PDVSummary({
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4">
+      <div className="mt-2 flex items-baseline justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Total da venda
+          Total
         </p>
         <p
           data-testid="pdv-grand-total"
-          className="mt-1 truncate text-4xl font-bold leading-none tracking-tight tabular-nums text-primary"
+          className="truncate text-2xl font-bold leading-none tracking-tight tabular-nums text-primary"
         >
           {formatCurrency(totals.grand_total)}
         </p>
