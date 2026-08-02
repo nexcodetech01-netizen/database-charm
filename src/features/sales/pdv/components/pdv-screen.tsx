@@ -366,7 +366,9 @@ export function PDVScreen({
             )}
           </>
         }
+        footer={<PDVShortcutBar />}
       />
+
 
       {pendingSale || completed ? (
         <CheckoutDialog
