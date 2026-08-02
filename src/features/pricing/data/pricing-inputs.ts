@@ -33,6 +33,8 @@ export interface PricingInputs {
   /** Alíquota efetiva sobre a venda (%). 0 quando não configurada. */
   readonly taxPct: number;
   readonly costDefaults: CompanyCostDefaults;
+  /** true quando a categoria tem "política automática" ativa. */
+  readonly categoryAutoPolicy: boolean;
 }
 
 const num = (v: unknown): number | null => {
@@ -96,7 +98,7 @@ export async function fetchPricingInputs(
     categoryId
       ? supabase
           .from("product_categories")
-          .select("target_margin_pct, min_margin_pct, max_margin_pct")
+          .select("target_margin_pct, min_margin_pct, max_margin_pct, auto_pricing_policy")
           .eq("id", categoryId)
           .eq("company_id", companyId)
           .maybeSingle()
@@ -126,7 +128,8 @@ export async function fetchPricingInputs(
           premiumPct: num(defaults["premiumMarginPct"]),
         }
       : null,
-    categoryRes?.data
+    // Categoria com política automática DESLIGADA não impõe margem.
+    categoryRes?.data && categoryRes.data.auto_pricing_policy !== false
       ? {
           minPct: num(categoryRes.data.min_margin_pct),
           targetPct: num(categoryRes.data.target_margin_pct),
@@ -144,5 +147,6 @@ export async function fetchPricingInputs(
     feeTable,
     taxPct,
     costDefaults: costDefaults ?? EMPTY_COMPANY_COST_DEFAULTS,
+    categoryAutoPolicy: categoryRes?.data?.auto_pricing_policy !== false,
   };
 }

@@ -11,6 +11,7 @@ import { FALLBACK_MARGINS, fetchPricingInputs, type PricingInputs } from "../dat
 export const EMPTY_PRICING_INPUTS: PricingInputs = {
   margins: FALLBACK_MARGINS,
   marginSource: "fallback",
+  categoryAutoPolicy: true,
   feeTable: EMPTY_FEE_TABLE,
   taxPct: 0,
   costDefaults: EMPTY_COMPANY_COST_DEFAULTS,
