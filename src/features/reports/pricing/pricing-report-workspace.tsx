@@ -1,3 +1,4 @@
+import { evaluateOfficialPrice } from "@/features/pricing/official";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -170,7 +171,7 @@ async function loadPricingData(companyId: string): Promise<ProductRow[]> {
     const price = num(p.price);
     // MOTOR ÚNICO (FASE 1/2) — relatório não calcula margem localmente.
     const evaluation = evaluateOfficialPrice(price, {
-      companyId: p.company_id ?? "",
+      companyId: "",
       productId: p.id,
       costs: { acquisition: cost, freight, insurance, otherCosts },
       margins: { minPct: 0, targetPct: 0 },
