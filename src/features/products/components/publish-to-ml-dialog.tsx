@@ -109,7 +109,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       typeof mlChan?.marginPct === "number" && mlChan.marginPct >= 0
         ? mlChan.marginPct
         : targetMarginPct;
-    const feePct = 16;
+    const feePct = ML_COMMISSION_PCT;
     const feeRate = feePct / 100;
     let raw = 0;
     if (strategy === "keep_store_profit") {
@@ -118,16 +118,24 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       if (!reachable) return null;
       raw = (currentStorePrice + fixedCost) / (1 - feeRate);
     } else {
-      const denom = 1 - (feePct + marginPct) / 100;
-      if (denom <= 0) return null;
-      raw = (costTotal + fixedCost) / denom;
+      // MOTOR ÚNICO (FASE 1/2) — nenhuma fórmula local.
+      const official = computeOfficialPricing({
+        companyId: product.company_id,
+        productId: product.id,
+        costs: { acquisition: costTotal },
+        margins: { minPct: 0, targetPct: marginPct },
+        fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
+        module: "products.publish-ml",
+      });
+      raw = official.recommendedPrice;
     }
     if (!Number.isFinite(raw) || raw <= 0) return null;
     // Arredonda para o próximo múltiplo terminado em .90
     const base = Math.floor(raw);
     const candidate = base + 0.9;
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
-  }, [pricingQuery.data, channelSettingsQuery.data]);
+  }, [pricingQuery.data, channelSettingsQuery.data, product.company_id, product.id]);
+
 
   const rawProductPrice = Number(product.price ?? 0);
   const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
