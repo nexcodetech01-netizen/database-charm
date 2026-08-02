@@ -19,19 +19,26 @@ import { computeItemTotal } from "../../types";
  * direita é fixo (sticky) — nunca rola junto do carrinho.
  */
 export const PDV_LAYOUT = {
-  /** Container geral (barra de operação + áreas). */
-  shell: "flex flex-col gap-4",
+  /** Container geral (barra de operação + áreas + rodapé de atalhos). */
+  shell: "mx-auto flex w-full max-w-[1800px] flex-col gap-3",
   /** Grade principal: carrinho (esquerda) + painel (direita). */
-  grid: "grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]",
+  grid: "grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_400px]",
   /** Coluna do carrinho — rolagem suave e própria. */
-  cartColumn: "flex min-w-0 flex-col gap-3",
-  /** Área rolável do carrinho, dimensionada pela altura da viewport. */
+  cartColumn: "flex min-w-0 flex-col gap-2",
+  /**
+   * Área rolável do carrinho, dimensionada pela altura da viewport.
+   * Sprint PDV.3.1: barra de operação compacta libera ~9rem de altura útil.
+   */
   cartScroll:
-    "max-h-[calc(100vh-22rem)] min-h-64 overflow-y-auto scroll-smooth overscroll-contain",
+    "max-h-[calc(100vh-15rem)] min-h-56 overflow-y-auto scroll-smooth overscroll-contain",
   /** Painel lateral fixo: acompanha o scroll da página. */
   sidePanel:
-    "flex min-w-0 flex-col gap-3 xl:sticky xl:top-4 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:overscroll-contain",
+    "flex min-w-0 flex-col gap-2 lg:sticky lg:top-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain",
+  /** Rodapé discreto de atalhos (somente leitura). */
+  shortcutBar:
+    "flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border bg-card/60 px-3 py-1.5 text-[11px] text-muted-foreground",
 } as const;
+
 
 /** Estágio visual da sessão de balcão (derivado, sem regra nova). */
 export type PdvStage = "cart" | "receiving" | "completed";
