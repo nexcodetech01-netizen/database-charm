@@ -137,11 +137,11 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
 
   function apply() {
     if (!onApply) {
-      toast.info("Copie o preço sugerido e ajuste no formulário do produto.");
+      toast.info("Preço sugerido aplicado ao formulário. Revise os dados e clique em Salvar Produto para confirmar.");
       return;
     }
     onApply(result.targetPrice);
-    toast.success(`Preço aplicado: ${formatCurrency(result.targetPrice)}`);
+    toast.success(`Preço sugerido aplicado ao formulário: ${formatCurrency(result.targetPrice)}. Clique em Salvar Produto para confirmar.`);
     onOpenChange(false);
   }
 
