@@ -45,7 +45,9 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { priceForMargin } from "@/features/pricing/calculator";
+import { computeOfficialPricing } from "@/features/pricing/official";
+import { worstCaseFee, effectiveFeePct } from "@/features/pricing/official/fees";
+import { useCompanyFeeTable } from "@/features/pricing/hooks/use-company-fee-table";
 import {
   getProductPricingIntelligence,
   type ProductPricingIntelligenceDTO,
