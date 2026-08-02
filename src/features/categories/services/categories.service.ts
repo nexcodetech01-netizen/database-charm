@@ -1,5 +1,27 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { CategoryInsert, CategoryUpdate, CategoryWithMeta } from "../types";
+import { findEquivalentCategory } from "../lib/category-name-key";
+
+/** Erro amigável quando já existe categoria equivalente. */
+export class DuplicateCategoryError extends Error {
+  constructor(public readonly existingName: string) {
+    super(
+      `Já existe a categoria "${existingName}" equivalente a esse nome. Utilize a categoria existente.`,
+    );
+    this.name = "DuplicateCategoryError";
+  }
+}
+
+async function assertNoEquivalent(companyId: string, name: string, ignoreId?: string) {
+  const { data, error } = await supabase
+    .from("product_categories")
+    .select("id, name")
+    .eq("company_id", companyId);
+  if (error) throw error;
+  const hit = findEquivalentCategory(data ?? [], name, ignoreId);
+  if (hit) throw new DuplicateCategoryError(hit.name);
+}
+
 
 export const categoriesService = {
   /**
