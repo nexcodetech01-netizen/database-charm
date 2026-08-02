@@ -27,9 +27,13 @@ export interface DuplicateProduct {
   matchedBy: "sku" | "barcode" | "name";
 }
 
-/** Normaliza texto para comparação: trim, colapso de espaços e minúsculas. */
+/** Normaliza texto para comparação: trim, hífens/travessões como espaço, colapso e minúsculas. */
 export function normalizeForMatch(value?: string | null): string {
-  return (value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  return (value ?? "")
+    .replace(/[-–—]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 /** Escapa curingas do LIKE para permitir comparação exata via `ilike`. */
