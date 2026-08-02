@@ -4806,6 +4806,39 @@ export type Database = {
           },
         ]
       }
+      products_backup_costs_20260802: {
+        Row: {
+          backed_up_at: string | null
+          company_id: string | null
+          freight: number | null
+          insurance: number | null
+          other_costs: number | null
+          packaging: number | null
+          price: number | null
+          product_id: string | null
+        }
+        Insert: {
+          backed_up_at?: string | null
+          company_id?: string | null
+          freight?: number | null
+          insurance?: number | null
+          other_costs?: number | null
+          packaging?: number | null
+          price?: number | null
+          product_id?: string | null
+        }
+        Update: {
+          backed_up_at?: string | null
+          company_id?: string | null
+          freight?: number | null
+          insurance?: number | null
+          other_costs?: number | null
+          packaging?: number | null
+          price?: number | null
+          product_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
