@@ -400,8 +400,18 @@ function ProductDetailPage() {
         }
       />
 
+      <Tabs defaultValue="visao" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="visao">Visão geral</TabsTrigger>
+          <TabsTrigger value="precificacao">Precificação</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visao" className="space-y-6">
       {/* Informações principais — reconstruído: foto 35% + dados 65% */}
       <Section flushBody bodyClassName="p-6 lg:p-8">
+
 
 
           <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
