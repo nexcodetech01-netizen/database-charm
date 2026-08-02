@@ -639,11 +639,13 @@ function buildRows(
   fixedCosts: Record<string, number>,
   channelMargins: Record<string, number> = {},
   channelStrategies: Record<string, Strategy> = {},
+  channels: readonly ChannelPreset[] = buildChannels(0),
+  companyId = "",
 ): readonly Row[] {
   if (!snapshot) return [];
   const { costTotal, targetMarginPct, currentStorePrice } = snapshot;
 
-  return CHANNELS.map((c) => {
+  return channels.map((c) => {
     const feeRate = c.feePct / 100;
     const fixedCost = Math.max(0, Number(fixedCosts[c.id] ?? 0) || 0);
     const effectiveCost = costTotal + fixedCost;
