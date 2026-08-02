@@ -5,7 +5,32 @@ import type { CategoryInsert, CategoryUpdate } from "../types";
 export const categoriesKeys = {
   all: ["categories"] as const,
   list: (companyId: string) => ["categories", "list", companyId] as const,
+  duplicates: (companyId: string) => ["categories", "duplicates", companyId] as const,
 };
+
+export function useDuplicateCategories(companyId: string) {
+  return useQuery({
+    queryKey: categoriesKeys.duplicates(companyId),
+    queryFn: () => categoriesService.previewDuplicates(companyId),
+    enabled: !!companyId,
+  });
+}
+
+export function useMergeCategories() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sourceId,
+      targetId,
+      confirmPolicyConflict,
+    }: {
+      sourceId: string;
+      targetId: string;
+      confirmPolicyConflict?: boolean;
+    }) => categoriesService.merge(sourceId, targetId, confirmPolicyConflict ?? false),
+    onSuccess: () => qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+  });
+}
 
 export function useCategoriesList(companyId: string) {
   return useQuery({
