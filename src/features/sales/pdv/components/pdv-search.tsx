@@ -108,8 +108,6 @@ export function PDVSearch({
           placeholder="Pesquisar produto • Código • SKU • Nome"
           className="h-11 border-0 pl-9 pr-32 text-base font-medium shadow-none focus-visible:ring-0"
         />
-      </div>
-
         <span
           aria-live="polite"
           className={cn(
@@ -121,6 +119,7 @@ export function PDVSearch({
           {focused && !disabled ? "Scanner pronto" : "ENTER adiciona"}
         </span>
       </div>
+
 
       {value.trim().length >= 2 && (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg">
