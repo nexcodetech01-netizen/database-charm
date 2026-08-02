@@ -73,6 +73,8 @@ import { MovementFormDialog } from "@/features/inventory/components/movement-for
 import type { ManualMovementType } from "@/features/inventory/types";
 
 import { useProductFinancials } from "@/features/products/hooks/use-product-financials";
+import { ProductCostBreakdown } from "@/features/products/components/product-cost-breakdown";
+
 import { formatCurrency, formatDateTime, formatNumber, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
