@@ -67,6 +67,7 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
 
 export function ProductPricingSheet({ open, onOpenChange, companyId, product, onApply }: Props) {
   const { policy } = usePricingPolicy(companyId);
+  const { feeTable } = useCompanyFeeTable(companyId);
 
   const baseCost = num(product.cost);
   const baseFreight = num(product.freight);
@@ -89,26 +90,51 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, product.id]);
 
+  // FASE 4 — taxa vem da tabela única da empresa (pior caso permitido).
+  const feePct = useMemo(() => {
+    const reference = num(product.price) || baseCost * 2 || 100;
+    return effectiveFeePct(worstCaseFee(feeTable, reference), reference);
+  }, [feeTable, product.price, baseCost]);
+
   const input = useMemo(
     () => ({
-      cost: baseCost,
-      freight: num(freight),
-      packaging: num(packaging),
-      otherCosts: num(otherCosts),
-      targetMargin: num(target),
+      companyId,
+      productId: product.id,
+      costs: {
+        acquisition: baseCost,
+        freight: num(freight),
+        packaging: num(packaging),
+        otherCosts: num(otherCosts),
+      },
+      margins: {
+        minPct: policy.minMargin,
+        targetPct: num(target),
+        premiumPct: policy.premiumMargin,
+      },
+      fee: { pct: feePct, label: "de recebimento" },
+      rounding: toRoundingPolicySpec(policy.rounding),
+      module: "pricing.product-sheet",
     }),
-    [baseCost, freight, packaging, otherCosts, target],
+    [companyId, product.id, baseCost, freight, packaging, otherCosts, target, feePct, policy],
   );
 
-  const result = useMemo(() => computePricing(input, policy), [input, policy]);
-  const currentEval = useMemo(
-    () => evaluatePrice(num(product.price), input, policy),
-    [product.price, input, policy],
-  );
-  const suggestedEval = useMemo(
-    () => evaluatePrice(result.targetPrice, input, policy),
-    [result.targetPrice, input, policy],
-  );
+  const result = useMemo(() => computeOfficialPricing(input), [input]);
+  const thresholds = {
+    minMarginPct: policy.minMargin,
+    idealMarginPct: num(target),
+    premiumMarginPct: policy.premiumMargin,
+  };
+  const currentEval = useMemo(() => {
+    const evaluated = evaluateOfficialPrice(num(product.price), input);
+    return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.price, input]);
+  const suggestedEval = useMemo(() => {
+    const evaluated = evaluateOfficialPrice(result.targetPrice, input);
+    return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result.targetPrice, input]);
+
 
   function apply() {
     if (!onApply) {
