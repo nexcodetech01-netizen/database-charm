@@ -125,14 +125,21 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   };
 
   const save = async () => {
+    const nextPrice = round2(parseNum(priceInput));
+    // Proteção: nunca sobrescrever um preço já gravado com R$ 0,00.
+    if (nextPrice <= 0 && fin.price > 0) {
+      toast.error("Informe um preço de venda válido para salvar.");
+      return;
+    }
     try {
       await update.mutateAsync({
         id: productId,
         input: {
-          price: round2(parseNum(priceInput)),
+          price: nextPrice,
           margin: round2(parseNum(marginInput)),
         },
       });
+
       setDirty(false);
       toast.success("Preço e margem atualizados");
     } catch (err) {
