@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPercent } from "@/lib/format";
+import { resolveMarginPolicy } from "@/features/pricing/official/margin-policy";
 
 interface Props {
   categoryName: string | null;
@@ -21,6 +22,10 @@ interface Props {
   categoryDefaultDiscountPct?: number | null;
   productMarginPct: number;
   useCategoryMargin: boolean;
+  /** Margem máxima da categoria (%), quando configurada. */
+  categoryMaxMarginPct?: number | null;
+  /** "Utilizar política automática" da categoria. */
+  categoryAutoPolicy?: boolean | null;
 }
 
 export function AppliedMarginPolicyCard({
@@ -30,17 +35,30 @@ export function AppliedMarginPolicyCard({
   categoryDefaultDiscountPct,
   productMarginPct,
   useCategoryMargin,
+  categoryMaxMarginPct,
+  categoryAutoPolicy,
 }: Props) {
   const hasCategoryTarget =
     categoryTargetMarginPct != null && Number.isFinite(categoryTargetMarginPct);
   const hasCategoryMin = categoryMinMarginPct != null && Number.isFinite(categoryMinMarginPct);
   const hasCategoryDiscount =
     categoryDefaultDiscountPct != null && Number.isFinite(categoryDefaultDiscountPct);
-  const originIsCategory = useCategoryMargin && hasCategoryTarget;
-  const policyValue = originIsCategory ? (categoryTargetMarginPct as number) : productMarginPct;
-  const policyLabel = originIsCategory
-    ? `Política comercial aplicada — categoria (${formatPercent(policyValue)}%)`
-    : `Política comercial aplicada — personalizada (${formatPercent(policyValue)}%)`;
+  // AUDITORIA: a margem utilizada e sua ORIGEM vêm do resolvedor oficial.
+  const resolution = resolveMarginPolicy({
+    product: { marginPct: productMarginPct, useCategoryMargin },
+    category: {
+      targetPct: categoryTargetMarginPct,
+      minPct: categoryMinMarginPct,
+      maxPct: categoryMaxMarginPct,
+      autoPolicy: categoryAutoPolicy,
+    },
+    fallbackTargetPct: productMarginPct,
+  });
+  const originIsCategory = resolution.origin === "category" && hasCategoryTarget;
+  const policyValue = resolution.marginPct;
+  const policyLabel = `Margem utilizada ${formatPercent(policyValue)}% — origem: ${
+    originIsCategory ? "Categoria" : "Produto"
+  }`;
   const Icon = originIsCategory ? Layers : User;
 
   return (
