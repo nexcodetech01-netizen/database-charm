@@ -90,6 +90,9 @@ interface Props {
   companyId: string;
   product?: Product;
   duplicateOf?: Product;
+  /** Preço sugerido aplicado externamente (modal de precificação) — apenas em memória. */
+  initialPrice?: number;
+
 }
 
 const schema = z.object({
@@ -229,7 +232,7 @@ function num(v: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function ProductForm({ companyId, product, duplicateOf }: Props) {
+export function ProductForm({ companyId, product, duplicateOf, initialPrice }: Props) {
   const navigate = useNavigate();
   const showNextAction = useNextAction();
 
@@ -239,7 +242,14 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
   const [form, setForm] = useEntityForm(product, toState);
+  const initialPriceAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!initialPrice || initialPrice <= 0 || initialPriceAppliedRef.current) return;
+    initialPriceAppliedRef.current = true;
+    setForm((s) => ({ ...s, price: initialPrice.toFixed(2) }));
+  }, [initialPrice, setForm]);
   const duplicateAppliedRef = useRef(false);
+
   useEffect(() => {
     if (product || !duplicateOf || duplicateAppliedRef.current) return;
     duplicateAppliedRef.current = true;

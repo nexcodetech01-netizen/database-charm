@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { z } from "zod";
 import { requirePermission } from "@/features/rbac";
 import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { EntityHeader, FormLayout, LoadingSurface } from "@/components/design";
 import { ProductForm, useProduct } from "@/features/products";
 
 export const Route = createFileRoute("/_authenticated/produtos_/$productId/editar")({
+  validateSearch: z.object({ price: z.coerce.number().positive().optional() }),
   beforeLoad: requirePermission("products.view"),
   component: EditProductPage,
 });
@@ -19,6 +21,7 @@ const STATUS_MAP: Record<string, { label: string; status: "success" | "neutral" 
 function EditProductPage() {
   const { productId } = Route.useParams();
   const { company } = Route.useRouteContext();
+  const { price: suggestedPrice } = Route.useSearch();
   const { data: product, isLoading } = useProduct(productId);
 
   if (isLoading) {
@@ -52,7 +55,7 @@ function EditProductPage() {
       />
 
       <FormLayout width="full">
-        <ProductForm companyId={company.id} product={product} />
+        <ProductForm companyId={company.id} product={product} initialPrice={suggestedPrice} />
       </FormLayout>
     </div>
   );

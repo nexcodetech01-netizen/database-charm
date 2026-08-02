@@ -838,6 +838,13 @@ function ProductDetailPage() {
           other_costs: product.other_costs,
           price: product.price,
         }}
+        onApply={(newPrice) => {
+          void navigate({
+            to: "/produtos/$productId/editar",
+            params: { productId: product.id },
+            search: { price: Number(newPrice.toFixed(2)) },
+          });
+        }}
       />
       <SalesCenterDialog
         open={salesCenterOpen}
