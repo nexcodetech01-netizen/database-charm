@@ -66,8 +66,7 @@ const MARGIN_TARGET_LABEL: Record<RecalculationMarginKind, string> = {
   premium: "Premium",
 };
 
-const cents = (n: number | null | undefined) =>
-  formatCurrency(((n ?? 0) as number) / 100);
+const cents = (n: number | null | undefined) => formatCurrency(((n ?? 0) as number) / 100);
 
 interface AppliedItem {
   readonly productId: string;
@@ -100,19 +99,14 @@ interface Props {
 
 export function PriceRecalculationWorkspace({ companyId }: Props) {
   const queryClient = useQueryClient();
-  const [marginTarget, setMarginTarget] =
-    useState<RecalculationMarginKind>("ideal");
+  const [marginTarget, setMarginTarget] = useState<RecalculationMarginKind>("ideal");
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["price-recalculation-list", companyId, marginTarget],
-    queryFn: () =>
-      getPriceRecalculationList({ data: { companyId, marginTarget } }),
+    queryFn: () => getPriceRecalculationList({ data: { companyId, marginTarget } }),
     staleTime: 30_000,
   });
 
-  const items = useMemo<readonly RecalculationItemDTO[]>(
-    () => data?.items ?? [],
-    [data],
-  );
+  const items = useMemo<readonly RecalculationItemDTO[]>(() => data?.items ?? [], [data]);
 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("all");
@@ -159,10 +153,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
 
   // ─── Seleção — SOMENTE aumentos são selecionáveis/aplicáveis em lote.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const applicableIds = useMemo(
-    () => increases.map((r) => r.productId),
-    [increases],
-  );
+  const applicableIds = useMemo(() => increases.map((r) => r.productId), [increases]);
 
   // Modo auditoria: nenhum produto é selecionado automaticamente.
   // Se o conjunto de aumentos mudar, apenas descartamos IDs que não existem mais.
@@ -179,10 +170,8 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSelectKey]);
 
-
   const pageSelectedCount = applicableIds.filter((id) => selected.has(id)).length;
-  const pageAllSelected =
-    applicableIds.length > 0 && pageSelectedCount === applicableIds.length;
+  const pageAllSelected = applicableIds.length > 0 && pageSelectedCount === applicableIds.length;
   const pageSomeSelected = pageSelectedCount > 0 && !pageAllSelected;
 
   const toggleRow = (id: string, checked: boolean) => {
@@ -261,9 +250,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
 
     for (let i = 0; i < selectedItems.length; i++) {
       if (cancelRef.current) {
-        setBulkState((s) =>
-          s ? { ...s, canceled: true, running: false, currentName: null } : s,
-        );
+        setBulkState((s) => (s ? { ...s, canceled: true, running: false, currentName: null } : s));
         break;
       }
       const it = selectedItems[i];
@@ -373,12 +360,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
         </div>
       }
       actions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
           <RefreshCw className={cn("mr-1 h-4 w-4", isFetching && "animate-spin")} />
           Recalcular
         </Button>
@@ -402,15 +384,9 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
               <SelectValue placeholder="Alvo de margem" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="min">
-                Margem mínima
-              </SelectItem>
-              <SelectItem value="ideal">
-                Margem ideal (padrão)
-              </SelectItem>
-              <SelectItem value="premium">
-                Margem premium
-              </SelectItem>
+              <SelectItem value="min">Margem mínima</SelectItem>
+              <SelectItem value="ideal">Margem ideal (padrão)</SelectItem>
+              <SelectItem value="premium">Margem premium</SelectItem>
             </SelectContent>
           </Select>
           <Select value={categoryId} onValueChange={setCategoryId}>
@@ -462,9 +438,8 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
           {selected.size > 0 ? (
             <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm">
-                <strong>{selectedSummary.count}</strong> selecionado(s) ·{" "}
-                Atual {cents(selectedSummary.cur)} → Novo{" "}
-                <strong>{cents(selectedSummary.rec)}</strong>
+                <strong>{selectedSummary.count}</strong> selecionado(s) · Atual{" "}
+                {cents(selectedSummary.cur)} → Novo <strong>{cents(selectedSummary.rec)}</strong>
                 <span
                   className={cn(
                     "ml-2 font-medium",
@@ -556,11 +531,10 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
           <DialogHeader>
             <DialogTitle>Confirmar aplicação em lote</DialogTitle>
             <DialogDescription>
-              Esta ação vai atualizar o preço de venda de{" "}
-              <strong>{selectedSummary.count}</strong> produto(s){" "}
-              <strong>com aumento de preço</strong>. Nenhum produto com redução
-              será alterado. SKU, custo, estoque e histórico permanecem intactos.
-              Cada preço aplicado é registrado em auditoria.
+              Esta ação vai atualizar o preço de venda de <strong>{selectedSummary.count}</strong>{" "}
+              produto(s) <strong>com aumento de preço</strong>. Nenhum produto com redução será
+              alterado. SKU, custo, estoque e histórico permanecem intactos. Cada preço aplicado é
+              registrado em auditoria.
             </DialogDescription>
           </DialogHeader>
 
@@ -572,9 +546,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Soma nova</span>
-                <span className="tabular-nums font-medium">
-                  {cents(selectedSummary.rec)}
-                </span>
+                <span className="tabular-nums font-medium">{cents(selectedSummary.rec)}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-2">
                 <span className="text-muted-foreground">Impacto</span>
@@ -596,9 +568,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
           ) : (
             <div className="space-y-3">
               <Progress
-                value={
-                  bulkState.total > 0 ? (bulkState.done / bulkState.total) * 100 : 0
-                }
+                value={bulkState.total > 0 ? (bulkState.done / bulkState.total) * 100 : 0}
               />
               <div className="text-sm text-muted-foreground">
                 {bulkState.running
@@ -608,67 +578,75 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
                     : "Aplicação concluída."}
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                >
                   {bulkState.applied.length} aplicados
                 </Badge>
                 {bulkState.failed.length > 0 ? (
-                  <Badge variant="outline" className="border-red-500/40 text-red-600 dark:text-red-400">
+                  <Badge
+                    variant="outline"
+                    className="border-red-500/40 text-red-600 dark:text-red-400"
+                  >
                     {bulkState.failed.length} falharam
                   </Badge>
                 ) : null}
               </div>
-              {!bulkState.running && bulkState.applied.length > 0 ? (() => {
-                const changed = bulkState.applied.filter(
-                  (a) => a.appliedPriceCents !== a.previousPriceCents,
-                );
-                const unchanged = bulkState.applied.length - changed.length;
-                const diffs = changed.map((a) => ({
-                  name: a.name,
-                  diff: a.appliedPriceCents - a.previousPriceCents,
-                }));
-                const biggestUp = diffs.reduce(
-                  (m, x) => (x.diff > (m?.diff ?? -Infinity) ? x : m),
-                  null as { name: string; diff: number } | null,
-                );
-                const biggestDown = diffs.reduce(
-                  (m, x) => (x.diff < (m?.diff ?? Infinity) ? x : m),
-                  null as { name: string; diff: number } | null,
-                );
-                return (
-                  <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Recalculados</span>
-                      <span className="tabular-nums font-medium">
-                        {bulkState.applied.length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Alterados</span>
-                      <span className="tabular-nums font-medium">{changed.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Permaneceram iguais</span>
-                      <span className="tabular-nums">{unchanged}</span>
-                    </div>
-                    {biggestUp && biggestUp.diff > 0 ? (
-                      <div className="flex justify-between border-t border-border pt-1.5">
-                        <span className="text-muted-foreground">Maior aumento</span>
-                        <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
-                          +{cents(biggestUp.diff)} · {biggestUp.name}
-                        </span>
+              {!bulkState.running && bulkState.applied.length > 0
+                ? (() => {
+                    const changed = bulkState.applied.filter(
+                      (a) => a.appliedPriceCents !== a.previousPriceCents,
+                    );
+                    const unchanged = bulkState.applied.length - changed.length;
+                    const diffs = changed.map((a) => ({
+                      name: a.name,
+                      diff: a.appliedPriceCents - a.previousPriceCents,
+                    }));
+                    const biggestUp = diffs.reduce(
+                      (m, x) => (x.diff > (m?.diff ?? -Infinity) ? x : m),
+                      null as { name: string; diff: number } | null,
+                    );
+                    const biggestDown = diffs.reduce(
+                      (m, x) => (x.diff < (m?.diff ?? Infinity) ? x : m),
+                      null as { name: string; diff: number } | null,
+                    );
+                    return (
+                      <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Recalculados</span>
+                          <span className="tabular-nums font-medium">
+                            {bulkState.applied.length}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Alterados</span>
+                          <span className="tabular-nums font-medium">{changed.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Permaneceram iguais</span>
+                          <span className="tabular-nums">{unchanged}</span>
+                        </div>
+                        {biggestUp && biggestUp.diff > 0 ? (
+                          <div className="flex justify-between border-t border-border pt-1.5">
+                            <span className="text-muted-foreground">Maior aumento</span>
+                            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
+                              +{cents(biggestUp.diff)} · {biggestUp.name}
+                            </span>
+                          </div>
+                        ) : null}
+                        {biggestDown && biggestDown.diff < 0 ? (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Maior redução</span>
+                            <span className="tabular-nums text-red-600 dark:text-red-400">
+                              {cents(biggestDown.diff)} · {biggestDown.name}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                    {biggestDown && biggestDown.diff < 0 ? (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Maior redução</span>
-                        <span className="tabular-nums text-red-600 dark:text-red-400">
-                          {cents(biggestDown.diff)} · {biggestDown.name}
-                        </span>
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })() : null}
+                    );
+                  })()
+                : null}
               {bulkState.failed.length > 0 ? (
                 <div className="max-h-40 overflow-auto rounded-lg border border-border bg-muted/40 p-2 text-xs">
                   {bulkState.failed.map((f) => (
@@ -681,7 +659,6 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
               ) : null}
             </div>
           )}
-
 
           <DialogFooter>
             {!bulkState ? (
@@ -903,7 +880,10 @@ function GroupedRecalcTable({
 function RowStatusBadge({ row }: { row: RecalculationItemDTO }) {
   if (row.skipped) {
     return (
-      <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400"
+      >
         <XCircle className="h-3 w-3" />
         Sem dados
       </Badge>
@@ -911,7 +891,10 @@ function RowStatusBadge({ row }: { row: RecalculationItemDTO }) {
   }
   if (row.differenceCents === 0) {
     return (
-      <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+      <Badge
+        variant="outline"
+        className="gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+      >
         <CheckCircle2 className="h-3 w-3" />
         Já alinhado
       </Badge>
@@ -919,7 +902,10 @@ function RowStatusBadge({ row }: { row: RecalculationItemDTO }) {
   }
   if (row.differenceCents > 0) {
     return (
-      <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400"
+      >
         <ArrowUpRight className="h-3 w-3" />
         Precisa de aumento
       </Badge>

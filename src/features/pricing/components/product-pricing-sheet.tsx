@@ -135,7 +135,6 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result.targetPrice, input]);
 
-
   function apply() {
     if (!onApply) {
       toast.info("Copie o preço sugerido e ajuste no formulário do produto.");
@@ -160,7 +159,9 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
         <div className="mt-6 space-y-5">
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">Preço atual</span>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                Preço atual
+              </span>
               <PricingStatusBadge status={currentEval.status} label={currentEval.label} />
             </div>
             <div className="mt-2 flex items-baseline gap-3">
@@ -168,7 +169,8 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
                 {formatCurrency(num(product.price))}
               </span>
               <span className="text-xs text-muted-foreground">
-                margem {formatNumber(currentEval.marginPct)}% · markup {formatNumber(currentEval.markupPct)}%
+                margem {formatNumber(currentEval.marginPct)}% · markup{" "}
+                {formatNumber(currentEval.markupPct)}%
               </span>
             </div>
           </div>
@@ -178,16 +180,32 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
               <Input value={formatNumber(baseCost)} disabled />
             </Field>
             <Field label="Frete (R$)">
-              <Input inputMode="decimal" value={freight} onChange={(e) => setFreight(e.target.value)} />
+              <Input
+                inputMode="decimal"
+                value={freight}
+                onChange={(e) => setFreight(e.target.value)}
+              />
             </Field>
             <Field label="Embalagem (R$)">
-              <Input inputMode="decimal" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
+              <Input
+                inputMode="decimal"
+                value={packaging}
+                onChange={(e) => setPackaging(e.target.value)}
+              />
             </Field>
             <Field label="Outros custos (R$)">
-              <Input inputMode="decimal" value={otherCosts} onChange={(e) => setOtherCosts(e.target.value)} />
+              <Input
+                inputMode="decimal"
+                value={otherCosts}
+                onChange={(e) => setOtherCosts(e.target.value)}
+              />
             </Field>
             <Field label="Margem desejada (%)">
-              <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <Input
+                inputMode="decimal"
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+              />
             </Field>
             <Field label="Taxa considerada (%)">
               <Input value={formatNumber(result.feePct)} disabled />
@@ -234,7 +252,8 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            Nada é salvo automaticamente. Clique em <strong>Aplicar</strong> para usar o preço sugerido
+            Nada é salvo automaticamente. Clique em <strong>Aplicar</strong> para usar o preço
+            sugerido
             {onApply ? " no formulário" : " (copie e cole no cadastro)"}.
           </p>
         </div>

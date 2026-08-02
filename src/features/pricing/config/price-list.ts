@@ -96,10 +96,7 @@ export function createPriceList(input: PriceListInput): PriceListAggregate {
   };
 }
 
-export function validatePriceListEntry(
-  value: unknown,
-  path = "entry",
-): DomainIssue[] {
+export function validatePriceListEntry(value: unknown, path = "entry"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }
@@ -143,22 +140,17 @@ export function validatePriceListEntry(
     (e.maxQty as number) < (e.minQty as number)
   ) {
     issues.push(
-      issue(
-        "PRICE_LIST_RANGE_INVALID",
-        `${path}.maxQty`,
-        `maxQty < minQty`,
-        { minQty: e.minQty, maxQty: e.maxQty },
-      ),
+      issue("PRICE_LIST_RANGE_INVALID", `${path}.maxQty`, `maxQty < minQty`, {
+        minQty: e.minQty,
+        maxQty: e.maxQty,
+      }),
     );
   }
 
   return issues;
 }
 
-export function validatePriceList(
-  value: unknown,
-  path = "priceList",
-): DomainIssue[] {
+export function validatePriceList(value: unknown, path = "priceList"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }
@@ -167,12 +159,10 @@ export function validatePriceList(
 
   if (pl.version !== PRICE_LIST_AGGREGATE_VERSION) {
     issues.push(
-      issue(
-        "UNSUPPORTED_CONFIG_VERSION",
-        `${path}.version`,
-        `versão de PriceList não suportada`,
-        { expected: PRICE_LIST_AGGREGATE_VERSION, actual: pl.version },
-      ),
+      issue("UNSUPPORTED_CONFIG_VERSION", `${path}.version`, `versão de PriceList não suportada`, {
+        expected: PRICE_LIST_AGGREGATE_VERSION,
+        actual: pl.version,
+      }),
     );
   }
   issues.push(...validateRequiredString(pl.priceListId, `${path}.priceListId`));

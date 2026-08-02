@@ -48,10 +48,7 @@ export class ApplicationError extends Error {
   }
 }
 
-export const validationFailed = (
-  message: string,
-  issues: readonly DomainIssue[],
-) =>
+export const validationFailed = (message: string, issues: readonly DomainIssue[]) =>
   new ApplicationError("VALIDATION_FAILED", message, {
     issues,
     detail: { issueCount: issues.length },

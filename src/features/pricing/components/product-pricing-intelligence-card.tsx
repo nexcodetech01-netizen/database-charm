@@ -12,23 +12,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import {
-  BadgeCheck,
-  Building2,
-  CheckCircle2,
-  Info,
-  Layers,
-  Package,
-  Sparkles,
-} from "lucide-react";
+import { BadgeCheck, Building2, CheckCircle2, Info, Layers, Package, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -37,12 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -51,8 +33,7 @@ import {
   type ProductPricingIntelligenceDTO,
 } from "@/features/pricing/lib/product-pricing.functions";
 
-const cents = (n: number | null | undefined) =>
-  formatCurrency(((n ?? 0) as number) / 100);
+const cents = (n: number | null | undefined) => formatCurrency(((n ?? 0) as number) / 100);
 
 const ORIGIN_ICON = {
   Produto: Package,
@@ -68,29 +49,21 @@ interface Props {
   productQueryKey?: readonly unknown[];
 }
 
-export function ProductPricingIntelligenceCard({
-  companyId,
-  productId,
-  productQueryKey,
-}: Props) {
+export function ProductPricingIntelligenceCard({ companyId, productId, productQueryKey }: Props) {
   const qc = useQueryClient();
   const queryKey = ["pricing", "product-intelligence", companyId, productId] as const;
 
   const query = useQuery({
     queryKey,
-    queryFn: () =>
-      getProductPricingIntelligence({ data: { companyId, productId } }),
+    queryFn: () => getProductPricingIntelligence({ data: { companyId, productId } }),
   });
 
   const [explainOpen, setExplainOpen] = useState(false);
 
   const applyMutation = useMutation({
-    mutationFn: () =>
-      applyProductSuggestedPrice({ data: { companyId, productId } }),
+    mutationFn: () => applyProductSuggestedPrice({ data: { companyId, productId } }),
     onSuccess: async (res) => {
-      toast.success(
-        `Preço aplicado: ${formatCurrency(res.appliedPriceCents / 100)}`,
-      );
+      toast.success(`Preço aplicado: ${formatCurrency(res.appliedPriceCents / 100)}`);
       await qc.invalidateQueries({ queryKey });
       if (productQueryKey) {
         await qc.invalidateQueries({ queryKey: productQueryKey });
@@ -131,7 +104,6 @@ export function ProductPricingIntelligenceCard({
 
       <CardContent className="space-y-5">
         {query.isLoading ? (
-
           <p className="text-sm text-muted-foreground">Calculando preço sugerido…</p>
         ) : query.isError || !data ? (
           <PolicyEmptyState message={friendlyPricingMessage(query.error)} />
@@ -144,20 +116,12 @@ export function ProductPricingIntelligenceCard({
               const priceReais = (data.product.currentPriceCents ?? 0) / 100;
               const costReais = (data.product.costTotalCents ?? 0) / 100;
               const profitReais = priceReais - costReais;
-              const marginPct =
-                priceReais > 0 ? (profitReais / priceReais) * 100 : 0;
+              const marginPct = priceReais > 0 ? (profitReais / priceReais) * 100 : 0;
               const profitTone: "positive" | "negative" | "neutral" =
-                profitReais > 0
-                  ? "positive"
-                  : profitReais < 0
-                    ? "negative"
-                    : "neutral";
+                profitReais > 0 ? "positive" : profitReais < 0 ? "negative" : "neutral";
               return (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <MetricTile
-                    label="Preço atual"
-                    value={formatCurrency(priceReais)}
-                  />
+                  <MetricTile label="Preço atual" value={formatCurrency(priceReais)} />
                   <MetricTile
                     label="Custo total"
                     value={formatCurrency(costReais)}
@@ -196,42 +160,28 @@ export function ProductPricingIntelligenceCard({
                   {formatPercent(data.estimatedMarginPct)}%
                 </span>{" "}
                 • Preço sugerido pela política:{" "}
-                <span className="font-medium text-foreground">
-                  {cents(data.finalPriceCents)}
-                </span>
+                <span className="font-medium text-foreground">{cents(data.finalPriceCents)}</span>
               </span>
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setExplainOpen(true)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setExplainOpen(true)}>
                 Ver explicação
               </Button>
               <Button
                 size="sm"
                 onClick={() => applyMutation.mutate()}
-                disabled={
-                  applyMutation.isPending || data.differenceCents === 0
-                }
+                disabled={applyMutation.isPending || data.differenceCents === 0}
               >
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                {applyMutation.isPending
-                  ? "Aplicando…"
-                  : "Aplicar preço sugerido pela política"}
+                {applyMutation.isPending ? "Aplicando…" : "Aplicar preço sugerido pela política"}
               </Button>
             </div>
           </>
         )}
       </CardContent>
 
-      <ExplainDialog
-        open={explainOpen}
-        onOpenChange={setExplainOpen}
-        data={data ?? null}
-      />
+      <ExplainDialog open={explainOpen} onOpenChange={setExplainOpen} data={data ?? null} />
     </Card>
   );
 }
@@ -240,13 +190,7 @@ export function ProductPricingIntelligenceCard({
 // Sub-componentes
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OriginBadge({
-  label,
-  scope,
-}: {
-  label: string;
-  scope?: string | null;
-}) {
+function OriginBadge({ label, scope }: { label: string; scope?: string | null }) {
   const Icon = ORIGIN_ICON[label as keyof typeof ORIGIN_ICON] ?? Sparkles;
   return (
     <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -320,8 +264,6 @@ function MetricTile({
   );
 }
 
-
-
 // UUID v4-ish regex — usado para higienizar mensagens técnicas antes de mostrar
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
@@ -347,15 +289,13 @@ function PolicyEmptyState({ message }: { message: string }) {
         <div>
           <p className="text-sm font-medium text-foreground">{message}</p>
           <p className="text-xs text-muted-foreground">
-            Configure margens, arredondamento e comportamento comercial para
-            habilitar as sugestões automáticas.
+            Configure margens, arredondamento e comportamento comercial para habilitar as sugestões
+            automáticas.
           </p>
         </div>
       </div>
       <Button asChild size="sm" variant="outline">
-        <Link to="/inteligencia-comercial/politica-empresa">
-          Configurar política comercial
-        </Link>
+        <Link to="/inteligencia-comercial/politica-empresa">Configurar política comercial</Link>
       </Button>
     </div>
   );
@@ -375,9 +315,7 @@ function ExplainDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Explicação do cálculo</DialogTitle>
-          <DialogDescription>
-            {data?.summary ?? "Sem detalhes disponíveis."}
-          </DialogDescription>
+          <DialogDescription>{data?.summary ?? "Sem detalhes disponíveis."}</DialogDescription>
         </DialogHeader>
 
         {data ? (
@@ -403,14 +341,11 @@ function ExplainDialog({
 
             {data.warnings.length > 0 ? (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
-                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">
-                  Avisos
-                </p>
+                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">Avisos</p>
                 <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
                   {data.warnings.map((w, i) => (
                     <li key={i}>
-                      <span className="font-mono text-[10px]">{w.code}</span> —{" "}
-                      {w.message}
+                      <span className="font-mono text-[10px]">{w.code}</span> — {w.message}
                     </li>
                   ))}
                 </ul>

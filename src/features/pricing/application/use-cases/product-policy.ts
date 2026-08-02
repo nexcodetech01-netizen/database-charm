@@ -8,12 +8,7 @@ import {
 } from "../../config/product-policy";
 import type { StoredEntity } from "../../persistence/types";
 import type { ProductPolicy } from "../../resolver/types";
-import {
-  ApplicationError,
-  invalidArgument,
-  notFound,
-  validationFailed,
-} from "../errors";
+import { ApplicationError, invalidArgument, notFound, validationFailed } from "../errors";
 import type { Actor, PricingApplicationDeps, UseCase } from "../ports";
 import { requireString, translateRepoError } from "./_internal";
 
@@ -51,11 +46,10 @@ export function createCreateProductPolicyUseCase(
         });
       }
       try {
-        return await deps.repositories.productPolicies.save(
-          companyId,
-          createProductPolicy(input),
-          { expectedVersion: 0, actor: { userId: actor?.userId } },
-        );
+        return await deps.repositories.productPolicies.save(companyId, createProductPolicy(input), {
+          expectedVersion: 0,
+          actor: { userId: actor?.userId },
+        });
       } catch (err) {
         throw translateRepoError(err, "ProductPolicy");
       }
@@ -83,11 +77,10 @@ export function createUpdateProductPolicyUseCase(
       );
       if (!existing) throw notFound("ProductPolicy", input.productId);
       try {
-        return await deps.repositories.productPolicies.save(
-          companyId,
-          createProductPolicy(input),
-          { expectedVersion, actor: { userId: actor?.userId } },
-        );
+        return await deps.repositories.productPolicies.save(companyId, createProductPolicy(input), {
+          expectedVersion,
+          actor: { userId: actor?.userId },
+        });
       } catch (err) {
         throw translateRepoError(err, "ProductPolicy");
       }

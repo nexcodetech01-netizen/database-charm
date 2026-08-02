@@ -12,8 +12,7 @@ export interface ProductLayer {
   readonly priceFloorCents?: number;
 }
 
-const isNum = (v: unknown): v is number =>
-  typeof v === "number" && Number.isFinite(v);
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 export function resolveProductLayer(policy: ProductPolicy): ProductLayer {
   const overrides: PolicyOverrides = {
@@ -29,8 +28,9 @@ export function resolveProductLayer(policy: ProductPolicy): ProductLayer {
     warnings: [],
     productId: policy.productId,
     sku: policy.sku,
-    priceFloorCents: isNum(policy.priceFloorCents) && policy.priceFloorCents >= 0
-      ? policy.priceFloorCents
-      : undefined,
+    priceFloorCents:
+      isNum(policy.priceFloorCents) && policy.priceFloorCents >= 0
+        ? policy.priceFloorCents
+        : undefined,
   };
 }

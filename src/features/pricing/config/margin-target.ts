@@ -9,21 +9,11 @@ import { issue, validatePct } from "./primitives";
 
 export type MarginTargetKind = MarginTargetSpec["kind"];
 
-const VALID_KINDS: readonly MarginTargetKind[] = [
-  "min",
-  "ideal",
-  "premium",
-  "custom",
-];
+const VALID_KINDS: readonly MarginTargetKind[] = ["min", "ideal", "premium", "custom"];
 
-export function createMarginTarget(
-  kind: "min" | "ideal" | "premium",
-): MarginTargetSpec;
+export function createMarginTarget(kind: "min" | "ideal" | "premium"): MarginTargetSpec;
 export function createMarginTarget(kind: "custom", pct: number): MarginTargetSpec;
-export function createMarginTarget(
-  kind: MarginTargetKind,
-  pct?: number,
-): MarginTargetSpec {
+export function createMarginTarget(kind: MarginTargetKind, pct?: number): MarginTargetSpec {
   if (kind === "custom") {
     if (typeof pct !== "number" || !Number.isFinite(pct)) {
       throw new Error("createMarginTarget: 'custom' requer pct numérico finito");
@@ -33,10 +23,7 @@ export function createMarginTarget(
   return { kind };
 }
 
-export function validateMarginTarget(
-  value: unknown,
-  path = "marginTarget",
-): DomainIssue[] {
+export function validateMarginTarget(value: unknown, path = "marginTarget"): DomainIssue[] {
   if (value === undefined || value === null) return [];
   if (typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];

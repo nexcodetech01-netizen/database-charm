@@ -95,11 +95,46 @@ describe("FASE 3 — custos unificados", () => {
 
 describe("FASE 4 — taxas Asaas da empresa", () => {
   const table = buildFeeTable([
-    { method_key: "pix", label: "Pix", installments: 1, fee_percent: 0, fee_fixed: 1.99, active: true },
-    { method_key: "debit_card", label: "Débito", installments: 1, fee_percent: 1.89, fee_fixed: 0.35, active: true },
-    { method_key: "credit_card_1", label: "Crédito 1x", installments: 1, fee_percent: 2.99, fee_fixed: 0.49, active: true },
-    { method_key: "credit_card_2", label: "Crédito 2x", installments: 2, fee_percent: 3.49, fee_fixed: 0.49, active: true },
-    { method_key: "credit_card_3", label: "Crédito 3x", installments: 3, fee_percent: 3.99, fee_fixed: 0.49, active: true },
+    {
+      method_key: "pix",
+      label: "Pix",
+      installments: 1,
+      fee_percent: 0,
+      fee_fixed: 1.99,
+      active: true,
+    },
+    {
+      method_key: "debit_card",
+      label: "Débito",
+      installments: 1,
+      fee_percent: 1.89,
+      fee_fixed: 0.35,
+      active: true,
+    },
+    {
+      method_key: "credit_card_1",
+      label: "Crédito 1x",
+      installments: 1,
+      fee_percent: 2.99,
+      fee_fixed: 0.49,
+      active: true,
+    },
+    {
+      method_key: "credit_card_2",
+      label: "Crédito 2x",
+      installments: 2,
+      fee_percent: 3.49,
+      fee_fixed: 0.49,
+      active: true,
+    },
+    {
+      method_key: "credit_card_3",
+      label: "Crédito 3x",
+      installments: 3,
+      fee_percent: 3.99,
+      fee_fixed: 0.49,
+      active: true,
+    },
   ]);
 
   it("resolve a taxa cadastrada por método", () => {
@@ -114,10 +149,9 @@ describe("FASE 4 — taxas Asaas da empresa", () => {
   });
 
   it("converte taxa fixa em percentual efetivo sobre o valor", () => {
-    expect(effectiveFeePct({ feePct: 0, feeFixed: 1.99, methodKey: "pix", label: "Pix" }, 100)).toBeCloseTo(
-      1.99,
-      2,
-    );
+    expect(
+      effectiveFeePct({ feePct: 0, feeFixed: 1.99, methodKey: "pix", label: "Pix" }, 100),
+    ).toBeCloseTo(1.99, 2);
   });
 
   it("até R$ 100,00 permite somente 1x", () => {

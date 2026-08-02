@@ -14,11 +14,7 @@
  * Referências: ADR-001..010. Versionamento obrigatório (ADR-008).
  */
 import type { PriceListAggregate } from "../config/price-list";
-import type {
-  CategoryPolicy,
-  CompanyPolicy,
-  ProductPolicy,
-} from "../resolver/types";
+import type { CategoryPolicy, CompanyPolicy, ProductPolicy } from "../resolver/types";
 import type {
   AppliedRule,
   PricingContext,
@@ -98,11 +94,7 @@ export interface CategoryPolicyRepository {
     policy: CategoryPolicy,
     opts?: WriteOptions,
   ): Promise<StoredEntity<CategoryPolicy>>;
-  softDelete(
-    companyId: string,
-    categoryId: string,
-    opts?: WriteOptions,
-  ): Promise<void>;
+  softDelete(companyId: string, categoryId: string, opts?: WriteOptions): Promise<void>;
   restore(
     companyId: string,
     categoryId: string,
@@ -115,10 +107,7 @@ export interface CategoryPolicyRepository {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProductPolicyRepository {
-  findByProduct(
-    companyId: string,
-    productId: string,
-  ): Promise<StoredEntity<ProductPolicy> | null>;
+  findByProduct(companyId: string, productId: string): Promise<StoredEntity<ProductPolicy> | null>;
   listByCompany(
     companyId: string,
     opts?: ListOptions,
@@ -128,11 +117,7 @@ export interface ProductPolicyRepository {
     policy: ProductPolicy,
     opts?: WriteOptions,
   ): Promise<StoredEntity<ProductPolicy>>;
-  softDelete(
-    companyId: string,
-    productId: string,
-    opts?: WriteOptions,
-  ): Promise<void>;
+  softDelete(companyId: string, productId: string, opts?: WriteOptions): Promise<void>;
   restore(
     companyId: string,
     productId: string,
@@ -158,11 +143,7 @@ export interface PriceListRepository {
     aggregate: PriceListAggregate,
     opts?: WriteOptions,
   ): Promise<StoredEntity<PriceListAggregate>>;
-  softDelete(
-    companyId: string,
-    priceListId: string,
-    opts?: WriteOptions,
-  ): Promise<void>;
+  softDelete(companyId: string, priceListId: string, opts?: WriteOptions): Promise<void>;
   restore(
     companyId: string,
     priceListId: string,
@@ -217,10 +198,7 @@ export interface DecisionQuery {
 export interface PricingDecisionRepository {
   /** Append imutável. Nunca sobrescreve. */
   append(snapshot: PricingDecisionSnapshot): Promise<StoredPricingDecision>;
-  findByExplainId(
-    companyId: string,
-    explainId: string,
-  ): Promise<StoredPricingDecision | null>;
+  findByExplainId(companyId: string, explainId: string): Promise<StoredPricingDecision | null>;
   query(query: DecisionQuery): Promise<readonly StoredPricingDecision[]>;
 }
 

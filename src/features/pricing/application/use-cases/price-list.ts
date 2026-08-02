@@ -12,12 +12,7 @@ import {
   type PriceListInput,
 } from "../../config/price-list";
 import type { StoredEntity } from "../../persistence/types";
-import {
-  ApplicationError,
-  invalidArgument,
-  notFound,
-  validationFailed,
-} from "../errors";
+import { ApplicationError, invalidArgument, notFound, validationFailed } from "../errors";
 import type { Actor, PricingApplicationDeps, UseCase } from "../ports";
 import { requireString, translateRepoError } from "./_internal";
 

@@ -53,7 +53,6 @@ export type PricingWarningCode =
   | "NEGATIVE_PRICE_CLAMPED"
   | "MISSING_COST_COMPOSITION";
 
-
 export interface PricingWarning {
   code: PricingWarningCode;
   message: string;

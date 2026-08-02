@@ -30,13 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -80,7 +74,6 @@ const numStr = (s: string): number => {
 };
 const cents = (v: number) => formatCurrency(Number.isFinite(v) ? v / 100 : 0);
 
-
 const ORIGIN_ICON = {
   Produto: Package,
   Categoria: Layers,
@@ -117,7 +110,6 @@ export function PricingSimulatorWorkspace({ companyId }: Props) {
     customMargin: "",
   });
 
-
   const [result, setResult] = useState<SimulatePricingDTO | null>(null);
   const [explainOpen, setExplainOpen] = useState(false);
 
@@ -151,11 +143,9 @@ export function PricingSimulatorWorkspace({ companyId }: Props) {
           quantity: Math.max(1, Math.round(numStr(form.quantity))),
 
           marginTarget: form.marginTarget,
-          customMarginPct:
-            form.marginTarget === "custom" ? numStr(form.customMargin) : undefined,
-          currentPriceCents: numStr(form.currentPrice) > 0
-            ? Math.round(numStr(form.currentPrice) * 100)
-            : null,
+          customMarginPct: form.marginTarget === "custom" ? numStr(form.customMargin) : undefined,
+          currentPriceCents:
+            numStr(form.currentPrice) > 0 ? Math.round(numStr(form.currentPrice) * 100) : null,
         },
       }),
     onSuccess: (dto) => setResult(dto),
@@ -168,18 +158,13 @@ export function PricingSimulatorWorkspace({ companyId }: Props) {
 
   const actions = (
     <div className="flex flex-col items-end gap-1">
-      <Button
-        onClick={handleSimulate}
-        disabled={!canSimulate || mutation.isPending}
-        size="sm"
-      >
+      <Button onClick={handleSimulate} disabled={!canSimulate || mutation.isPending} size="sm">
         <Calculator className="mr-1.5 h-4 w-4" />
         {mutation.isPending ? "Calculando…" : "Simular preço"}
       </Button>
       {!canSimulate ? (
         <p className="text-[10px] text-muted-foreground">
-          Preencha:{" "}
-          <span className="text-destructive">{missingFields.join(", ")}</span>
+          Preencha: <span className="text-destructive">{missingFields.join(", ")}</span>
         </p>
       ) : null}
     </div>
@@ -215,11 +200,7 @@ export function PricingSimulatorWorkspace({ companyId }: Props) {
         />
       </div>
 
-      <ExplainDialog
-        open={explainOpen}
-        onOpenChange={setExplainOpen}
-        data={result}
-      />
+      <ExplainDialog open={explainOpen} onOpenChange={setExplainOpen} data={result} />
     </PageLayout>
   );
 }
@@ -241,7 +222,6 @@ interface FormShape {
   marginTarget: SimulatorMarginKind;
   customMargin: string;
 }
-
 
 function InputsPanel({
   form,
@@ -321,17 +301,12 @@ function InputsPanel({
             value={form.packaging}
             onChange={(v) => set("packaging", v)}
           />
-          <MoneyField
-            label="Seguro"
-            value={form.insurance}
-            onChange={(v) => set("insurance", v)}
-          />
+          <MoneyField label="Seguro" value={form.insurance} onChange={(v) => set("insurance", v)} />
           <MoneyField
             label="Outras despesas"
             value={form.otherCosts}
             onChange={(v) => set("otherCosts", v)}
           />
-
 
           <Field label="Quantidade *">
             <Input
@@ -352,26 +327,27 @@ function InputsPanel({
           <Field label="Estratégia de margem">
             <Select
               value={form.marginTarget}
-              onValueChange={(v) =>
-                set("marginTarget", v as SimulatorMarginKind)
-              }
+              onValueChange={(v) => set("marginTarget", v as SimulatorMarginKind)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="min">
-                  Mínima {bootstrap?.companyPolicy
+                  Mínima{" "}
+                  {bootstrap?.companyPolicy
                     ? `(${formatNumber(bootstrap.companyPolicy.minMarginPct)}%)`
                     : ""}
                 </SelectItem>
                 <SelectItem value="ideal">
-                  Ideal {bootstrap?.companyPolicy
+                  Ideal{" "}
+                  {bootstrap?.companyPolicy
                     ? `(${formatNumber(bootstrap.companyPolicy.idealMarginPct)}%)`
                     : ""}
                 </SelectItem>
                 <SelectItem value="premium">
-                  Premium {bootstrap?.companyPolicy
+                  Premium{" "}
+                  {bootstrap?.companyPolicy
                     ? `(${formatNumber(bootstrap.companyPolicy.premiumMarginPct)}%)`
                     : ""}
                 </SelectItem>
@@ -387,9 +363,7 @@ function InputsPanel({
                 value={form.customMargin}
                 onChange={(e) => set("customMargin", e.target.value)}
                 placeholder="Ex: 42"
-                className={cn(
-                  numStr(form.customMargin) <= 0 && "border-destructive/60",
-                )}
+                className={cn(numStr(form.customMargin) <= 0 && "border-destructive/60")}
               />
             </Field>
           ) : (
@@ -414,9 +388,7 @@ function Field({
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
-      {helper ? (
-        <p className="text-[10px] text-muted-foreground">{helper}</p>
-      ) : null}
+      {helper ? <p className="text-[10px] text-muted-foreground">{helper}</p> : null}
     </div>
   );
 }
@@ -503,18 +475,9 @@ function ResultsPanel({
                 highlight
               />
               <MetricTile label="Preço premium" value={cents(result.premiumPriceCents)} />
-              <MetricTile
-                label="Margem estimada"
-                value={`${formatNumber(result.marginPct)}%`}
-              />
-              <MetricTile
-                label="Markup"
-                value={`${formatNumber(result.markupPct)}%`}
-              />
-              <MetricTile
-                label="Custo total"
-                value={cents(result.costTotalCents)}
-              />
+              <MetricTile label="Margem estimada" value={`${formatNumber(result.marginPct)}%`} />
+              <MetricTile label="Markup" value={`${formatNumber(result.markupPct)}%`} />
+              <MetricTile label="Custo total" value={cents(result.costTotalCents)} />
               <MetricTile
                 label="Lucro bruto"
                 value={cents(result.grossProfitCents)}
@@ -525,23 +488,16 @@ function ResultsPanel({
                 value={cents(result.netProfitCents)}
                 tone={result.netProfitCents < 0 ? "negative" : "positive"}
               />
-              <MetricTile
-                label="Quantidade"
-                value={formatNumber(result.quantity)}
-              />
+              <MetricTile label="Quantidade" value={formatNumber(result.quantity)} />
             </div>
 
-            {result.comparison ? (
-              <ComparisonBlock data={result.comparison} />
-            ) : null}
+            {result.comparison ? <ComparisonBlock data={result.comparison} /> : null}
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <Info className="h-3.5 w-3.5" />
                 Origem da política:{" "}
-                <span className="font-medium text-foreground">
-                  {result.originLabel}
-                </span>
+                <span className="font-medium text-foreground">{result.originLabel}</span>
               </span>
               <Button variant="outline" size="sm" onClick={onExplain}>
                 Como esse preço foi calculado?
@@ -588,26 +544,13 @@ function MetricTile({
         highlight ? "border-primary/40 bg-primary/5" : "border-border bg-card",
       )}
     >
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "mt-1 text-lg font-semibold tabular-nums",
-          toneClass,
-        )}
-      >
-        {value}
-      </p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={cn("mt-1 text-lg font-semibold tabular-nums", toneClass)}>{value}</p>
     </div>
   );
 }
 
-function ComparisonBlock({
-  data,
-}: {
-  data: NonNullable<SimulatePricingDTO["comparison"]>;
-}) {
+function ComparisonBlock({ data }: { data: NonNullable<SimulatePricingDTO["comparison"]> }) {
   const positive = data.differenceCents > 0;
   const zero = data.differenceCents === 0;
   const Icon = zero ? TrendingUp : positive ? ArrowUpRight : ArrowDownRight;
@@ -623,15 +566,9 @@ function ComparisonBlock({
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricTile label="Preço atual" value={cents(data.currentPriceCents)} />
-        <MetricTile
-          label="Preço recomendado"
-          value={cents(data.recommendedPriceCents)}
-          highlight
-        />
+        <MetricTile label="Preço recomendado" value={cents(data.recommendedPriceCents)} highlight />
         <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Diferença
-          </p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Diferença</p>
           <p
             className={cn(
               "mt-1 inline-flex items-center gap-1 text-lg font-semibold tabular-nums",
@@ -684,10 +621,7 @@ function SkeletonResult() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-16 animate-pulse rounded-lg border border-border bg-muted/40"
-        />
+        <div key={i} className="h-16 animate-pulse rounded-lg border border-border bg-muted/40" />
       ))}
     </div>
   );
@@ -741,14 +675,11 @@ function ExplainDialog({
 
             {warnings.length > 0 ? (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
-                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">
-                  Avisos
-                </p>
+                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">Avisos</p>
                 <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
                   {warnings.map((w, i) => (
                     <li key={i}>
-                      <span className="font-mono text-[10px]">{w.code}</span> —{" "}
-                      {w.message}
+                      <span className="font-mono text-[10px]">{w.code}</span> — {w.message}
                     </li>
                   ))}
                 </ul>

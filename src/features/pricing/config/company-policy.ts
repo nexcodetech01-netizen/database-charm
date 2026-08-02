@@ -56,37 +56,30 @@ function validateMarginTriplet(
   const ideal = triplet.ideal;
   const premium = triplet.premium;
 
-  if (min !== undefined) issues.push(...validatePct(min, `${basePath}.minMarginPct`, { min: -100, max: 100 }));
-  if (ideal !== undefined) issues.push(...validatePct(ideal, `${basePath}.idealMarginPct`, { min: -100, max: 100 }));
-  if (premium !== undefined) issues.push(...validatePct(premium, `${basePath}.premiumMarginPct`, { min: -100, max: 100 }));
+  if (min !== undefined)
+    issues.push(...validatePct(min, `${basePath}.minMarginPct`, { min: -100, max: 100 }));
+  if (ideal !== undefined)
+    issues.push(...validatePct(ideal, `${basePath}.idealMarginPct`, { min: -100, max: 100 }));
+  if (premium !== undefined)
+    issues.push(...validatePct(premium, `${basePath}.premiumMarginPct`, { min: -100, max: 100 }));
 
   if (issues.length === 0 && isFiniteNumber(min) && isFiniteNumber(ideal) && min > ideal) {
     issues.push(
-      issue(
-        "MARGIN_INCONSISTENT",
-        `${basePath}.idealMarginPct`,
-        `min > ideal`,
-        { min, ideal },
-      ),
+      issue("MARGIN_INCONSISTENT", `${basePath}.idealMarginPct`, `min > ideal`, { min, ideal }),
     );
   }
   if (issues.length === 0 && isFiniteNumber(ideal) && isFiniteNumber(premium) && ideal > premium) {
     issues.push(
-      issue(
-        "MARGIN_INCONSISTENT",
-        `${basePath}.premiumMarginPct`,
-        `ideal > premium`,
-        { ideal, premium },
-      ),
+      issue("MARGIN_INCONSISTENT", `${basePath}.premiumMarginPct`, `ideal > premium`, {
+        ideal,
+        premium,
+      }),
     );
   }
   return issues;
 }
 
-export function validateCompanyPolicy(
-  value: unknown,
-  path = "companyPolicy",
-): DomainIssue[] {
+export function validateCompanyPolicy(value: unknown, path = "companyPolicy"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }

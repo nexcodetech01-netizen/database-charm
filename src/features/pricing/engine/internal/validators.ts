@@ -93,8 +93,7 @@ export function validateContext(ctx: PricingContext): ContextValidation {
   let effectiveRounding = ctx.roundingPolicy ?? DEFAULT_ROUNDING;
   if (
     effectiveRounding.kind === "psychological" &&
-    (!Array.isArray(effectiveRounding.endings) ||
-      effectiveRounding.endings.length === 0)
+    (!Array.isArray(effectiveRounding.endings) || effectiveRounding.endings.length === 0)
   ) {
     warnings.push({
       code: "INVALID_ROUNDING_POLICY",

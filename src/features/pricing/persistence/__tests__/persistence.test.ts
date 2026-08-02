@@ -81,7 +81,9 @@ const priceList = createPriceList({
   ],
 });
 
-const decisionSnapshot = (over: Partial<PricingDecisionSnapshot> = {}): PricingDecisionSnapshot => ({
+const decisionSnapshot = (
+  over: Partial<PricingDecisionSnapshot> = {},
+): PricingDecisionSnapshot => ({
   companyId: COMPANY,
   requestId: "req-1",
   explainId: "exp-1",
@@ -133,9 +135,12 @@ describe("InMemoryCompanyPolicyRepository", () => {
     const fetched = await repo.findByCompany(COMPANY);
     expect(fetched?.meta.id).toBe(first.meta.id);
 
-    const updated = await repo.save({ ...companyPolicy, minMarginPct: 5 }, {
-      expectedVersion: 1,
-    });
+    const updated = await repo.save(
+      { ...companyPolicy, minMarginPct: 5 },
+      {
+        expectedVersion: 1,
+      },
+    );
     expect(updated.meta.version).toBe(2);
     expect(updated.entity.minMarginPct).toBe(5);
   });
@@ -252,9 +257,9 @@ describe("InMemoryCategoryPolicyRepository", () => {
       { expectedVersion: 1 },
     );
     expect(b.meta.version).toBe(2);
-    await expect(
-      repo.save(COMPANY, categoryPolicy, { expectedVersion: 1 }),
-    ).rejects.toMatchObject({ code: "CONCURRENCY" });
+    await expect(repo.save(COMPANY, categoryPolicy, { expectedVersion: 1 })).rejects.toMatchObject({
+      code: "CONCURRENCY",
+    });
     await expect(
       repo.save(COMPANY, createCategoryPolicy({ categoryId: "novo" }), { expectedVersion: 5 }),
     ).rejects.toMatchObject({ code: "CONCURRENCY" });
@@ -265,9 +270,9 @@ describe("InMemoryCategoryPolicyRepository", () => {
     await expect(repo.findByCategory("", CAT)).rejects.toMatchObject({
       code: "INVALID_ARGUMENT",
     });
-    await expect(repo.save(COMPANY, { ...categoryPolicy, categoryId: "" })).rejects.toMatchObject(
-      { code: "INVALID_ARGUMENT" },
-    );
+    await expect(repo.save(COMPANY, { ...categoryPolicy, categoryId: "" })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
     await expect(repo.softDelete(COMPANY, "")).rejects.toMatchObject({
       code: "INVALID_ARGUMENT",
     });
@@ -309,7 +314,7 @@ describe("InMemoryProductPolicyRepository", () => {
     const repo = new InMemoryProductPolicyRepository();
     const s = await repo.save(COMPANY, productPolicy, { actor: { userId: "u1" } });
     expect(s.meta.createdBy).toBe("u1");
-    expect((await repo.listByCompany(COMPANY))).toHaveLength(1);
+    expect(await repo.listByCompany(COMPANY)).toHaveLength(1);
     await repo.softDelete(COMPANY, PROD);
     expect(await repo.findByProduct(COMPANY, PROD)).toBeNull();
     const back = await repo.restore(COMPANY, PROD);
@@ -321,9 +326,9 @@ describe("InMemoryProductPolicyRepository", () => {
     await expect(repo.findByProduct(COMPANY, "")).rejects.toMatchObject({
       code: "INVALID_ARGUMENT",
     });
-    await expect(repo.save(COMPANY, { ...productPolicy, productId: "" })).rejects.toMatchObject(
-      { code: "INVALID_ARGUMENT" },
-    );
+    await expect(repo.save(COMPANY, { ...productPolicy, productId: "" })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
     await expect(repo.softDelete(COMPANY, "")).rejects.toMatchObject({
       code: "INVALID_ARGUMENT",
     });
@@ -464,10 +469,12 @@ interface FakeRow {
 function makeBuilder(result: { data: unknown; error: unknown }) {
   const calls: Array<{ op: string; args: unknown[] }> = [];
   const b = {} as Record<string, unknown>;
-  const method = (name: string) => (...args: unknown[]) => {
-    calls.push({ op: name, args });
-    return b;
-  };
+  const method =
+    (name: string) =>
+    (...args: unknown[]) => {
+      calls.push({ op: name, args });
+      return b;
+    };
   for (const m of [
     "select",
     "eq",
@@ -497,11 +504,16 @@ function makeFakeClient(responses: Record<string, { data: unknown; error: unknow
       return builder;
     },
   };
-  return { client: client as unknown as import("@supabase/supabase-js").SupabaseClient, tableCalls };
+  return {
+    client: client as unknown as import("@supabase/supabase-js").SupabaseClient,
+    tableCalls,
+  };
 }
 
-const envelopeFor = (kind: "CompanyPolicy" | "CategoryPolicy" | "ProductPolicy" | "PriceList", payload: unknown) =>
-  toEnvelope(kind, payload, new Date().toISOString());
+const envelopeFor = (
+  kind: "CompanyPolicy" | "CategoryPolicy" | "ProductPolicy" | "PriceList",
+  payload: unknown,
+) => toEnvelope(kind, payload, new Date().toISOString());
 
 const fakeRow = (over: Partial<FakeRow>): FakeRow => ({
   id: "row-1",
@@ -612,7 +624,8 @@ describe("SupabaseCompanyPolicyRepository", () => {
     const alt = {
       from: () => {
         callIdx += 1;
-        if (callIdx === 1) return makeBuilder({ data: { id: "r", version: 2 }, error: null }).builder;
+        if (callIdx === 1)
+          return makeBuilder({ data: { id: "r", version: 2 }, error: null }).builder;
         return makeBuilder({ data: null, error: null }).builder;
       },
     } as unknown as import("@supabase/supabase-js").SupabaseClient;
@@ -789,7 +802,11 @@ describe("SupabasePriceListRepository", () => {
         idx += 1;
         if (idx === 1)
           return makeBuilder({
-            data: fakeRow({ id: "row-1", version: 2, envelope: envelopeFor("PriceList", priceList) }),
+            data: fakeRow({
+              id: "row-1",
+              version: 2,
+              envelope: envelopeFor("PriceList", priceList),
+            }),
             error: null,
           }).builder;
         if (idx === 2)

@@ -77,9 +77,7 @@ import {
 } from "@/features/pricing/lib/product-pricing.functions";
 import type { PolicyLayerName } from "@/features/pricing/resolver/types";
 
-
-const cents = (n: number | null | undefined) =>
-  formatCurrency(((n ?? 0) as number) / 100);
+const cents = (n: number | null | undefined) => formatCurrency(((n ?? 0) as number) / 100);
 
 const ORIGIN_ICON: Record<PolicyLayerName, typeof Package> = {
   product: Package,
@@ -90,16 +88,11 @@ const ORIGIN_ICON: Record<PolicyLayerName, typeof Package> = {
 };
 
 const REASON_TONE: Record<PriceReviewReason, string> = {
-  below_min_margin:
-    "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
-  cost_changed:
-    "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  price_differs:
-    "border-primary/40 bg-primary/10 text-primary dark:text-primary",
-  pending_suggestion:
-    "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  no_policy:
-    "border-muted-foreground/30 bg-muted text-muted-foreground",
+  below_min_margin: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
+  cost_changed: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  price_differs: "border-primary/40 bg-primary/10 text-primary dark:text-primary",
+  pending_suggestion: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  no_policy: "border-muted-foreground/30 bg-muted text-muted-foreground",
 };
 
 interface BulkAppliedItem {
@@ -144,10 +137,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
     staleTime: 30_000,
   });
 
-  const reviewList = useMemo<readonly PriceReviewItemDTO[]>(
-    () => data?.reviewList ?? [],
-    [data],
-  );
+  const reviewList = useMemo<readonly PriceReviewItemDTO[]>(() => data?.reviewList ?? [], [data]);
 
   // ─── Filtros
   const [search, setSearch] = useState("");
@@ -159,8 +149,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   const categories = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of reviewList)
-      if (r.categoryId && r.categoryName)
-        map.set(r.categoryId, r.categoryName);
+      if (r.categoryId && r.categoryName) map.set(r.categoryId, r.categoryName);
     return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
       a.name.localeCompare(b.name),
     );
@@ -169,8 +158,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   const suppliers = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of reviewList)
-      if (r.supplierId && r.supplierName)
-        map.set(r.supplierId, r.supplierName);
+      if (r.supplierId && r.supplierName) map.set(r.supplierId, r.supplierName);
     return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
       a.name.localeCompare(b.name),
     );
@@ -228,13 +216,9 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   // ─── Seleção em lote
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const filteredIds = useMemo(() => filtered.map((r) => r.productId), [filtered]);
-  const allResultIds = useMemo(
-    () => reviewList.map((r) => r.productId),
-    [reviewList],
-  );
+  const allResultIds = useMemo(() => reviewList.map((r) => r.productId), [reviewList]);
   const pageSelectedCount = filteredIds.filter((id) => selected.has(id)).length;
-  const pageAllSelected =
-    filteredIds.length > 0 && pageSelectedCount === filteredIds.length;
+  const pageAllSelected = filteredIds.length > 0 && pageSelectedCount === filteredIds.length;
   const pageSomeSelected = pageSelectedCount > 0 && !pageAllSelected;
 
   const toggleRow = (id: string, checked: boolean) => {
@@ -253,8 +237,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
       return next;
     });
   };
-  const selectAllResults = () =>
-    setSelected(new Set(allResultIds));
+  const selectAllResults = () => setSelected(new Set(allResultIds));
   const clearSelection = () => setSelected(new Set());
 
   // ─── Bulk apply
@@ -272,14 +255,8 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   const bulkPreview = useMemo(() => {
     const applicable = selectedItems.filter((r) => r.differenceCents !== 0);
     const skipped = selectedItems.length - applicable.length;
-    const currentSum = applicable.reduce(
-      (s, r) => s + (r.currentPriceCents ?? 0),
-      0,
-    );
-    const newSum = applicable.reduce(
-      (s, r) => s + (r.recommendedPriceCents ?? 0),
-      0,
-    );
+    const currentSum = applicable.reduce((s, r) => s + (r.currentPriceCents ?? 0), 0);
+    const newSum = applicable.reduce((s, r) => s + (r.recommendedPriceCents ?? 0), 0);
     return {
       total: selectedItems.length,
       applicable: applicable.length,
@@ -314,9 +291,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
 
     for (let i = 0; i < items.length; i++) {
       if (cancelRef.current) {
-        setBulkState((s) =>
-          s ? { ...s, canceled: true, running: false, currentName: null } : s,
-        );
+        setBulkState((s) => (s ? { ...s, canceled: true, running: false, currentName: null } : s));
         break;
       }
       const item = items[i];
@@ -359,8 +334,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
                   {
                     productId: item.productId,
                     name: item.name,
-                    error:
-                      err instanceof Error ? err.message : "Erro desconhecido",
+                    error: err instanceof Error ? err.message : "Erro desconhecido",
                   },
                 ],
               }
@@ -378,15 +352,11 @@ export function PriceReviewWorkspace({ companyId }: Props) {
 
   const summaryKpis = useMemo(() => {
     const total = reviewList.length;
-    const below = reviewList.filter((r) => r.reasons.includes("below_min_margin"))
-      .length;
-    const cost = reviewList.filter((r) => r.reasons.includes("cost_changed"))
-      .length;
-    const noPolicy = reviewList.filter((r) => r.reasons.includes("no_policy"))
-      .length;
+    const below = reviewList.filter((r) => r.reasons.includes("below_min_margin")).length;
+    const cost = reviewList.filter((r) => r.reasons.includes("cost_changed")).length;
+    const noPolicy = reviewList.filter((r) => r.reasons.includes("no_policy")).length;
     return { total, below, cost, noPolicy };
   }, [reviewList]);
-
 
   return (
     <PageLayout
@@ -400,12 +370,18 @@ export function PriceReviewWorkspace({ companyId }: Props) {
             {summaryKpis.total} para revisar
           </Badge>
           {summaryKpis.below > 0 ? (
-            <Badge variant="outline" className="gap-1 border-red-500/40 text-red-600 dark:text-red-400">
+            <Badge
+              variant="outline"
+              className="gap-1 border-red-500/40 text-red-600 dark:text-red-400"
+            >
               {summaryKpis.below} abaixo da margem
             </Badge>
           ) : null}
           {summaryKpis.cost > 0 ? (
-            <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
+            <Badge
+              variant="outline"
+              className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400"
+            >
               {summaryKpis.cost} custo alterado
             </Badge>
           ) : null}
@@ -417,12 +393,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
         </div>
       }
       actions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
           Atualizar
         </Button>
       }
@@ -469,13 +440,11 @@ export function PriceReviewWorkspace({ companyId }: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os motivos</SelectItem>
-              {(Object.keys(PRICE_REVIEW_REASON_LABEL) as PriceReviewReason[]).map(
-                (r) => (
-                  <SelectItem key={r} value={r}>
-                    {PRICE_REVIEW_REASON_LABEL[r]}
-                  </SelectItem>
-                ),
-              )}
+              {(Object.keys(PRICE_REVIEW_REASON_LABEL) as PriceReviewReason[]).map((r) => (
+                <SelectItem key={r} value={r}>
+                  {PRICE_REVIEW_REASON_LABEL[r]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={origin} onValueChange={setOrigin}>
@@ -510,9 +479,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
         <EmptyState
           icon={CheckCircle2}
           title={
-            reviewList.length === 0
-              ? "Nada a revisar por aqui"
-              : "Nenhum item bate com os filtros"
+            reviewList.length === 0 ? "Nada a revisar por aqui" : "Nenhum item bate com os filtros"
           }
           description={
             reviewList.length === 0
@@ -538,13 +505,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
                   <TableHead className="w-10">
                     <Checkbox
                       aria-label="Selecionar página"
-                      checked={
-                        pageAllSelected
-                          ? true
-                          : pageSomeSelected
-                            ? "indeterminate"
-                            : false
-                      }
+                      checked={pageAllSelected ? true : pageSomeSelected ? "indeterminate" : false}
                       onCheckedChange={(v) => togglePage(v === true)}
                     />
                   </TableHead>
@@ -569,10 +530,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
                     onToggle={(v) => toggleRow(r.productId, v)}
                     onExplain={() => setExplainProductId(r.productId)}
                     onApply={() => applyMutation.mutate(r.productId)}
-                    applying={
-                      applyMutation.isPending &&
-                      applyMutation.variables === r.productId
-                    }
+                    applying={applyMutation.isPending && applyMutation.variables === r.productId}
                   />
                 ))}
               </TableBody>
@@ -598,7 +556,6 @@ export function PriceReviewWorkspace({ companyId }: Props) {
         }}
         onClose={() => setBulkState(null)}
       />
-
 
       <ExplainDialog
         open={!!explainProductId}
@@ -652,18 +609,12 @@ function ReviewRow({
         <div className="flex flex-col">
           <span className="font-medium">{item.name}</span>
           {item.supplierName ? (
-            <span className="text-xs text-muted-foreground">
-              {item.supplierName}
-            </span>
+            <span className="text-xs text-muted-foreground">{item.supplierName}</span>
           ) : null}
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {item.categoryName ?? "—"}
-      </TableCell>
-      <TableCell className="text-right tabular-nums">
-        {cents(item.currentPriceCents)}
-      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">{item.categoryName ?? "—"}</TableCell>
+      <TableCell className="text-right tabular-nums">{cents(item.currentPriceCents)}</TableCell>
       <TableCell className="text-right tabular-nums font-medium">
         {cents(item.recommendedPriceCents)}
       </TableCell>
@@ -674,9 +625,7 @@ function ReviewRow({
           ) : diff < 0 ? (
             <ArrowDownRight className="h-3.5 w-3.5" />
           ) : null}
-          {diff === 0
-            ? "—"
-            : `${diff > 0 ? "+" : "−"}${formatCurrency(Math.abs(diff) / 100)}`}
+          {diff === 0 ? "—" : `${diff > 0 ? "+" : "−"}${formatCurrency(Math.abs(diff) / 100)}`}
         </span>
       </TableCell>
       <TableCell className="text-right tabular-nums text-sm">
@@ -714,10 +663,7 @@ function ReviewRow({
       <TableCell>
         <div className="flex items-center justify-end gap-1">
           <Button variant="ghost" size="sm" asChild>
-            <Link
-              to="/produtos/$productId"
-              params={{ productId: item.productId }}
-            >
+            <Link to="/produtos/$productId" params={{ productId: item.productId }}>
               <ExternalLink className="mr-1 h-3.5 w-3.5" />
               Ver produto
             </Link>
@@ -726,12 +672,7 @@ function ReviewRow({
             <Info className="mr-1 h-3.5 w-3.5" />
             Explain
           </Button>
-          <Button
-            size="sm"
-            onClick={onApply}
-            disabled={applying}
-            className="gap-1"
-          >
+          <Button size="sm" onClick={onApply} disabled={applying} className="gap-1">
             <BadgeCheck className="h-3.5 w-3.5" />
             {applying ? "Aplicando..." : "Aplicar"}
           </Button>
@@ -765,9 +706,7 @@ function ExplainDialog({
             Como esse preço foi calculado?
           </DialogTitle>
           <DialogDescription>
-            {loading
-              ? "Carregando explicação..."
-              : data?.summary ?? "Sem detalhes disponíveis."}
+            {loading ? "Carregando explicação..." : (data?.summary ?? "Sem detalhes disponíveis.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -775,11 +714,7 @@ function ExplainDialog({
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-2 text-xs">
               <MiniStat label="Mínimo" value={cents(data.minPriceCents)} />
-              <MiniStat
-                label="Recomendado"
-                value={cents(data.recommendedPriceCents)}
-                highlight
-              />
+              <MiniStat label="Recomendado" value={cents(data.recommendedPriceCents)} highlight />
               <MiniStat label="Premium" value={cents(data.premiumPriceCents)} />
             </div>
 
@@ -804,14 +739,11 @@ function ExplainDialog({
 
             {data.warnings.length > 0 ? (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-xs">
-                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">
-                  Avisos
-                </p>
+                <p className="mb-1 font-semibold text-amber-700 dark:text-amber-400">Avisos</p>
                 <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
                   {data.warnings.map((w, i) => (
                     <li key={i}>
-                      <span className="font-mono text-[10px]">{w.code}</span> —{" "}
-                      {w.message}
+                      <span className="font-mono text-[10px]">{w.code}</span> — {w.message}
                     </li>
                   ))}
                 </ul>
@@ -850,9 +782,7 @@ function MiniStat({
         highlight ? "border-primary/40 bg-primary/5" : "border-border",
       )}
     >
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-sm font-semibold tabular-nums">{value}</p>
     </div>
   );
@@ -906,12 +836,7 @@ function BulkSelectionBar({
           </Button>
         ) : null}
         {hasSelection ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto px-2 py-1 text-xs"
-            onClick={onClear}
-          >
+          <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs" onClick={onClear}>
             Limpar
           </Button>
         ) : (
@@ -920,12 +845,7 @@ function BulkSelectionBar({
           </span>
         )}
       </div>
-      <Button
-        size="sm"
-        onClick={onApply}
-        disabled={!hasSelection || disabled}
-        className="gap-1"
-      >
+      <Button size="sm" onClick={onApply} disabled={!hasSelection || disabled} className="gap-1">
         <BadgeCheck className="h-3.5 w-3.5" />
         Aplicar selecionados
       </Button>
@@ -969,24 +889,15 @@ function BulkConfirmDialog({
             <BadgeCheck className="h-4 w-4 text-primary" />
             Confirmar aplicação em lote
           </DialogTitle>
-          <DialogDescription>
-            Revise o impacto antes de continuar.
-          </DialogDescription>
+          <DialogDescription>Revise o impacto antes de continuar.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <MiniStat label="Selecionados" value={String(preview.total)} />
-            <MiniStat
-              label="A aplicar"
-              value={String(preview.applicable)}
-              highlight
-            />
+            <MiniStat label="A aplicar" value={String(preview.applicable)} highlight />
             <MiniStat label="Sem mudança" value={String(preview.skipped)} />
-            <MiniStat
-              label="Preço atual (soma)"
-              value={cents(preview.currentSum)}
-            />
+            <MiniStat label="Preço atual (soma)" value={cents(preview.currentSum)} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <MiniStat label="Preço novo (soma)" value={cents(preview.newSum)} />
@@ -994,12 +905,7 @@ function BulkConfirmDialog({
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Impacto estimado
               </p>
-              <p
-                className={cn(
-                  "mt-0.5 text-sm font-semibold tabular-nums",
-                  impactTone,
-                )}
-              >
+              <p className={cn("mt-0.5 text-sm font-semibold tabular-nums", impactTone)}>
                 {preview.impact === 0
                   ? "—"
                   : `${preview.impact > 0 ? "+" : "−"}${formatCurrency(
@@ -1071,8 +977,7 @@ function BulkRunDialog({
 }) {
   const open = !!state;
   const running = !!state?.running;
-  const progress =
-    state && state.total > 0 ? Math.round((state.done / state.total) * 100) : 0;
+  const progress = state && state.total > 0 ? Math.round((state.done / state.total) * 100) : 0;
 
   const exportReport = () => {
     if (!state) return;
@@ -1094,18 +999,10 @@ function BulkRunDialog({
       );
     }
     for (const s of state.skipped) {
-      rows.push(
-        ["skipped", s.productId, csv(s.name), "", "", "", "", csv(s.reason)].join(
-          ",",
-        ),
-      );
+      rows.push(["skipped", s.productId, csv(s.name), "", "", "", "", csv(s.reason)].join(","));
     }
     for (const f of state.failed) {
-      rows.push(
-        ["failed", f.productId, csv(f.name), "", "", "", "", csv(f.error)].join(
-          ",",
-        ),
-      );
+      rows.push(["failed", f.productId, csv(f.name), "", "", "", "", csv(f.error)].join(","));
     }
     const blob = new Blob([rows.join("\n")], {
       type: "text/csv;charset=utf-8",
@@ -1150,9 +1047,7 @@ function BulkRunDialog({
               <Progress value={progress} />
               <p className="mt-1 text-xs text-muted-foreground">
                 {state.done}/{state.total}
-                {running && state.currentName
-                  ? ` • ${state.currentName}`
-                  : ""}
+                {running && state.currentName ? ` • ${state.currentName}` : ""}
               </p>
             </div>
 
@@ -1179,16 +1074,11 @@ function BulkRunDialog({
 
             {state.failed.length > 0 ? (
               <div className="max-h-32 overflow-auto rounded-md border border-red-500/40 bg-red-500/5 p-2 text-xs">
-                <p className="mb-1 font-semibold text-red-700 dark:text-red-400">
-                  Falhas
-                </p>
+                <p className="mb-1 font-semibold text-red-700 dark:text-red-400">Falhas</p>
                 <ul className="space-y-0.5">
                   {state.failed.map((f) => (
                     <li key={f.productId} className="text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {f.name}
-                      </span>{" "}
-                      — {f.error}
+                      <span className="font-medium text-foreground">{f.name}</span> — {f.error}
                     </li>
                   ))}
                 </ul>
@@ -1258,4 +1148,3 @@ function csv(v: string): string {
   }
   return v;
 }
-

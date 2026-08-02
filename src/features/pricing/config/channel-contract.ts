@@ -35,10 +35,7 @@ export function createChannelContract(input: ChannelContractInput): ChannelContr
   };
 }
 
-export function validateChannelContract(
-  value: unknown,
-  path = "channelContract",
-): DomainIssue[] {
+export function validateChannelContract(value: unknown, path = "channelContract"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }
@@ -59,9 +56,7 @@ export function validateChannelContract(
   issues.push(...validateRequiredString(c.channelId, `${path}.channelId`));
 
   if (!isFiniteNumber(c.variableFeePct)) {
-    issues.push(
-      issue("INVALID_NUMBER", `${path}.variableFeePct`, `variableFeePct inválido`),
-    );
+    issues.push(issue("INVALID_NUMBER", `${path}.variableFeePct`, `variableFeePct inválido`));
   } else if (c.variableFeePct < 0 || c.variableFeePct > 100) {
     issues.push(
       issue(
@@ -73,9 +68,7 @@ export function validateChannelContract(
     );
   }
 
-  issues.push(
-    ...validateCents(c.fixedFeePerOrderCents, `${path}.fixedFeePerOrderCents`),
-  );
+  issues.push(...validateCents(c.fixedFeePerOrderCents, `${path}.fixedFeePerOrderCents`));
   issues.push(...validateCents(c.operationalCostCents, `${path}.operationalCostCents`));
 
   if (c.minMarginOverridePct !== undefined) {
@@ -88,9 +81,7 @@ export function validateChannelContract(
   }
 
   if (c.hasNonLinearRules !== undefined && typeof c.hasNonLinearRules !== "boolean") {
-    issues.push(
-      issue("INVALID_TYPE", `${path}.hasNonLinearRules`, `deve ser boolean`),
-    );
+    issues.push(issue("INVALID_TYPE", `${path}.hasNonLinearRules`, `deve ser boolean`));
   }
 
   return issues;

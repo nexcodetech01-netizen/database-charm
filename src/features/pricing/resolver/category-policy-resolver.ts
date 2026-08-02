@@ -10,12 +10,9 @@ export interface CategoryLayer {
   readonly categoryId?: string;
 }
 
-const isNum = (v: unknown): v is number =>
-  typeof v === "number" && Number.isFinite(v);
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
-export function resolveCategoryLayer(
-  policy: CategoryPolicy | undefined,
-): CategoryLayer {
+export function resolveCategoryLayer(policy: CategoryPolicy | undefined): CategoryLayer {
   if (!policy) {
     return { overrides: {}, warnings: [] };
   }

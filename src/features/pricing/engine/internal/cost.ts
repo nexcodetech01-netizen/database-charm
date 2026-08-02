@@ -64,9 +64,7 @@ export function sumCostComponentsCents(
  * Cria uma `CostComposition.v1` a partir dos componentes brutos.
  * `perUnitCostCents` é DERIVADO — nunca aceito de fora.
  */
-export function composeCostComposition(
-  input: CostComponentsInputCents,
-): CostComposition {
+export function composeCostComposition(input: CostComponentsInputCents): CostComposition {
   const perUnitCostCents = sumCostComponentsCents(input);
   return {
     version: COST_COMPOSITION_VERSION,

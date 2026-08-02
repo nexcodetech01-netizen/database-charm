@@ -47,9 +47,7 @@ export function createResolvePricingUseCase(
       }
 
       try {
-        const companyEnt = await deps.repositories.companyPolicies.findByCompany(
-          input.companyId,
-        );
+        const companyEnt = await deps.repositories.companyPolicies.findByCompany(input.companyId);
         if (!companyEnt) throw notFound("CompanyPolicy", input.companyId);
 
         const productEnt = await deps.repositories.productPolicies.findByProduct(
@@ -65,14 +63,14 @@ export function createResolvePricingUseCase(
             )
           : null;
 
-        const priceListEntities =
-          await deps.repositories.priceLists.listByCompany(input.companyId, {
+        const priceListEntities = await deps.repositories.priceLists.listByCompany(
+          input.companyId,
+          {
             includeDeleted: false,
-          });
-
-        const priceListCandidates = priceListEntities.flatMap(
-          (pl) => pl.entity.entries,
+          },
         );
+
+        const priceListCandidates = priceListEntities.flatMap((pl) => pl.entity.entries);
 
         const resolverInput: PricingContextInput = {
           company: companyEnt.entity,

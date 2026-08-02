@@ -17,13 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -54,9 +48,7 @@ import {
   type CategoryPolicyRow,
 } from "@/features/pricing/lib/category-policy.functions";
 import type { CategoryPolicyInput } from "@/features/pricing/config/category-policy";
-import type {
-  CommercialBehaviorSpec,
-} from "@/features/pricing/engine/types";
+import type { CommercialBehaviorSpec } from "@/features/pricing/engine/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estratégia — mesmo mapeamento visual da UX-001
@@ -79,9 +71,7 @@ const STRATEGY_LABEL: Record<StrategyKey, string> = {
   stock_burn: "Queima de Estoque",
 };
 
-function strategyToBehavior(
-  k: StrategyKey,
-): CommercialBehaviorSpec | undefined {
+function strategyToBehavior(k: StrategyKey): CommercialBehaviorSpec | undefined {
   switch (k) {
     case "high_turnover":
       return { kind: "high_turnover" };
@@ -264,8 +254,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
           <div>
             <CardTitle className="text-base">Categorias</CardTitle>
             <CardDescription>
-              {rows.length} categorias · {rows.filter((r) => r.policy).length} com
-              política própria
+              {rows.length} categorias · {rows.filter((r) => r.policy).length} com política própria
             </CardDescription>
           </div>
           <div className="relative w-full sm:max-w-xs">
@@ -295,13 +284,19 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
             <TableBody>
               {overview.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     Carregando categorias...
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={8}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     Nenhuma categoria encontrada.
                   </TableCell>
                 </TableRow>
@@ -310,7 +305,8 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                   const p = row.policy?.entity;
                   const effMin = p?.minMarginPct ?? companyPolicy?.defaults?.minMarginPct;
                   const effIdeal = p?.idealMarginPct ?? companyPolicy?.defaults?.idealMarginPct;
-                  const effPremium = p?.premiumMarginPct ?? companyPolicy?.defaults?.premiumMarginPct;
+                  const effPremium =
+                    p?.premiumMarginPct ?? companyPolicy?.defaults?.premiumMarginPct;
                   const strat = p
                     ? STRATEGY_LABEL[behaviorToStrategy(p.commercialBehavior, p.marginTarget?.kind)]
                     : STRATEGY_LABEL.inherit;
@@ -328,9 +324,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                               style={{ backgroundColor: row.category.color }}
                             />
                           ) : null}
-                          <span className="font-medium text-foreground">
-                            {row.category.name}
-                          </span>
+                          <span className="font-medium text-foreground">{row.category.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -345,9 +339,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                       <TableCell className="text-right tabular-nums">
                         {effPremium != null ? `${effPremium}%` : "—"}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {strat}
-                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{strat}</TableCell>
                       <TableCell className="text-right text-[10px] text-muted-foreground tabular-nums">
                         {row.policy ? `v${row.policy.meta.version}` : "—"}
                       </TableCell>
@@ -387,9 +379,8 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                   <OriginBadge row={selected} />
                 </SheetTitle>
                 <SheetDescription>
-                  Deixe os campos em branco para herdar o valor da política da
-                  empresa. Apenas os campos preenchidos serão considerados como
-                  sobrescrita desta categoria.
+                  Deixe os campos em branco para herdar o valor da política da empresa. Apenas os
+                  campos preenchidos serão considerados como sobrescrita desta categoria.
                 </SheetDescription>
               </SheetHeader>
 
@@ -407,9 +398,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                           : "—"
                       }
                       value={editor.minMargin}
-                      onChange={(e) =>
-                        setEditor((s) => ({ ...s, minMargin: e.target.value }))
-                      }
+                      onChange={(e) => setEditor((s) => ({ ...s, minMargin: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -424,9 +413,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                           : "—"
                       }
                       value={editor.idealMargin}
-                      onChange={(e) =>
-                        setEditor((s) => ({ ...s, idealMargin: e.target.value }))
-                      }
+                      onChange={(e) => setEditor((s) => ({ ...s, idealMargin: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -457,9 +444,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                   </Label>
                   <Select
                     value={editor.strategy}
-                    onValueChange={(v) =>
-                      setEditor((s) => ({ ...s, strategy: v as StrategyKey }))
-                    }
+                    onValueChange={(v) => setEditor((s) => ({ ...s, strategy: v as StrategyKey }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -496,10 +481,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                 >
                   Cancelar
                 </Button>
-                <Button
-                  onClick={() => saveMutation.mutate()}
-                  disabled={saveMutation.isPending}
-                >
+                <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
                   <Save className="mr-1.5 h-4 w-4" />
                   {saveMutation.isPending ? "Salvando..." : "Salvar política"}
                 </Button>

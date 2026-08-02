@@ -195,25 +195,31 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
       data.companyId,
     );
 
-    const [companyEnt, categoryPolicies, productPolicies, categoriesRes, productsRes, decisionsRes] =
-      await Promise.all([
-        repos.companyPolicies.findByCompany(data.companyId),
-        repos.categoryPolicies.listByCompany(data.companyId),
-        repos.productPolicies.listByCompany(data.companyId),
-        context.supabase
-          .from("product_categories")
-          .select("id, name")
-          .eq("company_id", data.companyId)
-          .order("name"),
-        context.supabase
-          .from("products")
-          .select(
-            "id, name, category_id, supplier_id, cost, freight, packaging, insurance, other_costs, price, updated_at",
-          )
-          .eq("company_id", data.companyId)
-          .limit(MAX_PRODUCTS_ANALYZED),
-        repos.pricingDecisions.query({ companyId: data.companyId, limit: 200 }),
-      ]);
+    const [
+      companyEnt,
+      categoryPolicies,
+      productPolicies,
+      categoriesRes,
+      productsRes,
+      decisionsRes,
+    ] = await Promise.all([
+      repos.companyPolicies.findByCompany(data.companyId),
+      repos.categoryPolicies.listByCompany(data.companyId),
+      repos.productPolicies.listByCompany(data.companyId),
+      context.supabase
+        .from("product_categories")
+        .select("id, name")
+        .eq("company_id", data.companyId)
+        .order("name"),
+      context.supabase
+        .from("products")
+        .select(
+          "id, name, category_id, supplier_id, cost, freight, packaging, insurance, other_costs, price, updated_at",
+        )
+        .eq("company_id", data.companyId)
+        .limit(MAX_PRODUCTS_ANALYZED),
+      repos.pricingDecisions.query({ companyId: data.companyId, limit: 200 }),
+    ]);
 
     if (categoriesRes.error) throw categoriesRes.error;
     if (productsRes.error) throw productsRes.error;
@@ -227,9 +233,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
     const categoryPolicyByCategoryId = new Map(
       categoryPolicies.map((p) => [p.entity.categoryId, p]),
     );
-    const productPolicyByProductId = new Map(
-      productPolicies.map((p) => [p.entity.productId, p]),
-    );
+    const productPolicyByProductId = new Map(productPolicies.map((p) => [p.entity.productId, p]));
 
     const products = (productsRes.data ?? []) as Array<{
       id: string;
@@ -238,7 +242,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
       supplier_id: string | null;
       cost: number | string | null;
       freight: number | string | null;
-  packaging: number | string | null;
+      packaging: number | string | null;
       insurance: number | string | null;
       other_costs: number | string | null;
       price: number | string | null;
@@ -275,13 +279,11 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
       if (!pid) continue;
       if (lastDecisionByProductId.has(pid)) continue; // decisionsRes vem desc por createdAt
       lastDecisionByProductId.set(pid, {
-        perUnitCostCents:
-          d.snapshot.context.costComposition?.perUnitCostCents ?? 0,
+        perUnitCostCents: d.snapshot.context.costComposition?.perUnitCostCents ?? 0,
         appliedPriceCents: d.snapshot.result.finalPriceCents,
         createdAt: d.createdAt,
       });
     }
-
 
     // ─── Deriva agregados via Application Layer (defaultResolver + defaultEngine)
     interface Computed {
@@ -329,7 +331,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
         if (perUnitCostCents <= 0) continue; // engine requires cost > 0 to compute margin
 
         const categoryEnt = p.category_id
-          ? categoryPolicyByCategoryId.get(p.category_id) ?? null
+          ? (categoryPolicyByCategoryId.get(p.category_id) ?? null)
           : null;
         const productEnt = productPolicyByProductId.get(p.id) ?? null;
         const productPolicy = productEnt?.entity ?? { productId: p.id };
@@ -347,7 +349,6 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
           currency: companyEnt.entity.currency,
         });
 
-
         const result = application.defaultEngine.compute(bundle.context);
         const belowMinMargin = result.warnings.some((w) => w.code === "MARGIN_BELOW_MIN");
         const originLayer =
@@ -362,8 +363,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
           currentPriceCents > 0
             ? ((currentPriceCents - perUnitCostCents) / currentPriceCents) * 100
             : 0;
-        const targetMarginPct =
-          bundle.context.company.defaults?.idealMarginPct ?? result.marginPct;
+        const targetMarginPct = bundle.context.company.defaults?.idealMarginPct ?? result.marginPct;
 
         computed.push({
           product: p,
@@ -384,10 +384,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
     // ─── KPIs
     const productsTotal = products.length;
     const productsWithOwnPolicy = productPolicies.length;
-    const productsInheritingPolicy = Math.max(
-      0,
-      productsTotal - productsWithOwnPolicy,
-    );
+    const productsInheritingPolicy = Math.max(0, productsTotal - productsWithOwnPolicy);
     const productsBelowMargin = computed.filter((c) => c.belowMinMargin).length;
     const productsWithSuggestion = computed.filter((c) => c.hasSuggestion).length;
 
@@ -467,7 +464,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
         name: c.product.name,
         categoryId: c.product.category_id,
         categoryName: c.product.category_id
-          ? categoryNameById.get(c.product.category_id) ?? null
+          ? (categoryNameById.get(c.product.category_id) ?? null)
           : null,
         currentPriceCents: c.currentPriceCents,
         recommendedPriceCents: c.recommendedPriceCents,
@@ -494,10 +491,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
     const categoriesSummary: CategorySummaryDTO[] = categoriesRaw.map((c) => {
       const marginsList = marginsByCategory.get(c.id) ?? [];
       const productsCount = marginsList.length;
-      const avg =
-        productsCount > 0
-          ? marginsList.reduce((s, v) => s + v, 0) / productsCount
-          : 0;
+      const avg = productsCount > 0 ? marginsList.reduce((s, v) => s + v, 0) / productsCount : 0;
       const policy = categoryPolicyByCategoryId.get(c.id) ?? null;
       const strategyKind = policy?.entity.commercialBehavior?.kind ?? "standard";
       return {
@@ -542,7 +536,7 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
         id: d.id,
         explainId: d.snapshot.explainId,
         productId: pid,
-        productName: pid ? productNameById.get(pid) ?? null : null,
+        productName: pid ? (productNameById.get(pid) ?? null) : null,
         previousPriceCents: previous,
         appliedPriceCents: applied,
         createdAt: d.createdAt,
@@ -607,13 +601,11 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
     const reviewList: PriceReviewItemDTO[] = [];
     for (const c of computed) {
       const last = lastDecisionByProductId.get(c.product.id);
-      const costChanged =
-        !!last && Math.abs(last.perUnitCostCents - c.perUnitCostCents) >= 1;
+      const costChanged = !!last && Math.abs(last.perUnitCostCents - c.perUnitCostCents) >= 1;
       // "pending_suggestion": há sugestão e nunca foi aplicada uma decisão que já
       // reflita esse preço recomendado.
       const pending =
-        c.hasSuggestion &&
-        (!last || last.appliedPriceCents !== c.recommendedPriceCents);
+        c.hasSuggestion && (!last || last.appliedPriceCents !== c.recommendedPriceCents);
       // "no_policy": nem produto nem categoria têm política própria
       const catPolicy = c.product.category_id
         ? categoryPolicyByCategoryId.get(c.product.category_id)
@@ -637,19 +629,18 @@ export const getCommercialDashboard = createServerFn({ method: "GET" })
         "pending_suggestion",
         "no_policy",
       ];
-      const primary =
-        priority.find((r) => reasons.includes(r)) ?? reasons[0];
+      const primary = priority.find((r) => reasons.includes(r)) ?? reasons[0];
 
       reviewList.push({
         productId: c.product.id,
         name: c.product.name,
         categoryId: c.product.category_id,
         categoryName: c.product.category_id
-          ? categoryNameById.get(c.product.category_id) ?? null
+          ? (categoryNameById.get(c.product.category_id) ?? null)
           : null,
         supplierId: c.product.supplier_id,
         supplierName: c.product.supplier_id
-          ? supplierNameById.get(c.product.supplier_id) ?? null
+          ? (supplierNameById.get(c.product.supplier_id) ?? null)
           : null,
         currentPriceCents: c.currentPriceCents,
         recommendedPriceCents: c.recommendedPriceCents,
@@ -711,8 +702,7 @@ function deriveHealth(input: {
     };
   }
   const belowPct = input.productsBelowMargin / input.productsTotal;
-  const missingPct =
-    (input.productsWithoutCost + input.productsWithoutPrice) / input.productsTotal;
+  const missingPct = (input.productsWithoutCost + input.productsWithoutPrice) / input.productsTotal;
 
   if (belowPct >= 0.25 || missingPct >= 0.4) {
     return {

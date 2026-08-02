@@ -5,7 +5,16 @@ import { computeOfficialPricing } from "@/features/pricing/official";
 const ML_COMMISSION_PCT = 16;
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Copy, Loader2, Search, ShoppingBag, ExternalLink, Smartphone, Sparkles } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Loader2,
+  Search,
+  ShoppingBag,
+  ExternalLink,
+  Smartphone,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -41,8 +50,6 @@ import { AlertTriangle, Wand2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Product } from "../types";
 
-
-
 interface Props {
   product: Product;
   open: boolean;
@@ -65,7 +72,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const integrationFn = useServerFn(getMercadoLivreIntegration);
   const generateDescFn = useServerFn(generateMercadoLivreDescription);
 
-
   // Status da integração: bloqueia publicação se expirado
   const integrationQuery = useQuery({
     queryKey: ["mercadolivre", "integration-status"],
@@ -77,7 +83,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     integrationQuery.data?.status === "expired" ||
     integrationQuery.data?.status === "disconnected" ||
     integrationQuery.data?.status === "credentials_only";
-
 
   // Preço sugerido do Mercado Livre (mesma fórmula do card "Preços por canal")
   const pricingQuery = useQuery({
@@ -117,8 +122,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     const feeRate = feePct / 100;
     let raw = 0;
     if (strategy === "keep_store_profit") {
-      const reachable =
-        currentStorePrice > 0 && currentStorePrice > costTotal && feeRate < 1;
+      const reachable = currentStorePrice > 0 && currentStorePrice > costTotal && feeRate < 1;
       if (!reachable) return null;
       raw = (currentStorePrice + fixedCost) / (1 - feeRate);
     } else {
@@ -139,7 +143,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     const candidate = base + 0.9;
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
   }, [pricingQuery.data, channelSettingsQuery.data, product.company_id, product.id]);
-
 
   const rawProductPrice = Number(product.price ?? 0);
   const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
@@ -185,8 +188,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
-
-
   const autoRanRef = useRef(false);
 
   // Reset state on open
@@ -221,7 +222,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
   }, [open, product]);
 
-
   // Assim que o preço sugerido do ML fica disponível, aplica como padrão
   // (só se o usuário ainda não editou manualmente).
   useEffect(() => {
@@ -231,7 +231,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setUsingMlSuggested(true);
     }
   }, [open, priceTouched, mlSuggestedPrice]);
-
 
   async function runPredict(query: string, opts?: { auto?: boolean }) {
     if (!query.trim()) return;
@@ -327,13 +326,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   const uploadPhoto = useMutation({
     mutationFn: async (file: File) => {
-      const nextPosition = (photosQuery.data?.length ?? 0);
+      const nextPosition = photosQuery.data?.length ?? 0;
       const path = await productImagesService.upload(product.company_id, product.id, file);
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
       return path;
     },
     onSuccess: (path) => {
-      setSelectedPhotoPaths((prev) => (prev.includes(path) || prev.length >= 5 ? prev : [...prev, path]));
+      setSelectedPhotoPaths((prev) =>
+        prev.includes(path) || prev.length >= 5 ? prev : [...prev, path],
+      );
       qc.invalidateQueries({ queryKey: ["product-images", product.id] });
       toast.success("Foto adicionada ao anúncio.");
     },
@@ -366,7 +367,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
     uploadPhoto.mutate(file);
   }
-
 
   // Monta a ficha técnica estendida enviada como attributes extras ao ML.
   const extraAttributes = useMemo(() => {
@@ -540,8 +540,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     description.length <= 50000 &&
     !publish.isPending;
 
-
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -561,8 +559,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             <AlertTitle>Conexão com o Mercado Livre expirou</AlertTitle>
             <AlertDescription className="flex flex-col gap-3">
               <span>
-                Não foi possível renovar automaticamente o token de acesso. Reautorize a
-                conta para voltar a publicar e sincronizar anúncios.
+                Não foi possível renovar automaticamente o token de acesso. Reautorize a conta para
+                voltar a publicar e sincronizar anúncios.
               </span>
               <Button
                 type="button"
@@ -570,9 +568,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 className="w-fit border-destructive/40 text-destructive hover:bg-destructive/10"
                 asChild
               >
-                <a href="/configuracoes?tab=integracoes">
-                  Reautorizar conta Mercado Livre
-                </a>
+                <a href="/configuracoes?tab=integracoes">Reautorizar conta Mercado Livre</a>
               </Button>
             </AlertDescription>
           </Alert>
@@ -600,7 +596,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               onChange={(e) => setTitle(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              {title.length}/60 caracteres · padrão ML: <strong>Tipo + Gênero/Estilo + Modelo + Cor</strong>
+              {title.length}/60 caracteres · padrão ML:{" "}
+              <strong>Tipo + Gênero/Estilo + Modelo + Cor</strong>
             </p>
             {title.trim().length > 0 && title.trim().length < 35 ? (
               <p className="text-xs text-amber-600 dark:text-amber-500">
@@ -640,7 +637,12 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       className="group relative aspect-square overflow-hidden rounded-md border-2 border-primary ring-2 ring-primary/30 transition"
                     >
                       {url ? (
-                        <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        <img
+                          src={url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
                       ) : (
                         <div className="h-full w-full bg-muted" />
                       )}
@@ -689,7 +691,12 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                           className="aspect-square overflow-hidden rounded border border-border transition hover:border-primary"
                         >
                           {url ? (
-                            <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                            <img
+                              src={url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
                           ) : (
                             <div className="h-full w-full bg-muted" />
                           )}
@@ -702,13 +709,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             })()}
 
             <p className="text-[11px] text-muted-foreground">
-              A primeira foto (slot 1) será a capa do anúncio. Anúncios com 4–5 fotos
-              tendem a atingir notas mais altas no Mercado Livre.
+              A primeira foto (slot 1) será a capa do anúncio. Anúncios com 4–5 fotos tendem a
+              atingir notas mais altas no Mercado Livre.
             </p>
           </div>
-
-
-
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
@@ -843,9 +847,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         <div className="min-w-0">
                           <p className="truncate font-medium">{s.categoryName}</p>
                           {s.domainName ? (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {s.domainName}
-                            </p>
+                            <p className="truncate text-xs text-muted-foreground">{s.domainName}</p>
                           ) : null}
                         </div>
                         <span className="shrink-0 text-[11px] text-muted-foreground">
@@ -912,7 +914,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-gender" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-gender"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Gênero (GENDER)
                 </Label>
                 <Select value={gender || undefined} onValueChange={setGender}>
@@ -928,7 +933,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-bagtype" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-bagtype"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Tipo de bolsa (BAG_TYPE)
                 </Label>
                 <Input
@@ -939,7 +947,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-material" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-material"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Material (MATERIAL)
                 </Label>
                 <Input
@@ -950,7 +961,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-style" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-style"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Estilo (STYLE)
                 </Label>
                 <Input
@@ -961,7 +975,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-color" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-color"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Cor (COLOR)
                 </Label>
                 <Input
@@ -972,7 +989,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-brand" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-brand"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Marca (BRAND) *
                 </Label>
                 <Input
@@ -983,7 +1003,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-model" className="text-xs font-normal text-muted-foreground">
+                <Label
+                  htmlFor="ml-attr-model"
+                  className="text-xs font-normal text-muted-foreground"
+                >
                   Modelo (MODEL)
                 </Label>
                 <Input
@@ -999,12 +1022,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               (marca oficial). O Mercado Livre recusa &quot;Genérica&quot; ou &quot;Sem marca&quot;.
             </p>
             <p className="text-[11px] text-muted-foreground">
-              Estes campos são enviados como atributos oficiais do Mercado Livre e ajudam o
-              anúncio a atingir nota de qualidade 80+.
+              Estes campos são enviados como atributos oficiais do Mercado Livre e ajudam o anúncio
+              a atingir nota de qualidade 80+.
             </p>
           </div>
-
-
 
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-2">
@@ -1143,7 +1164,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   </p>
                   <span
                     className={`shrink-0 text-xs tabular-nums ${
-                      overHard ? "text-destructive font-medium" : overSoft ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground"
+                      overHard
+                        ? "text-destructive font-medium"
+                        : overSoft
+                          ? "text-amber-600 dark:text-amber-500"
+                          : "text-muted-foreground"
                     }`}
                     aria-live="polite"
                   >
@@ -1152,14 +1177,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 </div>
               );
             })()}
-
           </div>
-
-
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={publish.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={publish.isPending}
+          >
             Cancelar
           </Button>
           <Button onClick={() => publish.mutate()} disabled={!canPublish}>

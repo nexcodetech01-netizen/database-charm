@@ -68,18 +68,16 @@ export type RecalculationMarginKind = "min" | "ideal" | "premium";
 
 export const getPriceRecalculationList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; marginTarget?: RecalculationMarginKind }) => {
-      if (!input?.companyId) throw new Error("companyId é obrigatório");
-      const marginTarget: RecalculationMarginKind =
-        input.marginTarget === "min" ||
-        input.marginTarget === "premium" ||
-        input.marginTarget === "ideal"
-          ? input.marginTarget
-          : "ideal";
-      return { companyId: input.companyId, marginTarget };
-    },
-  )
+  .inputValidator((input: { companyId: string; marginTarget?: RecalculationMarginKind }) => {
+    if (!input?.companyId) throw new Error("companyId é obrigatório");
+    const marginTarget: RecalculationMarginKind =
+      input.marginTarget === "min" ||
+      input.marginTarget === "premium" ||
+      input.marginTarget === "ideal"
+        ? input.marginTarget
+        : "ideal";
+    return { companyId: input.companyId, marginTarget };
+  })
   .handler(async ({ data, context }): Promise<RecalculationListDTO> => {
     const [{ createSupabaseRepositories }, application, engineMod, costDefaultsMod] =
       await Promise.all([
@@ -126,9 +124,7 @@ export const getPriceRecalculationList = createServerFn({ method: "GET" })
     const categoryPolicyByCategoryId = new Map(
       categoryPolicies.map((p) => [p.entity.categoryId, p]),
     );
-    const productPolicyByProductId = new Map(
-      productPolicies.map((p) => [p.entity.productId, p]),
-    );
+    const productPolicyByProductId = new Map(productPolicies.map((p) => [p.entity.productId, p]));
 
     const products = (productsRes.data ?? []) as Array<{
       id: string;
@@ -152,7 +148,7 @@ export const getPriceRecalculationList = createServerFn({ method: "GET" })
 
     for (const p of products) {
       const currentPriceCents = Math.round(toN(p.price) * 100);
-      const categoryName = p.category_id ? categoryNameById.get(p.category_id) ?? null : null;
+      const categoryName = p.category_id ? (categoryNameById.get(p.category_id) ?? null) : null;
 
       if (!companyEnt) {
         totalSkipped += 1;
@@ -224,7 +220,7 @@ export const getPriceRecalculationList = createServerFn({ method: "GET" })
       }
 
       const categoryEnt = p.category_id
-        ? categoryPolicyByCategoryId.get(p.category_id) ?? null
+        ? (categoryPolicyByCategoryId.get(p.category_id) ?? null)
         : null;
       const productEnt = productPolicyByProductId.get(p.id) ?? null;
       const productPolicy = productEnt?.entity ?? { productId: p.id };
@@ -261,8 +257,7 @@ export const getPriceRecalculationList = createServerFn({ method: "GET" })
           : data.marginTarget === "premium"
             ? companyDefaults?.premiumMarginPct
             : companyDefaults?.idealMarginPct) ?? result.marginPct;
-      const differencePct =
-        currentPriceCents > 0 ? (diff / currentPriceCents) * 100 : 0;
+      const differencePct = currentPriceCents > 0 ? (diff / currentPriceCents) * 100 : 0;
 
       currentSumCents += currentPriceCents;
       recommendedSumCents += result.finalPriceCents;

@@ -8,12 +8,7 @@ import {
 } from "../../config/category-policy";
 import type { StoredEntity } from "../../persistence/types";
 import type { CategoryPolicy } from "../../resolver/types";
-import {
-  ApplicationError,
-  invalidArgument,
-  notFound,
-  validationFailed,
-} from "../errors";
+import { ApplicationError, invalidArgument, notFound, validationFailed } from "../errors";
 import type { Actor, PricingApplicationDeps, UseCase } from "../ports";
 import { requireString, translateRepoError } from "./_internal";
 
@@ -48,11 +43,9 @@ export function createCreateCategoryPolicyUseCase(
         input.categoryId,
       );
       if (existing) {
-        throw new ApplicationError(
-          "CONFLICT",
-          `CategoryPolicy já existe`,
-          { detail: { companyId, categoryId: input.categoryId } },
-        );
+        throw new ApplicationError("CONFLICT", `CategoryPolicy já existe`, {
+          detail: { companyId, categoryId: input.categoryId },
+        });
       }
 
       try {

@@ -42,10 +42,7 @@ export function createProductPolicy(input: ProductPolicyInput): ProductPolicy {
   };
 }
 
-export function validateProductPolicy(
-  value: unknown,
-  path = "productPolicy",
-): DomainIssue[] {
+export function validateProductPolicy(value: unknown, path = "productPolicy"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }

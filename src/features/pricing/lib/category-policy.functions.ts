@@ -15,10 +15,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireServerPermission } from "@/features/rbac/guards/server-guards";
 import type { CategoryPolicyInput } from "@/features/pricing/config/category-policy";
 import type { StoredEntity } from "@/features/pricing/persistence/types";
-import type {
-  CategoryPolicy,
-  CompanyPolicy,
-} from "@/features/pricing/resolver/types";
+import type { CategoryPolicy, CompanyPolicy } from "@/features/pricing/resolver/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DTOs
@@ -55,9 +52,8 @@ export const getCategoryPoliciesOverview = createServerFn({ method: "GET" })
     return input;
   })
   .handler(async ({ data, context }): Promise<CategoryPoliciesOverviewDTO> => {
-    const { createSupabaseRepositories } = await import(
-      "@/features/pricing/persistence/supabase.server"
-    );
+    const { createSupabaseRepositories } =
+      await import("@/features/pricing/persistence/supabase.server");
     const repos = createSupabaseRepositories(context.supabase);
 
     const [companyPolicy, categoryPolicies, categoriesRes] = await Promise.all([
@@ -99,11 +95,7 @@ export const getCategoryPoliciesOverview = createServerFn({ method: "GET" })
 export const saveCategoryPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      input: CategoryPolicyInput;
-      expectedVersion?: number;
-    }) => {
+    (input: { companyId: string; input: CategoryPolicyInput; expectedVersion?: number }) => {
       if (!input?.companyId) throw new Error("companyId é obrigatório");
       if (!input?.input?.categoryId) throw new Error("categoryId é obrigatório");
       return input;

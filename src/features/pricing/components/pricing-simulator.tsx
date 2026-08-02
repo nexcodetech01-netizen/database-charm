@@ -22,14 +22,25 @@ const num = (s: string): number => {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 };
 
-
-function Row({ label, value, tone }: { label: string; value: string; tone?: "success" | "danger" }) {
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success" | "danger";
+}) {
   return (
     <div className="flex items-baseline justify-between rounded-lg border border-border/60 bg-card px-4 py-3">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span
         className={`text-lg font-semibold tabular-nums ${
-          tone === "danger" ? "text-destructive" : tone === "success" ? "text-emerald-600 dark:text-emerald-400" : ""
+          tone === "danger"
+            ? "text-destructive"
+            : tone === "success"
+              ? "text-emerald-600 dark:text-emerald-400"
+              : ""
         }`}
       >
         {value}
@@ -84,7 +95,6 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
     [companyId, cost, freight, packaging, commission, feePctValue, target, policy],
   );
 
-
   return (
     <Card>
       <CardHeader>
@@ -101,16 +111,32 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
             <Input inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
           </Field>
           <Field label="Frete (R$)">
-            <Input inputMode="decimal" value={freight} onChange={(e) => setFreight(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={freight}
+              onChange={(e) => setFreight(e.target.value)}
+            />
           </Field>
           <Field label="Embalagem (R$)">
-            <Input inputMode="decimal" value={packaging} onChange={(e) => setPackaging(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={packaging}
+              onChange={(e) => setPackaging(e.target.value)}
+            />
           </Field>
           <Field label="Comissão (R$)">
-            <Input inputMode="decimal" value={commission} onChange={(e) => setCommission(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
+            />
           </Field>
           <Field label="Taxa aplicada (%)">
-            <Input inputMode="decimal" value={feePctValue} onChange={(e) => setFeePct(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={feePctValue}
+              onChange={(e) => setFeePct(e.target.value)}
+            />
           </Field>
 
           <Field label="Margem desejada (%)">
@@ -121,7 +147,11 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
         <div className="space-y-3">
           <Row label="Custo total" value={formatCurrency(result.costTotal)} />
           <Row label="Preço mínimo" value={formatCurrency(result.minPrice)} />
-          <Row label="Preço recomendado" value={formatCurrency(result.recommendedPrice)} tone="success" />
+          <Row
+            label="Preço recomendado"
+            value={formatCurrency(result.recommendedPrice)}
+            tone="success"
+          />
           <Row label="Preço premium" value={formatCurrency(result.premiumPrice)} />
           <Separator />
           <Row
@@ -130,7 +160,11 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
             tone="success"
           />
           <div className="grid grid-cols-3 gap-2">
-            <Row label="Lucro" value={formatCurrency(result.profit)} tone={result.profit < 0 ? "danger" : "success"} />
+            <Row
+              label="Lucro"
+              value={formatCurrency(result.profit)}
+              tone={result.profit < 0 ? "danger" : "success"}
+            />
             <Row label="Margem" value={`${formatNumber(result.marginPct)}%`} />
             <Row label="Markup" value={`${formatNumber(result.markupPct)}%`} />
           </div>

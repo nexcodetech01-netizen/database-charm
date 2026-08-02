@@ -35,13 +35,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -192,9 +186,7 @@ function HealthCard({ health }: { health: CommercialHealthDTO }) {
               key={i}
               className={cn(
                 "h-4 w-4",
-                i < health.stars
-                  ? cn("fill-current", toneClass)
-                  : "text-muted-foreground/30",
+                i < health.stars ? cn("fill-current", toneClass) : "text-muted-foreground/30",
               )}
             />
           ))}
@@ -208,12 +200,32 @@ function HealthCard({ health }: { health: CommercialHealthDTO }) {
 function KpisGrid({ kpis }: { kpis: CommercialDashboardDTO["kpis"] }) {
   const items = [
     { label: "Produtos", value: kpis.productsTotal, icon: Package, tone: "text-primary" },
-    { label: "Política própria", value: kpis.productsWithOwnPolicy, icon: BadgeCheck, tone: "text-success" },
-    { label: "Herdando política", value: kpis.productsInheritingPolicy, icon: Layers, tone: "text-muted-foreground" },
-    { label: "Abaixo da margem", value: kpis.productsBelowMargin, icon: AlertTriangle, tone: "text-destructive" },
+    {
+      label: "Política própria",
+      value: kpis.productsWithOwnPolicy,
+      icon: BadgeCheck,
+      tone: "text-success",
+    },
+    {
+      label: "Herdando política",
+      value: kpis.productsInheritingPolicy,
+      icon: Layers,
+      tone: "text-muted-foreground",
+    },
+    {
+      label: "Abaixo da margem",
+      value: kpis.productsBelowMargin,
+      icon: AlertTriangle,
+      tone: "text-destructive",
+    },
     { label: "Sem custo", value: kpis.productsWithoutCost, icon: Info, tone: "text-warning" },
     { label: "Sem preço", value: kpis.productsWithoutPrice, icon: Info, tone: "text-warning" },
-    { label: "Sugestão pendente", value: kpis.productsWithSuggestion, icon: TrendingUp, tone: "text-primary" },
+    {
+      label: "Sugestão pendente",
+      value: kpis.productsWithSuggestion,
+      icon: TrendingUp,
+      tone: "text-primary",
+    },
   ] as const;
 
   return (
@@ -225,9 +237,7 @@ function KpisGrid({ kpis }: { kpis: CommercialDashboardDTO["kpis"] }) {
               <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 {label}
               </div>
-              <div className="mt-1 text-xl font-semibold tabular-nums">
-                {formatNumber(value)}
-              </div>
+              <div className="mt-1 text-xl font-semibold tabular-nums">{formatNumber(value)}</div>
             </div>
             <Icon className={cn("h-4 w-4", tone)} />
           </CardContent>
@@ -241,11 +251,7 @@ function KpisGrid({ kpis }: { kpis: CommercialDashboardDTO["kpis"] }) {
 // SEÇÃO 3 — Oportunidades
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OpportunitiesSection({
-  items,
-}: {
-  items: CommercialDashboardDTO["opportunities"];
-}) {
+function OpportunitiesSection({ items }: { items: CommercialDashboardDTO["opportunities"] }) {
   return (
     <Card className="border-border/70">
       <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-3">
@@ -258,8 +264,14 @@ function OpportunitiesSection({
         ) : (
           <ul className="divide-y divide-border/60">
             {items.map((op) => (
-              <li key={op.kind} className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <Badge variant="secondary" className="h-6 min-w-[2.5rem] justify-center tabular-nums">
+              <li
+                key={op.kind}
+                className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <Badge
+                  variant="secondary"
+                  className="h-6 min-w-[2.5rem] justify-center tabular-nums"
+                >
                   {op.count}
                 </Badge>
                 <div className="min-w-0 flex-1">
@@ -359,11 +371,7 @@ function PriorityProductsSection({
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onOpen(p.productId)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => onOpen(p.productId)}>
                           Abrir
                           <ExternalLink className="ml-1 h-3.5 w-3.5" />
                         </Button>
@@ -384,11 +392,7 @@ function PriorityProductsSection({
 // SEÇÃO 5 — Categorias
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CategoriesSection({
-  items,
-}: {
-  items: CommercialDashboardDTO["categories"];
-}) {
+function CategoriesSection({ items }: { items: CommercialDashboardDTO["categories"] }) {
   const sorted = useMemo(
     () => [...items].sort((a, b) => b.productsCount - a.productsCount).slice(0, 8),
     [items],
@@ -435,9 +439,7 @@ function CategoriesSection({
                     <TableCell className="text-right tabular-nums">
                       {formatNumber(c.productsCount)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {c.strategyLabel}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground">{c.strategyLabel}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {c.pendingProducts > 0 ? (
                         <span className="text-warning">{c.pendingProducts}</span>
@@ -460,11 +462,7 @@ function CategoriesSection({
 // SEÇÃO 6 — Últimas decisões
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RecentDecisionsSection({
-  items,
-}: {
-  items: CommercialDashboardDTO["recentDecisions"];
-}) {
+function RecentDecisionsSection({ items }: { items: CommercialDashboardDTO["recentDecisions"] }) {
   return (
     <Card className="border-border/70">
       <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-3">
@@ -482,9 +480,7 @@ function RecentDecisionsSection({
                 className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-border/60 p-3"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium">
-                    {d.productName ?? "Produto removido"}
-                  </div>
+                  <div className="text-sm font-medium">{d.productName ?? "Produto removido"}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
                     {d.previousPriceCents != null && d.previousPriceCents > 0 ? (
                       <>
@@ -532,9 +528,7 @@ function InsightsSection({ items }: { items: readonly CommercialInsightDTO[] }) 
       <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-3">
         <Sparkles className="h-4 w-4 text-primary" />
         <CardTitle className="text-sm font-medium">Insights</CardTitle>
-        <CardDescription className="ml-auto text-[11px]">
-          derivados de dados atuais
-        </CardDescription>
+        <CardDescription className="ml-auto text-[11px]">derivados de dados atuais</CardDescription>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (

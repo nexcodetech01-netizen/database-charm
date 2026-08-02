@@ -23,8 +23,7 @@ export interface PriceListResolution {
   readonly warnings: readonly ResolverWarning[];
 }
 
-const isNum = (v: unknown): v is number =>
-  typeof v === "number" && Number.isFinite(v);
+const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 export function resolvePriceList(input: {
   candidates?: readonly PriceListEntry[];

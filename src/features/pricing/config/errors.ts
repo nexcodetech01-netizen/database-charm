@@ -52,9 +52,7 @@ export class DomainValidationError extends Error {
   readonly issues: readonly DomainIssue[];
   constructor(issues: readonly DomainIssue[]) {
     super(
-      `Configuration validation failed (${issues.length} issue${
-        issues.length === 1 ? "" : "s"
-      })`,
+      `Configuration validation failed (${issues.length} issue${issues.length === 1 ? "" : "s"})`,
     );
     this.name = "DomainValidationError";
     this.issues = issues;
@@ -75,8 +73,6 @@ export function toResult(issues: readonly DomainIssue[]): ValidationResult {
 
 export function throwIfInvalid(result: ValidationResult): void {
   if (!result.ok) {
-    throw new DomainValidationError(
-      result.issues.filter((i) => i.severity === "error"),
-    );
+    throw new DomainValidationError(result.issues.filter((i) => i.severity === "error"));
   }
 }

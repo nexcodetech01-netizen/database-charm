@@ -36,7 +36,6 @@ import { applyRounding } from "./internal/rounding";
 import { validateContext } from "./internal/validators";
 import { sumCostComponentsCents } from "./internal/cost";
 
-
 // -----------------------------------------------------------------------------
 
 /** Resolve o percentual efetivo do MarginTargetSpec usando defaults da company. */
@@ -118,13 +117,13 @@ export function compute(ctx: PricingContext): PricingResult {
   // presente, o engine deriva `perUnitCostCents` da soma e ignora o valor
   // declarado; divergência emite warning `COST_COMPONENTS_MISMATCH`.
   const cc = ctx.costComposition;
-  const hasComponents = !!cc && (
-    cc.acquisitionCostCents !== undefined ||
-    cc.freightCents !== undefined ||
-    cc.packagingCents !== undefined ||
-    cc.insuranceCents !== undefined ||
-    cc.otherExpensesCents !== undefined
-  );
+  const hasComponents =
+    !!cc &&
+    (cc.acquisitionCostCents !== undefined ||
+      cc.freightCents !== undefined ||
+      cc.packagingCents !== undefined ||
+      cc.insuranceCents !== undefined ||
+      cc.otherExpensesCents !== undefined);
   const declaredCost = cc?.perUnitCostCents;
   let costCents = 0;
   if (hasComponents && cc) {
@@ -136,10 +135,7 @@ export function compute(ctx: PricingContext): PricingResult {
       otherExpensesCents: cc.otherExpensesCents,
     });
     costCents = derived;
-    if (
-      isFiniteNumber(declaredCost) &&
-      atLeast(declaredCost, 0) !== derived
-    ) {
+    if (isFiniteNumber(declaredCost) && atLeast(declaredCost, 0) !== derived) {
       warnings.push({
         code: "COST_COMPONENTS_MISMATCH",
         message: `perUnitCostCents declarado (${declaredCost}) diverge da soma canônica dos componentes (${derived}); engine usou a soma.`,
@@ -151,15 +147,11 @@ export function compute(ctx: PricingContext): PricingResult {
     costCents = isFiniteNumber(declaredCost) ? atLeast(declaredCost, 0) : 0;
   }
 
-  const opCostCents = ctx.channel
-    ? atLeast(ctx.channel.operationalCostCents, 0)
-    : 0;
+  const opCostCents = ctx.channel ? atLeast(ctx.channel.operationalCostCents, 0) : 0;
   const fixedFeeCents = ctx.channel
     ? Math.round(atLeast(ctx.channel.fixedFeePerOrderCents, 0) / quantity)
     : 0;
-  const taxFixedCents = ctx.taxQuote
-    ? atLeast(ctx.taxQuote.totalFixedCents, 0)
-    : 0;
+  const taxFixedCents = ctx.taxQuote ? atLeast(ctx.taxQuote.totalFixedCents, 0) : 0;
   const fixedAddCents = opCostCents + fixedFeeCents + taxFixedCents;
   const costTotalCents = costCents + fixedAddCents;
 
@@ -176,8 +168,7 @@ export function compute(ctx: PricingContext): PricingResult {
       quantity,
     },
   });
-  policySource.perUnitCost =
-    ctx.costComposition?.origin === "manual" ? "manual" : "inventory";
+  policySource.perUnitCost = ctx.costComposition?.origin === "manual" ? "manual" : "inventory";
 
   // ─── Step: TARGET (margem-alvo) ──────────────────────────────────────────
   const resolvedTarget = resolveMarginPct(marginTarget, ctx.company);
@@ -190,9 +181,7 @@ export function compute(ctx: PricingContext): PricingResult {
   policySource.marginTarget = resolvedTarget.source;
 
   const defaults = ctx.company.defaults ?? {};
-  const minMarginPct = isFiniteNumber(defaults.minMarginPct)
-    ? defaults.minMarginPct
-    : 0;
+  const minMarginPct = isFiniteNumber(defaults.minMarginPct) ? defaults.minMarginPct : 0;
   const idealMarginPct = isFiniteNumber(defaults.idealMarginPct)
     ? defaults.idealMarginPct
     : resolvedTarget.pct;
@@ -226,9 +215,7 @@ export function compute(ctx: PricingContext): PricingResult {
   const rawPremium = priceForMargin(costCents, fixedAddCents, premiumMarginPct, feePct, taxPct);
   const rawTarget = priceForMargin(costCents, fixedAddCents, resolvedTarget.pct, feePct, taxPct);
 
-  const anyImpossible = [rawMin, rawIdeal, rawPremium, rawTarget].some(
-    (v) => !Number.isFinite(v),
-  );
+  const anyImpossible = [rawMin, rawIdeal, rawPremium, rawTarget].some((v) => !Number.isFinite(v));
   if (anyImpossible) {
     warnings.push({
       code: "DIVISION_BY_ZERO_AVOIDED",
@@ -271,9 +258,7 @@ export function compute(ctx: PricingContext): PricingResult {
 
   const preBehaviorTarget = targetPriceCents;
   if (discountPct > 0) {
-    targetPriceCents = toCents(
-      targetPriceCents * (1 - discountPct / 100),
-    );
+    targetPriceCents = toCents(targetPriceCents * (1 - discountPct / 100));
   }
   appliedRules.push({
     step: "behavior",
@@ -352,9 +337,7 @@ export function compute(ctx: PricingContext): PricingResult {
   // ─── Step: FLOOR ─────────────────────────────────────────────────────────
   const productFloor = ctx.product.priceFloorCents;
   const channelMinMargin = ctx.channel?.minMarginOverridePct;
-  const effectiveMinMarginPct = isFiniteNumber(channelMinMargin)
-    ? channelMinMargin
-    : minMarginPct;
+  const effectiveMinMarginPct = isFiniteNumber(channelMinMargin) ? channelMinMargin : minMarginPct;
 
   const marginFloorPriceRaw = priceForMargin(
     costCents,
@@ -368,13 +351,10 @@ export function compute(ctx: PricingContext): PricingResult {
     : 0;
 
   const floorCandidates: number[] = [];
-  if (isFiniteNumber(productFloor) && productFloor > 0)
-    floorCandidates.push(productFloor);
-  if (marginFloorCents > 0 && mode === "derived")
-    floorCandidates.push(marginFloorCents);
+  if (isFiniteNumber(productFloor) && productFloor > 0) floorCandidates.push(productFloor);
+  if (marginFloorCents > 0 && mode === "derived") floorCandidates.push(marginFloorCents);
 
-  const priceFloorCents =
-    floorCandidates.length > 0 ? Math.max(...floorCandidates) : 0;
+  const priceFloorCents = floorCandidates.length > 0 ? Math.max(...floorCandidates) : 0;
 
   const beforeFloor = targetPriceCents;
   let finalPriceCents = targetPriceCents;
@@ -409,12 +389,10 @@ export function compute(ctx: PricingContext): PricingResult {
 
   // ─── Indicadores ─────────────────────────────────────────────────────────
   const netFactor = 1 - feePct / 100 - taxPct / 100;
-  const netFinalCents =
-    finalPriceCents * (netFactor > 0 ? netFactor : 0) - fixedAddCents;
+  const netFinalCents = finalPriceCents * (netFactor > 0 ? netFactor : 0) - fixedAddCents;
   const netProfitCents = toCents(netFinalCents - costCents);
   const grossProfitCents = toCents(finalPriceCents - costTotalCents);
-  const marginPct =
-    finalPriceCents > 0 ? (netProfitCents / finalPriceCents) * 100 : 0;
+  const marginPct = finalPriceCents > 0 ? (netProfitCents / finalPriceCents) * 100 : 0;
   const markupPct = costTotalCents > 0 ? (netProfitCents / costTotalCents) * 100 : 0;
 
   if (marginPct < minMarginPct) {
@@ -453,9 +431,7 @@ export function compute(ctx: PricingContext): PricingResult {
   });
   const policyVersion = `policy/${stableHash(policyPayload)}`;
 
-  const explainId = `expl_${stableHash(
-    `${ctx.requestId}|${policyVersion}|${finalPriceCents}`,
-  )}`;
+  const explainId = `expl_${stableHash(`${ctx.requestId}|${policyVersion}|${finalPriceCents}`)}`;
 
   const result: PricingResult = {
     resultVersion: RESULT_VERSION,

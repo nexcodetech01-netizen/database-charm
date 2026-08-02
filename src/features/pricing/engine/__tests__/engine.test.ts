@@ -27,9 +27,7 @@ import {
 
 const FIXED_NOW = "2026-07-14T12:00:00.000Z";
 
-function makeCost(
-  overrides: Partial<CostComposition> = {},
-): CostComposition {
+function makeCost(overrides: Partial<CostComposition> = {}): CostComposition {
   return {
     version: COST_COMPOSITION_VERSION,
     perUnitCostCents: 5000,
@@ -58,7 +56,10 @@ function makeContext(overrides: Partial<PricingContext> = {}): PricingContext {
   };
 }
 
-function hasWarning(codes: readonly { code: PricingWarningCode }[], code: PricingWarningCode): boolean {
+function hasWarning(
+  codes: readonly { code: PricingWarningCode }[],
+  code: PricingWarningCode,
+): boolean {
   return codes.some((w) => w.code === code);
 }
 
@@ -133,9 +134,7 @@ describe("compute() — cálculo básico", () => {
 
 describe("compute() — custo zero e limites", () => {
   it("custo zero => todos preços zero, sem crash", () => {
-    const r = compute(
-      makeContext({ costComposition: makeCost({ perUnitCostCents: 0 }) }),
-    );
+    const r = compute(makeContext({ costComposition: makeCost({ perUnitCostCents: 0 }) }));
     expect(r.recommendedPriceCents).toBe(0);
     expect(r.targetPriceCents).toBe(0);
     expect(r.finalPriceCents).toBe(0);
@@ -182,9 +181,7 @@ describe("compute() — custo zero e limites", () => {
   });
 
   it("MarginTargetSpec custom inválido (>=100) emite warning e usa ideal", () => {
-    const r = compute(
-      makeContext({ marginTarget: { kind: "custom", pct: 150 } }),
-    );
+    const r = compute(makeContext({ marginTarget: { kind: "custom", pct: 150 } }));
     expect(hasWarning(r.warnings, "INVALID_MARGIN_TARGET")).toBe(true);
     expect(r.targetPriceCents).toBe(r.recommendedPriceCents);
   });
@@ -205,9 +202,7 @@ describe("compute() — custo zero e limites", () => {
 
 describe("compute() — indicadores", () => {
   it("markup e margem consistentes: custo 50, target 30%", () => {
-    const r = compute(
-      makeContext({ marginTarget: { kind: "custom", pct: 30 } }),
-    );
+    const r = compute(makeContext({ marginTarget: { kind: "custom", pct: 30 } }));
     // finalPrice = 7143, netProfit ≈ 2143
     expect(r.finalPriceCents).toBe(7143);
     expect(r.netProfitCents).toBe(2143);
@@ -241,9 +236,7 @@ describe("compute() — arredondamento", () => {
   });
 
   it("end_99", () => {
-    const r = compute(
-      makeContext({ roundingPolicy: { kind: "end_99" } }),
-    );
+    const r = compute(makeContext({ roundingPolicy: { kind: "end_99" } }));
     expect(r.finalPriceCents % 100).toBe(99);
   });
 
@@ -297,16 +290,12 @@ describe("compute() — commercialBehavior", () => {
   });
 
   it("high_turnover com discount=0 mantém preço", () => {
-    const r = compute(
-      makeContext({ commercialBehavior: { kind: "high_turnover" } }),
-    );
+    const r = compute(makeContext({ commercialBehavior: { kind: "high_turnover" } }));
     expect(r.finalPriceCents).toBe(7143);
   });
 
   it("standard não altera preço", () => {
-    const r = compute(
-      makeContext({ commercialBehavior: { kind: "standard" } }),
-    );
+    const r = compute(makeContext({ commercialBehavior: { kind: "standard" } }));
     expect(r.finalPriceCents).toBe(7143);
   });
 });
@@ -473,81 +462,80 @@ describe("compute() — estabilidade", () => {
     for (const c of cases) {
       expect(() => compute(c)).not.toThrow();
     }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// explain() — cobertura de suggestedActions
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("explain() — todas as branches de suggestedActions", () => {
-  const baseResult = () => compute(makeContext());
-
-  it("MARGIN_BELOW_MIN → sugere aumentar preço", () => {
-    const r = baseResult();
-    const withW = {
-      ...r,
-      warnings: [{ code: "MARGIN_BELOW_MIN" as const, message: "" }],
-    };
-    const e = explain(withW);
-    expect(e.suggestedActions?.some((s) => s.includes("minMargin"))).toBe(true);
   });
 
-  it("MARGIN_BELOW_IDEAL → sugere revisar", () => {
-    const r = baseResult();
-    const e = explain({
-      ...r,
-      warnings: [{ code: "MARGIN_BELOW_IDEAL" as const, message: "" }],
+  // ─────────────────────────────────────────────────────────────────────────────
+  // explain() — cobertura de suggestedActions
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  describe("explain() — todas as branches de suggestedActions", () => {
+    const baseResult = () => compute(makeContext());
+
+    it("MARGIN_BELOW_MIN → sugere aumentar preço", () => {
+      const r = baseResult();
+      const withW = {
+        ...r,
+        warnings: [{ code: "MARGIN_BELOW_MIN" as const, message: "" }],
+      };
+      const e = explain(withW);
+      expect(e.suggestedActions?.some((s) => s.includes("minMargin"))).toBe(true);
     });
-    expect(e.suggestedActions?.some((s) => s.includes("idealMargin"))).toBe(true);
-  });
 
-  it("TAX_QUOTE_EXPIRED → sugere nova cotação", () => {
-    const r = baseResult();
-    const e = explain({
-      ...r,
-      warnings: [{ code: "TAX_QUOTE_EXPIRED" as const, message: "" }],
+    it("MARGIN_BELOW_IDEAL → sugere revisar", () => {
+      const r = baseResult();
+      const e = explain({
+        ...r,
+        warnings: [{ code: "MARGIN_BELOW_IDEAL" as const, message: "" }],
+      });
+      expect(e.suggestedActions?.some((s) => s.includes("idealMargin"))).toBe(true);
     });
-    expect(e.suggestedActions?.some((s) => s.includes("Tax Engine"))).toBe(true);
-  });
 
-  it("TABLED_PRICE_BELOW_FLOOR → sugere reavaliar", () => {
-    const r = baseResult();
-    const e = explain({
-      ...r,
-      warnings: [{ code: "TABLED_PRICE_BELOW_FLOOR" as const, message: "" }],
+    it("TAX_QUOTE_EXPIRED → sugere nova cotação", () => {
+      const r = baseResult();
+      const e = explain({
+        ...r,
+        warnings: [{ code: "TAX_QUOTE_EXPIRED" as const, message: "" }],
+      });
+      expect(e.suggestedActions?.some((s) => s.includes("Tax Engine"))).toBe(true);
     });
-    expect(e.suggestedActions?.some((s) => s.includes("PriceList"))).toBe(true);
-  });
 
-  it("warning não acionável → não adiciona ação", () => {
-    const r = baseResult();
-    const e = explain({
-      ...r,
-      warnings: [{ code: "INVALID_QUANTITY" as const, message: "" }],
+    it("TABLED_PRICE_BELOW_FLOOR → sugere reavaliar", () => {
+      const r = baseResult();
+      const e = explain({
+        ...r,
+        warnings: [{ code: "TABLED_PRICE_BELOW_FLOOR" as const, message: "" }],
+      });
+      expect(e.suggestedActions?.some((s) => s.includes("PriceList"))).toBe(true);
     });
-    expect(e.suggestedActions).toBeUndefined();
-  });
 
-  it("moeda não-BRL usa formatação genérica no summary", () => {
-    const r = baseResult();
-    const e = explain({ ...r, currency: "USD" });
-    expect(e.summary).toContain("USD");
-  });
+    it("warning não acionável → não adiciona ação", () => {
+      const r = baseResult();
+      const e = explain({
+        ...r,
+        warnings: [{ code: "INVALID_QUANTITY" as const, message: "" }],
+      });
+      expect(e.suggestedActions).toBeUndefined();
+    });
 
-  it("finalPriceCents não-finito produz — no summary", () => {
-    const r = baseResult();
-    const e = explain({ ...r, finalPriceCents: Number.NaN });
-    expect(e.summary).toContain("—");
-  });
+    it("moeda não-BRL usa formatação genérica no summary", () => {
+      const r = baseResult();
+      const e = explain({ ...r, currency: "USD" });
+      expect(e.summary).toContain("USD");
+    });
 
-  it("invariante mode_matches_pricelist_step falha quando mode=tabled sem step", () => {
-    const r = baseResult();
-    const e = explain({ ...r, mode: "tabled" });
-    const inv = e.invariantsChecked.find((i) => i.name === "mode_matches_pricelist_step");
-    expect(inv?.passed).toBe(false);
-  });
-});
+    it("finalPriceCents não-finito produz — no summary", () => {
+      const r = baseResult();
+      const e = explain({ ...r, finalPriceCents: Number.NaN });
+      expect(e.summary).toContain("—");
+    });
 
+    it("invariante mode_matches_pricelist_step falha quando mode=tabled sem step", () => {
+      const r = baseResult();
+      const e = explain({ ...r, mode: "tabled" });
+      const inv = e.invariantsChecked.find((i) => i.name === "mode_matches_pricelist_step");
+      expect(inv?.passed).toBe(false);
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -576,9 +564,7 @@ describe("explain()", () => {
   it("invariantes: preço final não-negativo, versionamento presente", () => {
     const r = compute(makeContext());
     const e = explain(r);
-    const inv = Object.fromEntries(
-      e.invariantsChecked.map((i) => [i.name, i.passed]),
-    );
+    const inv = Object.fromEntries(e.invariantsChecked.map((i) => [i.name, i.passed]));
     expect(inv.final_price_non_negative).toBe(true);
     expect(inv.versioning_present).toBe(true);
     expect(inv.mode_matches_pricelist_step).toBe(true);

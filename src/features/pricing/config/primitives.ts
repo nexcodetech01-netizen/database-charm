@@ -92,10 +92,7 @@ export function validateIsoDate(value: unknown, path: string): DomainIssue[] {
   return [];
 }
 
-export function validateRequiredString(
-  value: unknown,
-  path: string,
-): DomainIssue[] {
+export function validateRequiredString(value: unknown, path: string): DomainIssue[] {
   if (!isNonEmptyString(value)) {
     return [issue("REQUIRED_FIELD", path, `${path} é obrigatório`)];
   }

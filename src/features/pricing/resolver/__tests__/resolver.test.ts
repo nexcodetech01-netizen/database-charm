@@ -100,17 +100,13 @@ describe("resolveCompanyLayer()", () => {
   });
 
   it("defaults parciais → warning e zera os ausentes", () => {
-    const layer = resolveCompanyLayer(
-      baseCompany({ defaults: { minMarginPct: 10 } }),
-    );
+    const layer = resolveCompanyLayer(baseCompany({ defaults: { minMarginPct: 10 } }));
     expect(hasWarn(layer.warnings, "MISSING_COMPANY_DEFAULTS")).toBe(true);
     expect(layer.defaults.minMarginPct).toBe(10);
   });
 
   it("overrides numéricos inválidos são descartados", () => {
-    const layer = resolveCompanyLayer(
-      baseCompany({ minMarginPct: NaN, idealMarginPct: 25 }),
-    );
+    const layer = resolveCompanyLayer(baseCompany({ minMarginPct: NaN, idealMarginPct: 25 }));
     expect(layer.overrides.minMarginPct).toBeUndefined();
     expect(layer.overrides.idealMarginPct).toBe(25);
   });
@@ -153,9 +149,7 @@ describe("resolveCategoryLayer()", () => {
   });
 
   it("descarta números inválidos", () => {
-    const layer = resolveCategoryLayer(
-      baseCategory({ idealMarginPct: Number.POSITIVE_INFINITY }),
-    );
+    const layer = resolveCategoryLayer(baseCategory({ idealMarginPct: Number.POSITIVE_INFINITY }));
     expect(layer.overrides.idealMarginPct).toBeUndefined();
   });
 });
@@ -166,18 +160,14 @@ describe("resolveCategoryLayer()", () => {
 
 describe("resolveProductLayer()", () => {
   it("preserva id/sku/priceFloorCents válidos", () => {
-    const layer = resolveProductLayer(
-      baseProduct({ priceFloorCents: 12345, sku: "SKU-X" }),
-    );
+    const layer = resolveProductLayer(baseProduct({ priceFloorCents: 12345, sku: "SKU-X" }));
     expect(layer.productId).toBe("prod_1");
     expect(layer.sku).toBe("SKU-X");
     expect(layer.priceFloorCents).toBe(12345);
   });
 
   it("priceFloor negativo é descartado", () => {
-    const layer = resolveProductLayer(
-      baseProduct({ priceFloorCents: -10 }),
-    );
+    const layer = resolveProductLayer(baseProduct({ priceFloorCents: -10 }));
     expect(layer.priceFloorCents).toBeUndefined();
   });
 
@@ -210,9 +200,7 @@ describe("mergePolicies()", () => {
   });
 
   it("categoria sobrescreve empresa e registra conflito", () => {
-    const cat = resolveCategoryLayer(
-      baseCategory({ marginTarget: { kind: "premium" } }),
-    );
+    const cat = resolveCategoryLayer(baseCategory({ marginTarget: { kind: "premium" } }));
     const prod = resolveProductLayer(baseProduct());
     const m = mergePolicies({ company, category: cat, product: prod });
     expect(m.policySource.marginTarget).toBe("category");
@@ -224,12 +212,8 @@ describe("mergePolicies()", () => {
   });
 
   it("produto vence categoria e empresa", () => {
-    const cat = resolveCategoryLayer(
-      baseCategory({ marginTarget: { kind: "premium" } }),
-    );
-    const prod = resolveProductLayer(
-      baseProduct({ marginTarget: { kind: "custom", pct: 55 } }),
-    );
+    const cat = resolveCategoryLayer(baseCategory({ marginTarget: { kind: "premium" } }));
+    const prod = resolveProductLayer(baseProduct({ marginTarget: { kind: "custom", pct: 55 } }));
     const m = mergePolicies({ company, category: cat, product: prod });
     expect(m.policySource.marginTarget).toBe("product");
     expect(m.merged.marginTarget).toEqual({ kind: "custom", pct: 55 });
@@ -238,12 +222,8 @@ describe("mergePolicies()", () => {
   });
 
   it("contextOverrides vencem tudo (simulador)", () => {
-    const cat = resolveCategoryLayer(
-      baseCategory({ marginTarget: { kind: "premium" } }),
-    );
-    const prod = resolveProductLayer(
-      baseProduct({ marginTarget: { kind: "min" } }),
-    );
+    const cat = resolveCategoryLayer(baseCategory({ marginTarget: { kind: "premium" } }));
+    const prod = resolveProductLayer(baseProduct({ marginTarget: { kind: "min" } }));
     const m = mergePolicies({
       company,
       category: cat,
@@ -255,9 +235,7 @@ describe("mergePolicies()", () => {
   });
 
   it("campos independentes resolvem em camadas diferentes", () => {
-    const cat = resolveCategoryLayer(
-      baseCategory({ roundingPolicy: { kind: "end_99" } }),
-    );
+    const cat = resolveCategoryLayer(baseCategory({ roundingPolicy: { kind: "end_99" } }));
     const prod = resolveProductLayer(
       baseProduct({ commercialBehavior: { kind: "high_turnover" } }),
     );
@@ -399,10 +377,7 @@ describe("resolvePriceList()", () => {
 
   it("prioridade ausente é tratada como 0", () => {
     const r = resolvePriceList({
-      candidates: [
-        entry({ priceListId: "sem" }),
-        entry({ priceListId: "com", priority: 3 }),
-      ],
+      candidates: [entry({ priceListId: "sem" }), entry({ priceListId: "com", priority: 3 })],
       productId: "prod_1",
       currency: "BRL",
       quantity: 1,
@@ -431,9 +406,7 @@ describe("buildPricingContext()", () => {
   });
 
   it("currency explícita no input sobrescreve currency da empresa", () => {
-    const { context, resolution } = buildPricingContext(
-      baseInput({ currency: "USD" }),
-    );
+    const { context, resolution } = buildPricingContext(baseInput({ currency: "USD" }));
     expect(context.currency).toBe("USD");
     expect(resolution.policySource.currency).toBe("context");
   });
@@ -444,9 +417,7 @@ describe("buildPricingContext()", () => {
   });
 
   it("categoria presente → context.category populada", () => {
-    const { context } = buildPricingContext(
-      baseInput({ category: baseCategory() }),
-    );
+    const { context } = buildPricingContext(baseInput({ category: baseCategory() }));
     expect(context.category?.id).toBe("cat_1");
     expect(context.category?.name).toBe("Bolsas");
   });
@@ -618,9 +589,7 @@ describe("integração resolver → compute()", () => {
       currency: "BRL",
       fallback: "derived",
     };
-    const { context } = buildPricingContext(
-      baseInput({ priceListCandidates: [priceList] }),
-    );
+    const { context } = buildPricingContext(baseInput({ priceListCandidates: [priceList] }));
     const result = compute(context);
     expect(result.mode).toBe("tabled");
     expect(result.finalPriceCents).toBe(12345);

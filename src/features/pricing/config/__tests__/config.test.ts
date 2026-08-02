@@ -57,9 +57,7 @@ describe("result helpers", () => {
     expect(okResult.issues).toEqual([]);
   });
   it("toResult marca ok=false quando há erro", () => {
-    const r = toResult([
-      { code: "REQUIRED_FIELD", message: "x", path: "p", severity: "error" },
-    ]);
+    const r = toResult([{ code: "REQUIRED_FIELD", message: "x", path: "p", severity: "error" }]);
     expect(r.ok).toBe(false);
   });
   it("toResult ignora warnings para status", () => {
@@ -71,9 +69,7 @@ describe("result helpers", () => {
   it("throwIfInvalid lança DomainValidationError com issues", () => {
     try {
       throwIfInvalid(
-        toResult([
-          { code: "REQUIRED_FIELD", message: "x", path: "p", severity: "error" },
-        ]),
+        toResult([{ code: "REQUIRED_FIELD", message: "x", path: "p", severity: "error" }]),
       );
       expect.fail("deveria lançar");
     } catch (e) {
@@ -152,9 +148,7 @@ describe("CommercialBehavior", () => {
     expect(validateCommercialBehavior("x")[0].code).toBe("INVALID_TYPE");
   });
   it("rejeita kind desconhecido", () => {
-    expect(validateCommercialBehavior({ kind: "x" })[0].code).toBe(
-      "INVALID_COMMERCIAL_BEHAVIOR",
-    );
+    expect(validateCommercialBehavior({ kind: "x" })[0].code).toBe("INVALID_COMMERCIAL_BEHAVIOR");
   });
   it("valida standard sem campos", () => {
     expect(validateCommercialBehavior({ kind: "standard" })).toEqual([]);
@@ -163,11 +157,15 @@ describe("CommercialBehavior", () => {
     expect(validateCommercialBehavior({ kind: "promotion" }).length).toBeGreaterThan(0);
   });
   it("stock_burn valida maxDiscountPct", () => {
-    expect(validateCommercialBehavior({ kind: "stock_burn", maxDiscountPct: 150 }).length).toBeGreaterThan(0);
+    expect(
+      validateCommercialBehavior({ kind: "stock_burn", maxDiscountPct: 150 }).length,
+    ).toBeGreaterThan(0);
   });
   it("high_turnover opcional aceita e valida pct", () => {
     expect(validateCommercialBehavior({ kind: "high_turnover" })).toEqual([]);
-    expect(validateCommercialBehavior({ kind: "high_turnover", discountPct: 200 }).length).toBeGreaterThan(0);
+    expect(
+      validateCommercialBehavior({ kind: "high_turnover", discountPct: 200 }).length,
+    ).toBeGreaterThan(0);
   });
 });
 
@@ -202,7 +200,9 @@ describe("RoundingPolicy", () => {
     expect(validateRoundingPolicy({ kind: "integer" })).toEqual([]);
   });
   it("psychological exige endings válidos", () => {
-    expect(validateRoundingPolicy({ kind: "psychological" })[0].code).toBe("INVALID_ROUNDING_POLICY");
+    expect(validateRoundingPolicy({ kind: "psychological" })[0].code).toBe(
+      "INVALID_ROUNDING_POLICY",
+    );
     expect(validateRoundingPolicy({ kind: "psychological", endings: [] })[0].code).toBe(
       "INVALID_ROUNDING_POLICY",
     );
@@ -252,8 +252,9 @@ describe("CostComposition", () => {
   it("origin inválida", () => {
     const c = createCostComposition({ perUnitCostCents: 1000, computedAt: NOW });
     expect(
-      validateCostComposition({ ...c, origin: "bogus" as unknown as "inventory" })
-        .some((i) => i.code === "INVALID_ENUM"),
+      validateCostComposition({ ...c, origin: "bogus" as unknown as "inventory" }).some(
+        (i) => i.code === "INVALID_ENUM",
+      ),
     ).toBe(true);
   });
   it("staleThresholdDays negativa falha", () => {
@@ -278,7 +279,9 @@ describe("CostComposition", () => {
       otherExpensesCents: 100,
       computedAt: NOW,
     });
-    expect(validateCostComposition(c).every((i) => i.code !== "COST_COMPONENTS_MISMATCH")).toBe(true);
+    expect(validateCostComposition(c).every((i) => i.code !== "COST_COMPONENTS_MISMATCH")).toBe(
+      true,
+    );
   });
   it("soma incorreta gera COST_COMPONENTS_MISMATCH", () => {
     const c = createCostComposition({
@@ -287,7 +290,9 @@ describe("CostComposition", () => {
       freightCents: 100,
       computedAt: NOW,
     });
-    expect(validateCostComposition(c).some((i) => i.code === "COST_COMPONENTS_MISMATCH")).toBe(true);
+    expect(validateCostComposition(c).some((i) => i.code === "COST_COMPONENTS_MISMATCH")).toBe(
+      true,
+    );
   });
 });
 
@@ -397,9 +402,7 @@ describe("TaxQuote", () => {
   });
   it("totalPctOnPrice fora de faixa", () => {
     expect(
-      validateTaxQuote({ ...base(), totalPctOnPrice: 200 }).some(
-        (i) => i.code === "OUT_OF_RANGE",
-      ),
+      validateTaxQuote({ ...base(), totalPctOnPrice: 200 }).some((i) => i.code === "OUT_OF_RANGE"),
     ).toBe(true);
   });
   it("validTo antes de validFrom", () => {
@@ -485,16 +488,12 @@ describe("PriceList", () => {
   });
   it("valida entry: minQty negativa", () => {
     expect(
-      validatePriceListEntry({ ...entry(), minQty: -1 }).some(
-        (i) => i.code === "OUT_OF_RANGE",
-      ),
+      validatePriceListEntry({ ...entry(), minQty: -1 }).some((i) => i.code === "OUT_OF_RANGE"),
     ).toBe(true);
   });
   it("valida entry: maxQty ≤ 0", () => {
     expect(
-      validatePriceListEntry({ ...entry(), maxQty: 0 }).some(
-        (i) => i.code === "OUT_OF_RANGE",
-      ),
+      validatePriceListEntry({ ...entry(), maxQty: 0 }).some((i) => i.code === "OUT_OF_RANGE"),
     ).toBe(true);
   });
   it("valida entry: maxQty < minQty", () => {
@@ -597,9 +596,7 @@ describe("CompanyPolicy", () => {
   });
   it("companyId obrigatório", () => {
     expect(
-      validateCompanyPolicy({ ...base(), companyId: "" }).some(
-        (i) => i.code === "REQUIRED_FIELD",
-      ),
+      validateCompanyPolicy({ ...base(), companyId: "" }).some((i) => i.code === "REQUIRED_FIELD"),
     ).toBe(true);
   });
   it("currency inválida", () => {
@@ -721,7 +718,9 @@ describe("ProductPolicy", () => {
       productId: "p1",
       commercialBehavior: { kind: "x" } as unknown as ReturnType<typeof createStandard>,
     });
-    expect(validateProductPolicy(p).some((i) => i.code === "INVALID_COMMERCIAL_BEHAVIOR")).toBe(true);
+    expect(validateProductPolicy(p).some((i) => i.code === "INVALID_COMMERCIAL_BEHAVIOR")).toBe(
+      true,
+    );
   });
   it("margens inconsistentes min>ideal", () => {
     const p = createProductPolicy({
@@ -792,7 +791,9 @@ describe("Serialization / Envelope", () => {
       });
       expect.fail("deveria lançar");
     } catch (e) {
-      expect((e as DomainValidationError).issues.some((i) => i.code === "UNSUPPORTED_CONFIG_VERSION")).toBe(true);
+      expect(
+        (e as DomainValidationError).issues.some((i) => i.code === "UNSUPPORTED_CONFIG_VERSION"),
+      ).toBe(true);
     }
   });
   it("fromEnvelope rejeita kind inválido", () => {
@@ -805,7 +806,9 @@ describe("Serialization / Envelope", () => {
       });
       expect.fail("deveria lançar");
     } catch (e) {
-      expect((e as DomainValidationError).issues.some((i) => i.code === "MALFORMED_ENVELOPE")).toBe(true);
+      expect((e as DomainValidationError).issues.some((i) => i.code === "MALFORMED_ENVELOPE")).toBe(
+        true,
+      );
     }
   });
   it("fromEnvelope rejeita kind divergente do esperado", () => {

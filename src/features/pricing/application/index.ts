@@ -81,10 +81,7 @@ export {
 } from "./use-cases/price-list";
 
 // Pricing
-export {
-  createResolvePricingUseCase,
-  type ResolvePricingInput,
-} from "./use-cases/resolve-pricing";
+export { createResolvePricingUseCase, type ResolvePricingInput } from "./use-cases/resolve-pricing";
 export {
   createCalculateSuggestedPriceUseCase,
   type CalculateSuggestedPriceInput,

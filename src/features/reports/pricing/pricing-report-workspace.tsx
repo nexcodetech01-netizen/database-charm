@@ -1,14 +1,7 @@
 import { evaluateOfficialPrice } from "@/features/pricing/official";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  ArrowUpDown,
-  Filter,
-  Printer,
-  Settings2,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Filter, Printer, Settings2, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -208,7 +201,6 @@ async function loadPricingData(companyId: string): Promise<ProductRow[]> {
   });
 }
 
-
 export function PricingReportWorkspace({ companyId, onBack }: Props) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["pricing-report", companyId],
@@ -297,7 +289,18 @@ export function PricingReportWorkspace({ companyId, onBack }: Props) {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
-  }, [data, categoryId, supplierId, brand, status, marginMode, priceMin, priceMax, sortKey, sortDir]);
+  }, [
+    data,
+    categoryId,
+    supplierId,
+    brand,
+    status,
+    marginMode,
+    priceMin,
+    priceMax,
+    sortKey,
+    sortDir,
+  ]);
 
   const totals = useMemo(() => {
     let totalCost = 0;
@@ -401,51 +404,69 @@ export function PricingReportWorkspace({ companyId, onBack }: Props) {
         <CardContent className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
           <FilterField label="Categoria">
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FilterField>
           <FilterField label="Fornecedor">
             <Select value={supplierId} onValueChange={setSupplierId}>
-              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {suppliers.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FilterField>
           <FilterField label="Marca">
             <Select value={brand} onValueChange={setBrand}>
-              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 {brands.map((b) => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FilterField>
           <FilterField label="Status">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {statuses.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </FilterField>
           <FilterField label="Margem">
             <Select value={marginMode} onValueChange={(v) => setMarginMode(v as typeof marginMode)}>
-              <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="default">Padrão da categoria</SelectItem>
@@ -554,7 +575,10 @@ export function PricingReportWorkspace({ companyId, onBack }: Props) {
                     {activeColumns.map((col, idx) => (
                       <TableCell
                         key={col.key}
-                        className={cn(col.align === "right" && "text-right tabular-nums", "font-medium")}
+                        className={cn(
+                          col.align === "right" && "text-right tabular-nums",
+                          "font-medium",
+                        )}
                       >
                         {renderFooter(col.key, totals, idx === 0)}
                       </TableCell>
@@ -598,7 +622,9 @@ function renderCell(r: ProductRow, key: ColumnKey): React.ReactNode {
         <span className="inline-flex items-center gap-2">
           {r.name}
           {!r.useCategoryMargin ? (
-            <Badge variant="outline" className="text-[10px]">Margem personalizada</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              Margem personalizada
+            </Badge>
           ) : null}
         </span>
       );
@@ -627,19 +653,32 @@ function renderCell(r: ProductRow, key: ColumnKey): React.ReactNode {
 
 function renderCellExport(r: ProductRow, key: ColumnKey): string | number {
   switch (key) {
-    case "photo": return "";
-    case "sku": return r.sku ?? "";
-    case "name": return r.name;
-    case "category": return r.categoryName;
-    case "stock": return r.stock;
-    case "cost": return r.cost;
-    case "freight": return r.freight;
-    case "insurance": return r.insurance;
-    case "other_costs": return r.other_costs;
-    case "totalCost": return r.totalCost;
-    case "marginPct": return Number((r.marginPct * 100).toFixed(2));
-    case "marginValue": return r.marginValue;
-    case "price": return r.price;
+    case "photo":
+      return "";
+    case "sku":
+      return r.sku ?? "";
+    case "name":
+      return r.name;
+    case "category":
+      return r.categoryName;
+    case "stock":
+      return r.stock;
+    case "cost":
+      return r.cost;
+    case "freight":
+      return r.freight;
+    case "insurance":
+      return r.insurance;
+    case "other_costs":
+      return r.other_costs;
+    case "totalCost":
+      return r.totalCost;
+    case "marginPct":
+      return Number((r.marginPct * 100).toFixed(2));
+    case "marginValue":
+      return r.marginValue;
+    case "price":
+      return r.price;
   }
 }
 

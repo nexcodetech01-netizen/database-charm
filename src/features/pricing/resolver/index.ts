@@ -27,10 +27,7 @@ export type { MergeResult } from "./policy-merge-resolver";
 export { resolvePriceList } from "./price-list-resolver";
 export type { PriceListResolution } from "./price-list-resolver";
 
-export {
-  RESOLVER_VERSION,
-  RESOLUTION_VERSION,
-} from "./types";
+export { RESOLVER_VERSION, RESOLUTION_VERSION } from "./types";
 
 export type {
   CompanyPolicy,

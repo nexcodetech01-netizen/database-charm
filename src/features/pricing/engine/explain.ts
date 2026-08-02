@@ -72,10 +72,7 @@ export function explain(result: PricingResult): PricingExplanation {
   };
   let orderOk = true;
   for (let i = 1; i < result.appliedRules.length; i++) {
-    if (
-      orderIndex(result.appliedRules[i]!.step) <
-      orderIndex(result.appliedRules[i - 1]!.step)
-    ) {
+    if (orderIndex(result.appliedRules[i]!.step) < orderIndex(result.appliedRules[i - 1]!.step)) {
       orderOk = false;
       break;
     }
