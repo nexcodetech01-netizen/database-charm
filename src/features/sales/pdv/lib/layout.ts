@@ -79,12 +79,15 @@ export function pdvCashStatus(input: {
   };
 }
 
-/** Classes do indicador de status (contraste elevado, tokens semânticos). */
+/**
+ * Classes do indicador de status.
+ * Sprint PDV.3.1: cores cruas substituídas pelos tokens do design system.
+ */
 export const PDV_STATUS_TONE_CLASS: Record<PdvStatusTone, string> = {
-  open: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600",
-  closed: "border-destructive/40 bg-destructive/10 text-destructive",
-  pending: "border-amber-500/40 bg-amber-500/10 text-amber-600",
-  done: "border-primary/40 bg-primary/10 text-primary",
+  open: STATUS_TOKENS.success.soft,
+  closed: STATUS_TOKENS.danger.soft,
+  pending: STATUS_TOKENS.warning.soft,
+  done: STATUS_TOKENS.info.soft,
 };
 
 /**
