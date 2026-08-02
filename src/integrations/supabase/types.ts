@@ -4693,6 +4693,7 @@ export type Database = {
           insurance: number
           last_purchase_cost: number | null
           margin: number
+          margin_mode: string
           min_stock: number
           ml_item_id: string | null
           ml_permalink: string | null
@@ -4728,6 +4729,7 @@ export type Database = {
           insurance?: number
           last_purchase_cost?: number | null
           margin?: number
+          margin_mode?: string
           min_stock?: number
           ml_item_id?: string | null
           ml_permalink?: string | null
@@ -4763,6 +4765,7 @@ export type Database = {
           insurance?: number
           last_purchase_cost?: number | null
           margin?: number
+          margin_mode?: string
           min_stock?: number
           ml_item_id?: string | null
           ml_permalink?: string | null
