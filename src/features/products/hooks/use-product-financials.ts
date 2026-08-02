@@ -24,16 +24,38 @@ export type ProductFinancialsInput = Pick<
   | "margin"
   | "stock"
   | "min_stock"
->;
+> &
+  Partial<Pick<Product, "packaging">>;
+
+/** Linha discriminada da composição de custo — usada nos detalhamentos da UI. */
+export interface CostComponentLine {
+  key: "cost" | "packaging" | "freight" | "insurance" | "other_costs" | "tax";
+  /** Rótulo exibido ao usuário. */
+  label: string;
+  /** Origem/rastro do valor, para tooltip — nada de taxa oculta. */
+  source: string;
+  /** Valor em R$ que entra no Custo Total. */
+  amount: number;
+  /** Percentual, quando o componente é percentual (impostos). */
+  pct?: number;
+}
 
 export interface ProductFinancials {
   /** Componentes de custo (R$). */
   cost: number;
+  packaging: number;
   freight: number;
   insurance: number;
   otherCosts: number;
+  /** Alíquota de impostos aplicada na visualização (%) e seu valor em R$. */
+  taxRatePct: number;
+  taxAmount: number;
   /** Soma normalizada de todos os componentes de custo (R$). */
   costTotal: number;
+  /** Custo sem impostos (aquisição + embalagem + frete + seguro + outros). */
+  costTotalWithoutTax: number;
+  /** Detalhamento discriminado de cada componente do Custo Total. */
+  components: CostComponentLine[];
   /** Preço de venda praticado (R$). */
   price: number;
   /** Preço − custo total, sem descontar taxa de canal. */
@@ -64,48 +86,107 @@ const num = (v: unknown): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export function useProductFinancials(
   product: ProductFinancialsInput | null | undefined,
-  opts?: { feePct?: number },
+  opts?: { feePct?: number; taxRatePct?: number },
 ): ProductFinancials | null {
   const feePct = opts?.feePct;
+  const taxRatePctOpt = opts?.taxRatePct;
   return useMemo(() => {
     if (!product) return null;
     const cost = num(product.cost);
+    const packaging = num((product as { packaging?: number }).packaging);
     const freight = num(product.freight);
     const insurance = num(product.insurance);
     const otherCosts = num(product.other_costs);
-    const costTotal = cost + freight + insurance + otherCosts;
     const price = num(product.price);
+
+    const taxRatePct = Math.max(0, num(taxRatePctOpt));
+    const taxAmount = round2((price * taxRatePct) / 100);
+
+    const costTotalWithoutTax = round2(
+      cost + packaging + freight + insurance + otherCosts,
+    );
+    const costTotal = round2(costTotalWithoutTax + taxAmount);
+
+    const components: CostComponentLine[] = [
+      {
+        key: "cost",
+        label: "Custo de aquisição",
+        source: "Preço pago ao fornecedor (cadastro do produto)",
+        amount: cost,
+      },
+      {
+        key: "packaging",
+        label: "Embalagem",
+        source: "Custos de embalagem informados no cadastro do produto",
+        amount: packaging,
+      },
+      {
+        key: "freight",
+        label: "Frete de entrada",
+        source: "Frete rateado na entrada/compra deste produto",
+        amount: freight,
+      },
+      {
+        key: "insurance",
+        label: "Seguro",
+        source: "Seguro rateado na entrada/compra deste produto",
+        amount: insurance,
+      },
+      {
+        key: "other_costs",
+        label: "Outras taxas operacionais",
+        source:
+          "Campo “Outros custos” do cadastro do produto (taxas operacionais adicionais)",
+        amount: otherCosts,
+      },
+      {
+        key: "tax",
+        label: "Impostos sobre a venda",
+        source:
+          "Alíquota aplicada sobre o preço de venda apenas nesta simulação — não é persistida no produto",
+        amount: taxAmount,
+        pct: taxRatePct,
+      },
+    ];
+
     const marginStored = num(product.margin);
     const feeRate = Math.max(0, Math.min(1, num(feePct) / 100));
     const netPrice = price * (1 - feeRate);
-    const grossProfit = price - costTotal;
-    const netProfit = netPrice - costTotal;
-    const marginPctReal = price > 0 ? (netProfit / price) * 100 : 0;
-    const markupPct = costTotal > 0 ? (grossProfit / costTotal) * 100 : 0;
+    const grossProfit = round2(price - costTotal);
+    const netProfit = round2(netPrice - costTotal);
+    const marginPctReal = price > 0 ? round2((netProfit / price) * 100) : 0;
+    const markupPct = costTotal > 0 ? round2((grossProfit / costTotal) * 100) : 0;
     const stock = num(product.stock);
     const minStock = num(product.min_stock);
 
     return {
       cost,
+      packaging,
       freight,
       insurance,
       otherCosts,
+      taxRatePct,
+      taxAmount,
       costTotal,
+      costTotalWithoutTax,
+      components,
       price,
       grossProfit,
       netProfit,
       marginPctReal,
       marginPctStored: marginStored,
-      marginDrift: marginPctReal - marginStored,
+      marginDrift: round2(marginPctReal - marginStored),
       markupPct,
       stock,
       minStock,
-      stockValue: stock * costTotal,
+      stockValue: round2(stock * costTotal),
       costCents: Math.round(cost * 100),
       costTotalCents: Math.round(costTotal * 100),
       priceCents: Math.round(price * 100),
     };
-  }, [product, feePct]);
+  }, [product, feePct, taxRatePctOpt]);
 }
