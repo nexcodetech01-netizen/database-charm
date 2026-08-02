@@ -22,6 +22,34 @@ async function assertNoEquivalent(companyId: string, name: string, ignoreId?: st
   if (hit) throw new DuplicateCategoryError(hit.name);
 }
 
+export interface DuplicateGroupCategory {
+  id: string;
+  name: string;
+  status: string;
+  product_count: number;
+  min_margin_pct: number | null;
+  target_margin_pct: number | null;
+  max_margin_pct: number | null;
+  auto_pricing_policy: boolean | null;
+}
+
+export interface DuplicateGroupRow {
+  key: string;
+  members: number;
+  policy_conflict: boolean;
+  suggested_target_id: string;
+  suggested_target_name: string;
+  categories: DuplicateGroupCategory[];
+}
+
+export interface MergeResult {
+  merged_from: { id: string; name: string };
+  merged_into: { id: string; name: string };
+  products_moved: number;
+  children_moved: number;
+  policies_moved: number;
+}
+
 
 export const categoriesService = {
   /**
