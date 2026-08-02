@@ -63,6 +63,8 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
 
   // Recalcula os campos quando o produto (ou a alíquota simulada) muda e o
   // usuário ainda não editou nada — nunca sobrescreve edição em andamento.
+  // Nunca zera o preço já gravado: se o produto tem preço no banco, ele é
+  // sempre a fonte inicial do campo.
   useEffect(() => {
     if (dirty) return;
     setMarginInput(toInput(fin.marginPctReal));
@@ -103,7 +105,10 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   const handleMarginChange = (v: string) => {
     setDirty(true);
     setMarginInput(v);
-    setPriceInput(toInput(priceFromMargin(parseNum(v))));
+    const next = priceFromMargin(parseNum(v));
+    // Só propaga para o preço quando o cálculo é válido — evita zerar um
+    // preço existente enquanto o usuário digita a margem.
+    if (next > 0) setPriceInput(toInput(next));
   };
 
   const handlePriceChange = (v: string) => {
@@ -111,6 +116,7 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
     setPriceInput(v);
     setMarginInput(toInput(marginFromPrice(parseNum(v))));
   };
+
 
   const reset = () => {
     setDirty(false);
