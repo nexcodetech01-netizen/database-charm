@@ -110,8 +110,9 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
             <Input inputMode="decimal" value={commission} onChange={(e) => setCommission(e.target.value)} />
           </Field>
           <Field label="Taxa aplicada (%)">
-            <Input inputMode="decimal" value={feePct} onChange={(e) => setFeePct(e.target.value)} />
+            <Input inputMode="decimal" value={feePctValue} onChange={(e) => setFeePct(e.target.value)} />
           </Field>
+
           <Field label="Margem desejada (%)">
             <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
           </Field>
