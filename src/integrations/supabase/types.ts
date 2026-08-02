@@ -4246,8 +4246,56 @@ export type Database = {
           },
         ]
       }
+      pricing_market_references: {
+        Row: {
+          category_key: string
+          common_pct: number
+          company_id: string | null
+          conservative_pct: number
+          created_at: string
+          id: string
+          label: string
+          premium_pct: number
+          source_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          category_key: string
+          common_pct: number
+          company_id?: string | null
+          conservative_pct: number
+          created_at?: string
+          id?: string
+          label: string
+          premium_pct: number
+          source_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category_key?: string
+          common_pct?: number
+          company_id?: string | null
+          conservative_pct?: number
+          created_at?: string
+          id?: string
+          label?: string
+          premium_pct?: number
+          source_note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_market_references_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
+          auto_pricing_policy: boolean
           color: string
           company_id: string
           created_at: string
@@ -4266,6 +4314,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_pricing_policy?: boolean
           color?: string
           company_id: string
           created_at?: string
@@ -4284,6 +4333,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_pricing_policy?: boolean
           color?: string
           company_id?: string
           created_at?: string

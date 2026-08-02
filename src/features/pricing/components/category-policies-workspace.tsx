@@ -50,6 +50,9 @@ import {
 import type { CategoryPolicyInput } from "@/features/pricing/config/category-policy";
 import type { CommercialBehaviorSpec } from "@/features/pricing/engine/types";
 import { CategoryRecalcDialog } from "@/features/pricing/components/category-recalc-dialog";
+import { BellaMarginReferenceCard } from "@/features/pricing/components/bella-margin-reference-card";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estratégia — mesmo mapeamento visual da UX-001
@@ -172,6 +175,46 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [recalcId, setRecalcId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(EMPTY_EDITOR);
+
+  // "Utilizar política automática" vive em `product_categories` porque é
+  // exatamente a coluna lida pelo Motor Comercial V2.
+  const autoPolicyQuery = useQuery({
+    queryKey: ["pricing", "category-auto-policy", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_categories")
+        .select("id, auto_pricing_policy")
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return Object.fromEntries(
+        (data ?? []).map((c) => [c.id, c.auto_pricing_policy !== false]),
+      ) as Record<string, boolean>;
+    },
+    enabled: Boolean(companyId),
+  });
+
+  const autoPolicyMutation = useMutation({
+    mutationFn: async (vars: { categoryId: string; enabled: boolean }) => {
+      const { error } = await supabase
+        .from("product_categories")
+        .update({ auto_pricing_policy: vars.enabled })
+        .eq("id", vars.categoryId)
+        .eq("company_id", companyId);
+      if (error) throw error;
+      return vars;
+    },
+    onSuccess: async (vars) => {
+      toast.success(
+        vars.enabled
+          ? "Política automática ativada — novos produtos usarão a margem da categoria"
+          : "Política automática desativada para esta categoria",
+      );
+      await qc.invalidateQueries({ queryKey: ["pricing", "category-auto-policy", companyId] });
+      await qc.invalidateQueries({ queryKey: ["pricing", "inputs"] });
+    },
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar a política automática"),
+  });
 
   const rows = overview.data?.rows ?? [];
   const companyPolicy = overview.data?.companyPolicy?.entity ?? null;
@@ -473,6 +516,38 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="flex items-start justify-between gap-3 rounded-md border border-border/60 p-3">
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">
+                      Utilizar política automática
+                    </Label>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Todo produto novo desta categoria nasce com a margem padrão acima, sem o
+                      operador informar margem.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={autoPolicyQuery.data?.[selected.category.id] !== false}
+                    disabled={autoPolicyMutation.isPending}
+                    onCheckedChange={(v) =>
+                      autoPolicyMutation.mutate({ categoryId: selected.category.id, enabled: v })
+                    }
+                  />
+                </div>
+
+                <BellaMarginReferenceCard
+                  companyId={companyId}
+                  categoryName={selected.category.name}
+                  onApply={(r) =>
+                    setEditor((s) => ({
+                      ...s,
+                      minMargin: String(r.conservativePct),
+                      idealMargin: String(r.commonPct),
+                      premiumMargin: String(r.premiumPct),
+                    }))
+                  }
+                />
 
                 <div className="rounded-md border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
                   <div className="flex items-center justify-between">

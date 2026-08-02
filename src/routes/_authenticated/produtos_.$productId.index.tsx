@@ -644,6 +644,14 @@ function ProductDetailPage() {
           (product.category as { default_discount_pct?: number | null } | null | undefined)
             ?.default_discount_pct ?? null
         }
+        categoryMaxMarginPct={
+          (product.category as { max_margin_pct?: number | null } | null | undefined)
+            ?.max_margin_pct ?? null
+        }
+        categoryAutoPolicy={
+          (product.category as { auto_pricing_policy?: boolean | null } | null | undefined)
+            ?.auto_pricing_policy ?? true
+        }
         productMarginPct={margin}
         useCategoryMargin={
           (product as { use_category_margin?: boolean | null }).use_category_margin ?? false
