@@ -117,15 +117,13 @@ export interface RecalcApplyResultDTO {
 
 export const applyCategoryRecalc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { companyId: string; items: { productId: string; price: number }[] }) => {
-      if (!input?.companyId) throw new Error("companyId é obrigatório");
-      if (!Array.isArray(input?.items) || input.items.length === 0) {
-        throw new Error("Nenhum produto selecionado para recálculo");
-      }
-      return input;
-    },
-  )
+  .inputValidator((input: { companyId: string; items: { productId: string; price: number }[] }) => {
+    if (!input?.companyId) throw new Error("companyId é obrigatório");
+    if (!Array.isArray(input?.items) || input.items.length === 0) {
+      throw new Error("Nenhum produto selecionado para recálculo");
+    }
+    return input;
+  })
   .handler(async ({ data, context }): Promise<RecalcApplyResultDTO> => {
     await requireServerPermission(context, "products.update", {
       companyId: data.companyId,

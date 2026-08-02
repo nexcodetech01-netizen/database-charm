@@ -63,10 +63,7 @@ export function CategoryRecalcDialog({
   });
 
   const candidates = useMemo(() => preview.data?.candidates ?? [], [preview.data]);
-  const selected = useMemo(
-    () => candidates.filter((c) => !excluded[c.id]),
-    [candidates, excluded],
-  );
+  const selected = useMemo(() => candidates.filter((c) => !excluded[c.id]), [candidates, excluded]);
 
   const apply = useMutation({
     mutationFn: () =>
@@ -129,9 +126,7 @@ export function CategoryRecalcDialog({
                 <li key={c.id} className="flex items-center gap-3 px-3 py-2 text-sm">
                   <Checkbox
                     checked={!excluded[c.id]}
-                    onCheckedChange={(v) =>
-                      setExcluded((s) => ({ ...s, [c.id]: v !== true }))
-                    }
+                    onCheckedChange={(v) => setExcluded((s) => ({ ...s, [c.id]: v !== true }))}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-foreground">{c.name}</p>
@@ -165,9 +160,7 @@ export function CategoryRecalcDialog({
             onClick={() => apply.mutate()}
             disabled={apply.isPending || selected.length === 0}
           >
-            {apply.isPending
-              ? "Aplicando..."
-              : `Aplicar em ${selected.length} produto(s)`}
+            {apply.isPending ? "Aplicando..." : `Aplicar em ${selected.length} produto(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

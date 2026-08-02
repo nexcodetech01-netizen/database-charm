@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, Building2, Layers, Save, Search } from "lucide-react";
+import { BadgeCheck, Building2, Calculator, Layers, Save, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +49,7 @@ import {
 } from "@/features/pricing/lib/category-policy.functions";
 import type { CategoryPolicyInput } from "@/features/pricing/config/category-policy";
 import type { CommercialBehaviorSpec } from "@/features/pricing/engine/types";
+import { CategoryRecalcDialog } from "@/features/pricing/components/category-recalc-dialog";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estratégia — mesmo mapeamento visual da UX-001
@@ -169,6 +170,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [recalcId, setRecalcId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(EMPTY_EDITOR);
 
   const rows = overview.data?.rows ?? [];
@@ -275,7 +277,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                 <TableHead>Origem</TableHead>
                 <TableHead className="text-right">Mín.</TableHead>
                 <TableHead className="text-right">Ideal</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
+                <TableHead className="text-right">Máx.</TableHead>
                 <TableHead>Estratégia</TableHead>
                 <TableHead className="text-right">Versão</TableHead>
                 <TableHead className="w-[1%]" />
@@ -344,16 +346,29 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                         {row.policy ? `v${row.policy.meta.version}` : "—"}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedId(row.category.id);
-                          }}
-                        >
-                          Editar
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRecalcId(row.category.id);
+                            }}
+                            title="Recalcular preços dos produtos desta categoria"
+                          >
+                            <Calculator className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedId(row.category.id);
+                            }}
+                          >
+                            Editar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -418,7 +433,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground">
-                      Margem premium (%)
+                      Margem máxima (%)
                     </Label>
                     <Input
                       inputMode="decimal"
@@ -490,6 +505,16 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
           ) : null}
         </SheetContent>
       </Sheet>
+
+      {recalcId ? (
+        <CategoryRecalcDialog
+          companyId={companyId}
+          categoryId={recalcId}
+          categoryName={rows.find((r) => r.category.id === recalcId)?.category.name ?? "Categoria"}
+          open
+          onOpenChange={(o) => !o && setRecalcId(null)}
+        />
+      ) : null}
     </PageLayout>
   );
 }

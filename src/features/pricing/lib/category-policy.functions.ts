@@ -126,14 +126,12 @@ export const saveCategoryPolicy = createServerFn({ method: "POST" })
 
     const result =
       data.expectedVersion && data.expectedVersion > 0
-        ? await application
-            .createUpdateCategoryPolicyUseCase(deps)
-            .execute({
-              companyId: data.companyId,
-              input: data.input,
-              expectedVersion: data.expectedVersion,
-              actor,
-            })
+        ? await application.createUpdateCategoryPolicyUseCase(deps).execute({
+            companyId: data.companyId,
+            input: data.input,
+            expectedVersion: data.expectedVersion,
+            actor,
+          })
         : await application
             .createCreateCategoryPolicyUseCase(deps)
             .execute({ companyId: data.companyId, input: data.input, actor });
@@ -141,9 +139,8 @@ export const saveCategoryPolicy = createServerFn({ method: "POST" })
     // Espelha as margens nas colunas lidas pelo Motor Comercial V2, para que
     // política (UI) e motor jamais divirjam. Best-effort: não bloqueia o save.
     try {
-      const { categoryMarginColumns } = await import(
-        "@/features/pricing/lib/category-margin-mirror"
-      );
+      const { categoryMarginColumns } =
+        await import("@/features/pricing/lib/category-margin-mirror");
       await context.supabase
         .from("product_categories")
         .update(categoryMarginColumns(data.input))
