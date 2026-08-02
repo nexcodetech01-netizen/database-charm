@@ -4,6 +4,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { requirePermission } from "@/features/rbac";
 import { ProductPricingSheet } from "@/features/pricing";
 import { ProductPricingIntelligenceCard } from "@/features/pricing/components/product-pricing-intelligence-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 import { AppliedMarginPolicyCard } from "@/features/pricing/components/applied-margin-policy-card";
 import { Calculator, Megaphone } from "lucide-react";
@@ -316,6 +317,8 @@ function ProductDetailPage() {
     "[&_p.tabular-nums]:whitespace-nowrap",
     "[&_span.truncate]:whitespace-normal [&_span.truncate]:overflow-visible [&_span.truncate]:text-clip",
   );
+  // Produto sem preço cadastrado: não calcular "prejuízo" — exibir "A definir".
+  const hasPrice = price > 0;
   const kpis = (
     <KpiSection
       columns={5}
@@ -324,9 +327,15 @@ function ProductDetailPage() {
       <KpiCard
         className={kpiCardClass}
         label="Preço de venda"
-        value={formatCurrency(price)}
+        value={hasPrice ? formatCurrency(price) : "A definir"}
         icon={DollarSign}
-        hint={product.unit ? `por ${product.unit}` : undefined}
+        hint={
+          hasPrice
+            ? product.unit
+              ? `por ${product.unit}`
+              : undefined
+            : "Preço ainda não cadastrado"
+        }
       />
       <KpiCard
         className={kpiCardClass}
@@ -337,23 +346,31 @@ function ProductDetailPage() {
       <KpiCard
         className={kpiCardClass}
         label="Margem de Lucro"
-        value={`${formatPercent(margin)}%`}
+        value={hasPrice ? `${formatPercent(margin)}%` : "A definir"}
         icon={Percent}
-        hint="Percentual do preço de venda que representa lucro."
+        hint={
+          hasPrice
+            ? "Percentual do preço de venda que representa lucro."
+            : "Defina o preço de venda para calcular a margem."
+        }
       />
       <KpiCard
         className={kpiCardClass}
         label="Lucro Unitário"
-        value={formatCurrency(profit)}
+        value={hasPrice ? formatCurrency(profit) : "A definir"}
         icon={TrendingUp}
         hint={
-          <span className="flex flex-col gap-0.5 text-xs">
-            <span>Custo Total: {formatCurrency(costTotal)}</span>
-            <span>Preço de Venda: {formatCurrency(price)}</span>
-            <span className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
-              Lucro Unitário: {formatCurrency(profit)}
+          hasPrice ? (
+            <span className="flex flex-col gap-0.5 text-xs">
+              <span>Custo Total: {formatCurrency(costTotal)}</span>
+              <span>Preço de Venda: {formatCurrency(price)}</span>
+              <span className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                Lucro Unitário: {formatCurrency(profit)}
+              </span>
             </span>
-          </span>
+          ) : (
+            "Defina o preço de venda para calcular o lucro."
+          )
         }
       />
 
@@ -366,6 +383,7 @@ function ProductDetailPage() {
       />
     </KpiSection>
   );
+
 
   return (
     <>
@@ -383,8 +401,18 @@ function ProductDetailPage() {
         }
       />
 
+      <Tabs defaultValue="visao" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="visao">Visão geral</TabsTrigger>
+          <TabsTrigger value="precificacao">Precificação</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visao" className="space-y-6">
       {/* Informações principais — reconstruído: foto 35% + dados 65% */}
       <Section flushBody bodyClassName="p-6 lg:p-8">
+
 
 
           <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
@@ -479,11 +507,18 @@ function ProductDetailPage() {
           </div>
       </Section>
 
+      {/* Lista de Interesse — clientes aguardando este produto */}
+      <ProductInterestPanel
+        companyId={company.id}
+        productId={product.id}
+        stock={Number(stock) || 0}
+      />
+        </TabsContent>
 
-
-
+        <TabsContent value="estoque" className="space-y-6">
       {/* Estoque */}
       <Section
+
 
             title="Estoque"
             description="Disponibilidade, limites e valor imobilizado."
@@ -591,8 +626,9 @@ function ProductDetailPage() {
               />
             </div>
       </Section>
+        </TabsContent>
 
-
+        <TabsContent value="precificacao" className="space-y-6">
       {/* Política de margem aplicada — categoria vs personalizada */}
       <AppliedMarginPolicyCard
         categoryName={product.category?.name ?? null}
@@ -614,34 +650,26 @@ function ProductDetailPage() {
         }
       />
 
-      {/* Lista de Interesse — clientes aguardando este produto */}
-      <ProductInterestPanel
-        companyId={company.id}
-        productId={product.id}
-        stock={Number(stock) || 0}
-      />
-
       {/* Inteligência Comercial — política aplicada e sugestão de preço */}
       <ProductPricingIntelligenceCard
         companyId={company.id}
         productId={product.id}
       />
 
-      {/* Sugestão automática por canal (Loja, Site, ML, Shopee, Amazon) */}
+      {/* Sugestão automática por canal (Loja, Site, Mercado Livre) */}
       <SuggestedPricesByChannelCard
         companyId={company.id}
         productId={product.id}
       />
 
-
       {/* Custos operacionais e precificação */}
       <ProductCostBreakdown productId={product.id} product={product} />
+        </TabsContent>
 
-
-
-
+        <TabsContent value="historico" className="space-y-6">
       {/* Movimentações */}
       <Section
+
 
             title="Movimentações"
             description="Últimos eventos de estoque, compras e vendas deste produto."
@@ -728,6 +756,10 @@ function ProductDetailPage() {
               </li>
             </ol>
       </Section>
+        </TabsContent>
+      </Tabs>
+
+
 
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

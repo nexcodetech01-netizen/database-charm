@@ -63,6 +63,8 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
 
   // Recalcula os campos quando o produto (ou a alíquota simulada) muda e o
   // usuário ainda não editou nada — nunca sobrescreve edição em andamento.
+  // Nunca zera o preço já gravado: se o produto tem preço no banco, ele é
+  // sempre a fonte inicial do campo.
   useEffect(() => {
     if (dirty) return;
     setMarginInput(toInput(fin.marginPctReal));
@@ -103,7 +105,10 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   const handleMarginChange = (v: string) => {
     setDirty(true);
     setMarginInput(v);
-    setPriceInput(toInput(priceFromMargin(parseNum(v))));
+    const next = priceFromMargin(parseNum(v));
+    // Só propaga para o preço quando o cálculo é válido — evita zerar um
+    // preço existente enquanto o usuário digita a margem.
+    if (next > 0) setPriceInput(toInput(next));
   };
 
   const handlePriceChange = (v: string) => {
@@ -112,6 +117,7 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
     setMarginInput(toInput(marginFromPrice(parseNum(v))));
   };
 
+
   const reset = () => {
     setDirty(false);
     setMarginInput(toInput(fin.marginPctReal));
@@ -119,14 +125,21 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   };
 
   const save = async () => {
+    const nextPrice = round2(parseNum(priceInput));
+    // Proteção: nunca sobrescrever um preço já gravado com R$ 0,00.
+    if (nextPrice <= 0 && fin.price > 0) {
+      toast.error("Informe um preço de venda válido para salvar.");
+      return;
+    }
     try {
       await update.mutateAsync({
         id: productId,
         input: {
-          price: round2(parseNum(priceInput)),
+          price: nextPrice,
           margin: round2(parseNum(marginInput)),
         },
       });
+
       setDirty(false);
       toast.success("Preço e margem atualizados");
     } catch (err) {
