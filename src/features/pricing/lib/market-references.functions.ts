@@ -40,3 +40,38 @@ export const listMarketReferences = createServerFn({ method: "GET" })
     if (error) return [];
     return ((rows ?? []) as Row[]).map(toRef);
   });
+
+/**
+ * Grava/atualiza a referência de mercado DA EMPRESA para uma categoria.
+ * Catálogo configurável — separado da política comercial. Nunca toca em
+ * produtos, preços ou nas margens da política.
+ */
+export const upsertCompanyMarketReference = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      companyId: string;
+      categoryKey: string;
+      label: string;
+      conservativePct: number;
+      commonPct: number;
+      premiumPct: number;
+      sourceNote?: string | null;
+    }) => input,
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean; error?: string }> => {
+    const { error } = await context.supabase.from("pricing_market_references").upsert(
+      {
+        company_id: data.companyId,
+        category_key: data.categoryKey,
+        label: data.label,
+        conservative_pct: data.conservativePct,
+        common_pct: data.commonPct,
+        premium_pct: data.premiumPct,
+        source_note: data.sourceNote ?? null,
+      },
+      { onConflict: "company_id,category_key" },
+    );
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  });
