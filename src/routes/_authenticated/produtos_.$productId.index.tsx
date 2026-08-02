@@ -506,11 +506,18 @@ function ProductDetailPage() {
           </div>
       </Section>
 
+      {/* Lista de Interesse — clientes aguardando este produto */}
+      <ProductInterestPanel
+        companyId={company.id}
+        productId={product.id}
+        stock={Number(stock) || 0}
+      />
+        </TabsContent>
 
-
-
+        <TabsContent value="estoque" className="space-y-6">
       {/* Estoque */}
       <Section
+
 
             title="Estoque"
             description="Disponibilidade, limites e valor imobilizado."
