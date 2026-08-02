@@ -12,6 +12,7 @@ import {
 import { PageLayout } from "@/components/layout";
 import { toast } from "@/hooks/use-toast";
 import {
+  CategoryDuplicatesPanel,
   CategoryFormDialog,
   CategoryTable,
   useArchiveCategory,
@@ -102,7 +103,10 @@ function CategoriesPage() {
         </div>
       }
     >
+      <CategoryDuplicatesPanel companyId={company.id} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
+
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input

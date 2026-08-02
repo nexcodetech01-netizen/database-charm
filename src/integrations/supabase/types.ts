@@ -6511,6 +6511,7 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      category_name_key: { Args: { _name: string }; Returns: string }
       company_month_start: { Args: { _company_id: string }; Returns: string }
       company_monthly_revenue: {
         Args: { _company_id: string; _competence: string }
@@ -6746,7 +6747,19 @@ export type Database = {
         }
         Returns: Json
       }
+      merge_product_categories: {
+        Args: {
+          _confirm_policy_conflict?: boolean
+          _source_id: string
+          _target_id: string
+        }
+        Returns: Json
+      }
       nexos_jobs_status: { Args: never; Returns: Json }
+      preview_duplicate_categories: {
+        Args: { _company_id: string }
+        Returns: Json
+      }
       preview_duplicate_products: {
         Args: { _company_id: string }
         Returns: {

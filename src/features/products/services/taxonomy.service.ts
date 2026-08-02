@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ensureCategoryByName } from "@/features/categories/lib/ensure-category";
 
 export const categoriesService = {
   async list(companyId: string) {
@@ -10,11 +11,16 @@ export const categoriesService = {
     if (error) throw error;
     return data ?? [];
   },
+  /**
+   * Cria a categoria OU reutiliza a equivalente já existente
+   * (plural/acentos/caixa/espaços) — nunca gera duplicidade.
+   */
   async create(companyId: string, name: string) {
+    const id = await ensureCategoryByName(companyId, name);
     const { data, error } = await supabase
       .from("product_categories")
-      .insert({ company_id: companyId, name })
-      .select()
+      .select("*")
+      .eq("id", id!)
       .single();
     if (error) throw error;
     return data;
