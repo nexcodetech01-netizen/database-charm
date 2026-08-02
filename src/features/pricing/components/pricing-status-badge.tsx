@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { PricingStatus } from "../types";
+import type { PricingStatus } from "../official/status";
 
 const TONE: Record<PricingStatus, { className: string; dot: string }> = {
   premium: {

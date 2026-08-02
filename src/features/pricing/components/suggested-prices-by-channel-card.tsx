@@ -45,7 +45,9 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { priceForMargin } from "@/features/pricing/calculator";
+import { computeOfficialPricing } from "@/features/pricing/official";
+import { worstCaseFee, effectiveFeePct } from "@/features/pricing/official/fees";
+import { useCompanyFeeTable } from "@/features/pricing/hooks/use-company-fee-table";
 import {
   getProductPricingIntelligence,
   type ProductPricingIntelligenceDTO,
@@ -99,21 +101,45 @@ interface ChannelPreset {
   defaultFixedCost: number;
 }
 
-// Taxas típicas praticadas pelos canais (apresentação — usuário pode
-// sobrescrever ao aplicar). Não altera política salva.
-const CHANNELS: readonly ChannelPreset[] = [
-  { id: "store", label: "Loja Física", icon: Store, feePct: 0, hint: "Sem taxa de marketplace", defaultFixedCost: 0 },
-  { id: "site", label: "Site próprio", icon: Globe, feePct: 3, hint: "Gateway ~3%", defaultFixedCost: 0 },
-  { id: "ml", label: "Mercado Livre", icon: ShoppingBag, feePct: 16, hint: "Comissão clássica ~16% + tarifa fixa", defaultFixedCost: 6 },
-];
+/**
+ * Canais de venda. A taxa de RECEBIMENTO (Loja Física / Site) vem sempre da
+ * tabela única da empresa (`payment_method_fees` → `official/fees.ts`).
+ * Apenas a COMISSÃO de marketplace é preset do canal, e é editável.
+ */
+const MARKETPLACE_COMMISSION_PCT = 16;
 
-const DEFAULT_FIXED_COSTS: Record<string, number> = CHANNELS.reduce(
-  (acc, c) => {
-    acc[c.id] = c.defaultFixedCost;
-    return acc;
-  },
-  {} as Record<string, number>,
-);
+function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
+  const fee = Math.max(0, Number(paymentFeePct) || 0);
+  return [
+    {
+      id: "store",
+      label: "Loja Física",
+      icon: Store,
+      feePct: fee,
+      hint: `Taxa de recebimento da empresa (${fee.toFixed(2)}%)`,
+      defaultFixedCost: 0,
+    },
+    {
+      id: "site",
+      label: "Site próprio",
+      icon: Globe,
+      feePct: fee,
+      hint: `Gateway Asaas (${fee.toFixed(2)}%)`,
+      defaultFixedCost: 0,
+    },
+    {
+      id: "ml",
+      label: "Mercado Livre",
+      icon: ShoppingBag,
+      feePct: MARKETPLACE_COMMISSION_PCT,
+      hint: "Comissão clássica ~16% + tarifa fixa",
+      defaultFixedCost: 6,
+    },
+  ];
+}
+
+const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, site: 0, ml: 6 };
+
 
 const LOW_MARGIN_ALERT_PCT = 10;
 
@@ -126,6 +152,8 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const companyId = !isLocal ? props.companyId : "";
   const productId = !isLocal ? props.productId : "";
   const queryKey = ["pricing", "product-intelligence", companyId, productId] as const;
+  // FASE 4 — taxas SEMPRE da tabela única da empresa.
+  const { feeTable } = useCompanyFeeTable(companyId);
 
   const query = useQuery({
     queryKey,
@@ -282,9 +310,23 @@ export function SuggestedPricesByChannelCard(props: Props) {
     localTick,
   ]);
 
+  const channels = useMemo(() => {
+    const reference = snapshot?.currentStorePrice || 100;
+    return buildChannels(effectiveFeePct(worstCaseFee(feeTable, reference), reference));
+  }, [feeTable, snapshot?.currentStorePrice]);
+
   const rows = useMemo(
-    () => buildRows(snapshot, strategy, fixedCosts, channelMargins, channelStrategies),
-    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies],
+    () =>
+      buildRows(
+        snapshot,
+        strategy,
+        fixedCosts,
+        channelMargins,
+        channelStrategies,
+        channels,
+        companyId,
+      ),
+    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies, channels, companyId],
   );
 
   // "Manter lucro" só faz sentido com preço de loja > custo.
@@ -613,11 +655,13 @@ function buildRows(
   fixedCosts: Record<string, number>,
   channelMargins: Record<string, number> = {},
   channelStrategies: Record<string, Strategy> = {},
+  channels: readonly ChannelPreset[] = buildChannels(0),
+  companyId = "",
 ): readonly Row[] {
   if (!snapshot) return [];
   const { costTotal, targetMarginPct, currentStorePrice } = snapshot;
 
-  return CHANNELS.map((c) => {
+  return channels.map((c) => {
     const feeRate = c.feePct / 100;
     const fixedCost = Math.max(0, Number(fixedCosts[c.id] ?? 0) || 0);
     const effectiveCost = costTotal + fixedCost;
@@ -665,9 +709,17 @@ function buildRows(
     let unreachable: boolean;
 
     if (strategy === "policy") {
-      const denom = 1 - (c.feePct + effectiveMarginPct) / 100;
-      raw = denom > 0 ? effectiveCost / denom : 0;
-      unreachable = !Number.isFinite(raw) || raw <= 0 || denom <= 0;
+      // MOTOR ÚNICO — nenhuma fórmula local (FASE 1/2).
+      const official = computeOfficialPricing({
+        companyId,
+        productId: `channel:${c.id}`,
+        costs: { acquisition: costTotal },
+        margins: { minPct: 0, targetPct: effectiveMarginPct },
+        fee: { pct: c.feePct, fixed: fixedCost, label: c.label },
+        module: "pricing.channels",
+      });
+      raw = official.recommendedPrice;
+      unreachable = !Number.isFinite(raw) || raw <= 0;
     } else {
       // Manter Lucro em R$ (âncora: Loja Física):
       // Preço = (Preço Loja Física + Tarifa Fixa) / (1 − Taxa%)

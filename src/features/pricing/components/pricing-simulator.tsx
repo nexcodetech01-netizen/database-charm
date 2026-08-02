@@ -6,7 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { usePricingPolicy } from "../hooks/use-pricing-policy";
-import { computePricing } from "../calculator";
+import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
+import { computeOfficialPricing } from "../official";
+import { worstCaseFee, effectiveFeePct } from "../official/fees";
+import { toRoundingPolicySpec } from "../types";
 
 const num = (s: string): number => {
   if (typeof s !== "string" || s.length === 0) return 0;
@@ -46,31 +49,41 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function PricingSimulator({ companyId }: { companyId: string }) {
   const { policy } = usePricingPolicy(companyId);
+  const { feeTable } = useCompanyFeeTable(companyId);
 
   const [cost, setCost] = useState("100");
   const [freight, setFreight] = useState(String(policy.avgFreight));
   const [packaging, setPackaging] = useState(String(policy.packaging));
   const [commission, setCommission] = useState("0");
-  const [feePct, setFeePct] = useState(
-    String(policy.defaultChannel === "pix" ? policy.pixFeePct : policy.defaultChannel === "card" ? policy.cardFeePct : 0),
-  );
+  // Taxa padrão vem da tabela ÚNICA da empresa (pior caso permitido).
+  const defaultFeePct = effectiveFeePct(worstCaseFee(feeTable, 100), 100);
+  const [feePct, setFeePct] = useState<string | null>(null);
   const [target, setTarget] = useState(String(policy.idealMargin));
+  const feePctValue = feePct ?? defaultFeePct.toFixed(2);
 
   const result = useMemo(
     () =>
-      computePricing(
-        {
-          cost: num(cost),
+      computeOfficialPricing({
+        companyId,
+        productId: "simulator",
+        costs: {
+          acquisition: num(cost),
           freight: num(freight),
           packaging: num(packaging),
           commission: num(commission),
-          feePct: num(feePct),
-          targetMargin: num(target),
         },
-        policy,
-      ),
-    [cost, freight, packaging, commission, feePct, target, policy],
+        margins: {
+          minPct: policy.minMargin,
+          targetPct: num(target),
+          premiumPct: policy.premiumMargin,
+        },
+        fee: { pct: num(feePctValue), label: "recebimento" },
+        rounding: toRoundingPolicySpec(policy.rounding),
+        module: "pricing.simulator",
+      }),
+    [companyId, cost, freight, packaging, commission, feePctValue, target, policy],
   );
+
 
   return (
     <Card>
@@ -97,8 +110,9 @@ export function PricingSimulator({ companyId }: { companyId: string }) {
             <Input inputMode="decimal" value={commission} onChange={(e) => setCommission(e.target.value)} />
           </Field>
           <Field label="Taxa aplicada (%)">
-            <Input inputMode="decimal" value={feePct} onChange={(e) => setFeePct(e.target.value)} />
+            <Input inputMode="decimal" value={feePctValue} onChange={(e) => setFeePct(e.target.value)} />
           </Field>
+
           <Field label="Margem desejada (%)">
             <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
           </Field>

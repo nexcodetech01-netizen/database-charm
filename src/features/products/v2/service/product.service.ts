@@ -7,7 +7,7 @@
  */
 import { BaseService } from "@/features/bella-ai/agent/infrastructure/base-service";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
-import { priceForMargin } from "@/features/pricing/calculator";
+import { computeOfficialPricing } from "@/features/pricing/official";
 import { fetchCompanyCostDefaults } from "@/features/pricing/lib/company-cost-defaults";
 import type { Product, ProductInsert } from "../../types";
 import {
@@ -99,14 +99,27 @@ export class ProductService extends BaseService {
     }
 
     // Produto genuinamente novo: calcula preço a partir do custo quando ausente.
+    // MOTOR ÚNICO — nenhuma fórmula local (FASE 1/2).
     let price = inputPrice ?? 0;
     if (price <= 0 && cost > 0) {
       const defaults = await fetchCompanyCostDefaults(this.ctx.supabase, this.companyId);
-      const costTotal =
-        cost + defaults.freight + defaults.packaging + defaults.insurance + defaults.otherCosts;
-      const suggested = priceForMargin(costTotal, 50, 0);
+      const official = computeOfficialPricing({
+        companyId: this.companyId,
+        productId: "new-product",
+        costs: {
+          acquisition: cost,
+          freight: defaults.freight,
+          packaging: defaults.packaging,
+          insurance: defaults.insurance,
+          otherCosts: defaults.otherCosts,
+        },
+        margins: { minPct: 0, targetPct: 50, premiumPct: 50 },
+        module: "products.create",
+      });
+      const suggested = official.targetPrice;
       price = Number.isFinite(suggested) ? Math.round(suggested * 100) / 100 : 0;
     }
+
 
     // `company_id` sempre derivado do ExecutionContext.
     const payload: ProductInsert = {

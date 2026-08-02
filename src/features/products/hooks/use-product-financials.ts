@@ -7,11 +7,12 @@
  * margem real, markup, valor em estoque, etc.).
  *
  * Camada 100% de apresentação — não faz I/O, não altera dados, não
- * substitui o motor puro (`@/features/pricing/calculator`) usado por
- * server functions. Existe apenas para eliminar cálculos duplicados
- * espalhados pelos componentes visuais.
+ * calcula nada localmente: delega lucro/margem/markup ao MOTOR OFICIAL
+ * (`@/features/pricing/official`). Existe apenas para normalizar a
+ * apresentação dos componentes visuais.
  */
 import { useMemo } from "react";
+import { evaluateOfficialPrice } from "@/features/pricing/official";
 import type { Product } from "@/features/products/types";
 
 export type ProductFinancialsInput = Pick<
@@ -154,14 +155,29 @@ export function useProductFinancials(
     ];
 
     const marginStored = num(product.margin);
-    const feeRate = Math.max(0, Math.min(1, num(feePct) / 100));
-    const netPrice = price * (1 - feeRate);
+    // MOTOR ÚNICO (FASE 1/2): lucro, margem e markup vêm do motor oficial.
+    const evaluation = evaluateOfficialPrice(price, {
+      companyId: "",
+      productId: "product-financials",
+      costs: {
+        acquisition: cost,
+        packaging,
+        freight,
+        insurance,
+        otherCosts,
+      },
+      margins: { minPct: 0, targetPct: 0 },
+      fee: { pct: Math.max(0, num(feePct)) },
+      taxPct: taxRatePct,
+      module: "products.financials",
+    });
     const grossProfit = round2(price - costTotal);
-    const netProfit = round2(netPrice - costTotal);
-    const marginPctReal = price > 0 ? round2((netProfit / price) * 100) : 0;
-    const markupPct = costTotal > 0 ? round2((grossProfit / costTotal) * 100) : 0;
+    const netProfit = round2(evaluation.profit);
+    const marginPctReal = round2(evaluation.marginPct);
+    const markupPct = round2(evaluation.markupPct);
     const stock = num(product.stock);
     const minStock = num(product.min_stock);
+
 
     return {
       cost,

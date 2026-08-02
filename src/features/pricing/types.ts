@@ -1,6 +1,8 @@
 /**
- * Inteligência de Precificação — tipos
- * Módulo compartilhado. Não altera fluxos de compra/venda.
+ * Inteligência de Precificação — tipos de POLÍTICA (configuração).
+ *
+ * Este arquivo NÃO contém contrato de cálculo. Resultado, avaliação e
+ * status vêm exclusivamente de `@/features/pricing/official`.
  */
 
 export type RoundingMode = "none" | "integer" | "end_90" | "end_99";
@@ -43,44 +45,16 @@ export const DEFAULT_POLICY: PricingPolicy = {
   defaultChannel: "pix",
 };
 
-/** Entrada do simulador / calculadora */
-export interface PricingInput {
-  cost: number;
-  freight?: number;
-  packaging?: number;
-  commission?: number;
-  /** Taxa (%) aplicada — geralmente pix ou cartão */
-  feePct?: number;
-  otherCosts?: number;
-  /** Margem alvo (%) — se omitida, usa idealMargin da política */
-  targetMargin?: number;
-}
-
-/** Resultado do cálculo */
-export interface PricingResult {
-  costTotal: number;
-  feePct: number;
-  /** Preço no mínimo aceitável (usa minMargin) */
-  minPrice: number;
-  /** Preço recomendado (usa idealMargin) */
-  recommendedPrice: number;
-  /** Preço premium (usa premiumMargin) */
-  premiumPrice: number;
-  /** Preço a partir da margem desejada (targetMargin) — pós arredondamento */
-  targetPrice: number;
-  profit: number;
-  marginPct: number;
-  markupPct: number;
-}
-
-export type PricingStatus = "premium" | "healthy" | "attention" | "below";
-
-export interface PricingEvaluation {
-  status: PricingStatus;
-  label: string;
-  marginPct: number;
-  markupPct: number;
-  profit: number;
-  costTotal: number;
-  feePct: number;
+/** Converte o modo de arredondamento da política para o contrato do motor. */
+export function toRoundingPolicySpec(mode: RoundingMode) {
+  switch (mode) {
+    case "integer":
+      return { kind: "integer" } as const;
+    case "end_90":
+      return { kind: "end_90" } as const;
+    case "end_99":
+      return { kind: "end_99" } as const;
+    default:
+      return { kind: "none" } as const;
+  }
 }
