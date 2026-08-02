@@ -48,6 +48,7 @@ export const categoriesService = {
   },
 
   async create(input: CategoryInsert) {
+    await assertNoEquivalent(input.company_id, input.name);
     const { data, error } = await supabase
       .from("product_categories")
       .insert(input)
@@ -58,6 +59,16 @@ export const categoriesService = {
   },
 
   async update(id: string, input: CategoryUpdate) {
+    if (input.name) {
+      const { data: current } = await supabase
+        .from("product_categories")
+        .select("company_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (current?.company_id) {
+        await assertNoEquivalent(current.company_id, input.name, id);
+      }
+    }
     const { data, error } = await supabase
       .from("product_categories")
       .update(input)
@@ -67,6 +78,27 @@ export const categoriesService = {
     if (error) throw error;
     return data;
   },
+
+  /** Prévia (READ-ONLY) dos grupos de categorias equivalentes da empresa. */
+  async previewDuplicates(companyId: string) {
+    const { data, error } = await supabase.rpc("preview_duplicate_categories", {
+      _company_id: companyId,
+    });
+    if (error) throw error;
+    return (data ?? []) as unknown as DuplicateGroupRow[];
+  },
+
+  /** Unifica a categoria de origem na de destino (após confirmação do usuário). */
+  async merge(sourceId: string, targetId: string, confirmPolicyConflict = false) {
+    const { data, error } = await supabase.rpc("merge_product_categories", {
+      _source_id: sourceId,
+      _target_id: targetId,
+      _confirm_policy_conflict: confirmPolicyConflict,
+    });
+    if (error) throw error;
+    return data as unknown as MergeResult;
+  },
+
 
   async archive(id: string) {
     return this.update(id, { status: "archived" });
