@@ -37,9 +37,11 @@ import {
   type ProductFinancialsInput,
 } from "@/features/products/hooks/use-product-financials";
 
+export type MarginMode = "margin" | "markup";
+
 interface Props {
   productId: string;
-  product: ProductFinancialsInput;
+  product: ProductFinancialsInput & { margin_mode?: string | null };
   canEdit?: boolean;
 }
 
@@ -50,11 +52,27 @@ const parseNum = (v: string) => {
 };
 const toInput = (n: number) => String(round2(n)).replace(".", ",");
 
+const MODE_OPTIONS: { value: MarginMode; label: string; hint: string }[] = [
+  {
+    value: "margin",
+    label: "Margem sobre o preço de venda",
+    hint: "Preço = Custo ÷ (1 − margem%)",
+  },
+  {
+    value: "markup",
+    label: "Markup sobre o custo",
+    hint: "Preço = Custo × (1 + markup%)",
+  },
+];
+
 export function ProductCostBreakdown({ productId, product, canEdit = true }: Props) {
   const [taxInput, setTaxInput] = useState("0");
   const taxRatePct = parseNum(taxInput);
   const fin = useProductFinancials(product, { taxRatePct })!;
 
+  const storedMode: MarginMode =
+    product.margin_mode === "markup" ? "markup" : "margin";
+  const [mode, setMode] = useState<MarginMode>(storedMode);
   const [marginInput, setMarginInput] = useState(() => toInput(fin.marginPctReal));
   const [priceInput, setPriceInput] = useState(() => toInput(fin.price));
   const [dirty, setDirty] = useState(false);
@@ -67,62 +85,37 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   // sempre a fonte inicial do campo.
   useEffect(() => {
     if (dirty) return;
+    setMode(storedMode);
     setMarginInput(toInput(fin.marginPctReal));
     setPriceInput(toInput(fin.price));
-  }, [dirty, fin.marginPctReal, fin.price]);
+  }, [dirty, storedMode, fin.marginPctReal, fin.price]);
 
   const baseCost = fin.costTotalWithoutTax;
 
-  /** Margem desejada -> preço sugerido (margem sobre o preço de venda). */
-  const priceFromMargin = (marginPct: number): number => {
-    const divisor = 1 - (marginPct + taxRatePct) / 100;
+  /** Percentual desejado -> preço sugerido, conforme o modo selecionado. */
+  const priceFromPct = (pct: number, m: MarginMode = mode): number => {
+    if (m === "markup") {
+      const divisor = 1 - taxRatePct / 100;
+      if (divisor <= 0) return 0;
+      return round2((baseCost * (1 + pct / 100)) / divisor);
+    }
+    const divisor = 1 - (pct + taxRatePct) / 100;
     if (divisor <= 0) return 0;
     return round2(baseCost / divisor);
   };
 
-  /** Preço informado -> margem real (sem tocar no custo de aquisição). */
-  const marginFromPrice = (priceValue: number): number => {
+  /** Preço informado -> percentual, conforme o modo selecionado. */
+  const pctFromPrice = (priceValue: number, m: MarginMode = mode): number => {
     if (priceValue <= 0) return 0;
     const tax = (priceValue * taxRatePct) / 100;
-    return round2(((priceValue - baseCost - tax) / priceValue) * 100);
+    const profit = priceValue - baseCost - tax;
+    if (m === "markup") {
+      if (baseCost <= 0) return 0;
+      return round2((profit / baseCost) * 100);
+    }
+    return round2((profit / priceValue) * 100);
   };
 
-  const simulated = useMemo(() => {
-    const p = parseNum(priceInput);
-    const tax = round2((p * taxRatePct) / 100);
-    const total = round2(baseCost + tax);
-    const profit = round2(p - total);
-    return {
-      price: p,
-      tax,
-      costTotal: total,
-      profit,
-      marginPct: p > 0 ? round2((profit / p) * 100) : 0,
-      markupPct: total > 0 ? round2((profit / total) * 100) : 0,
-    };
-  }, [priceInput, taxRatePct, baseCost]);
-
-  const handleMarginChange = (v: string) => {
-    setDirty(true);
-    setMarginInput(v);
-    const next = priceFromMargin(parseNum(v));
-    // Só propaga para o preço quando o cálculo é válido — evita zerar um
-    // preço existente enquanto o usuário digita a margem.
-    if (next > 0) setPriceInput(toInput(next));
-  };
-
-  const handlePriceChange = (v: string) => {
-    setDirty(true);
-    setPriceInput(v);
-    setMarginInput(toInput(marginFromPrice(parseNum(v))));
-  };
-
-
-  const reset = () => {
-    setDirty(false);
-    setMarginInput(toInput(fin.marginPctReal));
-    setPriceInput(toInput(fin.price));
-  };
 
   const save = async () => {
     const nextPrice = round2(parseNum(priceInput));
