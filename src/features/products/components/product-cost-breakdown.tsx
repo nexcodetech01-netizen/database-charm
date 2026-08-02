@@ -117,6 +117,52 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   };
 
 
+  const simulated = useMemo(() => {
+    const p = parseNum(priceInput);
+    const tax = round2((p * taxRatePct) / 100);
+    const total = round2(baseCost + tax);
+    const profit = round2(p - total);
+    return {
+      price: p,
+      tax,
+      costTotal: total,
+      profit,
+      marginPct: p > 0 ? round2((profit / p) * 100) : 0,
+      markupPct: total > 0 ? round2((profit / total) * 100) : 0,
+    };
+  }, [priceInput, taxRatePct, baseCost]);
+
+  const handleModeChange = (next: MarginMode) => {
+    if (next === mode) return;
+    setDirty(true);
+    setMode(next);
+    // O número digitado permanece — só a fórmula muda daqui em diante.
+    const price = priceFromPct(parseNum(marginInput), next);
+    if (price > 0) setPriceInput(toInput(price));
+  };
+
+  const handleMarginChange = (v: string) => {
+    setDirty(true);
+    setMarginInput(v);
+    const next = priceFromPct(parseNum(v));
+    // Só propaga para o preço quando o cálculo é válido — evita zerar um
+    // preço existente enquanto o usuário digita a margem.
+    if (next > 0) setPriceInput(toInput(next));
+  };
+
+  const handlePriceChange = (v: string) => {
+    setDirty(true);
+    setPriceInput(v);
+    setMarginInput(toInput(pctFromPrice(parseNum(v))));
+  };
+
+  const reset = () => {
+    setDirty(false);
+    setMode(storedMode);
+    setMarginInput(toInput(fin.marginPctReal));
+    setPriceInput(toInput(fin.price));
+  };
+
   const save = async () => {
     const nextPrice = round2(parseNum(priceInput));
     // Proteção: nunca sobrescrever um preço já gravado com R$ 0,00.
@@ -130,8 +176,10 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
         input: {
           price: nextPrice,
           margin: round2(parseNum(marginInput)),
+          margin_mode: mode,
         },
       });
+
 
       setDirty(false);
       toast.success("Preço e margem atualizados");
