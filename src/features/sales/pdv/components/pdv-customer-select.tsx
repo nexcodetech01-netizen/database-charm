@@ -40,64 +40,49 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
 
   if (!expanded) {
     return (
-      <div className="rounded-2xl border bg-card p-5 shadow-sm">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted">
-            <UserRound
-              className="h-4 w-4 text-muted-foreground"
-              aria-hidden="true"
-            />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Cliente
-            </span>
-            <span className="block truncate text-sm font-semibold">
-              Consumidor Final
-            </span>
-          </span>
-        </div>
+      <div className="flex items-center gap-2 rounded-xl border bg-card px-3 py-2 shadow-sm">
+        <UserRound
+          className="h-4 w-4 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+          Consumidor Final
+        </span>
         <Button
           id="pdv-customer"
           type="button"
           variant="outline"
-          className="mt-4 h-11 w-full"
+          size="sm"
+          className="h-8 shrink-0"
           onClick={() => {
             setExpanded(true);
             setOpen(true);
           }}
         >
-          <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Identificar Cliente (F2)
+          <UserPlus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+          Cliente (F2)
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10">
-          <UserRound className="h-4 w-4 text-primary" aria-hidden="true" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Cliente
-          </span>
-          <span className="block truncate text-sm font-semibold">
-            {selected?.name ?? "Selecione o cliente"}
-          </span>
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="flex min-w-0 items-center gap-2">
+        <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="min-w-0 truncate text-sm font-semibold">
+          {selected?.name ?? "Selecione o cliente"}
         </span>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-2 space-y-1.5">
         <Select
           open={open}
           onOpenChange={setOpen}
           value={value || undefined}
           onValueChange={onChange}
         >
-          <SelectTrigger id="pdv-customer" className="h-11" aria-label="Cliente">
+          <SelectTrigger id="pdv-customer" className="h-9" aria-label="Cliente">
             <SelectValue
               placeholder={isLoading ? "Carregando..." : "Selecione o cliente"}
             />
@@ -113,7 +98,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
         <Button
           type="button"
           variant="ghost"
-          className="h-9 w-full text-xs text-muted-foreground"
+          className="h-8 w-full text-xs text-muted-foreground"
           onClick={() => {
             onChange("");
             setExpanded(false);

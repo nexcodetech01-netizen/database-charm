@@ -31,13 +31,13 @@ export function PDVCompletedPanel({
   onRetryFiscal,
 }: Props) {
   return (
-    <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-emerald-600">
-        <CheckCircle2 className="h-5 w-5" />
-        <p className="text-sm font-medium">Venda concluída</p>
+    <div className="space-y-2 rounded-xl border border-status-success/30 bg-status-success-surface p-3 shadow-sm">
+      <div className="flex items-center gap-2 text-status-success">
+        <CheckCircle2 className="h-4 w-4" />
+        <p className="text-sm font-semibold">Venda concluída</p>
       </div>
 
-      <dl className="space-y-1 text-sm">
+      <dl className="space-y-0.5 text-[13px]">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">Venda</dt>
           <dd className="font-mono">{sale.number}</dd>
@@ -64,15 +64,20 @@ export function PDVCompletedPanel({
         />
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="default" onClick={onViewReceipt}>
-          <Receipt className="mr-1.5 h-4 w-4" /> Visualizar recibo
+      <div className="grid grid-cols-2 gap-1.5">
+        <Button type="button" variant="outline" size="sm" onClick={onViewReceipt}>
+          <Receipt className="mr-1.5 h-3.5 w-3.5" /> Recibo
         </Button>
-        <Button type="button" variant="outline" size="default" onClick={onPrint}>
-          <Printer className="mr-1.5 h-4 w-4" /> Imprimir
+        <Button type="button" variant="outline" size="sm" onClick={onPrint}>
+          <Printer className="mr-1.5 h-3.5 w-3.5" /> Imprimir
         </Button>
-        <Button type="button" size="default" onClick={onNewSale}>
-          <Plus className="mr-1.5 h-4 w-4" /> Nova Venda
+        <Button
+          type="button"
+          size="sm"
+          className="col-span-2"
+          onClick={onNewSale}
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Nova Venda
         </Button>
       </div>
     </div>
