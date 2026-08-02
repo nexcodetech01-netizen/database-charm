@@ -8,6 +8,7 @@
  * Também isola o modelo da futura "segunda tela do cliente"
  * (`buildPdvCustomerDisplay`) — a tela em si NÃO é implementada nesta sprint.
  */
+import { STATUS_TOKENS } from "@/design";
 import type { SaleTotals } from "../../engine/types";
 import type { SaleItemDraft } from "../../types";
 import { computeItemTotal } from "../../types";
