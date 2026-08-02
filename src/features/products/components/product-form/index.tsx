@@ -920,7 +920,11 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
+  /** Faixa escolhida pelo usuário (UX apenas — não altera o motor). */
+  const [priceTier, setPriceTier] = useState<"min" | "recommended" | "premium">("recommended");
+
   /** Faixas oferecidas pelo motor (somente leitura). */
+
   const priceTiers = useMemo(
     () =>
       officialSuggestion
