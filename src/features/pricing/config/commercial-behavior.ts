@@ -50,17 +50,12 @@ export function validateCommercialBehavior(
     discountPct?: unknown;
     maxDiscountPct?: unknown;
   };
-  if (
-    typeof spec.kind !== "string" ||
-    !VALID_KINDS.includes(spec.kind as CommercialBehaviorKind)
-  ) {
+  if (typeof spec.kind !== "string" || !VALID_KINDS.includes(spec.kind as CommercialBehaviorKind)) {
     return [
-      issue(
-        "INVALID_COMMERCIAL_BEHAVIOR",
-        `${path}.kind`,
-        `commercialBehavior.kind inválido`,
-        { expected: VALID_KINDS, actual: spec.kind },
-      ),
+      issue("INVALID_COMMERCIAL_BEHAVIOR", `${path}.kind`, `commercialBehavior.kind inválido`, {
+        expected: VALID_KINDS,
+        actual: spec.kind,
+      }),
     ];
   }
   const issues: DomainIssue[] = [];
@@ -71,7 +66,9 @@ export function validateCommercialBehavior(
     issues.push(...validatePct(spec.discountPct, `${path}.discountPct`, { min: 0, max: 100 }));
   }
   if (spec.kind === "stock_burn") {
-    issues.push(...validatePct(spec.maxDiscountPct, `${path}.maxDiscountPct`, { min: 0, max: 100 }));
+    issues.push(
+      ...validatePct(spec.maxDiscountPct, `${path}.maxDiscountPct`, { min: 0, max: 100 }),
+    );
   }
   return issues;
 }

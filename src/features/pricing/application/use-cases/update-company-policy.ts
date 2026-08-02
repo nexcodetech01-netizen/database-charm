@@ -37,9 +37,7 @@ export function createUpdateCompanyPolicyUseCase(
         throw validationFailed("CompanyPolicy inválida", issues);
       }
 
-      const existing = await deps.repositories.companyPolicies.findByCompany(
-        input.companyId,
-      );
+      const existing = await deps.repositories.companyPolicies.findByCompany(input.companyId);
       if (!existing) throw notFound("CompanyPolicy", input.companyId);
 
       const policy = createCompanyPolicy(input);

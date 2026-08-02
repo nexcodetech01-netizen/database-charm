@@ -35,15 +35,11 @@ export function createCreateCompanyPolicyUseCase(
         throw validationFailed("CompanyPolicy inválida", issues);
       }
 
-      const existing = await deps.repositories.companyPolicies.findByCompany(
-        input.companyId,
-      );
+      const existing = await deps.repositories.companyPolicies.findByCompany(input.companyId);
       if (existing) {
-        throw new ApplicationError(
-          "CONFLICT",
-          `CompanyPolicy já existe para ${input.companyId}`,
-          { detail: { companyId: input.companyId } },
-        );
+        throw new ApplicationError("CONFLICT", `CompanyPolicy já existe para ${input.companyId}`, {
+          detail: { companyId: input.companyId },
+        });
       }
 
       const policy = createCompanyPolicy(input);
@@ -58,4 +54,3 @@ export function createCreateCompanyPolicyUseCase(
     },
   };
 }
-

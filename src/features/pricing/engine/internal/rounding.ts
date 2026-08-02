@@ -66,8 +66,7 @@ export function applyRounding(
           deltaUnits = 0;
         }
       }
-      const value =
-        units * CENTS_IN_UNIT + deltaUnits * CENTS_IN_UNIT + chosen;
+      const value = units * CENTS_IN_UNIT + deltaUnits * CENTS_IN_UNIT + chosen;
       return {
         valueCents: Math.max(0, value),
         rule: "rounding:psychological",

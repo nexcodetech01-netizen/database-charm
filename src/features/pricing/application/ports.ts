@@ -10,11 +10,7 @@
  *   - IdGenerator port
  *   - Hasher port (snapshot hash determinístico)
  */
-import type {
-  PricingContext,
-  PricingExplanation,
-  PricingResult,
-} from "../engine/types";
+import type { PricingContext, PricingExplanation, PricingResult } from "../engine/types";
 import type { PricingContextBundle } from "../resolver/pricing-context-factory";
 import type { PricingContextInput } from "../resolver/types";
 import type { PricingRepositories } from "../persistence/types";

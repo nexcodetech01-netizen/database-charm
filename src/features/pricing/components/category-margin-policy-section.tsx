@@ -53,10 +53,7 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
   const { data: categories = [], isLoading } = useCategoriesList(companyId);
   const update = useUpdateCategory();
 
-  const active = useMemo(
-    () => categories.filter((c) => c.status === "active"),
-    [categories],
-  );
+  const active = useMemo(() => categories.filter((c) => c.status === "active"), [categories]);
 
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
@@ -65,12 +62,11 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
       const next: Record<string, Draft> = {};
       for (const c of active) {
         const policy = c as unknown as CategoryPolicy;
-        next[c.id] =
-          prev[c.id] ?? {
-            target: toInput(policy.target_margin_pct),
-            min: toInput(policy.min_margin_pct),
-            discount: toInput(policy.default_discount_pct),
-          };
+        next[c.id] = prev[c.id] ?? {
+          target: toInput(policy.target_margin_pct),
+          min: toInput(policy.min_margin_pct),
+          discount: toInput(policy.default_discount_pct),
+        };
       }
       return next;
     });
@@ -122,11 +118,10 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
           <CardTitle className="text-base">Política Comercial por categoria</CardTitle>
         </div>
         <p className="text-sm text-muted-foreground">
-          Para cada categoria defina <strong>margem alvo</strong>,{" "}
-          <strong>margem mínima</strong> e{" "}
-          <strong>desconto padrão</strong>. Essas regras alimentam a Bella IA,
-          o cadastro de produtos e o PDV. Descontos que deixem a margem
-          abaixo do piso apenas sinalizam — não bloqueiam a venda.
+          Para cada categoria defina <strong>margem alvo</strong>, <strong>margem mínima</strong> e{" "}
+          <strong>desconto padrão</strong>. Essas regras alimentam a Bella IA, o cadastro de
+          produtos e o PDV. Descontos que deixem a margem abaixo do piso apenas sinalizam — não
+          bloqueiam a venda.
         </p>
       </CardHeader>
       <CardContent>
@@ -136,8 +131,8 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
           </div>
         ) : active.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            Cadastre categorias em <strong>Produtos → Categorias</strong> para
-            definir a política comercial.
+            Cadastre categorias em <strong>Produtos → Categorias</strong> para definir a política
+            comercial.
           </div>
         ) : (
           <Table>
@@ -164,8 +159,7 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
 
                 const targetNum = parsePct(draft.target);
                 const minNum = parsePct(draft.min);
-                const invalidOrder =
-                  targetNum != null && minNum != null && minNum > targetNum;
+                const invalidOrder = targetNum != null && minNum != null && minNum > targetNum;
 
                 const patch = (p: Partial<Draft>) =>
                   setDrafts((s) => ({
@@ -256,4 +250,3 @@ function PctInput({
     </div>
   );
 }
-

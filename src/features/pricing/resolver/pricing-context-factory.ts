@@ -14,10 +14,7 @@
  *
  * PURO. Sem I/O. Não conhece React/Supabase/HTTP.
  */
-import {
-  CONTEXT_VERSION,
-  type PricingContext,
-} from "../engine/types";
+import { CONTEXT_VERSION, type PricingContext } from "../engine/types";
 import { resolveCategoryLayer } from "./category-policy-resolver";
 import { resolveCompanyLayer } from "./company-policy-resolver";
 import { mergePolicies } from "./policy-merge-resolver";
@@ -36,9 +33,7 @@ export interface PricingContextBundle {
   readonly resolution: PolicyResolution;
 }
 
-export function buildPricingContext(
-  input: PricingContextInput,
-): PricingContextBundle {
+export function buildPricingContext(input: PricingContextInput): PricingContextBundle {
   const warnings: ResolverWarning[] = [];
 
   // ─── Currency ─────────────────────────────────────────────────────────────

@@ -30,19 +30,10 @@ import {
   ShoppingBag,
   Globe,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { computeOfficialPricing } from "@/features/pricing/official";
@@ -140,7 +131,6 @@ function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
 
 const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, site: 0, ml: 6 };
 
-
 const LOW_MARGIN_ALERT_PCT = 10;
 
 export function SuggestedPricesByChannelCard(props: Props) {
@@ -157,8 +147,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
 
   const query = useQuery({
     queryKey,
-    queryFn: () =>
-      getProductPricingIntelligence({ data: { companyId, productId } }),
+    queryFn: () => getProductPricingIntelligence({ data: { companyId, productId } }),
     enabled: !isLocal && Boolean(companyId && productId),
   });
 
@@ -189,9 +178,9 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const [strategy, setStrategy] = useState<Strategy>("policy");
 
   // Custo fixo por canal (R$/unidade) — editável na UI.
-  const [fixedCosts, setFixedCosts] = useState<Record<string, number>>(
-    () => ({ ...DEFAULT_FIXED_COSTS }),
-  );
+  const [fixedCosts, setFixedCosts] = useState<Record<string, number>>(() => ({
+    ...DEFAULT_FIXED_COSTS,
+  }));
 
   // Margem alvo customizada por canal (%) — editável na UI. Ausente = usa
   // a margem alvo do snapshot (política comercial).
@@ -282,13 +271,8 @@ export function SuggestedPricesByChannelCard(props: Props) {
   } | null = useMemo(() => {
     if (isLocal) {
       const costTotal = Math.max(0, (props.costTotalCents ?? 0) / 100);
-      const targetMarginPct = Number.isFinite(props.targetMarginPct)
-        ? props.targetMarginPct
-        : 30;
-      const currentStorePrice = Math.max(
-        0,
-        (props.currentStorePriceCents ?? 0) / 100,
-      );
+      const targetMarginPct = Number.isFinite(props.targetMarginPct) ? props.targetMarginPct : 30;
+      const currentStorePrice = Math.max(0, (props.currentStorePriceCents ?? 0) / 100);
       return { costTotal, targetMarginPct, currentStorePrice };
     }
     if (query.data) {
@@ -331,9 +315,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
 
   // "Manter lucro" só faz sentido com preço de loja > custo.
   const keepProfitAvailable =
-    !!snapshot &&
-    snapshot.currentStorePrice > 0 &&
-    snapshot.currentStorePrice > snapshot.costTotal;
+    !!snapshot && snapshot.currentStorePrice > 0 && snapshot.currentStorePrice > snapshot.costTotal;
 
   const recalc = () => {
     if (isLocal) {
@@ -436,12 +418,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
             </Badge>
           ) : null}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={recalc}
-            disabled={isFetching}
-          >
+          <Button variant="outline" size="sm" onClick={recalc} disabled={isFetching}>
             <RefreshCw className={cn("mr-1.5 h-4 w-4", isFetching && "animate-spin")} />
             Atualizar preços
           </Button>
@@ -457,7 +434,8 @@ export function SuggestedPricesByChannelCard(props: Props) {
           ) : null}
           {props.onApplySuggested && strategy === "keep_store_profit" ? (
             <p className="max-w-xs text-[11px] leading-snug text-muted-foreground">
-              Os preços exibidos são apenas uma simulação para os marketplaces com base no preço atual da Loja Física. Não há preço para aplicar.
+              Os preços exibidos são apenas uma simulação para os marketplaces com base no preço
+              atual da Loja Física. Não há preço para aplicar.
             </p>
           ) : null}
         </div>
@@ -503,12 +481,9 @@ export function SuggestedPricesByChannelCard(props: Props) {
                   currentStorePrice={snapshot.currentStorePrice}
                   keepProfitAvailable={keepProfitAvailable}
                   hasMarginOverride={
-                    channelMargins[r.id] !== undefined &&
-                    Number.isFinite(channelMargins[r.id])
+                    channelMargins[r.id] !== undefined && Number.isFinite(channelMargins[r.id])
                   }
-                  onChangeFixedCost={(v) =>
-                    setFixedCosts((prev) => ({ ...prev, [r.id]: v }))
-                  }
+                  onChangeFixedCost={(v) => setFixedCosts((prev) => ({ ...prev, [r.id]: v }))}
                   onChangeMargin={(v) =>
                     setChannelMargins((prev) => {
                       const next = { ...prev };
@@ -517,9 +492,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
                       return next;
                     })
                   }
-                  onChangeStrategy={(s) =>
-                    setChannelStrategies((prev) => ({ ...prev, [r.id]: s }))
-                  }
+                  onChangeStrategy={(s) => setChannelStrategies((prev) => ({ ...prev, [r.id]: s }))}
                 />
               ))}
             </div>
@@ -542,20 +515,17 @@ export function SuggestedPricesByChannelCard(props: Props) {
             <p className="text-[11px] text-muted-foreground">
               {strategy === "policy" ? (
                 <>
-                  Base: custo total {formatCurrency(snapshot.costTotal)} +
-                  margem alvo {formatPercent(snapshot.targetMarginPct)}%. Taxas de canal são
-                  estimativas usadas para orientação — ajuste conforme seu contrato com
-                  cada marketplace.
+                  Base: custo total {formatCurrency(snapshot.costTotal)} + margem alvo{" "}
+                  {formatPercent(snapshot.targetMarginPct)}%. Taxas de canal são estimativas usadas
+                  para orientação — ajuste conforme seu contrato com cada marketplace.
                 </>
               ) : (
                 <>
-                  Base: preço da Loja Física {formatCurrency(snapshot.currentStorePrice)}{" "}
-                  (lucro líquido de{" "}
-                  {formatCurrency(
-                    Math.max(0, snapshot.currentStorePrice - snapshot.costTotal),
-                  )}
-                  ). Cada canal é ajustado para preservar esse mesmo lucro após a taxa
-                  estimada — a margem da política não é aplicada nesse modo.
+                  Base: preço da Loja Física {formatCurrency(snapshot.currentStorePrice)} (lucro
+                  líquido de{" "}
+                  {formatCurrency(Math.max(0, snapshot.currentStorePrice - snapshot.costTotal))}
+                  ). Cada canal é ajustado para preservar esse mesmo lucro após a taxa estimada — a
+                  margem da política não é aplicada nesse modo.
                 </>
               )}
             </p>
@@ -648,9 +618,7 @@ const ceilToEnd90 = (v: number): number => {
 };
 
 function buildRows(
-  snapshot:
-    | { costTotal: number; targetMarginPct: number; currentStorePrice: number }
-    | null,
+  snapshot: { costTotal: number; targetMarginPct: number; currentStorePrice: number } | null,
   globalStrategy: Strategy,
   fixedCosts: Record<string, number>,
   channelMargins: Record<string, number> = {},
@@ -683,8 +651,7 @@ function buildRows(
     if (c.id === "store") {
       const storePrice = roundMoney(currentStorePrice);
       const storeProfit = roundMoney(storePrice - costTotal);
-      const storeMarginPct =
-        storePrice > 0 ? roundPercent((storeProfit / storePrice) * 100) : 0;
+      const storeMarginPct = storePrice > 0 ? roundPercent((storeProfit / storePrice) * 100) : 0;
       const storeUnreachable = storePrice <= 0;
       return {
         id: c.id,
@@ -725,11 +692,8 @@ function buildRows(
       // Preço = (Preço Loja Física + Tarifa Fixa) / (1 − Taxa%)
       // Garante que, após taxa % e tarifa fixa, sobre exatamente o
       // lucro líquido praticado na Loja Física (Preço Loja − Custo).
-      const storeReachable =
-        currentStorePrice > 0 && currentStorePrice > costTotal && feeRate < 1;
-      raw = storeReachable
-        ? (currentStorePrice + fixedCost) / (1 - feeRate)
-        : 0;
+      const storeReachable = currentStorePrice > 0 && currentStorePrice > costTotal && feeRate < 1;
+      raw = storeReachable ? (currentStorePrice + fixedCost) / (1 - feeRate) : 0;
       unreachable = !storeReachable || !Number.isFinite(raw) || raw <= 0;
     }
 
@@ -759,7 +723,6 @@ function buildRows(
     };
   });
 }
-
 
 interface ChannelTileProps {
   row: Row;
@@ -875,9 +838,7 @@ function ChannelTile({
       return;
     }
     if (parsed + row.feePct >= 100) {
-      setMarginError(
-        `Margem + taxa do canal (${formatPercent(row.feePct)}%) deve ser < 100%`,
-      );
+      setMarginError(`Margem + taxa do canal (${formatPercent(row.feePct)}%) deve ser < 100%`);
       return;
     }
     setMarginError(null);
@@ -1025,9 +986,7 @@ function ChannelTile({
               <p
                 className={cn(
                   "flex items-center justify-end gap-1 font-medium tabular-nums",
-                  row.lowMargin
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-foreground",
+                  row.lowMargin ? "text-amber-600 dark:text-amber-400" : "text-foreground",
                 )}
               >
                 {row.lowMargin ? <AlertTriangle className="h-3 w-3" /> : null}
@@ -1044,11 +1003,9 @@ function ChannelTile({
                   title="Margem alvo % aplicada sobre a venda neste canal. Vazio = usa a margem da política comercial."
                 >
                   Margem alvo (%)
-                  {hasMarginOverride ? (
-                    <span className="ml-1 text-primary">•</span>
-                  ) : null}
+                  {hasMarginOverride ? <span className="ml-1 text-primary">•</span> : null}
                 </label>
-              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
                   <input
                     id={`target-margin-${row.id}`}
                     type="text"
@@ -1179,9 +1136,7 @@ function FormulaBreakdownPopover({
   const feeAmount = price * feeRate;
   const effectiveCost = costTotal + fixedCost;
   const isKeepProfit = row.strategy === "keep_store_profit";
-  const denominator = isKeepProfit
-    ? 1 - feeRate
-    : 1 - (feeRate + row.targetMarginPct / 100);
+  const denominator = isKeepProfit ? 1 - feeRate : 1 - (feeRate + row.targetMarginPct / 100);
 
   return (
     <Popover>
@@ -1262,9 +1217,7 @@ function FormulaBreakdownPopover({
                 <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                   = {formatCurrency(effectiveCost)} / (1 − ({feeRate.toFixed(4)} +{" "}
                   {(row.targetMarginPct / 100).toFixed(4)})) ={" "}
-                  {denominator > 0
-                    ? formatCurrency(effectiveCost / denominator)
-                    : "—"}
+                  {denominator > 0 ? formatCurrency(effectiveCost / denominator) : "—"}
                 </p>
               </>
             )}
@@ -1283,14 +1236,12 @@ function FormulaBreakdownPopover({
               Lucro = Preço − (Preço × Taxa) − Custo total − Tarifa fixa
             </p>
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              = {formatCurrency(price)} − {formatCurrency(feeAmount)} −{" "}
-              {formatCurrency(costTotal)} − {formatCurrency(fixedCost)} ={" "}
+              = {formatCurrency(price)} − {formatCurrency(feeAmount)} − {formatCurrency(costTotal)}{" "}
+              − {formatCurrency(fixedCost)} ={" "}
               <span
                 className={cn(
                   "font-semibold",
-                  profit > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-destructive",
+                  profit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive",
                 )}
               >
                 {formatCurrency(profit)}
@@ -1308,9 +1259,7 @@ function FormulaBreakdownPopover({
             </p>
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
               = {formatCurrency(profit)} / {formatCurrency(price)} × 100 ={" "}
-              <span className="font-semibold text-foreground">
-                {formatPercent(row.marginPct)}%
-              </span>
+              <span className="font-semibold text-foreground">{formatPercent(row.marginPct)}%</span>
             </p>
           </div>
         </div>
@@ -1332,14 +1281,10 @@ function BreakdownRow({
     <div className="flex items-center justify-between gap-2">
       <span className="text-muted-foreground">{label}</span>
       <span
-        className={cn(
-          "tabular-nums",
-          strong ? "font-semibold text-foreground" : "text-foreground",
-        )}
+        className={cn("tabular-nums", strong ? "font-semibold text-foreground" : "text-foreground")}
       >
         {value}
       </span>
     </div>
   );
 }
-

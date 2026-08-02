@@ -35,11 +35,7 @@ import {
 } from "..";
 import { createInMemoryRepositories } from "../../persistence/in-memory";
 import { RepositoryError } from "../../persistence/errors";
-import type {
-  PricingContext,
-  PricingResult,
-  PricingExplanation,
-} from "../../engine/types";
+import type { PricingContext, PricingResult, PricingExplanation } from "../../engine/types";
 import type { PricingContextBundle } from "../../resolver/pricing-context-factory";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -64,9 +60,7 @@ const priceListInput = {
   name: "Wholesale",
   currency: "BRL" as const,
   priority: 10,
-  entries: [
-    { productId: PROD, priceCents: 9900, currency: "BRL" as const },
-  ],
+  entries: [{ productId: PROD, priceCents: 9900, currency: "BRL" as const }],
 };
 
 function makeDeps(overrides: Partial<PricingApplicationDeps> = {}): PricingApplicationDeps {
@@ -159,7 +153,9 @@ describe("application layer — errors", () => {
 
 describe("CreateCompanyPolicy", () => {
   let deps: PricingApplicationDeps;
-  beforeEach(() => { deps = makeDeps(); });
+  beforeEach(() => {
+    deps = makeDeps();
+  });
 
   it("cria política e devolve versão 1", async () => {
     const uc = createCreateCompanyPolicyUseCase(deps);
@@ -178,7 +174,10 @@ describe("CreateCompanyPolicy", () => {
     const uc = createCreateCompanyPolicyUseCase(deps);
     await expect(
       uc.execute({
-        input: { ...companyInput, defaults: { minMarginPct: 90, idealMarginPct: 50, premiumMarginPct: 30 } },
+        input: {
+          ...companyInput,
+          defaults: { minMarginPct: 90, idealMarginPct: 50, premiumMarginPct: 30 },
+        },
       }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
@@ -197,9 +196,13 @@ describe("CreateCompanyPolicy", () => {
         ...createInMemoryRepositories(),
         companyPolicies: {
           findByCompany: async () => null,
-          save: async () => { throw new RepositoryError("STORAGE_FAILURE", "db down"); },
+          save: async () => {
+            throw new RepositoryError("STORAGE_FAILURE", "db down");
+          },
           softDelete: async () => {},
-          restore: async () => { throw new Error(); },
+          restore: async () => {
+            throw new Error();
+          },
         },
       },
     });
@@ -215,9 +218,13 @@ describe("CreateCompanyPolicy", () => {
         ...createInMemoryRepositories(),
         companyPolicies: {
           findByCompany: async () => null,
-          save: async () => { throw new Error("wat"); },
+          save: async () => {
+            throw new Error("wat");
+          },
           softDelete: async () => {},
-          restore: async () => { throw new Error(); },
+          restore: async () => {
+            throw new Error();
+          },
         },
       },
     });
@@ -234,7 +241,10 @@ describe("UpdateCompanyPolicy", () => {
     const created = await createCreateCompanyPolicyUseCase(deps).execute({ input: companyInput });
     const uc = createUpdateCompanyPolicyUseCase(deps);
     const updated = await uc.execute({
-      input: { ...companyInput, defaults: { minMarginPct: 5, idealMarginPct: 20, premiumMarginPct: 35 } },
+      input: {
+        ...companyInput,
+        defaults: { minMarginPct: 5, idealMarginPct: 20, premiumMarginPct: 35 },
+      },
       expectedVersion: created.meta.version,
     });
     expect(updated.meta.version).toBe(2);
@@ -243,17 +253,17 @@ describe("UpdateCompanyPolicy", () => {
   it("rejeita expectedVersion inválido", async () => {
     const deps = makeDeps();
     const uc = createUpdateCompanyPolicyUseCase(deps);
-    await expect(
-      uc.execute({ input: companyInput, expectedVersion: 0 }),
-    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
+    await expect(uc.execute({ input: companyInput, expectedVersion: 0 })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
   });
 
   it("rejeita quando inexistente", async () => {
     const deps = makeDeps();
     const uc = createUpdateCompanyPolicyUseCase(deps);
-    await expect(
-      uc.execute({ input: companyInput, expectedVersion: 1 }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(uc.execute({ input: companyInput, expectedVersion: 1 })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 
   it("rejeita input inválido", async () => {
@@ -262,7 +272,10 @@ describe("UpdateCompanyPolicy", () => {
     const uc = createUpdateCompanyPolicyUseCase(deps);
     await expect(
       uc.execute({
-        input: { ...companyInput, defaults: { minMarginPct: 90, idealMarginPct: 50, premiumMarginPct: 30 } },
+        input: {
+          ...companyInput,
+          defaults: { minMarginPct: 90, idealMarginPct: 50, premiumMarginPct: 30 },
+        },
         expectedVersion: 1,
       }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
@@ -277,7 +290,8 @@ describe("Category & Product policies", () => {
   it("cria + atualiza categoria", async () => {
     const deps = makeDeps();
     const created = await createCreateCategoryPolicyUseCase(deps).execute({
-      companyId: COMPANY, input: categoryInput,
+      companyId: COMPANY,
+      input: categoryInput,
     });
     expect(created.meta.version).toBe(1);
     const updated = await createUpdateCategoryPolicyUseCase(deps).execute({
@@ -290,7 +304,10 @@ describe("Category & Product policies", () => {
 
   it("categoria: rejeita duplicata + not found no update", async () => {
     const deps = makeDeps();
-    await createCreateCategoryPolicyUseCase(deps).execute({ companyId: COMPANY, input: categoryInput });
+    await createCreateCategoryPolicyUseCase(deps).execute({
+      companyId: COMPANY,
+      input: categoryInput,
+    });
     await expect(
       createCreateCategoryPolicyUseCase(deps).execute({ companyId: COMPANY, input: categoryInput }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -309,13 +326,20 @@ describe("Category & Product policies", () => {
       createCreateCategoryPolicyUseCase(deps).execute({ companyId: "", input: categoryInput }),
     ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
     await expect(
-      createUpdateCategoryPolicyUseCase(deps).execute({ companyId: COMPANY, input: categoryInput, expectedVersion: 0 }),
+      createUpdateCategoryPolicyUseCase(deps).execute({
+        companyId: COMPANY,
+        input: categoryInput,
+        expectedVersion: 0,
+      }),
     ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
   });
 
   it("produto: cria + atualiza + duplicata + not-found", async () => {
     const deps = makeDeps();
-    await createCreateProductPolicyUseCase(deps).execute({ companyId: COMPANY, input: productInput });
+    await createCreateProductPolicyUseCase(deps).execute({
+      companyId: COMPANY,
+      input: productInput,
+    });
     await expect(
       createCreateProductPolicyUseCase(deps).execute({ companyId: COMPANY, input: productInput }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -342,7 +366,10 @@ describe("Category & Product policies", () => {
         input: { ...productInput, priceFloorCents: -1 },
       }),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
-    await createCreateProductPolicyUseCase(deps).execute({ companyId: COMPANY, input: productInput });
+    await createCreateProductPolicyUseCase(deps).execute({
+      companyId: COMPANY,
+      input: productInput,
+    });
     await expect(
       createUpdateProductPolicyUseCase(deps).execute({
         companyId: COMPANY,
@@ -352,7 +379,9 @@ describe("Category & Product policies", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
     await expect(
       createUpdateProductPolicyUseCase(deps).execute({
-        companyId: COMPANY, input: productInput, expectedVersion: 0,
+        companyId: COMPANY,
+        input: productInput,
+        expectedVersion: 0,
       }),
     ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
     await expect(
@@ -369,7 +398,8 @@ describe("PriceList use cases", () => {
   it("cria + atualiza + activate/deactivate", async () => {
     const deps = makeDeps();
     const created = await createCreatePriceListUseCase(deps).execute({
-      companyId: COMPANY, input: priceListInput,
+      companyId: COMPANY,
+      input: priceListInput,
     });
     expect(created.meta.version).toBe(1);
 
@@ -381,10 +411,12 @@ describe("PriceList use cases", () => {
     expect(upd.entity.name).toBe("Renamed");
 
     await createDeactivatePriceListUseCase(deps).execute({
-      companyId: COMPANY, priceListId: priceListInput.priceListId,
+      companyId: COMPANY,
+      priceListId: priceListInput.priceListId,
     });
     const restored = await createActivatePriceListUseCase(deps).execute({
-      companyId: COMPANY, priceListId: priceListInput.priceListId,
+      companyId: COMPANY,
+      priceListId: priceListInput.priceListId,
     });
     expect(restored.entity.priceListId).toBe(priceListInput.priceListId);
   });
@@ -404,7 +436,9 @@ describe("PriceList use cases", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(
       createUpdatePriceListUseCase(deps).execute({
-        companyId: COMPANY, input: priceListInput, expectedVersion: 0,
+        companyId: COMPANY,
+        input: priceListInput,
+        expectedVersion: 0,
       }),
     ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
     await expect(
@@ -435,13 +469,16 @@ describe("PriceList use cases", () => {
         ...inmem,
         priceLists: {
           ...inmem.priceLists,
-          softDelete: async () => { throw new RepositoryError("STORAGE_FAILURE", "db"); },
+          softDelete: async () => {
+            throw new RepositoryError("STORAGE_FAILURE", "db");
+          },
         },
       },
     });
     await expect(
       createDeactivatePriceListUseCase(failing).execute({
-        companyId: COMPANY, priceListId: "pl-1",
+        companyId: COMPANY,
+        priceListId: "pl-1",
       }),
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
   });
@@ -453,7 +490,10 @@ describe("PriceList use cases", () => {
 
 async function seedPolicies(deps: PricingApplicationDeps) {
   await createCreateCompanyPolicyUseCase(deps).execute({ input: companyInput });
-  await createCreateCategoryPolicyUseCase(deps).execute({ companyId: COMPANY, input: categoryInput });
+  await createCreateCategoryPolicyUseCase(deps).execute({
+    companyId: COMPANY,
+    input: categoryInput,
+  });
   await createCreateProductPolicyUseCase(deps).execute({ companyId: COMPANY, input: productInput });
 }
 
@@ -518,19 +558,25 @@ describe("ResolvePricing", () => {
   it("rejeita quantidade/companyId/productId inválidos", async () => {
     const deps = makeDeps();
     const uc = createResolvePricingUseCase(deps);
-    await expect(uc.execute({ ...pricingContextInputBase(), companyId: "" })).rejects.toMatchObject({
-      code: "INVALID_ARGUMENT",
-    });
-    await expect(uc.execute({ ...pricingContextInputBase(), productId: "" })).rejects.toMatchObject({
-      code: "INVALID_ARGUMENT",
-    });
+    await expect(uc.execute({ ...pricingContextInputBase(), companyId: "" })).rejects.toMatchObject(
+      {
+        code: "INVALID_ARGUMENT",
+      },
+    );
+    await expect(uc.execute({ ...pricingContextInputBase(), productId: "" })).rejects.toMatchObject(
+      {
+        code: "INVALID_ARGUMENT",
+      },
+    );
     await expect(uc.execute({ ...pricingContextInputBase(), quantity: 0 })).rejects.toMatchObject({
       code: "INVALID_ARGUMENT",
     });
     // @ts-expect-error test
-    await expect(uc.execute({ ...pricingContextInputBase(), context: null })).rejects.toMatchObject({
-      code: "INVALID_ARGUMENT",
-    });
+    await expect(uc.execute({ ...pricingContextInputBase(), context: null })).rejects.toMatchObject(
+      {
+        code: "INVALID_ARGUMENT",
+      },
+    );
   });
 
   it("agrega PriceLists ativas nas candidatas", async () => {
@@ -560,9 +606,7 @@ describe("CalculateSuggestedPrice", () => {
       },
     });
     await seedPolicies(deps);
-    const out = await createCalculateSuggestedPriceUseCase(deps).execute(
-      pricingContextInputBase(),
-    );
+    const out = await createCalculateSuggestedPriceUseCase(deps).execute(pricingContextInputBase());
     expect(out.result).toBe(stubResult);
     expect(deps.engine.compute).toHaveBeenCalledWith(stubBundle.context);
   });
@@ -621,7 +665,7 @@ describe("ApplySuggestedPrice", () => {
           resolution: {} as PricingContextBundle["resolution"],
         }),
       },
-      engine: { compute: () => result, explain: () => ({} as PricingExplanation) },
+      engine: { compute: () => result, explain: () => ({}) as PricingExplanation },
     });
     await seedPolicies(deps);
     const uc = createApplySuggestedPriceUseCase(deps);
@@ -642,7 +686,7 @@ describe("ApplySuggestedPrice", () => {
           resolution: {} as PricingContextBundle["resolution"],
         }),
       },
-      engine: { compute: () => result, explain: () => ({} as PricingExplanation) },
+      engine: { compute: () => result, explain: () => ({}) as PricingExplanation },
     });
     await seedPolicies(deps);
     await expect(
@@ -694,18 +738,18 @@ describe("RegisterPricingDecision", () => {
     const uc = createRegisterPricingDecisionUseCase(deps);
     // @ts-expect-error test
     await expect(uc.execute({})).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
-    await expect(
-      uc.execute({ snapshot: { ...snap, companyId: "" } }),
-    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
-    await expect(
-      uc.execute({ snapshot: { ...snap, explainId: "" } }),
-    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
-    await expect(
-      uc.execute({ snapshot: { ...snap, requestId: "" } }),
-    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
-    await expect(
-      uc.execute({ snapshot: { ...snap, snapshotHash: "" } }),
-    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
+    await expect(uc.execute({ snapshot: { ...snap, companyId: "" } })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
+    await expect(uc.execute({ snapshot: { ...snap, explainId: "" } })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
+    await expect(uc.execute({ snapshot: { ...snap, requestId: "" } })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
+    await expect(uc.execute({ snapshot: { ...snap, snapshotHash: "" } })).rejects.toMatchObject({
+      code: "INVALID_ARGUMENT",
+    });
   });
 
   it("traduz erros de repositório", async () => {
@@ -714,7 +758,9 @@ describe("RegisterPricingDecision", () => {
         ...createInMemoryRepositories(),
         pricingDecisions: {
           findByExplainId: async () => null,
-          append: async () => { throw new RepositoryError("STORAGE_FAILURE", "db"); },
+          append: async () => {
+            throw new RepositoryError("STORAGE_FAILURE", "db");
+          },
           query: async () => [],
         },
       },
@@ -738,7 +784,9 @@ describe("repo error translation across use cases", () => {
         [kind]: new Proxy(inmem[kind], {
           get(target, prop) {
             if (prop === "save") {
-              return async () => { throw new RepositoryError("STORAGE_FAILURE", "db"); };
+              return async () => {
+                throw new RepositoryError("STORAGE_FAILURE", "db");
+              };
             }
             return (target as unknown as Record<string, unknown>)[prop as string];
           },
@@ -754,13 +802,19 @@ describe("repo error translation across use cases", () => {
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
 
     const ok = makeDeps();
-    await createCreateCategoryPolicyUseCase(ok).execute({ companyId: COMPANY, input: categoryInput });
+    await createCreateCategoryPolicyUseCase(ok).execute({
+      companyId: COMPANY,
+      input: categoryInput,
+    });
     const failing = makeDeps({
       repositories: {
         ...ok.repositories,
         categoryPolicies: new Proxy(ok.repositories.categoryPolicies, {
           get(t, p) {
-            if (p === "save") return async () => { throw new Error("boom"); };
+            if (p === "save")
+              return async () => {
+                throw new Error("boom");
+              };
             return (t as unknown as Record<string, unknown>)[p as string];
           },
         }),
@@ -768,7 +822,9 @@ describe("repo error translation across use cases", () => {
     });
     await expect(
       createUpdateCategoryPolicyUseCase(failing).execute({
-        companyId: COMPANY, input: categoryInput, expectedVersion: 1,
+        companyId: COMPANY,
+        input: categoryInput,
+        expectedVersion: 1,
       }),
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
   });
@@ -786,7 +842,10 @@ describe("repo error translation across use cases", () => {
         ...ok.repositories,
         productPolicies: new Proxy(ok.repositories.productPolicies, {
           get(t, p) {
-            if (p === "save") return async () => { throw new RepositoryError("STORAGE_FAILURE", "db"); };
+            if (p === "save")
+              return async () => {
+                throw new RepositoryError("STORAGE_FAILURE", "db");
+              };
             return (t as unknown as Record<string, unknown>)[p as string];
           },
         }),
@@ -794,7 +853,9 @@ describe("repo error translation across use cases", () => {
     });
     await expect(
       createUpdateProductPolicyUseCase(failing).execute({
-        companyId: COMPANY, input: productInput, expectedVersion: 1,
+        companyId: COMPANY,
+        input: productInput,
+        expectedVersion: 1,
       }),
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
   });
@@ -813,7 +874,9 @@ describe("repo error translation across use cases", () => {
         priceLists: new Proxy(ok.repositories.priceLists, {
           get(t, p) {
             if (p === "save" || p === "restore") {
-              return async () => { throw new RepositoryError("STORAGE_FAILURE", "db"); };
+              return async () => {
+                throw new RepositoryError("STORAGE_FAILURE", "db");
+              };
             }
             return (t as unknown as Record<string, unknown>)[p as string];
           },
@@ -822,12 +885,15 @@ describe("repo error translation across use cases", () => {
     });
     await expect(
       createUpdatePriceListUseCase(failing).execute({
-        companyId: COMPANY, input: priceListInput, expectedVersion: 1,
+        companyId: COMPANY,
+        input: priceListInput,
+        expectedVersion: 1,
       }),
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
     await expect(
       createActivatePriceListUseCase(failing).execute({
-        companyId: COMPANY, priceListId: priceListInput.priceListId,
+        companyId: COMPANY,
+        priceListId: priceListInput.priceListId,
       }),
     ).rejects.toMatchObject({ code: "STORAGE_FAILURE" });
   });
@@ -840,7 +906,10 @@ describe("repo error translation across use cases", () => {
         ...deps.repositories,
         companyPolicies: new Proxy(deps.repositories.companyPolicies, {
           get(t, p) {
-            if (p === "save") return async () => { throw new RepositoryError("CONCURRENCY", "v"); };
+            if (p === "save")
+              return async () => {
+                throw new RepositoryError("CONCURRENCY", "v");
+              };
             return (t as unknown as Record<string, unknown>)[p as string];
           },
         }),
@@ -848,7 +917,8 @@ describe("repo error translation across use cases", () => {
     });
     await expect(
       createUpdateCompanyPolicyUseCase(failing).execute({
-        input: companyInput, expectedVersion: 1,
+        input: companyInput,
+        expectedVersion: 1,
       }),
     ).rejects.toMatchObject({ code: "CONCURRENCY" });
   });
@@ -857,7 +927,8 @@ describe("repo error translation across use cases", () => {
     // executa uma vez para cobrir linhas 25-26 do adapters.ts
     const inputBundle = defaultResolver.build({
       company: {
-        companyId: COMPANY, currency: "BRL",
+        companyId: COMPANY,
+        currency: "BRL",
         defaults: { minMarginPct: 10, idealMarginPct: 25, premiumMarginPct: 40 },
       },
       product: { productId: PROD },

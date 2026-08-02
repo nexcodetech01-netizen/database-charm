@@ -20,13 +20,7 @@ const TONE: Record<PricingStatus, { className: string; dot: string }> = {
   },
 };
 
-export function PricingStatusBadge({
-  status,
-  label,
-}: {
-  status: PricingStatus;
-  label?: string;
-}) {
+export function PricingStatusBadge({ status, label }: { status: PricingStatus; label?: string }) {
   const tone = TONE[status];
   return (
     <Badge variant="outline" className={tone.className}>

@@ -8,10 +8,7 @@
  * `ApplySuggestedPrice`. Idempotência via `(companyId, explainId)`:
  * se já existir, devolve o registro existente sem duplicar.
  */
-import type {
-  PricingDecisionSnapshot,
-  StoredPricingDecision,
-} from "../../persistence/types";
+import type { PricingDecisionSnapshot, StoredPricingDecision } from "../../persistence/types";
 import { invalidArgument } from "../errors";
 import type { PricingApplicationDeps, UseCase } from "../ports";
 import { requireString, translateRepoError } from "./_internal";

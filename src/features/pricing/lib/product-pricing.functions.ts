@@ -112,12 +112,11 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
     return input;
   })
   .handler(async ({ data, context }): Promise<ProductPricingIntelligenceDTO> => {
-    const [{ createSupabaseRepositories }, application, engineMod] =
-      await Promise.all([
-        import("@/features/pricing/persistence/supabase.server"),
-        import("@/features/pricing/application"),
-        import("@/features/pricing/engine"),
-      ]);
+    const [{ createSupabaseRepositories }, application, engineMod] = await Promise.all([
+      import("@/features/pricing/persistence/supabase.server"),
+      import("@/features/pricing/application"),
+      import("@/features/pricing/engine"),
+    ]);
 
     const repos = createSupabaseRepositories(context.supabase);
     const deps = {
@@ -159,10 +158,7 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
     }
 
     // Ensure ProductPolicy exists (bootstrap sem overrides — herda Categoria/Empresa)
-    const existing = await repos.productPolicies.findByProduct(
-      data.companyId,
-      data.productId,
-    );
+    const existing = await repos.productPolicies.findByProduct(data.companyId, data.productId);
     let hasPolicy = !!existing;
     if (!existing) {
       const createUC = application.createCreateProductPolicyUseCase(deps);
@@ -177,9 +173,8 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
     // Composição de custo: engine é a fonte única — passamos apenas os componentes
     // brutos (em centavos). `perUnitCostCents` é derivado dentro do Pricing Engine
     // (ver src/features/pricing/engine/internal/cost.ts).
-    const { fetchCompanyCostDefaults, mergeProductOperationalCosts } = await import(
-      "@/features/pricing/lib/company-cost-defaults"
-    );
+    const { fetchCompanyCostDefaults, mergeProductOperationalCosts } =
+      await import("@/features/pricing/lib/company-cost-defaults");
     const companyDefaults = await fetchCompanyCostDefaults(context.supabase, data.companyId);
     const merged = mergeProductOperationalCosts(p, companyDefaults);
     const cost = toN(p.cost);
@@ -213,7 +208,6 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
       },
     });
 
-
     const explanation = deps.engine.explain(result);
     const originLayer =
       (bundle.resolution.policySource.marginTarget as PolicyLayerName | undefined) ??
@@ -227,9 +221,7 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
     const resolvedTargetPct =
       typeof targetRule?.detail?.pct === "number" ? (targetRule.detail.pct as number) : undefined;
     const targetMarginPct =
-      resolvedTargetPct ??
-      bundle.context.company.defaults?.idealMarginPct ??
-      result.marginPct;
+      resolvedTargetPct ?? bundle.context.company.defaults?.idealMarginPct ?? result.marginPct;
 
     return {
       product: {
@@ -255,7 +247,7 @@ export const getProductPricingIntelligence = createServerFn({ method: "GET" })
       explainId: result.explainId,
       requestId: result.requestId,
       summary: explanation.summary,
-      
+
       steps: explanation.steps.map((s) => ({
         step: s.step,
         rule: s.rule,
@@ -284,17 +276,11 @@ export interface ApplyProductPriceResultDTO {
 
 export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      companyId: string;
-      productId: string;
-      strategy?: PricingStrategy;
-    }) => {
-      if (!input?.companyId) throw new Error("companyId é obrigatório");
-      if (!input?.productId) throw new Error("productId é obrigatório");
-      return input;
-    },
-  )
+  .inputValidator((input: { companyId: string; productId: string; strategy?: PricingStrategy }) => {
+    if (!input?.companyId) throw new Error("companyId é obrigatório");
+    if (!input?.productId) throw new Error("productId é obrigatório");
+    return input;
+  })
   .handler(async ({ data, context }): Promise<ApplyProductPriceResultDTO> => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
     await requireServerPermission(context, "products.update", {
@@ -302,12 +288,11 @@ export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
       action: "pricing.product.apply_price",
       module: "pricing",
     });
-    const [{ createSupabaseRepositories }, application, engineMod] =
-      await Promise.all([
-        import("@/features/pricing/persistence/supabase.server"),
-        import("@/features/pricing/application"),
-        import("@/features/pricing/engine"),
-      ]);
+    const [{ createSupabaseRepositories }, application, engineMod] = await Promise.all([
+      import("@/features/pricing/persistence/supabase.server"),
+      import("@/features/pricing/application"),
+      import("@/features/pricing/engine"),
+    ]);
 
     const repos = createSupabaseRepositories(context.supabase);
     const deps = {
@@ -328,19 +313,17 @@ export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
       .eq("id", data.productId)
       .maybeSingle();
     if (prodRes.error) throw prodRes.error;
-    const p = prodRes.data as unknown as
-      | (Pick<
-          ProductRow,
-          | "id"
-          | "category_id"
-          | "cost"
-          | "freight"
-          | "packaging"
-          | "insurance"
-          | "other_costs"
-          | "updated_at"
-        >)
-      | null;
+    const p = prodRes.data as unknown as Pick<
+      ProductRow,
+      | "id"
+      | "category_id"
+      | "cost"
+      | "freight"
+      | "packaging"
+      | "insurance"
+      | "other_costs"
+      | "updated_at"
+    > | null;
     if (!p) throw new Error("Produto não encontrado");
 
     // Ensure CompanyPolicy (bootstrap default)
@@ -358,10 +341,7 @@ export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
     }
 
     // Ensure ProductPolicy
-    const existing = await repos.productPolicies.findByProduct(
-      data.companyId,
-      data.productId,
-    );
+    const existing = await repos.productPolicies.findByProduct(data.companyId, data.productId);
     if (!existing) {
       const createUC = application.createCreateProductPolicyUseCase(deps);
       await createUC.execute({
@@ -373,9 +353,8 @@ export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
 
     // Composição de custo: engine é a fonte única (ver internal/cost.ts).
     // Custos operacionais: COALESCE(produto, defaults da empresa).
-    const { fetchCompanyCostDefaults, mergeProductOperationalCosts } = await import(
-      "@/features/pricing/lib/company-cost-defaults"
-    );
+    const { fetchCompanyCostDefaults, mergeProductOperationalCosts } =
+      await import("@/features/pricing/lib/company-cost-defaults");
     const companyDefaults = await fetchCompanyCostDefaults(context.supabase, data.companyId);
     const merged = mergeProductOperationalCosts(p, companyDefaults);
     const cost = toN(p.cost);
@@ -409,7 +388,6 @@ export const applyProductSuggestedPrice = createServerFn({ method: "POST" })
         requestedBy: { module: "product-detail", userId: context.userId },
       },
     });
-
 
     // Atualiza o preço do produto (Product Domain — direto, mesmo padrão do resto do app)
     const newPriceReais = command.priceCents / 100;
@@ -455,119 +433,105 @@ export interface SyncProductIdealMarginResultDTO {
 
 export const syncProductIdealMargin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      companyId: string;
-      productId: string;
-      idealMarginPct: number;
-    }) => {
-      if (!input?.companyId) throw new Error("companyId é obrigatório");
-      if (!input?.productId) throw new Error("productId é obrigatório");
-      if (typeof input.idealMarginPct !== "number")
-        throw new Error("idealMarginPct deve ser numérico");
-      return input;
-    },
-  )
-  .handler(
-    async ({ data, context }): Promise<SyncProductIdealMarginResultDTO> => {
-      // Hardening RBAC server-side (a UI não é barreira de segurança).
-      await requireServerPermission(context, "products.update", {
-        companyId: data.companyId,
-        action: "pricing.product.sync_margin",
-        module: "pricing",
-      });
-      // Regra de negócio (mesma guarda do trigger
-      // apply_category_margin_to_products): ignora margens fora de (0, 100).
-      if (
-        !Number.isFinite(data.idealMarginPct) ||
-        data.idealMarginPct <= 0 ||
-        data.idealMarginPct >= 100
-      ) {
-        return { synced: false, skipped: true, reason: "invalid-margin" };
-      }
+  .inputValidator((input: { companyId: string; productId: string; idealMarginPct: number }) => {
+    if (!input?.companyId) throw new Error("companyId é obrigatório");
+    if (!input?.productId) throw new Error("productId é obrigatório");
+    if (typeof input.idealMarginPct !== "number")
+      throw new Error("idealMarginPct deve ser numérico");
+    return input;
+  })
+  .handler(async ({ data, context }): Promise<SyncProductIdealMarginResultDTO> => {
+    // Hardening RBAC server-side (a UI não é barreira de segurança).
+    await requireServerPermission(context, "products.update", {
+      companyId: data.companyId,
+      action: "pricing.product.sync_margin",
+      module: "pricing",
+    });
+    // Regra de negócio (mesma guarda do trigger
+    // apply_category_margin_to_products): ignora margens fora de (0, 100).
+    if (
+      !Number.isFinite(data.idealMarginPct) ||
+      data.idealMarginPct <= 0 ||
+      data.idealMarginPct >= 100
+    ) {
+      return { synced: false, skipped: true, reason: "invalid-margin" };
+    }
 
-      const [{ createSupabaseRepositories }, application] = await Promise.all([
-        import("@/features/pricing/persistence/supabase.server"),
-        import("@/features/pricing/application"),
-      ]);
+    const [{ createSupabaseRepositories }, application] = await Promise.all([
+      import("@/features/pricing/persistence/supabase.server"),
+      import("@/features/pricing/application"),
+    ]);
 
-      const repos = createSupabaseRepositories(context.supabase);
-      const deps = {
-        repositories: repos,
-        engine: application.defaultEngine,
-        resolver: application.defaultResolver,
-        clock: application.systemClock,
-        ids: application.createIdGenerator(),
-        hasher: application.defaultHasher,
-      };
-      const actor = { userId: context.userId, module: "product-form" };
+    const repos = createSupabaseRepositories(context.supabase);
+    const deps = {
+      repositories: repos,
+      engine: application.defaultEngine,
+      resolver: application.defaultResolver,
+      clock: application.systemClock,
+      ids: application.createIdGenerator(),
+      hasher: application.defaultHasher,
+    };
+    const actor = { userId: context.userId, module: "product-form" };
 
-      // Garante CompanyPolicy (mesmo bootstrap dos outros server fns deste módulo).
-      const companyExisting = await repos.companyPolicies.findByCompany(
-        data.companyId,
-      );
-      if (!companyExisting) {
-        const createCompanyUC = application.createCreateCompanyPolicyUseCase(deps);
-        await createCompanyUC.execute({
-          input: {
-            companyId: data.companyId,
-            currency: "BRL",
-            defaults: { minMarginPct: 10, idealMarginPct: 30, premiumMarginPct: 50 },
-          },
-          actor,
-        });
-      }
-
-      const existing = await repos.productPolicies.findByProduct(
-        data.companyId,
-        data.productId,
-      );
-
-      if (!existing) {
-        const createUC = application.createCreateProductPolicyUseCase(deps);
-        await createUC.execute({
-          companyId: data.companyId,
-          input: {
-            productId: data.productId,
-            idealMarginPct: data.idealMarginPct,
-          },
-          actor,
-        });
-        return {
-          synced: true,
-          skipped: false,
-          created: true,
-          idealMarginPct: data.idealMarginPct,
-        };
-      }
-
-      // Preserva TODOS os campos existentes (min/premium, marginTarget,
-      // roundingPolicy, priceFloorCents, sku, commercialBehavior) e
-      // sobrescreve apenas idealMarginPct. Concorrência otimista via version.
-      const updateUC = application.createUpdateProductPolicyUseCase(deps);
-      await updateUC.execute({
-        companyId: data.companyId,
-        expectedVersion: existing.meta.version,
+    // Garante CompanyPolicy (mesmo bootstrap dos outros server fns deste módulo).
+    const companyExisting = await repos.companyPolicies.findByCompany(data.companyId);
+    if (!companyExisting) {
+      const createCompanyUC = application.createCreateCompanyPolicyUseCase(deps);
+      await createCompanyUC.execute({
         input: {
-          productId: existing.entity.productId,
-          sku: existing.entity.sku,
-          priceFloorCents: existing.entity.priceFloorCents,
-          marginTarget: existing.entity.marginTarget,
-          commercialBehavior: existing.entity.commercialBehavior,
-          roundingPolicy: existing.entity.roundingPolicy,
-          minMarginPct: existing.entity.minMarginPct,
-          premiumMarginPct: existing.entity.premiumMarginPct,
+          companyId: data.companyId,
+          currency: "BRL",
+          defaults: { minMarginPct: 10, idealMarginPct: 30, premiumMarginPct: 50 },
+        },
+        actor,
+      });
+    }
+
+    const existing = await repos.productPolicies.findByProduct(data.companyId, data.productId);
+
+    if (!existing) {
+      const createUC = application.createCreateProductPolicyUseCase(deps);
+      await createUC.execute({
+        companyId: data.companyId,
+        input: {
+          productId: data.productId,
           idealMarginPct: data.idealMarginPct,
         },
         actor,
       });
-
       return {
         synced: true,
         skipped: false,
-        created: false,
+        created: true,
         idealMarginPct: data.idealMarginPct,
       };
-    },
-  );
+    }
 
+    // Preserva TODOS os campos existentes (min/premium, marginTarget,
+    // roundingPolicy, priceFloorCents, sku, commercialBehavior) e
+    // sobrescreve apenas idealMarginPct. Concorrência otimista via version.
+    const updateUC = application.createUpdateProductPolicyUseCase(deps);
+    await updateUC.execute({
+      companyId: data.companyId,
+      expectedVersion: existing.meta.version,
+      input: {
+        productId: existing.entity.productId,
+        sku: existing.entity.sku,
+        priceFloorCents: existing.entity.priceFloorCents,
+        marginTarget: existing.entity.marginTarget,
+        commercialBehavior: existing.entity.commercialBehavior,
+        roundingPolicy: existing.entity.roundingPolicy,
+        minMarginPct: existing.entity.minMarginPct,
+        premiumMarginPct: existing.entity.premiumMarginPct,
+        idealMarginPct: data.idealMarginPct,
+      },
+      actor,
+    });
+
+    return {
+      synced: true,
+      skipped: false,
+      created: false,
+      idealMarginPct: data.idealMarginPct,
+    };
+  });

@@ -54,11 +54,7 @@ export {
   type ChannelContractInput,
 } from "./channel-contract";
 
-export {
-  createTaxQuote,
-  validateTaxQuote,
-  type TaxQuoteInput,
-} from "./tax-quote";
+export { createTaxQuote, validateTaxQuote, type TaxQuoteInput } from "./tax-quote";
 
 export {
   createPriceList,

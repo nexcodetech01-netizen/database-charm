@@ -54,10 +54,28 @@ export interface SimulatorBootstrapDTO {
 
 /** Canais oferecidos ao simulador (parâmetros fixos — nenhuma regra nova). */
 const CHANNEL_PRESETS: readonly SimulatorChannelOption[] = [
-  { id: "none",   label: "Sem canal",  variableFeePct: 0,   fixedFeePerOrderCents: 0, operationalCostCents: 0 },
-  { id: "pix",    label: "PIX",        variableFeePct: 0,   fixedFeePerOrderCents: 0, operationalCostCents: 0 },
-  { id: "card",   label: "Cartão",     variableFeePct: 3.5, fixedFeePerOrderCents: 0, operationalCostCents: 0 },
-  { id: "boleto", label: "Boleto",     variableFeePct: 0,   fixedFeePerOrderCents: 350, operationalCostCents: 0 },
+  {
+    id: "none",
+    label: "Sem canal",
+    variableFeePct: 0,
+    fixedFeePerOrderCents: 0,
+    operationalCostCents: 0,
+  },
+  { id: "pix", label: "PIX", variableFeePct: 0, fixedFeePerOrderCents: 0, operationalCostCents: 0 },
+  {
+    id: "card",
+    label: "Cartão",
+    variableFeePct: 3.5,
+    fixedFeePerOrderCents: 0,
+    operationalCostCents: 0,
+  },
+  {
+    id: "boleto",
+    label: "Boleto",
+    variableFeePct: 0,
+    fixedFeePerOrderCents: 350,
+    operationalCostCents: 0,
+  },
 ];
 
 export const getPricingSimulatorBootstrap = createServerFn({ method: "GET" })
@@ -67,9 +85,8 @@ export const getPricingSimulatorBootstrap = createServerFn({ method: "GET" })
     return input;
   })
   .handler(async ({ data, context }): Promise<SimulatorBootstrapDTO> => {
-    const { createSupabaseRepositories } = await import(
-      "@/features/pricing/persistence/supabase.server"
-    );
+    const { createSupabaseRepositories } =
+      await import("@/features/pricing/persistence/supabase.server");
     const repos = createSupabaseRepositories(context.supabase);
 
     const [policy, categoryPolicies, categoriesRes] = await Promise.all([
@@ -207,12 +224,11 @@ export const simulatePricing = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }): Promise<SimulatePricingDTO> => {
-    const [{ createSupabaseRepositories }, application, engineMod] =
-      await Promise.all([
-        import("@/features/pricing/persistence/supabase.server"),
-        import("@/features/pricing/application"),
-        import("@/features/pricing/engine"),
-      ]);
+    const [{ createSupabaseRepositories }, application, engineMod] = await Promise.all([
+      import("@/features/pricing/persistence/supabase.server"),
+      import("@/features/pricing/application"),
+      import("@/features/pricing/engine"),
+    ]);
 
     const repos = createSupabaseRepositories(context.supabase);
     const clock = application.systemClock;
@@ -252,9 +268,7 @@ export const simulatePricing = createServerFn({ method: "POST" })
     // MarginTarget — controlado pela UI
     const kind: SimulatorMarginKind = data.marginTarget ?? "ideal";
     const marginTarget: MarginTargetSpec =
-      kind === "custom"
-        ? { kind: "custom", pct: Number(data.customMarginPct) }
-        : { kind };
+      kind === "custom" ? { kind: "custom", pct: Number(data.customMarginPct) } : { kind };
 
     // ProductPolicy sintética (simulação — não persiste nada)
     const syntheticProduct = {
@@ -302,11 +316,8 @@ export const simulatePricing = createServerFn({ method: "POST" })
             currentPriceCents,
             recommendedPriceCents: result.finalPriceCents,
             differenceCents: result.finalPriceCents - currentPriceCents,
-            differencePct:
-              ((result.finalPriceCents - currentPriceCents) / currentPriceCents) *
-              100,
-            profitImpactCents:
-              (result.finalPriceCents - currentPriceCents) * data.quantity,
+            differencePct: ((result.finalPriceCents - currentPriceCents) / currentPriceCents) * 100,
+            profitImpactCents: (result.finalPriceCents - currentPriceCents) * data.quantity,
           }
         : null;
 

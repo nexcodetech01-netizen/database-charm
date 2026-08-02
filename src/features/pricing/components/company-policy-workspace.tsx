@@ -28,13 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -50,33 +44,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageLayout } from "@/components/layout";
 import {
   getCompanyPolicyOverview,
   saveCompanyPolicy,
 } from "@/features/pricing/lib/company-policy.functions";
 import type { CompanyPolicyInput } from "@/features/pricing/config/company-policy";
-import type {
-  CommercialBehaviorSpec,
-  RoundingPolicySpec,
-} from "@/features/pricing/engine/types";
+import type { CommercialBehaviorSpec, RoundingPolicySpec } from "@/features/pricing/engine/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Estado local do formulário (representação plana; conversão apenas no save)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type StrategyKey =
-  | "high_margin"
-  | "high_turnover"
-  | "premium"
-  | "promotion"
-  | "stock_burn";
+type StrategyKey = "high_margin" | "high_turnover" | "premium" | "promotion" | "stock_burn";
 
 type RoundingKey = "none" | "integer" | "end_90" | "end_99" | "psychological";
 
@@ -168,11 +149,39 @@ function policyToRounding(r: RoundingPolicySpec | undefined): RoundingKey {
 
 const CHANNELS = [
   { id: "store", name: "Loja Física", icon: Store, status: "Ativo", commission: "0%", fee: "0%" },
-  { id: "whatsapp", name: "WhatsApp", icon: MessageCircle, status: "Ativo", commission: "0%", fee: "0,99%" },
-  { id: "instagram", name: "Instagram", icon: Instagram, status: "Em breve", commission: "—", fee: "—" },
+  {
+    id: "whatsapp",
+    name: "WhatsApp",
+    icon: MessageCircle,
+    status: "Ativo",
+    commission: "0%",
+    fee: "0,99%",
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    icon: Instagram,
+    status: "Em breve",
+    commission: "—",
+    fee: "—",
+  },
   { id: "site", name: "Site", icon: Globe, status: "Em breve", commission: "—", fee: "—" },
-  { id: "ml", name: "Mercado Livre", icon: ShoppingBag, status: "Em breve", commission: "16%", fee: "R$ 6,00" },
-  { id: "shopee", name: "Shopee", icon: ShoppingCart, status: "Em breve", commission: "14%", fee: "R$ 4,00" },
+  {
+    id: "ml",
+    name: "Mercado Livre",
+    icon: ShoppingBag,
+    status: "Em breve",
+    commission: "16%",
+    fee: "R$ 6,00",
+  },
+  {
+    id: "shopee",
+    name: "Shopee",
+    icon: ShoppingCart,
+    status: "Em breve",
+    commission: "14%",
+    fee: "R$ 4,00",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,9 +200,7 @@ function HelpTip({ children }: { children: React.ReactNode }) {
           <Info className="h-3.5 w-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-xs leading-relaxed">
-        {children}
-      </TooltipContent>
+      <TooltipContent className="max-w-xs text-xs leading-relaxed">{children}</TooltipContent>
     </Tooltip>
   );
 }
@@ -218,13 +225,7 @@ function LabeledField({
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-border/60 py-2 last:border-b-0">
       <span className="text-xs text-muted-foreground">{label}</span>
@@ -376,8 +377,8 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
             <CardHeader>
               <CardTitle className="text-base">Margens</CardTitle>
               <CardDescription>
-                Referência global para classificação da saúde de preço em Produtos,
-                Vendas e Bella IA.
+                Referência global para classificação da saúde de preço em Produtos, Vendas e Bella
+                IA.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-3">
@@ -419,8 +420,8 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
             <CardHeader>
               <CardTitle className="text-base">Estratégia comercial</CardTitle>
               <CardDescription>
-                Comportamento padrão da empresa — orienta o motor sem sobrescrever
-                regras específicas de produto.
+                Comportamento padrão da empresa — orienta o motor sem sobrescrever regras
+                específicas de produto.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -548,16 +549,9 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
                         <TableCell className="text-sm text-muted-foreground">
                           {c.commission}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {c.fee}
-                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{c.fee}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled
-                            title="Em breve"
-                          >
+                          <Button variant="ghost" size="sm" disabled title="Em breve">
                             Editar
                           </Button>
                         </TableCell>
@@ -581,20 +575,12 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
               <div>
                 <SummaryRow
                   label="Política ativa"
-                  value={
-                    overview.isLoading
-                      ? "—"
-                      : meta
-                        ? "Sim"
-                        : "Ainda não configurada"
-                  }
+                  value={overview.isLoading ? "—" : meta ? "Sim" : "Ainda não configurada"}
                 />
                 <SummaryRow label="Versão" value={meta ? `v${meta.version}` : "—"} />
                 <SummaryRow
                   label="Última atualização"
-                  value={
-                    meta ? new Date(meta.updatedAt).toLocaleString("pt-BR") : "—"
-                  }
+                  value={meta ? new Date(meta.updatedAt).toLocaleString("pt-BR") : "—"}
                 />
                 <SummaryRow label="Origem" value="Empresa (padrão global)" />
               </div>
@@ -607,14 +593,8 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
                   label="Produtos sobrescrevendo"
                   value={stats?.productsOverriding ?? 0}
                 />
-                <SummaryRow
-                  label="Moeda"
-                  value={overview.data?.policy?.entity.currency ?? "BRL"}
-                />
-                <SummaryRow
-                  label="Criada por"
-                  value={meta?.createdBy ?? "—"}
-                />
+                <SummaryRow label="Moeda" value={overview.data?.policy?.entity.currency ?? "BRL"} />
+                <SummaryRow label="Criada por" value={meta?.createdBy ?? "—"} />
               </div>
             </CardContent>
           </Card>

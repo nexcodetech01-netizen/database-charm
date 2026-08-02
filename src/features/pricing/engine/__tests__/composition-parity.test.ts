@@ -137,4 +137,3 @@ describe("Cost Composition — canonical single source of truth", () => {
     expect(result.warnings.find((w) => w.code === "COST_COMPONENTS_MISMATCH")).toBeUndefined();
   });
 });
-

@@ -162,8 +162,7 @@ function buildContext(input: OfficialPricingInput): {
   const lossPct = Math.max(0, num(c.lossPct));
   const loss = (directCost * lossPct) / 100;
 
-  const feePct =
-    Math.max(0, num(input.fee?.pct)) + Math.max(0, num(input.fee?.financialCostPct));
+  const feePct = Math.max(0, num(input.fee?.pct)) + Math.max(0, num(input.fee?.financialCostPct));
   const fixedFee = Math.max(0, num(input.fee?.fixed));
   const taxPct = Math.max(0, num(input.taxPct));
 
@@ -178,15 +177,10 @@ function buildContext(input: OfficialPricingInput): {
       defaults: {
         minMarginPct: Math.max(0, num(input.margins.minPct)),
         idealMarginPct: Math.max(0, num(input.margins.targetPct)),
-        premiumMarginPct: Math.max(
-          0,
-          num(input.margins.premiumPct ?? input.margins.targetPct),
-        ),
+        premiumMarginPct: Math.max(0, num(input.margins.premiumPct ?? input.margins.targetPct)),
       },
     },
-    ...(input.categoryId
-      ? { category: { id: input.categoryId, name: input.categoryName } }
-      : {}),
+    ...(input.categoryId ? { category: { id: input.categoryId, name: input.categoryName } } : {}),
     product: {
       id: input.productId,
       ...(input.sku ? { sku: input.sku } : {}),
@@ -242,14 +236,62 @@ function buildAudit(
   const c = input.costs;
   const price = brl(result.finalPriceCents);
   const lines: PriceAuditLine[] = [
-    { key: "acquisition", label: "Custo do fornecedor", source: "Cadastro do produto", amount: Math.max(0, num(c.acquisition)), kind: "cost" },
-    { key: "freight", label: "Frete de entrada", source: "Rateio da compra", amount: Math.max(0, num(c.freight)), kind: "cost" },
-    { key: "packaging", label: "Embalagem", source: "Cadastro do produto", amount: Math.max(0, num(c.packaging)), kind: "cost" },
-    { key: "label", label: "Etiqueta", source: "Cadastro do produto", amount: Math.max(0, num(c.label)), kind: "cost" },
-    { key: "insurance", label: "Seguro", source: "Rateio da compra", amount: Math.max(0, num(c.insurance)), kind: "cost" },
-    { key: "commission", label: "Comissão", source: "Política comercial", amount: Math.max(0, num(c.commission)), kind: "cost" },
-    { key: "other_costs", label: "Outros custos", source: "Cadastro do produto", amount: Math.max(0, num(c.otherCosts)), kind: "cost" },
-    { key: "operational", label: "Despesas operacionais", source: "Rateio da política da empresa", amount: Math.max(0, num(c.operationalExpenses)), kind: "cost" },
+    {
+      key: "acquisition",
+      label: "Custo do fornecedor",
+      source: "Cadastro do produto",
+      amount: Math.max(0, num(c.acquisition)),
+      kind: "cost",
+    },
+    {
+      key: "freight",
+      label: "Frete de entrada",
+      source: "Rateio da compra",
+      amount: Math.max(0, num(c.freight)),
+      kind: "cost",
+    },
+    {
+      key: "packaging",
+      label: "Embalagem",
+      source: "Cadastro do produto",
+      amount: Math.max(0, num(c.packaging)),
+      kind: "cost",
+    },
+    {
+      key: "label",
+      label: "Etiqueta",
+      source: "Cadastro do produto",
+      amount: Math.max(0, num(c.label)),
+      kind: "cost",
+    },
+    {
+      key: "insurance",
+      label: "Seguro",
+      source: "Rateio da compra",
+      amount: Math.max(0, num(c.insurance)),
+      kind: "cost",
+    },
+    {
+      key: "commission",
+      label: "Comissão",
+      source: "Política comercial",
+      amount: Math.max(0, num(c.commission)),
+      kind: "cost",
+    },
+    {
+      key: "other_costs",
+      label: "Outros custos",
+      source: "Cadastro do produto",
+      amount: Math.max(0, num(c.otherCosts)),
+      kind: "cost",
+    },
+    {
+      key: "operational",
+      label: "Despesas operacionais",
+      source: "Rateio da política da empresa",
+      amount: Math.max(0, num(c.operationalExpenses)),
+      kind: "cost",
+    },
   ];
   if (derived.loss > 0) {
     lines.push({

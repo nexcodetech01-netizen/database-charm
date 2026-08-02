@@ -112,9 +112,7 @@ export function effectiveFeePct(fee: ResolvedFee, amount: number): number {
  * É esta taxa que entra na formação do preço (FASE 4).
  */
 export function worstCaseCreditFee(table: CompanyFeeTable, amount: number): ResolvedFee {
-  const options = allowedInstallments(amount).map((n) =>
-    resolveFee(table, `credit_card_${n}`),
-  );
+  const options = allowedInstallments(amount).map((n) => resolveFee(table, `credit_card_${n}`));
   let worst = NO_FEE;
   let worstPct = -1;
   for (const opt of options) {

@@ -7,7 +7,11 @@
  */
 export * from "./types";
 export * from "./official";
-export { resolvePricingStatus, type PricingStatus, type PricingStatusView } from "./official/status";
+export {
+  resolvePricingStatus,
+  type PricingStatus,
+  type PricingStatusView,
+} from "./official/status";
 export { usePricingPolicy } from "./hooks/use-pricing-policy";
 export { useCompanyFeeTable } from "./hooks/use-company-fee-table";
 export { PricingPolicyForm } from "./components/pricing-policy-form";

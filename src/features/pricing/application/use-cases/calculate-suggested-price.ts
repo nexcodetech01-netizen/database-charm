@@ -8,10 +8,7 @@
 import type { PricingResult } from "../../engine/types";
 import type { PricingContextBundle } from "../../resolver/pricing-context-factory";
 import type { PricingApplicationDeps, UseCase } from "../ports";
-import {
-  createResolvePricingUseCase,
-  type ResolvePricingInput,
-} from "./resolve-pricing";
+import { createResolvePricingUseCase, type ResolvePricingInput } from "./resolve-pricing";
 
 export type CalculateSuggestedPriceInput = ResolvePricingInput;
 

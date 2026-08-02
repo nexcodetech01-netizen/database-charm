@@ -45,9 +45,8 @@ export const getCompanyPolicyOverview = createServerFn({ method: "GET" })
     return input;
   })
   .handler(async ({ data, context }): Promise<CompanyPolicyOverviewDTO> => {
-    const { createSupabaseRepositories } = await import(
-      "@/features/pricing/persistence/supabase.server"
-    );
+    const { createSupabaseRepositories } =
+      await import("@/features/pricing/persistence/supabase.server");
     const repos = createSupabaseRepositories(context.supabase);
 
     const [policy, categories, products] = await Promise.all([
@@ -71,15 +70,10 @@ export const getCompanyPolicyOverview = createServerFn({ method: "GET" })
 
 export const saveCompanyPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      input: CompanyPolicyInput;
-      expectedVersion?: number;
-    }) => {
-      if (!input?.input?.companyId) throw new Error("companyId é obrigatório");
-      return input;
-    },
-  )
+  .inputValidator((input: { input: CompanyPolicyInput; expectedVersion?: number }) => {
+    if (!input?.input?.companyId) throw new Error("companyId é obrigatório");
+    return input;
+  })
   .handler(async ({ data, context }) => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
     await requireServerPermission(context, "products.update", {
@@ -87,10 +81,7 @@ export const saveCompanyPolicy = createServerFn({ method: "POST" })
       action: "pricing.company_policy.save",
       module: "pricing",
     });
-    const [
-      { createSupabaseRepositories },
-      application,
-    ] = await Promise.all([
+    const [{ createSupabaseRepositories }, application] = await Promise.all([
       import("@/features/pricing/persistence/supabase.server"),
       import("@/features/pricing/application"),
     ]);

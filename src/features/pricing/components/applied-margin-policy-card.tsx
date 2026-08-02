@@ -33,14 +33,11 @@ export function AppliedMarginPolicyCard({
 }: Props) {
   const hasCategoryTarget =
     categoryTargetMarginPct != null && Number.isFinite(categoryTargetMarginPct);
-  const hasCategoryMin =
-    categoryMinMarginPct != null && Number.isFinite(categoryMinMarginPct);
+  const hasCategoryMin = categoryMinMarginPct != null && Number.isFinite(categoryMinMarginPct);
   const hasCategoryDiscount =
     categoryDefaultDiscountPct != null && Number.isFinite(categoryDefaultDiscountPct);
   const originIsCategory = useCategoryMargin && hasCategoryTarget;
-  const policyValue = originIsCategory
-    ? (categoryTargetMarginPct as number)
-    : productMarginPct;
+  const policyValue = originIsCategory ? (categoryTargetMarginPct as number) : productMarginPct;
   const policyLabel = originIsCategory
     ? `Política comercial aplicada — categoria (${formatPercent(policyValue)}%)`
     : `Política comercial aplicada — personalizada (${formatPercent(policyValue)}%)`;
@@ -59,9 +56,7 @@ export function AppliedMarginPolicyCard({
             </p>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-muted-foreground">Categoria:</span>
-              <span className="font-medium text-foreground">
-                {categoryName ?? "Sem categoria"}
-              </span>
+              <span className="font-medium text-foreground">{categoryName ?? "Sem categoria"}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Badge variant="secondary" className="gap-1">

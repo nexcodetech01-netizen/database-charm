@@ -33,10 +33,7 @@ export function createCategoryPolicy(input: CategoryPolicyInput): CategoryPolicy
   };
 }
 
-export function validateCategoryPolicy(
-  value: unknown,
-  path = "categoryPolicy",
-): DomainIssue[] {
+export function validateCategoryPolicy(value: unknown, path = "categoryPolicy"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }

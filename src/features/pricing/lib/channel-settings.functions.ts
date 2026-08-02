@@ -87,7 +87,9 @@ export const getProductChannelSettings = createServerFn({ method: "GET" })
       .eq("id", data.productId)
       .maybeSingle();
     if (res.error) throw res.error;
-    return sanitize((res.data as { channel_pricing_settings?: unknown } | null)?.channel_pricing_settings);
+    return sanitize(
+      (res.data as { channel_pricing_settings?: unknown } | null)?.channel_pricing_settings,
+    );
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,11 +99,7 @@ export const getProductChannelSettings = createServerFn({ method: "GET" })
 export const saveProductChannelSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: {
-      companyId: string;
-      productId: string;
-      settings: ProductChannelSettingsDTO;
-    }) => {
+    (input: { companyId: string; productId: string; settings: ProductChannelSettingsDTO }) => {
       if (!input?.companyId) throw new Error("companyId é obrigatório");
       if (!input?.productId) throw new Error("productId é obrigatório");
       return { ...input, settings: sanitize(input.settings) };

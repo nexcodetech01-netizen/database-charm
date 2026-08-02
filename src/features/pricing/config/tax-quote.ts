@@ -45,12 +45,10 @@ export function validateTaxQuote(value: unknown, path = "taxQuote"): DomainIssue
 
   if (q.version !== TAX_QUOTE_VERSION) {
     issues.push(
-      issue(
-        "UNSUPPORTED_CONFIG_VERSION",
-        `${path}.version`,
-        `versão de TaxQuote não suportada`,
-        { expected: TAX_QUOTE_VERSION, actual: q.version },
-      ),
+      issue("UNSUPPORTED_CONFIG_VERSION", `${path}.version`, `versão de TaxQuote não suportada`, {
+        expected: TAX_QUOTE_VERSION,
+        actual: q.version,
+      }),
     );
   }
 
@@ -58,13 +56,9 @@ export function validateTaxQuote(value: unknown, path = "taxQuote"): DomainIssue
   issues.push(...validateRequiredString(q.taxEngineVersion, `${path}.taxEngineVersion`));
 
   if (!isFiniteNumber(q.totalPctOnPrice)) {
-    issues.push(
-      issue("INVALID_NUMBER", `${path}.totalPctOnPrice`, `totalPctOnPrice inválido`),
-    );
+    issues.push(issue("INVALID_NUMBER", `${path}.totalPctOnPrice`, `totalPctOnPrice inválido`));
   } else {
-    issues.push(
-      ...validatePct(q.totalPctOnPrice, `${path}.totalPctOnPrice`, { min: 0, max: 100 }),
-    );
+    issues.push(...validatePct(q.totalPctOnPrice, `${path}.totalPctOnPrice`, { min: 0, max: 100 }));
   }
 
   issues.push(...validateCents(q.totalFixedCents, `${path}.totalFixedCents`));
@@ -84,12 +78,10 @@ export function validateTaxQuote(value: unknown, path = "taxQuote"): DomainIssue
     const to = Date.parse(q.validTo);
     if (from > to) {
       issues.push(
-        issue(
-          "OUT_OF_RANGE",
-          `${path}.validTo`,
-          `validTo anterior a validFrom`,
-          { validFrom: q.validFrom, validTo: q.validTo },
-        ),
+        issue("OUT_OF_RANGE", `${path}.validTo`, `validTo anterior a validFrom`, {
+          validFrom: q.validFrom,
+          validTo: q.validTo,
+        }),
       );
     }
   }

@@ -9,11 +9,7 @@
  */
 import type { PriceListAggregate } from "../config/price-list";
 import type { CategoryPolicy, CompanyPolicy, ProductPolicy } from "../resolver/types";
-import {
-  concurrency,
-  invalidArgument,
-  notFound,
-} from "./errors";
+import { concurrency, invalidArgument, notFound } from "./errors";
 import type {
   CategoryPolicyRepository,
   CompanyPolicyRepository,
@@ -49,11 +45,7 @@ const requireString = (v: unknown, field: string): string => {
   return v;
 };
 
-const checkVersion = (
-  what: string,
-  current: number,
-  expected: number | undefined,
-): void => {
+const checkVersion = (what: string, current: number, expected: number | undefined): void => {
   if (typeof expected === "number" && expected !== current) {
     throw concurrency(what, expected, current);
   }
@@ -205,12 +197,7 @@ class ScopedPolicyStore<TEntity> {
     return toStored(row);
   }
 
-  softDelete(
-    what: string,
-    companyId: string,
-    entityKey: string,
-    opts: WriteOptions,
-  ): void {
+  softDelete(what: string, companyId: string, entityKey: string, opts: WriteOptions): void {
     const row = this.rows.get(this.k(companyId, entityKey));
     if (!row) throw notFound(what, entityKey);
     checkVersion(what, row.meta.version, opts.expectedVersion);

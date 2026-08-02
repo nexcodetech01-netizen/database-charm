@@ -10,24 +10,12 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toEnvelope, fromEnvelope, CONFIG_DOMAIN_VERSION } from "../config/serialization";
-import {
-  createPriceList,
-  type PriceListAggregate,
-} from "../config/price-list";
+import { createPriceList, type PriceListAggregate } from "../config/price-list";
 import { createCompanyPolicy } from "../config/company-policy";
 import { createCategoryPolicy } from "../config/category-policy";
 import { createProductPolicy } from "../config/product-policy";
-import type {
-  CategoryPolicy,
-  CompanyPolicy,
-  ProductPolicy,
-} from "../resolver/types";
-import {
-  concurrency,
-  invalidArgument,
-  notFound,
-  storageFailure,
-} from "./errors";
+import type { CategoryPolicy, CompanyPolicy, ProductPolicy } from "../resolver/types";
+import { concurrency, invalidArgument, notFound, storageFailure } from "./errors";
 import type {
   CategoryPolicyRepository,
   CompanyPolicyRepository,
@@ -139,10 +127,7 @@ async function scopedSave<TEntity>(
   if (existErr && existErr.code !== "PGRST116") raise(`load ${cfg.what}`, existErr);
 
   if (existing) {
-    if (
-      typeof opts.expectedVersion === "number" &&
-      opts.expectedVersion !== existing.version
-    ) {
+    if (typeof opts.expectedVersion === "number" && opts.expectedVersion !== existing.version) {
       throw concurrency(cfg.what, opts.expectedVersion, existing.version);
     }
     const nextVersion = existing.version + 1;
@@ -176,11 +161,7 @@ async function scopedSave<TEntity>(
     created_by: opts.actor?.userId ?? null,
   };
   if (cfg.keyColumn !== "id") insert[cfg.keyColumn] = entityKey;
-  const { data, error } = await sb
-    .from(cfg.table)
-    .insert(insert)
-    .select("*")
-    .maybeSingle();
+  const { data, error } = await sb.from(cfg.table).insert(insert).select("*").maybeSingle();
   if (error) raise(`insert ${cfg.what}`, error);
   if (!data) throw storageFailure(`insert ${cfg.what} returned no row`);
   return {
@@ -323,13 +304,7 @@ export class SupabaseCategoryPolicyRepository implements CategoryPolicyRepositor
     return scopedList(this.sb, this.cfg, require1(companyId, "companyId"), opts);
   }
   async save(companyId: string, policy: CategoryPolicy, opts: WriteOptions = {}) {
-    return scopedSave(
-      this.sb,
-      this.cfg,
-      require1(companyId, "companyId"),
-      policy,
-      opts,
-    );
+    return scopedSave(this.sb, this.cfg, require1(companyId, "companyId"), policy, opts);
   }
   async softDelete(companyId: string, categoryId: string, opts: WriteOptions = {}) {
     return scopedSoftDelete(
@@ -449,10 +424,7 @@ export class SupabasePriceListRepository implements PriceListRepository {
     const envelope = toEnvelope("PriceList", aggregate, nowIso());
     const existing = await this.load(companyId, aggregate.priceListId);
     if (existing) {
-      if (
-        typeof opts.expectedVersion === "number" &&
-        opts.expectedVersion !== existing.version
-      ) {
+      if (typeof opts.expectedVersion === "number" && opts.expectedVersion !== existing.version) {
         throw concurrency("PriceList", opts.expectedVersion, existing.version);
       }
       const nextVersion = existing.version + 1;

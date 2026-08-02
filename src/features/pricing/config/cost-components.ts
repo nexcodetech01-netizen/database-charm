@@ -46,10 +46,7 @@ const OPTIONAL_CENT_FIELDS: readonly (keyof CostComposition)[] = [
   "otherExpensesCents",
 ];
 
-export function validateCostComposition(
-  value: unknown,
-  path = "costComposition",
-): DomainIssue[] {
+export function validateCostComposition(value: unknown, path = "costComposition"): DomainIssue[] {
   if (value === null || typeof value !== "object") {
     return [issue("INVALID_TYPE", path, `${path} deve ser objeto`)];
   }
@@ -78,11 +75,7 @@ export function validateCostComposition(
   if (c.staleThresholdDays !== undefined) {
     if (!isFiniteNumber(c.staleThresholdDays) || c.staleThresholdDays < 0) {
       issues.push(
-        issue(
-          "OUT_OF_RANGE",
-          `${path}.staleThresholdDays`,
-          `staleThresholdDays deve ser ≥ 0`,
-        ),
+        issue("OUT_OF_RANGE", `${path}.staleThresholdDays`, `staleThresholdDays deve ser ≥ 0`),
       );
     }
   }

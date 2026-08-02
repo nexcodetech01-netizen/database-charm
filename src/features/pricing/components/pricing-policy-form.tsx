@@ -38,7 +38,15 @@ const num = (s: string) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
@@ -86,19 +94,35 @@ export function PricingPolicyForm({ companyId }: { companyId: string }) {
         <CardHeader>
           <CardTitle className="text-base">Margens de referência</CardTitle>
           <CardDescription>
-            Definem os limites <strong>mínimo</strong>, <strong>ideal</strong> e <strong>premium</strong>{" "}
-            (% sobre o preço de venda) usados para classificar a saúde do preço.
+            Definem os limites <strong>mínimo</strong>, <strong>ideal</strong> e{" "}
+            <strong>premium</strong> (% sobre o preço de venda) usados para classificar a saúde do
+            preço.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <Field label="Margem mínima (%)" hint="Abaixo disso, o preço é bloqueado como inseguro.">
-            <Input inputMode="decimal" value={form.minMargin} onChange={(e) => set("minMargin", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.minMargin}
+              onChange={(e) => set("minMargin", e.target.value)}
+            />
           </Field>
           <Field label="Margem ideal (%)" hint="Alvo padrão do simulador e do 'preço recomendado'.">
-            <Input inputMode="decimal" value={form.idealMargin} onChange={(e) => set("idealMargin", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.idealMargin}
+              onChange={(e) => set("idealMargin", e.target.value)}
+            />
           </Field>
-          <Field label="Margem premium (%)" hint="Preço aspiracional para produtos de alta demanda.">
-            <Input inputMode="decimal" value={form.premiumMargin} onChange={(e) => set("premiumMargin", e.target.value)} />
+          <Field
+            label="Margem premium (%)"
+            hint="Preço aspiracional para produtos de alta demanda."
+          >
+            <Input
+              inputMode="decimal"
+              value={form.premiumMargin}
+              onChange={(e) => set("premiumMargin", e.target.value)}
+            />
           </Field>
         </CardContent>
       </Card>
@@ -106,17 +130,31 @@ export function PricingPolicyForm({ companyId }: { companyId: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Taxas e comissões</CardTitle>
-          <CardDescription>Descontados automaticamente ao calcular a margem líquida.</CardDescription>
+          <CardDescription>
+            Descontados automaticamente ao calcular a margem líquida.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <Field label="Taxa PIX (%)">
-            <Input inputMode="decimal" value={form.pixFeePct} onChange={(e) => set("pixFeePct", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.pixFeePct}
+              onChange={(e) => set("pixFeePct", e.target.value)}
+            />
           </Field>
           <Field label="Taxa cartão (%)">
-            <Input inputMode="decimal" value={form.cardFeePct} onChange={(e) => set("cardFeePct", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.cardFeePct}
+              onChange={(e) => set("cardFeePct", e.target.value)}
+            />
           </Field>
           <Field label="Comissão (%)" hint="Vendedor, marketplace, indicação.">
-            <Input inputMode="decimal" value={form.commissionPct} onChange={(e) => set("commissionPct", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.commissionPct}
+              onChange={(e) => set("commissionPct", e.target.value)}
+            />
           </Field>
           <Field label="Canal padrão do simulador">
             <Select value={form.defaultChannel} onValueChange={(v) => set("defaultChannel", v)}>
@@ -136,17 +174,31 @@ export function PricingPolicyForm({ companyId }: { companyId: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Custos operacionais padrão</CardTitle>
-          <CardDescription>Valores em R$ por unidade — usados como sugestão inicial.</CardDescription>
+          <CardDescription>
+            Valores em R$ por unidade — usados como sugestão inicial.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <Field label="Frete médio (R$)">
-            <Input inputMode="decimal" value={form.avgFreight} onChange={(e) => set("avgFreight", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.avgFreight}
+              onChange={(e) => set("avgFreight", e.target.value)}
+            />
           </Field>
           <Field label="Embalagem (R$)">
-            <Input inputMode="decimal" value={form.packaging} onChange={(e) => set("packaging", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.packaging}
+              onChange={(e) => set("packaging", e.target.value)}
+            />
           </Field>
           <Field label="Outras despesas (R$)">
-            <Input inputMode="decimal" value={form.otherCosts} onChange={(e) => set("otherCosts", e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={form.otherCosts}
+              onChange={(e) => set("otherCosts", e.target.value)}
+            />
           </Field>
         </CardContent>
       </Card>

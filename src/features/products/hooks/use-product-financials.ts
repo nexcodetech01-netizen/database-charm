@@ -17,14 +17,7 @@ import type { Product } from "@/features/products/types";
 
 export type ProductFinancialsInput = Pick<
   Product,
-  | "cost"
-  | "freight"
-  | "insurance"
-  | "other_costs"
-  | "price"
-  | "margin"
-  | "stock"
-  | "min_stock"
+  "cost" | "freight" | "insurance" | "other_costs" | "price" | "margin" | "stock" | "min_stock"
 > &
   Partial<Pick<Product, "packaging">>;
 
@@ -107,9 +100,7 @@ export function useProductFinancials(
     const taxRatePct = Math.max(0, num(taxRatePctOpt));
     const taxAmount = round2((price * taxRatePct) / 100);
 
-    const costTotalWithoutTax = round2(
-      cost + packaging + freight + insurance + otherCosts,
-    );
+    const costTotalWithoutTax = round2(cost + packaging + freight + insurance + otherCosts);
     const costTotal = round2(costTotalWithoutTax + taxAmount);
 
     const components: CostComponentLine[] = [
@@ -140,8 +131,7 @@ export function useProductFinancials(
       {
         key: "other_costs",
         label: "Outras taxas operacionais",
-        source:
-          "Campo “Outros custos” do cadastro do produto (taxas operacionais adicionais)",
+        source: "Campo “Outros custos” do cadastro do produto (taxas operacionais adicionais)",
         amount: otherCosts,
       },
       {
@@ -177,7 +167,6 @@ export function useProductFinancials(
     const markupPct = round2(evaluation.markupPct);
     const stock = num(product.stock);
     const minStock = num(product.min_stock);
-
 
     return {
       cost,
