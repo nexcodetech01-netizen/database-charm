@@ -90,6 +90,9 @@ interface Props {
   companyId: string;
   product?: Product;
   duplicateOf?: Product;
+  /** Preço sugerido aplicado externamente (modal de precificação) — apenas em memória. */
+  initialPrice?: number;
+
 }
 
 const schema = z.object({
