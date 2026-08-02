@@ -552,10 +552,13 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     return own > 0 ? { ...pricingInputs.margins, targetPct: own } : pricingInputs.margins;
   }, [form.margin, pricingInputs]);
 
-  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
-  const suggestOfficialPrice = useCallback((): number | null => {
+  /**
+   * Resultado COMPLETO do Motor Comercial V2 (mín / recomendado / premium).
+   * UX apenas: nenhuma fórmula é calculada aqui.
+   */
+  const officialSuggestion = useMemo(() => {
     if (officialCosts.acquisition <= 0) return null;
-    const official = computeSuggestedPrice({
+    return computeSuggestedPrice({
       companyId,
       productId: product?.id ?? "new-product",
       categoryId: form.category_id || undefined,
@@ -565,8 +568,6 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       feeTable: pricingInputs.feeTable,
       module: "products.form",
     });
-    const value = official.targetPrice;
-    return Number.isFinite(value) && value > 0 ? value : null;
   }, [
     companyId,
     product?.id,
@@ -576,6 +577,13 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     taxPct,
     pricingInputs,
   ]);
+
+  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
+  const suggestOfficialPrice = useCallback((): number | null => {
+    const value = officialSuggestion?.targetPrice;
+    return value != null && Number.isFinite(value) && value > 0 ? value : null;
+  }, [officialSuggestion]);
+
 
   // Impostos: alíquota efetiva da empresa (quando configurada).
   const taxAppliedRef = useRef(false);
