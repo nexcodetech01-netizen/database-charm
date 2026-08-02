@@ -13,6 +13,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
+import {
+  findDuplicateProduct,
+  type DuplicateCandidate,
+  type DuplicateProduct,
+} from "../../lib/product-dedupe";
 
 const LIST_SELECT = `
   id, sku, name, brand, price, cost, stock, min_stock, unit, status,
