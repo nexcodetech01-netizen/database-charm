@@ -35,6 +35,8 @@ function makeSupabase(overrides: {
     self.select = returnSelf;
     self.eq = returnSelf;
     self.or = returnSelf;
+    self.ilike = returnSelf;
+    self.neq = returnSelf;
     self.order = returnSelf;
     self.limit = returnSelf;
     self.range = () =>
