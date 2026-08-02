@@ -8,15 +8,44 @@
  */
 import { createCipheriv, createDecipheriv, createHmac, randomBytes, createHash } from "node:crypto";
 
+/** Falha de configuração: segredo do cofre ausente no ambiente. */
+export class MetaSecretMissingError extends Error {
+  constructor(public readonly secretName: string) {
+    super(
+      `${secretName} não está configurado. Configure o segredo para reativar a integração.`,
+    );
+    this.name = "MetaSecretMissingError";
+  }
+}
+
+/**
+ * Falha de decriptação: o dado foi cifrado com outra chave (ou está corrompido).
+ * Sinaliza "reconectar", nunca um erro 500 genérico.
+ */
+export class TokenDecryptError extends Error {
+  constructor(cause?: unknown) {
+    super(
+      "Não foi possível decifrar o token armazenado (chave de criptografia diferente). Reconecte a integração.",
+    );
+    this.name = "TokenDecryptError";
+    if (cause instanceof Error) this.cause = cause;
+  }
+}
+
+/** true quando os dois segredos do cofre estão presentes no ambiente. */
+export function metaSecretsConfigured(): boolean {
+  return Boolean(process.env.META_OAUTH_STATE_SECRET && process.env.META_TOKEN_ENC_SECRET);
+}
+
 function stateSecret(): string {
   const s = process.env.META_OAUTH_STATE_SECRET;
-  if (!s) throw new Error("META_OAUTH_STATE_SECRET is not set");
+  if (!s) throw new MetaSecretMissingError("META_OAUTH_STATE_SECRET");
   return s;
 }
 
 function encKey(): Buffer {
   const s = process.env.META_TOKEN_ENC_SECRET;
-  if (!s) throw new Error("META_TOKEN_ENC_SECRET is not set");
+  if (!s) throw new MetaSecretMissingError("META_TOKEN_ENC_SECRET");
   return createHash("sha256").update(s).digest();
 }
 
@@ -71,10 +100,25 @@ export function encryptToken(plaintext: string): string {
 }
 
 export function decryptToken(stored: string): string {
-  const [version, ivB, tagB, ctB] = stored.split(".");
-  if (version !== "v1") throw new Error("Unknown token version");
-  const decipher = createDecipheriv("aes-256-gcm", encKey(), b64urlDecode(ivB));
-  decipher.setAuthTag(b64urlDecode(tagB));
-  const pt = Buffer.concat([decipher.update(b64urlDecode(ctB)), decipher.final()]);
-  return pt.toString("utf8");
+  const key = encKey(); // MetaSecretMissingError quando o cofre não está configurado
+  try {
+    const [version, ivB, tagB, ctB] = stored.split(".");
+    if (version !== "v1") throw new Error("Unknown token version");
+    const decipher = createDecipheriv("aes-256-gcm", key, b64urlDecode(ivB));
+    decipher.setAuthTag(b64urlDecode(tagB));
+    const pt = Buffer.concat([decipher.update(b64urlDecode(ctB)), decipher.final()]);
+    return pt.toString("utf8");
+  } catch (err) {
+    throw new TokenDecryptError(err);
+  }
+}
+
+/** Decriptação tolerante: devolve `null` em vez de lançar. */
+export function tryDecryptToken(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  try {
+    return decryptToken(stored);
+  } catch {
+    return null;
+  }
 }
