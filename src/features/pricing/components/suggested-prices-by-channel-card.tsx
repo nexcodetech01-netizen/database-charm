@@ -101,21 +101,45 @@ interface ChannelPreset {
   defaultFixedCost: number;
 }
 
-// Taxas típicas praticadas pelos canais (apresentação — usuário pode
-// sobrescrever ao aplicar). Não altera política salva.
-const CHANNELS: readonly ChannelPreset[] = [
-  { id: "store", label: "Loja Física", icon: Store, feePct: 0, hint: "Sem taxa de marketplace", defaultFixedCost: 0 },
-  { id: "site", label: "Site próprio", icon: Globe, feePct: 3, hint: "Gateway ~3%", defaultFixedCost: 0 },
-  { id: "ml", label: "Mercado Livre", icon: ShoppingBag, feePct: 16, hint: "Comissão clássica ~16% + tarifa fixa", defaultFixedCost: 6 },
-];
+/**
+ * Canais de venda. A taxa de RECEBIMENTO (Loja Física / Site) vem sempre da
+ * tabela única da empresa (`payment_method_fees` → `official/fees.ts`).
+ * Apenas a COMISSÃO de marketplace é preset do canal, e é editável.
+ */
+const MARKETPLACE_COMMISSION_PCT = 16;
 
-const DEFAULT_FIXED_COSTS: Record<string, number> = CHANNELS.reduce(
-  (acc, c) => {
-    acc[c.id] = c.defaultFixedCost;
-    return acc;
-  },
-  {} as Record<string, number>,
-);
+function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
+  const fee = Math.max(0, Number(paymentFeePct) || 0);
+  return [
+    {
+      id: "store",
+      label: "Loja Física",
+      icon: Store,
+      feePct: fee,
+      hint: `Taxa de recebimento da empresa (${fee.toFixed(2)}%)`,
+      defaultFixedCost: 0,
+    },
+    {
+      id: "site",
+      label: "Site próprio",
+      icon: Globe,
+      feePct: fee,
+      hint: `Gateway Asaas (${fee.toFixed(2)}%)`,
+      defaultFixedCost: 0,
+    },
+    {
+      id: "ml",
+      label: "Mercado Livre",
+      icon: ShoppingBag,
+      feePct: MARKETPLACE_COMMISSION_PCT,
+      hint: "Comissão clássica ~16% + tarifa fixa",
+      defaultFixedCost: 6,
+    },
+  ];
+}
+
+const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, site: 0, ml: 6 };
+
 
 const LOW_MARGIN_ALERT_PCT = 10;
 
