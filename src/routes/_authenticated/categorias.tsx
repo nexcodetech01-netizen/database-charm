@@ -12,6 +12,7 @@ import {
 import { PageLayout } from "@/components/layout";
 import { toast } from "@/hooks/use-toast";
 import {
+  CategoryDuplicatesPanel,
   CategoryFormDialog,
   CategoryTable,
   useArchiveCategory,
