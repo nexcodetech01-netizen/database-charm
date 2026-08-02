@@ -106,8 +106,6 @@ const CHANNELS: readonly ChannelPreset[] = [
   { id: "store", label: "Loja Física", icon: Store, feePct: 0, hint: "Sem taxa de marketplace", defaultFixedCost: 0 },
   { id: "site", label: "Site próprio", icon: Globe, feePct: 3, hint: "Gateway ~3%", defaultFixedCost: 0 },
   { id: "ml", label: "Mercado Livre", icon: ShoppingBag, feePct: 16, hint: "Comissão clássica ~16% + tarifa fixa", defaultFixedCost: 6 },
-  { id: "shopee", label: "Shopee", icon: ShoppingBag, feePct: 20, hint: "Comissão ~20%", defaultFixedCost: 0 },
-  { id: "amazon", label: "Amazon", icon: Package, feePct: 15, hint: "Comissão ~15%", defaultFixedCost: 0 },
 ];
 
 const DEFAULT_FIXED_COSTS: Record<string, number> = CHANNELS.reduce(
