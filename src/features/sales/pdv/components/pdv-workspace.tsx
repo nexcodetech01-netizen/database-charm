@@ -8,6 +8,8 @@ type Props = {
   cart: ReactNode;
   /** Painel lateral fixo (cliente, totais, pagamento, recibo). */
   panel: ReactNode;
+  /** Rodapé discreto de atalhos (opcional, somente leitura). */
+  footer?: ReactNode;
 };
 
 /**
@@ -16,7 +18,7 @@ type Props = {
  * Puramente estrutural: recebe as áreas por composição, sem conhecer nenhum
  * hook, serviço ou regra. Facilita o rollback e a futura segunda tela.
  */
-export function PDVWorkspace({ operationBar, cart, panel }: Props) {
+export function PDVWorkspace({ operationBar, cart, panel, footer }: Props) {
   return (
     <div className={PDV_LAYOUT.shell}>
       {operationBar}
@@ -35,6 +37,7 @@ export function PDVWorkspace({ operationBar, cart, panel }: Props) {
           {panel}
         </aside>
       </div>
+      {footer}
     </div>
   );
 }
