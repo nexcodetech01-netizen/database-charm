@@ -693,9 +693,17 @@ function buildRows(
     let unreachable: boolean;
 
     if (strategy === "policy") {
-      const denom = 1 - (c.feePct + effectiveMarginPct) / 100;
-      raw = denom > 0 ? effectiveCost / denom : 0;
-      unreachable = !Number.isFinite(raw) || raw <= 0 || denom <= 0;
+      // MOTOR ÚNICO — nenhuma fórmula local (FASE 1/2).
+      const official = computeOfficialPricing({
+        companyId,
+        productId: `channel:${c.id}`,
+        costs: { acquisition: costTotal },
+        margins: { minPct: 0, targetPct: effectiveMarginPct },
+        fee: { pct: c.feePct, fixed: fixedCost, label: c.label },
+        module: "pricing.channels",
+      });
+      raw = official.recommendedPrice;
+      unreachable = !Number.isFinite(raw) || raw <= 0;
     } else {
       // Manter Lucro em R$ (âncora: Loja Física):
       // Preço = (Preço Loja Física + Tarifa Fixa) / (1 − Taxa%)
