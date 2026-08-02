@@ -1517,15 +1517,58 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
                   <div className="mt-1.5">
                     <NumInput value={form.price} onChange={(v) => set("price", v)} />
                   </div>
+
+                  {priceTiers.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        Preço sugerido pelo Motor Comercial V2
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {priceTiers.map((tier) => {
+                          const active = tier.key === priceTier;
+                          return (
+                            <button
+                              key={tier.key}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => setPriceTier(tier.key)}
+                              className={`rounded-lg border p-2 text-center transition-colors ${
+                                active
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border/60 hover:border-primary/40"
+                              }`}
+                            >
+                              <span
+                                className={`block text-[10px] uppercase ${
+                                  active ? "text-primary" : "text-muted-foreground"
+                                }`}
+                              >
+                                {tier.label}
+                              </span>
+                              <span className="mt-0.5 block text-sm font-semibold tabular-nums">
+                                {formatCurrency(tier.value)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <Button
                     type="button"
                     className="mt-2 w-full"
-                    onClick={calcBasePrice}
+                    onClick={applySuggestedPrice}
                     disabled={totalCost <= 0}
                   >
-                    <Wand2 className="mr-1.5 h-4 w-4" /> Calcular preço sugerido
+                    <Wand2 className="mr-1.5 h-4 w-4" /> Aplicar preço sugerido
                   </Button>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Preenche apenas o campo acima. Nada é salvo até você clicar em{" "}
+                    <strong>Salvar produto</strong>.
+                  </p>
                 </div>
+
 
                 <div className="grid grid-cols-2 gap-3 border-t border-primary/20 pt-4">
                   <Metric
