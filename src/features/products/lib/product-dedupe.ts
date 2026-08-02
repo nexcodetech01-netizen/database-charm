@@ -27,9 +27,13 @@ export interface DuplicateProduct {
   matchedBy: "sku" | "barcode" | "name";
 }
 
-/** Normaliza texto para comparação: trim, colapso de espaços e minúsculas. */
+/** Normaliza texto para comparação: trim, hífens/travessões como espaço, colapso e minúsculas. */
 export function normalizeForMatch(value?: string | null): string {
-  return (value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  return (value ?? "")
+    .replace(/[-–—]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 /** Escapa curingas do LIKE para permitir comparação exata via `ilike`. */
@@ -38,13 +42,26 @@ function escapeLike(value: string): string {
 }
 
 /**
+ * Padrão `ilike` para nomes: separadores (espaços, hífens e travessões)
+ * viram curinga, de modo que "Arthur - Preto" case com "Arthur — Preto".
+ */
+function namePattern(normalized: string): string {
+  return escapeLike(normalized).split(" ").filter(Boolean).join("%");
+}
+
+/**
  * Busca um produto existente equivalente. Precedência: SKU → Código de barras → Nome.
  * Retorna `null` quando não há duplicidade.
+ *
+ * `client` permite reaproveitar a deduplicação com um client autenticado
+ * por contexto (Skills da Bella). Por padrão usa o client da aplicação.
  */
 export async function findDuplicateProduct(
   companyId: string,
   candidate: DuplicateCandidate,
   ignoreProductId?: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any = supabase,
 ): Promise<DuplicateProduct | null> {
   if (!companyId) return null;
 
@@ -53,17 +70,17 @@ export async function findDuplicateProduct(
   const barcode = (candidate.barcode ?? "").trim();
   const name = normalizeForMatch(candidate.name);
 
-  if (sku) checks.push({ column: "sku", value: sku });
-  if (barcode) checks.push({ column: "barcode", value: barcode });
-  if (name) checks.push({ column: "name", value: name });
+  if (sku) checks.push({ column: "sku", value: escapeLike(sku) });
+  if (barcode) checks.push({ column: "barcode", value: escapeLike(barcode) });
+  if (name) checks.push({ column: "name", value: namePattern(name) });
   if (checks.length === 0) return null;
 
   for (const check of checks) {
-    let q = supabase
+    let q = client
       .from("products")
       .select("id, name, sku, barcode, price, cost")
       .eq("company_id", companyId)
-      .ilike(check.column, escapeLike(check.value))
+      .ilike(check.column, check.value)
       .order("created_at", { ascending: true })
       .limit(1);
 

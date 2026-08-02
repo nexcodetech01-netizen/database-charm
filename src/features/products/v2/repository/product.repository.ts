@@ -13,6 +13,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
+import {
+  findDuplicateProduct,
+  type DuplicateCandidate,
+  type DuplicateProduct,
+} from "../../lib/product-dedupe";
 
 const LIST_SELECT = `
   id, sku, name, brand, price, cost, stock, min_stock, unit, status,
@@ -126,6 +131,29 @@ export class ProductRepository {
     const { data, error } = await this.supabase
       .from("products")
       .insert(input)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Product;
+  }
+
+  /** Deduplicação (Nome/SKU/Barcode) usando o client autenticado do contexto. */
+  async findDuplicate(
+    candidate: DuplicateCandidate,
+    ignoreProductId?: string,
+  ): Promise<DuplicateProduct | null> {
+    return findDuplicateProduct(this.companyId, candidate, ignoreProductId, this.supabase);
+  }
+
+  /** Atualização parcial. `stock` nunca é alterado aqui (só via inventory_movements). */
+  async update(id: string, patch: ProductUpdate): Promise<Product> {
+    const safe = { ...patch } as ProductUpdate & { stock?: unknown };
+    delete safe.stock;
+    const { data, error } = await this.supabase
+      .from("products")
+      .update(safe)
+      .eq("company_id", this.companyId)
+      .eq("id", id)
       .select()
       .single();
     if (error) throw error;

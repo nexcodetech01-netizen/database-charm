@@ -11,7 +11,7 @@ import type { Product } from "../../types";
 export const productCreateSchema = z
   .object({
     name: z.string().trim().min(1).max(200),
-    price: z.number().nonnegative(),
+    price: z.number().nonnegative().optional(),
     cost: z.number().nonnegative().optional(),
     sku: z.string().trim().max(64).optional(),
     unit: z.string().trim().max(8).optional(),
@@ -31,12 +31,15 @@ export const productCreateSkill = defineBaseSkill({
   schema: productCreateSchema,
   requiredPermissions: ["products.create"],
   destructive: false,
-  confirmationSummary: (input) => `Cadastrar produto "${input.name}" por R$ ${input.price.toFixed(2)}?`,
+  confirmationSummary: (input) =>
+    typeof input.price === "number"
+      ? `Cadastrar produto "${input.name}" por R$ ${input.price.toFixed(2)}?`
+      : `Cadastrar produto "${input.name}" (preço será calculado a partir do custo)?`,
   async handler(input, ctx) {
     const svc = new ProductService(ctx);
     const product = await svc.create({
       name: input.name,
-      price: input.price,
+      price: input.price ?? null,
       cost: input.cost ?? 0,
       sku: input.sku ?? null,
       unit: input.unit ?? "un",
