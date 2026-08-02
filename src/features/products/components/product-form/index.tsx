@@ -218,7 +218,9 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   const navigate = useNavigate();
   const showNextAction = useNextAction();
   
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [tab, setTab] = useState("geral");
+  /** Alíquota simulada nesta tela — não é persistida no produto. */
+  const [taxPct, setTaxPct] = useState("0");
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
   const [form, setForm] = useEntityForm(product, toState);
