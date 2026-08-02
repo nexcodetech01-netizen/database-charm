@@ -276,10 +276,50 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
               <h3 className="text-sm font-semibold">Margem e preço de venda</h3>
             </div>
 
+            <div className="mb-4 space-y-1.5">
+              <Label className="text-xs">Modo de cálculo</Label>
+              <div
+                role="radiogroup"
+                aria-label="Modo de cálculo do percentual"
+                className="grid gap-2 sm:grid-cols-2"
+              >
+                {MODE_OPTIONS.map((opt) => {
+                  const active = mode === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      disabled={!canEdit}
+                      onClick={() => handleModeChange(opt.value)}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-left transition-colors disabled:opacity-60",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-background hover:bg-muted/50",
+                      )}
+                    >
+                      <span className="block text-xs font-medium">{opt.label}</span>
+                      <span className="block text-[11px] text-muted-foreground tabular-nums">
+                        {opt.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Trocar o modo não altera o número digitado — apenas a fórmula
+                usada dali em diante.
+              </p>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="desired-margin" className="text-xs">
-                  Margem desejada (%)
+                  {mode === "markup"
+                    ? "Markup desejado (%)"
+                    : "Margem desejada (%)"}
                 </Label>
                 <Input
                   id="desired-margin"
@@ -292,6 +332,7 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
                   Livre por produto — sugere o preço ideal.
                 </p>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="sale-price" className="text-xs">
                   Preço de venda (R$)
