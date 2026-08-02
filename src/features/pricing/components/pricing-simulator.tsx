@@ -14,7 +14,7 @@ import { toRoundingPolicySpec } from "../types";
 const num = (s: string): number => {
   if (typeof s !== "string" || s.length === 0) return 0;
   const cleaned = s
-    .replace(/[^\d,.\-]/g, "")
+    .replace(/[^\d,.-]/g, "")
     .replace(/\.(?=\d{3}(\D|$))/g, "")
     .replace(",", ".");
   if (cleaned === "" || cleaned === "-" || cleaned === "." || cleaned === "-.") return 0;

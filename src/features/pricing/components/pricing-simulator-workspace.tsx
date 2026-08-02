@@ -64,7 +64,7 @@ const numStr = (s: string): number => {
   if (typeof s !== "string" || s.length === 0) return 0;
   // Aceita "R$ 1.234,56", "1234.56", "10,", "10,5", "  ", etc.
   const cleaned = s
-    .replace(/[^\d,.\-]/g, "") // remove símbolos, letras, espaços
+    .replace(/[^\d,.-]/g, "") // remove símbolos, letras, espaços
     .replace(/\.(?=\d{3}(\D|$))/g, "") // remove separador de milhar pt-BR
     .replace(",", ".");
   if (cleaned === "" || cleaned === "-" || cleaned === "." || cleaned === "-.") return 0;
