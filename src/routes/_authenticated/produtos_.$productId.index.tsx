@@ -755,6 +755,10 @@ function ProductDetailPage() {
               </li>
             </ol>
       </Section>
+        </TabsContent>
+      </Tabs>
+
+
 
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
