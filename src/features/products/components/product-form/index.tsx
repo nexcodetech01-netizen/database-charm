@@ -1865,3 +1865,30 @@ function InlineCreate({
     </div>
   );
 }
+
+function StepRow({
+  step,
+  title,
+  hint,
+  children,
+}: {
+  step: number;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+        {step}
+      </span>
+      <div className="min-w-0 space-y-2">
+        <div>
+          <p className="text-sm font-medium">{title}</p>
+          {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
