@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { computeOfficialPricing } from "@/features/pricing/official";
+
+/** Comissão clássica do Mercado Livre (canal, não taxa de recebimento). */
+const ML_COMMISSION_PCT = 16;
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Copy, Loader2, Search, ShoppingBag, ExternalLink, Smartphone, Sparkles } from "lucide-react";
