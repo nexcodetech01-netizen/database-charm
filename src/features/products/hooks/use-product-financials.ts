@@ -12,6 +12,7 @@
  * espalhados pelos componentes visuais.
  */
 import { useMemo } from "react";
+import { evaluateOfficialPrice } from "@/features/pricing/official";
 import type { Product } from "@/features/products/types";
 
 export type ProductFinancialsInput = Pick<
