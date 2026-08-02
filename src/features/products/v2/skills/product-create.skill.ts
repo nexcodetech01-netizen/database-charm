@@ -31,12 +31,15 @@ export const productCreateSkill = defineBaseSkill({
   schema: productCreateSchema,
   requiredPermissions: ["products.create"],
   destructive: false,
-  confirmationSummary: (input) => `Cadastrar produto "${input.name}" por R$ ${input.price.toFixed(2)}?`,
+  confirmationSummary: (input) =>
+    typeof input.price === "number"
+      ? `Cadastrar produto "${input.name}" por R$ ${input.price.toFixed(2)}?`
+      : `Cadastrar produto "${input.name}" (preço será calculado a partir do custo)?`,
   async handler(input, ctx) {
     const svc = new ProductService(ctx);
     const product = await svc.create({
       name: input.name,
-      price: input.price,
+      price: input.price ?? null,
       cost: input.cost ?? 0,
       sku: input.sku ?? null,
       unit: input.unit ?? "un",
