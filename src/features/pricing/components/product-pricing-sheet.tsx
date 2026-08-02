@@ -14,8 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import { computePricing, evaluatePrice } from "../calculator";
+import { computeOfficialPricing, evaluateOfficialPrice } from "../official";
+import { worstCaseFee, effectiveFeePct } from "../official/fees";
+import { resolvePricingStatus } from "../official/status";
+import { toRoundingPolicySpec } from "../types";
 import { usePricingPolicy } from "../hooks/use-pricing-policy";
+import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
 import { PricingStatusBadge } from "./pricing-status-badge";
 
 const num = (s: string | number | null | undefined) => {
