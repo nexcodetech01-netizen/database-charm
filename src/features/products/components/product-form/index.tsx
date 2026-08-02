@@ -920,15 +920,41 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
-  const calcBasePrice = () => {
-    const suggested = suggestOfficialPrice();
+  /** Faixas oferecidas pelo motor (somente leitura). */
+  const priceTiers = useMemo(
+    () =>
+      officialSuggestion
+        ? ([
+            { key: "min" as const, label: "Mínimo", value: officialSuggestion.minPrice },
+            {
+              key: "recommended" as const,
+              label: "Recomendado",
+              value: officialSuggestion.recommendedPrice,
+            },
+            { key: "premium" as const, label: "Premium", value: officialSuggestion.premiumPrice },
+          ].filter((t) => Number.isFinite(t.value) && t.value > 0))
+        : [],
+    [officialSuggestion],
+  );
+
+  const selectedTierPrice = priceTiers.find((t) => t.key === priceTier)?.value ?? null;
+
+  /**
+   * UX — apenas preenche o campo "Preço de venda" em memória.
+   * NÃO grava nada: o produto só é salvo em "Salvar produto".
+   */
+  const applySuggestedPrice = () => {
+    const suggested = selectedTierPrice ?? suggestOfficialPrice();
     if (suggested == null) {
       toast.error("Não foi possível calcular. Verifique custos e margem.");
       return;
     }
     setForm((s) => ({ ...s, price: suggested.toFixed(2) }));
-    toast.success("Preço sugerido gerado pelo Motor Comercial V2");
+    toast.success(
+      `Preço aplicado no formulário: ${formatCurrency(suggested)} — revise e clique em Salvar produto.`,
+    );
   };
+
 
   return (
     <div className="space-y-6">
