@@ -7,9 +7,9 @@
  * margem real, markup, valor em estoque, etc.).
  *
  * Camada 100% de apresentação — não faz I/O, não altera dados, não
- * substitui o motor puro (`@/features/pricing/calculator`) usado por
- * server functions. Existe apenas para eliminar cálculos duplicados
- * espalhados pelos componentes visuais.
+ * calcula nada localmente: delega lucro/margem/markup ao MOTOR OFICIAL
+ * (`@/features/pricing/official`). Existe apenas para normalizar a
+ * apresentação dos componentes visuais.
  */
 import { useMemo } from "react";
 import { evaluateOfficialPrice } from "@/features/pricing/official";
