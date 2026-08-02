@@ -165,7 +165,9 @@ export function BellaMarginReferenceCard({ companyId, categoryName, onApply }: P
             ))}
           </div>
           <div className="space-y-1">
-            <Label className="text-[10px] uppercase text-muted-foreground">Fonte / observação</Label>
+            <Label className="text-[10px] uppercase text-muted-foreground">
+              Fonte / observação
+            </Label>
             <Input
               value={form.note}
               placeholder="Ex.: pesquisa de concorrentes 08/2026"

@@ -565,8 +565,8 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
                 {autoPolicyQuery.data?.[selected.category.id]?.confirmed === false ? (
                   <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400">
                     As margens desta categoria ainda são <strong>sugestão inicial</strong>. Revise
-                    os valores e salve para confirmá-los como política da empresa. Salvar não
-                    altera nenhum produto nem recalcula preços.
+                    os valores e salve para confirmá-los como política da empresa. Salvar não altera
+                    nenhum produto nem recalcula preços.
                   </p>
                 ) : null}
 
