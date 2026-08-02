@@ -15,6 +15,14 @@ export {
 } from "./official-pricing";
 
 export {
+  computeSuggestedPrice,
+  solvePriceForTargetProfit,
+  type SuggestedPriceInput,
+} from "./suggested-price";
+
+export { CHANNEL_FEE_DEFAULTS, resolveChannelFee, type ChannelFeeDefault } from "./channels";
+
+export {
   buildFeeTable,
   resolveFee,
   worstCaseFee,

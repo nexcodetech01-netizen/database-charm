@@ -14,6 +14,14 @@ export {
 } from "./official/status";
 export { usePricingPolicy } from "./hooks/use-pricing-policy";
 export { useCompanyFeeTable } from "./hooks/use-company-fee-table";
+export { usePricingInputs, EMPTY_PRICING_INPUTS } from "./hooks/use-pricing-inputs";
+export {
+  fetchPricingInputs,
+  resolveMargins,
+  FALLBACK_MARGINS,
+  type PricingInputs,
+  type MarginSource,
+} from "./data/pricing-inputs";
 export { PricingPolicyForm } from "./components/pricing-policy-form";
 export { PricingSimulator } from "./components/pricing-simulator";
 export { PricingStatusBadge } from "./components/pricing-status-badge";
