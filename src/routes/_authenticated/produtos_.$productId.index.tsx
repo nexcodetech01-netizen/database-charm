@@ -625,8 +625,9 @@ function ProductDetailPage() {
               />
             </div>
       </Section>
+        </TabsContent>
 
-
+        <TabsContent value="precificacao" className="space-y-6">
       {/* Política de margem aplicada — categoria vs personalizada */}
       <AppliedMarginPolicyCard
         categoryName={product.category?.name ?? null}
@@ -648,34 +649,26 @@ function ProductDetailPage() {
         }
       />
 
-      {/* Lista de Interesse — clientes aguardando este produto */}
-      <ProductInterestPanel
-        companyId={company.id}
-        productId={product.id}
-        stock={Number(stock) || 0}
-      />
-
       {/* Inteligência Comercial — política aplicada e sugestão de preço */}
       <ProductPricingIntelligenceCard
         companyId={company.id}
         productId={product.id}
       />
 
-      {/* Sugestão automática por canal (Loja, Site, ML, Shopee, Amazon) */}
+      {/* Sugestão automática por canal (Loja, Site, Mercado Livre) */}
       <SuggestedPricesByChannelCard
         companyId={company.id}
         productId={product.id}
       />
 
-
       {/* Custos operacionais e precificação */}
       <ProductCostBreakdown productId={product.id} product={product} />
+        </TabsContent>
 
-
-
-
+        <TabsContent value="historico" className="space-y-6">
       {/* Movimentações */}
       <Section
+
 
             title="Movimentações"
             description="Últimos eventos de estoque, compras e vendas deste produto."
