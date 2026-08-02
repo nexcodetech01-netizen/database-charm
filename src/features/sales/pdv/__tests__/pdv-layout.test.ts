@@ -26,7 +26,7 @@ const items = [
   },
 ] as unknown as SaleItemDraft[];
 
-describe("PDV — layout profissional (Sprint 2.9)", () => {
+describe("PDV — layout profissional (Sprint 2.9 / PDV.3.1)", () => {
   it("mantém o carrinho como maior área e o painel fixo à direita", () => {
     expect(PDV_LAYOUT.grid).toContain("minmax(0,1fr)_380px");
     expect(PDV_LAYOUT.sidePanel).toContain("sticky");
@@ -41,9 +41,15 @@ describe("PDV — layout profissional (Sprint 2.9)", () => {
   });
 
   it("usa grade responsiva sem quebra de 1366x768 até Full HD", () => {
+    expect(PDV_LAYOUT.grid).toContain("lg:grid-cols-");
     expect(PDV_LAYOUT.grid).toContain("xl:grid-cols-");
     expect(PDV_LAYOUT.grid).toContain("2xl:grid-cols-");
     expect(PDV_LAYOUT.cartScroll).toContain("calc(100vh-");
+  });
+
+  it("expõe o rodapé compacto de atalhos (somente leitura)", () => {
+    expect(PDV_LAYOUT.shortcutBar).toContain("text-[11px]");
+    expect(PDV_LAYOUT.shortcutBar).toContain("text-muted-foreground");
   });
 
   it("resolve o estágio da sessão sem alterar regra de negócio", () => {
@@ -64,9 +70,17 @@ describe("PDV — layout profissional (Sprint 2.9)", () => {
       pdvCashStatus({ canOperate: true, openedAtLabel: "hoje 08:00" }),
     ).toEqual({ label: "Caixa aberto · hoje 08:00", tone: "open" });
     expect(pdvCashStatus({ canOperate: true }).label).toBe("Caixa aberto");
-    expect(PDV_STATUS_TONE_CLASS.open).toContain("emerald");
-    expect(PDV_STATUS_TONE_CLASS.closed).toContain("destructive");
   });
+
+  it("usa apenas tokens do design system nos indicadores de status", () => {
+    for (const cls of Object.values(PDV_STATUS_TONE_CLASS)) {
+      expect(cls).toContain("status-");
+      expect(cls).not.toMatch(/emerald|amber|rose|green|red|yellow/);
+    }
+    expect(PDV_STATUS_TONE_CLASS.open).toContain("status-success");
+    expect(PDV_STATUS_TONE_CLASS.closed).toContain("status-danger");
+  });
+
 
   it("preserva o foco por teclado: busca e leitor seguem aceitando atalhos", () => {
     expect(
