@@ -33,7 +33,9 @@ export const listMarketReferences = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<MarketReference[]> => {
     const { data: rows, error } = await context.supabase
       .from("pricing_market_references")
-      .select("company_id, category_key, label, conservative_pct, common_pct, premium_pct, source_note")
+      .select(
+        "company_id, category_key, label, conservative_pct, common_pct, premium_pct, source_note",
+      )
       .or(`company_id.is.null,company_id.eq.${data.companyId}`);
     if (error) return [];
     return ((rows ?? []) as Row[]).map(toRef);

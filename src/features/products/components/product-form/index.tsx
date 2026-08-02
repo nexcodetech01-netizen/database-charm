@@ -2,7 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowUpRight, Boxes, ChevronDown, Loader2, Plus, Settings2, Sparkles, Wand2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  Boxes,
+  ChevronDown,
+  Loader2,
+  Plus,
+  Settings2,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +59,12 @@ import { MovementFormDialog } from "@/features/inventory/components/movement-for
 import type { ManualMovementType } from "@/features/inventory/types";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
-import { computeSuggestedPrice, evaluateOfficialPrice, worstCaseFee, effectiveFeePct } from "@/features/pricing/official";
+import {
+  computeSuggestedPrice,
+  evaluateOfficialPrice,
+  worstCaseFee,
+  effectiveFeePct,
+} from "@/features/pricing/official";
 import { useDraft } from "@/hooks/use-draft";
 import { DRAFT_KEYS } from "@/lib/draft-storage";
 import { DraftAutosave } from "@/components/feedback/draft-autosave";
@@ -77,7 +91,6 @@ interface Props {
   product?: Product;
   duplicateOf?: Product;
 }
-
 
 const schema = z.object({
   name: z.string().trim().min(1, "Nome obrigatório").max(200),
@@ -219,7 +232,7 @@ function num(v: string | number | null | undefined): number {
 export function ProductForm({ companyId, product, duplicateOf }: Props) {
   const navigate = useNavigate();
   const showNextAction = useNextAction();
-  
+
   const [tab, setTab] = useState("geral");
   /** Alíquota simulada nesta tela — não é persistida no produto. */
   const [taxPct, setTaxPct] = useState("0");
@@ -238,14 +251,14 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     setForm({
       ...base,
       name: `${base.name} (Cópia)`.slice(0, 200),
-      sku: "",         // regenerado pelo auto-SKU
-      barcode: "",     // código de barras é físico da peça
-      cost: "0",       // custo unitário revisado a cada compra
-      freight: "0",    // reaplicado via operationalDefaults
+      sku: "", // regenerado pelo auto-SKU
+      barcode: "", // código de barras é físico da peça
+      cost: "0", // custo unitário revisado a cada compra
+      freight: "0", // reaplicado via operationalDefaults
       packaging: "0",
       insurance: "0",
       other_costs: "0",
-      stock: "0",      // estoque inicia zerado
+      stock: "0", // estoque inicia zerado
       min_stock: base.min_stock, // mantém política de reposição
     });
     // Permite reaplicar os custos operacionais padrão da empresa no clone.
@@ -253,11 +266,10 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duplicateOf?.id, product]);
 
-
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [suggestingTags, setSuggestingTags] = useState(false);
-  
+
   const suggestTagsFn = useServerFn(suggestProductTags);
   const [newCategory, setNewCategory] = useState("");
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
@@ -270,9 +282,7 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   const { data: suppliers = [] } = useSuppliers(companyId);
   const { data: existingImages = [] } = useProductImages(product?.id ?? "");
   const currentMainImage = existingImages[0] ?? null;
-  const { data: signed = [] } = useSignedImageUrls(
-    currentMainImage ? [currentMainImage.path] : [],
-  );
+  const { data: signed = [] } = useSignedImageUrls(currentMainImage ? [currentMainImage.path] : []);
   const currentMainImageUrl = signed[0]?.signedUrl ?? null;
   const createCategory = useCreateCategory(companyId);
   const createProduct = useCreateProduct();
@@ -308,7 +318,6 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operationalDefaults, isEditForDefaults]);
-
 
   // OFFLINE-001 — Rascunho automático (somente em novo produto).
   const isEdit = !!product;
@@ -509,8 +518,6 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     };
   }, [debouncedSku, companyId, product?.id]);
 
-
-
   // Precificação: base de custos (Custo + Frete + Embalagem + Seguro + Outros)
   const totalCost = useMemo(
     () =>
@@ -560,7 +567,15 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     });
     const value = official.targetPrice;
     return Number.isFinite(value) && value > 0 ? value : null;
-  }, [companyId, product?.id, form.category_id, officialCosts, effectiveMargins, taxPct, pricingInputs]);
+  }, [
+    companyId,
+    product?.id,
+    form.category_id,
+    officialCosts,
+    effectiveMargins,
+    taxPct,
+    pricingInputs,
+  ]);
 
   // Impostos: alíquota efetiva da empresa (quando configurada).
   const taxAppliedRef = useRef(false);
@@ -649,7 +664,8 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       );
       setSuggestedTags(fresh);
       if (!opts.silent) {
-        if (fresh.length) toast.success(`Bella sugeriu ${fresh.length} tag${fresh.length > 1 ? "s" : ""}.`);
+        if (fresh.length)
+          toast.success(`Bella sugeriu ${fresh.length} tag${fresh.length > 1 ? "s" : ""}.`);
         else toast.message("Nenhuma nova sugestão no momento.");
       }
     } catch (err) {
@@ -660,7 +676,6 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       setSuggestingTags(false);
     }
   };
-
 
   const isDuplicating = !!duplicateOf && !product;
 
@@ -726,9 +741,10 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       let attempts = 0;
       while (attempts < 25 && (await isSkuTaken(companyId, effectiveSku, product?.id))) {
         const regenerated = await generateNextSku(companyId, form.name, categoryName);
-        effectiveSku = regenerated && regenerated.toUpperCase() !== effectiveSku.toUpperCase()
-          ? regenerated
-          : bumpSuffix(effectiveSku);
+        effectiveSku =
+          regenerated && regenerated.toUpperCase() !== effectiveSku.toUpperCase()
+            ? regenerated
+            : bumpSuffix(effectiveSku);
         attempts++;
       }
       if (attempts > 0 && effectiveSku !== originalSku) {
@@ -744,7 +760,11 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos");
       return;
     }
-    if (companyId && !duplicateProduct && (await isSkuTaken(companyId, effectiveSku, product?.id))) {
+    if (
+      companyId &&
+      !duplicateProduct &&
+      (await isSkuTaken(companyId, effectiveSku, product?.id))
+    ) {
       toast.error("Este SKU já está em uso por outro produto");
       return;
     }
@@ -800,13 +820,17 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       ...(product ? {} : { stock: num(form.stock) }),
       min_stock: num(form.min_stock),
       tags: normalizeTags(form.tags),
-
     };
 
     try {
       const savedId = product
         ? (await updateProduct.mutateAsync({ id: product.id, input: basePayload }), product.id)
-        : (await createProduct.mutateAsync({ ...(basePayload as ProductInsert), company_id: companyId })).id;
+        : (
+            await createProduct.mutateAsync({
+              ...(basePayload as ProductInsert),
+              company_id: companyId,
+            })
+          ).id;
 
       // Persistência da imagem principal (após salvar o produto).
       if (mainImageFile) {
@@ -817,7 +841,10 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
           const path = await productImagesService.upload(companyId, savedId, mainImageFile);
           await productImagesService.createRecord(companyId, savedId, path, 0);
           // Sincroniza denormalização usada por listagens/venda/compra.
-          await updateProduct.mutateAsync({ id: savedId, input: { cover_image_path: path } as ProductUpdate });
+          await updateProduct.mutateAsync({
+            id: savedId,
+            input: { cover_image_path: path } as ProductUpdate,
+          });
           await qc.invalidateQueries({ queryKey: productsKeys.images(savedId) });
           setMainImageFile(null);
         } catch (err) {
@@ -857,11 +884,9 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
         // Fluxo de criação: novo modal de próximos passos.
         setCreatedProduct({ id: savedId, name: basePayload.name ?? form.name });
       }
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao salvar");
     }
-
   };
 
   const taxPctNum = num(taxPct);
@@ -909,407 +934,445 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
 
         {/* ══════════════ ABA 1 — DADOS GERAIS ══════════════ */}
         <TabsContent value="geral" className="space-y-6">
-      {/* ─── Bloco IMAGEM PRINCIPAL ─── */}
-      <Section
-        title="Imagem principal"
-        description="Uma boa foto vende. Envie PNG, JPG ou WEBP (até 2 MB)."
-      >
-        <ProductMainImagePicker
-          currentUrl={currentMainImageUrl}
-          file={mainImageFile}
-          onFileChange={setMainImageFile}
-          onRemoveCurrent={
-            currentMainImage
-              ? async () => {
-                  const removedImage = currentMainImage;
-                  const removedUrl = currentMainImageUrl;
-                  let cachedBlob: Blob | null = null;
-                  let cachedName = removedImage.path.split("/").pop() || "image.png";
-                  try {
-                    if (removedUrl) {
-                      const r = await fetch(removedUrl);
-                      if (r.ok) cachedBlob = await r.blob();
+          {/* ─── Bloco IMAGEM PRINCIPAL ─── */}
+          <Section
+            title="Imagem principal"
+            description="Uma boa foto vende. Envie PNG, JPG ou WEBP (até 2 MB)."
+          >
+            <ProductMainImagePicker
+              currentUrl={currentMainImageUrl}
+              file={mainImageFile}
+              onFileChange={setMainImageFile}
+              onRemoveCurrent={
+                currentMainImage
+                  ? async () => {
+                      const removedImage = currentMainImage;
+                      const removedUrl = currentMainImageUrl;
+                      let cachedBlob: Blob | null = null;
+                      const cachedName = removedImage.path.split("/").pop() || "image.png";
+                      try {
+                        if (removedUrl) {
+                          const r = await fetch(removedUrl);
+                          if (r.ok) cachedBlob = await r.blob();
+                        }
+                      } catch {
+                        /* undo best-effort */
+                      }
+                      try {
+                        await productImagesService.remove(removedImage.id, removedImage.path);
+                        await updateProduct.mutateAsync({
+                          id: product!.id,
+                          input: { cover_image_path: null } as ProductUpdate,
+                        });
+                        await qc.invalidateQueries({ queryKey: productsKeys.images(product!.id) });
+                        executeWithUndo({
+                          message: "✓ Imagem removida.",
+                          apply: () => {
+                            /* já removida */
+                          },
+                          undo: async () => {
+                            if (!cachedBlob) {
+                              toast.error("Não foi possível desfazer — imagem indisponível.");
+                              return;
+                            }
+                            try {
+                              const file = new File([cachedBlob], cachedName, {
+                                type: cachedBlob.type || "image/png",
+                              });
+                              const uploadedPath = await productImagesService.upload(
+                                companyId,
+                                product!.id,
+                                file,
+                              );
+                              await productImagesService.createRecord(
+                                companyId,
+                                product!.id,
+                                uploadedPath,
+                                0,
+                              );
+                              await updateProduct.mutateAsync({
+                                id: product!.id,
+                                input: { cover_image_path: uploadedPath } as ProductUpdate,
+                              });
+                              await qc.invalidateQueries({
+                                queryKey: productsKeys.images(product!.id),
+                              });
+                              toast.success("Imagem restaurada");
+                            } catch (err) {
+                              toast.error(
+                                err instanceof Error ? err.message : "Falha ao restaurar imagem",
+                              );
+                            }
+                          },
+                        });
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Falha ao remover imagem");
+                      }
                     }
-                  } catch { /* undo best-effort */ }
-                  try {
-                    await productImagesService.remove(removedImage.id, removedImage.path);
-                    await updateProduct.mutateAsync({
-                      id: product!.id,
-                      input: { cover_image_path: null } as ProductUpdate,
-                    });
-                    await qc.invalidateQueries({ queryKey: productsKeys.images(product!.id) });
-                    executeWithUndo({
-                      message: "✓ Imagem removida.",
-                      apply: () => { /* já removida */ },
-                      undo: async () => {
-                        if (!cachedBlob) {
-                          toast.error("Não foi possível desfazer — imagem indisponível.");
-                          return;
-                        }
-                        try {
-                          const file = new File([cachedBlob], cachedName, {
-                            type: cachedBlob.type || "image/png",
-                          });
-                          const uploadedPath = await productImagesService.upload(
-                            companyId,
-                            product!.id,
-                            file,
-                          );
-                          await productImagesService.createRecord(
-                            companyId,
-                            product!.id,
-                            uploadedPath,
-                            0,
-                          );
-                          await updateProduct.mutateAsync({
-                            id: product!.id,
-                            input: { cover_image_path: uploadedPath } as ProductUpdate,
-                          });
-                          await qc.invalidateQueries({ queryKey: productsKeys.images(product!.id) });
-                          toast.success("Imagem restaurada");
-                        } catch (err) {
-                          toast.error(err instanceof Error ? err.message : "Falha ao restaurar imagem");
-                        }
-                      },
-                    });
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Falha ao remover imagem");
-                  }
-                }
-              : undefined
-          }
-          disabled={saving}
-        />
-      </Section>
+                  : undefined
+              }
+              disabled={saving}
+            />
+          </Section>
 
-      {/* ─── Bloco INFORMAÇÕES ─── */}
-      <Section
-        title="Informações"
-        description="O básico para identificar o produto."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome *" hint="Nome comercial do produto">
-            <Input
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
-              onBlur={handleTitleCaseBlur((v) => set("name", v))}
-            />
-          </Field>
-          <Field label="Categoria">
-            <div className="flex gap-2">
-              <Select
-                value={form.category_id || "__none"}
-                onValueChange={(v) => {
-                  const next = v === "__none" ? "" : v;
-                  const prev = form.category_id;
-                  if (next === "" && prev) {
-                    executeWithUndo({
-                      message: "✓ Categoria removida.",
-                      apply: () => set("category_id", ""),
-                      undo: () => set("category_id", prev),
-                    });
-                  } else {
-                    set("category_id", next);
-                  }
-                }}
+          {/* ─── Bloco INFORMAÇÕES ─── */}
+          <Section title="Informações" description="O básico para identificar o produto.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Nome *" hint="Nome comercial do produto">
+                <Input
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("name", v))}
+                />
+              </Field>
+              <Field label="Categoria">
+                <div className="flex gap-2">
+                  <Select
+                    value={form.category_id || "__none"}
+                    onValueChange={(v) => {
+                      const next = v === "__none" ? "" : v;
+                      const prev = form.category_id;
+                      if (next === "" && prev) {
+                        executeWithUndo({
+                          message: "✓ Categoria removida.",
+                          apply: () => set("category_id", ""),
+                          undo: () => set("category_id", prev),
+                        });
+                      } else {
+                        set("category_id", next);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Sem categoria</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Gerenciar categorias"
+                    onClick={() => setCategoryManagerOpen(true)}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <InlineCreate
+                  placeholder="Nova categoria"
+                  value={newCategory}
+                  onChange={setNewCategory}
+                  onCreate={async () => {
+                    if (!newCategory.trim()) return;
+                    const c = await createCategory.mutateAsync(newCategory.trim());
+                    set("category_id", c.id);
+                    setNewCategory("");
+                  }}
+                />
+                <CategoryManagerDialog
+                  open={categoryManagerOpen}
+                  onOpenChange={setCategoryManagerOpen}
+                  companyId={companyId}
+                  onCreated={(id) => set("category_id", id)}
+                />
+              </Field>
+              <Field label="Fornecedor">
+                <div className="flex gap-2">
+                  <Select
+                    value={form.supplier_id || "__none"}
+                    onValueChange={(v) => set("supplier_id", v === "__none" ? "" : v)}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Sem fornecedor</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSupplierDialogOpen(true)}
+                    title="Novo fornecedor"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Field>
+              <Field
+                label="SKU *"
+                hint="Obrigatório — gerado automaticamente, editável se necessário"
               >
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">Sem categoria</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                title="Gerenciar categorias"
-                onClick={() => setCategoryManagerOpen(true)}
+                <div className="flex gap-2">
+                  <Input
+                    value={form.sku}
+                    onChange={(e) => {
+                      setSkuAuto(false);
+                      set("sku", e.target.value);
+                    }}
+                    placeholder={skuGenerating ? "Gerando..." : "Ex.: BOL-MIL-PRE-001"}
+                    aria-invalid={skuTaken || undefined}
+                    className={
+                      skuTaken
+                        ? "border-danger focus-visible:ring-danger"
+                        : form.sku.trim() && !skuChecking
+                          ? "border-success/60 focus-visible:ring-success"
+                          : undefined
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={regenerateSku}
+                    disabled={skuGenerating || !form.name.trim()}
+                    title="Gera um SKU a partir do nome e categoria"
+                    className="shrink-0 gap-1.5"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${skuGenerating ? "animate-spin" : ""}`} />
+                    Gerar SKU
+                  </Button>
+                </div>
+                {form.sku.trim() ? (
+                  skuChecking ? (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Verificando disponibilidade…
+                    </p>
+                  ) : skuTaken ? (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-danger">
+                      <X className="h-3 w-3" /> SKU já existe
+                    </p>
+                  ) : (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
+                      <Check className="h-3 w-3" /> SKU disponível
+                    </p>
+                  )
+                ) : null}
+              </Field>
+              <Field
+                label="Código de barras (EAN)"
+                hint="Opcional — use a busca para autopreencher os dados cadastrais"
               >
-                <Settings2 className="h-4 w-4" />
-              </Button>
+                <div className="flex gap-2">
+                  <Input
+                    className="flex-1"
+                    value={form.barcode}
+                    inputMode="numeric"
+                    maxLength={14}
+                    onChange={(e) => set("barcode", e.target.value.replace(/\D/g, "").slice(0, 14))}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={handleEanLookup}
+                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
+                    title="Consulta bases públicas e o histórico interno pelo EAN"
+                  >
+                    {eanLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar EAN
+                  </Button>
+                </div>
+              </Field>
+              <Field label="Marca">
+                <Input
+                  value={form.brand}
+                  onChange={(e) => set("brand", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
+                />
+              </Field>
+              <Field label="Status">
+                <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Unidade">
+                <Select value={form.unit} onValueChange={(v) => set("unit", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_UNIT_OPTIONS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Canal de venda principal">
+                <Select
+                  value={form.sales_channel || "__none"}
+                  onValueChange={(v) => set("sales_channel", v === "__none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Não definido</SelectItem>
+                    {SALES_CHANNEL_OPTIONS.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
-            <InlineCreate
-              placeholder="Nova categoria"
-              value={newCategory}
-              onChange={setNewCategory}
-              onCreate={async () => {
-                if (!newCategory.trim()) return;
-                const c = await createCategory.mutateAsync(newCategory.trim());
-                set("category_id", c.id);
-                setNewCategory("");
-              }}
-            />
-            <CategoryManagerDialog
-              open={categoryManagerOpen}
-              onOpenChange={setCategoryManagerOpen}
-              companyId={companyId}
-              onCreated={(id) => set("category_id", id)}
-            />
-          </Field>
-          <Field label="Fornecedor">
-            <div className="flex gap-2">
-              <Select
-                value={form.supplier_id || "__none"}
-                onValueChange={(v) => set("supplier_id", v === "__none" ? "" : v)}
-              >
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">Sem fornecedor</SelectItem>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setSupplierDialogOpen(true)}
-                title="Novo fornecedor"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </Field>
-          <Field label="SKU *" hint="Obrigatório — gerado automaticamente, editável se necessário">
-            <div className="flex gap-2">
-              <Input
-                value={form.sku}
-                onChange={(e) => {
-                  setSkuAuto(false);
-                  set("sku", e.target.value);
-                }}
-                placeholder={skuGenerating ? "Gerando..." : "Ex.: BOL-MIL-PRE-001"}
-                aria-invalid={skuTaken || undefined}
-                className={
-                  skuTaken
-                    ? "border-danger focus-visible:ring-danger"
-                    : form.sku.trim() && !skuChecking
-                      ? "border-success/60 focus-visible:ring-success"
-                      : undefined
-                }
+            <Field label="Descrição">
+              <Textarea
+                rows={3}
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
               />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={regenerateSku}
-                disabled={skuGenerating || !form.name.trim()}
-                title="Gera um SKU a partir do nome e categoria"
-                className="shrink-0 gap-1.5"
-              >
-                <RefreshCw className={`h-4 w-4 ${skuGenerating ? "animate-spin" : ""}`} />
-                Gerar SKU
-              </Button>
+            </Field>
+          </Section>
 
-            </div>
-            {form.sku.trim() ? (
-              skuChecking ? (
-                <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Verificando disponibilidade…
-                </p>
-              ) : skuTaken ? (
-                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-danger">
-                  <X className="h-3 w-3" /> SKU já existe
-                </p>
-              ) : (
-                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-                  <Check className="h-3 w-3" /> SKU disponível
-                </p>
-              )
-            ) : null}
-          </Field>
-          <Field
-            label="Código de barras (EAN)"
-            hint="Opcional — use a busca para autopreencher os dados cadastrais"
+          {/* Fotos adicionais */}
+          {product ? (
+            <Section title="Fotos do produto" description="Fotos e mídias adicionais.">
+              <ProductImageUploader companyId={companyId} productId={product.id} />
+            </Section>
+          ) : null}
+
+          {/* Tags */}
+          <Section
+            title="Tags"
+            description="A Bella sugere tags automaticamente. Aceite, remova ou adicione as suas."
           >
-            <div className="flex gap-2">
-              <Input
-                className="flex-1"
-                value={form.barcode}
-                inputMode="numeric"
-                maxLength={14}
-                onChange={(e) => set("barcode", e.target.value.replace(/\D/g, "").slice(0, 14))}
-              />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {form.tags.length} / {MAX_PRODUCT_TAGS} tags
+              </p>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="shrink-0 gap-1.5"
-                onClick={handleEanLookup}
-                disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
-                title="Consulta bases públicas e o histórico interno pelo EAN"
+                onClick={() => generateTagSuggestions()}
+                disabled={
+                  suggestingTags || !form.name.trim() || form.tags.length >= MAX_PRODUCT_TAGS
+                }
               >
-                {eanLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                {suggestingTags ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Search className="h-4 w-4" />
+                  <Sparkles className="mr-2 h-3.5 w-3.5" />
                 )}
-                Buscar EAN
+                Sugerir com Bella
               </Button>
             </div>
-          </Field>
-          <Field label="Marca">
-            <Input
-              value={form.brand}
-              onChange={(e) => set("brand", e.target.value)}
-              onBlur={handleTitleCaseBlur((v) => set("brand", v))}
-            />
-          </Field>
-          <Field label="Status">
-            <Select value={form.status} onValueChange={(v) => set("status", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PRODUCT_STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Unidade">
-            <Select value={form.unit} onValueChange={(v) => set("unit", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PRODUCT_UNIT_OPTIONS.map((u) => (
-                  <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Canal de venda principal">
-            <Select
-              value={form.sales_channel || "__none"}
-              onValueChange={(v) => set("sales_channel", v === "__none" ? "" : v)}
-            >
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Não definido</SelectItem>
-                {SALES_CHANNEL_OPTIONS.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
-        <Field label="Descrição">
-          <Textarea
-            rows={3}
-            value={form.description}
-            onChange={(e) => set("description", e.target.value)}
-          />
-        </Field>
-      </Section>
 
-      {/* Fotos adicionais */}
-      {product ? (
-        <Section title="Fotos do produto" description="Fotos e mídias adicionais.">
-          <ProductImageUploader companyId={companyId} productId={product.id} />
-        </Section>
-      ) : null}
+            {suggestedTags.length > 0 ? (
+              <div className="mt-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-primary">
+                    Sugestões da Bella — clique para aceitar
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSuggestedTags([])}
+                    >
+                      Descartar
+                    </Button>
+                    <Button type="button" size="sm" onClick={acceptAllSuggested}>
+                      Aceitar todas
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedTags.map((t) => (
+                    <Badge
+                      key={t}
+                      variant="outline"
+                      className="cursor-pointer border-primary/40 bg-background hover:bg-primary/10"
+                      onClick={() => acceptSuggestedTag(t)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        dismissSuggestedTag(t);
+                      }}
+                      title="Clique para aceitar · botão direito para descartar"
+                    >
+                      + {t}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
-      {/* Tags */}
-      <Section
-        title="Tags"
-        description="A Bella sugere tags automaticamente. Aceite, remova ou adicione as suas."
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
-            {form.tags.length} / {MAX_PRODUCT_TAGS} tags
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => generateTagSuggestions()}
-            disabled={suggestingTags || !form.name.trim() || form.tags.length >= MAX_PRODUCT_TAGS}
-          >
-            {suggestingTags ? (
-              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-3.5 w-3.5" />
-            )}
-            Sugerir com Bella
-          </Button>
-        </div>
-
-        {suggestedTags.length > 0 ? (
-          <div className="mt-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-primary">
-                Sugestões da Bella — clique para aceitar
-              </span>
+            <Field label="Adicionar tag manualmente">
               <div className="flex gap-2">
-                <Button type="button" size="sm" variant="ghost" onClick={() => setSuggestedTags([])}>
-                  Descartar
-                </Button>
-                <Button type="button" size="sm" onClick={acceptAllSuggested}>
-                  Aceitar todas
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Digite e pressione Enter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={addTag}>
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {suggestedTags.map((t) => (
-                <Badge
-                  key={t}
-                  variant="outline"
-                  className="cursor-pointer border-primary/40 bg-background hover:bg-primary/10"
-                  onClick={() => acceptSuggestedTag(t)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    dismissSuggestedTag(t);
-                  }}
-                  title="Clique para aceitar · botão direito para descartar"
-                >
-                  + {t}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <Field label="Adicionar tag manualmente">
-          <div className="flex gap-2">
-            <Input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Digite e pressione Enter"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-            />
-            <Button type="button" variant="outline" onClick={addTag}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {form.tags.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {form.tags.map((t) => (
-                <Badge
-                  key={t}
-                  variant="secondary"
-                  className="cursor-pointer"
-                  onClick={() => {
-                    const prev = form.tags;
-                    executeWithUndo({
-                      message: `✓ Tag "${t}" removida.`,
-                      apply: () => set("tags", prev.filter((x) => x !== t)),
-                      undo: () => set("tags", prev),
-                    });
-                  }}
-                >
-                  {t} ✕
-                </Badge>
-              ))}
-            </div>
-          ) : null}
-        </Field>
-      </Section>
+              {form.tags.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {form.tags.map((t) => (
+                    <Badge
+                      key={t}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        const prev = form.tags;
+                        executeWithUndo({
+                          message: `✓ Tag "${t}" removida.`,
+                          apply: () =>
+                            set(
+                              "tags",
+                              prev.filter((x) => x !== t),
+                            ),
+                          undo: () => set("tags", prev),
+                        });
+                      }}
+                    >
+                      {t} ✕
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </Field>
+          </Section>
         </TabsContent>
 
         {/* ══════════════ ABA 2 — CUSTOS E PRECIFICAÇÃO ══════════════ */}
@@ -1325,7 +1388,11 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
               {/* Passos */}
               <div className="space-y-5">
-                <StepRow step={1} title="Custo de aquisição" hint="Valor pago ao fornecedor por unidade">
+                <StepRow
+                  step={1}
+                  title="Custo de aquisição"
+                  hint="Valor pago ao fornecedor por unidade"
+                >
                   <NumInput value={form.cost} onChange={(v) => set("cost", v)} />
                 </StepRow>
 
@@ -1464,10 +1531,7 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
           <Section title="Estoque" description="Saldo, mínimo e movimentações.">
             <div className="grid gap-4 sm:grid-cols-2">
               {product ? (
-                <Field
-                  label="Saldo em estoque"
-                  hint="Alterado somente por movimentação de estoque"
-                >
+                <Field label="Saldo em estoque" hint="Alterado somente por movimentação de estoque">
                   <div className="space-y-2">
                     <NumInput value={form.stock} onChange={() => {}} disabled />
                     <div className="flex flex-wrap gap-2">
@@ -1495,9 +1559,7 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
                       </Button>
                     </div>
                     {num(form.stock) <= 0 ? (
-                      <p className="text-sm font-medium text-destructive">
-                        ⚠️ Produto sem estoque
-                      </p>
+                      <p className="text-sm font-medium text-destructive">⚠️ Produto sem estoque</p>
                     ) : null}
                   </div>
                 </Field>
@@ -1688,9 +1750,7 @@ function Section({
     <div className="rounded-xl border border-border bg-card p-6 space-y-5">
       <div>
         <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        ) : null}
+        {description ? <p className="text-xs text-muted-foreground mt-0.5">{description}</p> : null}
       </div>
       {children}
     </div>
@@ -1707,11 +1767,7 @@ function Metric({
   tone?: "success" | "danger";
 }) {
   const color =
-    tone === "danger"
-      ? "text-danger"
-      : tone === "success"
-        ? "text-success"
-        : "text-foreground";
+    tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : "text-foreground";
   return (
     <div>
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
@@ -1757,7 +1813,6 @@ function NumInput({
     />
   );
 }
-
 
 function OperationalCostField({
   label,
@@ -1844,9 +1899,7 @@ function MarginSourceField({
               effectiveUseCategory ? "border-primary" : "border-muted-foreground/40"
             }`}
           >
-            {effectiveUseCategory ? (
-              <span className="h-2 w-2 rounded-full bg-primary" />
-            ) : null}
+            {effectiveUseCategory ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
           </span>
           <span className="min-w-0 text-sm">
             <span className="block font-medium">Utilizar margem da categoria</span>
@@ -1874,9 +1927,7 @@ function MarginSourceField({
               !effectiveUseCategory ? "border-primary" : "border-muted-foreground/40"
             }`}
           >
-            {!effectiveUseCategory ? (
-              <span className="h-2 w-2 rounded-full bg-primary" />
-            ) : null}
+            {!effectiveUseCategory ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
           </span>
           <span className="min-w-0 flex-1 text-sm">
             <span className="block font-medium">

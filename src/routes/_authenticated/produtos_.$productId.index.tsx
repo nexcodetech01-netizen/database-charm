@@ -31,7 +31,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
-
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -93,16 +92,16 @@ function ProductDetailPage() {
   const [pricingOpen, setPricingOpen] = useState(false);
   const [salesCenterOpen, setSalesCenterOpen] = useState(false);
   const [mlPublishOpen, setMlPublishOpen] = useState(false);
-  const [mlActionPending, setMlActionPending] = useState<null | "pause" | "activate" | "unlink">(null);
+  const [mlActionPending, setMlActionPending] = useState<null | "pause" | "activate" | "unlink">(
+    null,
+  );
   const [unlinkConfirmOpen, setUnlinkConfirmOpen] = useState(false);
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
 
   const qc = useQueryClient();
 
-  const orderedImages = (product?.images ?? [])
-    .slice()
-    .sort((a, b) => a.position - b.position);
+  const orderedImages = (product?.images ?? []).slice().sort((a, b) => a.position - b.position);
   const imagePaths = orderedImages.map((i) => i.path);
   const { data: signed = [] } = useSignedImageUrls(imagePaths);
   const cover = signed[0]?.signedUrl;
@@ -157,7 +156,6 @@ function ProductDetailPage() {
   // matemático padrão em 2 casas (evita truncamento tipo 47,40% vs 47,49%).
   const margin = Math.round(marginPctReal * 100) / 100;
 
-
   // Estoque: reservado / máx / última entrada / última venda (derivados de movements)
   const reserved = movements
     .filter((m) => m.type === "reservation")
@@ -165,12 +163,9 @@ function ProductDetailPage() {
   const lastIn = movements.find((m) => m.type === "in" || m.source === "purchase");
   const lastOut = movements.find((m) => m.type === "out" || m.source === "sale");
 
-
   const meta = (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-      {product.sku ? (
-        <span className="font-mono">SKU {product.sku}</span>
-      ) : null}
+      {product.sku ? <span className="font-mono">SKU {product.sku}</span> : null}
       {product.category?.name ? (
         <span className="inline-flex items-center gap-1">
           <Tag className="h-3 w-3" />
@@ -223,9 +218,8 @@ function ProductDetailPage() {
               onClick={async () => {
                 setMlActionPending("pause");
                 try {
-                  const { setMercadoLivreItemStatus } = await import(
-                    "@/lib/mercadolivre-actions.functions"
-                  );
+                  const { setMercadoLivreItemStatus } =
+                    await import("@/lib/mercadolivre-actions.functions");
                   await setMercadoLivreItemStatus({
                     data: { productId: product.id, status: "paused" },
                   });
@@ -246,9 +240,8 @@ function ProductDetailPage() {
               onClick={async () => {
                 setMlActionPending("activate");
                 try {
-                  const { setMercadoLivreItemStatus } = await import(
-                    "@/lib/mercadolivre-actions.functions"
-                  );
+                  const { setMercadoLivreItemStatus } =
+                    await import("@/lib/mercadolivre-actions.functions");
                   await setMercadoLivreItemStatus({
                     data: { productId: product.id, status: "active" },
                   });
@@ -364,7 +357,13 @@ function ProductDetailPage() {
             <span className="flex flex-col gap-0.5 text-xs">
               <span>Custo Total: {formatCurrency(costTotal)}</span>
               <span>Preço de Venda: {formatCurrency(price)}</span>
-              <span className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+              <span
+                className={
+                  profit >= 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
+                }
+              >
                 Lucro Unitário: {formatCurrency(profit)}
               </span>
             </span>
@@ -384,183 +383,143 @@ function ProductDetailPage() {
     </KpiSection>
   );
 
-
   return (
     <>
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
-      <EntityHeader
-        icon={Package}
-        title={product.name}
-        description={product.brand || undefined}
-        actions={actions}
-        extra={
-          <div className="space-y-4">
-            {meta}
-            {kpis}
-          </div>
-        }
-      />
-
-      <Tabs defaultValue="visao" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="visao">Visão geral</TabsTrigger>
-          <TabsTrigger value="precificacao">Precificação</TabsTrigger>
-          <TabsTrigger value="estoque">Estoque</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="visao" className="space-y-6">
-      {/* Informações principais — reconstruído: foto 35% + dados 65% */}
-      <Section flushBody bodyClassName="p-6 lg:p-8">
-
-
-
-          <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
-            {/* Coluna esquerda: foto */}
-            <div className="space-y-3">
-              <FramedImage
-                src={cover}
-                alt={product.name}
-                framing={coverImage}
-                aspect="square"
-                rounded="2xl"
-                fallback={<ImageIcon className="h-10 w-10" />}
-              />
-              {signed.length > 1 ? (
-                <div className="flex flex-wrap gap-2">
-                  {signed.slice(0, 5).map((s) => {
-                    const img = orderedImages.find((i) => i.path === s.path);
-                    return (
-                      <div key={s.path} className="w-14">
-                        <FramedImage
-                          src={s.signedUrl}
-                          framing={img}
-                          aspect="square"
-                          rounded="md"
-                          containerClassName="border border-border"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
+      <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
+        <EntityHeader
+          icon={Package}
+          title={product.name}
+          description={product.brand || undefined}
+          actions={actions}
+          extra={
+            <div className="space-y-4">
+              {meta}
+              {kpis}
             </div>
+          }
+        />
 
-            {/* Coluna direita: dados do produto */}
-            <div className="min-w-0">
-              <div className="mb-5">
-                <h2 className="text-base font-semibold text-foreground">Informações</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Dados de identificação e catálogo.
-                </p>
-              </div>
+        <Tabs defaultValue="visao" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+            <TabsTrigger value="visao">Visão geral</TabsTrigger>
+            <TabsTrigger value="precificacao">Precificação</TabsTrigger>
+            <TabsTrigger value="estoque">Estoque</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+          </TabsList>
 
-              <dl className="divide-y divide-border/40">
-                <InfoRow label="SKU" value={product.sku ?? "—"} mono />
-                <InfoRow label="Categoria" value={product.category?.name ?? "—"} />
-                <InfoRow label="Fornecedor" value={product.supplier?.name ?? "—"} />
-                <InfoRow label="Marca" value={product.brand ?? "—"} />
-                <InfoRow label="Código de barras" value={product.barcode ?? "—"} mono />
-                <InfoRow label="Unidade" value={product.unit} />
-                <InfoRow
-                  label="Estoque"
-                  value={`${formatNumber(stock)} ${product.unit ?? ""}`.trim()}
-                />
-                <InfoRow label="Peso" value="—" />
-                <InfoRow label="Dimensões" value="—" />
-                <InfoRow label="NCM" value={product.ncm ?? "—"} mono />
-                <InfoRow label="Origem" value="—" />
-                <InfoRow label="Canal de venda" value={product.sales_channel ?? "—"} />
-                <InfoRow label="Status" value={<ProductStatusBadge status={product.status} />} />
-                <InfoRow
-                  label="Tags"
-                  value={
-                    product.tags?.length ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {product.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-md bg-accent px-2 py-0.5 text-[11px] text-muted-foreground"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      "—"
-                    )
-                  }
-                />
-              </dl>
-
-              {product.description ? (
-                <div className="mt-6 border-t border-border pt-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Descrição
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
-                    {product.description}
-                  </p>
+          <TabsContent value="visao" className="space-y-6">
+            {/* Informações principais — reconstruído: foto 35% + dados 65% */}
+            <Section flushBody bodyClassName="p-6 lg:p-8">
+              <div className="grid gap-8 lg:grid-cols-[39%_minmax(0,1fr)] lg:gap-10">
+                {/* Coluna esquerda: foto */}
+                <div className="space-y-3">
+                  <FramedImage
+                    src={cover}
+                    alt={product.name}
+                    framing={coverImage}
+                    aspect="square"
+                    rounded="2xl"
+                    fallback={<ImageIcon className="h-10 w-10" />}
+                  />
+                  {signed.length > 1 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {signed.slice(0, 5).map((s) => {
+                        const img = orderedImages.find((i) => i.path === s.path);
+                        return (
+                          <div key={s.path} className="w-14">
+                            <FramedImage
+                              src={s.signedUrl}
+                              framing={img}
+                              aspect="square"
+                              rounded="md"
+                              containerClassName="border border-border"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </div>
-      </Section>
 
-      {/* Lista de Interesse — clientes aguardando este produto */}
-      <ProductInterestPanel
-        companyId={company.id}
-        productId={product.id}
-        stock={Number(stock) || 0}
-      />
-        </TabsContent>
+                {/* Coluna direita: dados do produto */}
+                <div className="min-w-0">
+                  <div className="mb-5">
+                    <h2 className="text-base font-semibold text-foreground">Informações</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Dados de identificação e catálogo.
+                    </p>
+                  </div>
 
-        <TabsContent value="estoque" className="space-y-6">
-      {/* Estoque */}
-      <Section
+                  <dl className="divide-y divide-border/40">
+                    <InfoRow label="SKU" value={product.sku ?? "—"} mono />
+                    <InfoRow label="Categoria" value={product.category?.name ?? "—"} />
+                    <InfoRow label="Fornecedor" value={product.supplier?.name ?? "—"} />
+                    <InfoRow label="Marca" value={product.brand ?? "—"} />
+                    <InfoRow label="Código de barras" value={product.barcode ?? "—"} mono />
+                    <InfoRow label="Unidade" value={product.unit} />
+                    <InfoRow
+                      label="Estoque"
+                      value={`${formatNumber(stock)} ${product.unit ?? ""}`.trim()}
+                    />
+                    <InfoRow label="Peso" value="—" />
+                    <InfoRow label="Dimensões" value="—" />
+                    <InfoRow label="NCM" value={product.ncm ?? "—"} mono />
+                    <InfoRow label="Origem" value="—" />
+                    <InfoRow label="Canal de venda" value={product.sales_channel ?? "—"} />
+                    <InfoRow
+                      label="Status"
+                      value={<ProductStatusBadge status={product.status} />}
+                    />
+                    <InfoRow
+                      label="Tags"
+                      value={
+                        product.tags?.length ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {product.tags.map((t) => (
+                              <span
+                                key={t}
+                                className="rounded-md bg-accent px-2 py-0.5 text-[11px] text-muted-foreground"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          "—"
+                        )
+                      }
+                    />
+                  </dl>
 
-
-            title="Estoque"
-            description="Disponibilidade, limites e valor imobilizado."
-            actions={
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setMovementType("in");
-                    setMovementOpen(true);
-                  }}
-                >
-                  <ArrowUpRight className="mr-1.5 h-4 w-4" /> Entrada de estoque
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setMovementType("adjustment");
-                    setMovementOpen(true);
-                  }}
-                >
-                  <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
-                </Button>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
-                    <History className="mr-1.5 h-4 w-4" /> Ver movimentações
-                  </Link>
-                </Button>
+                  {product.description ? (
+                    <div className="mt-6 border-t border-border pt-4">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Descrição
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
+                        {product.description}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            }
-          >
-            {stock <= 0 ? (
-              <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
-                <p className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
-                  <AlertTriangle className="h-4 w-4" /> Produto sem estoque.
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Este produto não poderá ser vendido até que uma entrada ou ajuste
-                  de estoque seja realizado.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+            </Section>
+
+            {/* Lista de Interesse — clientes aguardando este produto */}
+            <ProductInterestPanel
+              companyId={company.id}
+              productId={product.id}
+              stock={Number(stock) || 0}
+            />
+          </TabsContent>
+
+          <TabsContent value="estoque" className="space-y-6">
+            {/* Estoque */}
+            <Section
+              title="Estoque"
+              description="Disponibilidade, limites e valor imobilizado."
+              actions={
+                <div className="mt-2 flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     onClick={() => {
@@ -580,312 +539,325 @@ function ProductDetailPage() {
                   >
                     <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
                   </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
+                      <History className="mr-1.5 h-4 w-4" /> Ver movimentações
+                    </Link>
+                  </Button>
                 </div>
-              </div>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              <PriceTile
-                label="Disponível"
-                value={`${formatNumber(stock)} ${product.unit ?? ""}`.trim()}
-                icon={Package}
-                intent={stock <= minStock ? "negative" : "neutral"}
-              />
-              <PriceTile
-                label="Reservado"
-                value={`${formatNumber(reserved)} ${product.unit ?? ""}`.trim()}
-                icon={Boxes}
-              />
-              <PriceTile
-                label="Estoque mínimo"
-                value={`${formatNumber(minStock)} ${product.unit ?? ""}`.trim()}
-                icon={Boxes}
-              />
-              <PriceTile label="Estoque máximo" value="—" icon={Boxes} />
-              <PriceTile
-                label="Valor em estoque"
-                value={formatCurrency(stockValue)}
-                icon={Wallet}
-              />
-              <PriceTile
-                label="Última entrada"
-                value={lastIn ? formatDateTime(lastIn.movement_date) : "—"}
-                icon={ArrowUpRight}
-                intent={lastIn ? "positive" : "neutral"}
-              />
-              <PriceTile
-                label="Última venda"
-                value={lastOut ? formatDateTime(lastOut.movement_date) : "—"}
-                icon={ArrowDownRight}
-                intent={lastOut ? "negative" : "neutral"}
-              />
-              <PriceTile
-                label="Última atualização"
-                value={formatDateTime(product.updated_at)}
-                icon={Clock}
-              />
-            </div>
-      </Section>
-        </TabsContent>
-
-        <TabsContent value="precificacao" className="space-y-6">
-      {/* Política de margem aplicada — categoria vs personalizada */}
-      <AppliedMarginPolicyCard
-        categoryName={product.category?.name ?? null}
-        categoryTargetMarginPct={
-          (product.category as { target_margin_pct?: number | null } | null | undefined)
-            ?.target_margin_pct ?? null
-        }
-        categoryMinMarginPct={
-          (product.category as { min_margin_pct?: number | null } | null | undefined)
-            ?.min_margin_pct ?? null
-        }
-        categoryDefaultDiscountPct={
-          (product.category as { default_discount_pct?: number | null } | null | undefined)
-            ?.default_discount_pct ?? null
-        }
-        categoryMaxMarginPct={
-          (product.category as { max_margin_pct?: number | null } | null | undefined)
-            ?.max_margin_pct ?? null
-        }
-        categoryAutoPolicy={
-          (product.category as { auto_pricing_policy?: boolean | null } | null | undefined)
-            ?.auto_pricing_policy ?? true
-        }
-        productMarginPct={margin}
-        useCategoryMargin={
-          (product as { use_category_margin?: boolean | null }).use_category_margin ?? false
-        }
-      />
-
-      {/* Inteligência Comercial — política aplicada e sugestão de preço */}
-      <ProductPricingIntelligenceCard
-        companyId={company.id}
-        productId={product.id}
-      />
-
-      {/* Sugestão automática por canal (Loja, Site, Mercado Livre) */}
-      <SuggestedPricesByChannelCard
-        companyId={company.id}
-        productId={product.id}
-      />
-
-      {/* Custos operacionais e precificação */}
-      <ProductCostBreakdown productId={product.id} product={product} />
-        </TabsContent>
-
-        <TabsContent value="historico" className="space-y-6">
-      {/* Movimentações */}
-      <Section
-
-
-            title="Movimentações"
-            description="Últimos eventos de estoque, compras e vendas deste produto."
-            actions={
-              <Button asChild variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
-                <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
-                  <History className="mr-1.5 h-4 w-4" /> Ver todas
-                </Link>
-              </Button>
-            }
-          >
-            {movements.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                Nenhuma movimentação registrada até o momento.
-              </div>
-            ) : (
-              <ol className="relative space-y-3 border-l border-border pl-5">
-                {movements.slice(0, 8).map((m) => {
-                  const qty = Number(m.quantity ?? 0);
-                  return (
-                    <li key={m.id} className="relative">
-                      <span className="absolute -left-[27px] top-1.5 grid h-4 w-4 place-items-center rounded-full border border-border bg-card">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      </span>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <MovementTypeBadge type={m.type} />
-                          <span className="text-sm text-foreground">
-                            {m.reason ?? m.source ?? "Movimento"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs">
-                          <span
-                            className={cn(
-                              "font-medium tabular-nums",
-                              qty > 0
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : qty < 0
-                                  ? "text-red-600 dark:text-red-400"
-                                  : "text-foreground",
-                            )}
-                          >
-                            {qty > 0 ? "+" : ""}
-                            {formatNumber(qty)} {product.unit ?? ""}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {formatDateTime(m.movement_date)}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-      </Section>
-
-
-      {/* Histórico */}
-      <Section
-
-            title="Histórico"
-            description="Eventos recentes deste produto."
-          >
-            <ol className="relative space-y-4 border-l border-border pl-5">
-              <TimelineItem
-                icon={Package}
-                title="Produto criado"
-                description={formatDateTime(product.created_at)}
-              />
-              <TimelineItem
-                icon={Clock}
-                title="Última atualização"
-                description={formatDateTime(product.updated_at)}
-              />
-              <li className="relative">
-                <span className="absolute -left-[27px] top-1 grid h-4 w-4 place-items-center rounded-full border border-border bg-muted">
-                  <History className="h-2.5 w-2.5 text-muted-foreground" />
-                </span>
-                <p className="text-xs text-muted-foreground">
-                  Movimentações de estoque, vendas e compras aparecerão aqui conforme os
-                  módulos forem sendo utilizados.
-                </p>
-              </li>
-            </ol>
-      </Section>
-        </TabsContent>
-      </Tabs>
-
-
-
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é permanente. O produto <strong>{product.name}</strong> será removido
-              do catálogo. Movimentações de estoque, vendas e compras já registradas
-              serão preservadas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteProduct.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteProduct.isPending}
-              className="bg-danger text-danger-foreground hover:bg-danger/90"
+              }
             >
-              {deleteProduct.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {stock <= 0 ? (
+                <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+                  <p className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4" /> Produto sem estoque.
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Este produto não poderá ser vendido até que uma entrada ou ajuste de estoque
+                    seja realizado.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setMovementType("in");
+                        setMovementOpen(true);
+                      }}
+                    >
+                      <ArrowUpRight className="mr-1.5 h-4 w-4" /> Entrada de estoque
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setMovementType("adjustment");
+                        setMovementOpen(true);
+                      }}
+                    >
+                      <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
+                    </Button>
+                  </div>
+                </div>
               ) : null}
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
-      <AlertDialog open={unlinkConfirmOpen} onOpenChange={setUnlinkConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Limpar vínculo com o Mercado Livre?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação remove apenas o vínculo local (ml_item_id, permalink e data
-              de publicação). O anúncio no Mercado Livre <strong>não</strong> é
-              excluído. Use quando o anúncio foi removido ou moderado no ML e você
-              precisa publicá-lo novamente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={mlActionPending === "unlink"}>
-              Voltar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={mlActionPending === "unlink"}
-              onClick={async (e) => {
-                e.preventDefault();
-                setMlActionPending("unlink");
-                try {
-                  const { unlinkMercadoLivreItem } = await import(
-                    "@/lib/mercadolivre-actions.functions"
-                  );
-                  await unlinkMercadoLivreItem({
-                    data: { productId: product.id },
-                  });
-                  toast.success("Vínculo com Mercado Livre removido");
-                  void qc.invalidateQueries({ queryKey: ["products"] });
-                  void qc.invalidateQueries({ queryKey: ["product", product.id] });
-                  setUnlinkConfirmOpen(false);
-                } catch (err) {
-                  toast.error("Não foi possível limpar o vínculo", {
-                    description: err instanceof Error ? err.message : undefined,
-                  });
-                } finally {
-                  setMlActionPending(null);
-                }
-              }}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <PriceTile
+                  label="Disponível"
+                  value={`${formatNumber(stock)} ${product.unit ?? ""}`.trim()}
+                  icon={Package}
+                  intent={stock <= minStock ? "negative" : "neutral"}
+                />
+                <PriceTile
+                  label="Reservado"
+                  value={`${formatNumber(reserved)} ${product.unit ?? ""}`.trim()}
+                  icon={Boxes}
+                />
+                <PriceTile
+                  label="Estoque mínimo"
+                  value={`${formatNumber(minStock)} ${product.unit ?? ""}`.trim()}
+                  icon={Boxes}
+                />
+                <PriceTile label="Estoque máximo" value="—" icon={Boxes} />
+                <PriceTile
+                  label="Valor em estoque"
+                  value={formatCurrency(stockValue)}
+                  icon={Wallet}
+                />
+                <PriceTile
+                  label="Última entrada"
+                  value={lastIn ? formatDateTime(lastIn.movement_date) : "—"}
+                  icon={ArrowUpRight}
+                  intent={lastIn ? "positive" : "neutral"}
+                />
+                <PriceTile
+                  label="Última venda"
+                  value={lastOut ? formatDateTime(lastOut.movement_date) : "—"}
+                  icon={ArrowDownRight}
+                  intent={lastOut ? "negative" : "neutral"}
+                />
+                <PriceTile
+                  label="Última atualização"
+                  value={formatDateTime(product.updated_at)}
+                  icon={Clock}
+                />
+              </div>
+            </Section>
+          </TabsContent>
+
+          <TabsContent value="precificacao" className="space-y-6">
+            {/* Política de margem aplicada — categoria vs personalizada */}
+            <AppliedMarginPolicyCard
+              categoryName={product.category?.name ?? null}
+              categoryTargetMarginPct={
+                (product.category as { target_margin_pct?: number | null } | null | undefined)
+                  ?.target_margin_pct ?? null
+              }
+              categoryMinMarginPct={
+                (product.category as { min_margin_pct?: number | null } | null | undefined)
+                  ?.min_margin_pct ?? null
+              }
+              categoryDefaultDiscountPct={
+                (product.category as { default_discount_pct?: number | null } | null | undefined)
+                  ?.default_discount_pct ?? null
+              }
+              categoryMaxMarginPct={
+                (product.category as { max_margin_pct?: number | null } | null | undefined)
+                  ?.max_margin_pct ?? null
+              }
+              categoryAutoPolicy={
+                (product.category as { auto_pricing_policy?: boolean | null } | null | undefined)
+                  ?.auto_pricing_policy ?? true
+              }
+              productMarginPct={margin}
+              useCategoryMargin={
+                (product as { use_category_margin?: boolean | null }).use_category_margin ?? false
+              }
+            />
+
+            {/* Inteligência Comercial — política aplicada e sugestão de preço */}
+            <ProductPricingIntelligenceCard companyId={company.id} productId={product.id} />
+
+            {/* Sugestão automática por canal (Loja, Site, Mercado Livre) */}
+            <SuggestedPricesByChannelCard companyId={company.id} productId={product.id} />
+
+            {/* Custos operacionais e precificação */}
+            <ProductCostBreakdown productId={product.id} product={product} />
+          </TabsContent>
+
+          <TabsContent value="historico" className="space-y-6">
+            {/* Movimentações */}
+            <Section
+              title="Movimentações"
+              description="Últimos eventos de estoque, compras e vendas deste produto."
+              actions={
+                <Button asChild variant="outline" size="sm" className="mt-2 w-full sm:w-auto">
+                  <Link to="/estoque/produto/$productId" params={{ productId: product.id }}>
+                    <History className="mr-1.5 h-4 w-4" /> Ver todas
+                  </Link>
+                </Button>
+              }
             >
-              Limpar vínculo
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {movements.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  Nenhuma movimentação registrada até o momento.
+                </div>
+              ) : (
+                <ol className="relative space-y-3 border-l border-border pl-5">
+                  {movements.slice(0, 8).map((m) => {
+                    const qty = Number(m.quantity ?? 0);
+                    return (
+                      <li key={m.id} className="relative">
+                        <span className="absolute -left-[27px] top-1.5 grid h-4 w-4 place-items-center rounded-full border border-border bg-card">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <MovementTypeBadge type={m.type} />
+                            <span className="text-sm text-foreground">
+                              {m.reason ?? m.source ?? "Movimento"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span
+                              className={cn(
+                                "font-medium tabular-nums",
+                                qty > 0
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : qty < 0
+                                    ? "text-red-600 dark:text-red-400"
+                                    : "text-foreground",
+                              )}
+                            >
+                              {qty > 0 ? "+" : ""}
+                              {formatNumber(qty)} {product.unit ?? ""}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {formatDateTime(m.movement_date)}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </Section>
 
-    </div>
-    <MovementFormDialog
-      open={movementOpen}
-      onOpenChange={setMovementOpen}
-      companyId={company.id}
-      defaultProductId={product.id}
-      defaultType={movementType}
-      lockProduct
-      lockedProductLabel={product.name}
-    />
-    <ProductPricingSheet
+            {/* Histórico */}
+            <Section title="Histórico" description="Eventos recentes deste produto.">
+              <ol className="relative space-y-4 border-l border-border pl-5">
+                <TimelineItem
+                  icon={Package}
+                  title="Produto criado"
+                  description={formatDateTime(product.created_at)}
+                />
+                <TimelineItem
+                  icon={Clock}
+                  title="Última atualização"
+                  description={formatDateTime(product.updated_at)}
+                />
+                <li className="relative">
+                  <span className="absolute -left-[27px] top-1 grid h-4 w-4 place-items-center rounded-full border border-border bg-muted">
+                    <History className="h-2.5 w-2.5 text-muted-foreground" />
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    Movimentações de estoque, vendas e compras aparecerão aqui conforme os módulos
+                    forem sendo utilizados.
+                  </p>
+                </li>
+              </ol>
+            </Section>
+          </TabsContent>
+        </Tabs>
 
-      open={pricingOpen}
-      onOpenChange={setPricingOpen}
-      companyId={company.id}
-      product={{
-        id: product.id,
-        name: product.name,
-        cost: product.cost,
-        freight: product.freight,
-        insurance: product.insurance,
-        other_costs: product.other_costs,
-        price: product.price,
-      }}
-    />
-    <SalesCenterDialog
-      open={salesCenterOpen}
-      onOpenChange={setSalesCenterOpen}
-      product={{
-        name: product.name,
-        brand: product.brand,
-        description: product.description,
-        price: Number(product.price),
-        unit: product.unit,
-        tags: product.tags,
-        category: product.category ? { name: product.category.name } : null,
-        cover_image_path: product.cover_image_path ?? null,
-      }}
-    />
-    <PublishToMercadoLivreDialog
-      product={product}
-      open={mlPublishOpen}
-      onOpenChange={setMlPublishOpen}
-    />
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação é permanente. O produto <strong>{product.name}</strong> será removido do
+                catálogo. Movimentações de estoque, vendas e compras já registradas serão
+                preservadas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteProduct.isPending}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleteProduct.isPending}
+                className="bg-danger text-danger-foreground hover:bg-danger/90"
+              >
+                {deleteProduct.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={unlinkConfirmOpen} onOpenChange={setUnlinkConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Limpar vínculo com o Mercado Livre?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação remove apenas o vínculo local (ml_item_id, permalink e data de
+                publicação). O anúncio no Mercado Livre <strong>não</strong> é excluído. Use quando
+                o anúncio foi removido ou moderado no ML e você precisa publicá-lo novamente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={mlActionPending === "unlink"}>Voltar</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={mlActionPending === "unlink"}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  setMlActionPending("unlink");
+                  try {
+                    const { unlinkMercadoLivreItem } =
+                      await import("@/lib/mercadolivre-actions.functions");
+                    await unlinkMercadoLivreItem({
+                      data: { productId: product.id },
+                    });
+                    toast.success("Vínculo com Mercado Livre removido");
+                    void qc.invalidateQueries({ queryKey: ["products"] });
+                    void qc.invalidateQueries({ queryKey: ["product", product.id] });
+                    setUnlinkConfirmOpen(false);
+                  } catch (err) {
+                    toast.error("Não foi possível limpar o vínculo", {
+                      description: err instanceof Error ? err.message : undefined,
+                    });
+                  } finally {
+                    setMlActionPending(null);
+                  }
+                }}
+              >
+                Limpar vínculo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      <MovementFormDialog
+        open={movementOpen}
+        onOpenChange={setMovementOpen}
+        companyId={company.id}
+        defaultProductId={product.id}
+        defaultType={movementType}
+        lockProduct
+        lockedProductLabel={product.name}
+      />
+      <ProductPricingSheet
+        open={pricingOpen}
+        onOpenChange={setPricingOpen}
+        companyId={company.id}
+        product={{
+          id: product.id,
+          name: product.name,
+          cost: product.cost,
+          freight: product.freight,
+          insurance: product.insurance,
+          other_costs: product.other_costs,
+          price: product.price,
+        }}
+      />
+      <SalesCenterDialog
+        open={salesCenterOpen}
+        onOpenChange={setSalesCenterOpen}
+        product={{
+          name: product.name,
+          brand: product.brand,
+          description: product.description,
+          price: Number(product.price),
+          unit: product.unit,
+          tags: product.tags,
+          category: product.category ? { name: product.category.name } : null,
+          cover_image_path: product.cover_image_path ?? null,
+        }}
+      />
+      <PublishToMercadoLivreDialog
+        product={product}
+        open={mlPublishOpen}
+        onOpenChange={setMlPublishOpen}
+      />
     </>
   );
 }
@@ -917,7 +889,6 @@ function InfoRow({
   );
 }
 
-
 function PriceTile({
   label,
   value,
@@ -941,9 +912,7 @@ function PriceTile({
     <div
       className={cn(
         "rounded-lg border p-3",
-        highlight
-          ? "border-primary/40 bg-primary/5"
-          : "border-border bg-card",
+        highlight ? "border-primary/40 bg-primary/5" : "border-border bg-card",
       )}
     >
       <div className="flex items-start justify-between gap-2 text-xs text-muted-foreground">
