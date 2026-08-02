@@ -514,27 +514,7 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     [form.cost, form.freight, form.packaging, form.insurance, form.other_costs],
   );
 
-  // Cálculo automático explícito: sem efeitos cruzados margem↔preço.
-  // Elimina classe inteira de bugs React #185 (loop de updates).
-  const autoCalculatePrice = () => {
-    const margin = num(form.margin) / 100;
-    if (!Number.isFinite(margin) || margin <= 0 || margin >= 1) {
-      toast.error("Informe uma margem entre 0 e 100%");
-      return;
-    }
-    const denom = 1 - margin;
-    const newPrice = totalCost / denom;
-    if (!Number.isFinite(newPrice) || newPrice <= 0) {
-      toast.error("Não foi possível calcular. Verifique custos e margem.");
-      return;
-    }
-    setForm((s) => ({ ...s, price: newPrice.toFixed(2) }));
-    toast.success("Preço calculado automaticamente");
-  };
-
   const price = num(form.price);
-  const profit = price - totalCost;
-  const markup = totalCost > 0 ? ((price - totalCost) / totalCost) * 100 : 0;
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((s) => ({ ...s, [k]: v }));
