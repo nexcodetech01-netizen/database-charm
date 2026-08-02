@@ -8,7 +8,12 @@
  *   back to supabaseAdmin when no browser session is available.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { encryptToken, decryptToken } from "./meta-crypto.server";
+import {
+  encryptToken,
+  decryptToken,
+  tryDecryptToken,
+  MetaSecretMissingError,
+} from "./meta-crypto.server";
 import { integrationFetch } from "@/lib/http-client.server";
 
 const AUTH_HOST = "https://auth.mercadolivre.com.br/authorization";
@@ -198,10 +203,16 @@ export async function getCompanyCredentials(
   if (error) throw error;
   if (!data) return null;
   const row = data as { client_id: string; client_secret_encrypted: string };
-  return {
-    clientId: row.client_id,
-    clientSecret: decryptToken(row.client_secret_encrypted),
-  };
+  if (!process.env.META_TOKEN_ENC_SECRET) {
+    throw new MetaSecretMissingError("META_TOKEN_ENC_SECRET");
+  }
+  const clientSecret = tryDecryptToken(row.client_secret_encrypted);
+  if (clientSecret === null) {
+    // Cifrado com outra chave: exige reconexão, não é erro de execução.
+    console.warn("[mercadolivre] client_secret não decifrável — reconexão necessária");
+    return null;
+  }
+  return { clientId: row.client_id, clientSecret };
 }
 
 export async function upsertTokens(params: {
@@ -274,6 +285,35 @@ async function readSummaryRow(supabase: AnySupabase, companyId: string) {
     | null;
 }
 
+/**
+ * Marca a integração como "precisa reconectar": zera a validade do token e,
+ * opcionalmente, limpa os tokens que não podem mais ser usados.
+ * Nunca lança — é telemetria de estado.
+ */
+export async function markReconnectRequired(
+  supabase: AnySupabase,
+  companyId: string,
+  options: { clearTokens?: boolean } = {},
+): Promise<void> {
+  try {
+    await supabase
+      .from(TABLE)
+      .update({
+        token_expires_at: new Date(0).toISOString(),
+        ...(options.clearTokens
+          ? { access_token_encrypted: null, refresh_token_encrypted: null }
+          : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("company_id", companyId);
+  } catch (err) {
+    console.warn(
+      "[mercadolivre] falha ao marcar reconexão necessária",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
 /** Refresh window: renew tokens when less than this many seconds remain. */
 const REFRESH_THRESHOLD_SECONDS = 60 * 60 * 24; // 24h
 
@@ -297,11 +337,21 @@ export async function ensureFreshAccessToken(
   if (expiresInSeconds === null) return;
   if (expiresInSeconds > REFRESH_THRESHOLD_SECONDS) return;
 
+  const clientSecret = tryDecryptToken(row.client_secret_encrypted);
+  const refreshToken = tryDecryptToken(row.refresh_token_encrypted);
+  if (clientSecret === null || refreshToken === null) {
+    console.warn(
+      "[mercadolivre] credenciais não decifráveis (chave de criptografia alterada) — marcando reconexão",
+    );
+    await markReconnectRequired(supabase, companyId, { clearTokens: true });
+    return;
+  }
+
   try {
     const token = await refreshAccessToken({
       clientId: row.client_id,
-      clientSecret: decryptToken(row.client_secret_encrypted),
-      refreshToken: decryptToken(row.refresh_token_encrypted),
+      clientSecret,
+      refreshToken,
     });
     await upsertTokens({ companyId, userId, token, supabase });
   } catch (err) {
