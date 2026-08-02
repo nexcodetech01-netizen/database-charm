@@ -316,6 +316,8 @@ function ProductDetailPage() {
     "[&_p.tabular-nums]:whitespace-nowrap",
     "[&_span.truncate]:whitespace-normal [&_span.truncate]:overflow-visible [&_span.truncate]:text-clip",
   );
+  // Produto sem preço cadastrado: não calcular "prejuízo" — exibir "A definir".
+  const hasPrice = price > 0;
   const kpis = (
     <KpiSection
       columns={5}
@@ -324,9 +326,15 @@ function ProductDetailPage() {
       <KpiCard
         className={kpiCardClass}
         label="Preço de venda"
-        value={formatCurrency(price)}
+        value={hasPrice ? formatCurrency(price) : "A definir"}
         icon={DollarSign}
-        hint={product.unit ? `por ${product.unit}` : undefined}
+        hint={
+          hasPrice
+            ? product.unit
+              ? `por ${product.unit}`
+              : undefined
+            : "Preço ainda não cadastrado"
+        }
       />
       <KpiCard
         className={kpiCardClass}
@@ -337,23 +345,31 @@ function ProductDetailPage() {
       <KpiCard
         className={kpiCardClass}
         label="Margem de Lucro"
-        value={`${formatPercent(margin)}%`}
+        value={hasPrice ? `${formatPercent(margin)}%` : "A definir"}
         icon={Percent}
-        hint="Percentual do preço de venda que representa lucro."
+        hint={
+          hasPrice
+            ? "Percentual do preço de venda que representa lucro."
+            : "Defina o preço de venda para calcular a margem."
+        }
       />
       <KpiCard
         className={kpiCardClass}
         label="Lucro Unitário"
-        value={formatCurrency(profit)}
+        value={hasPrice ? formatCurrency(profit) : "A definir"}
         icon={TrendingUp}
         hint={
-          <span className="flex flex-col gap-0.5 text-xs">
-            <span>Custo Total: {formatCurrency(costTotal)}</span>
-            <span>Preço de Venda: {formatCurrency(price)}</span>
-            <span className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
-              Lucro Unitário: {formatCurrency(profit)}
+          hasPrice ? (
+            <span className="flex flex-col gap-0.5 text-xs">
+              <span>Custo Total: {formatCurrency(costTotal)}</span>
+              <span>Preço de Venda: {formatCurrency(price)}</span>
+              <span className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                Lucro Unitário: {formatCurrency(profit)}
+              </span>
             </span>
-          </span>
+          ) : (
+            "Defina o preço de venda para calcular o lucro."
+          )
         }
       />
 
@@ -366,6 +382,7 @@ function ProductDetailPage() {
       />
     </KpiSection>
   );
+
 
   return (
     <>
