@@ -552,10 +552,13 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     return own > 0 ? { ...pricingInputs.margins, targetPct: own } : pricingInputs.margins;
   }, [form.margin, pricingInputs]);
 
-  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
-  const suggestOfficialPrice = useCallback((): number | null => {
+  /**
+   * Resultado COMPLETO do Motor Comercial V2 (mín / recomendado / premium).
+   * UX apenas: nenhuma fórmula é calculada aqui.
+   */
+  const officialSuggestion = useMemo(() => {
     if (officialCosts.acquisition <= 0) return null;
-    const official = computeSuggestedPrice({
+    return computeSuggestedPrice({
       companyId,
       productId: product?.id ?? "new-product",
       categoryId: form.category_id || undefined,
@@ -565,8 +568,6 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       feeTable: pricingInputs.feeTable,
       module: "products.form",
     });
-    const value = official.targetPrice;
-    return Number.isFinite(value) && value > 0 ? value : null;
   }, [
     companyId,
     product?.id,
@@ -576,6 +577,13 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
     taxPct,
     pricingInputs,
   ]);
+
+  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
+  const suggestOfficialPrice = useCallback((): number | null => {
+    const value = officialSuggestion?.targetPrice;
+    return value != null && Number.isFinite(value) && value > 0 ? value : null;
+  }, [officialSuggestion]);
+
 
   // Impostos: alíquota efetiva da empresa (quando configurada).
   const taxAppliedRef = useRef(false);
@@ -912,15 +920,45 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
-  const calcBasePrice = () => {
-    const suggested = suggestOfficialPrice();
+  /** Faixa escolhida pelo usuário (UX apenas — não altera o motor). */
+  const [priceTier, setPriceTier] = useState<"min" | "recommended" | "premium">("recommended");
+
+  /** Faixas oferecidas pelo motor (somente leitura). */
+
+  const priceTiers = useMemo(
+    () =>
+      officialSuggestion
+        ? ([
+            { key: "min" as const, label: "Mínimo", value: officialSuggestion.minPrice },
+            {
+              key: "recommended" as const,
+              label: "Recomendado",
+              value: officialSuggestion.recommendedPrice,
+            },
+            { key: "premium" as const, label: "Premium", value: officialSuggestion.premiumPrice },
+          ].filter((t) => Number.isFinite(t.value) && t.value > 0))
+        : [],
+    [officialSuggestion],
+  );
+
+  const selectedTierPrice = priceTiers.find((t) => t.key === priceTier)?.value ?? null;
+
+  /**
+   * UX — apenas preenche o campo "Preço de venda" em memória.
+   * NÃO grava nada: o produto só é salvo em "Salvar produto".
+   */
+  const applySuggestedPrice = () => {
+    const suggested = selectedTierPrice ?? suggestOfficialPrice();
     if (suggested == null) {
       toast.error("Não foi possível calcular. Verifique custos e margem.");
       return;
     }
     setForm((s) => ({ ...s, price: suggested.toFixed(2) }));
-    toast.success("Preço sugerido gerado pelo Motor Comercial V2");
+    toast.success(
+      `Preço aplicado no formulário: ${formatCurrency(suggested)} — revise e clique em Salvar produto.`,
+    );
   };
+
 
   return (
     <div className="space-y-6">
@@ -1479,15 +1517,58 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
                   <div className="mt-1.5">
                     <NumInput value={form.price} onChange={(v) => set("price", v)} />
                   </div>
+
+                  {priceTiers.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        Preço sugerido pelo Motor Comercial V2
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {priceTiers.map((tier) => {
+                          const active = tier.key === priceTier;
+                          return (
+                            <button
+                              key={tier.key}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => setPriceTier(tier.key)}
+                              className={`rounded-lg border p-2 text-center transition-colors ${
+                                active
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border/60 hover:border-primary/40"
+                              }`}
+                            >
+                              <span
+                                className={`block text-[10px] uppercase ${
+                                  active ? "text-primary" : "text-muted-foreground"
+                                }`}
+                              >
+                                {tier.label}
+                              </span>
+                              <span className="mt-0.5 block text-sm font-semibold tabular-nums">
+                                {formatCurrency(tier.value)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <Button
                     type="button"
                     className="mt-2 w-full"
-                    onClick={calcBasePrice}
+                    onClick={applySuggestedPrice}
                     disabled={totalCost <= 0}
                   >
-                    <Wand2 className="mr-1.5 h-4 w-4" /> Calcular preço sugerido
+                    <Wand2 className="mr-1.5 h-4 w-4" /> Aplicar preço sugerido
                   </Button>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Preenche apenas o campo acima. Nada é salvo até você clicar em{" "}
+                    <strong>Salvar produto</strong>.
+                  </p>
                 </div>
+
 
                 <div className="grid grid-cols-2 gap-3 border-t border-primary/20 pt-4">
                   <Metric
