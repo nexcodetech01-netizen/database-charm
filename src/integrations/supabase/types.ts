@@ -4305,6 +4305,7 @@ export type Database = {
           description: string | null
           icon: string
           id: string
+          margin_policy_source: string
           max_margin_pct: number | null
           min_margin_pct: number | null
           name: string
@@ -4324,6 +4325,7 @@ export type Database = {
           description?: string | null
           icon?: string
           id?: string
+          margin_policy_source?: string
           max_margin_pct?: number | null
           min_margin_pct?: number | null
           name: string
@@ -4343,6 +4345,7 @@ export type Database = {
           description?: string | null
           icon?: string
           id?: string
+          margin_policy_source?: string
           max_margin_pct?: number | null
           min_margin_pct?: number | null
           name?: string
