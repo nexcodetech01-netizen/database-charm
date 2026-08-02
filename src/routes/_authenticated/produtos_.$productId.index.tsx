@@ -634,42 +634,9 @@ function ProductDetailPage() {
       />
 
 
-      {/* Precificação */}
-      <Section
+      {/* Custos operacionais e precificação */}
+      <ProductCostBreakdown productId={product.id} product={product} />
 
-            title="Precificação"
-            description="Composição de custos e margem aplicada."
-          >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              <PriceTile label="Custo" value={formatCurrency(cost)} icon={Wallet} />
-              <PriceTile label="Frete" value={formatCurrency(freight)} icon={Truck} />
-              <PriceTile label="Seguro" value={formatCurrency(insurance)} icon={Shield} />
-              <PriceTile
-                label="Outros custos"
-                value={formatCurrency(otherCosts)}
-                icon={MoreHorizontal}
-              />
-              <PriceTile
-                label="Margem de Lucro"
-                value={`${formatPercent(margin)}%`}
-                icon={Percent}
-              />
-
-              <PriceTile
-                label="Lucro"
-                value={formatCurrency(profit)}
-                icon={TrendingUp}
-                intent={profit >= 0 ? "positive" : "negative"}
-                highlight
-              />
-              <PriceTile
-                label="Preço final"
-                value={formatCurrency(price)}
-                icon={DollarSign}
-                highlight
-              />
-            </div>
-      </Section>
 
 
 
