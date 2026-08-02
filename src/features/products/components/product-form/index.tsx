@@ -421,11 +421,17 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
       setEanLoading(false);
     }
   }
+  // Política automática da categoria (Motor Comercial V2). Quando desligada,
+  // a categoria não impõe margem e o formulário cai na política da empresa.
+  const categoryAutoPolicy =
+    (selectedCategory as { auto_pricing_policy?: boolean | null } | null)?.auto_pricing_policy !==
+    false;
   const categoryDefaultMargin = useMemo(() => {
+    if (!categoryAutoPolicy) return null;
     const raw = (selectedCategory as { target_margin_pct?: number | null } | null)
       ?.target_margin_pct;
     return raw != null && Number.isFinite(Number(raw)) ? Number(raw) : null;
-  }, [selectedCategory]);
+  }, [selectedCategory, categoryAutoPolicy]);
   const hasCategoryMargin = categoryDefaultMargin != null;
 
   // Auto-preenche a margem quando a opção "Utilizar margem da categoria"
