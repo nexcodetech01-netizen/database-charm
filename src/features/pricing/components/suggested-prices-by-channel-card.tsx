@@ -308,9 +308,23 @@ export function SuggestedPricesByChannelCard(props: Props) {
     localTick,
   ]);
 
+  const channels = useMemo(() => {
+    const reference = snapshot?.currentStorePrice || 100;
+    return buildChannels(effectiveFeePct(worstCaseFee(feeTable, reference), reference));
+  }, [feeTable, snapshot?.currentStorePrice]);
+
   const rows = useMemo(
-    () => buildRows(snapshot, strategy, fixedCosts, channelMargins, channelStrategies),
-    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies],
+    () =>
+      buildRows(
+        snapshot,
+        strategy,
+        fixedCosts,
+        channelMargins,
+        channelStrategies,
+        channels,
+        companyId,
+      ),
+    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies, channels, companyId],
   );
 
   // "Manter lucro" só faz sentido com preço de loja > custo.
