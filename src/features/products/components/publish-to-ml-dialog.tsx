@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { computeOfficialPricing } from "@/features/pricing/official";
+import {
+  computeOfficialPricing,
+  resolveChannelFee,
+  solvePriceForTargetProfit,
+} from "@/features/pricing/official";
 
 /** Comissão clássica do Mercado Livre (canal, não taxa de recebimento). */
-const ML_COMMISSION_PCT = 16;
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -113,18 +116,31 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     const mlChan = channelSettingsQuery.data?.channels?.ml;
     const globalStrategy = channelSettingsQuery.data?.globalStrategy ?? "policy";
     const strategy = mlChan?.strategy ?? globalStrategy;
-    const fixedCost = Math.max(0, Number(mlChan?.fixedCost ?? 6) || 0);
+    // Taxa do canal — catálogo canônico do motor, com override da empresa.
+    const channelFee = resolveChannelFee("ml", mlChan);
+    const fixedCost = channelFee.fixedFee;
     const marginPct =
       typeof mlChan?.marginPct === "number" && mlChan.marginPct >= 0
         ? mlChan.marginPct
         : targetMarginPct;
-    const feePct = ML_COMMISSION_PCT;
-    const feeRate = feePct / 100;
+    const feePct = channelFee.feePct;
     let raw = 0;
     if (strategy === "keep_store_profit") {
-      const reachable = currentStorePrice > 0 && currentStorePrice > costTotal && feeRate < 1;
-      if (!reachable) return null;
-      raw = (currentStorePrice + fixedCost) / (1 - feeRate);
+      if (!(currentStorePrice > 0) || currentStorePrice <= costTotal) return null;
+      // MOTOR ÚNICO — o preço que preserva o lucro da loja é resolvido pelo motor.
+      const solved = solvePriceForTargetProfit(
+        {
+          companyId: product.company_id,
+          productId: product.id,
+          costs: { acquisition: costTotal },
+          margins: { minPct: 0, targetPct: marginPct },
+          fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
+          module: "products.publish-ml",
+        },
+        currentStorePrice - costTotal,
+      );
+      if (solved == null) return null;
+      raw = solved;
     } else {
       // MOTOR ÚNICO (FASE 1/2) — nenhuma fórmula local.
       const official = computeOfficialPricing({

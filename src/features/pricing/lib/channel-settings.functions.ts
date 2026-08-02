@@ -25,6 +25,8 @@ export type ChannelStrategy = "policy" | "keep_store_profit";
 
 export interface ChannelSettingEntry {
   marginPct?: number;
+  /** Override da comissão do canal (%). Sem valor, usa o catálogo do motor. */
+  feePct?: number;
   fixedCost?: number;
   strategy?: ChannelStrategy;
 }
@@ -56,6 +58,9 @@ function sanitize(input: unknown): ProductChannelSettingsDTO {
 
       const m = Number(entry.marginPct);
       if (Number.isFinite(m) && m >= 0 && m < 100) clean.marginPct = m;
+
+      const fp = Number(entry.feePct);
+      if (Number.isFinite(fp) && fp >= 0 && fp < 100) clean.feePct = fp;
 
       const f = Number(entry.fixedCost);
       if (Number.isFinite(f) && f >= 0 && f < 1_000_000) clean.fixedCost = f;

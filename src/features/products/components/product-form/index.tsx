@@ -49,6 +49,8 @@ import { ProductCreatedDialog } from "../product-created-dialog";
 import { MovementFormDialog } from "@/features/inventory/components/movement-form-dialog";
 import type { ManualMovementType } from "@/features/inventory/types";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
+import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
+import { computeSuggestedPrice, evaluateOfficialPrice, worstCaseFee, effectiveFeePct } from "@/features/pricing/official";
 import { useDraft } from "@/hooks/use-draft";
 import { DRAFT_KEYS } from "@/lib/draft-storage";
 import { DraftAutosave } from "@/components/feedback/draft-autosave";
@@ -145,7 +147,7 @@ const empty: FormState = {
   packaging: "0",
   insurance: "0",
   other_costs: "0",
-  margin: "30",
+  margin: "",
   use_category_margin: true,
   price: "0",
   stock: "0",
@@ -516,6 +518,75 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
 
   const price = num(form.price);
 
+  // ── MOTOR COMERCIAL V2 — entradas oficiais (margem categoria→empresa,
+  // taxas reais do Asaas, impostos e custos padrão). Nada é hardcoded.
+  const { inputs: pricingInputs } = usePricingInputs(companyId, form.category_id || null);
+
+  const officialCosts = useMemo(
+    () => ({
+      acquisition: num(form.cost),
+      freight: num(form.freight),
+      packaging: num(form.packaging),
+      insurance: num(form.insurance),
+      otherCosts: num(form.other_costs),
+    }),
+    [form.cost, form.freight, form.packaging, form.insurance, form.other_costs],
+  );
+
+  /** Margem efetiva: produto → categoria → empresa (via política oficial). */
+  const effectiveMargins = useMemo(() => {
+    const own = num(form.margin);
+    return own > 0 ? { ...pricingInputs.margins, targetPct: own } : pricingInputs.margins;
+  }, [form.margin, pricingInputs]);
+
+  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
+  const suggestOfficialPrice = useCallback((): number | null => {
+    if (officialCosts.acquisition <= 0) return null;
+    const official = computeSuggestedPrice({
+      companyId,
+      productId: product?.id ?? "new-product",
+      categoryId: form.category_id || undefined,
+      costs: officialCosts,
+      margins: effectiveMargins,
+      taxPct: num(taxPct),
+      feeTable: pricingInputs.feeTable,
+      module: "products.form",
+    });
+    const value = official.targetPrice;
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }, [companyId, product?.id, form.category_id, officialCosts, effectiveMargins, taxPct, pricingInputs]);
+
+  // Impostos: alíquota efetiva da empresa (quando configurada).
+  const taxAppliedRef = useRef(false);
+  useEffect(() => {
+    if (taxAppliedRef.current || pricingInputs.taxPct <= 0) return;
+    taxAppliedRef.current = true;
+    setTaxPct(String(pricingInputs.taxPct));
+  }, [pricingInputs.taxPct]);
+
+  // Margem: quando não há valor próprio nem da categoria, usa a política da empresa.
+  useEffect(() => {
+    if (num(form.margin) > 0) return;
+    if (form.use_category_margin && hasCategoryMargin) return;
+    const target = pricingInputs.margins.targetPct;
+    if (!(target > 0)) return;
+    setForm((s) => (num(s.margin) > 0 ? s : { ...s, margin: String(target) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pricingInputs.margins.targetPct, form.margin, form.use_category_margin, hasCategoryMargin]);
+
+  // Produto NOVO: preço sugerido gerado automaticamente pelo motor.
+  const autoPriceRef = useRef(false);
+  useEffect(() => {
+    if (isEdit || autoPriceRef.current) return;
+    if (num(form.price) > 0 || officialCosts.acquisition <= 0) return;
+    if (!(effectiveMargins.targetPct > 0)) return;
+    const suggested = suggestOfficialPrice();
+    if (suggested == null) return;
+    autoPriceRef.current = true;
+    setForm((s) => (num(s.price) > 0 ? s : { ...s, price: suggested.toFixed(2) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, form.price, officialCosts, effectiveMargins, suggestOfficialPrice]);
+
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((s) => ({ ...s, [k]: v }));
 
@@ -788,27 +859,36 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
   };
 
   const taxPctNum = num(taxPct);
-  const taxAmount = (price * taxPctNum) / 100;
-  const netProfit = price - totalCost - taxAmount;
-  const realMarginPct = price > 0 ? (netProfit / price) * 100 : 0;
+  // MOTOR ÚNICO — lucro e margem vêm do Motor Comercial V2 (nunca calculados aqui).
+  const officialEvaluation = useMemo(
+    () =>
+      evaluateOfficialPrice(price, {
+        companyId,
+        productId: product?.id ?? "new-product",
+        categoryId: form.category_id || undefined,
+        costs: officialCosts,
+        margins: pricingInputs.margins,
+        fee: { pct: effectiveFeePct(worstCaseFee(pricingInputs.feeTable, price), price) },
+        taxPct: taxPctNum,
+        module: "products.form",
+      }),
+    [price, companyId, product?.id, form.category_id, officialCosts, pricingInputs, taxPctNum],
+  );
+  const taxAmount = (price * officialEvaluation.taxPct) / 100;
+  const netProfit = officialEvaluation.profit;
+  const realMarginPct = officialEvaluation.marginPct;
   // Só exibe indicadores de resultado quando há custo E preço preenchidos —
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
   const calcBasePrice = () => {
-    const marginPct = num(form.margin);
-    const totalPct = marginPct + taxPctNum;
-    if (!Number.isFinite(totalPct) || marginPct <= 0 || totalPct >= 100) {
-      toast.error("Informe uma margem válida (margem + impostos devem ser < 100%)");
-      return;
-    }
-    const newPrice = totalCost / (1 - totalPct / 100);
-    if (!Number.isFinite(newPrice) || newPrice <= 0) {
+    const suggested = suggestOfficialPrice();
+    if (suggested == null) {
       toast.error("Não foi possível calcular. Verifique custos e margem.");
       return;
     }
-    setForm((s) => ({ ...s, price: newPrice.toFixed(2) }));
-    toast.success("Preço de venda base calculado");
+    setForm((s) => ({ ...s, price: suggested.toFixed(2) }));
+    toast.success("Preço sugerido gerado pelo Motor Comercial V2");
   };
 
   return (

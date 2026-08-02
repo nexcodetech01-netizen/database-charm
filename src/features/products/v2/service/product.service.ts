@@ -7,8 +7,9 @@
  */
 import { BaseService } from "@/features/bella-ai/agent/infrastructure/base-service";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
-import { computeOfficialPricing } from "@/features/pricing/official";
-import { fetchCompanyCostDefaults } from "@/features/pricing/lib/company-cost-defaults";
+import { computeSuggestedPrice } from "@/features/pricing/official";
+import { fetchPricingInputs } from "@/features/pricing/data/pricing-inputs";
+
 import type { Product, ProductInsert } from "../../types";
 import {
   ProductRepository,
@@ -98,27 +99,35 @@ export class ProductService extends BaseService {
       return updated;
     }
 
-    // Produto genuinamente novo: calcula preço a partir do custo quando ausente.
-    // MOTOR ÚNICO — nenhuma fórmula local (FASE 1/2).
+    // Produto genuinamente novo: preço SEMPRE gerado pelo Motor Comercial V2.
+    // MOTOR ÚNICO — zero fórmula local, zero percentual hardcoded (FASE 1/2).
     let price = inputPrice ?? 0;
     if (price <= 0 && cost > 0) {
-      const defaults = await fetchCompanyCostDefaults(this.ctx.supabase, this.companyId);
-      const official = computeOfficialPricing({
+      const inputs = await fetchPricingInputs(
+        this.ctx.supabase,
+        this.companyId,
+        input.categoryId ?? null,
+      );
+      const official = computeSuggestedPrice({
         companyId: this.companyId,
         productId: "new-product",
+        categoryId: input.categoryId ?? undefined,
         costs: {
           acquisition: cost,
-          freight: defaults.freight,
-          packaging: defaults.packaging,
-          insurance: defaults.insurance,
-          otherCosts: defaults.otherCosts,
+          freight: inputs.costDefaults.freight,
+          packaging: inputs.costDefaults.packaging,
+          insurance: inputs.costDefaults.insurance,
+          otherCosts: inputs.costDefaults.otherCosts,
         },
-        margins: { minPct: 0, targetPct: 50, premiumPct: 50 },
+        margins: inputs.margins,
+        taxPct: inputs.taxPct,
+        feeTable: inputs.feeTable,
         module: "products.create",
       });
       const suggested = official.targetPrice;
       price = Number.isFinite(suggested) ? Math.round(suggested * 100) / 100 : 0;
     }
+
 
 
     // `company_id` sempre derivado do ExecutionContext.
