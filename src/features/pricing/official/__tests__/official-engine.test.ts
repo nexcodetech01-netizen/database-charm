@@ -20,7 +20,7 @@ import {
   INSTALLMENT_MIN_AMOUNT,
   MAX_INSTALLMENTS_NO_INTEREST,
   EMPTY_FEE_TABLE,
-} from "../official";
+} from "../index";
 
 const baseInput = {
   companyId: "c1",
