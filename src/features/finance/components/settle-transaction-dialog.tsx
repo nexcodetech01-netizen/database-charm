@@ -165,8 +165,8 @@ export function SettleTransactionDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b px-5 py-3 text-left">
             <DialogTitle>Registrar baixa</DialogTitle>
             <DialogDescription>
               {transaction ? (
@@ -176,6 +176,8 @@ export function SettleTransactionDialog({
               ) : null}
             </DialogDescription>
           </DialogHeader>
+
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
 
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -334,7 +336,9 @@ export function SettleTransactionDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          </div>
+
+          <DialogFooter className="shrink-0 border-t bg-card px-5 py-3">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>

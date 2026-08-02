@@ -1021,8 +1021,8 @@ export function CheckoutDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); else onOpenChange(true); }}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b px-5 py-3 text-left">
           <DialogTitle className="flex items-center gap-2">
             Checkout
             {saleNumber ? (
@@ -1036,6 +1036,7 @@ export function CheckoutDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
         {/* Valor */}
         <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1544,7 +1545,9 @@ export function CheckoutDialog({
 
         </div>
 
-        <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row">
+        </div>
+
+        <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t bg-card px-5 py-3 sm:flex-row">
           {onContinueEditing && !confirmed ? (
             <Button
               type="button"
