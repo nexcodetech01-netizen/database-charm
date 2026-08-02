@@ -29,7 +29,6 @@ import {
   Store,
   ShoppingBag,
   Globe,
-  Package,
 } from "lucide-react";
 import {
   Popover,
