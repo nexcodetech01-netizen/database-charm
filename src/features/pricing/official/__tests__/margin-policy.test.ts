@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  MARGIN_ORIGIN_LABEL,
-  categoryPolicyIsActive,
-  resolveMarginPolicy,
-} from "../margin-policy";
+import { MARGIN_ORIGIN_LABEL, categoryPolicyIsActive, resolveMarginPolicy } from "../margin-policy";
 import { findMarketReference, marketReferenceKey } from "../market-reference";
 
 const FALLBACK = 40;

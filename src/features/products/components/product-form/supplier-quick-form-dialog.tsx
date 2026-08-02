@@ -22,12 +22,7 @@ interface Props {
  * Reutiliza o `SupplierForm` completo em modo dialog para manter regras,
  * validações e campos alinhados ao cadastro oficial de Fornecedores.
  */
-export function SupplierQuickFormDialog({
-  companyId,
-  open,
-  onOpenChange,
-  onCreated,
-}: Props) {
+export function SupplierQuickFormDialog({ companyId, open, onOpenChange, onCreated }: Props) {
   const qc = useQueryClient();
 
   return (
@@ -36,8 +31,7 @@ export function SupplierQuickFormDialog({
         <DialogHeader>
           <DialogTitle>Novo fornecedor</DialogTitle>
           <DialogDescription>
-            Cadastro completo. O fornecedor será selecionado automaticamente no
-            produto após salvar.
+            Cadastro completo. O fornecedor será selecionado automaticamente no produto após salvar.
           </DialogDescription>
         </DialogHeader>
 
