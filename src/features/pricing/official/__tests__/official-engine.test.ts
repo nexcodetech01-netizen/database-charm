@@ -95,26 +95,26 @@ describe("FASE 3 — custos unificados", () => {
 
 describe("FASE 4 — taxas Asaas da empresa", () => {
   const table = buildFeeTable([
-    { method: "pix", installments: 1, percent_fee: 0, fixed_fee: 1.99, active: true },
-    { method: "debit_card", installments: 1, percent_fee: 1.89, fixed_fee: 0.35, active: true },
-    { method: "credit_card", installments: 1, percent_fee: 2.99, fixed_fee: 0.49, active: true },
-    { method: "credit_card", installments: 2, percent_fee: 3.49, fixed_fee: 0.49, active: true },
-    { method: "credit_card", installments: 3, percent_fee: 3.99, fixed_fee: 0.49, active: true },
-  ] as never);
+    { method_key: "pix", label: "Pix", installments: 1, fee_percent: 0, fee_fixed: 1.99, active: true },
+    { method_key: "debit_card", label: "Débito", installments: 1, fee_percent: 1.89, fee_fixed: 0.35, active: true },
+    { method_key: "credit_card_1", label: "Crédito 1x", installments: 1, fee_percent: 2.99, fee_fixed: 0.49, active: true },
+    { method_key: "credit_card_2", label: "Crédito 2x", installments: 2, fee_percent: 3.49, fee_fixed: 0.49, active: true },
+    { method_key: "credit_card_3", label: "Crédito 3x", installments: 3, fee_percent: 3.99, fee_fixed: 0.49, active: true },
+  ]);
 
   it("resolve a taxa cadastrada por método", () => {
     const pix = resolveFee(table, "pix");
-    expect(pix.fixed).toBeCloseTo(1.99, 2);
-    expect(pix.pct).toBe(0);
+    expect(pix.feeFixed).toBeCloseTo(1.99, 2);
+    expect(pix.feePct).toBe(0);
   });
 
   it("usa o pior caso na formação de preço (protege a margem)", () => {
     const worst = worstCaseFee(table, 500);
-    expect(worst.pct).toBeGreaterThanOrEqual(3.99);
+    expect(worst.feePct).toBeGreaterThanOrEqual(3.99);
   });
 
   it("converte taxa fixa em percentual efetivo sobre o valor", () => {
-    expect(effectiveFeePct({ pct: 0, fixed: 1.99, methodKey: "pix", label: "Pix" }, 100)).toBeCloseTo(
+    expect(effectiveFeePct({ feePct: 0, feeFixed: 1.99, methodKey: "pix", label: "Pix" }, 100)).toBeCloseTo(
       1.99,
       2,
     );
@@ -131,7 +131,7 @@ describe("FASE 4 — taxas Asaas da empresa", () => {
   });
 
   it("tabela vazia não quebra o motor", () => {
-    expect(worstCaseFee(EMPTY_FEE_TABLE, 100).pct).toBe(0);
+    expect(worstCaseFee(EMPTY_FEE_TABLE, 100).feePct).toBe(0);
   });
 
   it("taxa entra na formação e eleva o preço", () => {
