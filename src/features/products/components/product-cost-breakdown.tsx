@@ -37,9 +37,11 @@ import {
   type ProductFinancialsInput,
 } from "@/features/products/hooks/use-product-financials";
 
+export type MarginMode = "margin" | "markup";
+
 interface Props {
   productId: string;
-  product: ProductFinancialsInput;
+  product: ProductFinancialsInput & { margin_mode?: string | null };
   canEdit?: boolean;
 }
 
@@ -50,11 +52,27 @@ const parseNum = (v: string) => {
 };
 const toInput = (n: number) => String(round2(n)).replace(".", ",");
 
+const MODE_OPTIONS: { value: MarginMode; label: string; hint: string }[] = [
+  {
+    value: "margin",
+    label: "Margem sobre o preço de venda",
+    hint: "Preço = Custo ÷ (1 − margem%)",
+  },
+  {
+    value: "markup",
+    label: "Markup sobre o custo",
+    hint: "Preço = Custo × (1 + markup%)",
+  },
+];
+
 export function ProductCostBreakdown({ productId, product, canEdit = true }: Props) {
   const [taxInput, setTaxInput] = useState("0");
   const taxRatePct = parseNum(taxInput);
   const fin = useProductFinancials(product, { taxRatePct })!;
 
+  const storedMode: MarginMode =
+    product.margin_mode === "markup" ? "markup" : "margin";
+  const [mode, setMode] = useState<MarginMode>(storedMode);
   const [marginInput, setMarginInput] = useState(() => toInput(fin.marginPctReal));
   const [priceInput, setPriceInput] = useState(() => toInput(fin.price));
   const [dirty, setDirty] = useState(false);
@@ -67,25 +85,37 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   // sempre a fonte inicial do campo.
   useEffect(() => {
     if (dirty) return;
+    setMode(storedMode);
     setMarginInput(toInput(fin.marginPctReal));
     setPriceInput(toInput(fin.price));
-  }, [dirty, fin.marginPctReal, fin.price]);
+  }, [dirty, storedMode, fin.marginPctReal, fin.price]);
 
   const baseCost = fin.costTotalWithoutTax;
 
-  /** Margem desejada -> preço sugerido (margem sobre o preço de venda). */
-  const priceFromMargin = (marginPct: number): number => {
-    const divisor = 1 - (marginPct + taxRatePct) / 100;
+  /** Percentual desejado -> preço sugerido, conforme o modo selecionado. */
+  const priceFromPct = (pct: number, m: MarginMode = mode): number => {
+    if (m === "markup") {
+      const divisor = 1 - taxRatePct / 100;
+      if (divisor <= 0) return 0;
+      return round2((baseCost * (1 + pct / 100)) / divisor);
+    }
+    const divisor = 1 - (pct + taxRatePct) / 100;
     if (divisor <= 0) return 0;
     return round2(baseCost / divisor);
   };
 
-  /** Preço informado -> margem real (sem tocar no custo de aquisição). */
-  const marginFromPrice = (priceValue: number): number => {
+  /** Preço informado -> percentual, conforme o modo selecionado. */
+  const pctFromPrice = (priceValue: number, m: MarginMode = mode): number => {
     if (priceValue <= 0) return 0;
     const tax = (priceValue * taxRatePct) / 100;
-    return round2(((priceValue - baseCost - tax) / priceValue) * 100);
+    const profit = priceValue - baseCost - tax;
+    if (m === "markup") {
+      if (baseCost <= 0) return 0;
+      return round2((profit / baseCost) * 100);
+    }
+    return round2((profit / priceValue) * 100);
   };
+
 
   const simulated = useMemo(() => {
     const p = parseNum(priceInput);
@@ -102,10 +132,19 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
     };
   }, [priceInput, taxRatePct, baseCost]);
 
+  const handleModeChange = (next: MarginMode) => {
+    if (next === mode) return;
+    setDirty(true);
+    setMode(next);
+    // O número digitado permanece — só a fórmula muda daqui em diante.
+    const price = priceFromPct(parseNum(marginInput), next);
+    if (price > 0) setPriceInput(toInput(price));
+  };
+
   const handleMarginChange = (v: string) => {
     setDirty(true);
     setMarginInput(v);
-    const next = priceFromMargin(parseNum(v));
+    const next = priceFromPct(parseNum(v));
     // Só propaga para o preço quando o cálculo é válido — evita zerar um
     // preço existente enquanto o usuário digita a margem.
     if (next > 0) setPriceInput(toInput(next));
@@ -114,12 +153,12 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
   const handlePriceChange = (v: string) => {
     setDirty(true);
     setPriceInput(v);
-    setMarginInput(toInput(marginFromPrice(parseNum(v))));
+    setMarginInput(toInput(pctFromPrice(parseNum(v))));
   };
-
 
   const reset = () => {
     setDirty(false);
+    setMode(storedMode);
     setMarginInput(toInput(fin.marginPctReal));
     setPriceInput(toInput(fin.price));
   };
@@ -137,8 +176,10 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
         input: {
           price: nextPrice,
           margin: round2(parseNum(marginInput)),
+          margin_mode: mode,
         },
       });
+
 
       setDirty(false);
       toast.success("Preço e margem atualizados");
@@ -235,10 +276,50 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
               <h3 className="text-sm font-semibold">Margem e preço de venda</h3>
             </div>
 
+            <div className="mb-4 space-y-1.5">
+              <Label className="text-xs">Modo de cálculo</Label>
+              <div
+                role="radiogroup"
+                aria-label="Modo de cálculo do percentual"
+                className="grid gap-2 sm:grid-cols-2"
+              >
+                {MODE_OPTIONS.map((opt) => {
+                  const active = mode === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      disabled={!canEdit}
+                      onClick={() => handleModeChange(opt.value)}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-left transition-colors disabled:opacity-60",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-background hover:bg-muted/50",
+                      )}
+                    >
+                      <span className="block text-xs font-medium">{opt.label}</span>
+                      <span className="block text-[11px] text-muted-foreground tabular-nums">
+                        {opt.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Trocar o modo não altera o número digitado — apenas a fórmula
+                usada dali em diante.
+              </p>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="desired-margin" className="text-xs">
-                  Margem desejada (%)
+                  {mode === "markup"
+                    ? "Markup desejado (%)"
+                    : "Margem desejada (%)"}
                 </Label>
                 <Input
                   id="desired-margin"
@@ -251,6 +332,7 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
                   Livre por produto — sugere o preço ideal.
                 </p>
               </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="sale-price" className="text-xs">
                   Preço de venda (R$)
