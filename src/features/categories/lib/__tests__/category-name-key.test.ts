@@ -75,7 +75,7 @@ describe("resolveMergePlan", () => {
       { id: "2", name: "Bolsas", product_count: 26, ...base },
     ]);
     expect(plan.targetId).toBe("2");
-    expect(plan.sources.map((s) => s.id)).toEqual(["1"]);
+    expect(plan.sources.map((s: { id: string }) => s.id)).toEqual(["1"]);
     expect(plan.policyConflict).toBe(false);
     expect(plan.productsToMove).toBe(4);
   });
