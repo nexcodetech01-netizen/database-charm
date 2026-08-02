@@ -805,8 +805,42 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
 
   };
 
+  const taxPctNum = num(taxPct);
+  const taxAmount = (price * taxPctNum) / 100;
+  const netProfit = price - totalCost - taxAmount;
+  const realMarginPct = price > 0 ? (netProfit / price) * 100 : 0;
+  // Só exibe indicadores de resultado quando há custo E preço preenchidos —
+  // evita "prejuízo de -100%" em produtos ainda sem precificação.
+  const hasPricing = totalCost > 0 && price > 0;
+
+  const calcBasePrice = () => {
+    const marginPct = num(form.margin);
+    const totalPct = marginPct + taxPctNum;
+    if (!Number.isFinite(totalPct) || marginPct <= 0 || totalPct >= 100) {
+      toast.error("Informe uma margem válida (margem + impostos devem ser < 100%)");
+      return;
+    }
+    const newPrice = totalCost / (1 - totalPct / 100);
+    if (!Number.isFinite(newPrice) || newPrice <= 0) {
+      toast.error("Não foi possível calcular. Verifique custos e margem.");
+      return;
+    }
+    setForm((s) => ({ ...s, price: newPrice.toFixed(2) }));
+    toast.success("Preço de venda base calculado");
+  };
+
   return (
     <div className="space-y-6">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="geral">Dados gerais</TabsTrigger>
+          <TabsTrigger value="custos">Custos e precificação</TabsTrigger>
+          <TabsTrigger value="canais">Precificação por canal</TabsTrigger>
+          <TabsTrigger value="estoque">Estoque e fiscal</TabsTrigger>
+        </TabsList>
+
+        {/* ══════════════ ABA 1 — DADOS GERAIS ══════════════ */}
+        <TabsContent value="geral" className="space-y-6">
       {/* ─── Bloco IMAGEM PRINCIPAL ─── */}
       <Section
         title="Imagem principal"
@@ -1050,418 +1084,466 @@ export function ProductForm({ companyId, product, duplicateOf }: Props) {
               </Button>
             </div>
           </Field>
-          <Field label="NCM" hint="8 dígitos — obrigatório para emitir NF-e">
+          <Field label="Marca">
             <Input
-              value={form.ncm}
-              inputMode="numeric"
-              maxLength={12}
-              placeholder="0000.00.00 ou 00000000"
-              onChange={(e) => {
-                fiscal.markManual();
-                set("ncm", normalizeNcm(e.target.value));
-              }}
+              value={form.brand}
+              onChange={(e) => set("brand", e.target.value)}
+              onBlur={handleTitleCaseBlur((v) => set("brand", v))}
             />
-            {form.ncm && fiscal.source !== "manual" ? (
-              <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Sparkles className="h-3 w-3 text-primary" />
-                {fiscal.source === "category"
-                  ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
-                  : fiscal.source === "barcode"
-                    ? "Sugerido pelo EAN cadastrado — edite se precisar."
-                    : "Sugerido pelo histórico de produtos — edite se precisar."}
-              </p>
-            ) : null}
-
-            {fiscal.historyLoading && !form.ncm ? (
-              <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
-              </p>
-            ) : null}
-
-            {fiscal.historySuggestions.length ? (
-              <div className="mt-2 space-y-1.5">
-                <p className="text-[11px] font-medium text-muted-foreground">
-                  Usados em produtos semelhantes:
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {fiscal.historySuggestions.map((s) => (
-                    <Button
-                      key={s.ncm}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 gap-1.5 px-2 text-[11px]"
-                      onClick={() =>
-                        fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
-                      }
-                      title={`${s.sampleName} — ${s.usageCount} produto(s)`}
-                    >
-                      <Wand2 className="h-3 w-3" />
-                      {formatNcm(s.ncm)}
-                      {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
-                      <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
-                        {s.usageCount}
-                      </Badge>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </Field>
-          <Field label="CEST" hint="7 dígitos — apenas para substituição tributária">
-            <Input
-              value={form.cest}
-              inputMode="numeric"
-              maxLength={11}
-              placeholder="00.000.00 ou 0000000"
-              onChange={(e) => {
-                fiscal.markManual();
-                set("cest", normalizeCest(e.target.value));
-              }}
-            />
+          <Field label="Status">
+            <Select value={form.status} onValueChange={(v) => set("status", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PRODUCT_STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Unidade">
+            <Select value={form.unit} onValueChange={(v) => set("unit", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PRODUCT_UNIT_OPTIONS.map((u) => (
+                  <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Canal de venda principal">
+            <Select
+              value={form.sales_channel || "__none"}
+              onValueChange={(v) => set("sales_channel", v === "__none" ? "" : v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Não definido</SelectItem>
+                {SALES_CHANNEL_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
         </div>
+        <Field label="Descrição">
+          <Textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => set("description", e.target.value)}
+          />
+        </Field>
       </Section>
 
-      {/* ─── Bloco COMPRA ─── */}
+      {/* Fotos adicionais */}
+      {product ? (
+        <Section title="Fotos do produto" description="Fotos e mídias adicionais.">
+          <ProductImageUploader companyId={companyId} productId={product.id} />
+        </Section>
+      ) : null}
+
+      {/* Tags */}
       <Section
-        title="Compra"
-        description="Quanto você paga por este produto — o NexOS cuida do resto."
+        title="Tags"
+        description="A Bella sugere tags automaticamente. Aceite, remova ou adicione as suas."
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Preço de compra (R$) *" hint="Valor pago ao fornecedor por unidade">
-            <NumInput value={form.cost} onChange={(v) => set("cost", v)} />
-          </Field>
-          {product ? (
-            <Field
-              label="Saldo em estoque"
-              hint="Alterado somente por movimentação de estoque"
-            >
-              <div className="space-y-2">
-                <NumInput value={form.stock} onChange={() => {}} disabled />
-                <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {form.tags.length} / {MAX_PRODUCT_TAGS} tags
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => generateTagSuggestions()}
+            disabled={suggestingTags || !form.name.trim() || form.tags.length >= MAX_PRODUCT_TAGS}
+          >
+            {suggestingTags ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+            )}
+            Sugerir com Bella
+          </Button>
+        </div>
+
+        {suggestedTags.length > 0 ? (
+          <div className="mt-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-primary">
+                Sugestões da Bella — clique para aceitar
+              </span>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => setSuggestedTags([])}>
+                  Descartar
+                </Button>
+                <Button type="button" size="sm" onClick={acceptAllSuggested}>
+                  Aceitar todas
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {suggestedTags.map((t) => (
+                <Badge
+                  key={t}
+                  variant="outline"
+                  className="cursor-pointer border-primary/40 bg-background hover:bg-primary/10"
+                  onClick={() => acceptSuggestedTag(t)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    dismissSuggestedTag(t);
+                  }}
+                  title="Clique para aceitar · botão direito para descartar"
+                >
+                  + {t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <Field label="Adicionar tag manualmente">
+          <div className="flex gap-2">
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="Digite e pressione Enter"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag();
+                }
+              }}
+            />
+            <Button type="button" variant="outline" onClick={addTag}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {form.tags.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {form.tags.map((t) => (
+                <Badge
+                  key={t}
+                  variant="secondary"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    const prev = form.tags;
+                    executeWithUndo({
+                      message: `✓ Tag "${t}" removida.`,
+                      apply: () => set("tags", prev.filter((x) => x !== t)),
+                      undo: () => set("tags", prev),
+                    });
+                  }}
+                >
+                  {t} ✕
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </Field>
+      </Section>
+        </TabsContent>
+
+        {/* ══════════════ ABA 2 — CUSTOS E PRECIFICAÇÃO ══════════════ */}
+        <TabsContent value="custos" className="space-y-6">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold">Custos e precificação</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Preencha os passos abaixo — o preço de venda base é calculado a partir deles.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+              {/* Passos */}
+              <div className="space-y-5">
+                <StepRow step={1} title="Custo de aquisição" hint="Valor pago ao fornecedor por unidade">
+                  <NumInput value={form.cost} onChange={(v) => set("cost", v)} />
+                </StepRow>
+
+                <StepRow
+                  step={2}
+                  title="Frete de compra e embalagem"
+                  hint="Custos logísticos por unidade"
+                >
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <OperationalCostField
+                      label="Frete (R$)"
+                      value={form.freight}
+                      onChange={(v) => set("freight", v)}
+                      defaultValue={operationalDefaults?.freight}
+                    />
+                    <OperationalCostField
+                      label="Embalagem (R$)"
+                      value={form.packaging}
+                      onChange={(v) => set("packaging", v)}
+                      defaultValue={operationalDefaults?.packaging}
+                    />
+                    <OperationalCostField
+                      label="Seguro (R$)"
+                      value={form.insurance}
+                      onChange={(v) => set("insurance", v)}
+                      defaultValue={operationalDefaults?.insurance}
+                    />
+                    <OperationalCostField
+                      label="Outros custos (R$)"
+                      value={form.other_costs}
+                      onChange={(v) => set("other_costs", v)}
+                      defaultValue={operationalDefaults?.other_costs}
+                    />
+                  </div>
+                </StepRow>
+
+                <StepRow
+                  step={3}
+                  title="Impostos / alíquota base (%)"
+                  hint="Percentual sobre o preço de venda — usado apenas no cálculo desta tela"
+                >
+                  <div className="flex items-center gap-2">
+                    <Input
+                      inputMode="decimal"
+                      value={taxPct}
+                      onChange={(e) => setTaxPct(e.target.value)}
+                      className="max-w-[160px] tabular-nums"
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                </StepRow>
+
+                <StepRow
+                  step={4}
+                  title="Margem desejada / markup (%)"
+                  hint="Definida por produto — ou herdada da categoria"
+                >
+                  <MarginSourceField
+                    useCategory={form.use_category_margin}
+                    onChangeMode={(useCat) => set("use_category_margin", useCat)}
+                    margin={form.margin}
+                    onChangeMargin={(v) => set("margin", v)}
+                    categoryName={categoryName}
+                    categoryDefaultMargin={categoryDefaultMargin}
+                  />
+                </StepRow>
+              </div>
+
+              {/* Resultado em destaque */}
+              <aside className="space-y-4 rounded-xl border border-primary/25 bg-primary/5 p-5">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Custo total
+                  </p>
+                  <p className="text-base font-semibold tabular-nums">
+                    {formatCurrency(totalCost)}
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Preço de venda base (R$)
+                  </Label>
+                  <div className="mt-1.5">
+                    <NumInput value={form.price} onChange={(v) => set("price", v)} />
+                  </div>
                   <Button
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setMovementType("in");
-                      setMovementOpen(true);
-                    }}
+                    className="mt-2 w-full"
+                    onClick={calcBasePrice}
+                    disabled={totalCost <= 0}
                   >
-                    <ArrowUpRight className="mr-1.5 h-4 w-4" /> Entrada de estoque
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setMovementType("adjustment");
-                      setMovementOpen(true);
-                    }}
-                  >
-                    <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
+                    <Wand2 className="mr-1.5 h-4 w-4" /> Calcular preço sugerido
                   </Button>
                 </div>
-                {num(form.stock) <= 0 ? (
-                  <p className="text-sm font-medium text-destructive">
-                    ⚠️ Produto sem estoque
+
+                <div className="grid grid-cols-2 gap-3 border-t border-primary/20 pt-4">
+                  <Metric
+                    label="Lucro líquido"
+                    value={hasPricing ? formatCurrency(netProfit) : "—"}
+                    tone={hasPricing ? (netProfit < 0 ? "danger" : "success") : undefined}
+                  />
+                  <Metric
+                    label="Margem real"
+                    value={hasPricing ? `${realMarginPct.toFixed(2)}%` : "—"}
+                    tone={hasPricing ? (realMarginPct < 0 ? "danger" : "success") : undefined}
+                  />
+                </div>
+                {!hasPricing ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Informe custo e preço para ver lucro e margem.
                   </p>
                 ) : null}
-              </div>
-            </Field>
-          ) : (
-            <Field label="Estoque inicial" hint="Quantidade disponível hoje">
-              <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
-            </Field>
-          )}
+              </aside>
+            </div>
+          </div>
+        </TabsContent>
 
-        </div>
-        {product ? (
-          <MovementFormDialog
-            open={movementOpen}
-            onOpenChange={setMovementOpen}
-            companyId={companyId}
-            defaultProductId={product.id}
-            defaultType={movementType}
-            lockProduct
-            lockedProductLabel={product.name}
-            onCompleted={() => {
-              qc.invalidateQueries({ queryKey: productsKeys.all });
+        {/* ══════════════ ABA 3 — PRECIFICAÇÃO POR CANAL ══════════════ */}
+        <TabsContent value="canais" className="space-y-6">
+          <SuggestedPricesByChannelCard
+            mode="local"
+            costTotalCents={Math.round(totalCost * 100)}
+            targetMarginPct={num(form.margin)}
+            currentStorePriceCents={Math.round(num(form.price) * 100)}
+            productId={product?.id}
+            onApplySuggested={(recommended) => {
+              setForm((s) => ({ ...s, price: recommended.toFixed(2) }));
+              toast.success("Preços sugeridos aplicados");
             }}
           />
-        ) : null}
-      </Section>
+        </TabsContent>
 
-
-      {/* ─── Card: Onde vender e por quanto ─── */}
-      <SuggestedPricesByChannelCard
-        mode="local"
-        costTotalCents={Math.round(totalCost * 100)}
-        targetMarginPct={num(form.margin)}
-        currentStorePriceCents={Math.round(num(form.price) * 100)}
-        productId={product?.id}
-        onApplySuggested={(recommended) => {
-          setForm((s) => ({ ...s, price: recommended.toFixed(2) }));
-          toast.success("Preços sugeridos aplicados");
-        }}
-      />
-
-      {/* ─── Toggle: Opções avançadas ─── */}
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <div className="flex justify-center">
-          <CollapsibleTrigger asChild>
-            <Button type="button" variant="ghost" size="sm" className="text-muted-foreground">
-              <ChevronDown
-                className={`mr-1.5 h-4 w-4 transition-transform ${
-                  advancedOpen ? "rotate-180" : ""
-                }`}
-              />
-              {advancedOpen ? "Ocultar opções avançadas" : "Mostrar opções avançadas"}
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-
-        <CollapsibleContent className="mt-4 space-y-6">
-          {/* Detalhes complementares */}
-          <Section
-            title="Detalhes complementares"
-            description="Marca, unidade, status e descrição."
-          >
+        {/* ══════════════ ABA 4 — ESTOQUE E FISCAL ══════════════ */}
+        <TabsContent value="estoque" className="space-y-6">
+          <Section title="Estoque" description="Saldo, mínimo e movimentações.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Marca">
-                <Input
-                  value={form.brand}
-                  onChange={(e) => set("brand", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
-                />
-              </Field>
-              <Field label="Status">
-                <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Unidade">
-                <Select value={form.unit} onValueChange={(v) => set("unit", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_UNIT_OPTIONS.map((u) => (
-                      <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Canal de venda principal">
-                <Select
-                  value={form.sales_channel || "__none"}
-                  onValueChange={(v) => set("sales_channel", v === "__none" ? "" : v)}
+              {product ? (
+                <Field
+                  label="Saldo em estoque"
+                  hint="Alterado somente por movimentação de estoque"
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Não definido</SelectItem>
-                    {SALES_CHANNEL_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-            <Field label="Descrição">
-              <Textarea
-                rows={3}
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          {/* Custos adicionais e margem manual */}
-          <Section
-            title="Custos e margem manual"
-            description="Ajuste fino da composição de custo e do preço final."
-          >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <OperationalCostField
-                label="Frete (R$)"
-                value={form.freight}
-                onChange={(v) => set("freight", v)}
-                defaultValue={operationalDefaults?.freight}
-              />
-              <OperationalCostField
-                label="Embalagem (R$)"
-                value={form.packaging}
-                onChange={(v) => set("packaging", v)}
-                defaultValue={operationalDefaults?.packaging}
-              />
-              <OperationalCostField
-                label="Seguro (R$)"
-                value={form.insurance}
-                onChange={(v) => set("insurance", v)}
-                defaultValue={operationalDefaults?.insurance}
-              />
-              <OperationalCostField
-                label="Outros custos (R$)"
-                value={form.other_costs}
-                onChange={(v) => set("other_costs", v)}
-                defaultValue={operationalDefaults?.other_costs}
-              />
-              <div className="sm:col-span-2 lg:col-span-3">
-                <MarginSourceField
-                  useCategory={form.use_category_margin}
-                  onChangeMode={(useCat) => set("use_category_margin", useCat)}
-                  margin={form.margin}
-                  onChangeMargin={(v) => set("margin", v)}
-                  categoryName={categoryName}
-                  categoryDefaultMargin={categoryDefaultMargin}
-                />
-              </div>
-              <Field label="Preço final (R$)">
-                <NumInput value={form.price} onChange={(v) => set("price", v)} />
-              </Field>
-              <Field label="Estoque mínimo">
+                  <div className="space-y-2">
+                    <NumInput value={form.stock} onChange={() => {}} disabled />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setMovementType("in");
+                          setMovementOpen(true);
+                        }}
+                      >
+                        <ArrowUpRight className="mr-1.5 h-4 w-4" /> Entrada de estoque
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setMovementType("adjustment");
+                          setMovementOpen(true);
+                        }}
+                      >
+                        <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
+                      </Button>
+                    </div>
+                    {num(form.stock) <= 0 ? (
+                      <p className="text-sm font-medium text-destructive">
+                        ⚠️ Produto sem estoque
+                      </p>
+                    ) : null}
+                  </div>
+                </Field>
+              ) : (
+                <Field label="Estoque inicial" hint="Quantidade disponível hoje">
+                  <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
+                </Field>
+              )}
+              <Field label="Estoque mínimo" hint="Dispara alerta de reposição">
                 <NumInput value={form.min_stock} onChange={(v) => set("min_stock", v)} />
               </Field>
             </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-              <div className="text-sm">
-                <div className="font-medium">Calcular preço automaticamente</div>
-                <p className="text-xs text-muted-foreground">
-                  Usa custo total + margem desejada para sugerir o preço final.
-                </p>
-              </div>
-              <Button type="button" variant="default" onClick={autoCalculatePrice}>
-                <Wand2 className="mr-1.5 h-4 w-4" /> Calcular automaticamente
-              </Button>
-            </div>
-
-            <div className="grid gap-3 rounded-lg border border-dashed border-border bg-muted/30 p-4 sm:grid-cols-3">
-              <Metric label="Custo total" value={formatCurrency(totalCost)} />
-              <Metric
-                label="Lucro por unidade"
-                value={formatCurrency(profit)}
-                tone={profit < 0 ? "danger" : "success"}
+            {product ? (
+              <MovementFormDialog
+                open={movementOpen}
+                onOpenChange={setMovementOpen}
+                companyId={companyId}
+                defaultProductId={product.id}
+                defaultType={movementType}
+                lockProduct
+                lockedProductLabel={product.name}
+                onCompleted={() => {
+                  qc.invalidateQueries({ queryKey: productsKeys.all });
+                }}
               />
-              <Metric label="Markup" value={`${markup.toFixed(1)}%`} />
-            </div>
+            ) : null}
           </Section>
 
-          {/* Imagens (aba dedicada dentro do avançado) */}
-          {product ? (
-            <Section title="Imagens" description="Fotos e mídias do produto.">
-              <ProductImageUploader companyId={companyId} productId={product.id} />
-            </Section>
-          ) : null}
-
-          {/* Tags */}
-          <Section
-            title="Tags"
-            description="A Bella sugere tags automaticamente. Aceite, remova ou adicione as suas."
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">
-                {form.tags.length} / {MAX_PRODUCT_TAGS} tags
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => generateTagSuggestions()}
-                disabled={suggestingTags || !form.name.trim() || form.tags.length >= MAX_PRODUCT_TAGS}
-              >
-                {suggestingTags ? (
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2 h-3.5 w-3.5" />
-                )}
-                Sugerir com Bella
-              </Button>
-            </div>
-
-            {suggestedTags.length > 0 ? (
-              <div className="mt-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-primary">
-                    Sugestões da Bella — clique para aceitar
-                  </span>
-                  <div className="flex gap-2">
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setSuggestedTags([])}>
-                      Descartar
-                    </Button>
-                    <Button type="button" size="sm" onClick={acceptAllSuggested}>
-                      Aceitar todas
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {suggestedTags.map((t) => (
-                    <Badge
-                      key={t}
-                      variant="outline"
-                      className="cursor-pointer border-primary/40 bg-background hover:bg-primary/10"
-                      onClick={() => acceptSuggestedTag(t)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        dismissSuggestedTag(t);
-                      }}
-                      title="Clique para aceitar · botão direito para descartar"
-                    >
-                      + {t}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <Field label="Adicionar tag manualmente">
-              <div className="flex gap-2">
+          <Section title="Fiscal" description="Classificação fiscal usada na emissão de notas.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="NCM" hint="8 dígitos — obrigatório para emitir NF-e">
                 <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Digite e pressione Enter"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addTag();
-                    }
+                  value={form.ncm}
+                  inputMode="numeric"
+                  maxLength={12}
+                  placeholder="0000.00.00 ou 00000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("ncm", normalizeNcm(e.target.value));
                   }}
                 />
-                <Button type="button" variant="outline" onClick={addTag}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {form.tags.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {form.tags.map((t) => (
-                    <Badge
-                      key={t}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const prev = form.tags;
-                        executeWithUndo({
-                          message: `✓ Tag "${t}" removida.`,
-                          apply: () => set("tags", prev.filter((x) => x !== t)),
-                          undo: () => set("tags", prev),
-                        });
-                      }}
-                    >
-                      {t} ✕
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
-            </Field>
+                {form.ncm && fiscal.source !== "manual" ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    {fiscal.source === "category"
+                      ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
+                      : fiscal.source === "barcode"
+                        ? "Sugerido pelo EAN cadastrado — edite se precisar."
+                        : "Sugerido pelo histórico de produtos — edite se precisar."}
+                  </p>
+                ) : null}
+
+                {fiscal.historyLoading && !form.ncm ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
+                  </p>
+                ) : null}
+
+                {fiscal.historySuggestions.length ? (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Usados em produtos semelhantes:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fiscal.historySuggestions.map((s) => (
+                        <Button
+                          key={s.ncm}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 px-2 text-[11px]"
+                          onClick={() =>
+                            fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
+                          }
+                          title={`${s.sampleName} — ${s.usageCount} produto(s)`}
+                        >
+                          <Wand2 className="h-3 w-3" />
+                          {formatNcm(s.ncm)}
+                          {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
+                          <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
+                            {s.usageCount}
+                          </Badge>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </Field>
+              <Field label="CEST" hint="7 dígitos — apenas para substituição tributária">
+                <Input
+                  value={form.cest}
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="00.000.00 ou 0000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("cest", normalizeCest(e.target.value));
+                  }}
+                />
+              </Field>
+            </div>
           </Section>
-        </CollapsibleContent>
-      </Collapsible>
 
-
+          <Section
+            title="Dimensões e peso"
+            description="Usados no cálculo de frete dos marketplaces."
+          >
+            <p className="text-xs text-muted-foreground">
+              Peso e medidas ainda não fazem parte do cadastro de produtos deste ERP. Posso
+              habilitar esses campos assim que você autorizar a inclusão no banco de dados.
+            </p>
+          </Section>
+        </TabsContent>
+      </Tabs>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
