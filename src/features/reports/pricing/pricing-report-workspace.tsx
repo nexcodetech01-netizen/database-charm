@@ -168,9 +168,18 @@ async function loadPricingData(companyId: string): Promise<ProductRow[]> {
     const insurance = num(p.insurance);
     const otherCosts = num(p.other_costs);
     const price = num(p.price);
-    const totalCost = cost + freight + insurance + otherCosts;
-    const marginValue = price - totalCost;
+    // MOTOR ÚNICO (FASE 1/2) — relatório não calcula margem localmente.
+    const evaluation = evaluateOfficialPrice(price, {
+      companyId: p.company_id ?? "",
+      productId: p.id,
+      costs: { acquisition: cost, freight, insurance, otherCosts },
+      margins: { minPct: 0, targetPct: 0 },
+      module: "reports.pricing",
+    });
+    const totalCost = evaluation.costTotal;
+    const marginValue = evaluation.profit;
     const marginPct = price > 0 ? marginValue / price : 0;
+
     const path = primaryPathByProduct.get(p.id);
     const photoUrl = path ? (urlByPath.get(path) ?? null) : null;
     return {
