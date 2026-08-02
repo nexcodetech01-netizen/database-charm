@@ -63,24 +63,55 @@ export class ProductService extends BaseService {
   }
 
   async create(input: CreateProductInput): Promise<Product> {
-    if (input.price < 0) throw new Error("Preço não pode ser negativo.");
+    const inputPrice = typeof input.price === "number" ? input.price : null;
+    if (inputPrice != null && inputPrice < 0)
+      throw new Error("Preço não pode ser negativo.");
     if (input.cost != null && input.cost < 0)
       throw new Error("Custo não pode ser negativo.");
 
-    // Duplicidade por SKU dentro da mesma empresa (RLS-safe).
-    if (input.sku && input.sku.trim()) {
-      const existing = await this.repo.findBySku(input.sku.trim());
-      if (existing) {
-        throw new Error(`Já existe produto com SKU "${input.sku.trim()}".`);
-      }
+    const cost = input.cost ?? 0;
+
+    // Deduplicação por Nome / SKU / Código de barras (RLS-safe).
+    const duplicate = await this.repo.findDuplicate({
+      name: input.name,
+      sku: input.sku ?? null,
+      barcode: input.barcode ?? null,
+    });
+
+    if (duplicate) {
+      // Nunca sobrescreve descrição; price/cost só quando o novo valor > 0.
+      const patch: Record<string, unknown> = {};
+      if (inputPrice != null && inputPrice > 0) patch.price = inputPrice;
+      if (cost > 0) patch.cost = cost;
+      if (input.sku?.trim() && !duplicate.sku) patch.sku = input.sku.trim();
+      if (input.barcode?.trim() && !duplicate.barcode) patch.barcode = input.barcode.trim();
+
+      const updated = Object.keys(patch).length
+        ? await this.repo.update(duplicate.id, patch as never)
+        : ((await this.repo.findById(duplicate.id)) as Product);
+      this.log.info("product.merged_duplicate", {
+        productId: duplicate.id,
+        matchedBy: duplicate.matchedBy,
+      });
+      return updated;
+    }
+
+    // Produto genuinamente novo: calcula preço a partir do custo quando ausente.
+    let price = inputPrice ?? 0;
+    if (price <= 0 && cost > 0) {
+      const defaults = await fetchCompanyCostDefaults(this.ctx.supabase, this.companyId);
+      const costTotal =
+        cost + defaults.freight + defaults.packaging + defaults.insurance + defaults.otherCosts;
+      const suggested = priceForMargin(costTotal, 50, 0);
+      price = Number.isFinite(suggested) ? Math.round(suggested * 100) / 100 : 0;
     }
 
     // `company_id` sempre derivado do ExecutionContext.
     const payload: ProductInsert = {
       company_id: this.companyId,
       name: input.name.trim(),
-      price: input.price,
-      cost: input.cost ?? 0,
+      price,
+      cost,
       sku: input.sku?.trim() || null,
       unit: input.unit ?? "un",
       status: input.status ?? "active",
