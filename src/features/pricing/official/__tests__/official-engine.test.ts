@@ -177,7 +177,7 @@ describe("FASE 6 — auditoria de preço", () => {
     });
     const keys = r.audit.map((l) => l.key);
     expect(keys).toEqual(
-      expect.arrayContaining(["acquisition", "freight", "fee", "tax", "profit", "price"]),
+      expect.arrayContaining(["acquisition", "freight", "fee", "tax", "profit", "final_price"]),
     );
     expect(r.audit.find((l) => l.key === "profit")?.kind).toBe("result");
     expect(r.audit.find((l) => l.key === "tax")?.pct).toBeCloseTo(6, 2);
@@ -218,7 +218,7 @@ describe("FASE 7 — proteções comerciais", () => {
   });
 
   it("alerta quando a taxa consome o lucro", () => {
-    const guards = evaluatePriceGuards(104, evaluateOfficialPrice(104, input), {
+    const guards = evaluatePriceGuards(106, evaluateOfficialPrice(106, input), {
       minMarginPct: 0,
     });
     expect(guards.map((g) => g.code)).toContain("FEE_EATS_PROFIT");
