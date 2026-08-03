@@ -178,7 +178,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const [status, setStatus] = useState<Status>(null);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
-  const [inlineError, setInlineError] = useState<ReturnType<typeof formatError> | null>(null);
+  const [inlineError, setInlineError] = useState<{ title: string; description: string; recovery?: string } | null>(null);
 
   const refresh = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
