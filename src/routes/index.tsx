@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SPACING_TOKENS } from "@/design";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/index")({
+export const Route = createFileRoute("/")({
   component: VerificationPage,
 });
 
