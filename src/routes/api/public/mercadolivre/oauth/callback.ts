@@ -94,6 +94,11 @@ export const Route = createFileRoute("/api/public/mercadolivre/oauth/callback")(
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
+        
+        // LOG TEMPORÁRIO PARA AUDITORIA P0
+        console.log(`[ML_CALLBACK_RAW] URL: ${request.url}`);
+        console.log(`[ML_CALLBACK_PARAMS] code=${code ? '***' : 'missing'}, state=${state ? '***' : 'missing'}`);
+
         const providerError = url.searchParams.get("error");
         const errorReason =
           url.searchParams.get("error_description") ??
