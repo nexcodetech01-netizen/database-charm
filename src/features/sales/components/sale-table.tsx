@@ -137,14 +137,14 @@ export function SaleTable({
                     <div className="flex flex-wrap items-center gap-1.5">
                       <SaleStatusBadge status={s.status} />
                       {s.is_test ? <TestSaleBadge compact /> : null}
-                      {s.payment_method === "a_receber" &&
+                      {(s.payment_method === "a_receber" || (s.status === "pending" && !s.payment_method)) &&
                       s.status !== "cancelled" &&
                       s.status !== "paid" ? (
                         <Badge
                           variant="outline"
                           className="border-warning/30 bg-warning/10 text-warning"
                         >
-                          A Receber
+                          {s.payment_method === "a_receber" ? "A Receber" : "Pagamento Pendente"}
                         </Badge>
                       ) : null}
                     </div>
