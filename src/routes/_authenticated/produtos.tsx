@@ -84,7 +84,8 @@ function ProductsPage() {
         pageSize={filters.pageSize}
         onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
       />
-
+      
+      <NcmClassificationDashboard companyId={company.id} />
     </div>
   );
 }
