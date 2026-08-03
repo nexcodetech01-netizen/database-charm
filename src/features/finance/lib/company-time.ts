@@ -11,4 +11,5 @@ export {
   addDaysStr,
   companyDayKey,
   companyMonthKey,
+  tzParts,
 } from "@/lib/time";
