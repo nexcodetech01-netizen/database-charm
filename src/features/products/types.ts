@@ -29,10 +29,7 @@ export const PRODUCT_UNIT_OPTIONS = [
 
 export const SALES_CHANNEL_OPTIONS = [
   { value: "loja_fisica", label: "Loja Física" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "marketplace", label: "Marketplace" },
-  { value: "atacado", label: "Atacado" },
-  { value: "revenda", label: "Revenda" },
+  { value: "mercadolivre", label: "Mercado Livre" },
 ];
 
 export type StockFilter = "all" | "in_stock" | "low" | "out";

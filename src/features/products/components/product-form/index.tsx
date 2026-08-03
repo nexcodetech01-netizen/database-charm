@@ -185,7 +185,7 @@ function toState(p?: Product): FormState {
     supplier_id: p.supplier_id ?? "",
     status: p.status,
     unit: p.unit,
-    sales_channel: p.sales_channel ?? "",
+    sales_channels: (p as any).sales_channels ?? [],
     cost: String(p.cost),
     freight: String(p.freight),
     packaging: String(p.packaging ?? 0),
@@ -824,7 +824,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       supplier_id: form.supplier_id || null,
       status: form.status,
       unit: form.unit,
-      sales_channel: form.sales_channel || null,
+      sales_channels: form.sales_channels,
       cost: num(form.cost),
       freight: num(form.freight),
       packaging: num(form.packaging),
@@ -1275,24 +1275,40 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Canal de venda principal">
-                <Select
-                  value={form.sales_channel || "__none"}
-                  onValueChange={(v) => set("sales_channel", v === "__none" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Não definido</SelectItem>
-                    {SALES_CHANNEL_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
+              <Section
+                compact
+                title="Canais de Venda"
+                description="Onde este produto pode ser vendido."
+              >
+                <div className="flex flex-col gap-3">
+                  {SALES_CHANNEL_OPTIONS.map((c) => {
+                    const checked = form.sales_channels.includes(c.value);
+                    return (
+                      <label key={c.value} className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              set("sales_channels", [...form.sales_channels, c.value]);
+                            } else {
+                              set(
+                                "sales_channels",
+                                form.sales_channels.filter((v) => v !== c.value),
+                              );
+                            }
+                          }}
+                        />
+                        <span className="text-sm font-medium">{c.label}</span>
+                      </label>
+                    );
+                  })}
+                  {!form.sales_channels.length && (
+                    <p className="text-[11px] text-danger">Selecione pelo menos um canal.</p>
+                  )}
+                </div>
+              </Section>
             </div>
             <Field label="Descrição">
               <Textarea
