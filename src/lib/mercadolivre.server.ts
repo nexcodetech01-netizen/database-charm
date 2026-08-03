@@ -58,13 +58,14 @@ export async function exchangeCodeForToken(params: {
   code: string;
   redirectUri: string;
 }): Promise<MLTokenResponse> {
-  const body = new URLSearchParams({
+  const payload = {
     grant_type: "authorization_code",
     client_id: params.clientId,
     client_secret: params.clientSecret,
     code: params.code,
     redirect_uri: params.redirectUri,
-  });
+  };
+
   const res = await integrationFetch(
     TOKEN_URL,
     {
@@ -73,11 +74,12 @@ export async function exchangeCodeForToken(params: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "application/json",
       },
-      body,
+      body: new URLSearchParams(payload),
     },
     { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
   );
   const text = await res.text();
+  
   if (!res.ok) throw new Error(`ML token exchange failed (${res.status}): ${text.slice(0, 300)}`);
   return JSON.parse(text) as MLTokenResponse;
 }

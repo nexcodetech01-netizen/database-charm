@@ -9,7 +9,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit } from "@/lib/rate-limit.server";
 
-const FRONTEND_CALLBACK_PATH = "/mercadolivre/callback";
+const FRONTEND_CALLBACK_PATH = "/api/public/mercadolivre/oauth/callback";
 
 function resolveRedirectUri(origin: string): string {
   return (
