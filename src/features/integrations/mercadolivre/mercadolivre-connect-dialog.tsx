@@ -24,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import {
   disconnectMercadoLivre,
   getMercadoLivreIntegration,
@@ -118,7 +117,6 @@ const toneStyles: Record<StatusDescriptor["tone"], { badge: string; alert: strin
   },
 };
 
-/** Extract a human-friendly message from server-fn errors (RLS, network, etc.). */
 function formatError(err: unknown): { title: string; description: string; recovery?: string } {
   const raw = err instanceof Error ? err.message : String(err ?? "");
   const lower = raw.toLowerCase();
@@ -126,8 +124,7 @@ function formatError(err: unknown): { title: string; description: string; recove
   if (lower.includes("row-level security") || lower.includes("permission denied")) {
     return {
       title: "Sem permissão para esta empresa",
-      description:
-        "Sua conta não tem acesso à empresa selecionada. Verifique se você está na empresa correta.",
+      description: "Sua conta não tem acesso à empresa selecionada.",
       recovery: "Troque de empresa no menu ou peça acesso ao administrador.",
     };
   }
@@ -136,27 +133,6 @@ function formatError(err: unknown): { title: string; description: string; recove
       title: "Sessão expirada",
       description: "Sua sessão de login expirou.",
       recovery: "Saia e entre novamente para renovar a sessão.",
-    };
-  }
-  if (lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("network")) {
-    return {
-      title: "Falha de rede",
-      description: "Não foi possível contatar o servidor.",
-      recovery: "Verifique sua conexão e tente novamente.",
-    };
-  }
-  if (lower.includes("client secret") || lower.includes("client id")) {
-    return {
-      title: "Credenciais inválidas",
-      description: raw,
-      recovery: "Confira App ID e Client Secret no DevCenter do Mercado Livre.",
-    };
-  }
-  if (lower.includes("token exchange") || lower.includes("invalid_grant")) {
-    return {
-      title: "Autorização recusada pelo Mercado Livre",
-      description: raw,
-      recovery: "Reautorize a conta. O código de autorização pode ter expirado.",
     };
   }
   return {
@@ -178,7 +154,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const [status, setStatus] = useState<Status>(null);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
-  const [inlineError, setInlineError] = useState<ReturnType<typeof formatError> | null>(null);
+  const [inlineError, setInlineError] = useState<{ title: string; description: string; recovery?: string } | null>(null);
 
   const refresh = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -191,7 +167,6 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     } catch (err) {
       const info = formatError(err);
       setInlineError(info);
-      toast.error(info.title, { description: info.description });
     } finally {
       if (isInitial) setLoading(false);
     }
@@ -201,28 +176,20 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     if (open) void refresh(true);
   }, [open, refresh]);
 
-  // Detect return from OAuth (?ml_status=connected|error) even if dialog was closed.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const s = params.get("ml_status");
     if (!s) return;
     
-    // Clear status from URL immediately before any other state changes
     params.delete("ml_status");
     params.delete("ml_error");
-    const clean =
-      window.location.pathname +
-      (params.toString() ? `?${params.toString()}` : "") +
-      window.location.hash;
+    const clean = window.location.pathname + (params.toString() ? `?${params.toString()}` : "") + window.location.hash;
     window.history.replaceState({}, "", clean);
 
     if (s === "connected") {
       toast.success("Mercado Livre conectado com sucesso.");
       void refresh(true);
-    } else {
-      const info = formatError(params.get("ml_error") ?? "unknown");
-      toast.error(info.title, { description: info.description });
     }
   }, [refresh]);
 
@@ -239,9 +206,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       toast.success("Credenciais salvas com segurança.");
       await refresh(true);
     } catch (err) {
-      const info = formatError(err);
-      setInlineError(info);
-      toast.error(info.title, { description: info.description });
+      setInlineError(formatError(err));
     } finally {
       setSaving(false);
     }
@@ -255,9 +220,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       window.location.href = authorizationUrl;
     } catch (err) {
       setAuthorizing(false);
-      const info = formatError(err);
-      setInlineError(info);
-      toast.error(info.title, { description: info.description });
+      setInlineError(formatError(err));
     }
   };
 
@@ -269,9 +232,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       setClientSecret("");
       await refresh(true);
     } catch (err) {
-      const info = formatError(err);
-      setInlineError(info);
-      toast.error(info.title, { description: info.description });
+      setInlineError(formatError(err));
     }
   };
 
@@ -289,15 +250,14 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
           <DialogTitle className="flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-primary" />
             Mercado Livre
-            {descriptor && tone ? (
+            {descriptor && tone && (
               <Badge variant="outline" className={`ml-1 ${tone.badge}`}>
                 {descriptor.label}
               </Badge>
-            ) : null}
+            )}
           </DialogTitle>
           <DialogDescription>
-            Configure o app do Mercado Livre e autorize a conta para sincronizar anúncios,
-            pedidos e estoque.
+            Configure o app do Mercado Livre e autorize a conta para sincronizar anúncios, pedidos e estoque.
           </DialogDescription>
         </DialogHeader>
 
@@ -308,42 +268,41 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
             </div>
           ) : (
             <div className="space-y-4">
-              {descriptor && tone ? (
+              {descriptor && tone && (
                 <Alert className={tone.alert}>
                   <StatusIcon className={`h-4 w-4 ${tone.icon}`} />
                   <AlertTitle>{descriptor.label}</AlertTitle>
                   <AlertDescription className="space-y-1">
                     <p>{descriptor.message}</p>
-                    {descriptor.action ? (
+                    {descriptor.action && (
                       <p className="text-xs opacity-90">{descriptor.action}</p>
-                    ) : null}
-                    {connected && status ? (
+                    )}
+                    {connected && status && (
                       <div className="mt-2 space-y-0.5 text-xs opacity-90">
-                        {status.mlUserId ? <div>ML User ID: {status.mlUserId}</div> : null}
-                        {status.tokenExpiresAt ? (
+                        {status.mlUserId && <div>ML User ID: {status.mlUserId}</div>}
+                        {status.tokenExpiresAt && (
                           <div>
-                            Token expira em:{" "}
-                            {new Date(status.tokenExpiresAt).toLocaleString("pt-BR")}
+                            Token expira em: {new Date(status.tokenExpiresAt).toLocaleString("pt-BR")}
                           </div>
-                        ) : null}
+                        )}
                       </div>
-                    ) : null}
+                    )}
                   </AlertDescription>
                 </Alert>
-              ) : null}
+              )}
 
-              {inlineError ? (
+              {inlineError && (
                 <Alert variant="destructive">
                   <XCircle className="h-4 w-4" />
                   <AlertTitle>{inlineError.title}</AlertTitle>
                   <AlertDescription className="space-y-1">
                     <p>{inlineError.description}</p>
-                    {inlineError.recovery ? (
+                    {inlineError.recovery && (
                       <p className="text-xs opacity-90">{inlineError.recovery}</p>
-                    ) : null}
+                    )}
                   </AlertDescription>
                 </Alert>
-              ) : null}
+              )}
 
               <div className="space-y-3">
                 <div className="space-y-1.5">
@@ -360,10 +319,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ml-client-secret" className="text-xs font-medium">
-                    Client Secret{" "}
-                    {hasCreds ? (
-                      <span className="text-muted-foreground">(deixe em branco para manter)</span>
-                    ) : null}
+                    Client Secret {hasCreds && <span className="text-muted-foreground">(deixe em branco para manter)</span>}
                   </Label>
                   <Input
                     id="ml-client-secret"
@@ -380,12 +336,9 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
                     Credenciais protegidas por RLS
                   </p>
                   <p className="mt-1">
-                    Apenas usuários autenticados vinculados a esta empresa podem ler ou alterar
-                    estas credenciais. O Client Secret é criptografado antes de ser gravado.
+                    Apenas usuários autenticados vinculados a esta empresa podem ler ou alterar estas credenciais.
                   </p>
-                  <p className="mt-2 font-medium text-foreground">
-                    Redirect URI (configure no seu app ML):
-                  </p>
+                  <p className="mt-2 font-medium text-foreground">Redirect URI:</p>
                   <code className="mt-1 block break-all font-mono text-[11px]">
                     {status?.redirectUri ?? "—"}
                   </code>
@@ -395,7 +348,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
                     rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
                   >
-                    Abrir DevCenter do Mercado Livre <ExternalLink className="h-3 w-3" />
+                    Abrir DevCenter <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               </div>
@@ -410,13 +363,12 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
               variant="outline"
               disabled={loading || saving || !clientId.trim() || (!clientSecret.trim() && !hasCreds)}
             >
-              {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+              {saving && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
               Salvar credenciais
             </Button>
             <Button
               onClick={handleAuthorize}
               disabled={loading || authorizing || !hasCreds}
-              title={!hasCreds ? "Salve as credenciais primeiro" : undefined}
               variant={needsReauth ? "destructive" : "default"}
             >
               {authorizing ? (
@@ -430,11 +382,11 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
             </Button>
           </div>
           <div className="flex gap-2">
-            {connected ? (
+            {connected && (
               <Button variant="ghost" onClick={handleDisconnect} className="text-destructive">
                 Desconectar
               </Button>
-            ) : null}
+            )}
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>
