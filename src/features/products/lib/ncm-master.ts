@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeNcm } from "./fiscal-suggestions";
 
 export interface NcmMasterEntry {
   id: string;
@@ -19,37 +18,42 @@ export const ncmMasterService = {
   async suggest(categoryName: string, material: string | null = null): Promise<NcmMasterEntry | null> {
     if (!categoryName) return null;
 
-    // Tenta busca exata (Categoria + Material)
-    if (material) {
-      const { data: exactMatch } = await supabase
+    try {
+      // Tenta busca exata (Categoria + Material)
+      if (material) {
+        const { data: exactMatch } = await (supabase as any)
+          .from("ncm_master")
+          .select("*")
+          .eq("category", categoryName)
+          .eq("material", material)
+          .eq("status", "Confirmado")
+          .limit(1)
+          .maybeSingle();
+
+        if (exactMatch) return exactMatch as NcmMasterEntry;
+      }
+
+      // Tenta busca apenas por Categoria (ou se material for nulo)
+      const { data: categoryMatch } = await (supabase as any)
         .from("ncm_master")
         .select("*")
         .eq("category", categoryName)
-        .eq("material", material)
-        .eq("status", "Confirmado")
+        .is("material", null)
         .limit(1)
         .maybeSingle();
 
-      if (exactMatch) return exactMatch;
+      return categoryMatch as NcmMasterEntry | null;
+    } catch (error) {
+      console.error("[ncm-master] Error fetching suggestion:", error);
+      return null;
     }
-
-    // Tenta busca apenas por Categoria (ou se material for nulo)
-    const { data: categoryMatch } = await supabase
-      .from("ncm_master")
-      .select("*")
-      .eq("category", categoryName)
-      .is("material", null)
-      .limit(1)
-      .maybeSingle();
-
-    return categoryMatch;
   },
 
   /**
    * Lista entradas da tabela mestre para gestão.
    */
   async listEntries() {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("ncm_master")
       .select("*")
       .order("category", { ascending: true })
