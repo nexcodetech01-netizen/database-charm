@@ -9,58 +9,65 @@ export const Route = createFileRoute("/")({
 function AuditoriaReadOnlyPage() {
   return (
     <div className="p-8 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-      AUDITORIA READ-ONLY
+SPRINT
 
-      NÃO alterar código.
-      NÃO alterar banco.
-      NÃO alterar interface.
-      NÃO criar arquivos.
-      NÃO modificar textos.
+Pode alterar código.
 
-      Objetivo:
+OBJETIVO
 
-      Auditar exclusivamente o fluxo de vendas com pagamento pendente.
+Eliminar o "limbo" entre venda entregue e pagamento recebido.
 
-      Verificar e responder SOMENTE NO CHAT:
+ESCOPO
 
-      1. Hoje o sistema permite criar uma venda sem definir a forma de pagamento? (SIM/NÃO)
+Quando uma venda for finalizada sem pagamento imediato:
 
-      2. Existe um status específico para:
-         - Pagamento Pendente
-         - Pago
-         - Cancelado
+- Criar automaticamente um título em Contas a Receber.
+- Status inicial: Pagamento Pendente.
+- Valor igual ao total da venda.
+- Vincular ao cliente.
+- Vincular à venda.
 
-      3. Como o financeiro trata uma venda sem pagamento?
-         - cria conta a receber?
-         - cria lançamento financeiro?
-         - não cria nada?
+Ao receber o pagamento posteriormente:
 
-      4. O estoque é baixado no momento da venda ou somente após o pagamento?
+- Permitir escolher a forma de pagamento:
+  - PIX
+  - Dinheiro
+  - Cartão
+  - Asaas
+  - Transferência
 
-      5. O Dashboard contabiliza essa venda antes do pagamento?
+Após confirmar o recebimento:
 
-      6. O Caixa considera essa venda antes do pagamento?
+- Baixar automaticamente o Contas a Receber.
+- Alterar o status da venda para Pago.
+- Gerar a movimentação financeira.
+- Atualizar o Dashboard.
+- Atualizar o Caixa.
+- Registrar a data e hora da liquidação.
 
-      7. É possível alterar posteriormente a forma de pagamento?
-         - PIX
-         - Dinheiro
-         - Cartão
-         - Asaas
+IMPORTANTE
 
-      8. Ao informar o pagamento depois, quais processos acontecem automaticamente?
-         - baixa financeira
-         - atualização do Dashboard
-         - atualização do Caixa
-         - atualização do status da venda
+Não alterar:
 
-      9. Existe alguma inconsistência nesse fluxo?
+- Motor Comercial V2.
+- Mercado Livre.
+- Asaas.
+- Estoque.
+- Compras.
+- Precificação.
+- Caixa (exceto receber a movimentação já existente).
+- Fluxo de vendas já pagas.
 
-      10. Qual seria a menor alteração necessária para suportar corretamente vendas entregues com pagamento posterior?
+As vendas pagas no ato devem continuar funcionando exatamente como hoje.
 
-      Responder apenas com o diagnóstico.
+Apenas vendas sem pagamento imediato devem gerar automaticamente um Contas a Receber pendente.
 
-      Se houver sugestões de melhoria, NÃO implementar.
-      Apenas listar no final do relatório.
+Ao finalizar informar:
+
+1. Arquivos alterados.
+2. Migrações criadas (se houver).
+3. Testes executados.
+4. Confirmação de que nenhuma outra funcionalidade foi alterada.
     </div>
   );
 }
