@@ -1552,6 +1552,20 @@ export function CheckoutDialog({
               </Button>
             </div>
 
+          ) : method === "pending_payment" ? (
+            <div className="space-y-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
+              <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500">
+                <Wallet className="h-6 w-6" />
+                <h3 className="font-bold">Pagamento Pendente</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
+                O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
+              </p>
+              <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
+                O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
+              </div>
+            </div>
           ) : charge ? (
             <ChargeView
               charge={charge}
@@ -1562,6 +1576,7 @@ export function CheckoutDialog({
               whatsappNumber={whatsappNumber}
             />
           ) : null}
+
 
         </div>
 
