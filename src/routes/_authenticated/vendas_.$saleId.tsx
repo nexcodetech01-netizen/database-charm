@@ -832,6 +832,7 @@ function SaleWorkspace({
                     variant="outline"
                     onClick={async () => {
                       try {
+                        const { salesService } = await import("@/features/sales/services/sales.service");
                         const tx = await salesService.openReceivableForSale(sale.id);
                         if (!tx) {
                           toast.error("Não há lançamento financeiro em aberto para esta venda");
