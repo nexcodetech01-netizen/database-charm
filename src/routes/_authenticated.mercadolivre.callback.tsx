@@ -10,7 +10,7 @@ import { MERCADOLIVRE_INTEGRATION_QUERY_KEY } from "@/features/settings/central/
 const CALLBACK_ENDPOINT = "/api/public/mercadolivre/oauth/callback";
 const REDIRECT_TO = "/configuracoes";
 
-export const Route = createFileRoute("/mercadolivre/callback")({
+export const Route = createFileRoute("/_authenticated/mercadolivre/callback")({
   head: () => ({
     meta: [
       { title: "Conectando Mercado Livre — NexOS" },
