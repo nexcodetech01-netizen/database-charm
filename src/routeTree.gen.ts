@@ -96,7 +96,7 @@ import { Route as AuthenticatedComprasPurchaseIdEditarRouteImport } from './rout
 import { Route as AuthenticatedClientesCustomerIdEditarRouteImport } from './routes/_authenticated/clientes_.$customerId.editar'
 import { Route as CatalogoColecaoSlugProdutoProductIdRouteImport } from './routes/catalogo.colecao.$slug.produto.$productId'
 import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta.oauth.callback'
-import { Route as ApiPublicMercadolivreOauthCallbackRouteImport } from './routes/api/public/mercadolivre.oauth.callback'
+import { Route as ApiPublicMercadolivreOauthCallbackRouteImport } from './routes/api/public/mercadolivre/oauth/callback'
 import { Route as ApiPublicBellaPayWebhookTokenRouteImport } from './routes/api/public/bella-pay/webhook.$token'
 import { Route as ApiPublicBellaPayQrChargeIdRouteImport } from './routes/api/public/bella-pay/qr.$chargeId'
 import { Route as ApiPublicCatalogSlugProductProductIdRouteImport } from './routes/api/public/catalog/$slug/product/$productId'
@@ -2147,13 +2147,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
