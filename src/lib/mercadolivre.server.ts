@@ -58,13 +58,6 @@ export async function exchangeCodeForToken(params: {
   code: string;
   redirectUri: string;
 }): Promise<MLTokenResponse> {
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    client_id: params.clientId,
-    client_secret: params.clientSecret,
-    code: params.code,
-    redirect_uri: params.redirectUri,
-  });
   const payload = {
     grant_type: "authorization_code",
     client_id: params.clientId,
@@ -72,9 +65,6 @@ export async function exchangeCodeForToken(params: {
     code: params.code,
     redirect_uri: params.redirectUri,
   };
-
-  // LOG TEMPORÁRIO PARA AUDITORIA P0
-  console.log(`[ML_TOKEN_REQUEST_DEBUG] client_id=${params.clientId}, redirect_uri=${params.redirectUri}, grant_type=${payload.grant_type}, client_secret=${params.clientSecret ? 'present' : 'missing'}`);
 
   const res = await integrationFetch(
     TOKEN_URL,
@@ -90,12 +80,7 @@ export async function exchangeCodeForToken(params: {
   );
   const text = await res.text();
   
-  // LOG TEMPORÁRIO PARA AUDITORIA P0
-  if (!res.ok) {
-    console.error(`[ML_TOKEN_RESPONSE_ERROR] status=${res.status}, body=${text}`);
-    throw new Error(`ML token exchange failed (${res.status}): ${text.slice(0, 300)}`);
-  }
-  
+  if (!res.ok) throw new Error(`ML token exchange failed (${res.status}): ${text.slice(0, 300)}`);
   return JSON.parse(text) as MLTokenResponse;
 }
 
