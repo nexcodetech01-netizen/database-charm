@@ -383,6 +383,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     companyId,
     name: form.name,
     categoryId: form.category_id,
+    material: (form as any).material || null,
     categories,
     ncm: form.ncm,
     cest: form.cest,

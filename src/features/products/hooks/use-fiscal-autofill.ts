@@ -20,6 +20,7 @@ import {
   normalizeNcm,
   type FiscalHistorySuggestion,
 } from "../lib/fiscal-suggestions";
+import { ncmMasterService } from "../lib/ncm-master";
 
 export type FiscalSource = "manual" | "category" | "history" | "barcode";
 
@@ -34,6 +35,7 @@ interface Params {
   companyId: string;
   name: string;
   categoryId: string;
+  material?: string | null;
   categories: CategoryLike[];
   ncm: string;
   cest: string;
@@ -54,6 +56,7 @@ export function useFiscalAutofill({
   companyId,
   name,
   categoryId,
+  material,
   categories,
   ncm,
   cest,
@@ -79,21 +82,36 @@ export function useFiscalAutofill({
     };
   }, [category]);
 
-  // 1) Preenchimento automático por categoria (não invasivo).
+  // 1) Sugestão por Categoria (Tabela Mestre e Padrão da Categoria)
   const lastCategoryRef = useRef<string | null>(null);
+  const lastMaterialRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!categorySuggestion) return;
-    if (lastCategoryRef.current === categoryId) return;
-    lastCategoryRef.current = categoryId;
+    async function checkMasterNcm() {
+      if (!category) return;
+      if (lastCategoryRef.current === categoryId && lastMaterialRef.current === material) return;
+      lastCategoryRef.current = categoryId;
+      lastMaterialRef.current = material || null;
 
-    const canOverwrite = !ncm || sourceRef.current === "category";
-    if (!canOverwrite) return;
-    if (ncm === categorySuggestion.ncm && cest === categorySuggestion.cest) return;
+      // Prioridade 1: Tabela Mestre (NCM Master)
+      const masterSuggestion = await ncmMasterService.suggest(category.name, material);
+      
+      const targetNcm = masterSuggestion?.ncm || categorySuggestion?.ncm;
+      const targetCest = categorySuggestion?.cest || cest;
 
-    setSource("category");
-    onApply({ ncm: categorySuggestion.ncm, cest: categorySuggestion.cest || cest });
+      if (!targetNcm) return;
+
+      const canOverwrite = !ncm || sourceRef.current === "category";
+      if (!canOverwrite) return;
+      if (ncm === targetNcm && cest === targetCest) return;
+
+      setSource("category");
+      onApply({ ncm: targetNcm, cest: targetCest });
+    }
+
+    checkMasterNcm();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, categorySuggestion]);
+  }, [categoryId, material, category, categorySuggestion]);
 
   // 2) Histórico inteligente por similaridade de nome.
   const debouncedName = useDebouncedValue(name.trim(), 450);
