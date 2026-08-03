@@ -18,7 +18,7 @@ const METHOD_LABEL: Record<string, string> = {
   a_receber: "A Prazo / A Receber",
   crediario: "Crediário",
   credit_account: "Crediário",
-  pending_payment: "Pendente",
+  pending_payment: "Pagamento Pendente",
   other: "Outros",
 };
 

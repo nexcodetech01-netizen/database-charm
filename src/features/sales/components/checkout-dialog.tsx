@@ -577,19 +577,25 @@ export function CheckoutDialog({
   async function persistPaymentSelection() {
     try {
       const paymentMethod =
-        method === "cash"
-          ? "cash"
-          : method === "debit_card"
-            ? "debit_card"
-            : method === "credit_card"
-              ? "credit_card"
-              : method === "pix"
-                ? "pix"
-                : method;
+        method === "pending_payment"
+          ? null
+          : method === "cash"
+            ? "cash"
+            : method === "debit_card"
+              ? "debit_card"
+              : method === "credit_card"
+                ? "credit_card"
+                : method === "pix"
+                  ? "pix"
+                  : method;
       const inst = method === "credit_card" ? Math.max(1, Math.trunc(installments || 1)) : 1;
       await supabase
         .from("sales")
-        .update({ payment_method: paymentMethod, installments: inst })
+        .update({
+          payment_method: paymentMethod,
+          installments: inst,
+          updated_at: new Date().toISOString()
+        })
         .eq("id", saleId);
     } catch {
       /* não bloqueia o fluxo — o setStatus segue mesmo em caso de falha aqui. */
@@ -854,6 +860,7 @@ export function CheckoutDialog({
         confirmedRef.current = true;
         setConfirmed(true);
         try {
+          await persistPaymentSelection();
           await setStatus.mutateAsync({ id: saleId, status: "pending" });
           toast.success("Venda finalizada", {
             description: "Pagamento pendente registrado com sucesso.",
