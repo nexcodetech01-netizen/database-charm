@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -204,7 +204,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       await saveFn({ data: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } });
       setClientSecret("");
       toast.success("Credenciais salvas com segurança.");
-      await refresh(true);
+      await refresh(true, "manual_save");
     } catch (err) {
       setInlineError(formatError(err));
     } finally {
@@ -230,7 +230,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       await disconnectFn();
       toast.info("Mercado Livre desconectado.");
       setClientSecret("");
-      await refresh(true);
+      await refresh(true, "manual_disconnect");
     } catch (err) {
       setInlineError(formatError(err));
     }
