@@ -126,8 +126,25 @@ export const Route = createFileRoute("/api/public/mercadolivre/oauth/callback")(
           return redirectBack({ ml_status: "connected" });
         } catch (err) {
           const message = err instanceof Error ? err.message : "unknown_error";
-          console.error("[mercadolivre oauth callback GET]", message);
-          return redirectBack({ ml_status: "error", ml_error: message });
+          console.error("[mercadolivre oauth callback GET] ERROR_DETAIL:", message);
+          
+          // AUDITORIA P0: Se a mensagem contém o JSON de erro do ML, vamos extraí-lo
+          let errorMsg = "unknown_error";
+          try {
+             // O erro lançado em mercadolivre.server.ts agora contém a resposta completa
+             if (message.includes("ML token exchange failed")) {
+                errorMsg = message.split("): ")[1] || message;
+             } else {
+                errorMsg = message;
+             }
+          } catch {
+             errorMsg = message;
+          }
+
+          return redirectBack({ 
+            ml_status: "error", 
+            ml_error: errorMsg.slice(0, 500) // Evitar URLs gigantescas, mas manter o core
+          });
         }
       },
 
