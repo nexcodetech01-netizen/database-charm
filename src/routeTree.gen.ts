@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as DebugTextRouteImport } from './routes/debug-text'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -119,6 +120,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugTextRoute = DebugTextRouteImport.update({
+  id: '/debug-text',
+  path: '/debug-text',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataDeletionRoute = DataDeletionRouteImport.update({
@@ -616,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/debug-text': typeof DebugTextRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -708,6 +715,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/debug-text': typeof DebugTextRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -802,6 +810,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/debug-text': typeof DebugTextRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -896,6 +905,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/data-deletion'
+    | '/debug-text'
     | '/onboarding'
     | '/privacy'
     | '/reset-password'
@@ -988,6 +998,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/data-deletion'
+    | '/debug-text'
     | '/onboarding'
     | '/privacy'
     | '/reset-password'
@@ -1081,6 +1092,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/data-deletion'
+    | '/debug-text'
     | '/onboarding'
     | '/privacy'
     | '/reset-password'
@@ -1175,6 +1187,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DataDeletionRoute: typeof DataDeletionRoute
+  DebugTextRoute: typeof DebugTextRoute
   OnboardingRoute: typeof OnboardingRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1225,6 +1238,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-text': {
+      id: '/debug-text'
+      path: '/debug-text'
+      fullPath: '/debug-text'
+      preLoaderRoute: typeof DebugTextRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-deletion': {
@@ -2121,6 +2141,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DataDeletionRoute: DataDeletionRoute,
+  DebugTextRoute: DebugTextRoute,
   OnboardingRoute: OnboardingRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
