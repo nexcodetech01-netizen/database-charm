@@ -148,6 +148,10 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const startFn = useServerFn(startMercadoLivreOAuth);
   const disconnectFn = useServerFn(disconnectMercadoLivre);
 
+  const renderCount = useRef(0);
+  renderCount.current++;
+  console.log(`[ML_INSTRUMENT] MercadoLivreConnectDialog render #${renderCount.current}`, { open });
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [authorizing, setAuthorizing] = useState(false);
@@ -156,30 +160,56 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const [clientSecret, setClientSecret] = useState("");
   const [inlineError, setInlineError] = useState<{ title: string; description: string; recovery?: string } | null>(null);
 
-  const refresh = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true);
+  const refresh = useCallback(async (isInitial = false, reason = "unknown") => {
+    console.log(`[ML_INSTRUMENT] refresh() called. Reason: ${reason}, isInitial: ${isInitial}`);
+    if (isInitial) {
+      console.log("[ML_INSTRUMENT] setting loading = true");
+      setLoading(true);
+    }
     setInlineError(null);
     try {
+      console.log("[ML_INSTRUMENT] calling getMercadoLivreIntegration()...");
       const s = await getFn();
-      setStatus(s);
-      setClientId(prev => prev || (s.clientId ?? ""));
+      console.log("[ML_INSTRUMENT] getMercadoLivreIntegration() success:", s);
+      
+      setStatus(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(s)) {
+          console.log("[ML_INSTRUMENT] integration changed:", { old: prev, new: s });
+        } else {
+          console.log("[ML_INSTRUMENT] integration data is identical to previous state");
+        }
+        return s;
+      });
+
+      setClientId(prev => {
+        const next = prev || (s.clientId ?? "");
+        if (prev !== next) console.log(`[ML_INSTRUMENT] clientId updated: ${prev} -> ${next}`);
+        return next;
+      });
+
       onStatusChange?.(s.connected);
     } catch (err) {
+      console.error("[ML_INSTRUMENT] getMercadoLivreIntegration() FAILED:", err);
       const info = formatError(err);
       setInlineError(info);
     } finally {
-      if (isInitial) setLoading(false);
+      if (isInitial) {
+        console.log("[ML_INSTRUMENT] setting loading = false");
+        setLoading(false);
+      }
     }
   }, [getFn, onStatusChange]);
 
   useEffect(() => {
-    if (open) void refresh(true);
+    console.log("[ML_INSTRUMENT] useEffect [open, refresh] executed", { open });
+    if (open) void refresh(true, "dialog_opened");
   }, [open, refresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const s = params.get("ml_status");
+    console.log("[ML_INSTRUMENT] useEffect [refresh] (OAuth check) executed", { ml_status: s });
     if (!s) return;
     
     params.delete("ml_status");
@@ -189,7 +219,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
 
     if (s === "connected") {
       toast.success("Mercado Livre conectado com sucesso.");
-      void refresh(true);
+      void refresh(true, "oauth_success_callback");
     }
   }, [refresh]);
 
