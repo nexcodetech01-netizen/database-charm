@@ -86,9 +86,15 @@ export const getMercadoLivreIntegration = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { getIntegrationSummary } = await import("./mercadolivre.server");
     const companyId = await requireCurrentCompanyId(context.supabase, context.userId);
+    console.log(`[ML_INSTRUMENT] Server: getMercadoLivreIntegration for company ${companyId}`);
     const summary = await getIntegrationSummary(context.supabase, companyId, {
       userId: context.userId,
       autoRefresh: false,
+    });
+    console.log(`[ML_INSTRUMENT] Server: getIntegrationSummary result:`, {
+      status: summary.status,
+      connected: summary.connected,
+      hasCredentials: summary.hasCredentials
     });
     return { ...summary, redirectUri: buildRedirectUri() };
   });
