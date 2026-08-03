@@ -339,10 +339,12 @@ export async function ensureFreshAccessToken(
   if (!row?.access_token_encrypted || !row.refresh_token_encrypted) return;
   if (!row.client_id || !row.client_secret_encrypted) return;
 
-  const expiresInSeconds = row.token_expires_at
-    ? Math.floor((new Date(row.token_expires_at).getTime() - Date.now()) / 1000)
-    : null;
-  if (expiresInSeconds === null) return;
+  const now = Date.now();
+  const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0;
+  
+  // Se o token for de 1970 ou inválido, tratamos como expirado e forçamos o refresh se possível
+  const expiresInSeconds = expiresAt > 0 ? Math.floor((expiresAt - now) / 1000) : -1;
+  
   if (expiresInSeconds > REFRESH_THRESHOLD_SECONDS) return;
 
   const clientSecret = tryDecryptToken(row.client_secret_encrypted);
