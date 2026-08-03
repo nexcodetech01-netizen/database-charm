@@ -31,7 +31,7 @@ export function usePdvBarcode({ companyId, onProduct }: Options) {
         .select("id,name,sku,barcode,price,cost,stock,unit")
         .eq("company_id", companyId)
         .eq("status", "active");
-      q = applyProductSearch(q, code);
+      q = applyProductSearch(q, code, { salesChannel: "loja_fisica" });
       const { data } = await q.limit(10);
       return (data ?? []).map((p) => ({
         id: p.id,

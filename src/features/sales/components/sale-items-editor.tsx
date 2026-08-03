@@ -63,7 +63,7 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
         .select("id,name,sku,price,cost,stock,unit,cover_image_path,category:product_categories(min_margin_pct,target_margin_pct,default_discount_pct)")
         .eq("company_id", companyId)
         .eq("status", "active");
-      q = applyProductSearch(q, query);
+      q = applyProductSearch(q, query, { salesChannel: "loja_fisica" });
       const { data } = await q.limit(10);
 
       const mapped: ProductOption[] = (data ?? []).map((p) => {

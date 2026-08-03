@@ -59,7 +59,7 @@ export function usePdvProductSearch(companyId: string, term: string) {
           .select("id,name,sku,barcode,brand,price,cost,stock,unit")
           .eq("company_id", companyId)
           .eq("status", "active");
-        q = applyProductSearch(q, rawTerm);
+        q = applyProductSearch(q, rawTerm, { salesChannel: "loja_fisica" });
         const { data } = await q.limit(10);
         const mapped: PdvSearchOption[] = (data ?? []).map((p) => ({
           id: p.id,

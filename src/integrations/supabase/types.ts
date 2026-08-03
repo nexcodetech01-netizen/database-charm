@@ -4760,6 +4760,7 @@ export type Database = {
           packaging: number
           price: number
           sales_channel: string | null
+          sales_channels: string[] | null
           sku: string | null
           status: string
           stock: number
@@ -4796,6 +4797,7 @@ export type Database = {
           packaging?: number
           price?: number
           sales_channel?: string | null
+          sales_channels?: string[] | null
           sku?: string | null
           status?: string
           stock?: number
@@ -4832,6 +4834,7 @@ export type Database = {
           packaging?: number
           price?: number
           sales_channel?: string | null
+          sales_channels?: string[] | null
           sku?: string | null
           status?: string
           stock?: number
