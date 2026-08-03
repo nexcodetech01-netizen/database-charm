@@ -1558,14 +1558,34 @@ export function CheckoutDialog({
                 <Wallet className="h-6 w-6" />
                 <h3 className="font-bold">Pagamento Pendente</h3>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
-                O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
-              </p>
-              <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
-                O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
-              </div>
+              
+              {!customerId ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+                    Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-yellow-500/50 hover:bg-yellow-500/20"
+                    onClick={handleContinueEditing}
+                  >
+                    <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
+                    O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
+                  </p>
+                  <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
+                    O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
+                  </div>
+                </>
+              )}
             </div>
+
           ) : charge ? (
             <ChargeView
               charge={charge}
@@ -1612,9 +1632,9 @@ export function CheckoutDialog({
                 (!confirmed && cashClosed) ||
                 (method === "cash" && !confirmed && !canConfirmCash) ||
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
-                (method === "credit" && !confirmed && !customerId)
-
+                ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
+
 
               className="min-w-[180px]"
             >
