@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import React, { Suspense, lazy } from "react";
 
 // Mock do componente que será carregado via lazy
-const MockComponent = ({ text }: { text: string }) => <div>{text}</div>;
+const MockComponent = ({ text }: { text: string }) => React.createElement("div", null, text);
 
 describe("PDV Lazy Components (Sprint RC.1.3)", () => {
   it("should show fallback while loading lazy component", async () => {
@@ -15,9 +15,9 @@ describe("PDV Lazy Components (Sprint RC.1.3)", () => {
     );
 
     render(
-      <Suspense fallback={<div data-testid="fallback">Loading...</div>}>
-        <LazyComponent text="Loaded Content" />
-      </Suspense>
+      React.createElement(Suspense, { 
+        fallback: React.createElement("div", { "data-testid": "fallback" }, "Loading...") 
+      }, React.createElement(LazyComponent, { text: "Loaded Content" }))
     );
 
     // O fallback deve estar visível inicialmente
@@ -43,7 +43,7 @@ describe("PDV Lazy Components (Sprint RC.1.3)", () => {
         return { hasError: true };
       }
       render() {
-        if (this.state.hasError) return <div>Error Loading</div>;
+        if (this.state.hasError) return React.createElement("div", null, "Error Loading");
         return this.props.children;
       }
     }
@@ -51,11 +51,11 @@ describe("PDV Lazy Components (Sprint RC.1.3)", () => {
     const LazyErrorComponent = lazy(() => Promise.reject(new Error("Failed to fetch")));
 
     render(
-      <ErrorBoundary>
-        <Suspense fallback={<div>Loading...</div>}>
-          <LazyErrorComponent />
-        </Suspense>
-      </ErrorBoundary>
+      React.createElement(ErrorBoundary, null, 
+        React.createElement(Suspense, { 
+          fallback: React.createElement("div", null, "Loading...") 
+        }, React.createElement(LazyErrorComponent, null))
+      )
     );
 
     await waitFor(() => {
