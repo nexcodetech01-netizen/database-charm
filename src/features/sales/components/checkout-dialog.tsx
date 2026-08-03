@@ -856,6 +856,7 @@ export function CheckoutDialog({
         confirmedRef.current = true;
         setConfirmed(true);
         try {
+          await persistPaymentSelection();
           await setStatus.mutateAsync({ id: saleId, status: "pending" });
           toast.success("Venda finalizada", {
             description: "Pagamento pendente registrado com sucesso.",
