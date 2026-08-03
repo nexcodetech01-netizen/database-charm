@@ -12,10 +12,10 @@ import { enforceRateLimit } from "@/lib/rate-limit.server";
 const FRONTEND_CALLBACK_PATH = "/api/public/mercadolivre/oauth/callback";
 
 function resolveRedirectUri(origin: string): string {
-  const uri = process.env.MERCADOLIVRE_OAUTH_REDIRECT_URI ??
-    `${origin}${FRONTEND_CALLBACK_PATH}`;
-  console.log(`[ML_REDIRECT_URI_RESOLVED] uri=${uri}`);
-  return uri;
+  return (
+    process.env.MERCADOLIVRE_OAUTH_REDIRECT_URI ??
+    `${origin}${FRONTEND_CALLBACK_PATH}`
+  );
 }
 
 async function exchange(params: {
