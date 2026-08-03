@@ -1,10 +1,15 @@
+import { lazy, Suspense } from "react";
 import { CheckCircle2, Plus, Printer, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { paymentMethodLabel } from "../../lib/whatsapp-receipt";
 import type { PdvCompletedSale } from "../lib/completion";
 import type { PdvFiscalOutcome } from "../lib/fiscal";
-import { PDVFiscalStatus } from "./pdv-fiscal-status";
+
+const PDVFiscalStatus = lazy(() =>
+  import("./pdv-fiscal-status").then((m) => ({ default: m.PDVFiscalStatus })),
+);
 
 type Props = {
   sale: PdvCompletedSale;
@@ -57,11 +62,13 @@ export function PDVCompletedPanel({
       </dl>
 
       {(fiscalPending || fiscal) && (
-        <PDVFiscalStatus
-          outcome={fiscal}
-          isIssuing={fiscalPending}
-          onRetry={() => onRetryFiscal?.()}
-        />
+        <Suspense fallback={<Skeleton className="h-10 w-full rounded-xl" />}>
+          <PDVFiscalStatus
+            outcome={fiscal}
+            isIssuing={fiscalPending}
+            onRetry={() => onRetryFiscal?.()}
+          />
+        </Suspense>
       )}
 
       <div className="grid grid-cols-2 gap-1.5">

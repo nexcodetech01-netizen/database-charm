@@ -1,11 +1,19 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  lazy,
+  Suspense,
+} from "react";
 import { Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePDV } from "../hooks/use-pdv";
 import { usePdvCash } from "../hooks/use-pdv-cash";
 import { usePdvCheckout } from "../hooks/use-pdv-checkout";
-import { PDVCustomerSelect } from "./pdv-customer-select";
 import { PDVHeader } from "./pdv-header";
 import { PDVCart } from "./pdv-cart";
 import { PDVWorkspace } from "./pdv-workspace";
@@ -13,11 +21,8 @@ import { PDVShortcutBar } from "./pdv-shortcut-bar";
 import { PDVOperationBar } from "./pdv-operation-bar";
 import { PDVSummary } from "./pdv-summary";
 import { PDVPaymentPanel } from "./pdv-payment-panel";
-import { CheckoutDialog } from "../../components/checkout-dialog";
 import { toFinancePaymentMethod } from "../lib/payments";
 import { usePdvFiscal } from "../hooks/use-pdv-fiscal";
-import { PDVCompletedPanel } from "./pdv-completed-panel";
-import { ReceiptDialog } from "../../components/receipt-dialog";
 import {
   PDV_SESSION_INITIAL,
   pdvSessionReducer,
@@ -36,6 +41,22 @@ import {
   PDV_FINALIZE_BUTTON_ID,
 } from "../hooks/use-pdv-shortcuts";
 import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
+
+// Componentes pesados ou utilizados apenas após eventos carregados sob demanda (Sprint RC.1.3).
+const PDVCustomerSelect = lazy(() =>
+  import("./pdv-customer-select").then((m) => ({ default: m.PDVCustomerSelect })),
+);
+const PDVCompletedPanel = lazy(() =>
+  import("./pdv-completed-panel").then((m) => ({ default: m.PDVCompletedPanel })),
+);
+const CheckoutDialog = lazy(() =>
+  import("../../components/checkout-dialog").then((m) => ({
+    default: m.CheckoutDialog,
+  })),
+);
+const ReceiptDialog = lazy(() =>
+  import("../../components/receipt-dialog").then((m) => ({ default: m.ReceiptDialog })),
+);
 
 
 type Props = {
@@ -335,11 +356,13 @@ export function PDVScreen({
         }
         panel={
           <>
-            <PDVCustomerSelect
-              companyId={companyId}
-              value={pdv.state.customerId}
-              onChange={pdv.setCustomer}
-            />
+            <Suspense fallback={<Skeleton className="h-[52px] w-full rounded-xl" />}>
+              <PDVCustomerSelect
+                companyId={companyId}
+                value={pdv.state.customerId}
+                onChange={pdv.setCustomer}
+              />
+            </Suspense>
             <PDVSummary
               totals={pdv.totals}
               itemCount={pdv.itemCount}
@@ -354,15 +377,17 @@ export function PDVScreen({
               readOnly={cartLocked}
             />
             {completed ? (
-              <PDVCompletedPanel
-                sale={completed}
-                onViewReceipt={() => dispatchSession({ type: "OPEN_RECEIPT" })}
-                onPrint={handlePrintReceipt}
-                onNewSale={handleNewSale}
-                fiscal={fiscal}
-                fiscalPending={fiscalPending}
-                onRetryFiscal={() => void pdvFiscal.issue(completed.id)}
-              />
+              <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl" />}>
+                <PDVCompletedPanel
+                  sale={completed}
+                  onViewReceipt={() => dispatchSession({ type: "OPEN_RECEIPT" })}
+                  onPrint={handlePrintReceipt}
+                  onNewSale={handleNewSale}
+                  fiscal={fiscal}
+                  fiscalPending={fiscalPending}
+                  onRetryFiscal={() => void pdvFiscal.issue(completed.id)}
+                />
+              </Suspense>
             ) : (
               <PDVPaymentPanel
                 onFinalize={() => checkout.finalize(pdv.state)}
@@ -379,36 +404,40 @@ export function PDVScreen({
 
 
       {pendingSale || completed ? (
-        <CheckoutDialog
-          open={checkoutOpen}
-          onOpenChange={(v) => {
-            if (!v) dispatchSession({ type: "CLOSE_CHECKOUT" });
-          }}
-          companyId={companyId}
-          saleId={(pendingSale ?? completed)!.id}
-          saleNumber={(pendingSale ?? completed)!.number}
-          customerId={pdv.state.customerId}
-          amount={(pendingSale ?? completed)!.total}
-          subtotal={pdv.totals.items_total}
-          discount={pdv.state.discount}
-          onPaid={(info) =>
-            handlePaid((pendingSale ?? completed)!.id, info?.method)
-          }
-          onNewSale={handleNewSale}
-        />
+        <Suspense fallback={null}>
+          <CheckoutDialog
+            open={checkoutOpen}
+            onOpenChange={(v) => {
+              if (!v) dispatchSession({ type: "CLOSE_CHECKOUT" });
+            }}
+            companyId={companyId}
+            saleId={(pendingSale ?? completed)!.id}
+            saleNumber={(pendingSale ?? completed)!.number}
+            customerId={pdv.state.customerId}
+            amount={(pendingSale ?? completed)!.total}
+            subtotal={pdv.totals.items_total}
+            discount={pdv.state.discount}
+            onPaid={(info) =>
+              handlePaid((pendingSale ?? completed)!.id, info?.method)
+            }
+            onNewSale={handleNewSale}
+          />
+        </Suspense>
       ) : null}
       {completed ? (
-        <ReceiptDialog
-          open={receiptOpen}
-          onOpenChange={(v) =>
-            dispatchSession({ type: v ? "OPEN_RECEIPT" : "CLOSE_RECEIPT" })
-          }
-          saleId={completed.id}
-          companyId={companyId}
-          paymentMethod={completed.paymentMethod}
-          operatorName={operatorName}
-          onNewSale={handleNewSale}
-        />
+        <Suspense fallback={null}>
+          <ReceiptDialog
+            open={receiptOpen}
+            onOpenChange={(v) =>
+              dispatchSession({ type: v ? "OPEN_RECEIPT" : "CLOSE_RECEIPT" })
+            }
+            saleId={completed.id}
+            companyId={companyId}
+            paymentMethod={completed.paymentMethod}
+            operatorName={operatorName}
+            onNewSale={handleNewSale}
+          />
+        </Suspense>
       ) : null}
       {cashDialogs}
     </>
