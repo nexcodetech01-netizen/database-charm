@@ -27,7 +27,7 @@ function SprintPurchasesPage() {
         <div className="lg:col-span-8 space-y-6">
           <Section 
             title="OBJETIVO" 
-            description="Implementar a funcionalidade \"Nova Compra\" no módulo Compras."
+            description='Implementar a funcionalidade "Nova Compra" no módulo Compras.'
           >
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <p className="text-muted-foreground leading-relaxed">
@@ -66,7 +66,7 @@ function SprintPurchasesPage() {
             </Panel>
           </div>
 
-          <Section title="Fluxo de Confirmação" description="O que acontece ao clicar em \"Confirmar Entrada\"">
+          <Section title="Fluxo de Confirmação" description='O que acontece ao clicar em "Confirmar Entrada"'>
             <StatStack 
               items={[
                 { label: "Estoque", value: "Atualizado", icon: Package, status: "success" },
@@ -136,4 +136,3 @@ function SprintPurchasesPage() {
     </PageLayout>
   );
 }
-
