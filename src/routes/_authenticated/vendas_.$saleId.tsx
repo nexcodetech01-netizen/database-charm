@@ -811,6 +811,48 @@ function SaleWorkspace({
                   {sale.bella_pay_ref ? "Abrir cobrança" : "Gerar cobrança"}
                 </Button>
 
+              ) : isPending ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={!sale.customer_id}
+                    onClick={() => {
+                      if (!sale.customer_id) {
+                        toast.error("É obrigatório selecionar um cliente para salvar a venda");
+                        return;
+                      }
+                      setCheckoutOpen(true);
+                    }}
+                  >
+                    <Wallet className="mr-1.5 h-4 w-4" />
+                    Gerar cobrança
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const { salesService } = await import("@/features/sales/services/sales.service");
+                        const tx = await salesService.openReceivableForSale(sale.id);
+                        if (!tx) {
+                          toast.error("Não há lançamento financeiro em aberto para esta venda");
+                          return;
+                        }
+                        // Navega para o financeiro com o filtro do lançamento
+                        navigate({
+                          to: "/financeiro",
+                          search: { tab: "receivables" },
+                        });
+                        toast.info("Localize o lançamento da venda no Contas a Receber para baixar.");
+                      } catch (e) {
+                        toast.error("Erro ao localizar lançamento financeiro");
+                      }
+                    }}
+                  >
+                    <DollarSign className="mr-1.5 h-4 w-4" />
+                    Receber Pagamento
+                  </Button>
+                </div>
               ) : (
                 <Button size="sm" variant="outline" disabled>
                   <Wallet className="mr-1.5 h-4 w-4" />
