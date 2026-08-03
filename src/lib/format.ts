@@ -53,8 +53,13 @@ export const formatPercent = (
   return PCT_DEFAULT.format(value);
 };
 
-export const formatDate = (value: Date | string) =>
-  DATE.format(typeof value === "string" ? new Date(value) : value);
+export const formatDate = (value: Date | string) => {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split("-");
+    return `${d}/${m}/${y}`;
+  }
+  return DATE.format(typeof value === "string" ? new Date(value) : value);
+};
 export const formatDateTime = (value: Date | string) =>
   DATE_TIME.format(typeof value === "string" ? new Date(value) : value);
 
