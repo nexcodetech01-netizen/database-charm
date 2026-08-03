@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { usePdvCatalogIndex } from "../use-pdv-catalog-index";
+import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import React from "react";
