@@ -33,9 +33,18 @@ type Filterable = {
  * Aplica a busca inteligente sobre uma query de `products` já criada.
  * Retorna a mesma query para permitir chaining.
  */
-export function applyProductSearch<Q extends Filterable>(query: Q, term: string): Q {
+export function applyProductSearch<Q extends Filterable>(
+  query: Q,
+  term: string,
+  options?: { salesChannel?: string },
+): Q {
   const words = normalizeSearchTerm(term);
   let q: Filterable = query;
+
+  if (options?.salesChannel) {
+    q = (q as any).contains("sales_channels", [options.salesChannel]);
+  }
+
   for (const w of words) {
     const like = `%${w}%`;
     const parts = TEXT_COLS.map((c) => `${c}.ilike.${like}`);
