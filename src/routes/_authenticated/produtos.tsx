@@ -9,6 +9,7 @@ import {
   ProductFilters,
   ProductTable,
   BulkNcmDialog,
+  NcmClassificationDashboard,
   useProductsList,
 } from "@/features/products";
 import { ProductsBellaHints } from "@/features/bella-ai";
