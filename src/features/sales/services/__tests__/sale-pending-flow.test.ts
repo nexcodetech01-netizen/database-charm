@@ -6,15 +6,43 @@ import { supabase } from "@/integrations/supabase/client";
 // Mock para simular ambiente de teste
 const COMPANY_ID = "00000000-0000-0000-0000-000000000001"; // ID fictício para testes controlados
 
+async function ensureOpenCashSession() {
+  const { data: openSession } = await supabase
+    .from("cash_sessions")
+    .select("id")
+    .eq("company_id", COMPANY_ID)
+    .eq("status", "open")
+    .maybeSingle();
+
+  if (openSession) return openSession.id;
+
+  const { data: session, error } = await supabase
+    .from("cash_sessions")
+    .insert({
+      company_id: COMPANY_ID,
+      opened_at: new Date().toISOString(),
+      opening_balance: 0,
+      status: "open",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return session.id;
+}
+
 describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
   it("deve criar um Contas a Receber automaticamente ao criar venda sem pagamento", async () => {
+    const sessionId = await ensureOpenCashSession();
+
     // 1. Criar uma venda sem payment_method
     const sale = await salesService.create({
       company_id: COMPANY_ID,
-      number: "TEST-PENDING-001",
+      number: "TEST-PENDING-" + Date.now(),
       sale_date: new Date().toISOString().slice(0, 10),
       status: "pending",
       payment_method: null,
+      cash_session_id: sessionId,
       items: [
         {
           product_id: null,
@@ -43,13 +71,16 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
   });
 
   it("deve liquidar a venda corretamente ao baixar o financeiro", async () => {
+    const sessionId = await ensureOpenCashSession();
+
     // 1. Criar venda e pegar o ID do financeiro
     const sale = await salesService.create({
       company_id: COMPANY_ID,
-      number: "TEST-LIQ-001",
+      number: "TEST-LIQ-" + Date.now(),
       sale_date: new Date().toISOString().slice(0, 10),
       status: "pending",
       payment_method: null,
+      cash_session_id: sessionId,
       items: [{ product_id: null, description: "Teste Liq", quantity: 1, unit_price: 50, discount: 0 }]
     } as any, { origin: "pdv" });
 
@@ -62,7 +93,6 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     if (!tx) throw new Error("Lançamento financeiro não criado");
 
     // 2. Liquidar o financeiro
-    // Pegar uma conta ativa para o teste
     const accounts = await financeService.listAccounts(COMPANY_ID);
     const account = accounts.find(a => a.status === 'active');
     
@@ -88,5 +118,6 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     expect(updatedSale.paid_at).toBeDefined();
   });
 });
+
 
 
