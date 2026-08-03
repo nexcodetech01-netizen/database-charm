@@ -30,11 +30,13 @@ import { usePdvSaleWatch } from "../hooks/use-pdv-sale-watch";
 import { resolveActiveCartKey } from "../lib/cart";
 import { usePrintPreferences } from "@/features/printing";
 import {
+import {
   usePdvShortcuts,
   clickPdvElement,
   PDV_CUSTOMER_TRIGGER_ID,
   PDV_FINALIZE_BUTTON_ID,
 } from "../hooks/use-pdv-shortcuts";
+import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
 
 
 type Props = {
@@ -47,6 +49,8 @@ type Props = {
 /**
  * PDVScreen — sessão de venda em memória (Sprint 2.2) com guarda de caixa
  * reutilizando o fluxo existente (Sprint 2.3). Nenhuma venda é persistida.
+ *
+ * Sprint RC.1.2: Prefetch paralelo do catálogo iniciado aqui para não bloquear.
  */
 export function PDVScreen({
   companyId,
@@ -54,6 +58,9 @@ export function PDVScreen({
   operatorName,
   companyName,
 }: Props) {
+  // Prefetch paralelo do catálogo (não bloqueia a UI do caixa).
+  const catalog = usePdvCatalogIndex(companyId);
+
   const pdv = usePDV(companyId);
   const {
     access,
