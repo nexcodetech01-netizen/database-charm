@@ -207,13 +207,8 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     const params = new URLSearchParams(window.location.search);
     const s = params.get("ml_status");
     if (!s) return;
-    if (s === "connected") {
-      toast.success("Mercado Livre conectado com sucesso.");
-      void refresh();
-    } else {
-      const info = formatError(params.get("ml_error") ?? "unknown");
-      toast.error(info.title, { description: info.description });
-    }
+    
+    // Clear status from URL immediately before any other state changes
     params.delete("ml_status");
     params.delete("ml_error");
     const clean =
@@ -221,6 +216,14 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       (params.toString() ? `?${params.toString()}` : "") +
       window.location.hash;
     window.history.replaceState({}, "", clean);
+
+    if (s === "connected") {
+      toast.success("Mercado Livre conectado com sucesso.");
+      void refresh();
+    } else {
+      const info = formatError(params.get("ml_error") ?? "unknown");
+      toast.error(info.title, { description: info.description });
+    }
   }, [refresh]);
 
   const handleSave = async () => {
