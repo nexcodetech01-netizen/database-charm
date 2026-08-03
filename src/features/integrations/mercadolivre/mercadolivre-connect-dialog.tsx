@@ -186,7 +186,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     try {
       const s = await getFn();
       setStatus(s);
-      setClientId(s.clientId ?? "");
+      setClientId(prev => prev || (s.clientId ?? ""));
       onStatusChange?.(s.connected);
     } catch (err) {
       const info = formatError(err);
