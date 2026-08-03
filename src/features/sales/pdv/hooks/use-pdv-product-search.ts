@@ -53,6 +53,9 @@ export function usePdvProductSearch(companyId: string, term: string) {
       const pending = inflight.current.get(key);
       if (pending) return pending;
 
+      // 4. Busca Inteligente: Se não está no índice, busca e o React Query do catálogo indexará no próximo ciclo
+      // A busca normal do Supabase já preenche o cache local da sessão.
+
       const request = (async () => {
         let q = supabase
           .from("products")

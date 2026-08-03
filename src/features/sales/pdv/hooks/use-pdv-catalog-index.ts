@@ -41,10 +41,20 @@ export function usePdvCatalogIndex(
         .select("id,name,sku,barcode,brand,price,cost,stock,unit")
         .eq("company_id", companyId)
         .eq("status", "active")
-        .order("name") // Carrega os primeiros por nome para preencher a lista
+        .order("name")
         .limit(PDV_CATALOG_INITIAL_BATCH);
+      
       if (error) throw error;
-      return (data ?? []).map(mapProduct);
+      const mapped = (data ?? []).map(mapProduct);
+
+      // 1.5 Prefetch paralelo do catálogo completo assim que o inicial termina
+      // Sem await para não bloquear o retorno do lote inicial
+      queryClient.prefetchQuery({
+        queryKey: ["pdv", "catalog-index", "full", companyId],
+        staleTime: 5 * 60_000,
+      });
+
+      return mapped;
     },
   });
 
