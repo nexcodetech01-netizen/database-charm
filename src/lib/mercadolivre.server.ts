@@ -80,7 +80,12 @@ export async function exchangeCodeForToken(params: {
   );
   const text = await res.text();
   
-  if (!res.ok) throw new Error(`ML token exchange failed (${res.status}): ${text.slice(0, 300)}`);
+  if (!res.ok) {
+    // AUDITORIA P0: Captura resposta completa para diagnóstico
+    console.error(`[ML_TOKEN_ERROR] HTTP ${res.status}: ${text}`);
+    throw new Error(`ML token exchange failed (${res.status}): ${text}`);
+  }
+  
   return JSON.parse(text) as MLTokenResponse;
 }
 
