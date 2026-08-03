@@ -237,7 +237,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       await saveFn({ data: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } });
       setClientSecret("");
       toast.success("Credenciais salvas com segurança.");
-      await refresh();
+      await refresh(true);
     } catch (err) {
       const info = formatError(err);
       setInlineError(info);
