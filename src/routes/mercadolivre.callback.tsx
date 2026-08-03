@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MERCADOLIVRE_INTEGRATION_QUERY_KEY } from "@/features/settings/central/sections/integracoes-section";
 
-const CALLBACK_ENDPOINT =
-  "https://nexos.nexxcode.com.br/api/public/mercadolivre/oauth/callback";
+const CALLBACK_ENDPOINT = "/api/public/mercadolivre/oauth/callback";
 const REDIRECT_TO = "/configuracoes";
 
 export const Route = createFileRoute("/mercadolivre/callback")({
