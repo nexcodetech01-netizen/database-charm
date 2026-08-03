@@ -787,6 +787,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       .from("products")
       .update({
         ml_item_id: item.id,
+        ml_status: item.status || "active",
         ml_permalink: item.permalink ?? null,
         ml_published_at: new Date().toISOString(),
       })

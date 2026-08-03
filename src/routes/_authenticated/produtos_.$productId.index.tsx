@@ -181,6 +181,7 @@ function ProductDetailPage() {
       <ProductStatusBadge status={product.status} />
       <MercadoLivreBadge
         mlItemId={(product as { ml_item_id: string | null }).ml_item_id}
+        mlStatus={(product as { ml_status: string | null }).ml_status}
         permalink={(product as { ml_permalink: string | null }).ml_permalink}
       />
     </div>
