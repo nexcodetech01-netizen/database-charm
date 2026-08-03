@@ -180,8 +180,8 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const [clientSecret, setClientSecret] = useState("");
   const [inlineError, setInlineError] = useState<ReturnType<typeof formatError> | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     setInlineError(null);
     try {
       const s = await getFn();
@@ -193,12 +193,12 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       setInlineError(info);
       toast.error(info.title, { description: info.description });
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, [getFn, onStatusChange]);
 
   useEffect(() => {
-    if (open) void refresh();
+    if (open) void refresh(true);
   }, [open, refresh]);
 
   // Detect return from OAuth (?ml_status=connected|error) even if dialog was closed.
