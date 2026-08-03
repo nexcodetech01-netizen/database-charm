@@ -591,7 +591,11 @@ export function CheckoutDialog({
       const inst = method === "credit_card" ? Math.max(1, Math.trunc(installments || 1)) : 1;
       await supabase
         .from("sales")
-        .update({ payment_method: paymentMethod, installments: inst })
+        .update({
+          payment_method: paymentMethod,
+          installments: inst,
+          updated_at: new Date().toISOString()
+        })
         .eq("id", saleId);
     } catch {
       /* não bloqueia o fluxo — o setStatus segue mesmo em caso de falha aqui. */
