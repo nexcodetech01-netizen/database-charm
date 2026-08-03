@@ -1131,8 +1131,29 @@ export function CheckoutDialog({
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Usado apenas quando há entrada.
               </p>
-            </div>
           </div>
+        </div>
+
+        {method === "credit" && !customerId && (
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
+            <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500 mb-2">
+              <HandCoins className="h-6 w-6" />
+              <h3 className="font-bold">Crediário</h3>
+            </div>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium mb-3">
+              Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-yellow-500/50 hover:bg-yellow-500/20"
+              onClick={handleContinueEditing}
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
+            </Button>
+          </div>
+        )}
+
         </div>
 
         {/* Métodos */}
