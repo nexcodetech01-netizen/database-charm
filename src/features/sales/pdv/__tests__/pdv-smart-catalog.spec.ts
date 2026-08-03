@@ -52,9 +52,11 @@ describe("usePdvCatalogIndex (Smart Catalog)", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockImplementation((limit) => {
-        if (limit === 200) return Promise.resolve({ data: mockInitialData, error: null });
-        return Promise.resolve({ data: mockFullData, error: null });
+      limit: vi.fn().mockImplementation(async (limit) => {
+        if (limit === 200) return { data: mockInitialData, error: null };
+        // Simula um delay no carregamento completo
+        await new Promise(resolve => setTimeout(resolve, 50));
+        return { data: mockFullData, error: null };
       }),
     } as any);
 
