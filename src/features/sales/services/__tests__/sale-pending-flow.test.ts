@@ -11,6 +11,8 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     // 1. Criar uma venda sem payment_method
     const sale = await salesService.create({
       company_id: COMPANY_ID,
+      number: "TEST-PENDING-001",
+      sale_date: new Date().toISOString().slice(0, 10),
       status: "pending",
       payment_method: null,
       items: [
@@ -22,7 +24,7 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
           discount: 0,
         }
       ]
-    }, { origin: "pdv" });
+    } as any, { origin: "pdv" });
 
     expect(sale.id).toBeDefined();
 
@@ -44,10 +46,12 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     // 1. Criar venda e pegar o ID do financeiro
     const sale = await salesService.create({
       company_id: COMPANY_ID,
+      number: "TEST-LIQ-001",
+      sale_date: new Date().toISOString().slice(0, 10),
       status: "pending",
       payment_method: null,
       items: [{ product_id: null, description: "Teste Liq", quantity: 1, unit_price: 50, discount: 0 }]
-    }, { origin: "pdv" });
+    } as any, { origin: "pdv" });
 
     const { data: tx } = await supabase
       .from("financial_transactions")
@@ -84,4 +88,5 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     expect(updatedSale.paid_at).toBeDefined();
   });
 });
+
 
