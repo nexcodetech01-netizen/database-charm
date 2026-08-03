@@ -16,6 +16,14 @@ async function ensureOpenCashSession() {
 
   if (openSession) return openSession.id;
 
+  // Precisamos de um profile para ser o operador
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("current_company_id", COMPANY_ID)
+    .limit(1)
+    .single();
+
   const { data: session, error } = await supabase
     .from("cash_sessions")
     .insert({
@@ -23,7 +31,8 @@ async function ensureOpenCashSession() {
       opened_at: new Date().toISOString(),
       opening_balance: 0,
       status: "open",
-    })
+      operator_id: profile?.id
+    } as any)
     .select()
     .single();
 
@@ -118,6 +127,7 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
     expect(updatedSale.paid_at).toBeDefined();
   });
 });
+
 
 
 
