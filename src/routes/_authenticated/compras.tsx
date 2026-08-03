@@ -102,10 +102,6 @@ function PurchasesPage() {
       }
       kpis={<PurchaseMetrics companyId={company.id} />}
     >
-      <BellaPurchasesPanel companyId={company.id} />
-
-      <PurchasesBellaHints companyId={company.id} />
-
       <PurchaseFilters
         companyId={company.id}
         filters={filters}
@@ -125,6 +121,10 @@ function PurchasesPage() {
         onCancel={(p) => handleStatus(p, "cancelled", "cancelada")}
         onDelete={handleDelete}
       />
+
+      <PurchasesBellaHints companyId={company.id} />
+
+      <BellaPurchasesPanel companyId={company.id} collapsible />
     </PageLayout>
   );
 }
