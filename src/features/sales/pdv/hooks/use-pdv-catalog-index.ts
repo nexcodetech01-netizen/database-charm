@@ -32,8 +32,8 @@ export function usePdvCatalogIndex(
   const { data: initialData, isLoading: isInitialLoading } = useQuery({
     queryKey: ["pdv", "catalog-index", "initial", companyId],
     enabled: enabled && !!companyId,
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    staleTime: 5 * 60_000, // 5 minutos de cache para o PDV
+    gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<PdvSearchOption[]> => {
       const { data, error } = await supabase
@@ -52,8 +52,8 @@ export function usePdvCatalogIndex(
   const { data: fullData, isFetching: isSyncing } = useQuery({
     queryKey: ["pdv", "catalog-index", "full", companyId],
     enabled: enabled && !!companyId && !isInitialLoading,
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<PdvSearchOption[]> => {
       const { data, error } = await supabase
