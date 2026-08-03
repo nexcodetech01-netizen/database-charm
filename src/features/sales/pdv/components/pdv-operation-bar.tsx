@@ -28,6 +28,8 @@ type Props = {
   activity?: PdvActivity | null;
   /** Botão/menu operacional do caixa (somente UX). */
   cashMenu?: ReactNode;
+  /** Indica se o catálogo está sendo sincronizado em background. */
+  isSyncing?: boolean;
 };
 
 function MetaChip({
@@ -69,6 +71,7 @@ export const PDVOperationBar = memo(function PDVOperationBar({
   operatorName,
   activity,
   cashMenu,
+  isSyncing,
 }: Props) {
   return (
     <header className="rounded-xl border bg-card px-3 py-2 shadow-sm">
@@ -99,6 +102,12 @@ export const PDVOperationBar = memo(function PDVOperationBar({
             {activity ? activity.label : PDV_STAGE_LABEL[stage]}
           </span>
           {cashMenu}
+          {isSyncing && (
+            <div
+              title="Sincronizando catálogo..."
+              className="flex h-2 w-2 animate-pulse rounded-full bg-primary/40"
+            />
+          )}
         </div>
       </div>
 

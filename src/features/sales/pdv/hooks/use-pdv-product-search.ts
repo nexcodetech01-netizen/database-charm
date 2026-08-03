@@ -26,9 +26,9 @@ import { usePdvCatalogIndex } from "./use-pdv-catalog-index";
 export function usePdvProductSearch(companyId: string, term: string) {
   const [options, setOptions] = useState<PdvSearchOption[]>([]);
   const [isSearching, setSearching] = useState(false);
-  const catalogIndex = usePdvCatalogIndex(companyId);
-  const indexRef = useRef(catalogIndex);
-  indexRef.current = catalogIndex;
+  const { match } = usePdvCatalogIndex(companyId);
+  const matchRef = useRef(match);
+  matchRef.current = match;
 
   const cache = useMemo(
     () => createSearchCache<PdvSearchOption[]>({ ttlMs: 30_000, max: 40 }),
@@ -46,12 +46,15 @@ export function usePdvProductSearch(companyId: string, term: string) {
       const cached = cache.get(key);
       if (cached) return cached;
 
-      // Resposta instantânea do índice local (leitor USB).
-      const local = indexRef.current.match(key);
+      // Resposta instantânea do índice local (leitor USB / prefetch).
+      const local = matchRef.current(key);
       if (local) return [local];
 
       const pending = inflight.current.get(key);
       if (pending) return pending;
+
+      // 4. Busca Inteligente: Se não está no índice, busca e o React Query do catálogo indexará no próximo ciclo
+      // A busca normal do Supabase já preenche o cache local da sessão.
 
       const request = (async () => {
         let q = supabase
