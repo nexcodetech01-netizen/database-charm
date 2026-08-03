@@ -7,6 +7,7 @@ export { ProductForm } from "./components/product-form";
 export { ProductImageUploader } from "./components/product-image-uploader";
 export { ProductThumb } from "./components/product-thumb";
 export { BulkNcmDialog } from "./components/bulk-ncm-dialog";
+export { NcmClassificationDashboard } from "./components/ncm-classification-dashboard";
 export type { ProductThumbSize } from "./components/product-thumb";
 export * from "./hooks/use-products";
 export { productsService } from "./services/products.service";

@@ -9,6 +9,7 @@ import {
   ProductFilters,
   ProductTable,
   BulkNcmDialog,
+  NcmClassificationDashboard,
   useProductsList,
 } from "@/features/products";
 import { ProductsBellaHints } from "@/features/bella-ai";
@@ -83,7 +84,8 @@ function ProductsPage() {
         pageSize={filters.pageSize}
         onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
       />
-
+      
+      <NcmClassificationDashboard companyId={company.id} />
     </div>
   );
 }
