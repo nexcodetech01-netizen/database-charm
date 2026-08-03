@@ -28,6 +28,8 @@ type Props = {
   activity?: PdvActivity | null;
   /** Botão/menu operacional do caixa (somente UX). */
   cashMenu?: ReactNode;
+  /** Indica se o catálogo está sendo sincronizado em background. */
+  isSyncing?: boolean;
 };
 
 function MetaChip({
