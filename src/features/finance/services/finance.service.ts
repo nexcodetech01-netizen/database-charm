@@ -28,50 +28,39 @@ import {
 
 
 /**
- * HOTFIX — timestamp real da liquidação no fuso da empresa.
+ * BUGFIX — timestamp real da liquidação no fuso da empresa.
  *
- * A UI envia apenas a data (`YYYY-MM-DD`) já no fuso da empresa. O `paid_at`
- * gravado precisa representar esse dia local com a hora corrente da empresa,
- * convertido para UTC. A implementação anterior usava `new Date(y, m-1, d, ...)`
- * (fuso local do processo) e `now.toISOString()` como fallback, ambos avaliados
- * no fuso do servidor (UTC em produção). À noite no Brasil (ex.: 21h BRT ≈ 00h
- * UTC do dia seguinte), isso empurrava o `paid_at` para o dia UTC posterior,
- * jogando o registro para fora da janela da sessão de caixa.
+ * A UI envia a data (`YYYY-MM-DD`) já no fuso da empresa. O `paid_at`
+ * gravado deve representar o instante universal (UTC) desse dia/hora na empresa.
+ *
+ * CAUSA DO ERRO: À noite (ex: 21:00 BRT = 00:00 UTC dia+1), se usássemos o agora
+ * UTC como data base para uma data local retroativa ou "hoje", a lógica de ms 
+ * construída via naive UTC acabava empurrando o instante para 24h depois.
  */
 function toSettlementTimestamp(paidAt: string): string {
   const tz = DEFAULT_COMPANY_TZ;
   const now = new Date();
 
   if (paidAt && !/^\d{4}-\d{2}-\d{2}$/.test(paidAt)) {
-    // Já veio um timestamp completo — repassa/normaliza.
     return new Date(paidAt).toISOString();
   }
 
-  // Data local (na empresa) que a UI selecionou; se vazio, "hoje" na empresa.
+  // Data local na empresa (YYYY-MM-DD)
   const localDate = paidAt || companyDayKey(now, tz);
 
-  // Hora corrente no fuso da empresa (não do processo).
-  const localNowParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
-  }).formatToParts(now);
-  const get = (t: string) => localNowParts.find((p) => p.type === t)?.value ?? "0";
-  const hh = Number(get("hour")) === 24 ? 0 : Number(get("hour"));
-  const mm = Number(get("minute"));
-  const ss = Number(get("second"));
-  const ms = Number(get("fractionalSecond") ?? 0);
+  // Capturamos as partes da hora ATUAL no fuso da empresa
+  const p = tzParts(now, tz);
+  const hh = Number(p.hour) === 24 ? 0 : Number(p.hour);
+  const mm = Number(p.minute);
+  const ss = Number(p.second);
+  const ms = now.getMilliseconds();
 
-  // Constrói o instante UTC correspondente a `localDate localTime` no fuso.
-  // Dupla passada cobre transições de horário de verão.
-  const [y, mo, d] = localDate.split("-").map(Number);
-  const naive = Date.UTC(y, mo - 1, d, hh, mm, ss, ms);
-  const first = naive - tzOffsetMs(new Date(naive), tz);
-  const utcMs = naive - tzOffsetMs(new Date(first), tz);
-  return new Date(utcMs).toISOString();
+  // Constrói o instante UTC que, no fuso da empresa, resulta em localDate + hora atual.
+  // Usamos a infraestrutura testada de companyDayStartUtc.
+  const dayStartMs = companyDayStartUtc(localDate, tz);
+  const offsetMs = (hh * 3600 + mm * 60 + ss) * 1000 + ms;
+  
+  return new Date(dayStartMs + offsetMs).toISOString();
 }
 
 // P1.2 — Validação server-side de lançamentos financeiros.
