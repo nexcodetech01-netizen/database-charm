@@ -1670,7 +1670,10 @@ export function CheckoutDialog({
                   ? "Confirmar pagamento"
                   : method === "credit"
                     ? "Abrir crediário"
-                    : "Confirmar recebimento"}
+                    : method === "pending_payment"
+                      ? "Criar Venda Pendente"
+                      : "Confirmar recebimento"}
+
             </Button>
           ) : null}
 
