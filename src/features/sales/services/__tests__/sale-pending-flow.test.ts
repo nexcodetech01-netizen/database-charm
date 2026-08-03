@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { salesService } from "../sales.service";
 import { financeService } from "@/features/finance/services/finance.service";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,9 +15,11 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
       payment_method: null,
       items: [
         {
+          product_id: null,
           description: "Produto Teste",
           quantity: 1,
           unit_price: 100,
+          discount: 0,
         }
       ]
     }, { origin: "pdv" });
@@ -32,7 +34,8 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
       .eq("source", "sale")
       .single();
 
-    expect(tx).toBeDefined();
+    if (!tx) throw new Error("Lançamento financeiro não criado");
+
     expect(tx.status).toBe("pending");
     expect(Number(tx.amount)).toBe(100);
   });
@@ -43,7 +46,7 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
       company_id: COMPANY_ID,
       status: "pending",
       payment_method: null,
-      items: [{ description: "Teste Liq", quantity: 1, unit_price: 50 }]
+      items: [{ product_id: null, description: "Teste Liq", quantity: 1, unit_price: 50, discount: 0 }]
     }, { origin: "pdv" });
 
     const { data: tx } = await supabase
@@ -51,6 +54,8 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
       .select("id")
       .eq("reference_id", sale.id)
       .single();
+
+    if (!tx) throw new Error("Lançamento financeiro não criado");
 
     // 2. Liquidar o financeiro
     // Pegar uma conta ativa para o teste
@@ -73,7 +78,10 @@ describe("Fluxo de Venda com Pagamento Pendente (Sprint Limbo)", () => {
       .eq("id", sale.id)
       .single();
 
+    if (!updatedSale) throw new Error("Venda não encontrada");
+
     expect(updatedSale.status).toBe("paid");
     expect(updatedSale.paid_at).toBeDefined();
   });
 });
+
