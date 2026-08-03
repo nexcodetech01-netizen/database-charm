@@ -39,6 +39,7 @@ export function buildAuthorizeUrl(params: {
   url.searchParams.set("client_id", params.clientId);
   url.searchParams.set("redirect_uri", params.redirectUri);
   url.searchParams.set("state", params.state);
+  console.log(`[ML_AUTH_URL_DEBUG] clientId=${params.clientId}, redirectUri=${params.redirectUri}, state=${params.state ? 'present' : 'missing'}`);
   return url.toString();
 }
 
