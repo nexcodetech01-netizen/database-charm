@@ -311,6 +311,7 @@ export function PDVScreen({
               fiscalPending,
               stage,
             })}
+            isSyncing={catalog.isSyncing}
           />
         }
         cart={
