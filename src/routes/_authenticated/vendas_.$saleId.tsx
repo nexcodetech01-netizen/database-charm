@@ -199,10 +199,16 @@ function SaleWorkspace({
   }
 
 
-  const paymentLabel =
-    SALE_PAYMENT_METHODS.find((p) => p.value === sale.payment_method)?.label ??
-    sale.payment_method ??
-    "—";
+  const paymentLabel = useMemo(() => {
+    if (sale.status === "pending" && !sale.payment_method) {
+      return "Pagamento Pendente";
+    }
+    return (
+      SALE_PAYMENT_METHODS.find((p) => p.value === sale.payment_method)?.label ??
+      sale.payment_method ??
+      "—"
+    );
+  }, [sale.status, sale.payment_method]);
 
   // PDV-010 — busca cobrança Bella Pay para exibir parcelamento na aba Pagamento.
   const { data: bellaCharge } = useQuery({
@@ -283,7 +289,7 @@ function SaleWorkspace({
         <User className="h-3.5 w-3.5" />{" "}
         {sale.customer_name ?? "Consumidor final"}
       </span>
-      {sale.payment_method ? (
+      {sale.payment_method || (sale.status === "pending") ? (
         <>
           <span aria-hidden>·</span>
           <span className="inline-flex items-center gap-1">
