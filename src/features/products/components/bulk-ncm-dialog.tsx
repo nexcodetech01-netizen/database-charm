@@ -27,11 +27,12 @@ import { formatNcm } from "../lib/fiscal-suggestions";
 
 interface Props {
   companyId: string;
+  label?: string;
 }
 
 type Phase = "idle" | "scanning" | "preview" | "applying" | "done";
 
-export function BulkNcmDialog({ companyId }: Props) {
+export function BulkNcmDialog({ companyId, label }: Props) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -104,7 +105,7 @@ export function BulkNcmDialog({ companyId }: Props) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          <Sparkles className="mr-1.5 h-4 w-4" /> Preencher NCM
+          <Sparkles className="mr-1.5 h-4 w-4" /> {label || "Preencher NCM"}
         </Button>
       </DialogTrigger>
 

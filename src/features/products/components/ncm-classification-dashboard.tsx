@@ -112,7 +112,7 @@ export function NcmClassificationDashboard({ companyId }: Props) {
         </div>
 
         <div className="flex justify-end pt-4">
-          <BulkNcmDialog companyId={companyId} />
+          <BulkNcmDialog companyId={companyId} label="Classificar" />
         </div>
       </CardContent>
     </Card>
