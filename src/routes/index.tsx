@@ -15,17 +15,18 @@ function IndexPage() {
       </div>
 
       <div className="bg-muted/50 p-6 rounded-lg border">
-        <p className="mb-4">Investigar exclusivamente o card "Recebido hoje" do Dashboard.</p>
+        <p className="mb-4">Investigar exclusivamente o registro financeiro:</p>
+        <p className="font-mono text-xs mb-4">ID: 3df98503-993f-4994-899d-03805a12eaa1</p>
 
         <div className="space-y-3">
           <p className="font-medium">Responder:</p>
           <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>Qual consulta SQL ou serviço alimenta esse card?</li>
-            <li>Qual campo de data é utilizado (created_at, paid_at, confirmed_at, financial_date, etc.)?</li>
-            <li>Qual registro está compondo os R$ 40,00?</li>
-            <li>Qual é a data gravada nesse registro?</li>
-            <li>O filtro considera o dia do calendário ou as últimas 24 horas?</li>
-            <li>Existe divergência entre a regra implementada e o texto "Recebido hoje"?</li>
+            <li>transaction_date</li>
+            <li>created_at</li>
+            <li>paid_at</li>
+            <li>timezone armazenado</li>
+            <li>Quem definiu o paid_at (Asaas, venda manual, trigger ou backend?)</li>
+            <li>Confirmar se paid_at = 2026-08-04 01:23 UTC está correto ou se existe erro de data.</li>
           </ol>
         </div>
       </div>
