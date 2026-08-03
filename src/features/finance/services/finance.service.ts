@@ -64,6 +64,10 @@ function toSettlementTimestamp(paidAt: string): string {
   return new Date(dayStartMs + offsetMs).toISOString();
 }
 
+/** @internal EXPOSTO APENAS PARA TESTES DE INTEGRIDADE */
+export const _test_toSettlementTimestamp = toSettlementTimestamp;
+
+
 // P1.2 — Validação server-side de lançamentos financeiros.
 const financialTransactionCreateSchema = z
   .object({
