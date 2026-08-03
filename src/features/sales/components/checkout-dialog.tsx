@@ -1586,7 +1586,7 @@ export function CheckoutDialog({
           >
             <XCircle className="mr-1.5 h-4 w-4" /> Fechar
           </Button>
-          {confirmed || method === "cash" || method === "debit_card" || method === "pix_manual" || method === "credit" ? (
+          {confirmed || method === "cash" || method === "debit_card" || method === "pix_manual" || method === "credit" || method === "pending_payment" ? (
             <Button
               type="button"
               onClick={handleConfirm}
@@ -1598,6 +1598,7 @@ export function CheckoutDialog({
                 (method === "cash" && !confirmed && !canConfirmCash) ||
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 (method === "credit" && !confirmed && !customerId)
+
               }
 
               className="min-w-[180px]"
