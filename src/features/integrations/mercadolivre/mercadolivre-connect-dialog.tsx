@@ -219,7 +219,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
 
     if (s === "connected") {
       toast.success("Mercado Livre conectado com sucesso.");
-      void refresh();
+      void refresh(true);
     } else {
       const info = formatError(params.get("ml_error") ?? "unknown");
       toast.error(info.title, { description: info.description });
