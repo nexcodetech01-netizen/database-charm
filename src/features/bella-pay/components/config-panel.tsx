@@ -416,7 +416,8 @@ export function ConfigPanel({ companyId }: Props) {
           </div>
 
           <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-            Recebimento previsto: <strong className="text-foreground">D+32</strong> para cartão · <strong className="text-foreground">D+1</strong> para PIX.
+            Recebimento previsto: <strong className="text-foreground">D+32</strong> para cartão. <br />
+            <span className="text-destructive italic font-medium">PIX: Utilizando conta própria (configurado fora do Asaas).</span>
           </div>
 
           <Button onClick={handleSaveCard} disabled={save.isPending}>
