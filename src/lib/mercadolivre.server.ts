@@ -250,9 +250,6 @@ export async function upsertTokens(params: {
       connected_by: params.userId,
       last_synced_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }, {
-      // Forçar o retorno do objeto atualizado para garantir que o cache local reflita a realidade
-      returning: 'minimal'
     })
     .eq("company_id", params.companyId);
   if (error) throw error;
