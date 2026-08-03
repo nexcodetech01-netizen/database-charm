@@ -8,7 +8,7 @@
  * Somente leitura — nenhuma regra de estoque, preço ou venda é tocada.
  */
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   buildCatalogIndex,
@@ -19,14 +19,39 @@ import type { PdvSearchOption } from "../lib/search-cache";
 
 /** Teto de segurança: catálogos maiores continuam usando a busca no servidor. */
 export const PDV_CATALOG_PREFETCH_LIMIT = 2000;
+/** Primeiro lote para carregamento instantâneo. */
+export const PDV_CATALOG_INITIAL_BATCH = 200;
 
 export function usePdvCatalogIndex(
   companyId: string,
   enabled = true,
-): PdvCatalogIndex {
-  const { data } = useQuery({
-    queryKey: ["pdv", "catalog-index", companyId],
+): PdvCatalogIndex & { isSyncing: boolean; isInitialLoading: boolean } {
+  const queryClient = useQueryClient();
+
+  // 1. Carregamento do lote inicial (rápido)
+  const { data: initialData, isLoading: isInitialLoading } = useQuery({
+    queryKey: ["pdv", "catalog-index", "initial", companyId],
     enabled: enabled && !!companyId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<PdvSearchOption[]> => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,name,sku,barcode,brand,price,cost,stock,unit")
+        .eq("company_id", companyId)
+        .eq("status", "active")
+        .order("name") // Carrega os primeiros por nome para preencher a lista
+        .limit(PDV_CATALOG_INITIAL_BATCH);
+      if (error) throw error;
+      return (data ?? []).map(mapProduct);
+    },
+  });
+
+  // 2. Carregamento do catálogo completo em background
+  const { data: fullData, isFetching: isSyncing } = useQuery({
+    queryKey: ["pdv", "catalog-index", "full", companyId],
+    enabled: enabled && !!companyId && !isInitialLoading,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     refetchOnWindowFocus: false,
@@ -39,22 +64,34 @@ export function usePdvCatalogIndex(
         .order("name")
         .limit(PDV_CATALOG_PREFETCH_LIMIT);
       if (error) throw error;
-      return (data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        sku: p.sku ?? null,
-        barcode: (p as { barcode?: string | null }).barcode ?? null,
-        reference: (p as { brand?: string | null }).brand ?? null,
-        price: p.price != null ? Number(p.price) : null,
-        cost: p.cost != null ? Number(p.cost) : null,
-        stock: p.stock != null ? Number(p.stock) : null,
-        unit: p.unit ?? null,
-      }));
+      return (data ?? []).map(mapProduct);
     },
   });
 
-  return useMemo(
-    () => (data && data.length > 0 ? buildCatalogIndex(data) : EMPTY_CATALOG_INDEX),
-    [data],
+  const products = fullData ?? initialData ?? [];
+
+  const index = useMemo(
+    () => (products.length > 0 ? buildCatalogIndex(products) : EMPTY_CATALOG_INDEX),
+    [products],
   );
+
+  return {
+    ...index,
+    isSyncing,
+    isInitialLoading,
+  };
+}
+
+function mapProduct(p: any): PdvSearchOption {
+  return {
+    id: p.id,
+    name: p.name,
+    sku: p.sku ?? null,
+    barcode: (p as { barcode?: string | null }).barcode ?? null,
+    reference: (p as { brand?: string | null }).brand ?? null,
+    price: p.price != null ? Number(p.price) : null,
+    cost: p.cost != null ? Number(p.cost) : null,
+    stock: p.stock != null ? Number(p.stock) : null,
+    unit: p.unit ?? null,
+  };
 }
