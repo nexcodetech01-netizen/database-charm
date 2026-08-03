@@ -17,7 +17,6 @@ import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as MercadolivreCallbackRouteImport } from './routes/mercadolivre.callback'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
@@ -56,6 +55,7 @@ import { Route as CatalogoColecaoSlugRouteImport } from './routes/catalogo.colec
 import { Route as AuthenticatedVendasNovoRouteImport } from './routes/_authenticated/vendas_.novo'
 import { Route as AuthenticatedVendasSaleIdRouteImport } from './routes/_authenticated/vendas_.$saleId'
 import { Route as AuthenticatedProdutosNovoRouteImport } from './routes/_authenticated/produtos_.novo'
+import { Route as AuthenticatedMercadolivreCallbackRouteImport } from './routes/_authenticated.mercadolivre.callback'
 import { Route as AuthenticatedInteligenciaComercialSimuladorRouteImport } from './routes/_authenticated/inteligencia-comercial.simulador'
 import { Route as AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.revisao-precos'
 import { Route as AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.recalcular-precos'
@@ -138,11 +138,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MercadolivreCallbackRoute = MercadolivreCallbackRouteImport.update({
-  id: '/mercadolivre/callback',
-  path: '/mercadolivre/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -348,6 +343,12 @@ const AuthenticatedProdutosNovoRoute =
   AuthenticatedProdutosNovoRouteImport.update({
     id: '/produtos_/novo',
     path: '/produtos/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMercadolivreCallbackRoute =
+  AuthenticatedMercadolivreCallbackRouteImport.update({
+    id: '/mercadolivre/callback',
+    path: '/mercadolivre/callback',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInteligenciaComercialSimuladorRoute =
@@ -652,7 +653,6 @@ export interface FileRoutesByFullPath {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
-  '/mercadolivre/callback': typeof MercadolivreCallbackRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
@@ -673,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/inteligencia-comercial/recalcular-precos': typeof AuthenticatedInteligenciaComercialRecalcularPrecosRoute
   '/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
+  '/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
@@ -744,7 +745,6 @@ export interface FileRoutesByTo {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
-  '/mercadolivre/callback': typeof MercadolivreCallbackRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
@@ -765,6 +765,7 @@ export interface FileRoutesByTo {
   '/inteligencia-comercial/recalcular-precos': typeof AuthenticatedInteligenciaComercialRecalcularPrecosRoute
   '/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
+  '/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
@@ -838,7 +839,6 @@ export interface FileRoutesById {
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
-  '/mercadolivre/callback': typeof MercadolivreCallbackRoute
   '/_authenticated/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/_authenticated/clientes_/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/_authenticated/clientes_/novo': typeof AuthenticatedClientesNovoRoute
@@ -859,6 +859,7 @@ export interface FileRoutesById {
   '/_authenticated/inteligencia-comercial/recalcular-precos': typeof AuthenticatedInteligenciaComercialRecalcularPrecosRoute
   '/_authenticated/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/_authenticated/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
+  '/_authenticated/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
   '/_authenticated/produtos_/novo': typeof AuthenticatedProdutosNovoRoute
   '/_authenticated/vendas_/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/_authenticated/vendas_/novo': typeof AuthenticatedVendasNovoRoute
@@ -932,7 +933,6 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
-    | '/mercadolivre/callback'
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
@@ -953,6 +953,7 @@ export interface FileRouteTypes {
     | '/inteligencia-comercial/recalcular-precos'
     | '/inteligencia-comercial/revisao-precos'
     | '/inteligencia-comercial/simulador'
+    | '/mercadolivre/callback'
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
@@ -1024,7 +1025,6 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
-    | '/mercadolivre/callback'
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
@@ -1045,6 +1045,7 @@ export interface FileRouteTypes {
     | '/inteligencia-comercial/recalcular-precos'
     | '/inteligencia-comercial/revisao-precos'
     | '/inteligencia-comercial/simulador'
+    | '/mercadolivre/callback'
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
@@ -1117,7 +1118,6 @@ export interface FileRouteTypes {
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
     | '/invite/$token'
-    | '/mercadolivre/callback'
     | '/_authenticated/bella-pay/test'
     | '/_authenticated/clientes_/$customerId'
     | '/_authenticated/clientes_/novo'
@@ -1138,6 +1138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inteligencia-comercial/recalcular-precos'
     | '/_authenticated/inteligencia-comercial/revisao-precos'
     | '/_authenticated/inteligencia-comercial/simulador'
+    | '/_authenticated/mercadolivre/callback'
     | '/_authenticated/produtos_/novo'
     | '/_authenticated/vendas_/$saleId'
     | '/_authenticated/vendas_/novo'
@@ -1180,7 +1181,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
-  MercadolivreCallbackRoute: typeof MercadolivreCallbackRoute
   CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRouteWithChildren
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
@@ -1253,13 +1253,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mercadolivre/callback': {
-      id: '/mercadolivre/callback'
-      path: '/mercadolivre/callback'
-      fullPath: '/mercadolivre/callback'
-      preLoaderRoute: typeof MercadolivreCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1526,6 +1519,13 @@ declare module '@tanstack/react-router' {
       path: '/produtos/novo'
       fullPath: '/produtos/novo'
       preLoaderRoute: typeof AuthenticatedProdutosNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mercadolivre/callback': {
+      id: '/_authenticated/mercadolivre/callback'
+      path: '/mercadolivre/callback'
+      fullPath: '/mercadolivre/callback'
+      preLoaderRoute: typeof AuthenticatedMercadolivreCallbackRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inteligencia-comercial/simulador': {
@@ -2005,6 +2005,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInteligenciaComercialRecalcularPrecosRoute: typeof AuthenticatedInteligenciaComercialRecalcularPrecosRoute
   AuthenticatedInteligenciaComercialRevisaoPrecosRoute: typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   AuthenticatedInteligenciaComercialSimuladorRoute: typeof AuthenticatedInteligenciaComercialSimuladorRoute
+  AuthenticatedMercadolivreCallbackRoute: typeof AuthenticatedMercadolivreCallbackRoute
   AuthenticatedProdutosNovoRoute: typeof AuthenticatedProdutosNovoRoute
   AuthenticatedVendasSaleIdRoute: typeof AuthenticatedVendasSaleIdRouteWithChildren
   AuthenticatedVendasNovoRoute: typeof AuthenticatedVendasNovoRoute
@@ -2076,6 +2077,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedInteligenciaComercialRevisaoPrecosRoute,
   AuthenticatedInteligenciaComercialSimuladorRoute:
     AuthenticatedInteligenciaComercialSimuladorRoute,
+  AuthenticatedMercadolivreCallbackRoute:
+    AuthenticatedMercadolivreCallbackRoute,
   AuthenticatedProdutosNovoRoute: AuthenticatedProdutosNovoRoute,
   AuthenticatedVendasSaleIdRoute: AuthenticatedVendasSaleIdRouteWithChildren,
   AuthenticatedVendasNovoRoute: AuthenticatedVendasNovoRoute,
@@ -2126,7 +2129,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
-  MercadolivreCallbackRoute: MercadolivreCallbackRoute,
   CatalogoColecaoSlugRoute: CatalogoColecaoSlugRouteWithChildren,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
