@@ -267,7 +267,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
       await disconnectFn();
       toast.info("Mercado Livre desconectado.");
       setClientSecret("");
-      await refresh();
+      await refresh(true);
     } catch (err) {
       const info = formatError(err);
       setInlineError(info);
