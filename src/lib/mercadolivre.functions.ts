@@ -7,7 +7,7 @@ import { getRequestHost } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveCompanyId } from "@/lib/company-resolver.server";
 
-const CALLBACK_PATH = "/mercadolivre/callback";
+const CALLBACK_PATH = "/api/public/mercadolivre/oauth/callback";
 
 function buildRedirectUri(): string {
   const explicit = process.env.MERCADOLIVRE_OAUTH_REDIRECT_URI;
