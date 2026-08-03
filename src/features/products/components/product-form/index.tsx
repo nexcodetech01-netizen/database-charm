@@ -131,7 +131,7 @@ type FormState = {
   supplier_id: string;
   status: string;
   unit: string;
-  sales_channel: string;
+  sales_channels: string[];
   cost: string;
   freight: string;
   packaging: string;
@@ -157,7 +157,7 @@ const empty: FormState = {
   supplier_id: "",
   status: "active",
   unit: "un",
-  sales_channel: "",
+  sales_channels: ["loja_fisica"],
   cost: "0",
   freight: "0",
   packaging: "0",
@@ -1276,7 +1276,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 </Select>
               </Field>
               <Section
-                compact
                 title="Canais de Venda"
                 description="Onde este produto pode ser vendido."
               >
