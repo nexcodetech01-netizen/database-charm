@@ -1131,8 +1131,29 @@ export function CheckoutDialog({
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Usado apenas quando há entrada.
               </p>
-            </div>
           </div>
+        </div>
+
+        {method === "credit" && !customerId && (
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
+            <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500 mb-2">
+              <HandCoins className="h-6 w-6" />
+              <h3 className="font-bold">Crediário</h3>
+            </div>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium mb-3">
+              Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-yellow-500/50 hover:bg-yellow-500/20"
+              onClick={handleContinueEditing}
+            >
+              <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
+            </Button>
+          </div>
+        )}
+
         </div>
 
         {/* Métodos */}
@@ -1558,14 +1579,34 @@ export function CheckoutDialog({
                 <Wallet className="h-6 w-6" />
                 <h3 className="font-bold">Pagamento Pendente</h3>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
-                O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
-              </p>
-              <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
-                O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
-              </div>
+              
+              {!customerId ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+                    Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-yellow-500/50 hover:bg-yellow-500/20"
+                    onClick={handleContinueEditing}
+                  >
+                    <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
+                    O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
+                  </p>
+                  <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
+                    O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
+                  </div>
+                </>
+              )}
             </div>
+
           ) : charge ? (
             <ChargeView
               charge={charge}
@@ -1612,9 +1653,9 @@ export function CheckoutDialog({
                 (!confirmed && cashClosed) ||
                 (method === "cash" && !confirmed && !canConfirmCash) ||
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
-                (method === "credit" && !confirmed && !customerId)
-
+                ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
+
 
               className="min-w-[180px]"
             >
