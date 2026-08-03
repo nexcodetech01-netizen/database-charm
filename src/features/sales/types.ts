@@ -62,7 +62,7 @@ export const SALE_PAYMENT_METHODS: {
 export type CheckoutMethod = Exclude<
   SalePaymentMethod,
   "card" | "bella_pay" | "a_receber"
->;
+> | "pending_payment";
 
 
 export interface SaleWithMeta extends Sale {

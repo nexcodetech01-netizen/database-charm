@@ -163,6 +163,7 @@ const METHODS: {
   { id: "cash", label: "Dinheiro", icon: Banknote, hint: "Baixa imediata + troco" },
   { id: "debit_card", label: "Débito", icon: CreditCard, hint: "Baixa manual" },
   { id: "credit", label: "Crediário", icon: HandCoins, hint: "Venda a prazo na conta do cliente" },
+  { id: "pending_payment", label: "Pagamento Pendente", icon: Wallet, hint: "Venda finalizada. O pagamento será informado posteriormente." },
 ];
 
 
@@ -842,12 +843,31 @@ export function CheckoutDialog({
       return;
     }
 
-    // Dinheiro/Débito/PIX Próprio: baixa manual pelo operador (não passa por webhook).
-    if (method === "cash" || method === "debit_card" || method === "pix_manual") {
+    // Dinheiro/Débito/PIX Próprio/Pendente: baixa manual ou fluxo pendente.
+    if (method === "cash" || method === "debit_card" || method === "pix_manual" || method === "pending_payment") {
       if (method === "pix_manual" && !ownPixPayload) {
         toast.error("Configure a chave PIX em Configurações → Empresa antes de usar PIX Próprio.");
         return;
       }
+
+      if (method === "pending_payment") {
+        confirmedRef.current = true;
+        setConfirmed(true);
+        try {
+          await setStatus.mutateAsync({ id: saleId, status: "pending" });
+          toast.success("Venda finalizada", {
+            description: "Pagamento pendente registrado com sucesso.",
+          });
+          onPaid?.({ method });
+          openCompletedDialog();
+        } catch (e) {
+          confirmedRef.current = false;
+          setConfirmed(false);
+          toast.error("Erro ao finalizar venda com pagamento pendente");
+        }
+        return;
+      }
+
       await beginManualSettlement();
       return;
     }
