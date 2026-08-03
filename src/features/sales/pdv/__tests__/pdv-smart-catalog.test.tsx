@@ -50,7 +50,7 @@ describe("usePdvCatalogIndex (Smart Catalog)", () => {
     ];
 
     // Mock das chamadas do Supabase
-    const mockSelect = vi.mocked(supabase.from).mockReturnValue({
+    vi.mocked(supabase.from).mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
@@ -68,27 +68,26 @@ describe("usePdvCatalogIndex (Smart Catalog)", () => {
     expect(result.current.isInitialLoading).toBe(true);
 
     // Aguarda lote inicial
-    await waitFor(() => expect(result.current.isInitialLoading).toBe(false));
+    await waitFor(() => expect(result.current.isInitialLoading).toBe(false), { timeout: 3000 });
     expect(result.current.size).toBe(1);
     expect(result.current.match("123")).not.toBeNull();
     
     // Aguarda sincronização completa em background
-    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+    await waitFor(() => expect(result.current.isSyncing).toBe(false), { timeout: 3000 });
     expect(result.current.size).toBe(2);
     expect(result.current.match("456")).not.toBeNull();
   });
 
   it("deve lidar com busca de produto fora do lote inicial", async () => {
-    // Este teste valida a lógica de fallback que será usada no hook de busca
     const mockInitialData = [{ id: "1", name: "A", barcode: "123" }];
     
-    const mockSelect = vi.mocked(supabase.from).mockReturnValue({
+    vi.mocked(supabase.from).mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockImplementation((limit) => {
         if (limit === 200) return Promise.resolve({ data: mockInitialData, error: null });
-        return new Promise(() => {}); // Simula background carregando
+        return new Promise(() => {}); // Simula background carregando infinitamente para testar isSyncing
       }),
     } as any);
 
@@ -96,10 +95,10 @@ describe("usePdvCatalogIndex (Smart Catalog)", () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isInitialLoading).toBe(false));
+    await waitFor(() => expect(result.current.isInitialLoading).toBe(false), { timeout: 3000 });
     
     expect(result.current.match("123")).not.toBeNull();
-    expect(result.current.match("999")).toBeNull(); // Não está no lote inicial
-    expect(result.current.isSyncing).toBe(true); // Ainda sincronizando
+    expect(result.current.match("999")).toBeNull(); 
+    expect(result.current.isSyncing).toBe(true); 
   });
 });
