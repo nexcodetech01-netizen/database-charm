@@ -30,7 +30,6 @@ import { usePdvSaleWatch } from "../hooks/use-pdv-sale-watch";
 import { resolveActiveCartKey } from "../lib/cart";
 import { usePrintPreferences } from "@/features/printing";
 import {
-import {
   usePdvShortcuts,
   clickPdvElement,
   PDV_CUSTOMER_TRIGGER_ID,
