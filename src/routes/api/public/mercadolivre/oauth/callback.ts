@@ -9,13 +9,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit } from "@/lib/rate-limit.server";
 
-const FRONTEND_CALLBACK_PATH = "/mercadolivre/callback";
+const FRONTEND_CALLBACK_PATH = "/api/public/mercadolivre/oauth/callback";
 
 function resolveRedirectUri(origin: string): string {
-  return (
-    process.env.MERCADOLIVRE_OAUTH_REDIRECT_URI ??
-    `${origin}${FRONTEND_CALLBACK_PATH}`
-  );
+  const uri = process.env.MERCADOLIVRE_OAUTH_REDIRECT_URI ??
+    `${origin}${FRONTEND_CALLBACK_PATH}`;
+  console.log(`[ML_REDIRECT_URI_RESOLVED] uri=${uri}`);
+  return uri;
 }
 
 async function exchange(params: {
