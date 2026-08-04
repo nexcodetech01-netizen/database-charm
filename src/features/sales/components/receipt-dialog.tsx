@@ -60,8 +60,15 @@ export function ReceiptDialog(props: Props) {
       paperWidth: effectiveWidth,
       marginMm: printPrefs.marginMm,
     });
-    for (let i = 0; i < printPrefs.copies; i += 1) window.print();
-    setPrinted(true);
+    
+    // Pequeno delay para garantir que o estilo @page foi aplicado e o DOM renderizado
+    // antes de disparar o diálogo de impressão do navegador.
+    window.setTimeout(() => {
+      for (let i = 0; i < printPrefs.copies; i += 1) {
+        window.print();
+      }
+      setPrinted(true);
+    }, 100);
   }, [effectiveWidth, printPrefs.copies, printPrefs.marginMm]);
 
   // Impressão automática após a venda (preferência do operador).
