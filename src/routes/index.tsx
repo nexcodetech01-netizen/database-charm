@@ -16,9 +16,10 @@ export const Route = createFileRoute("/")({
     if (isPreviewHostname(host)) {
       if (typeof window === "undefined") {
         console.log(`[SSR] Preview environment detected. Host: ${host}. skipping redirect.`);
-        console.log(`[SSR] process.env.LOVABLE_PREVIEW_HOST: ${process.env['LOVABLE_PREVIEW_HOST']}`);
+        console.log(`[SSR] process.env.LOVABLE_PREVIEW_HOST: ${process.env['LOVABLE_PREVIEW_HOST'] || "UNDEFINED"}`);
         console.log(`[SSR] isPreviewHostname(${host}): ${isPreviewHostname(host)}`);
       }
+      return;
       return;
     }
 
