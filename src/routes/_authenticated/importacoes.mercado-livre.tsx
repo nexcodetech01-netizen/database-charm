@@ -26,7 +26,7 @@ function MercadoLivreOrdersPage() {
 
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ["external-orders", "mercadolivre"],
-    queryFn: () => getExternalOrders({ marketplace: "mercadolivre", status: "pending" }),
+    queryFn: () => getExternalOrders({ data: { marketplace: "mercadolivre", status: "pending" } }),
   });
 
   const importMutation = useMutation({
