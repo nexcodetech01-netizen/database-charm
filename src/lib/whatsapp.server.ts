@@ -284,6 +284,9 @@ export async function sendWhatsAppText(input: SendTextInput & { bypassWindowChec
   if (!text) return { ok: false, waMessageId: null, to, error: "Texto vazio." };
 
   try {
+    // Se não for solicitado explicitamente ignorar o check da janela, poderíamos verificar aqui.
+    // Porém, seguindo o requisito 3, criaremos a lógica inteligente de envio no service que orquestra.
+
     const res = await integrationFetch(
       `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,
       {
