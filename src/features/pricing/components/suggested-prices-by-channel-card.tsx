@@ -111,14 +111,6 @@ function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
       defaultFixedCost: 0,
     },
     {
-      id: "site",
-      label: "Site próprio",
-      icon: Globe,
-      feePct: fee,
-      hint: `Gateway Asaas (${fee.toFixed(2)}%)`,
-      defaultFixedCost: 0,
-    },
-    {
       id: "ml",
       label: "Mercado Livre",
       icon: ShoppingBag,
@@ -129,7 +121,7 @@ function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
   ];
 }
 
-const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, site: 0, ml: 6 };
+const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, ml: 6 };
 
 const LOW_MARGIN_ALERT_PCT = 10;
 

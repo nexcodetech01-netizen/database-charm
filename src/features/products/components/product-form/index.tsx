@@ -143,6 +143,10 @@ type FormState = {
   stock: string;
   min_stock: string;
   tags: string[];
+  weight: string;
+  width: string;
+  height: string;
+  length: string;
 };
 
 const empty: FormState = {
@@ -169,6 +173,10 @@ const empty: FormState = {
   stock: "0",
   min_stock: "0",
   tags: [],
+  weight: "0",
+  width: "0",
+  height: "0",
+  length: "0",
 };
 
 function toState(p?: Product): FormState {
@@ -198,6 +206,10 @@ function toState(p?: Product): FormState {
     stock: String(p.stock),
     min_stock: String(p.min_stock),
     tags: p.tags ?? [],
+    weight: String((p as any).weight ?? 0),
+    width: String((p as any).width ?? 0),
+    height: String((p as any).height ?? 0),
+    length: String((p as any).length ?? 0),
   };
 }
 
@@ -839,6 +851,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       ...(product ? {} : { stock: num(form.stock) }),
       min_stock: num(form.min_stock),
       tags: normalizeTags(form.tags),
+      weight: num(form.weight),
+      width: num(form.width),
+      height: num(form.height),
+      length: num(form.length),
     };
 
     try {
@@ -1544,6 +1560,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     <NumInput value={form.price} onChange={(v) => set("price", v)} />
                   </div>
 
+                  {num(form.price) <= 0 ? (
+                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="text-[11px] font-semibold uppercase tracking-tight">
+                        Definir Preço
+                      </span>
+                    </div>
+                  ) : null}
+
                   {priceTiers.length > 0 ? (
                     <div className="mt-3 space-y-2">
                       <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -1772,12 +1797,65 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
           <Section
             title="Dimensões e peso"
-            description="Usados no cálculo de frete dos marketplaces."
+            description="Medidas oficiais usadas para o cálculo exato de frete nos Marketplaces (Mercado Livre, etc)."
           >
-            <p className="text-xs text-muted-foreground">
-              Peso e medidas ainda não fazem parte do cadastro de produtos deste ERP. Posso
-              habilitar esses campos assim que você autorizar a inclusão no banco de dados.
-            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field 
+                label="Peso (kg)" 
+                hint="Peso total com embalagem"
+              >
+                <div className="relative">
+                  <NumInput 
+                    value={form.weight} 
+                    onChange={(v) => set("weight", v)} 
+                    placeholder="0,000"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">kg</span>
+                </div>
+              </Field>
+
+              <Field 
+                label="Altura (cm)" 
+                hint="Altura da caixa/embalagem"
+              >
+                <div className="relative">
+                  <NumInput 
+                    value={form.height} 
+                    onChange={(v) => set("height", v)} 
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
+                </div>
+              </Field>
+
+              <Field 
+                label="Largura (cm)" 
+                hint="Largura da caixa/embalagem"
+              >
+                <div className="relative">
+                  <NumInput 
+                    value={form.width} 
+                    onChange={(v) => set("width", v)} 
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
+                </div>
+              </Field>
+
+              <Field 
+                label="Comprimento (cm)" 
+                hint="Comprimento da caixa/embalagem"
+              >
+                <div className="relative">
+                  <NumInput 
+                    value={form.length} 
+                    onChange={(v) => set("length", v)} 
+                    placeholder="0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
+                </div>
+              </Field>
+            </div>
           </Section>
         </TabsContent>
       </Tabs>
