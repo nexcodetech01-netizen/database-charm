@@ -159,6 +159,9 @@ export async function sendWhatsAppTemplateRaw(
     },
   };
 
+  // Requisito 3: Log do payload exato antes do envio
+  console.log("PAYLOAD WHATSAPP META API:", JSON.stringify(body, null, 2));
+
   try {
     const res = await integrationFetch(
       `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,

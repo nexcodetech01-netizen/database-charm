@@ -88,7 +88,7 @@ export function NewConversationDialog({
           <DialogTitle>Nova conversa</DialogTitle>
           <DialogDescription>
             Informe o telefone do cliente com DDI e DDD. Ex.: 55 11 98888-7777. Enviaremos o
-            template <code className="rounded bg-muted px-1">hello_world</code> para abrir a janela
+            template <code className="rounded bg-muted px-1">jaspers_market_order_confirmation_v1</code> para abrir a janela
             de conversa.
           </DialogDescription>
         </DialogHeader>
