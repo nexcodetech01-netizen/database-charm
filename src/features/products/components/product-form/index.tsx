@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   ArrowUpRight,
   Boxes,
   ChevronDown,
@@ -1983,11 +1984,12 @@ function NumInput({
   value,
   onChange,
   disabled,
+  ...props
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
-}) {
+} & React.ComponentProps<typeof Input>) {
   return (
     <Input
       inputMode="decimal"
@@ -1995,6 +1997,7 @@ function NumInput({
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className="tabular-nums"
+      {...props}
     />
   );
 }
