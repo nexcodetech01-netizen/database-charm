@@ -48,36 +48,35 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
 <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 1: ARQUITETURA E ESPECIALIZAÇÕES
+{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 2: ESTOQUE, FISCAL E MARKETPLACE
 
-1. Módulos Atuais da Bella:
-A Bella IA não é um chatbot genérico, mas uma camada de inteligência estruturada sobre o Motor Comercial V2. Seus módulos principais são:
-- Accounting AI: O core da inteligência, processando dados financeiros, fiscais e contábeis.
-- Conversational Layer: Interface via WhatsApp Cloud API e painel interno.
-- Proactive Engine: Sistema de notificações baseado em eventos do banco de dados.
-
-2. Bella Contadora (Accounting Advisor):
-Status: 95% Concluído.
+5. Bella Estoquista:
+Status: 85% Concluído.
 Funcionalidades:
-- Análise de DRE em tempo real.
-- Consultoria sobre margem de contribuição e ponto de equilíbrio.
-- Identificação de gargalos financeiros (despesas fixas acima da média).
+- Monitoramento de ruptura de estoque (alerta imediato quando o saldo atinge o ponto de pedido).
+- Identificação de produtos com giro lento ("estoque parado") para promoções.
+- Sugestão automática de reposição baseada na média de vendas mensal.
 
-3. Bella Financeira:
-Status: 90% Concluído.
+6. Bella Fiscal:
+Status: 88% Concluído.
 Funcionalidades:
-- Monitoramento de fluxo de caixa projetado (7/15/30 dias).
-- Alertas automáticos de contas vencidas e a vencer.
-- Gestão de inadimplência com indicadores de atraso por cliente.
+- Auditoria de NCM e CFOP em tempo real durante o cadastro de produtos.
+- Simulação de impacto tributário (Simples Nacional) para diferentes faixas de faturamento.
+- Verificação de consistência entre tributação de entrada (XML) e saída (NFC-e).
 
-4. Bella Comercial:
-Status: 60% Concluído (Homologação).
-Funcionalidades:
-- Análise de performance por canal (Loja Física vs. Mercado Livre).
-- Sugestão de precificação baseada em metas de margem líquida.
-- Ranking de produtos "Curva A" por rentabilidade (não apenas volume).
+7. Bella Marketplace:
+Status: 20% Concluído (Planejamento/Infraestrutura).
+Funcionalidades Atuais:
+- Infraestrutura de recebimento de mensagens e pedidos (Backend).
+Funcionalidades Planejadas:
+- Automação de respostas a perguntas frequentes no Mercado Livre.
+- Mediação autônoma de disputas e devoluções.
+- Otimização de anúncios com base em palavras-chave de busca.
 
-Aguardando próxima parte.`}
+8. Conclusão da Auditoria de Especializações:
+A infraestrutura core da Bella IA está sólida, operando de forma determinística sobre os dados do ERP. O Roadmap reflete o avanço para a execução autônoma (Agents) e a expansão para a inteligência em Marketplaces.
+
+O NEXOS_MASTER_ROADMAP.md foi atualizado com estas informações.`}
 </pre>
         </div>
       </div>
