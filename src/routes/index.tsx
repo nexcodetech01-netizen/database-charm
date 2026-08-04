@@ -48,23 +48,29 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORRIGIR DISPARO DINÂMICO DE TEMPLATES DA META (SEM HELLO_WORLD):
+{`ATUALIZAR CONFIGURAÇÃO DO TEMPLATE DA META:
 
-1. REMOVER FIXAÇÃO DO HELLO_WORLD:
-   - Na Edge Function ou serviço que faz a chamada HTTP para a API do WhatsApp (Meta Cloud API), remova qualquer fallback ou valor fixo 'hello_world'.
-   - O parâmetro \`template.name\` DEVE ser lido dinamicamente a partir do objeto/registro do modelo de mensagem selecionado no banco de dados (\`modelos_mensagem.template_name\` ou similar).
+1. BANCO DE DADOS / MODELOS:
+   - Para o modelo 'Confirmação de Pedido', defina o \`template_name\` como: "jaspers_market_order_confirmation_v1".
 
-2. TRATAMENTO DE NOME E PARÂMETROS:
-   - Garanta que o nome do template seja formatado em minúsculas e sem espaços (ex: se o usuário selecionou o modelo 'Boas-vindas padrão', envie o \`template_name\` correspondente cadastrado).
-   - Defina o idioma como \`pt_BR\`:
-     template: {
-       name: templateSelecionado.template_name,
-       language: { code: "pt_BR" },
-       components: [...]
-     }
+2. PAYLOAD DA META CLOUD API:
+   - Ao disparar o template 'jaspers_market_order_confirmation_v1':
+     * Envie 'template.name': "jaspers_market_order_confirmation_v1"
+     * Envie 'language.code': "en_US" (ou "pt_BR", conforme aceito pela Meta para este template).
+     * Preencha EXATAMENTE 3 parâmetros dentro de 'components':
+       components: [
+         {
+           type: "body",
+           parameters: [
+             { type: "text", text: nomeCliente || "Cliente" },
+             { type: "text", text: numeroPedido || "001" },
+             { type: "text", text: dataPedido || "Hoje" }
+           ]
+         }
+       ]
 
-3. INTERFACE DE MODELOS:
-   - Na tela de 'Modelos de Mensagem', certifique-se de que cada card/modelo tenha um campo interno onde o usuário possa visualizar ou vincular o nome exato do template aprovado na Meta.`}
+3. TRATAMENTO DE ERROS:
+   - Garanta que nunca sejam enviados mais ou menos do que 3 parâmetros para este modelo específico, evitando o erro #132000 da Meta.`}
           </pre>
         </div>
       </div>
