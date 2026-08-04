@@ -51,6 +51,17 @@ function ImportsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ImportSourceCard
+            source={{
+              id: "mercadolivre",
+              name: "Mercado Livre",
+              description: "Importar pedidos pendentes do Mercado Livre",
+              icon: ShoppingBag,
+            }}
+            onImport={() => {
+              window.location.href = "/importacoes/mercado-livre";
+            }}
+          />
           {IMPORT_SOURCES.map((source) => (
             <ImportSourceCard key={source.id} source={source} onImport={openWizard} />
           ))}
