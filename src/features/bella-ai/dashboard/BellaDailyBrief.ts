@@ -44,8 +44,15 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
 
   const overdue = events.filter((e) => e.type === "finance.invoice.overdue").length;
   const cashflow = events.some((e) => e.type === "finance.cashflow.negative");
+  const dueToday = events.filter((e) => {
+    if (e.type !== "finance.invoice.overdue") return false;
+    const dueDate = e.payload?.dueDate;
+    if (typeof dueDate !== "string") return false;
+    return dueDate.split("T")[0] === now.toISOString().split("T")[0];
+  }).length;
+
   const financeLine = overdue > 0
-    ? `Você possui ${overdue} conta${overdue > 1 ? "s" : ""} vencida${overdue > 1 ? "s" : ""}.`
+    ? `Você possui ${overdue} conta${overdue > 1 ? "s" : ""} vencida${overdue > 1 ? "s" : ""}${dueToday > 0 ? `, sendo ${dueToday} vencendo hoje` : ""}.`
     : cashflow
       ? "O caixa do período está negativo."
       : "Financeiro sem pendências críticas.";

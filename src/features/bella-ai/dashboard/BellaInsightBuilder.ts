@@ -95,6 +95,21 @@ const RULES: Rule[] = [
       };
     },
   },
+  {
+    id: "finance.expense.elevated",
+    match: (events) => {
+      const elevated = events.find((e) => e.type === "finance.expense.elevated");
+      if (!elevated) return null;
+      const amount = Number(elevated.payload?.current || 0);
+      return {
+        id: "finance.expense.elevated",
+        tone: "negative",
+        message: amount > 0
+          ? `Identificada despesa elevada de R$ ${amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} acima do padrão.`
+          : "Identificada despesa acima do padrão no período.",
+      };
+    },
+  },
 ];
 
 export function buildInsights(events: BellaEvent[]): BellaInsightItem[] {

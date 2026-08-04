@@ -48,30 +48,30 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA ESTOQUISTA
+{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA FINANCEIRA
 
-1. CONEXÃO BELLA ESTOQUISTA:
+1. CONEXÃO BELLA FINANCEIRA:
    - STATUS: Concluído.
-   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder atualizados.
+   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder atualizados para o módulo finance.
    - DADOS: Snapshot operacional via useBellaHomeSnapshot (Event Registry).
-   - INFRAESTRUTURA: Integração total com inventory.slow_moving e inventory.min_stock.
+   - INFRAESTRUTURA: Integração total com finance.invoice.overdue e finance.cashflow.negative.
 
-2. ESCOPO DE DADOS (ESTOQUE):
-   - ESTOQUE MÍNIMO: Exibição prioritária de itens críticos.
-   - SEM GIRO (SLOW MOVING): Identificação de produtos e tempo sem venda.
-   - VALOR IMOBILIZADO: Cálculo proporcional do custo vs saldo em itens parados.
-   - RESUMO DIÁRIO: Inserção dinâmica de alertas financeiros do estoque no brief.
-   - INSIGHTS: Alertas de capital de giro retido em estoque estagnado.
-
+2. ESCOPO DE DADOS (FINANCEIRO):
+   - CONTAS VENCIDAS: Exibição quantitativa de invoices em atraso.
+   - VENCENDO HOJE: Filtro temporal sobre os payloads de invoices para destaque diário.
+   - FLUXO DE CAIXA: Detecção de caixa negativo e projeção baseada em eventos.
+   - MAIOR DESPESA: Insight gerado a partir do detector finance.expense.elevated.
+   - RESUMO DIÁRIO: Inserção dinâmica de alertas financeiros críticos no brief principal.
 
 3. ARQUIVOS ALTERADOS:
-   - src/routes/_authenticated/dashboard.tsx (Injeção do BellaDailyBriefCard e useBellaHomeSnapshot)
-   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Adicionado suporte a pedidos ML e limite de prioridades)
+   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Suporte a vencimentos de hoje)
+   - src/features/bella-ai/dashboard/BellaInsightBuilder.ts (Insight de despesas elevadas)
+   - src/routes/index.tsx (Diagnóstico da Sprint Financeira)
 
 4. VALIDAÇÃO:
    - Nenhuma nova regra de negócio criada.
-   - Nenhuma alteração em tabelas ou banco de dados.
-   - Mantida a estrutura de permissões e hooks existentes.`}
+   - Nenhuma alteração em tabelas ou serviços de base.
+   - Utilização exclusiva da infraestrutura de eventos e detectores existentes.`}
           </pre>
         </div>
       </div>
