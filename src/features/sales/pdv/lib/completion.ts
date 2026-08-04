@@ -114,9 +114,12 @@ export function pdvSessionReducer(
   }
 }
 
-/** Dispara a impressão usando a infraestrutura existente do navegador. */
+/** 
+ * Dispara a impressão usando a infraestrutura existente do navegador. 
+ * @deprecated Use handlePrint diretamente no ReceiptDialog para garantir injeção de estilos.
+ */
 export function printPdvReceipt(printer: () => void = () => window.print()) {
-  console.log("[completion.ts] printPdvReceipt executando...");
+  console.log("[completion.ts] printPdvReceipt executando (LEGACY)...");
   try {
     printer();
     console.log("[completion.ts] printer() chamado com sucesso.");
