@@ -48,15 +48,32 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`ATENÇÃO: MODO DE RESPOSTA DETALHADO OBRIGATÓRIO
+{`IMPLEMENTAÇÃO — SPRINT 1
 
-A partir de agora, NÃO responda apenas "Implementação concluída". Você DEVE obrigatoriamente:
+Implementar exclusivamente a Sprint 1.
 
-1. Exibir o trecho EXATO do código TypeScript que foi modificado em 'whatsapp.server.ts' e 'service.functions.ts'.
-2. Mostrar o JSON exato do payload do fetch do WhatsApp (body) que você está montando para a Meta.
-3. Confirmar se você realizou o Deploy / Atualização da Edge Function no Supabase ou se apenas alterou o arquivo local.
+Objetivo:
 
-Se você não mostrar o código do payload final, não considerarei a tarefa concluída.`}
+Persistir os pedidos do Mercado Livre para posterior importação manual.
+
+Escopo:
+
+- Criar a estrutura necessária para armazenar pedidos externos.
+- Alterar o webhook para persistir os pedidos recebidos.
+- NÃO criar venda automaticamente.
+- NÃO criar cliente.
+- NÃO criar financeiro.
+- NÃO alterar o fluxo atual de estoque.
+- NÃO alterar o fluxo de sincronização.
+- NÃO implementar outras funcionalidades.
+
+Ao finalizar responda SOMENTE:
+
+IMPLEMENTAÇÃO CONCLUÍDA
+
+ou
+
+IMPLEMENTAÇÃO FALHOU`}
           </pre>
         </div>
       </div>
