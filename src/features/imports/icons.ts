@@ -9,6 +9,7 @@ import {
   Truck,
   Users,
   BookOpen,
+  ShoppingBag,
 } from "lucide-react";
 import type { ImportSourceId } from "./types";
 
@@ -22,4 +23,5 @@ export const IMPORT_SOURCE_ICON: Record<ImportSourceId, LucideIcon> = {
   products: Package,
   customers: Users,
   suppliers: Truck,
+  mercadolivre: ShoppingBag,
 };

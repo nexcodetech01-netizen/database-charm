@@ -1,7 +1,7 @@
 import { requirePermission } from "@/features/rbac";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DownloadCloud, History, Upload } from "lucide-react";
+import { DownloadCloud, History, Upload, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLayout } from "@/components/layout";
 import {
@@ -51,6 +51,20 @@ function ImportsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ImportSourceCard
+            source={{
+              id: "mercadolivre",
+              title: "Mercado Livre",
+              description: "Importar pedidos pendentes do Mercado Livre",
+              icon: ShoppingBag,
+              status: "ready",
+              accept: "*",
+              lastImportAt: null,
+            } as any}
+            onImport={() => {
+              window.location.href = "/importacoes/mercado-livre";
+            }}
+          />
           {IMPORT_SOURCES.map((source) => (
             <ImportSourceCard key={source.id} source={source} onImport={openWizard} />
           ))}

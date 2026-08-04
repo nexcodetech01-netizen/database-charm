@@ -14,7 +14,8 @@ export type ImportSourceId =
   | "cnab"
   | "products"
   | "customers"
-  | "suppliers";
+  | "suppliers"
+  | "mercadolivre";
 
 export type ImportSourceStatus = "ready" | "beta" | "coming_soon";
 

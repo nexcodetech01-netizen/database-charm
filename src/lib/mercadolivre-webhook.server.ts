@@ -153,8 +153,26 @@ export async function processMercadoLivreNotification(
     return { status: 401, body: "origin mismatch", companyId: row.company_id };
   }
 
+  // Sprint 1: Persistência em external_orders para importação manual
+  const { error: extErr } = await (supabaseAdmin as any).from("external_orders").upsert({
+    company_id: row.company_id,
+    marketplace: "mercadolivre",
+    external_order_id: String(order.id),
+    payload: order,
+    status: order.status === "paid" ? "pending" : "ignored",
+  }, {
+    onConflict: "company_id,marketplace,external_order_id"
+  });
+
+  if (extErr) {
+    console.error("[ml-webhook] falha ao persistir external_order:", extErr.message);
+    // Continuamos para não quebrar a idempotência do fluxo atual se ele ainda existir
+  }
+
+  // O fluxo original de baixa de estoque automática deve ser mantido
+  // APENAS se o pedido estiver pago e não for duplicata.
   if (order.status !== "paid") {
-    return { status: 200, body: "not paid", companyId: row.company_id };
+    return { status: 200, body: "persisted (not paid)", companyId: row.company_id };
   }
 
   const referenceNumber = `ML-${order.id}`;
@@ -173,10 +191,6 @@ export async function processMercadoLivreNotification(
     const product = prod as { id: string; company_id: string } | null;
     if (!product) continue;
 
-    // Idempotência garantida pelo índice único parcial
-    // uq_inventory_external_reference (company_id, product_id, source,
-    // reference_number). Duplicatas concorrentes viram violação 23505 e são
-    // silenciosamente ignoradas — sem read-then-write (race condition).
     const { error: mvErr } = await supabaseAdmin.from("inventory_movements").insert({
       company_id: product.company_id,
       product_id: product.id,
@@ -192,7 +206,7 @@ export async function processMercadoLivreNotification(
     if (mvErr) {
       const duplicate =
         (mvErr as { code?: string }).code === "23505" || /duplicate key/i.test(mvErr.message ?? "");
-      if (duplicate) continue; // já processado — idempotente
+      if (duplicate) continue;
       throw new Error(`falha ao registrar movimento do produto ${product.id}: ${mvErr.message}`);
     }
   }

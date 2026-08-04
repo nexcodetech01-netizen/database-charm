@@ -62,6 +62,7 @@ import { Route as AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport 
 import { Route as AuthenticatedInteligenciaComercialPoliticaEmpresaRouteImport } from './routes/_authenticated/inteligencia-comercial.politica-empresa'
 import { Route as AuthenticatedInteligenciaComercialDashboardRouteImport } from './routes/_authenticated/inteligencia-comercial.dashboard'
 import { Route as AuthenticatedInteligenciaComercialCategoriasRouteImport } from './routes/_authenticated/inteligencia-comercial.categorias'
+import { Route as AuthenticatedImportacoesMercadoLivreRouteImport } from './routes/_authenticated/importacoes.mercado-livre'
 import { Route as AuthenticatedFornecedoresNovoRouteImport } from './routes/_authenticated/fornecedores_.novo'
 import { Route as AuthenticatedFornecedoresSupplierIdRouteImport } from './routes/_authenticated/fornecedores_.$supplierId'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
@@ -387,6 +388,12 @@ const AuthenticatedInteligenciaComercialCategoriasRoute =
     path: '/inteligencia-comercial/categorias',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedImportacoesMercadoLivreRoute =
+  AuthenticatedImportacoesMercadoLivreRouteImport.update({
+    id: '/mercado-livre',
+    path: '/mercado-livre',
+    getParentRoute: () => AuthenticatedImportacoesRoute,
+  } as any)
 const AuthenticatedFornecedoresNovoRoute =
   AuthenticatedFornecedoresNovoRouteImport.update({
     id: '/fornecedores_/novo',
@@ -641,7 +648,7 @@ export interface FileRoutesByFullPath {
   '/estoque': typeof AuthenticatedEstoqueRouteWithChildren
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/marketing': typeof AuthenticatedMarketingRoute
   '/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByFullPath {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
   '/fornecedores/$supplierId': typeof AuthenticatedFornecedoresSupplierIdRouteWithChildren
   '/fornecedores/novo': typeof AuthenticatedFornecedoresNovoRoute
+  '/importacoes/mercado-livre': typeof AuthenticatedImportacoesMercadoLivreRoute
   '/inteligencia-comercial/categorias': typeof AuthenticatedInteligenciaComercialCategoriasRoute
   '/inteligencia-comercial/dashboard': typeof AuthenticatedInteligenciaComercialDashboardRoute
   '/inteligencia-comercial/politica-empresa': typeof AuthenticatedInteligenciaComercialPoliticaEmpresaRoute
@@ -733,7 +741,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AuthenticatedEstoqueRouteWithChildren
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/marketing': typeof AuthenticatedMarketingRoute
   '/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
@@ -759,6 +767,7 @@ export interface FileRoutesByTo {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
   '/fornecedores/$supplierId': typeof AuthenticatedFornecedoresSupplierIdRouteWithChildren
   '/fornecedores/novo': typeof AuthenticatedFornecedoresNovoRoute
+  '/importacoes/mercado-livre': typeof AuthenticatedImportacoesMercadoLivreRoute
   '/inteligencia-comercial/categorias': typeof AuthenticatedInteligenciaComercialCategoriasRoute
   '/inteligencia-comercial/dashboard': typeof AuthenticatedInteligenciaComercialDashboardRoute
   '/inteligencia-comercial/politica-empresa': typeof AuthenticatedInteligenciaComercialPoliticaEmpresaRoute
@@ -827,7 +836,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRouteWithChildren
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
+  '/_authenticated/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
   '/_authenticated/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
@@ -853,6 +862,7 @@ export interface FileRoutesById {
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
   '/_authenticated/fornecedores_/$supplierId': typeof AuthenticatedFornecedoresSupplierIdRouteWithChildren
   '/_authenticated/fornecedores_/novo': typeof AuthenticatedFornecedoresNovoRoute
+  '/_authenticated/importacoes/mercado-livre': typeof AuthenticatedImportacoesMercadoLivreRoute
   '/_authenticated/inteligencia-comercial/categorias': typeof AuthenticatedInteligenciaComercialCategoriasRoute
   '/_authenticated/inteligencia-comercial/dashboard': typeof AuthenticatedInteligenciaComercialDashboardRoute
   '/_authenticated/inteligencia-comercial/politica-empresa': typeof AuthenticatedInteligenciaComercialPoliticaEmpresaRoute
@@ -947,6 +957,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/fornecedores/$supplierId'
     | '/fornecedores/novo'
+    | '/importacoes/mercado-livre'
     | '/inteligencia-comercial/categorias'
     | '/inteligencia-comercial/dashboard'
     | '/inteligencia-comercial/politica-empresa'
@@ -1039,6 +1050,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/fornecedores/$supplierId'
     | '/fornecedores/novo'
+    | '/importacoes/mercado-livre'
     | '/inteligencia-comercial/categorias'
     | '/inteligencia-comercial/dashboard'
     | '/inteligencia-comercial/politica-empresa'
@@ -1132,6 +1144,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/fornecedores_/$supplierId'
     | '/_authenticated/fornecedores_/novo'
+    | '/_authenticated/importacoes/mercado-livre'
     | '/_authenticated/inteligencia-comercial/categorias'
     | '/_authenticated/inteligencia-comercial/dashboard'
     | '/_authenticated/inteligencia-comercial/politica-empresa'
@@ -1570,6 +1583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInteligenciaComercialCategoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/importacoes/mercado-livre': {
+      id: '/_authenticated/importacoes/mercado-livre'
+      path: '/mercado-livre'
+      fullPath: '/importacoes/mercado-livre'
+      preLoaderRoute: typeof AuthenticatedImportacoesMercadoLivreRouteImport
+      parentRoute: typeof AuthenticatedImportacoesRoute
+    }
     '/_authenticated/fornecedores_/novo': {
       id: '/_authenticated/fornecedores_/novo'
       path: '/fornecedores/novo'
@@ -1882,6 +1902,21 @@ const AuthenticatedFinanceiroRouteWithChildren =
     AuthenticatedFinanceiroRouteChildren,
   )
 
+interface AuthenticatedImportacoesRouteChildren {
+  AuthenticatedImportacoesMercadoLivreRoute: typeof AuthenticatedImportacoesMercadoLivreRoute
+}
+
+const AuthenticatedImportacoesRouteChildren: AuthenticatedImportacoesRouteChildren =
+  {
+    AuthenticatedImportacoesMercadoLivreRoute:
+      AuthenticatedImportacoesMercadoLivreRoute,
+  }
+
+const AuthenticatedImportacoesRouteWithChildren =
+  AuthenticatedImportacoesRoute._addFileChildren(
+    AuthenticatedImportacoesRouteChildren,
+  )
+
 interface AuthenticatedClientesCustomerIdRouteChildren {
   AuthenticatedClientesCustomerIdEditarRoute: typeof AuthenticatedClientesCustomerIdEditarRoute
 }
@@ -1977,7 +2012,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRouteWithChildren
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
-  AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
+  AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRouteWithChildren
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
   AuthenticatedPainelExecutivoRoute: typeof AuthenticatedPainelExecutivoRoute
@@ -2037,7 +2072,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRouteWithChildren,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
-  AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
+  AuthenticatedImportacoesRoute: AuthenticatedImportacoesRouteWithChildren,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
   AuthenticatedPainelExecutivoRoute: AuthenticatedPainelExecutivoRoute,

@@ -48,32 +48,8 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`IMPLEMENTAÇÃO — SPRINT 1
-
-Implementar exclusivamente a Sprint 1.
-
-Objetivo:
-
-Persistir os pedidos do Mercado Livre para posterior importação manual.
-
-Escopo:
-
-- Criar a estrutura necessária para armazenar pedidos externos.
-- Alterar o webhook para persistir os pedidos recebidos.
-- NÃO criar venda automaticamente.
-- NÃO criar cliente.
-- NÃO criar financeiro.
-- NÃO alterar o fluxo atual de estoque.
-- NÃO alterar o fluxo de sincronização.
-- NÃO implementar outras funcionalidades.
-
-Ao finalizar responda SOMENTE:
-
-IMPLEMENTAÇÃO CONCLUÍDA
-
-ou
-
-IMPLEMENTAÇÃO FALHOU`}
+{`eu quero uma descrição completa!!!
+vc esta bugado?`}
           </pre>
         </div>
       </div>
