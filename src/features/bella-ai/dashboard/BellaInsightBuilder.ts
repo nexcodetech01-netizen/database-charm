@@ -132,6 +132,8 @@ const RULES: Rule[] = [
         tone: "positive",
         message: "Margem de contribuição acima da meta para os principais grupos de produtos.",
       };
+    },
+  },
 ];
 
 export function buildInsights(events: BellaEvent[]): BellaInsightItem[] {
