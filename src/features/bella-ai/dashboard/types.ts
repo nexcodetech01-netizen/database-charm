@@ -51,6 +51,7 @@ export interface BellaDailyBrief {
   prioritiesLine: string;
   financeLine: string;
   commercialLine: string;
+  contadoraLine: string;
   closingLine: string;
 }
 
