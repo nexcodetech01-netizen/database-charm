@@ -177,6 +177,7 @@ export const listConversations = createServerFn({ method: "POST" })
         last_message_at: lastAt,
         last_message_direction: (last?.direction ?? null) as "inbound" | "outbound" | null,
         last_message_provider: last?.provider ?? null,
+        ultima_mensagem_cliente_at: r.ultima_mensagem_cliente_at ?? r.contact?.ultima_mensagem_cliente_at ?? null,
         channel: "whatsapp",
       } satisfies ConversationListItem;
     }).sort((a, b) => {
