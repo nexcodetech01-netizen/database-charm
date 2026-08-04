@@ -45,9 +45,8 @@ function IndexComponent() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background text-foreground">
-      <div className="max-w-4xl w-full space-y-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">BOM DIA</h1>
-        <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm text-left leading-relaxed overflow-auto max-h-[80vh]">
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
 {`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 3: VISÃO GERAL DAS ESPECIALIZAÇÕES
 
