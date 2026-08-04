@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Send, StickyNote } from "lucide-react";
+import { Send, StickyNote, MessageCircle, MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,7 +44,7 @@ export function ConversationView({
         <Button 
           variant="outline" 
           className="mt-6 gap-2"
-          onClick={() => mutations.assume.mutate(selectedId || "")}
+          onClick={() => {}}
         >
           <MessageSquarePlus className="h-4 w-4" /> Iniciar Nova Conversa
         </Button>
