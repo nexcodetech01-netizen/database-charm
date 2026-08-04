@@ -37,7 +37,10 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
   const prioritiesLine =
     priorities.length === 0
       ? "Nenhuma prioridade em destaque no momento."
-      : `Prioridades em destaque: ${priorities.map((p) => p.title).slice(0, 3).join(" · ")}.`;
+      : `Prioridades em destaque: ${priorities.map((p) => p.title).slice(0, 2).join(" · ")}.`;
+
+  const mlPending = events.filter((e) => e.type === "sale.created" && e.source === "mercadolivre").length;
+  const mlLine = mlPending > 0 ? `Há ${mlPending} pedido${mlPending > 1 ? "s" : ""} do Mercado Livre pendente${mlPending > 1 ? "s" : ""} para importação.` : "";
 
   const overdue = events.filter((e) => e.type === "finance.invoice.overdue").length;
   const cashflow = events.some((e) => e.type === "finance.cashflow.negative");
@@ -68,7 +71,7 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
 
   return {
     greeting,
-    summaryLine,
+    summaryLine: mlLine ? `${summaryLine} ${mlLine}` : summaryLine,
     prioritiesLine,
     financeLine,
     commercialLine,
