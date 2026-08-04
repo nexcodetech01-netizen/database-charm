@@ -48,28 +48,23 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA CONTADORA
+{`DIAGNÓSTICO TÉCNICO — CORREÇÃO DE BUG (IMPRESSÃO)
 
-1. CONEXÃO BELLA CONTADORA:
-   - STATUS: Concluído.
-   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder integrados.
-   - DADOS: Consumo de eventos fiscal.* e finance.revenue.*.
-   - MÉTRICAS: Lucro Bruto, Líquido e Ponto de Equilíbrio derivados de indicadores de performance financeira.
+1. BUG: PRÉ-VISUALIZAÇÃO EM BRANCO
+   - STATUS: Corrigido.
+   - CAUSA: Falha na renderização via window.print() quando o navegador abre o spooler antes do processamento total do DOM complexo.
+   - SOLUÇÃO: Renderização via iframe isolado com injeção de HTML e estilos clonados via printHtmlDocument.
 
-2. ESCOPO DE DADOS (CONTADORA):
-   - DRE RESUMIDA: Mapeada via agregação de eventos de faturamento e despesas elevadas.
-   - ALERTAS CONTÁBEIS: Injeção de eventos fiscal.nfe.rejected e finance.expense.out_of_pattern.
-   - MARGEM: Cálculo determinístico baseado em variações de receita reportadas pelo registry.
+2. VERIFICAÇÕES REALIZADAS:
+   - CONTEÚDO NO IFRAME: Confirmado innerHTML de .receipt-print-area injetado.
+   - ESTILOS: Clonagem completa de styleSheets para o ambiente isolado.
+   - CICLO DE VIDA: Proteção contra desmontagem do React.
 
 3. ARQUIVOS ALTERADOS:
-   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Lógica contábil/fiscal)
-   - src/features/bella-ai/dashboard/BellaInsightBuilder.ts (Novas regras de insights contábeis)
-   - src/routes/index.tsx (Atualização do Diagnóstico Técnico)
+   - src/features/sales/components/receipt-dialog.tsx (Fluxo de captura)
+   - src/features/printing/lib/printer.ts (Motor de injeção)
 
-4. VALIDAÇÃO:
-   - Nenhuma nova tabela ou regra de cálculo criada.
-   - Uso integral da infraestrutura legada (BellaEventRegistry).
-   - Estabilidade SSR e performance mantidas.`}
+IMPLEMENTAÇÃO CONCLUÍDA`}
           </pre>
         </div>
       </div>
