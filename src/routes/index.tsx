@@ -6,11 +6,12 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     // No servidor (SSR), o process.env.LOVABLE_PREVIEW_HOST está disponível se estivermos no ambiente de preview.
+    const isPreview = Boolean(process.env['LOVABLE_PREVIEW_HOST']);
     const host = typeof window !== "undefined" 
       ? window.location.hostname 
       : (process.env['LOVABLE_PREVIEW_HOST'] || "");
 
-    if (isPreviewHostname(host)) {
+    if (isPreview || isPreviewHostname(host)) {
       return;
     }
 
