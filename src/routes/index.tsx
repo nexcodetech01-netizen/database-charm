@@ -48,35 +48,38 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
 <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 2: ESTOQUE, FISCAL E MARKETPLACE
+{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 3: VISÃO GERAL DAS ESPECIALIZAÇÕES
+
+1. Bella IA (Master):
+Status: 100% (Arquitetura Core e Orquestração).
+Especialização: Inteligência central que gerencia os agentes subjacentes e integra todos os módulos do ERP.
+
+2. Bella Contadora:
+Status: 95% Concluído.
+Especialização: Análise de DRE, Advisor de lucro, Ponto de Equilíbrio e Auditoria contábil.
+
+3. Bella Financeira:
+Status: 90% Concluído.
+Especialização: Fluxo de caixa projetado, Gestão de recebíveis e Alertas de inadimplência.
+
+4. Bella Comercial:
+Status: 60% Concluído (Homologação).
+Especialização: Performance por canal, Curva ABC de rentabilidade e Conversão de vendas.
 
 5. Bella Estoquista:
 Status: 85% Concluído.
-Funcionalidades:
-- Monitoramento de ruptura de estoque (alerta imediato quando o saldo atinge o ponto de pedido).
-- Identificação de produtos com giro lento ("estoque parado") para promoções.
-- Sugestão automática de reposição baseada na média de vendas mensal.
+Especialização: Monitoramento de ruptura, Sugestão de reposição e Giro de estoque.
 
 6. Bella Fiscal:
 Status: 88% Concluído.
-Funcionalidades:
-- Auditoria de NCM e CFOP em tempo real durante o cadastro de produtos.
-- Simulação de impacto tributário (Simples Nacional) para diferentes faixas de faturamento.
-- Verificação de consistência entre tributação de entrada (XML) e saída (NFC-e).
+Especialização: Auditoria de NCM/CFOP, Simulador tributário e Cruzamento de dados fiscais.
 
 7. Bella Marketplace:
-Status: 20% Concluído (Planejamento/Infraestrutura).
-Funcionalidades Atuais:
-- Infraestrutura de recebimento de mensagens e pedidos (Backend).
-Funcionalidades Planejadas:
-- Automação de respostas a perguntas frequentes no Mercado Livre.
-- Mediação autônoma de disputas e devoluções.
-- Otimização de anúncios com base em palavras-chave de busca.
+Status: 20% Concluído (Infraestrutura).
+Especialização: Logs de integração ML/Shopee e Planejamento para Automação de SAC/Disputas.
 
-8. Conclusão da Auditoria de Especializações:
-A infraestrutura core da Bella IA está sólida, operando de forma determinística sobre os dados do ERP. O Roadmap reflete o avanço para a execução autônoma (Agents) e a expansão para a inteligência em Marketplaces.
-
-O NEXOS_MASTER_ROADMAP.md foi atualizado com estas informações.`}
+Conclusão:
+A plataforma Bella IA consolidou a base determinística necessária para operar como o cérebro do NexOS ERP. O Roadmap de evolução foca agora na maturidade dos agentes de Marketplace e na autonomia completa de execução.`}
 </pre>
         </div>
       </div>
