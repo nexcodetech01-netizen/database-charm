@@ -405,7 +405,12 @@ export const addConversationNote = createServerFn({ method: "POST" })
 export const sendOperatorMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ conversationId: uuid, text: z.string().min(1).max(4096) }).parse(input),
+    z.object({
+      conversationId: uuid,
+      text: z.string().min(1).max(4096),
+      type: z.enum(["text", "template"]).optional().default("text"),
+      templateName: z.string().optional(),
+    }).parse(input),
   )
   .handler(async ({ data, context }) => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
