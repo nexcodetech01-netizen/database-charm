@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SaleReceipt, type ReceiptWidth } from "./sale-receipt";
-import { applyThermalPageStyle, usePrintPreferences } from "@/features/printing";
+import { usePrintPreferences } from "@/features/printing";
 import {
   buildReceiptWhatsAppMessage,
   openWhatsAppWithMessage,
