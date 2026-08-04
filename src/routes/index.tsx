@@ -48,32 +48,16 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`ve se faça o q eu mando:
-CORREÇÃO CRÍTICA DE DISPARO DE WHATSAPP (METACLOUD API):
+{`CORREÇÃO URGENTE: ERRO DE PARÂMETROS NO DISPARO DO WHATSAPP (#132000)
 
-O sistema ainda está disparando o template hardcoded 'hello_world'. Refatore o código de envio com as seguintes alterações obrigatórias:
+O modal/botão de envio de template na interface está disparando a requisição sem passar os 3 parâmetros obrigatórios que o template 'jaspers_market_order_confirmation_v1' exige.
 
-1. BUSCA DE CÓDIGO HARDCODED:
-   - Procure em todo o projeto (especialmente em supabase/functions/ send-whatsapp ou handlers de envio) pela string 'hello_world'.
-   - Remova qualquer fallback ou valor padrão fixo 'hello_world'.
+1. CORREÇÃO NO FRONT-END / COMPONENTE DE ENVIO:
+   - Quando o operador selecionar o template 'jaspers_market_order_confirmation_v1', o payload enviado para a Edge Function DEVE obrigatoriamente incluir os dados dos parâmetros (Nome, Número do Pedido e Data).
+   - Se o usuário não preencheu, utilize valores padrão seguros (ex: ["Cliente", "001", "Hoje"]) para evitar que o array vá vazio ou com tamanho incorreto.
 
-2. ATUALIZAR PAYLOAD DO TEMPLATE:
-   - Substitua o nome do template no payload da API da Meta para: "jaspers_market_order_confirmation_v1"
-   - Configure o idioma para "en_US" (conforme definido na Meta para este template).
-   - Inclua obrigatoriamente os 3 parâmetros no corpo (body) para evitar erro de assinatura:
-     components: [
-       {
-         type: "body",
-         parameters: [
-           { type: "text", text: "Cliente Teste" },
-           { type: "text", text: "12345" },
-           { type: "text", text: "04/08/2026" }
-         ]
-       }
-     ]
-
-3. VERIFICAÇÃO:
-   - Imprima no console da Edge Function (console.log) o JSON exato do payload enviado para https://graph.facebook.com para podermos validar o corpo da requisição.`}
+2. VALIDAÇÃO NA EDGE FUNCTION:
+   - Antes de realizar o \`fetch\` para a API da Meta, valide se \`parameters.length === 3\`. Se for diferente de 3, retorne um erro amigável no console informando que o template exige exatamente 3 parâmetros.`}
           </pre>
         </div>
       </div>
