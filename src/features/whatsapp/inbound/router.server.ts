@@ -382,6 +382,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         phone: existing.wa_id ?? canonical,
         profile_name: msg.profileName,
         last_seen_at: new Date(msg.timestamp).toISOString(),
+        ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
       })
       .eq("id", contactId);
   } else {
