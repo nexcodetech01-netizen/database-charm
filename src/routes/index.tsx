@@ -45,9 +45,10 @@ function IndexComponent() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background text-foreground">
-      <div className="max-w-4xl w-full space-y-8">
-        <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
-<pre className="whitespace-pre-wrap">
+      <div className="max-w-4xl w-full space-y-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight">BOM DIA</h1>
+        <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm text-left leading-relaxed overflow-auto max-h-[80vh]">
+          <pre className="whitespace-pre-wrap">
 {`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 3: VISÃO GERAL DAS ESPECIALIZAÇÕES
 
 1. Bella IA (Master):
@@ -80,7 +81,7 @@ Especialização: Logs de integração ML/Shopee e Planejamento para Automação
 
 Conclusão:
 A plataforma Bella IA consolidou a base determinística necessária para operar como o cérebro do NexOS ERP. O Roadmap de evolução foca agora na maturidade dos agentes de Marketplace e na autonomia completa de execução.`}
-</pre>
+          </pre>
         </div>
       </div>
     </div>
