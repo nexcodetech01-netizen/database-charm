@@ -87,12 +87,23 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
       ? "Aproveite para adiantar as pendências acompanhadas."
       : "Bom momento para planejar as próximas ações.";
 
+  // Comercial KPIs deriváveis do registry (Eventos ativos)
+  const salesGoal = events.find((e) => e.type === "sales.goal_reached");
+  const salesDecline = events.find((e) => e.type === "sales.decline");
+  const ticketDrop = events.find((e) => e.type === "sales.average_ticket.drop");
+
+  // Recomendações comerciais fixas baseadas em eventos
+  const recommendations: string[] = [];
+  if (salesGoal) recommendations.push("Meta batida! Considere novos incentivos.");
+  if (salesDecline) recommendations.push("Vendas em queda: revise preços ou faça promoções.");
+  if (ticketDrop) recommendations.push("Ticket baixo: treine a equipe para cross-sell.");
+
   return {
     greeting,
     summaryLine: mlLine ? `${summaryLine} ${mlLine}` : summaryLine,
     prioritiesLine,
     financeLine,
     commercialLine,
-    closingLine,
+    closingLine: recommendations.length > 0 ? recommendations[0] : closingLine,
   };
 }

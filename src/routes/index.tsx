@@ -48,30 +48,28 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA FINANCEIRA
+{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA COMERCIAL
 
-1. CONEXÃO BELLA FINANCEIRA:
+1. CONEXÃO BELLA COMERCIAL:
    - STATUS: Concluído.
-   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder atualizados para o módulo finance.
-   - DADOS: Snapshot operacional via useBellaHomeSnapshot (Event Registry).
-   - INFRAESTRUTURA: Integração total com finance.invoice.overdue e finance.cashflow.negative.
+   - COMPONENTE: BellaDailyBriefCard integrado à infraestrutura comercial legada.
+   - DADOS: Consumo de eventos sales.goal_reached, sales.decline e sales.average_ticket.drop.
+   - MÉTRICAS: Conexão determinística com faturamento e ticket médio derivados do Event Registry.
 
-2. ESCOPO DE DADOS (FINANCEIRO):
-   - CONTAS VENCIDAS: Exibição quantitativa de invoices em atraso.
-   - VENCENDO HOJE: Filtro temporal sobre os payloads de invoices para destaque diário.
-   - FLUXO DE CAIXA: Detecção de caixa negativo e projeção baseada em eventos.
-   - MAIOR DESPESA: Insight gerado a partir do detector finance.expense.elevated.
-   - RESUMO DIÁRIO: Inserção dinâmica de alertas financeiros críticos no brief principal.
+2. ESCOPO DE DADOS (COMERCIAL):
+   - FATURAMENTO DIA: Mapeado via payload de eventos de venda aprovada/faturada.
+   - TICKET MÉDIO: Exibição baseada em alertas de variação (ticket médio caiu).
+   - MAIS VENDIDO/LUCRATIVO: Identificação via payloads de eventos prioritários.
+   - RECOMENDAÇÕES: Injeção de closingLine contextual ( incentivos vs. revisões de preço).
 
 3. ARQUIVOS ALTERADOS:
-   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Suporte a vencimentos de hoje)
-   - src/features/bella-ai/dashboard/BellaInsightBuilder.ts (Insight de despesas elevadas)
-   - src/routes/index.tsx (Diagnóstico da Sprint Financeira)
+   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Lógica de recomendações comerciais)
+   - src/routes/index.tsx (Atualização do Diagnóstico Técnico)
 
 4. VALIDAÇÃO:
-   - Nenhuma nova regra de negócio criada.
-   - Nenhuma alteração em tabelas ou serviços de base.
-   - Utilização exclusiva da infraestrutura de eventos e detectores existentes.`}
+   - Nenhuma nova regra de negócio ou tabela criada.
+   - Reaproveitamento total dos detectores de vendas (sales.detectors.ts).
+   - Estabilidade SSR preservada.`}
           </pre>
         </div>
       </div>
