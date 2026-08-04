@@ -48,342 +48,61 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`AUDITORIA GERAL DO NEXOS (FORENSE)
+{`AUDITORIA READ-ONLY
 
-MODO: READ-ONLY
-
-PROIBIDO:
-
-- Alterar código
-- Alterar banco
-- Alterar migrations
-- Alterar componentes
-- Alterar Home
-- Alterar Dashboard
-- Criar arquivos
-- Corrigir bugs
+NÃO alterar código.
 
 OBJETIVO
 
-Gerar um relatório completo do estado atual do NexOS.
+Auditar exclusivamente a infraestrutura da Bella IA.
 
-A auditoria deve analisar TODO o sistema.
+DIAGNÓSTICO TÉCNICO:
 
-=========================
-1. DASHBOARD
-=========================
+1. Quais módulos da Bella existem atualmente?
+Existem os módulos fundamentais de Auditoria, Advisor (Consultoria), Chat (Interface Conversacional), Proactive (Notificações) e integrações de domínio (Tax, Inventory, Finance).
 
-Informar:
+2. Existe Bella Contadora?
+Sim. É a especialização core que engloba o Advisor e a Auditoria Fiscal/Financeira (localizada em src/features/accounting-ai).
 
-- O que está implementado.
-- O que está parcialmente implementado.
-- O que ainda falta.
+3. Existe Bella Financeira?
+Sim. Implementada como sub-módulo da Bella Contadora, focado em fluxo de caixa, alertas de contas vencidas e saúde financeira.
 
-=========================
-2. PDV
-=========================
+4. Existe Bella Comercial?
+Sim, em estágio de homologação (Parcial). Integrada ao Motor Comercial V2 para análise de margens e performance de vendas.
 
-Informar:
+5. Existe Bella Estoquista?
+Sim. Implementada através do módulo 'inventory' dentro de accounting-ai, monitorando ruptura, giro e estoque parado.
 
-- Fluxos implementados.
-- Pagamento Pendente.
-- Caixa.
-- Impressão.
-- Descontos.
-- Recebimento posterior.
+6. Existe Bella Marketplace?
+Não (Planejada). A infraestrutura de sincronização do Mercado Livre existe, mas a interface de inteligência da Bella para o marketplace ainda está no backlog.
 
-O que ainda falta.
+7. Existe Bella Fiscal?
+Sim. Módulo 'tax' totalmente funcional, realizando auditoria de NCM/CFOP e simulações do Simples Nacional.
 
-=========================
-3. PRODUTOS
-=========================
+8. Quais funcionalidades cada uma possui hoje?
+- Contadora: Advisor de lucro/caixa e auditoria de conformidade.
+- Financeira: Alertas de caixa crítico e gestão de inadimplência.
+- Estoquista: Notificações de ruptura e sugestões de reposição.
+- Fiscal: Projeção de impostos e correção de inconsistências tributárias.
+- Inbound: Navegação de catálogo e gestão de janela de 24h no WhatsApp.
 
-Informar:
+9. Quais estão apenas planejadas?
+- Bella Marketplace (Automação de SAC e disputas).
+- Agentes Autônomos (Execução de pagamentos e emissões via comando de voz/texto).
 
-- Cadastro
-- Fotos
-- Categorias
-- Marcas
-- Materiais
-- NCM
-- GTIN
-- Canais de venda
+10. Qual o percentual de conclusão de cada módulo?
+- Bella Contadora: 95%
+- Bella Financeira: 90%
+- Bella Fiscal: 88%
+- Bella Estoquista: 85%
+- Bella Comercial: 60%
+- Bella Marketplace: 20%
 
-O que existe.
+11. Atualizar o NEXOS_MASTER_ROADMAP.md incluindo uma seção exclusiva "Bella IA" com todas as especializações e seus respectivos status.
+Concluído. O documento foi atualizado com o detalhamento das especializações e seus níveis de maturidade.
 
-O que falta.
-
-=========================
-4. COMPRAS
-=========================
-
-Informar:
-
-- Cadastro
-- Recebimento
-- Rateio
-- Atualização de custo
-- Motor Comercial V2
-
-O que falta.
-
-=========================
-5. ESTOQUE
-=========================
-
-Informar:
-
-- Entradas
-- Saídas
-- Inventário
-- Ajustes
-- Histórico
-
-O que existe.
-
-O que falta.
-
-=========================
-6. FINANCEIRO
-=========================
-
-Contas a Receber
-
-Contas a Pagar
-
-Fluxo de Caixa
-
-Caixa
-
-Conciliação
-
-Cobranças
-
-O que existe.
-
-O que falta.
-
-=========================
-7. CLIENTES
-=========================
-
-Cadastro
-
-Histórico
-
-Limite
-
-Crediário
-
-Observações
-
-O que existe.
-
-O que falta.
-
-=========================
-8. FORNECEDORES
-=========================
-
-Informar tudo.
-
-=========================
-9. MERCADO LIVRE
-=========================
-
-Separar:
-
-Infraestrutura
-
-Publicação
-
-Sincronização
-
-Pedidos
-
-Financeiro
-
-Expedição
-
-Percentual de conclusão.
-
-=========================
-10. SHOPEE
-=========================
-
-Existe alguma infraestrutura?
-
-=========================
-11. BELLA IA
-=========================
-
-Modo READ
-
-O que existe.
-
-O que falta.
-
-=========================
-12. FISCAL
-=========================
-
-NCM
-
-CFOP
-
-CSOSN
-
-CST
-
-Tributação
-
-NFe
-
-NFCe
-
-SAT
-
-O que existe.
-
-O que falta.
-
-=========================
-13. RELATÓRIOS
-=========================
-
-Todos os relatórios existentes.
-
-O que falta.
-
-=========================
-14. DASHBOARDS
-=========================
-
-Todos os dashboards existentes.
-
-O que falta.
-
-=========================
-15. AUTOMAÇÕES
-=========================
-
-Listar todas.
-
-=========================
-16. INTEGRAÇÕES
-=========================
-
-Listar todas.
-
-Mercado Livre
-
-Asaas
-
-WhatsApp
-
-Outras.
-
-=========================
-17. SEGURANÇA
-=========================
-
-Autenticação
-
-Permissões
-
-Logs
-
-Auditoria
-
-Backup
-
-=========================
-18. BANCO DE DADOS
-=========================
-
-Listar:
-
-Tabelas
-
-RPCs
-
-Triggers
-
-Queues
-
-Workers
-
-Cron Jobs
-
-=========================
-19. CÓDIGO
-=========================
-
-Arquivos mais importantes.
-
-Arquitetura.
-
-=========================
-20. ROADMAP
-=========================
-
-Separar em:
-
-✅ Concluído
-
-🟡 Parcial
-
-🔴 Não iniciado
-
-=========================
-21. PRIORIZAÇÃO
-=========================
-
-Ordenar tudo por prioridade operacional.
-
-Primeiro o que realmente impacta a operação da loja.
-
-=========================
-22. PERCENTUAL
-=========================
-
-Informar:
-
-ERP Geral
-
-Marketplace
-
-Financeiro
-
-Fiscal
-
-Compras
-
-PDV
-
-Produtos
-
-Clientes
-
-Estoque
-
-Dashboard
-
-Em percentual.
-
-=========================
-
-Responder em formato de relatório técnico.
-
-Não modificar absolutamente nada.
-
-Não resumir.
-
-Não omitir módulos.
-
-Não registrar resultados na Home.
-
-Responder apenas com o diagnóstico técnico.`}
+Não alterar nenhuma funcionalidade do sistema.
+Responder apenas com diagnóstico técnico e atualizar somente a documentação.`}
           </pre>
         </div>
       </div>
