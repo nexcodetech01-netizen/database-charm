@@ -20,8 +20,11 @@ export function WhatsAppWindowIndicator({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={cn("flex items-center gap-1.5 text-xs text-amber-500", className)}>
-              <AlertCircle className="h-3.5 w-3.5" />
+            <div className={cn(
+              "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20", 
+              className
+            )}>
+              <AlertCircle className="h-3 w-3" />
               <span>Janela Fechada</span>
             </div>
           </TooltipTrigger>
