@@ -48,17 +48,23 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`AJUSTAR MAPEAMENTO DO TEMPLATE DA META CLOUD API:
+{`CORRIGIR DISPARO DINÂMICO DE TEMPLATES DA META (SEM HELLO_WORLD):
 
-1. ATUALIZAÇÃO DO NOME DO TEMPLATE:
-   - Na tabela/configuração de modelos de mensagem do WhatsApp, atualize a propriedade \`template_name\` para usar o nome exato do template aprovado na Meta: "[INSERIR_NOME_DO_SEU_TEMPLATE_AQUI]".
-   - Na Edge Function / Serviço que faz a chamada para a Meta Cloud API, garanta que o campo \`template.name\` no payload receba esse nome e NÃO o valor fixo/fallback 'hello_world'.
+1. REMOVER FIXAÇÃO DO HELLO_WORLD:
+   - Na Edge Function ou serviço que faz a chamada HTTP para a API do WhatsApp (Meta Cloud API), remova qualquer fallback ou valor fixo 'hello_world'.
+   - O parâmetro \`template.name\` DEVE ser lido dinamicamente a partir do objeto/registro do modelo de mensagem selecionado no banco de dados (\`modelos_mensagem.template_name\` ou similar).
 
-2. IDIOMA DO TEMPLATE:
-   - Certifique-se de enviar \`language: { code: "pt_BR" }\` no payload da API da Meta para templates criados em português.
+2. TRATAMENTO DE NOME E PARÂMETROS:
+   - Garanta que o nome do template seja formatado em minúsculas e sem espaços (ex: se o usuário selecionou o modelo 'Boas-vindas padrão', envie o \`template_name\` correspondente cadastrado).
+   - Defina o idioma como \`pt_BR\`:
+     template: {
+       name: templateSelecionado.template_name,
+       language: { code: "pt_BR" },
+       components: [...]
+     }
 
-3. TESTE DE DISPARO:
-   - Ao clicar no botão de enviar teste ou iniciar conversa via template, o sistema deve puxar dinamicamente o template selecionado com o nome correto.`}
+3. INTERFACE DE MODELOS:
+   - Na tela de 'Modelos de Mensagem', certifique-se de que cada card/modelo tenha um campo interno onde o usuário possa visualizar ou vincular o nome exato do template aprovado na Meta.`}
           </pre>
         </div>
       </div>
