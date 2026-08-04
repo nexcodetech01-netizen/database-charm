@@ -133,16 +133,45 @@ function printOnce(html: string): Promise<void> {
     };
 
     iframe.onload = () => {
-      // Sem delays artificiais: o conteúdo foi injetado via doc.write/close,
-      // o que garante a síncronia da renderização básica do HTML.
+      const win = iframe.contentWindow;
+      if (!win) {
+        console.error("[printer.ts] printOnce: contentWindow nulo.");
+        cleanup();
+        return;
+      }
+
+      // 4. Qual é o userAgent do navegador.
+      console.log(`[printer.ts] Navigator UserAgent: ${navigator.userAgent}`);
+
+      // 1. Se o evento beforeprint é disparado.
+      win.addEventListener("beforeprint", () => {
+        console.log("[printer.ts] Evento 'beforeprint' disparado no iframe.");
+      });
+
+      // 2. Se o evento afterprint é disparado.
+      win.addEventListener("afterprint", () => {
+        console.log("[printer.ts] Evento 'afterprint' disparado no iframe.");
+      });
+
       try {
+        // 3. Se o iframe recebe focus antes do print().
+        win.focus();
+        const hasFocus = doc?.hasFocus?.() ?? false; // document do iframe
+        const globalFocus = document.hasFocus(); // document principal
+        console.log(`[printer.ts] focus() chamado. iframe document.hasFocus: ${win.document.hasFocus()}, root document.hasFocus: ${globalFocus}`);
+
         console.log("[printer.ts] Disparando window.print() no iframe isolado...");
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        console.log("[printer.ts] window.print() disparado.");
+        
+        // 5. Se document.hasFocus() retorna true antes do window.print().
+        // (Já logado acima, mas sendo explícito aqui conforme pedido)
+        console.log(`[printer.ts] document.hasFocus() antes do print: ${document.hasFocus()}`);
+
+        win.print();
+        console.log("[printer.ts] window.print() disparado com sucesso.");
       } catch (err) {
-        console.error("[printer.ts] Falha na chamada de impressão do iframe:", err);
-        throw err; // Repassa para o chamador tratar (evita captura silenciosa)
+        // 6. Se existe alguma exceção assíncrona após o window.print().
+        console.error("[printer.ts] Exceção capturada durante/após window.print():", err);
+        throw err;
       }
       cleanup();
     };
