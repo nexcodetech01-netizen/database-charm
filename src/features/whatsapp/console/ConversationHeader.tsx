@@ -1,6 +1,7 @@
 import { Phone, Hash, Bot, UserCircle2 } from "lucide-react";
 import { ConversationStatusBadge } from "./ConversationStatus";
 import { PresenceIndicator } from "./PresenceIndicator";
+import { WhatsAppWindowIndicator } from "./WhatsAppWindowIndicator";
 import { ConversationActions } from "./ConversationActions";
 import { AssignmentManager } from "./AssignmentManager";
 import type { ConversationDetail } from "./types";
@@ -40,6 +41,7 @@ export function ConversationHeader({
               {conversation.contact_name || conversation.contact_phone || conversation.contact_wa_id}
             </h2>
             <ConversationStatusBadge status={conversation.status} />
+            <WhatsAppWindowIndicator lastAt={conversation.ultima_mensagem_cliente_at} />
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
