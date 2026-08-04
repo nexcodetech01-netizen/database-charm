@@ -15,8 +15,11 @@ export const Route = createFileRoute("/")({
     // que causa 502/Internal Server Error devido ao processamento de query params (?source=pwa).
     if (isPreviewHostname(host)) {
       if (typeof window === "undefined") {
-        console.log("[SSR] Preview environment detected via process.env. Skipping server-side redirect to avoid 502.");
+        console.log(`[SSR] Preview environment detected. Host: ${host}. skipping redirect.`);
+        console.log(`[SSR] process.env.LOVABLE_PREVIEW_HOST: ${process.env['LOVABLE_PREVIEW_HOST'] || "UNDEFINED"}`);
+        console.log(`[SSR] isPreviewHostname(${host}): ${isPreviewHostname(host)}`);
       }
+      return;
       return;
     }
 
