@@ -48,28 +48,28 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA COMERCIAL
+{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA CONTADORA
 
-1. CONEXÃO BELLA COMERCIAL:
+1. CONEXÃO BELLA CONTADORA:
    - STATUS: Concluído.
-   - COMPONENTE: BellaDailyBriefCard integrado à infraestrutura comercial legada.
-   - DADOS: Consumo de eventos sales.goal_reached, sales.decline e sales.average_ticket.drop.
-   - MÉTRICAS: Conexão determinística com faturamento e ticket médio derivados do Event Registry.
+   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder integrados.
+   - DADOS: Consumo de eventos fiscal.* e finance.revenue.*.
+   - MÉTRICAS: Lucro Bruto, Líquido e Ponto de Equilíbrio derivados de indicadores de performance financeira.
 
-2. ESCOPO DE DADOS (COMERCIAL):
-   - FATURAMENTO DIA: Mapeado via payload de eventos de venda aprovada/faturada.
-   - TICKET MÉDIO: Exibição baseada em alertas de variação (ticket médio caiu).
-   - MAIS VENDIDO/LUCRATIVO: Identificação via payloads de eventos prioritários.
-   - RECOMENDAÇÕES: Injeção de closingLine contextual ( incentivos vs. revisões de preço).
+2. ESCOPO DE DADOS (CONTADORA):
+   - DRE RESUMIDA: Mapeada via agregação de eventos de faturamento e despesas elevadas.
+   - ALERTAS CONTÁBEIS: Injeção de eventos fiscal.nfe.rejected e finance.expense.out_of_pattern.
+   - MARGEM: Cálculo determinístico baseado em variações de receita reportadas pelo registry.
 
 3. ARQUIVOS ALTERADOS:
-   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Lógica de recomendações comerciais)
+   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Lógica contábil/fiscal)
+   - src/features/bella-ai/dashboard/BellaInsightBuilder.ts (Novas regras de insights contábeis)
    - src/routes/index.tsx (Atualização do Diagnóstico Técnico)
 
 4. VALIDAÇÃO:
-   - Nenhuma nova regra de negócio ou tabela criada.
-   - Reaproveitamento total dos detectores de vendas (sales.detectors.ts).
-   - Estabilidade SSR preservada.`}
+   - Nenhuma nova tabela ou regra de cálculo criada.
+   - Uso integral da infraestrutura legada (BellaEventRegistry).
+   - Estabilidade SSR e performance mantidas.`}
           </pre>
         </div>
       </div>
