@@ -47,7 +47,7 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
   const dueToday = events.filter((e) => {
     if (e.type !== "finance.invoice.overdue") return false;
     const dueDate = e.payload?.dueDate;
-    if (!dueDate) return false;
+    if (typeof dueDate !== "string") return false;
     return dueDate.split("T")[0] === now.toISOString().split("T")[0];
   }).length;
 
