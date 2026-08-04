@@ -48,20 +48,21 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA INFORMA
+{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA ESTOQUISTA
 
-1. CONEXÃO BELLA INFORMA:
+1. CONEXÃO BELLA ESTOQUISTA:
    - STATUS: Concluído.
-   - COMPONENTE: BellaDailyBriefCard integrado ao Dashboard.
-   - DADOS: Snapshot reativo via useBellaHomeSnapshot (Event Registry).
-   - INFRAESTRUTURA: Reuso total de buildDailyBrief e EventEngine.
+   - COMPONENTE: BellaDailyBriefCard e BellaInsightBuilder atualizados.
+   - DADOS: Snapshot operacional via useBellaHomeSnapshot (Event Registry).
+   - INFRAESTRUTURA: Integração total com inventory.slow_moving e inventory.min_stock.
 
-2. ESCOPO DE DADOS:
-   - FINANCEIRO: Detectado via eventos finance.invoice.overdue e cashflow.
-   - ESTOQUE: Detectado via eventos inventory.min_stock_reached.
-   - VENDAS: Detectado via eventos sales.above_average / sales.decline.
-   - MERCADO LIVRE: Alerta de pedidos pendentes integrado ao resumo.
-   - ALERTAS: Integrados dinamicamente no resumo textual.
+2. ESCOPO DE DADOS (ESTOQUE):
+   - ESTOQUE MÍNIMO: Exibição prioritária de itens críticos.
+   - SEM GIRO (SLOW MOVING): Identificação de produtos e tempo sem venda.
+   - VALOR IMOBILIZADO: Cálculo proporcional do custo vs saldo em itens parados.
+   - RESUMO DIÁRIO: Inserção dinâmica de alertas financeiros do estoque no brief.
+   - INSIGHTS: Alertas de capital de giro retido em estoque estagnado.
+
 
 3. ARQUIVOS ALTERADOS:
    - src/routes/_authenticated/dashboard.tsx (Injeção do BellaDailyBriefCard e useBellaHomeSnapshot)
