@@ -195,7 +195,9 @@ export function PDVScreen({
   }
 
   function handlePrintReceipt() {
+    console.log("[PDVScreen] handlePrintReceipt disparado.");
     dispatchSession({ type: "OPEN_RECEIPT" });
+    console.log("[PDVScreen] Chamando printPdvReceipt...");
     printPdvReceipt();
   }
 

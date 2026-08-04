@@ -56,9 +56,11 @@ export function ReceiptDialog(props: Props) {
   }, [open]);
 
   const handlePrint = useCallback(() => {
+    console.log("[ReceiptDialog] handlePrint disparado.");
     // Busca o conteúdo renderizado na tela (o cupom que o usuário vê)
     const printArea = document.querySelector(".receipt-print-area");
     if (!printArea) {
+      console.warn("[ReceiptDialog] Área de impressão não encontrada no DOM.");
       toast.error("Área de impressão não encontrada.");
       return;
     }
