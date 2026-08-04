@@ -129,16 +129,15 @@ function printOnce(html: string): Promise<void> {
     };
 
     iframe.onload = () => {
-      // Pequeno delay para garantir que o conteúdo foi renderizado pelo navegador antes da impressão
-      window.setTimeout(() => {
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch {
-          /* fallback silencioso — o usuário pode imprimir manualmente */
-        }
-        cleanup();
-      }, 500);
+      // Sem delays artificiais: o conteúdo foi injetado via doc.write/close,
+      // o que garante a síncronia da renderização básica do HTML.
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        /* fallback silencioso */
+      }
+      cleanup();
     };
 
     const doc = iframe.contentDocument;
