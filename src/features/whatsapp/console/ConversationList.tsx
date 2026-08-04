@@ -4,6 +4,7 @@ import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConversationStatusBadge } from "./ConversationStatus";
 import { PresenceIndicator } from "./PresenceIndicator";
+import { WhatsAppWindowIndicator } from "./WhatsAppWindowIndicator";
 import type { ConversationListItem } from "./types";
 
 function timeAgo(iso: string | null): string {
@@ -73,11 +74,15 @@ export function ConversationList({
                 isSelected && "bg-muted",
               )}
             >
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/5 border border-primary/10 text-xs font-semibold text-primary overflow-hidden">
+                {/* 
+                  Note: contact_avatar_url would need to be in ConversationListItem. 
+                  If not present, we fall back to initials. 
+                */}
                 {initials(c.contact_name, c.contact_phone)}
                 <PresenceIndicator
                   lastAt={c.last_message_at}
-                  className="absolute -bottom-0.5 -right-0.5 ring-2 ring-background"
+                  className="absolute bottom-0.5 right-0.5 ring-2 ring-background"
                 />
               </div>
               <div className="min-w-0 flex-1 space-y-1">
@@ -99,17 +104,13 @@ export function ConversationList({
                 <p className="truncate text-xs text-muted-foreground">
                   {c.last_message_text || "Sem mensagens ainda"}
                 </p>
-                <div className="flex items-center gap-2">
-                  <ConversationStatusBadge status={c.status} />
-                  <WhatsAppWindowIndicator lastAt={c.ultima_mensagem_cliente_at} />
-                </div>
-                  {c.assigned_operator_name ? (
-                    <span className="truncate text-[10px] text-muted-foreground">
-                      · {c.assigned_operator_name}
-                    </span>
-                  ) : null}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ConversationStatusBadge status={c.status} />
+                    <WhatsAppWindowIndicator lastAt={c.ultima_mensagem_cliente_at} />
+                  </div>
                   {c.unread_count > 0 ? (
-                    <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
                       {c.unread_count}
                     </span>
                   ) : null}
