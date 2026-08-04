@@ -132,10 +132,13 @@ function printOnce(html: string): Promise<void> {
       // Sem delays artificiais: o conteúdo foi injetado via doc.write/close,
       // o que garante a síncronia da renderização básica do HTML.
       try {
+        console.log("[printer.ts] Disparando window.print() no iframe isolado...");
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
-      } catch {
-        /* fallback silencioso */
+        console.log("[printer.ts] window.print() disparado.");
+      } catch (err) {
+        console.error("[printer.ts] Falha na chamada de impressão do iframe:", err);
+        throw err; // Repassa para o chamador tratar (evita captura silenciosa)
       }
       cleanup();
     };

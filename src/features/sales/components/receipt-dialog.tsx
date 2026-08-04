@@ -104,9 +104,16 @@ export function ReceiptDialog(props: Props) {
     `;
 
     import("@/features/printing").then(({ printHtmlDocument }) => {
-      printHtmlDocument(html, { copies: printPrefs.copies }).then(() => {
-        setPrinted(true);
-      });
+      console.log("[ReceiptDialog] Invocando printHtmlDocument com HTML gerado...");
+      printHtmlDocument(html, { copies: printPrefs.copies })
+        .then(() => {
+          console.log("[ReceiptDialog] Impressão concluída com sucesso.");
+          setPrinted(true);
+        })
+        .catch((err) => {
+          console.error("[ReceiptDialog] Erro crítico ao imprimir:", err);
+          toast.error("Falha ao imprimir");
+        });
     });
   }, [effectiveWidth, printPrefs.copies, printPrefs.marginMm]);
 
