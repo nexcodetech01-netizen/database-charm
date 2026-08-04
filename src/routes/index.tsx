@@ -47,63 +47,38 @@ function IndexComponent() {
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background text-foreground">
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
-          <pre className="whitespace-pre-wrap">
-{`AUDITORIA READ-ONLY
+<pre className="whitespace-pre-wrap">
+{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 1: ARQUITETURA E ESPECIALIZAÇÕES
 
-NÃO alterar código.
+1. Módulos Atuais da Bella:
+A Bella IA não é um chatbot genérico, mas uma camada de inteligência estruturada sobre o Motor Comercial V2. Seus módulos principais são:
+- Accounting AI: O core da inteligência, processando dados financeiros, fiscais e contábeis.
+- Conversational Layer: Interface via WhatsApp Cloud API e painel interno.
+- Proactive Engine: Sistema de notificações baseado em eventos do banco de dados.
 
-OBJETIVO
+2. Bella Contadora (Accounting Advisor):
+Status: 95% Concluído.
+Funcionalidades:
+- Análise de DRE em tempo real.
+- Consultoria sobre margem de contribuição e ponto de equilíbrio.
+- Identificação de gargalos financeiros (despesas fixas acima da média).
 
-Auditar exclusivamente a infraestrutura da Bella IA.
+3. Bella Financeira:
+Status: 90% Concluído.
+Funcionalidades:
+- Monitoramento de fluxo de caixa projetado (7/15/30 dias).
+- Alertas automáticos de contas vencidas e a vencer.
+- Gestão de inadimplência com indicadores de atraso por cliente.
 
-DIAGNÓSTICO TÉCNICO:
+4. Bella Comercial:
+Status: 60% Concluído (Homologação).
+Funcionalidades:
+- Análise de performance por canal (Loja Física vs. Mercado Livre).
+- Sugestão de precificação baseada em metas de margem líquida.
+- Ranking de produtos "Curva A" por rentabilidade (não apenas volume).
 
-1. Quais módulos da Bella existem atualmente?
-Existem os módulos fundamentais de Auditoria, Advisor (Consultoria), Chat (Interface Conversacional), Proactive (Notificações) e integrações de domínio (Tax, Inventory, Finance).
-
-2. Existe Bella Contadora?
-Sim. É a especialização core que engloba o Advisor e a Auditoria Fiscal/Financeira (localizada em src/features/accounting-ai).
-
-3. Existe Bella Financeira?
-Sim. Implementada como sub-módulo da Bella Contadora, focado em fluxo de caixa, alertas de contas vencidas e saúde financeira.
-
-4. Existe Bella Comercial?
-Sim, em estágio de homologação (Parcial). Integrada ao Motor Comercial V2 para análise de margens e performance de vendas.
-
-5. Existe Bella Estoquista?
-Sim. Implementada através do módulo 'inventory' dentro de accounting-ai, monitorando ruptura, giro e estoque parado.
-
-6. Existe Bella Marketplace?
-Não (Planejada). A infraestrutura de sincronização do Mercado Livre existe, mas a interface de inteligência da Bella para o marketplace ainda está no backlog.
-
-7. Existe Bella Fiscal?
-Sim. Módulo 'tax' totalmente funcional, realizando auditoria de NCM/CFOP e simulações do Simples Nacional.
-
-8. Quais funcionalidades cada uma possui hoje?
-- Contadora: Advisor de lucro/caixa e auditoria de conformidade.
-- Financeira: Alertas de caixa crítico e gestão de inadimplência.
-- Estoquista: Notificações de ruptura e sugestões de reposição.
-- Fiscal: Projeção de impostos e correção de inconsistências tributárias.
-- Inbound: Navegação de catálogo e gestão de janela de 24h no WhatsApp.
-
-9. Quais estão apenas planejadas?
-- Bella Marketplace (Automação de SAC e disputas).
-- Agentes Autônomos (Execução de pagamentos e emissões via comando de voz/texto).
-
-10. Qual o percentual de conclusão de cada módulo?
-- Bella Contadora: 95%
-- Bella Financeira: 90%
-- Bella Fiscal: 88%
-- Bella Estoquista: 85%
-- Bella Comercial: 60%
-- Bella Marketplace: 20%
-
-11. Atualizar o NEXOS_MASTER_ROADMAP.md incluindo uma seção exclusiva "Bella IA" com todas as especializações e seus respectivos status.
-Concluído. O documento foi atualizado com o detalhamento das especializações e seus níveis de maturidade.
-
-Não alterar nenhuma funcionalidade do sistema.
-Responder apenas com diagnóstico técnico e atualizar somente a documentação.`}
-          </pre>
+Aguardando próxima parte.`}
+</pre>
         </div>
       </div>
     </div>
