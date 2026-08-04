@@ -48,43 +48,29 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO — AUDITORIA DE IMPLEMENTAÇÃO SPRINT 1
+{`DIAGNÓSTICO TÉCNICO — SPRINT BELLA INFORMA
 
-1. TABELA EXTERNAL_ORDERS:
-   - CRIADA: Sim.
-   - COLUNAS: id (UUID), company_id (UUID), marketplace (Text), external_order_id (Text), payload (JSONB), status (Text), imported_at (TZ), sale_id (UUID), timestamps.
-   - CONSTRAINTS: PRIMARY KEY (id), UNIQUE (company_id, marketplace, external_order_id), FKs para companies e sales.
+1. CONEXÃO BELLA INFORMA:
+   - STATUS: Concluído.
+   - COMPONENTE: BellaDailyBriefCard integrado ao Dashboard.
+   - DADOS: Snapshot reativo via useBellaHomeSnapshot (Event Registry).
+   - INFRAESTRUTURA: Reuso total de buildDailyBrief e EventEngine.
 
-2. WEBHOOK ML:
-   - STATUS: Operacional em src/lib/mercadolivre-webhook.server.ts.
-   - PERSISTÊNCIA: Implementada via upsert no tópico 'orders_v2' (linhas 157-170).
+2. ESCOPO DE DADOS:
+   - FINANCEIRO: Detectado via eventos finance.invoice.overdue e cashflow.
+   - ESTOQUE: Detectado via eventos inventory.min_stock_reached.
+   - VENDAS: Detectado via eventos sales.above_average / sales.decline.
+   - MERCADO LIVRE: Alerta de pedidos pendentes integrado ao resumo.
+   - ALERTAS: Integrados dinamicamente no resumo textual.
 
-3. ARQUIVOS ALTERADOS/CRIADOS:
-   - src/lib/mercadolivre-webhook.server.ts (Refatoração do webhook)
-   - src/lib/external-orders.functions.ts (Novas Server Functions: get/import)
-   - src/routes/_authenticated/importacoes.mercado-livre.tsx (Nova tela de listagem)
-   - src/routes/_authenticated/importacoes.tsx (Link na central)
-   - src/features/imports/types.ts & icons.ts (Definições de UI)
-   - supabase/migrations/*_create_external_orders.sql (Schema)
+3. ARQUIVOS ALTERADOS:
+   - src/routes/_authenticated/dashboard.tsx (Injeção do BellaDailyBriefCard e useBellaHomeSnapshot)
+   - src/features/bella-ai/dashboard/BellaDailyBrief.ts (Adicionado suporte a pedidos ML e limite de prioridades)
 
-4. TELA /importacoes/mercado-livre:
-   - EXISTE: Sim, totalmente funcional com Table, Badge e Hooks de dados.
-
-5. BOTÃO "IMPORTAR":
-   - FUNCIONAMENTO: Chama a Server Function 'importExternalOrder' via useMutation (Linha 33 de importacoes.mercado-livre.tsx).
-
-6. FLUXO DE VENDA:
-   - CONVERSÃO: A venda interna (sales/sale_items) é gerada APENAS quando o usuário clica em "Importar" no frontend, disparando o handler no backend.
-
-7. ESTOQUE AUTOMÁTICO (LEGADO):
-   - MANUTENÇÃO: O fluxo antigo de inventory_movements direto no webhook foi PRESERVADO (linhas 180-212 do webhook) para evitar quebra de compatibilidade durante a transição.
-
-8. BUGS E RISCOS:
-   - RISCO IDENTIFICADO: Duplicidade de estoque se o usuário importar manualmente um pedido que já sofreu baixa automática no webhook (ambos fluxos estão ativos).
-   - AÇÃO RECOMENDADA: Condicionar a baixa de estoque do webhook à flag de importação automática ou desativar o legado após homologação.
-
-9. CONCLUSÃO:
-   - STATUS: SPRINT 1 CONCLUÍDA. Infraestrutura de staging, UI de gestão e motor de importação manual operacionais.`}
+4. VALIDAÇÃO:
+   - Nenhuma nova regra de negócio criada.
+   - Nenhuma alteração em tabelas ou banco de dados.
+   - Mantida a estrutura de permissões e hooks existentes.`}
           </pre>
         </div>
       </div>
