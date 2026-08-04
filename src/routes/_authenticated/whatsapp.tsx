@@ -71,11 +71,11 @@ function WhatsAppPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6">
-      <BreadcrumbNav />
       <PageHeader
         icon={MessageCircle}
-        title="WhatsApp Business"
-        description="Envie pedidos, cobranças, recibos e acompanhe todas as conversas."
+        title="WhatsApp"
+        description="Envie pedidos, cobranças e acompanhe conversas."
+        className="py-1"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={openNewConversation}>
