@@ -48,27 +48,19 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-Você é um engenheiro do projeto.
+DIAGNÓSTICO E CORREÇÃO FORÇADA DE DISPARO (#132000):
 
-Implemente APENAS o código.
+O erro de parâmetros (#132000) continua acontecendo na interface ao tentar enviar mensagem. Precisamos rastrear o fluxo exato do clique:
 
-NÃO descreva o que fez.
+1. RASTREAR A AÇÃO DO BOTÃO "ENVIAR" NA TELA:
+   - Verifique exatamente qual função JavaScript/TypeScript é disparada quando o operador clica no botão 'Enviar' ou aperta 'Enter' no chat.
+   - Garanta que esse evento chame EXCLUSIVAMENTE a função refatorada no `service.functions.ts` ou a Edge Function atualizada, e NÃO um fetch direto ou rota legada.
 
-NÃO altere a Home.
+2. LOG DE CONTROLE (PRINT DO PAYLOAD):
+   - Antes de realizar o `fetch` para 'https://graph.facebook.com/v25.0/...', coloque um `console.log("PAYLOAD_ENVIADO_META:", JSON.stringify(bodyPayload))` para inspecionarmos no console do navegador / logs do Supabase.
 
-NÃO escreva relatórios.
-
-NÃO atualize a página inicial.
-
-Ao finalizar, responda SOMENTE:
-
-IMPLEMENTAÇÃO CONCLUÍDA
-
-ou
-
-IMPLEMENTAÇÃO FALHOU
-
-com o motivo.
+3. RE-DEPLOY DA EDGE FUNCTION:
+   - Se os arquivos do Supabase / Edge Functions foram alterados (`whatsapp.server.ts`), certifique-se de aplicar/re-implantar as Edge Functions para que o ambiente de produção/sua instância rode o código atualizado com o fallback dos 3 parâmetros.
           </pre>
         </div>
       </div>
