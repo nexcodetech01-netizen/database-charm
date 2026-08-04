@@ -48,26 +48,34 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`ESTRUTURA DE ARQUIVOS (src/):
+{`AUDITORIA FINAL — SPRINT 1 (READ-ONLY)
 
-src/
-├── components/ (brand, design, layout, ui, pwa)
-├── config/ (env, routes)
-├── design/ (tokens, tests)
-├── features/ (accounting, auth, bella-ai, marketplace, sales, inventory, etc.)
-├── hooks/ (use-toast, use-mobile, version-check)
-├── integrations/ (supabase)
-├── lib/ (ai-gateway, marketplace-sync, mercadolivre, meta, whatsapp, utils)
-├── providers/ (auth, theme, app-providers)
-├── routes/ (__root, _authenticated, api, index, auth, catalogo)
-├── services/ (branding, storage, supabase)
-├── types/ (common)
-├── router.tsx
-├── start.ts
-└── styles.css
+NÃO alterar código.
+NÃO alterar banco.
+NÃO criar arquivos.
 
-Total de diretórios principais: 11
-Foco em Features: 40+ módulos operacionais.`}
+OBJETIVO
+
+Auditar EXCLUSIVAMENTE o fluxo de importação manual de pedidos do Mercado Livre.
+
+Responder:
+
+1. O webhook de pedidos já está funcionando?
+
+2. Existe uma tela/lista de pedidos do Mercado Livre?
+
+3. Os pedidos recebidos são persistidos em alguma tabela?
+   Se sim, qual?
+
+4. Existe botão "Importar para o NexOS"?
+
+5. O que já está implementado?
+
+6. O que falta exatamente para concluir esta sprint?
+
+Responder apenas com diagnóstico técnico.
+
+Não implementar nada.`}
           </pre>
         </div>
       </div>
