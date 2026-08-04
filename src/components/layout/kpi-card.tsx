@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
  * Standard KPI/summary card used across NexOS dashboards and module headers.
@@ -64,23 +65,32 @@ export function KpiCard({
         className,
       )}
     >
-      <CardContent className="flex items-start justify-between gap-3 p-5">
+      <CardContent className="flex items-start justify-between gap-2 p-3 sm:p-4">
         <div className="min-w-0 flex-1 space-y-1">
-          <p
-            className={cn(
-              "line-clamp-2 text-xs font-medium uppercase tracking-wide",
-              highlight ? "text-primary/80" : "text-muted-foreground",
-            )}
-          >
-            {label}
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p
+                  className={cn(
+                    "truncate text-[10px] font-semibold uppercase tracking-wider",
+                    highlight ? "text-primary/80" : "text-muted-foreground",
+                  )}
+                >
+                  {label}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{label}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {loading ? (
             <Skeleton className="h-8 w-24" />
           ) : (
             <p
               className={cn(
-                "font-semibold tracking-tight tabular-nums break-words",
-                highlight ? "text-2xl text-foreground xl:text-3xl" : "text-xl text-foreground xl:text-2xl",
+                "font-bold tracking-tight tabular-nums truncate",
+                highlight ? "text-xl text-foreground xl:text-2xl" : "text-lg text-foreground xl:text-xl",
               )}
             >
               {value}
@@ -96,14 +106,14 @@ export function KpiCard({
         {Icon ? (
           <div
             className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+              "grid h-7 w-7 shrink-0 place-items-center rounded-lg sm:h-8 sm:w-8",
               highlight
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-primary/10 text-primary",
             )}
             aria-hidden="true"
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
         ) : null}
       </CardContent>

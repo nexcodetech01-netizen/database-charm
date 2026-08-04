@@ -71,11 +71,11 @@ function WhatsAppPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 sm:p-6">
-      <BreadcrumbNav />
       <PageHeader
         icon={MessageCircle}
-        title="WhatsApp Business"
-        description="Envie pedidos, cobranças, recibos e acompanhe todas as conversas."
+        title="WhatsApp"
+        description="Envie pedidos, cobranças e acompanhe conversas."
+        className="py-1"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={openNewConversation}>
@@ -92,7 +92,7 @@ function WhatsAppPage() {
       />
 
 
-      <KpiSection columns={5}>
+      <KpiSection columns={5} className="gap-3">
         <KpiCard
           label="Conversas abertas"
           value={conversations.filter((c) => c.status === "open").length}
@@ -160,11 +160,7 @@ function WhatsAppPage() {
           <CommunicationTimeline events={WHATSAPP_TIMELINE} />
         </TabsContent>
 
-        <TabsContent value="templates" className="mt-0 space-y-3">
-          <SectionHeader
-            title="Modelos de mensagem"
-            description="Boas-vindas, pedido, orçamento, cobrança, pós-venda, lembrete e aniversário."
-          />
+        <TabsContent value="templates" className="mt-0">
           <TemplatesGrid />
         </TabsContent>
 
