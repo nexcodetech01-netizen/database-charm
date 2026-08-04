@@ -48,21 +48,17 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO DE ENVIO DE TEMPLATE DE WHATSAPP:
+{`AJUSTAR MAPEAMENTO DO TEMPLATE DA META CLOUD API:
 
-1. NOME DO TEMPLATE:
-   - Certifique-se de que a função de envio via Meta Cloud API esteja enviando o parâmetro \`template.name\` com o nome exato do modelo selecionado pelo usuário (ex: 'boas_vindas' ou 'boas_vindas_padrao'), e NÃO o valor 'hello_world'.
+1. ATUALIZAÇÃO DO NOME DO TEMPLATE:
+   - Na tabela/configuração de modelos de mensagem do WhatsApp, atualize a propriedade \`template_name\` para usar o nome exato do template aprovado na Meta: "[INSERIR_NOME_DO_SEU_TEMPLATE_AQUI]".
+   - Na Edge Function / Serviço que faz a chamada para a Meta Cloud API, garanta que o campo \`template.name\` no payload receba esse nome e NÃO o valor fixo/fallback 'hello_world'.
 
-2. IDIOMA E COMPONENTES:
-   - Defina o idioma padrão do template como 'pt_BR' no payload:
-     template: {
-       name: templateNome,
-       language: { code: "pt_BR" },
-       components: [...]
-     }
+2. IDIOMA DO TEMPLATE:
+   - Certifique-se de enviar \`language: { code: "pt_BR" }\` no payload da API da Meta para templates criados em português.
 
-3. MAPEAMENTO DE MODELOS:
-   - No painel/banco de dados, certifique-se de que a coluna \`name\` ou \`template_name\` da tabela de modelos de mensagem corresponda exatamente ao nome do modelo aprovado no Gerenciador da Meta.`}
+3. TESTE DE DISPARO:
+   - Ao clicar no botão de enviar teste ou iniciar conversa via template, o sistema deve puxar dinamicamente o template selecionado com o nome correto.`}
           </pre>
         </div>
       </div>
