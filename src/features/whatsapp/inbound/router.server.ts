@@ -414,6 +414,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         company_id: tenant.companyId,
         contact_id: contactId,
         last_inbound_at: new Date(msg.timestamp).toISOString(),
+        ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
       },
       { onConflict: "company_id,contact_id" },
     )
