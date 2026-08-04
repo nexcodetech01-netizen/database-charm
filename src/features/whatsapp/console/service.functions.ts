@@ -423,7 +423,7 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
     const { data: conv, error } = await db
       .from("whatsapp_conversations")
       .select(
-        "id, company_id, contact_id, status, contact:whatsapp_contacts!inner ( phone, wa_id )",
+        "id, company_id, contact_id, status, ultima_mensagem_cliente_at, contact:whatsapp_contacts!inner ( phone, wa_id, ultima_mensagem_cliente_at )",
       )
       .eq("id", data.conversationId)
       .single();
