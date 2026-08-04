@@ -4745,9 +4745,11 @@ export type Database = {
           created_at: string
           description: string | null
           freight: number
+          height: number | null
           id: string
           insurance: number
           last_purchase_cost: number | null
+          length: number | null
           margin: number
           margin_mode: string
           min_stock: number
@@ -4769,6 +4771,8 @@ export type Database = {
           unit: string
           updated_at: string
           use_category_margin: boolean
+          weight: number | null
+          width: number | null
         }
         Insert: {
           barcode?: string | null
@@ -4782,9 +4786,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           freight?: number
+          height?: number | null
           id?: string
           insurance?: number
           last_purchase_cost?: number | null
+          length?: number | null
           margin?: number
           margin_mode?: string
           min_stock?: number
@@ -4806,6 +4812,8 @@ export type Database = {
           unit?: string
           updated_at?: string
           use_category_margin?: boolean
+          weight?: number | null
+          width?: number | null
         }
         Update: {
           barcode?: string | null
@@ -4819,9 +4827,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           freight?: number
+          height?: number | null
           id?: string
           insurance?: number
           last_purchase_cost?: number | null
+          length?: number | null
           margin?: number
           margin_mode?: string
           min_stock?: number
@@ -4843,6 +4853,8 @@ export type Database = {
           unit?: string
           updated_at?: string
           use_category_margin?: boolean
+          weight?: number | null
+          width?: number | null
         }
         Relationships: [
           {
