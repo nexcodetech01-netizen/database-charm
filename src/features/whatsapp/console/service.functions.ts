@@ -413,6 +413,7 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
       text: z.string().min(1).max(4096),
       type: z.enum(["text", "template"]).optional().default("text"),
       templateName: z.string().optional(),
+      variables: z.array(z.union([z.string(), z.number()])).optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -445,7 +446,12 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
 
     let sent;
     if (data.type === "template" && data.templateName) {
-      sent = await sendWhatsAppTemplateRaw({ to, templateName: data.templateName });
+      // Requisito 1: No front-end/service, garante 3 parâmetros para o template específico
+      let vars = data.variables;
+      if (data.templateName === "jaspers_market_order_confirmation_v1") {
+        vars = vars && vars.length === 3 ? vars : ["Cliente", "001", "Hoje"];
+      }
+      sent = await sendWhatsAppTemplateRaw({ to, templateName: data.templateName, variables: vars });
     } else if (isWindowOpen) {
       sent = await sendWhatsAppText({ to, text: data.text });
     } else {
