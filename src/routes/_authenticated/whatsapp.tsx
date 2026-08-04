@@ -92,7 +92,7 @@ function WhatsAppPage() {
       />
 
 
-      <KpiSection columns={5}>
+      <KpiSection columns={5} className="gap-3">
         <KpiCard
           label="Conversas abertas"
           value={conversations.filter((c) => c.status === "open").length}
@@ -160,11 +160,7 @@ function WhatsAppPage() {
           <CommunicationTimeline events={WHATSAPP_TIMELINE} />
         </TabsContent>
 
-        <TabsContent value="templates" className="mt-0 space-y-3">
-          <SectionHeader
-            title="Modelos de mensagem"
-            description="Boas-vindas, pedido, orçamento, cobrança, pós-venda, lembrete e aniversário."
-          />
+        <TabsContent value="templates" className="mt-0">
           <TemplatesGrid />
         </TabsContent>
 
