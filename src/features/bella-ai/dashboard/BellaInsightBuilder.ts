@@ -41,6 +41,21 @@ const RULES: Rule[] = [
     },
   },
   {
+    id: "inventory.slow_moving",
+    match: (events) => {
+      const slow = events.filter((e) => e.type === "inventory.slow_moving");
+      if (slow.length === 0) return null;
+      const value = slow.reduce((s, e) => s + (Number(e.payload?.inventoryValue) || 0), 0);
+      return {
+        id: "inventory.slow_moving",
+        tone: "neutral",
+        message: value > 0 
+          ? `Você tem R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} imobilizados em ${slow.length} produtos sem giro.`
+          : `Existem ${slow.length} produtos sem movimentação recente no estoque.`,
+      };
+    },
+  },
+  {
     id: "sales.trend",
     match: (events) => {
       const above = events.some((e) => e.type === "sales.above_average" || e.type === "sales.goal_reached");
