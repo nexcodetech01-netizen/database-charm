@@ -236,6 +236,7 @@ export const getConversation = createServerFn({ method: "POST" })
       last_message_at: null,
       last_message_direction: null,
       last_message_provider: null,
+      ultima_mensagem_cliente_at: row.ultima_mensagem_cliente_at ?? row.contact?.ultima_mensagem_cliente_at ?? null,
       channel: "whatsapp",
       
       notes: Array.isArray(row.notes) ? (row.notes as ConversationNote[]) : [],
