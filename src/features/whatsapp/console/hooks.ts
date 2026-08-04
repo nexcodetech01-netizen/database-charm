@@ -189,7 +189,7 @@ export function useConsoleMutations(companyId: string | null) {
       onSuccess: (_r, v) => invalidate(v.conversationId),
     }),
     sendMessage: useMutation({
-      mutationFn: (vars: { conversationId: string; text: string }) =>
+      mutationFn: (vars: { conversationId: string; text: string; type?: "text" | "template"; templateName?: string }) =>
         sendFn({ data: vars }),
       onSuccess: (_r, v) => invalidate(v.conversationId),
     }),
