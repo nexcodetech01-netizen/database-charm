@@ -131,8 +131,8 @@ export const listConversations = createServerFn({ method: "POST" })
       .from("whatsapp_conversations")
       .select(
         `id, company_id, contact_id, status, assigned_operator_id, unread_count,
-         protocol, last_inbound_at, last_outbound_at, updated_at,
-         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name ),
+         protocol, last_inbound_at, last_outbound_at, updated_at, ultima_mensagem_cliente_at,
+         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name, ultima_mensagem_cliente_at ),
          operator:profiles!whatsapp_conversations_assigned_operator_id_fkey ( id, full_name )`,
       )
       .eq("company_id", data.companyId)
@@ -177,6 +177,7 @@ export const listConversations = createServerFn({ method: "POST" })
         last_message_at: lastAt,
         last_message_direction: (last?.direction ?? null) as "inbound" | "outbound" | null,
         last_message_provider: last?.provider ?? null,
+        ultima_mensagem_cliente_at: r.ultima_mensagem_cliente_at ?? r.contact?.ultima_mensagem_cliente_at ?? null,
         channel: "whatsapp",
       } satisfies ConversationListItem;
     }).sort((a, b) => {
@@ -199,8 +200,8 @@ export const getConversation = createServerFn({ method: "POST" })
       .from("whatsapp_conversations")
       .select(
         `id, company_id, contact_id, status, assigned_operator_id, unread_count,
-         protocol, last_inbound_at, last_outbound_at, updated_at, bella_state, notes,
-         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name ),
+         protocol, last_inbound_at, last_outbound_at, updated_at, bella_state, notes, ultima_mensagem_cliente_at,
+         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name, ultima_mensagem_cliente_at ),
          operator:profiles!whatsapp_conversations_assigned_operator_id_fkey ( id, full_name )`,
       )
       .eq("id", data.conversationId)
@@ -235,6 +236,7 @@ export const getConversation = createServerFn({ method: "POST" })
       last_message_at: null,
       last_message_direction: null,
       last_message_provider: null,
+      ultima_mensagem_cliente_at: row.ultima_mensagem_cliente_at ?? row.contact?.ultima_mensagem_cliente_at ?? null,
       channel: "whatsapp",
       
       notes: Array.isArray(row.notes) ? (row.notes as ConversationNote[]) : [],
@@ -405,7 +407,12 @@ export const addConversationNote = createServerFn({ method: "POST" })
 export const sendOperatorMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ conversationId: uuid, text: z.string().min(1).max(4096) }).parse(input),
+    z.object({
+      conversationId: uuid,
+      text: z.string().min(1).max(4096),
+      type: z.enum(["text", "template"]).optional().default("text"),
+      templateName: z.string().optional(),
+    }).parse(input),
   )
   .handler(async ({ data, context }) => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
@@ -418,17 +425,32 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
     const { data: conv, error } = await db
       .from("whatsapp_conversations")
       .select(
-        "id, company_id, contact_id, status, contact:whatsapp_contacts!inner ( phone, wa_id )",
+        "id, company_id, contact_id, status, ultima_mensagem_cliente_at, contact:whatsapp_contacts!inner ( phone, wa_id, ultima_mensagem_cliente_at )",
       )
       .eq("id", data.conversationId)
       .single();
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada.");
 
     const to = (conv.contact?.phone as string) || (conv.contact?.wa_id as string);
-    const { sendWhatsAppText, WHATSAPP_NOT_CONFIGURED } = await import(
+    const { sendWhatsAppText, sendWhatsAppTemplateRaw, WHATSAPP_NOT_CONFIGURED } = await import(
       "@/lib/whatsapp.server"
     );
-    const sent = await sendWhatsAppText({ to, text: data.text });
+
+    // Lógica Inteligente de Envio (Requisito 3)
+    const lastInboundAt = conv.ultima_mensagem_cliente_at || conv.contact?.ultima_mensagem_cliente_at;
+    const isWindowOpen = lastInboundAt 
+      ? (Date.now() - new Date(lastInboundAt).getTime()) <= 24 * 60 * 60 * 1000 
+      : false;
+
+    let sent;
+    if (data.type === "template" && data.templateName) {
+      sent = await sendWhatsAppTemplateRaw({ to, templateName: data.templateName });
+    } else if (isWindowOpen) {
+      sent = await sendWhatsAppText({ to, text: data.text });
+    } else {
+      // Janela FECHADA e não foi solicitado template: fallback para template padrão (boas_vindas)
+      sent = await sendWhatsAppTemplateRaw({ to, templateName: "boas_vindas" });
+    }
 
     // Integração ainda não configurada: não é falha de envio. Devolvemos um
     // aviso amigável, sem lançar erro e sem poluir a timeline com uma

@@ -274,7 +274,7 @@ export interface SendTextResult {
   missing?: string[];
 }
 
-export async function sendWhatsAppText(input: SendTextInput): Promise<SendTextResult> {
+export async function sendWhatsAppText(input: SendTextInput & { bypassWindowCheck?: boolean }): Promise<SendTextResult> {
   const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
   const text = (input.text ?? "").slice(0, 4096);
@@ -284,6 +284,9 @@ export async function sendWhatsAppText(input: SendTextInput): Promise<SendTextRe
   if (!text) return { ok: false, waMessageId: null, to, error: "Texto vazio." };
 
   try {
+    // Se não for solicitado explicitamente ignorar o check da janela, poderíamos verificar aqui.
+    // Porém, seguindo o requisito 3, criaremos a lógica inteligente de envio no service que orquestra.
+
     const res = await integrationFetch(
       `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,
       {

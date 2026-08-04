@@ -47,6 +47,7 @@ export interface ConversationListItem {
   last_message_at: string | null;
   last_message_direction: "inbound" | "outbound" | null;
   last_message_provider: string | null;
+  ultima_mensagem_cliente_at: string | null;
   channel: "whatsapp";
 }
 
