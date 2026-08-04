@@ -129,13 +129,16 @@ function printOnce(html: string): Promise<void> {
     };
 
     iframe.onload = () => {
-      try {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      } catch {
-        /* fallback silencioso — o usuário pode imprimir manualmente */
-      }
-      cleanup();
+      // Pequeno delay para garantir que o conteúdo foi renderizado pelo navegador antes da impressão
+      window.setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          /* fallback silencioso — o usuário pode imprimir manualmente */
+        }
+        cleanup();
+      }, 500);
     };
 
     const doc = iframe.contentDocument;
