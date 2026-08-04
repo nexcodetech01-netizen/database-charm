@@ -9,7 +9,7 @@ async function requireCurrentCompanyId(supabase: any, userId: string): Promise<s
 
 export const getExternalOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { marketplace?: string; status?: string }) => {
+  .inputValidator((input: { marketplace?: string; status?: string } | undefined) => {
     return {
       marketplace: input?.marketplace ?? "mercadolivre",
       status: input?.status ?? "pending",
@@ -54,10 +54,8 @@ export const importExternalOrder = createServerFn({ method: "POST" })
     const payload = extOrder.payload;
     
     // 2. Criar a venda (Sale)
-    // Usamos um número sequencial ou o ID do marketplace
     const saleNumber = `ML-${payload.id}`;
     
-    // Verificamos se já existe uma venda com este número para evitar duplicidade
     const { data: existingSale } = await supabase
       .from("sales")
       .select("id")
@@ -66,7 +64,6 @@ export const importExternalOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     
     if (existingSale) {
-      // Se a venda existe mas o external_order não estava marcado, atualizamos o vínculo
       await (supabase as any)
         .from("external_orders")
         .update({ 
@@ -78,16 +75,14 @@ export const importExternalOrder = createServerFn({ method: "POST" })
       return { success: true, saleId: existingSale.id };
     }
 
-    // Criar a venda
-    // Nota: Requisito diz NÃO criar cliente. Vamos deixar customer_id nulo ou usar um padrão.
     const { data: newSale, error: saleErr } = await supabase
       .from("sales")
       .insert({
         company_id: companyId,
         number: saleNumber,
-        status: "paid", // Pedidos do ML chegam como pagos no webhook
+        status: "paid", 
         sale_date: new Date().toISOString().split('T')[0],
-        items_total: payload.items_total || 0, // payload.total_amount no ML
+        items_total: payload.total_amount || 0,
         grand_total: payload.total_amount || 0,
         notes: `Importado do Mercado Livre. Pedido #${payload.id}`,
         created_by: context.userId,
@@ -102,10 +97,9 @@ export const importExternalOrder = createServerFn({ method: "POST" })
     const saleItems = [];
     
     for (const item of items) {
-      // Tentar encontrar o produto pelo ml_item_id
-      const { data: product } = await supabase
+      const { data: product } = await (supabase as any)
         .from("products")
-        .select("id, name, sale_price")
+        .select("id, name, price")
         .eq("company_id", companyId)
         .eq("ml_item_id", item.item.id)
         .maybeSingle();
