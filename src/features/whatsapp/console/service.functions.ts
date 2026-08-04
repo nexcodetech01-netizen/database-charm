@@ -200,8 +200,8 @@ export const getConversation = createServerFn({ method: "POST" })
       .from("whatsapp_conversations")
       .select(
         `id, company_id, contact_id, status, assigned_operator_id, unread_count,
-         protocol, last_inbound_at, last_outbound_at, updated_at, bella_state, notes,
-         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name ),
+         protocol, last_inbound_at, last_outbound_at, updated_at, bella_state, notes, ultima_mensagem_cliente_at,
+         contact:whatsapp_contacts!inner ( id, wa_id, phone, profile_name, ultima_mensagem_cliente_at ),
          operator:profiles!whatsapp_conversations_assigned_operator_id_fkey ( id, full_name )`,
       )
       .eq("id", data.conversationId)
