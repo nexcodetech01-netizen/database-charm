@@ -154,7 +154,7 @@ export async function processMercadoLivreNotification(
   }
 
   // Sprint 1: Persistência em external_orders para importação manual
-  const { error: extErr } = await supabaseAdmin.from("external_orders").upsert({
+  const { error: extErr } = await (supabaseAdmin as any).from("external_orders").upsert({
     company_id: row.company_id,
     marketplace: "mercadolivre",
     external_order_id: String(order.id),
