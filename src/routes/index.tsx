@@ -5,9 +5,18 @@ import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
+    // No servidor (SSR), o process.env.LOVABLE_PREVIEW_HOST está disponível se estivermos no ambiente de preview.
+    // No cliente, usamos o hostname da janela.
+    const host = typeof window !== "undefined" 
+      ? window.location.hostname 
+      : (process.env['LOVABLE_PREVIEW_HOST'] || "");
+
     // No ambiente de preview do Lovable, evitamos o throw redirect imediato no SSR
     // que causa 502/Internal Server Error devido ao processamento de query params (?source=pwa).
-    if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
+    if (isPreviewHostname(host)) {
+      if (typeof window === "undefined") {
+        console.log("[SSR] Preview environment detected via process.env. Skipping server-side redirect to avoid 502.");
+      }
       return;
     }
 
