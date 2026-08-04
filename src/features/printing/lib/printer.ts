@@ -102,7 +102,11 @@ export async function printHtmlDocument(
   html: string,
   options: { copies?: number } = {},
 ): Promise<void> {
-  if (typeof document === "undefined") return;
+  console.log("[printer.ts] printHtmlDocument iniciado...");
+  if (typeof document === "undefined") {
+    console.warn("[printer.ts] printHtmlDocument abortado: document undefined.");
+    return;
+  }
   const copies = Math.min(5, Math.max(1, Math.round(options.copies ?? 1)));
 
   for (let i = 0; i < copies; i += 1) {

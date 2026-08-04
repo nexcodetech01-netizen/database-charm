@@ -116,7 +116,13 @@ export function pdvSessionReducer(
 
 /** Dispara a impressão usando a infraestrutura existente do navegador. */
 export function printPdvReceipt(printer: () => void = () => window.print()) {
-  printer();
+  console.log("[completion.ts] printPdvReceipt executando...");
+  try {
+    printer();
+    console.log("[completion.ts] printer() chamado com sucesso.");
+  } catch (err) {
+    console.error("[completion.ts] Erro ao chamar printer():", err);
+  }
 }
 
 /**
