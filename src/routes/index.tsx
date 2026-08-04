@@ -48,60 +48,27 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`IMPLEMENTAÇÃO — SPRINT 1
+Você é um engenheiro do projeto.
 
-Objetivo:
+Implemente APENAS o código.
 
-Implementar a importação MANUAL de pedidos do Mercado Livre.
+NÃO descreva o que fez.
 
-Escopo:
+NÃO altere a Home.
 
-1. Criar a tabela \`external_orders\`.
-   Campos mínimos:
-   - id (UUID)
-   - provider ('mercadolivre')
-   - external_order_id (UNIQUE)
-   - payload (JSONB)
-   - status
-   - sale_id (nullable)
-   - imported_at
-   - created_at
-   - updated_at
+NÃO escreva relatórios.
 
-2. Alterar o webhook do Mercado Livre para persistir o pedido em \`external_orders\`.
+NÃO atualize a página inicial.
 
-3. NÃO criar venda automaticamente.
+Ao finalizar, responda SOMENTE:
 
-4. NÃO criar cliente.
+IMPLEMENTAÇÃO CONCLUÍDA
 
-5. NÃO criar financeiro.
+ou
 
-6. Criar a tela "Pedidos Mercado Livre".
+IMPLEMENTAÇÃO FALHOU
 
-7. Exibir:
-   - Número do pedido
-   - Cliente
-   - Valor
-   - Status
-   - Data
-   - Botão "Importar"
-
-8. Ao clicar em "Importar":
-   - Criar a venda.
-   - Vincular \`sale_id\` em \`external_orders\`.
-   - Preencher \`imported_at\`.
-
-IMPORTANTE
-
-Não alterar o fluxo atual de sincronização de preço.
-
-Não alterar o fluxo atual de sincronização de estoque.
-
-Não alterar o PDV.
-
-Não alterar o Financeiro.
-
-Implementar somente esta Sprint.`}
+com o motivo.
           </pre>
         </div>
       </div>
