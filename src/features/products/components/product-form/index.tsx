@@ -1984,20 +1984,21 @@ function NumInput({
   value,
   onChange,
   disabled,
-  ...props
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
-} & React.ComponentProps<typeof Input>) {
+  placeholder?: string;
+}) {
   return (
     <Input
       inputMode="decimal"
       value={value}
       disabled={disabled}
+      placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className="tabular-nums"
-      {...props}
     />
   );
 }
