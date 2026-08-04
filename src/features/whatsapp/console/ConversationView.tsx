@@ -33,8 +33,21 @@ export function ConversationView({
 
   if (!selected) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-        Selecione uma conversa à esquerda para começar.
+      <div className="flex h-full flex-col items-center justify-center p-12 text-center">
+        <div className="mb-4 rounded-full bg-primary/5 p-6">
+          <MessageCircle className="h-12 w-12 text-primary/20" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">Selecione uma conversa</h3>
+        <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+          Escolha um contato na lista à esquerda para visualizar o histórico e responder mensagens.
+        </p>
+        <Button 
+          variant="outline" 
+          className="mt-6 gap-2"
+          onClick={() => mutations.assume.mutate(selectedId || "")}
+        >
+          <MessageSquarePlus className="h-4 w-4" /> Iniciar Nova Conversa
+        </Button>
       </div>
     );
   }

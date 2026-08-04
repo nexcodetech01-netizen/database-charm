@@ -99,8 +99,10 @@ export function ConversationList({
                 <p className="truncate text-xs text-muted-foreground">
                   {c.last_message_text || "Sem mensagens ainda"}
                 </p>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <ConversationStatusBadge status={c.status} />
+                  <WhatsAppWindowIndicator lastAt={c.ultima_mensagem_cliente_at} />
+                </div>
                   {c.assigned_operator_name ? (
                     <span className="truncate text-[10px] text-muted-foreground">
                       · {c.assigned_operator_name}

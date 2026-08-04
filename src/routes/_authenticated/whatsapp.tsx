@@ -96,10 +96,22 @@ function WhatsAppPage() {
           value={conversations.filter((c) => c.status === "open").length}
           icon={MessageCircle}
         />
-        <KpiCard label="Atendimento Bella/IA" value={conversations.filter((c) => c.status === "bella").length} icon={Sparkles} />
-        <KpiCard label="Humano" value={conversations.filter((c) => c.status === "human").length} icon={User} />
+        <KpiCard 
+          label="Atendimento Bella/IA" 
+          value={conversations.filter((c) => (c.status as string) === "bella").length} 
+          icon={Sparkles} 
+        />
+        <KpiCard 
+          label="Humano" 
+          value={conversations.filter((c) => (c.status as string) === "human").length} 
+          icon={User} 
+        />
         <KpiCard label="Taxa de Resolução" value="95%" icon={CheckCheck} />
-        <KpiCard label="Janelas Ativas" value={conversations.filter((c) => (c.last_message_at ? (Date.now() - new Date(c.last_message_at).getTime()) <= 24 * 60 * 60 * 1000 : false)).length} icon={Timer} />
+        <KpiCard 
+          label="Janelas Ativas" 
+          value={conversations.filter((c) => (c.lastMessageAt ? (Date.now() - new Date(c.lastMessageAt).getTime()) <= 24 * 60 * 60 * 1000 : false)).length} 
+          icon={Timer} 
+        />
       </KpiSection>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
