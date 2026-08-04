@@ -45,38 +45,346 @@ function IndexComponent() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-background text-foreground">
-      <div className="max-w-2xl space-y-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-          WhatsApp 24h Window Management
-        </h1>
-        
-        <div className="p-6 text-left border rounded-lg bg-card shadow-sm space-y-4">
-          <p className="font-semibold text-lg">Backend & Database Infrastructure Implemented:</p>
-          
-          <ul className="space-y-3 list-disc list-inside text-muted-foreground">
-            <li>
-              <span className="font-medium text-foreground">Database:</span> Added <code>ultima_mensagem_cliente_at</code> to <code>whatsapp_contacts</code> and <code>whatsapp_conversations</code>.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Webhook:</span> Updated <code>handleWhatsAppInboundPayload</code> to automatically refresh window timestamps on every incoming message.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Smart Delivery:</span> Refactored <code>sendOperatorMessage</code> with 24h window logic. Automatically switches between <code>text</code> and <code>template</code> (boas_vindas) based on window status.
-            </li>
-            <li>
-              <span className="font-medium text-foreground">UI Indicators:</span> Created <code>WhatsAppWindowIndicator</code> component for real-time visual feedback on conversation status (Open vs Expired).
-            </li>
-          </ul>
-        </div>
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
+          <pre className="whitespace-pre-wrap">
+{`AUDITORIA GERAL DO NEXOS (FORENSE)
 
-        <div className="flex justify-center pt-4">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-500 text-sm font-medium border border-emerald-500/20">
-            <span className="relative flex h-2 w-2 mr-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Infrastructure Ready
-          </div>
+MODO: READ-ONLY
+
+PROIBIDO:
+
+- Alterar código
+- Alterar banco
+- Alterar migrations
+- Alterar componentes
+- Alterar Home
+- Alterar Dashboard
+- Criar arquivos
+- Corrigir bugs
+
+OBJETIVO
+
+Gerar um relatório completo do estado atual do NexOS.
+
+A auditoria deve analisar TODO o sistema.
+
+=========================
+1. DASHBOARD
+=========================
+
+Informar:
+
+- O que está implementado.
+- O que está parcialmente implementado.
+- O que ainda falta.
+
+=========================
+2. PDV
+=========================
+
+Informar:
+
+- Fluxos implementados.
+- Pagamento Pendente.
+- Caixa.
+- Impressão.
+- Descontos.
+- Recebimento posterior.
+
+O que ainda falta.
+
+=========================
+3. PRODUTOS
+=========================
+
+Informar:
+
+- Cadastro
+- Fotos
+- Categorias
+- Marcas
+- Materiais
+- NCM
+- GTIN
+- Canais de venda
+
+O que existe.
+
+O que falta.
+
+=========================
+4. COMPRAS
+=========================
+
+Informar:
+
+- Cadastro
+- Recebimento
+- Rateio
+- Atualização de custo
+- Motor Comercial V2
+
+O que falta.
+
+=========================
+5. ESTOQUE
+=========================
+
+Informar:
+
+- Entradas
+- Saídas
+- Inventário
+- Ajustes
+- Histórico
+
+O que existe.
+
+O que falta.
+
+=========================
+6. FINANCEIRO
+=========================
+
+Contas a Receber
+
+Contas a Pagar
+
+Fluxo de Caixa
+
+Caixa
+
+Conciliação
+
+Cobranças
+
+O que existe.
+
+O que falta.
+
+=========================
+7. CLIENTES
+=========================
+
+Cadastro
+
+Histórico
+
+Limite
+
+Crediário
+
+Observações
+
+O que existe.
+
+O que falta.
+
+=========================
+8. FORNECEDORES
+=========================
+
+Informar tudo.
+
+=========================
+9. MERCADO LIVRE
+=========================
+
+Separar:
+
+Infraestrutura
+
+Publicação
+
+Sincronização
+
+Pedidos
+
+Financeiro
+
+Expedição
+
+Percentual de conclusão.
+
+=========================
+10. SHOPEE
+=========================
+
+Existe alguma infraestrutura?
+
+=========================
+11. BELLA IA
+=========================
+
+Modo READ
+
+O que existe.
+
+O que falta.
+
+=========================
+12. FISCAL
+=========================
+
+NCM
+
+CFOP
+
+CSOSN
+
+CST
+
+Tributação
+
+NFe
+
+NFCe
+
+SAT
+
+O que existe.
+
+O que falta.
+
+=========================
+13. RELATÓRIOS
+=========================
+
+Todos os relatórios existentes.
+
+O que falta.
+
+=========================
+14. DASHBOARDS
+=========================
+
+Todos os dashboards existentes.
+
+O que falta.
+
+=========================
+15. AUTOMAÇÕES
+=========================
+
+Listar todas.
+
+=========================
+16. INTEGRAÇÕES
+=========================
+
+Listar todas.
+
+Mercado Livre
+
+Asaas
+
+WhatsApp
+
+Outras.
+
+=========================
+17. SEGURANÇA
+=========================
+
+Autenticação
+
+Permissões
+
+Logs
+
+Auditoria
+
+Backup
+
+=========================
+18. BANCO DE DADOS
+=========================
+
+Listar:
+
+Tabelas
+
+RPCs
+
+Triggers
+
+Queues
+
+Workers
+
+Cron Jobs
+
+=========================
+19. CÓDIGO
+=========================
+
+Arquivos mais importantes.
+
+Arquitetura.
+
+=========================
+20. ROADMAP
+=========================
+
+Separar em:
+
+✅ Concluído
+
+🟡 Parcial
+
+🔴 Não iniciado
+
+=========================
+21. PRIORIZAÇÃO
+=========================
+
+Ordenar tudo por prioridade operacional.
+
+Primeiro o que realmente impacta a operação da loja.
+
+=========================
+22. PERCENTUAL
+=========================
+
+Informar:
+
+ERP Geral
+
+Marketplace
+
+Financeiro
+
+Fiscal
+
+Compras
+
+PDV
+
+Produtos
+
+Clientes
+
+Estoque
+
+Dashboard
+
+Em percentual.
+
+=========================
+
+Responder em formato de relatório técnico.
+
+Não modificar absolutamente nada.
+
+Não resumir.
+
+Não omitir módulos.
+
+Não registrar resultados na Home.
+
+Responder apenas com o diagnóstico técnico.`}
+          </pre>
         </div>
       </div>
     </div>
