@@ -243,10 +243,16 @@ export function PDVScreen({
             }
           : undefined,
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
-      "print-receipt": completed ? handlePrintReceipt : undefined,
+      "print-receipt": completed ? () => {
+        console.log("[PDVScreen] Atalho print-receipt detectado.");
+        handlePrintReceipt();
+      } : undefined,
       // F12 apenas ABRE o diálogo de fechamento existente.
       "close-cash": session ? requestCloseCash : undefined,
-      "confirm-dialog": receiptOpen ? printPdvReceipt : undefined,
+      "confirm-dialog": receiptOpen ? () => {
+        console.log("[PDVScreen] Atalho confirm-dialog detectado (Impressão).");
+        handlePrintReceipt();
+      } : undefined,
       "close-dialog": receiptOpen
         ? () => dispatchSession({ type: "CLOSE_RECEIPT" })
         : undefined,
