@@ -274,7 +274,7 @@ export interface SendTextResult {
   missing?: string[];
 }
 
-export async function sendWhatsAppText(input: SendTextInput): Promise<SendTextResult> {
+export async function sendWhatsAppText(input: SendTextInput & { bypassWindowCheck?: boolean }): Promise<SendTextResult> {
   const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
   const text = (input.text ?? "").slice(0, 4096);
