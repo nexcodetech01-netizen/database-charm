@@ -1,12 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isPreviewHostname } from "@/hooks/version-check.utils";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     // No ambiente de preview do Lovable, evitamos o throw redirect imediato no SSR
     // que causa 502/Internal Server Error devido ao processamento de query params (?source=pwa).
-    // O redirecionamento acontecerá no client-side após a hidratação se necessário.
     if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
       return;
     }
@@ -23,16 +23,21 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexComponent() {
-  const router = Route.useRouter();
-  const { data: { session } } = supabase.auth.useSession();
+  const navigate = useNavigate();
   
-  if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
-    if (session) {
-      router.navigate({ to: "/dashboard" });
-    } else if (session === null) {
-      router.navigate({ to: "/auth" });
+  useEffect(() => {
+    if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate({ to: "/dashboard" });
+        } else {
+          navigate({ to: "/auth" });
+        }
+      };
+      void checkSession();
     }
-  }
+  }, [navigate]);
 
   return null;
 }
