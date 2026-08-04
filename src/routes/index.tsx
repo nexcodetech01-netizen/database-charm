@@ -24,18 +24,14 @@ export const Route = createFileRoute("/")({
 
 function IndexComponent() {
   const router = Route.useRouter();
+  const { data: { session } } = supabase.auth.useSession();
   
-  // No preview, fazemos o redirecionamento manual no client-side para evitar o 502 no boot
   if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.navigate({ to: "/dashboard" });
-      } else {
-        router.navigate({ to: "/auth" });
-      }
-    };
-    void checkSession();
+    if (session) {
+      router.navigate({ to: "/dashboard" });
+    } else if (session === null) {
+      router.navigate({ to: "/auth" });
+    }
   }
 
   return null;
