@@ -195,10 +195,17 @@ export function PDVScreen({
   }
 
   function handlePrintReceipt() {
-    console.log("[PDVScreen] handlePrintReceipt disparado.");
-    dispatchSession({ type: "OPEN_RECEIPT" });
-    console.log("[PDVScreen] Chamando printPdvReceipt...");
-    printPdvReceipt();
+    console.log("[PDVScreen] handlePrintReceipt invocado. Estado receiptOpen:", receiptOpen);
+    
+    // Se o diálogo não estiver aberto, abre ele. 
+    // O useEffect em PDVScreen ou ReceiptDialog tratará a auto-impressão se configurada,
+    // mas aqui garantimos que a função seja rastreável.
+    if (!receiptOpen) {
+      console.log("[PDVScreen] Abrindo ReceiptDialog...");
+      dispatchSession({ type: "OPEN_RECEIPT" });
+    } else {
+      console.log("[PDVScreen] ReceiptDialog já aberto. O clique no botão 'Imprimir cupom' dentro do modal deve ser usado.");
+    }
   }
 
   // P0.2 — cliente é opcional no balcão (consumidor final). A regra vive no
