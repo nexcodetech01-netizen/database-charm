@@ -48,25 +48,21 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORRER ERRO DA META CLOUD API (#132000):
+{`CORREÇÃO DE ENVIO DE TEMPLATE DE WHATSAPP:
 
-Na função de disparo de templates de WhatsApp (type: "template"):
+1. NOME DO TEMPLATE:
+   - Certifique-se de que a função de envio via Meta Cloud API esteja enviando o parâmetro \`template.name\` com o nome exato do modelo selecionado pelo usuário (ex: 'boas_vindas' ou 'boas_vindas_padrao'), e NÃO o valor 'hello_world'.
 
-1. TRATAMENTO DE PARÂMETROS:
-   - Garanta que a lista de parameters dentro do objeto components (body) corresponda EXATAMENTE às variáveis declaradas no template da Meta.
-   - Se o template selecionado NÃO possuir variáveis no texto (ex: Hello World ou templates sem {{1}}, {{2}}), envie parameters como um array vazio [] ou omita a seção de parâmetros no body.
-   - Caso o template possua variáveis (ex: {{cliente}}, {{empresa}}), certifique-se de preenchê-las dinamicamente no formato correto da Meta:
-     components: [
-       {
-         type: "body",
-         parameters: [
-           { type: "text", text: nomeCliente || "Cliente" }
-         ]
-       }
-     ]
+2. IDIOMA E COMPONENTES:
+   - Defina o idioma padrão do template como 'pt_BR' no payload:
+     template: {
+       name: templateNome,
+       language: { code: "pt_BR" },
+       components: [...]
+     }
 
-2. VALIDAÇÃO PRÉ-ENVIO:
-   - Adicione um fallback simples para não quebrar a chamada de API quando um valor de variável estiver indefinido/nulo no banco de dados.`}
+3. MAPEAMENTO DE MODELOS:
+   - No painel/banco de dados, certifique-se de que a coluna \`name\` ou \`template_name\` da tabela de modelos de mensagem corresponda exatamente ao nome do modelo aprovado no Gerenciador da Meta.`}
           </pre>
         </div>
       </div>
