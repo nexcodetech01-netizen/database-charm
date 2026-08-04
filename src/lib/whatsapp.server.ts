@@ -137,8 +137,14 @@ export async function sendWhatsAppTemplateRaw(
       type: "body",
       parameters: input.variables.map((v) => ({
         type: "text",
-        text: String(v ?? ""),
+        text: String(v ?? " "), // Requisito 2: fallback para não quebrar a API
       })),
+    });
+  } else {
+    // Requisito 1: enviar parameters como array vazio ou omitir se não houver variáveis
+    componentsList.push({
+      type: "body",
+      parameters: [],
     });
   }
 
