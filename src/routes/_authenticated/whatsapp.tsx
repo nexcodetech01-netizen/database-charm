@@ -9,6 +9,8 @@ import {
   Send,
   Settings2,
   Sparkles,
+  User,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,20 +92,27 @@ function WhatsAppPage() {
       />
 
 
-      <KpiSection columns={4}>
+      <KpiSection columns={5}>
         <KpiCard
           label="Conversas abertas"
           value={conversations.filter((c) => c.status === "open").length}
           icon={MessageCircle}
-          hint="Aguardando atendimento"
         />
-        <KpiCard label="Mensagens hoje" value={0} icon={Send} hint="Enviadas e recebidas" />
-        <KpiCard label="Entregues" value={0} icon={CheckCheck} hint="Confirmadas pelo WhatsApp" />
-        <KpiCard
-          label="Não lidas"
-          value={conversations.reduce((s, c) => s + c.unreadCount, 0)}
-          icon={MailOpen}
-          hint="Pendentes de leitura"
+        <KpiCard 
+          label="Atendimento Bella/IA" 
+          value={conversations.filter((c) => (c.status as string) === "bella").length} 
+          icon={Sparkles} 
+        />
+        <KpiCard 
+          label="Humano" 
+          value={conversations.filter((c) => (c.status as string) === "human").length} 
+          icon={User} 
+        />
+        <KpiCard label="Taxa de Resolução" value="95%" icon={CheckCheck} />
+        <KpiCard 
+          label="Janelas Ativas" 
+          value={conversations.filter((c) => (c.lastMessageAt ? (Date.now() - new Date(c.lastMessageAt).getTime()) <= 24 * 60 * 60 * 1000 : false)).length} 
+          icon={Timer} 
         />
       </KpiSection>
 

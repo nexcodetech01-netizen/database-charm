@@ -107,8 +107,8 @@ export function WhatsAppConsole({
   const m = metrics.data;
 
   return (
-    <div className="space-y-4">
-      <KpiSection columns={5}>
+    <div className="flex flex-col h-full space-y-4">
+      <div className="hidden">
         <KpiCard
           label="Conversas abertas"
           value={m?.open ?? 0}
@@ -144,9 +144,9 @@ export function WhatsAppConsole({
           hint={`${m?.messagesToday ?? 0} mensagens hoje`}
           loading={metrics.isLoading}
         />
-      </KpiSection>
+      </div>
 
-      <Card className="overflow-hidden">
+      <Card className="flex-1 overflow-hidden border-none bg-background/50 shadow-none">
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
           <p className="text-xs text-muted-foreground">
             {filtered.length === items.length
@@ -158,7 +158,7 @@ export function WhatsAppConsole({
             <MessageSquarePlus className="mr-1.5 h-4 w-4" /> Nova conversa
           </Button>
         </div>
-        <div className="grid h-[calc(100vh-360px)] min-h-[560px] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="grid h-[calc(100vh-280px)] min-h-[600px] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="flex min-h-0 flex-col border-r">
             <ConversationFilters value={filters} onChange={setFilters} />
             <div className="min-h-0 flex-1 overflow-y-auto">
