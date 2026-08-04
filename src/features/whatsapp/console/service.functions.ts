@@ -430,10 +430,25 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
     if (error || !conv) throw new Error(error?.message ?? "Conversa não encontrada.");
 
     const to = (conv.contact?.phone as string) || (conv.contact?.wa_id as string);
-    const { sendWhatsAppText, WHATSAPP_NOT_CONFIGURED } = await import(
+    const { sendWhatsAppText, sendWhatsAppTemplateRaw, WHATSAPP_NOT_CONFIGURED } = await import(
       "@/lib/whatsapp.server"
     );
-    const sent = await sendWhatsAppText({ to, text: data.text });
+
+    // Lógica Inteligente de Envio (Requisito 3)
+    const lastInboundAt = conv.ultima_mensagem_cliente_at || conv.contact?.ultima_mensagem_cliente_at;
+    const isWindowOpen = lastInboundAt 
+      ? (Date.now() - new Date(lastInboundAt).getTime()) <= 24 * 60 * 60 * 1000 
+      : false;
+
+    let sent;
+    if (data.type === "template" && data.templateName) {
+      sent = await sendWhatsAppTemplateRaw({ to, templateName: data.templateName });
+    } else if (isWindowOpen) {
+      sent = await sendWhatsAppText({ to, text: data.text });
+    } else {
+      // Janela FECHADA e não foi solicitado template: fallback para template padrão (boas_vindas)
+      sent = await sendWhatsAppTemplateRaw({ to, templateName: "boas_vindas" });
+    }
 
     // Integração ainda não configurada: não é falha de envio. Devolvemos um
     // aviso amigável, sem lançar erro e sem poluir a timeline com uma
