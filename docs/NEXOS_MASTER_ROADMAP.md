@@ -85,10 +85,28 @@ O NexOS é um ecossistema ERP focado em varejo e e-commerce, com integração na
 - **Última Homologação:** N/A
 
 ### Bella IA
-- **Concluídas:** Navegação categórica no WhatsApp, Persistência de estado (bella_state), Janela de 24h (Smart Sending), Auditoria Fiscal/Financeira, Advisor.
-- **Parciais:** Voz para Texto (Speech-to-Text).
-- **Pendentes:** Execução autônoma de tarefas complexas (Agents).
-- **Percentual Estimado:** 90%
+- **Concluídas:**
+    - **Navegação Categórica (WhatsApp):** Roteamento inteligente de catálogo.
+    - **Gestão de Janela 24h:** Alternância automática entre Texto Livre e Templates.
+    - **Bella Contadora (Advisor):** Análise preditiva de fluxo de caixa e lucro.
+    - **Bella Fiscal:** Auditoria de NCM, CFOP e simulação de faixas do Simples Nacional.
+    - **Bella Financeira:** Monitoramento de contas a pagar/receber e alertas de inadimplência.
+    - **Bella Estoquista:** Alertas de ruptura, sugestão de reposição e identificação de produtos parados.
+    - **Insights Determinísticos:** Diagnósticos baseados em dados reais (sem alucinação).
+- **Parciais:** 
+    - **Bella Comercial:** Análise de performance por canal e sugestão de precificação dinâmica (integrada ao Motor V2).
+    - **Voz para Texto (Speech-to-Text):** Transcrição de pedidos via áudio no WhatsApp.
+- **Pendentes:**
+    - **Bella Marketplace:** Automação de respostas a perguntas e gestão autônoma de disputas no Mercado Livre.
+    - **Agentes Autônomos:** Execução de tarefas complexas (ex: "Bella, gere a guia de imposto e envie para o financeiro").
+- **Especializações e Status:**
+    - 🏦 **Bella Contadora:** 95% (Produção - Advisor & Auditoria)
+    - 💰 **Bella Financeira:** 90% (Produção - Alertas & Fluxo)
+    - ⚖️ **Bella Fiscal:** 88% (Produção - Simples & NCM)
+    - 📦 **Bella Estoquista:** 85% (Produção - Ruptura & Giro)
+    - 📈 **Bella Comercial:** 60% (Homologação - Canais & Preços)
+    - 🛍️ **Bella Marketplace:** 20% (Arquitetura / Planejada)
+- **Percentual Geral:** 90%
 - **Última Homologação:** 04/08/2026
 
 ### Relatórios
