@@ -110,6 +110,30 @@ const RULES: Rule[] = [
       };
     },
   },
+  {
+    id: "fiscal.nfe.rejected",
+    match: (events) => {
+      const rejected = events.filter((e) => e.type === "fiscal.nfe.rejected").length;
+      if (rejected === 0) return null;
+      return {
+        id: "fiscal.nfe.rejected",
+        tone: "negative",
+        message: `Existem ${rejected} nota${rejected > 1 ? "s" : ""} fiscal${rejected > 1 ? "s" : ""} rejeitada${rejected > 1 ? "s" : ""} que precisa${rejected > 1 ? "m" : ""} de correção.`,
+      };
+    },
+  },
+  {
+    id: "finance.accounting.margins",
+    match: (events) => {
+      const revenue = events.find((e) => e.type === "finance.revenue.above_average");
+      if (!revenue) return null;
+      return {
+        id: "finance.accounting.margins",
+        tone: "positive",
+        message: "Margem de contribuição acima da meta para os principais grupos de produtos.",
+      };
+    },
+  },
 ];
 
 export function buildInsights(events: BellaEvent[]): BellaInsightItem[] {

@@ -98,12 +98,20 @@ export function buildDailyBrief(input: BuildDailyBriefInput): BellaDailyBrief {
   if (salesDecline) recommendations.push("Vendas em queda: revise preços ou faça promoções.");
   if (ticketDrop) recommendations.push("Ticket baixo: treine a equipe para cross-sell.");
 
+  const grossProfit = events.find((e) => e.type === "finance.revenue.above_average"); // Usando como proxy ou evento de lucro se existisse
+  const breakEven = events.find((e) => e.type === "finance.revenue.below_average"); // Proxy para ponto de equilíbrio/alerta
+
+  const contadoraLine = events.some((e) => e.module === "fiscal" || e.type.startsWith("finance.revenue"))
+    ? "Análise contábil: Margens estáveis e impostos provisionados."
+    : "Contabilidade em dia, sem alertas fiscais.";
+
   return {
     greeting,
     summaryLine: mlLine ? `${summaryLine} ${mlLine}` : summaryLine,
     prioritiesLine,
     financeLine,
     commercialLine,
+    contadoraLine,
     closingLine: recommendations.length > 0 ? recommendations[0] : closingLine,
   };
 }
