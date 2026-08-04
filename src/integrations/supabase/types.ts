@@ -6048,6 +6048,7 @@ export type Database = {
           last_seen_at: string
           phone: string | null
           profile_name: string | null
+          ultima_mensagem_cliente_at: string | null
           updated_at: string
           wa_id: string
         }
@@ -6058,6 +6059,7 @@ export type Database = {
           last_seen_at?: string
           phone?: string | null
           profile_name?: string | null
+          ultima_mensagem_cliente_at?: string | null
           updated_at?: string
           wa_id: string
         }
@@ -6068,6 +6070,7 @@ export type Database = {
           last_seen_at?: string
           phone?: string | null
           profile_name?: string | null
+          ultima_mensagem_cliente_at?: string | null
           updated_at?: string
           wa_id?: string
         }
@@ -6095,6 +6098,7 @@ export type Database = {
           notes: Json
           protocol: string | null
           status: string
+          ultima_mensagem_cliente_at: string | null
           unread_count: number
           updated_at: string
         }
@@ -6111,6 +6115,7 @@ export type Database = {
           notes?: Json
           protocol?: string | null
           status?: string
+          ultima_mensagem_cliente_at?: string | null
           unread_count?: number
           updated_at?: string
         }
@@ -6127,6 +6132,7 @@ export type Database = {
           notes?: Json
           protocol?: string | null
           status?: string
+          ultima_mensagem_cliente_at?: string | null
           unread_count?: number
           updated_at?: string
         }
