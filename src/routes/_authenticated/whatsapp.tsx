@@ -117,13 +117,43 @@ function WhatsAppPage() {
       </KpiSection>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="console">Console</TabsTrigger>
-          <TabsTrigger value="inbox">Caixa de entrada</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="templates">Modelos</TabsTrigger>
-          <TabsTrigger value="automations">Automações</TabsTrigger>
-          <TabsTrigger value="integrations">Integrações</TabsTrigger>
+        <TabsList className="bg-transparent border-b rounded-none w-full justify-start h-auto p-0 space-x-6">
+          <TabsTrigger 
+            value="console" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Console
+          </TabsTrigger>
+          <TabsTrigger 
+            value="inbox" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Caixa de entrada
+          </TabsTrigger>
+          <TabsTrigger 
+            value="timeline" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger 
+            value="templates" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Modelos
+          </TabsTrigger>
+          <TabsTrigger 
+            value="automations" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Automações
+          </TabsTrigger>
+          <TabsTrigger 
+            value="integrations" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
+          >
+            Integrações
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="console" className="mt-0">

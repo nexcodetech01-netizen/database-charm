@@ -44,13 +44,15 @@ export function WhatsAppWindowIndicator({
         <TooltipTrigger asChild>
           <div 
             className={cn(
-              "flex items-center gap-1.5 text-xs font-medium transition-colors",
-              isOpen ? "text-emerald-500" : "text-amber-500",
+              "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors",
+              isOpen 
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
               className
             )}
           >
-            {isOpen ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-            <span>Janela {isOpen ? "Aberta" : "Expirada"}</span>
+            {isOpen ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            <span>{isOpen ? "🟢 Janela Ativa" : "Janela Expirada"}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-[250px]">

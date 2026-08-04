@@ -154,9 +154,6 @@ export function WhatsAppConsole({
               : `${filtered.length} de ${items.length} conversa${items.length === 1 ? "" : "s"}`}
             {" · atualização em tempo real"}
           </p>
-          <Button size="sm" onClick={() => setDialogOpen(true)} disabled={!companyId}>
-            <MessageSquarePlus className="mr-1.5 h-4 w-4" /> Nova conversa
-          </Button>
         </div>
         <div className="grid h-[calc(100vh-280px)] min-h-[600px] grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="flex min-h-0 flex-col border-r">
