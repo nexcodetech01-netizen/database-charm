@@ -195,10 +195,17 @@ export function PDVScreen({
   }
 
   function handlePrintReceipt() {
-    console.log("[PDVScreen] handlePrintReceipt disparado.");
-    dispatchSession({ type: "OPEN_RECEIPT" });
-    console.log("[PDVScreen] Chamando printPdvReceipt...");
-    printPdvReceipt();
+    console.log("[PDVScreen] handlePrintReceipt invocado. Estado receiptOpen:", receiptOpen);
+    
+    // Se o diálogo não estiver aberto, abre ele. 
+    // O useEffect em PDVScreen ou ReceiptDialog tratará a auto-impressão se configurada,
+    // mas aqui garantimos que a função seja rastreável.
+    if (!receiptOpen) {
+      console.log("[PDVScreen] Abrindo ReceiptDialog...");
+      dispatchSession({ type: "OPEN_RECEIPT" });
+    } else {
+      console.log("[PDVScreen] ReceiptDialog já aberto. O clique no botão 'Imprimir cupom' dentro do modal deve ser usado.");
+    }
   }
 
   // P0.2 — cliente é opcional no balcão (consumidor final). A regra vive no
@@ -243,10 +250,16 @@ export function PDVScreen({
             }
           : undefined,
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
-      "print-receipt": completed ? handlePrintReceipt : undefined,
+      "print-receipt": completed ? () => {
+        console.log("[PDVScreen] Atalho print-receipt detectado.");
+        handlePrintReceipt();
+      } : undefined,
       // F12 apenas ABRE o diálogo de fechamento existente.
       "close-cash": session ? requestCloseCash : undefined,
-      "confirm-dialog": receiptOpen ? printPdvReceipt : undefined,
+      "confirm-dialog": receiptOpen ? () => {
+        console.log("[PDVScreen] Atalho confirm-dialog detectado (Impressão).");
+        handlePrintReceipt();
+      } : undefined,
       "close-dialog": receiptOpen
         ? () => dispatchSession({ type: "CLOSE_RECEIPT" })
         : undefined,
