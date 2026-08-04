@@ -48,16 +48,69 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO URGENTE: ERRO DE PARÂMETROS NO DISPARO DO WHATSAPP (#132000)
+{`AUDITORIA TÉCNICA — SPRINT 1 (READ-ONLY)
 
-O modal/botão de envio de template na interface está disparando a requisição sem passar os 3 parâmetros obrigatórios que o template 'jaspers_market_order_confirmation_v1' exige.
+NÃO alterar código.
 
-1. CORREÇÃO NO FRONT-END / COMPONENTE DE ENVIO:
-   - Quando o operador selecionar o template 'jaspers_market_order_confirmation_v1', o payload enviado para a Edge Function DEVE obrigatoriamente incluir os dados dos parâmetros (Nome, Número do Pedido e Data).
-   - Se o usuário não preencheu, utilize valores padrão seguros (ex: ["Cliente", "001", "Hoje"]) para evitar que o array vá vazio ou com tamanho incorreto.
+NÃO alterar banco.
 
-2. VALIDAÇÃO NA EDGE FUNCTION:
-   - Antes de realizar o \`fetch\` para a API da Meta, valide se \`parameters.length === 3\`. Se for diferente de 3, retorne um erro amigável no console informando que o template exige exatamente 3 parâmetros.`}
+NÃO criar arquivos.
+
+OBJETIVO
+
+Auditar exclusivamente a implementação da Sprint 1:
+"Importação Manual de Pedidos do Mercado Livre".
+
+Responder:
+
+1. Qual a melhor estrutura para armazenar pedidos do Mercado Livre?
+   (Nova tabela ou reutilizar alguma existente?)
+
+2. Quais tabelas precisarão ser criadas ou alteradas?
+
+3. Quais arquivos serão modificados?
+
+4. Qual será o fluxo completo do pedido, desde o webhook até aparecer na tela?
+
+5. Como evitar pedidos duplicados?
+
+6. Como marcar um pedido como "Importado"?
+
+7. Existe algum risco de impactar o fluxo atual de baixa automática de estoque?
+
+8. Existe alguma estrutura já pronta que possa ser reaproveitada?
+
+9. Qual é a implementação mais simples para concluir esta sprint?
+
+IMPORTANTE
+
+Responder APENAS no chat.
+
+NÃO alterar nenhum arquivo.
+
+NÃO alterar src/routes/index.tsx.
+
+NÃO alterar a Home.
+
+NÃO criar componentes.
+
+NÃO criar arquivos.
+
+NÃO criar migrations.
+
+NÃO alterar banco de dados.
+
+NÃO implementar nenhuma funcionalidade.
+
+NÃO registrar o resultado na interface.
+
+NÃO responder que "o relatório foi atualizado".
+
+NÃO responder que "a página inicial foi atualizada".
+
+Exibir TODO o diagnóstico diretamente nesta conversa.
+
+Se qualquer arquivo for alterado, a auditoria estará incorreta.`}
           </pre>
         </div>
       </div>
