@@ -34,6 +34,8 @@ import {
   InsightCards,
   type InsightCardItem,
 } from "@/features/dashboard/components/insight-cards";
+import { BellaDailyBriefCard } from "@/features/bella-ai/components/bella-daily-brief-card";
+import { useBellaHomeSnapshot } from "@/features/bella-ai/hooks/use-bella-dashboard";
 import { useSaleMetrics, salesKeys } from "@/features/sales/hooks/use-sales";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -85,6 +87,7 @@ function DashboardPage() {
   );
   const inventory = useInventoryMetrics(company.id);
   const finance = useFinanceOverview(company.id);
+  const bellaSnapshot = useBellaHomeSnapshot(company.id);
 
   // PWA / mobile: força refetch ao abrir e ao voltar ao primeiro plano.
   useMobileDashboardRefresh([
@@ -293,6 +296,8 @@ function DashboardPage() {
 
         <div className={SPACING_TOKENS.relaxed.stack}>
           {/* Bella — mais destaque, menos bordas */}
+          <BellaDailyBriefCard brief={bellaSnapshot.brief} />
+
           <Panel
             elevation="floating"
             className="border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card"
