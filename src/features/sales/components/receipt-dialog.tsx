@@ -56,19 +56,58 @@ export function ReceiptDialog(props: Props) {
   }, [open]);
 
   const handlePrint = useCallback(() => {
-    applyThermalPageStyle({
-      paperWidth: effectiveWidth,
-      marginMm: printPrefs.marginMm,
+    // Busca o conteúdo renderizado na tela (o cupom que o usuário vê)
+    const printArea = document.querySelector(".receipt-print-area");
+    if (!printArea) {
+      toast.error("Área de impressão não encontrada.");
+      return;
+    }
+
+    // Identifica todos os estilos da página (global + tailwind + custom)
+    const styles = Array.from(document.styleSheets)
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join("\n");
+        } catch (e) {
+          // Fallback para cross-origin sheets se houver
+          return "";
+        }
+      })
+      .join("\n");
+
+    // Injeta a regra @page térmica
+    const thermalPageStyle = `@page { size: ${effectiveWidth === "58mm" ? 58 : 80}mm auto; margin: ${printPrefs.marginMm}mm; }`;
+
+    // Monta o documento HTML completo para o iframe
+    // Importante: .receipt-print-area deve ser o body ou estar visível
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            ${styles}
+            ${thermalPageStyle}
+            /* Reset básico para impressão isolada */
+            body { margin: 0; padding: 0; background: #fff; }
+            .no-print { display: none !important; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-print-area">
+            ${printArea.innerHTML}
+          </div>
+        </body>
+      </html>
+    `;
+
+    import("@/features/printing").then(({ printHtmlDocument }) => {
+      printHtmlDocument(html, { copies: printPrefs.copies }).then(() => {
+        setPrinted(true);
+      });
     });
-    
-    // Pequeno delay para garantir que o estilo @page foi aplicado e o DOM renderizado
-    // antes de disparar o diálogo de impressão do navegador.
-    window.setTimeout(() => {
-      for (let i = 0; i < printPrefs.copies; i += 1) {
-        window.print();
-      }
-      setPrinted(true);
-    }, 100);
   }, [effectiveWidth, printPrefs.copies, printPrefs.marginMm]);
 
   // Impressão automática após a venda (preferência do operador).
