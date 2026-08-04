@@ -48,34 +48,29 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`AUDITORIA FINAL — SPRINT 1 (READ-ONLY)
+{`ATUALIZAR CONFIGURAÇÃO DO TEMPLATE DA META:
 
-NÃO alterar código.
-NÃO alterar banco.
-NÃO criar arquivos.
+1. BANCO DE DADOS / MODELOS:
+   - Para o modelo 'Confirmação de Pedido', defina o \`template_name\` como: "jaspers_market_order_confirmation_v1".
 
-OBJETIVO
+2. PAYLOAD DA META CLOUD API:
+   - Ao disparar o template 'jaspers_market_order_confirmation_v1':
+     * Envie 'template.name': "jaspers_market_order_confirmation_v1"
+     * Envie 'language.code': "en_US" (ou "pt_BR", conforme aceito pela Meta para este template).
+     * Preencha EXATAMENTE 3 parâmetros dentro de 'components':
+       components: [
+         {
+           type: "body",
+           parameters: [
+             { type: "text", text: nomeCliente || "Cliente" },
+             { type: "text", text: numeroPedido || "001" },
+             { type: "text", text: dataPedido || "Hoje" }
+           ]
+         }
+       ]
 
-Auditar EXCLUSIVAMENTE o fluxo de importação manual de pedidos do Mercado Livre.
-
-Responder:
-
-1. O webhook de pedidos já está funcionando?
-
-2. Existe uma tela/lista de pedidos do Mercado Livre?
-
-3. Os pedidos recebidos são persistidos em alguma tabela?
-   Se sim, qual?
-
-4. Existe botão "Importar para o NexOS"?
-
-5. O que já está implementado?
-
-6. O que falta exatamente para concluir esta sprint?
-
-Responder apenas com diagnóstico técnico.
-
-Não implementar nada.`}
+3. TRATAMENTO DE ERROS:
+   - Garanta que nunca sejam enviados mais ou menos do que 3 parâmetros para este modelo específico, evitando o erro #132000 da Meta.`}
           </pre>
         </div>
       </div>
