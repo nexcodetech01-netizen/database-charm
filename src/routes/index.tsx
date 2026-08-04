@@ -48,38 +48,25 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`DIAGNÓSTICO TÉCNICO BELLA IA - PARTE 3: VISÃO GERAL DAS ESPECIALIZAÇÕES
+{`CORRER ERRO DA META CLOUD API (#132000):
 
-1. Bella IA (Master):
-Status: 100% (Arquitetura Core e Orquestração).
-Especialização: Inteligência central que gerencia os agentes subjacentes e integra todos os módulos do ERP.
+Na função de disparo de templates de WhatsApp (type: "template"):
 
-2. Bella Contadora:
-Status: 95% Concluído.
-Especialização: Análise de DRE, Advisor de lucro, Ponto de Equilíbrio e Auditoria contábil.
+1. TRATAMENTO DE PARÂMETROS:
+   - Garanta que a lista de parameters dentro do objeto components (body) corresponda EXATAMENTE às variáveis declaradas no template da Meta.
+   - Se o template selecionado NÃO possuir variáveis no texto (ex: Hello World ou templates sem {{1}}, {{2}}), envie parameters como um array vazio [] ou omita a seção de parâmetros no body.
+   - Caso o template possua variáveis (ex: {{cliente}}, {{empresa}}), certifique-se de preenchê-las dinamicamente no formato correto da Meta:
+     components: [
+       {
+         type: "body",
+         parameters: [
+           { type: "text", text: nomeCliente || "Cliente" }
+         ]
+       }
+     ]
 
-3. Bella Financeira:
-Status: 90% Concluído.
-Especialização: Fluxo de caixa projetado, Gestão de recebíveis e Alertas de inadimplência.
-
-4. Bella Comercial:
-Status: 60% Concluído (Homologação).
-Especialização: Performance por canal, Curva ABC de rentabilidade e Conversão de vendas.
-
-5. Bella Estoquista:
-Status: 85% Concluído.
-Especialização: Monitoramento de ruptura, Sugestão de reposição e Giro de estoque.
-
-6. Bella Fiscal:
-Status: 88% Concluído.
-Especialização: Auditoria de NCM/CFOP, Simulador tributário e Cruzamento de dados fiscais.
-
-7. Bella Marketplace:
-Status: 20% Concluído (Infraestrutura).
-Especialização: Logs de integração ML/Shopee e Planejamento para Automação de SAC/Disputas.
-
-Conclusão:
-A plataforma Bella IA consolidou a base determinística necessária para operar como o cérebro do NexOS ERP. O Roadmap de evolução foca agora na maturidade dos agentes de Marketplace e na autonomia completa de execução.`}
+2. VALIDAÇÃO PRÉ-ENVIO:
+   - Adicione um fallback simples para não quebrar a chamada de API quando um valor de variável estiver indefinido/nulo no banco de dados.`}
           </pre>
         </div>
       </div>
