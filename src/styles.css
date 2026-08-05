@@ -369,7 +369,7 @@
  * ========================================================= */
 .receipt {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
   color: #000;
   background: #fff;
@@ -380,7 +380,7 @@
 }
 .receipt-58 {
   width: 100% !important;
-  max-width: 260px !important;
+  max-width: 240px !important;
   padding: 0;
 }
 .receipt-80 {
