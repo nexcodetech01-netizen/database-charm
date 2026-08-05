@@ -55,6 +55,7 @@ const FINANCE_TABS = [
   "accounts",
   "cleanup",
   "reports",
+  "insights",
 ] as const;
 
 type FinanceTab = (typeof FINANCE_TABS)[number];
@@ -119,13 +120,13 @@ function FinancePage() {
   );
 
   const kpis = (
-    <KpiSection columns={3}>
+    <KpiSection>
       <KpiCard
         label="Saldo atual"
         value={data ? formatCurrency(data.currentBalance) : "—"}
         icon={Wallet}
         loading={isLoading}
-        onClick={() => setTab("summary")}
+        onClick={() => setTab("accounts")}
       />
       <KpiCard
         label="A receber"
@@ -142,20 +143,6 @@ function FinancePage() {
         onClick={() => setTab("payables")}
       />
       <KpiCard
-        label="Receitas do mês"
-        value={data ? formatCurrency(data.monthIncome) : "—"}
-        icon={ArrowDownCircle}
-        loading={isLoading}
-        onClick={() => setTab("cashflow")}
-      />
-      <KpiCard
-        label="Despesas do mês"
-        value={data ? formatCurrency(data.monthExpense) : "—"}
-        icon={ArrowUpCircle}
-        loading={isLoading}
-        onClick={() => setTab("cashflow")}
-      />
-      <KpiCard
         label="Resultado do mês"
         value={monthResult !== undefined ? formatCurrency(monthResult) : "—"}
         icon={Scale}
@@ -165,14 +152,13 @@ function FinancePage() {
             ? monthResult >= 0
               ? "Superávit no período"
               : "Déficit no período"
-            : cashFlow !== undefined
-              ? `Fluxo ${formatCurrency(cashFlow)}`
-              : undefined
+            : undefined
         }
         loading={isLoading}
         onClick={() => setTab("cashflow")}
       />
     </KpiSection>
+
   );
 
   const tabTriggerClass =
@@ -185,7 +171,6 @@ function FinancePage() {
       actions={actions}
       kpis={kpis}
     >
-      <FinanceBellaHints companyId={company.id} />
 
       <Tabs
         value={tab}
@@ -193,21 +178,26 @@ function FinancePage() {
         className="space-y-8 pt-2"
       >
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-muted p-1">
-          <TabsTrigger value="summary" className={tabTriggerClass}>Visão geral</TabsTrigger>
-          <TabsTrigger value="receivables" className={tabTriggerClass}>Contas a receber</TabsTrigger>
-          <TabsTrigger value="payables" className={tabTriggerClass}>Contas a pagar</TabsTrigger>
+          <TabsTrigger value="summary" className={tabTriggerClass}>Resumo</TabsTrigger>
+          <TabsTrigger value="receivables" className={tabTriggerClass}>A receber</TabsTrigger>
+          <TabsTrigger value="payables" className={tabTriggerClass}>A pagar</TabsTrigger>
           <TabsTrigger value="reconciliation" className={tabTriggerClass}>Conciliação</TabsTrigger>
-          <TabsTrigger value="cashflow" className={tabTriggerClass}>Fluxo de caixa</TabsTrigger>
+          <TabsTrigger value="cashflow" className={tabTriggerClass}>Fluxo</TabsTrigger>
           <TabsTrigger value="categories" className={tabTriggerClass}>Categorias</TabsTrigger>
-          <TabsTrigger value="accounts" className={tabTriggerClass}>Contas bancárias</TabsTrigger>
-          <TabsTrigger value="cleanup" className={tabTriggerClass}>Saneamento de baixas</TabsTrigger>
+          <TabsTrigger value="accounts" className={tabTriggerClass}>Contas</TabsTrigger>
+          <TabsTrigger value="cleanup" className={tabTriggerClass}>Saneamento</TabsTrigger>
+          <TabsTrigger value="insights" className={tabTriggerClass}>Insights Bella</TabsTrigger>
           <TabsTrigger value="reports" className={tabTriggerClass}>Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-6">
-          <BellaFinancePanel companyId={company.id} />
           <FinanceSummaryPanel companyId={company.id} />
           <BellaPayCard />
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-6">
+          <FinanceBellaHints companyId={company.id} />
+          <BellaFinancePanel companyId={company.id} />
         </TabsContent>
 
         <TabsContent value="receivables" className="space-y-6">
