@@ -48,13 +48,10 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`Adicione um botão para exportar o XML de cada nota individualmente direto da linha na tabela do módulo Fiscal.
+{`Por favor, corrija o aviso de 'Hydration Mismatch' em componentes que exibem datas e horários em todo o sistema:
 
-Implemente filtros na listagem para eu escolher quais notas exportar (autorizadas, canceladas ou ambos) e aplicar também filtros por CFOP/cliente quando disponível.
-
-Inclua uma barra de progresso e feedback de carregamento durante a geração do ZIP para eu acompanhar o andamento do download no módulo Fiscal.
-
-Implemente validação e limites para eu evitar exportações muito grandes, com mensagens claras quando ultrapassar o número máximo de XMLs no intervalo selecionado.`}
+1. Identifique os locais onde 'new Date()' ou formatações de data/hora são renderizadas diretamente no JSX/SSR.
+2. Crie ou utilize um componente/hook utilitário de formatação de data (ex: DateFormatter ou useHydrated) que garanta a renderização padronizada do fuso horário apenas após a montagem do componente no cliente (useEffect / client-side).`}
           </pre>
         </div>
       </div>
