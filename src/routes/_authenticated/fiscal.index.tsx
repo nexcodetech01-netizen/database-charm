@@ -52,7 +52,7 @@ function FiscalDashboardPage() {
   return (
     <PageLayout
       title="Fiscal"
-      description="Gestão de documentos fiscais e conformidade tributária."
+      meta={`${totalDocs} documentos`}
       actions={
         <div className="flex items-center gap-3">
           <FiscalEnvironmentBadge environment={readiness.environment} withPrefix />
@@ -156,6 +156,30 @@ function FiscalDashboardPage() {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <KpiSection>
+            <KpiCard
+              label="Notas autorizadas"
+              value={totals ? formatNumber(totals.authorized) : "—"}
+              loading={dashboard.isLoading}
+              highlight
+            />
+            <KpiCard
+              label="Em processamento"
+              value={formatNumber(processing)}
+              loading={dashboard.isLoading}
+            />
+            <KpiCard
+              label="Rejeitadas / Erro"
+              value={totals ? formatNumber(totals.rejected + totals.error) : "—"}
+              loading={dashboard.isLoading}
+              highlight={totals && (totals.rejected + totals.error) > 0}
+            />
+            <KpiCard
+              label="Ambiente"
+              value={readiness.environment === "production" ? "Produção" : "Homologação"}
+              loading={readiness.isLoading}
+            />
+          </KpiSection>
           <BellaFiscalPanel companyId={company.id} />
         </TabsContent>
 
