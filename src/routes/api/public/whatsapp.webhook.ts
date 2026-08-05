@@ -110,23 +110,6 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
             return new Response("EVENT_RECEIVED", { status: 200 });
           }
 
-          // Extração explícita para log/debug.
-          try {
-            const body = payload as any;
-            const value = body?.entry?.[0]?.changes?.[0]?.value;
-            const message = value?.messages?.[0];
-            const fromNumber = message?.from;
-            const textBody = message?.text?.body;
-            console.log("[whatsapp.webhook] payload extraído", {
-              fromNumber,
-              textBody,
-              hasValue: Boolean(value),
-              hasMessage: Boolean(message),
-            });
-          } catch (extractErr) {
-            console.error("Erro ao extrair payload do Webhook:", extractErr);
-          }
-
           // 5) Processa mensagens/status AGUARDANDO (sem fire-and-forget).
           try {
             const { handleWhatsAppInboundPayload } =
