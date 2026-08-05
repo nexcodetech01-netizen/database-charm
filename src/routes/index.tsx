@@ -48,15 +48,23 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO DE TEMPLATE META CLOUD API (ERRO #132001)
+{`CORREÇÃO DO TEMPLATE WHATSAPP META (ERRO #132001)
 
-O envio do template na Meta Cloud API está falhando com o erro (#132001) "Template name does not exist in the translation".
+Ajuste a requisição de envio de template da Meta Cloud API para usar exatamente estes valores verificados no Gerenciador da Meta:
 
-Por favor, ajuste a função de disparo de mensagens de template do WhatsApp para:
+Se o disparo for o de boas-vindas / início de conversa:
+- template.name: "boas_vindas"
+- template.language.code: "pt_BR"
 
-1. Definir explicitamente template.language.code = "pt_BR".
-2. Garantir que o template.name enviado esteja formatado estritamente em letras minúsculas e separado por underlines (ex: "nome_do_template").
-3. Exibir no log o JSON do payload enviado para facilitar a depuração caso haja divergência no nome do modelo cadastrado na Meta.`}
+Se o disparo for de cobrança:
+- template.name: "cobranca_criada"
+- template.language.code: "pt_BR"
+
+Se for o teste padrão da Meta:
+- template.name: "hello_world"
+- template.language.code: "en_US"
+
+Certifique-se de que o parâmetro 'language.code' envie a string exatamente igual ao modelo selecionado (ex: "pt_BR" para os modelos em português).`}
           </pre>
         </div>
       </div>
