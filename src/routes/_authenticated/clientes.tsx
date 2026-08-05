@@ -89,8 +89,8 @@ function CustomersPage() {
       meta={`${data?.total ?? 0} cadastrados`}
       actions={
         <ActionToolbar
-          createLabel="Novo cliente"
           onCreate={() => navigate({ to: "/clientes/novo" })}
+          createLabel="Novo"
         />
       }
       kpis={null}
