@@ -48,23 +48,20 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO DO TEMPLATE WHATSAPP META (ERRO #132001)
+{`REVISÃO FINAL DA INTEGRAÇÃO META CLOUD API WHATSAPP
 
-Ajuste a requisição de envio de template da Meta Cloud API para usar exatamente estes valores verificados no Gerenciador da Meta:
+Por favor, faça uma checagem geral na função de envio de templates do WhatsApp para garantir os seguintes pontos:
 
-Se o disparo for o de boas-vindas / início de conversa:
-- template.name: "boas_vindas"
-- template.language.code: "pt_BR"
+1. IDIOMA E NOME:
+   - Utilizar template.name = "boas_vindas" (ou o template selecionado no fluxo).
+   - Definir obrigatoriamente template.language.code = "pt_BR".
 
-Se o disparo for de cobrança:
-- template.name: "cobranca_criada"
-- template.language.code: "pt_BR"
+2. PARÂMETROS DE VARIÁVEIS (BODY):
+   - Mapear a variável {{1}} do template enviando o nome do cliente no array de parâmetros do body:
+     "components": [{ "type": "body", "parameters": [{ "type": "text", "text": clienteNome }] }]
 
-Se for o teste padrão da Meta:
-- template.name: "hello_world"
-- template.language.code: "en_US"
-
-Certifique-se de que o parâmetro 'language.code' envie a string exatamente igual ao modelo selecionado (ex: "pt_BR" para os modelos em português).`}
+3. TRATAMENTO DE ERROS:
+   - Exibir no console/log o status retornado pela API da Meta para facilitar identificação de eventuais falhas de envio.`}
           </pre>
         </div>
       </div>
