@@ -2038,7 +2038,13 @@ function NumInput({
       value={value}
       disabled={disabled}
       placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        const val = e.target.value;
+        // Permite apenas números, ponto e vírgula
+        if (val === "" || /^[0-9.,]*$/.test(val)) {
+          onChange(val);
+        }
+      }}
       className="tabular-nums"
     />
   );
