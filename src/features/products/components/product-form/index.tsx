@@ -287,6 +287,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       other_costs: "0",
       stock: "0", // estoque inicia zerado
       min_stock: base.min_stock, // mantém política de reposição
+      weight: base.weight, // dimensões logísticas são do produto físico
+      width: base.width,
+      height: base.height,
+      length: base.length,
     });
     // Permite reaplicar os custos operacionais padrão da empresa no clone.
     defaultsAppliedRef.current = false;
