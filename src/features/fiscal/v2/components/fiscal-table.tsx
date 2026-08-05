@@ -35,9 +35,13 @@ export function FiscalTable({ documents, isLoading, onSelect }: Props) {
     );
   }
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <ExportXmlDialog />
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
           <TableRow>
             <TableHead>Número / Série</TableHead>
             <TableHead>Chave de acesso</TableHead>

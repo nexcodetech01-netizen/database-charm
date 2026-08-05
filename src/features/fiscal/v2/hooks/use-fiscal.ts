@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   cancelFiscalDocument,
   deactivateFiscalCertificate,
+  exportFiscalXmlsBatch,
   discardFiscalDocument,
   deleteFiscalCertificate,
   getCompanyFiscalProfile,
@@ -366,6 +367,14 @@ export function useDiscardFiscalDocument(
       (onError as ((e: Error, ...a: unknown[]) => void) | undefined)?.(err, ...args);
     },
     ...rest,
+  });
+}
+
+export function useExportFiscalXmlsBatch() {
+  const fn = useServerFn(exportFiscalXmlsBatch);
+  return useMutation({
+    mutationFn: (input: { from: string; to: string }) => fn({ data: input }),
+    onError: (err: Error) => toast.error(err.message || "Falha ao exportar XMLs."),
   });
 }
 
