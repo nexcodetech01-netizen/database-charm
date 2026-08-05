@@ -104,8 +104,8 @@ export function ConversationTimeline({
                 inbound
                   ? "rounded-bl-sm bg-muted text-foreground"
                   : isOperator
-                    ? "rounded-br-sm bg-amber-500 text-white"
-                    : "rounded-br-sm bg-emerald-600 text-white",
+                    ? "rounded-br-sm bg-blue-600 text-white"
+                    : "rounded-br-sm bg-slate-800 text-white",
               )}
             >
               {!inbound ? (

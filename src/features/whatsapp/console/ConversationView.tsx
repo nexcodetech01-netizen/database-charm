@@ -156,6 +156,14 @@ export function ConversationView({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="reply" className="mt-2 space-y-2">
+            {!isOpen && (
+              <div className="flex items-center gap-2 rounded-md bg-amber-50 p-2 text-[11px] text-amber-700 border border-amber-100 dark:bg-amber-900/10 dark:text-amber-400 dark:border-amber-900/20">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  A janela de 24h expirou. Utilize um dos templates abaixo para reabrir o contato com este cliente.
+                </span>
+              </div>
+            )}
             <div className="relative">
               <Textarea
                 value={text}
@@ -164,7 +172,7 @@ export function ConversationView({
                 disabled={!isOpen}
                 className={cn(
                   "min-h-[72px] text-sm",
-                  !isOpen && "bg-muted/50 cursor-not-allowed opacity-60"
+                  !isOpen && "bg-muted/30 cursor-not-allowed opacity-60"
                 )}
                 onKeyDown={(e) => {
                   if (isOpen && e.key === "Enter" && !e.shiftKey) {
@@ -173,21 +181,13 @@ export function ConversationView({
                   }
                 }}
               />
-              {!isOpen && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="bg-background/80 px-3 py-1 rounded-md text-xs font-medium text-amber-600 border border-amber-200 shadow-sm flex items-center gap-1.5 pointer-events-auto">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    Campo desabilitado (Janela Fechada)
-                  </span>
-                </div>
-              )}
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="h-8 text-[10px]"
+                  className="h-7 text-[10px] rounded-full px-3"
                   disabled={mutations.sendMessage.isPending}
                   onClick={() => mutations.sendMessage.mutate({
                     conversationId: conv.id,
@@ -196,12 +196,12 @@ export function ConversationView({
                     templateName: "boas_vindas"
                   })}
                 >
-                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Template Boas-vindas
+                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Boas-vindas
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="h-8 text-[10px]"
+                  className="h-7 text-[10px] rounded-full px-3"
                   disabled={mutations.sendMessage.isPending}
                   onClick={() => mutations.sendMessage.mutate({
                     conversationId: conv.id,
@@ -210,7 +210,7 @@ export function ConversationView({
                     templateName: "cobranca_criada"
                   })}
                 >
-                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Template Cobrança
+                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Cobrança
                 </Button>
               </div>
               <div className="flex flex-col items-end gap-1">

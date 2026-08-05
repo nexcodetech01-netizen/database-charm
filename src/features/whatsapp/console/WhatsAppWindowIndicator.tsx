@@ -11,10 +11,41 @@ import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 export function WhatsAppWindowIndicator({
   lastAt,
   className,
+  variant = "badge",
 }: {
   lastAt: string | null;
   className?: string;
+  variant?: "badge" | "dot";
 }) {
+  const isOpen = (() => {
+    if (!lastAt) return false;
+    const lastDate = new Date(lastAt);
+    const diffMs = Date.now() - lastDate.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours <= 24;
+  })();
+
+  if (variant === "dot") {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div 
+              className={cn(
+                "h-2.5 w-2.5 rounded-full border border-background shadow-sm",
+                isOpen ? "bg-emerald-500" : "bg-slate-400",
+                className
+              )} 
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isOpen ? "Janela Aberta" : "Janela Fechada"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
   if (!lastAt) {
     return (
       <TooltipProvider>
