@@ -3,19 +3,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Plus, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageLayout } from "@/components/layout";
+import { PageLayout, KpiSection, KpiCard } from "@/components/layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  SupplierMetrics,
   SupplierFilters,
   SupplierTable,
   useSuppliersList,
   useArchiveSupplier,
   useRestoreSupplier,
   useDeleteSupplier,
+  useSupplierMetrics,
 } from "@/features/suppliers";
 import type { SupplierListFilters, SupplierWithMeta } from "@/features/suppliers";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { formatNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/fornecedores")({
   beforeLoad: requirePermission("suppliers.view"),
@@ -41,6 +43,7 @@ function SuppliersPage() {
     [filters, debouncedSearch],
   );
   const { data, isLoading } = useSuppliersList(company.id, effective);
+  const metrics = useSupplierMetrics(company.id);
 
   const archiveMut = useArchiveSupplier();
   const restoreMut = useRestoreSupplier();
@@ -88,7 +91,7 @@ function SuppliersPage() {
     <PageLayout
       icon={Truck}
       title="Fornecedores"
-      description="Cadastre parceiros, contatos e condições comerciais em um só lugar."
+      description="Gestão de parceiros, contatos e condições comerciais."
       actions={
         <Button size="sm" asChild>
           <Link to="/fornecedores/novo">
@@ -96,25 +99,59 @@ function SuppliersPage() {
           </Link>
         </Button>
       }
-      kpis={<SupplierMetrics companyId={company.id} />}
+      kpis={
+        <KpiSection>
+          <KpiCard
+            label="Total de fornecedores"
+            value={metrics.data ? formatNumber(metrics.data.total) : "—"}
+            loading={metrics.isLoading}
+          />
+          <KpiCard
+            label="Fornecedores ativos"
+            value={metrics.data ? formatNumber(metrics.data.active) : "—"}
+            loading={metrics.isLoading}
+            highlight
+          />
+          <KpiCard
+            label="Arquivados"
+            value={metrics.data ? formatNumber(metrics.data.archived) : "—"}
+            loading={metrics.isLoading}
+          />
+        </KpiSection>
+      }
     >
-      <SupplierFilters
-        filters={filters}
-        onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
-        onReset={() => setFilters(DEFAULT)}
-      />
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list">Lista de Fornecedores</TabsTrigger>
+          <TabsTrigger value="insights">Insights & IA Bella</TabsTrigger>
+        </TabsList>
 
-      <SupplierTable
-        rows={data?.rows ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        page={filters.page}
-        pageSize={filters.pageSize}
-        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-        onArchive={handleArchive}
-        onRestore={handleRestore}
-        onDelete={handleDelete}
-      />
+        <TabsContent value="list" className="space-y-4 border-none p-0 outline-none">
+          <SupplierFilters
+            filters={filters}
+            onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
+            onReset={() => setFilters(DEFAULT)}
+          />
+
+          <SupplierTable
+            rows={data?.rows ?? []}
+            total={data?.total ?? 0}
+            isLoading={isLoading}
+            page={filters.page}
+            pageSize={filters.pageSize}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onArchive={handleArchive}
+            onRestore={handleRestore}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-4 border-none p-0 outline-none">
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
+            <p className="text-sm text-muted-foreground">Módulo de Insights para fornecedores em desenvolvimento pela Bella.</p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </PageLayout>
   );
 }

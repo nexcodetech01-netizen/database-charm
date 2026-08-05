@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { requirePermission } from "@/features/rbac";
 import { Plus, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { PageLayout } from "@/components/layout";
+import { PageLayout, KpiSection, KpiCard } from "@/components/layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   PurchaseFilters,
   PurchaseMetrics,
@@ -12,11 +12,13 @@ import {
   useDeletePurchase,
   usePurchasesList,
   useSetPurchaseStatus,
+  usePurchaseMetrics,
 } from "@/features/purchases";
 import { PurchasesBellaHints } from "@/features/bella-ai";
 import { BellaPurchasesPanel } from "@/features/accounting-ai/purchases";
 import type { PurchaseListFilters, PurchaseWithMeta } from "@/features/purchases";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import { useNextAction } from "@/components/feedback/next-action-provider";
 
 export const Route = createFileRoute("/_authenticated/compras")({
@@ -43,6 +45,7 @@ function PurchasesPage() {
     [filters, debouncedSearch],
   );
   const { data, isLoading } = usePurchasesList(company.id, effective);
+  const metrics = usePurchaseMetrics(company.id);
 
   const setStatusMut = useSetPurchaseStatus();
   const deleteMut = useDeletePurchase();
@@ -92,7 +95,7 @@ function PurchasesPage() {
     <PageLayout
       icon={ShoppingBag}
       title="Compras"
-      description="Quanto paguei? Registre a entrada e o estoque + custo médio atualizam sozinhos."
+      description="Gestão de entradas e controle de custos de aquisição."
       actions={
         <Button size="sm" asChild>
           <Link to="/compras/novo">
@@ -100,31 +103,65 @@ function PurchasesPage() {
           </Link>
         </Button>
       }
-      kpis={<PurchaseMetrics companyId={company.id} />}
+      kpis={
+        <KpiSection>
+          <KpiCard
+            label="Compras do mês"
+            value={metrics.data ? formatNumber(metrics.data.monthCount) : "—"}
+            loading={metrics.isLoading}
+          />
+          <KpiCard
+            label="Total comprado"
+            value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
+            loading={metrics.isLoading}
+            highlight
+          />
+          <KpiCard
+            label="Pedidos pendentes"
+            value={metrics.data ? formatNumber(metrics.data.pending) : "—"}
+            loading={metrics.isLoading}
+          />
+          <KpiCard
+            label="Fornecedores ativos"
+            value={metrics.data ? formatNumber(metrics.data.activeSuppliers) : "—"}
+            loading={metrics.isLoading}
+          />
+        </KpiSection>
+      }
     >
-      <PurchaseFilters
-        companyId={company.id}
-        filters={filters}
-        onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
-        onReset={() => setFilters(DEFAULT)}
-      />
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list">Lista de Compras</TabsTrigger>
+          <TabsTrigger value="insights">Insights & IA Bella</TabsTrigger>
+        </TabsList>
 
-      <PurchaseTable
-        rows={data?.rows ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        page={filters.page}
-        pageSize={filters.pageSize}
-        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-        onMarkPending={(p) => handleStatus(p, "pending", "marcada como pendente")}
-        onMarkReceived={(p) => handleStatus(p, "received", "marcada como recebida")}
-        onCancel={(p) => handleStatus(p, "cancelled", "cancelada")}
-        onDelete={handleDelete}
-      />
+        <TabsContent value="list" className="space-y-4 border-none p-0 outline-none">
+          <PurchaseFilters
+            companyId={company.id}
+            filters={filters}
+            onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
+            onReset={() => setFilters(DEFAULT)}
+          />
 
-      <PurchasesBellaHints companyId={company.id} />
+          <PurchaseTable
+            rows={data?.rows ?? []}
+            total={data?.total ?? 0}
+            isLoading={isLoading}
+            page={filters.page}
+            pageSize={filters.pageSize}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onMarkPending={(p) => handleStatus(p, "pending", "marcada como pendente")}
+            onMarkReceived={(p) => handleStatus(p, "received", "marcada como recebida")}
+            onCancel={(p) => handleStatus(p, "cancelled", "cancelada")}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
 
-      <BellaPurchasesPanel companyId={company.id} collapsible />
+        <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <PurchasesBellaHints companyId={company.id} />
+          <BellaPurchasesPanel companyId={company.id} />
+        </TabsContent>
+      </Tabs>
     </PageLayout>
   );
 }
