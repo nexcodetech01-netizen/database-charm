@@ -200,7 +200,7 @@ export async function sendWhatsAppTemplateRaw(
           scope: "sendWhatsAppTemplate",
           level: "warn",
           msg: "Meta rejeitou envio",
-          templateName: input.templateName,
+          templateName: templateName,
           to,
           status: res.status,
           error: msg,
