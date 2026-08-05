@@ -48,28 +48,18 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO DE ENVIO NO CHAT (JANELA FECHADA E TEMPLATES REAIS)
+{`AJUSTAR ATALHO DE ENVIO DE MENSAGEM NO CHAT (ENTER PARA ENVIAR)
 
-No chat de atendimento (onde aparece a badge 'Janela Fechada'):
+No componente de input do chat (caixa de texto de resposta):
 
-1. MAPEAMENTO DE TEMPLATES DO CHAT:
-   - Certifique-se de que os botões de envio de template no chat usem APENAS os nomes reais aprovados na Meta: "boas_vindas" ou "cobranca_criada".
-   - Remova ou substitua referências a templates inexistentes na Meta (como "Confirmação de Pedido").
+1. Modifique o evento 'onKeyDown' da caixa de texto (textarea) para:
+   - Se a tecla pressionada for 'Enter' E NÃO estiver segurando 'Shift' (e.key === 'Enter' && !e.shiftKey):
+     - Executar 'e.preventDefault()' para não pular linha.
+     - Disparar a função de envio da mensagem ('handleSendMessage').
+   - Se pressionar 'Shift + Enter':
+     - Permitir o comportamento padrão (pular linha no texto).
 
-2. ESTRUTURA DO PAYLOAD PARA "boas_vindas" E "cobranca_criada":
-   - Mande language.code: "pt_BR".
-   - Envie EXATAMENTE 1 parâmetro dentro do body (referente ao {{1}}):
-     "components": [
-       {
-         "type": "body",
-         "parameters": [
-           { "type": "text", "text": clienteNome || "Cliente" }
-         ]
-       }
-     ]
-
-3. ALERTA DE JANELA FECHADA:
-   - Se a janela estiver FECHADA ('Janela Fechada'), desabilite ou avise o operador que o campo de texto livre (como "oiii") não funcionará até que um Template (como 'boas_vindas') seja enviado e respondido/entregue.`}
+2. Atualize a legenda explicativa abaixo do botão de envio de "Ctrl/⌘ + Enter para enviar" para "Pressione Enter para enviar • Shift + Enter para quebra de linha".`}
           </pre>
         </div>
       </div>

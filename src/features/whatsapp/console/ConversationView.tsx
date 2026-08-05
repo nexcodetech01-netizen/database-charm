@@ -167,7 +167,7 @@ export function ConversationView({
                   !isOpen && "bg-muted/50 cursor-not-allowed opacity-60"
                 )}
                 onKeyDown={(e) => {
-                  if (isOpen && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                  if (isOpen && e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     void handleSubmit();
                   }
@@ -213,13 +213,18 @@ export function ConversationView({
                   <MessageSquarePlus className="mr-1 h-3 w-3" /> Template Cobrança
                 </Button>
               </div>
-              <Button 
-                size="sm" 
-                onClick={handleSubmit} 
-                disabled={!isOpen || mutations.sendMessage.isPending}
-              >
-                <Send className="mr-1.5 h-3.5 w-3.5" /> Enviar
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                <Button 
+                  size="sm" 
+                  onClick={handleSubmit} 
+                  disabled={!isOpen || mutations.sendMessage.isPending}
+                >
+                  <Send className="mr-1.5 h-3.5 w-3.5" /> Enviar
+                </Button>
+                <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  Pressione Enter para enviar • Shift + Enter para quebra de linha
+                </p>
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="note" className="mt-2 space-y-2">
