@@ -104,7 +104,8 @@ export function CustomerTable({
       columns={columns}
       getRowId={(c) => c.id}
       isLoading={isLoading}
-      skeletonRows={6}
+      skeletonRows={8}
+      className="border-none shadow-none"
       empty={{
         icon: Users,
         title: "Nenhum cliente encontrado",
