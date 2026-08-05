@@ -235,6 +235,7 @@ function SalesPage() {
     <PageLayout
       icon={ShoppingCart}
       title="Vendas"
+      meta={`${metrics.data ? formatNumber(metrics.data.monthCount) : 0} pedidos no mês`}
       actions={
         <div className="flex items-center gap-3">
           <Select
@@ -254,48 +255,28 @@ function SalesPage() {
           </Select>
           <Button size="sm" asChild className="rounded-xl">
             <Link to="/vendas/novo">
-              <Plus className="mr-1.5 h-4 w-4" /> Nova venda
+              <Plus className="mr-1.5 h-4 w-4" /> Novo
             </Link>
           </Button>
         </div>
       }
-      kpis={
-        <KpiSection>
-          <KpiCard
-            label="Vendas do dia"
-            value={metrics.data ? formatCurrency(metrics.data.dayTotal) : "—"}
-            hint={metrics.data ? `${formatNumber(metrics.data.dayCount)} pedidos` : undefined}
-            loading={metrics.isLoading}
-          />
-          <KpiCard
-            label="Faturamento"
-            value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
-            hint={metrics.data ? `${formatNumber(metrics.data.monthCount)} pedidos` : undefined}
-            loading={metrics.isLoading}
-            highlight
-          />
-          <KpiCard
-            label="Ticket médio"
-            value={metrics.data ? formatCurrency(metrics.data.averageTicket) : "—"}
-            loading={metrics.isLoading}
-          />
-          <KpiCard
-            label="A Receber"
-            value={metrics.data ? formatCurrency(metrics.data.paidTotal) : "—"}
-            loading={metrics.isLoading}
-          />
-        </KpiSection>
-      }
+      kpis={null}
     >
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="list">Lista de Vendas</TabsTrigger>
-          <TabsTrigger value="insights" className="relative">
-            Insights & IA Bella
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger 
+            value="list"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Insights & IA
             {hasAlerts && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground animate-pulse">
-                {view.alerts.length}
-              </span>
+              <span className="ml-2 h-2 w-2 rounded-full bg-warning animate-pulse" />
             )}
           </TabsTrigger>
         </TabsList>
@@ -326,6 +307,31 @@ function SalesPage() {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <KpiSection>
+            <KpiCard
+              label="Vendas do dia"
+              value={metrics.data ? formatCurrency(metrics.data.dayTotal) : "—"}
+              hint={metrics.data ? `${formatNumber(metrics.data.dayCount)} pedidos` : undefined}
+              loading={metrics.isLoading}
+            />
+            <KpiCard
+              label="Faturamento"
+              value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
+              hint={metrics.data ? `${formatNumber(metrics.data.monthCount)} pedidos` : undefined}
+              loading={metrics.isLoading}
+              highlight
+            />
+            <KpiCard
+              label="Ticket médio"
+              value={metrics.data ? formatCurrency(metrics.data.averageTicket) : "—"}
+              loading={metrics.isLoading}
+            />
+            <KpiCard
+              label="A Receber"
+              value={metrics.data ? formatCurrency(metrics.data.paidTotal) : "—"}
+              loading={metrics.isLoading}
+            />
+          </KpiSection>
           {hasAlerts && (
             <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
               <div className="mb-4 flex items-center gap-2">
