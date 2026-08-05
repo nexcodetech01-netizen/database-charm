@@ -68,9 +68,7 @@ export function WhatsAppWindowIndicator({
   }
 
   const lastDate = new Date(lastAt);
-  const diffMs = Date.now() - lastDate.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-  const isOpen = diffHours <= 24;
+  // Reutiliza isOpen definido no topo
 
   return (
     <TooltipProvider>
