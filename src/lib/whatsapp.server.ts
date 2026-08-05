@@ -116,6 +116,9 @@ export async function sendWhatsAppTemplateRaw(
 ): Promise<SendTemplateResult> {
   const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
+
+  // Garantia de nome de template em minúsculas e underscores (Requisito 2)
+  const templateName = (input.templateName ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const languageCode = input.languageCode ?? "pt_BR";
 
   if (!configured) return whatsAppNotConfiguredResult(to, missing);
