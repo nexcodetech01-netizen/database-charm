@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Boxes, Plus, Scale } from "lucide-react";
+import { Boxes, Plus, Scale, History, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageLayout } from "@/components/layout";
@@ -10,15 +10,19 @@ import {
   MovementFormDialog,
   MovementsTable,
   MovementFilters,
-  MovementsTimeline,
   LowStockAlerts,
   StagnantProducts,
   useMovementsList,
-  useRecentMovements,
   useInventoryMetrics,
   DEFAULT_MOVEMENT_FILTERS,
 } from "@/features/inventory";
 import type { MovementListFilters } from "@/features/inventory";
+import { 
+  ProductTable, 
+  ProductFilters, 
+  useProductsList,
+  type ProductListFilters 
+} from "@/features/products";
 import { BellaInventoryPanel } from "@/features/accounting-ai/inventory";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useInterestSummary } from "@/features/interests";
@@ -28,18 +32,41 @@ export const Route = createFileRoute("/_authenticated/estoque")({
   component: InventoryPage,
 });
 
+const DEFAULT_PRODUCT_FILTERS: ProductListFilters = {
+  search: "",
+  categoryId: "all",
+  supplierId: "all",
+  status: "active",
+  stock: "all",
+  sortBy: "name",
+  sortDir: "asc",
+  page: 1,
+  pageSize: 20,
+};
+
 function InventoryPage() {
   const { company } = Route.useRouteContext();
   const [openForm, setOpenForm] = useState(false);
-  const [filters, setFilters] = useState<MovementListFilters>(DEFAULT_MOVEMENT_FILTERS);
-  const debouncedSearch = useDebouncedValue(filters.search, 300);
-  const effective = useMemo(
-    () => ({ ...filters, search: debouncedSearch }),
-    [filters, debouncedSearch],
+  
+  // State para Aba 1 (Produtos)
+  const [productFilters, setProductFilters] = useState<ProductListFilters>(DEFAULT_PRODUCT_FILTERS);
+  const debouncedProductSearch = useDebouncedValue(productFilters.search, 300);
+  const effectiveProductFilters = useMemo(
+    () => ({ ...productFilters, search: debouncedProductSearch }),
+    [productFilters, debouncedProductSearch],
   );
 
-  const list = useMovementsList(company.id, effective);
-  const recent = useRecentMovements(company.id, 8);
+  // State para Aba 2 (Movimentações)
+  const [movementFilters, setMovementFilters] = useState<MovementListFilters>(DEFAULT_MOVEMENT_FILTERS);
+  const debouncedMovementSearch = useDebouncedValue(movementFilters.search, 300);
+  const effectiveMovementFilters = useMemo(
+    () => ({ ...movementFilters, search: debouncedMovementSearch }),
+    [movementFilters, debouncedMovementSearch],
+  );
+
+  // Data fetching
+  const products = useProductsList(company.id, effectiveProductFilters);
+  const movements = useMovementsList(company.id, effectiveMovementFilters);
   const metrics = useInventoryMetrics(company.id);
   const { waitingByProduct } = useInterestSummary(company.id);
 
@@ -62,63 +89,86 @@ function InventoryPage() {
       }
       kpis={null}
     >
-      <Tabs defaultValue="list" className="space-y-6">
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="mb-4 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
           <TabsTrigger 
-            value="list"
+            value="overview"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
           >
             Visão Geral
           </TabsTrigger>
           <TabsTrigger 
+            value="history"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Histórico de Movimentações
+          </TabsTrigger>
+          <TabsTrigger 
             value="insights"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
           >
-            Insights & IA
+            Insights & Alertas
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <MovementsTimeline
-                rows={recent.data ?? []}
-                isLoading={recent.isLoading}
-                title="Últimas movimentações"
-              />
+        <TabsContent value="overview" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-muted-foreground">Catálogo de Produtos</h2>
+            <ProductFilters
+              filters={productFilters}
+              onChange={(p) => setProductFilters((f) => ({ ...f, ...p }))}
+              onReset={() => setProductFilters(DEFAULT_PRODUCT_FILTERS)}
+            />
+          </div>
+          <ProductTable
+            rows={products.data?.rows ?? []}
+            total={products.data?.total ?? 0}
+            isLoading={products.isLoading}
+            page={productFilters.page}
+            pageSize={productFilters.pageSize}
+            onPageChange={(page) => setProductFilters((f) => ({ ...f, page }))}
+          />
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-muted-foreground">Extrato de Entradas e Saídas</h2>
             </div>
-            <div className="space-y-6">
-              <LowStockAlerts
-                items={metrics.data?.belowMin ?? []}
-                waitingByProduct={waitingByProduct}
-              />
-              <StagnantProducts items={metrics.data?.stagnant ?? []} />
-            </div>
+            <MovementFilters
+              filters={movementFilters}
+              onChange={(p) => setMovementFilters((f) => ({ ...f, ...p }))}
+              onReset={() => setMovementFilters(DEFAULT_MOVEMENT_FILTERS)}
+            />
+          </div>
+          <MovementsTable
+            rows={movements.data?.rows ?? []}
+            total={movements.data?.total ?? 0}
+            isLoading={movements.isLoading}
+            page={movementFilters.page}
+            pageSize={movementFilters.pageSize}
+            onPageChange={(page) => setMovementFilters((f) => ({ ...f, page }))}
+          />
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-8">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <LowStockAlerts
+              items={metrics.data?.belowMin ?? []}
+              waitingByProduct={waitingByProduct}
+            />
+            <StagnantProducts items={metrics.data?.stagnant ?? []} />
+            <InventoryMetrics companyId={company.id} />
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-muted-foreground">Histórico</h2>
-              <MovementFilters
-                filters={filters}
-                onChange={(p) => setFilters((f) => ({ ...f, ...p }))}
-                onReset={() => setFilters(DEFAULT_MOVEMENT_FILTERS)}
-              />
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Diagnóstico da Bella IA</h3>
             </div>
-            <MovementsTable
-              rows={list.data?.rows ?? []}
-              total={list.data?.total ?? 0}
-              isLoading={list.isLoading}
-              page={filters.page}
-              pageSize={filters.pageSize}
-              onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-            />
+            <BellaInventoryPanel companyId={company.id} />
           </div>
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
-          <InventoryMetrics companyId={company.id} />
-          <BellaInventoryPanel companyId={company.id} />
         </TabsContent>
       </Tabs>
 
