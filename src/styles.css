@@ -446,11 +446,17 @@
 }
 .receipt-row dt {
   font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
 }
 .receipt-row dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .receipt-row-strong {
   font-size: 13px;
