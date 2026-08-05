@@ -137,7 +137,7 @@ export async function sendWhatsAppTemplateRaw(
   }
 
   // Validação Crítica de Parâmetros (Requisito 2)
-  if (input.templateName === "jaspers_market_order_confirmation_v1") {
+  if (templateName === "jaspers_market_order_confirmation_v1") {
     const varsCount = input.variables?.length ?? 0;
     if (varsCount !== 3) {
       const errorMsg = `O template 'jaspers_market_order_confirmation_v1' exige exatamente 3 parâmetros. Recebidos: ${varsCount}.`;
