@@ -80,8 +80,9 @@ export function ConversationList({
                   If not present, we fall back to initials. 
                 */}
                 {initials(c.contact_name, c.contact_phone)}
-                <PresenceIndicator
-                  lastAt={c.last_message_at}
+                <WhatsAppWindowIndicator
+                  lastAt={c.ultima_mensagem_cliente_at}
+                  variant="dot"
                   className="absolute bottom-0.5 right-0.5 ring-2 ring-background"
                 />
               </div>
@@ -107,7 +108,7 @@ export function ConversationList({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <ConversationStatusBadge status={c.status} />
-                    <WhatsAppWindowIndicator lastAt={c.ultima_mensagem_cliente_at} />
+                    {/* Badge removido conforme solicitação */}
                   </div>
                   {c.unread_count > 0 ? (
                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
