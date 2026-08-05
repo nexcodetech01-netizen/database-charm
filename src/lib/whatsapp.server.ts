@@ -235,7 +235,7 @@ export async function sendWhatsAppTemplateRaw(
         scope: "sendWhatsAppTemplate",
         level: "error",
         msg: "falha de rede",
-        templateName: input.templateName,
+        templateName: templateName,
         to,
         error: message,
       }),
