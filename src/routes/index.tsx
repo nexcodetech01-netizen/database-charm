@@ -48,20 +48,25 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`REVISÃO FINAL DA INTEGRAÇÃO META CLOUD API WHATSAPP
+{`CORREÇÃO DE PARÂMETROS META CLOUD API (ERRO #132000)
 
-Por favor, faça uma checagem geral na função de envio de templates do WhatsApp para garantir os seguintes pontos:
+A Meta retornou o erro "(#132000) Number of parameters does not match the expected number of params".
 
-1. IDIOMA E NOME:
-   - Utilizar template.name = "boas_vindas" (ou o template selecionado no fluxo).
-   - Definir obrigatoriamente template.language.code = "pt_BR".
+Por favor, revise a construção do array 'components' na função 'sendWhatsAppTemplateRaw' em 'src/lib/whatsapp.server.ts':
 
-2. PARÂMETROS DE VARIÁVEIS (BODY):
-   - Mapear a variável {{1}} do template enviando o nome do cliente no array de parâmetros do body:
-     "components": [{ "type": "body", "parameters": [{ "type": "text", "text": clienteNome }] }]
+1. Garanta que o número de objetos inseridos no array 'parameters' corresponda EXATAMENTE à quantidade de variáveis {{1}}, {{2}}, etc. cadastradas no corpo do template na Meta.
 
-3. TRATAMENTO DE ERROS:
-   - Exibir no console/log o status retornado pela API da Meta para facilitar identificação de eventuais falhas de envio.`}
+2. Exemplo de estrutura para 1 variável (ex: nome):
+"components": [
+  {
+    "type": "body",
+    "parameters": [
+      { "type": "text", "text": clienteNome || "Cliente" }
+    ]
+  }
+]
+
+3. Se o template exigir mais variáveis (ex: {{1}} para Nome, {{2}} para Valor), certifique-se de incluir todos os itens na ordem correta no array 'parameters'.`}
           </pre>
         </div>
       </div>

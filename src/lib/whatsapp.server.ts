@@ -165,11 +165,14 @@ export async function sendWhatsAppTemplateRaw(
       type: "body",
       parameters: input.variables.map((v) => ({
         type: "text",
-        text: String(v ?? " "), // Mapeia variáveis {{1}}, {{2}}, etc. (ex: nome do cliente)
+        text: String(v ?? " "),
       })),
     });
   } else {
-    // Garante array de parâmetros vazio se o template não tiver variáveis
+    // Se não houver variáveis mas o template esperar parâmetros, 
+    // a Meta retornará #132000. O chamador deve prover variáveis se o template as exigir.
+    // O 'components' deve ser omitido se for estritamente zero parâmetros em templates sem vars.
+    // Mas para templates com vars opcionais ou placeholders, enviamos array vazio.
     componentsList.push({
       type: "body",
       parameters: [],
