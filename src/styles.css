@@ -411,7 +411,7 @@
   width: 100%;
 }
 .receipt-sub {
-  font-size: 10px;
+  font-size: 9px;
   width: 100%;
 }
 
@@ -469,7 +469,7 @@
 
 .receipt-section-title {
   font-weight: 700;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.05em;
   margin: 2px 0;
   width: 100%;
@@ -488,7 +488,7 @@
   width: 100%;
 }
 .receipt-item-desc {
-  font-size: 11px;
+  font-size: 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
