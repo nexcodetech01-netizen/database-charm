@@ -96,7 +96,7 @@ function PurchasesPage() {
     <PageLayout
       icon={ShoppingBag}
       title="Compras"
-      description="Gestão de entradas e controle de custos de aquisição."
+      meta={`${metrics.data?.monthCount ?? 0} pedidos no mês`}
       actions={
         <Button size="sm" asChild>
           <Link to="/compras/novo">
@@ -104,36 +104,22 @@ function PurchasesPage() {
           </Link>
         </Button>
       }
-      kpis={
-        <KpiSection>
-          <KpiCard
-            label="Compras do mês"
-            value={metrics.data ? formatNumber(metrics.data.monthCount) : "—"}
-            loading={metrics.isLoading}
-          />
-          <KpiCard
-            label="Total comprado"
-            value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
-            loading={metrics.isLoading}
-            highlight
-          />
-          <KpiCard
-            label="Pedidos pendentes"
-            value={metrics.data ? formatNumber(metrics.data.pending) : "—"}
-            loading={metrics.isLoading}
-          />
-          <KpiCard
-            label="Fornecedores ativos"
-            value={metrics.data ? formatNumber(metrics.data.activeSuppliers) : "—"}
-            loading={metrics.isLoading}
-          />
-        </KpiSection>
-      }
+      kpis={null}
     >
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="list">Lista de Compras</TabsTrigger>
-          <TabsTrigger value="insights">Insights & IA Bella</TabsTrigger>
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger 
+            value="list"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Insights & IA
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4 border-none p-0 outline-none">
@@ -159,6 +145,29 @@ function PurchasesPage() {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <KpiSection>
+            <KpiCard
+              label="Compras do mês"
+              value={metrics.data ? formatNumber(metrics.data.monthCount) : "—"}
+              loading={metrics.isLoading}
+            />
+            <KpiCard
+              label="Total comprado"
+              value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
+              loading={metrics.isLoading}
+              highlight
+            />
+            <KpiCard
+              label="Pedidos pendentes"
+              value={metrics.data ? formatNumber(metrics.data.pending) : "—"}
+              loading={metrics.isLoading}
+            />
+            <KpiCard
+              label="Fornecedores ativos"
+              value={metrics.data ? formatNumber(metrics.data.activeSuppliers) : "—"}
+              loading={metrics.isLoading}
+            />
+          </KpiSection>
           <PurchasesBellaHints companyId={company.id} />
           <BellaPurchasesPanel companyId={company.id} />
         </TabsContent>

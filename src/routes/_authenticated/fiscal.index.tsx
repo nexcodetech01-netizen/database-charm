@@ -52,7 +52,7 @@ function FiscalDashboardPage() {
   return (
     <PageLayout
       title="Fiscal"
-      description="Gestão de documentos fiscais e conformidade tributária."
+      meta={`${totalDocs} documentos`}
       actions={
         <div className="flex items-center gap-3">
           <FiscalEnvironmentBadge environment={readiness.environment} withPrefix />
@@ -72,51 +72,34 @@ function FiscalDashboardPage() {
           </TooltipProvider>
         </div>
       }
-      kpis={
-        <KpiSection>
-          <KpiCard
-            label="Notas autorizadas"
-            value={totals ? formatNumber(totals.authorized) : "—"}
-            loading={dashboard.isLoading}
-            highlight
-          />
-          <KpiCard
-            label="Em processamento"
-            value={formatNumber(processing)}
-            loading={dashboard.isLoading}
-          />
-          <KpiCard
-            label="Rejeitadas / Erro"
-            value={totals ? formatNumber(totals.rejected + totals.error) : "—"}
-            loading={dashboard.isLoading}
-            highlight={totals && (totals.rejected + totals.error) > 0}
-          />
-          <KpiCard
-            label="Ambiente"
-            value={readiness.environment === "production" ? "Produção" : "Homologação"}
-            loading={readiness.isLoading}
-          />
-        </KpiSection>
-      }
+      kpis={null}
     >
       <FiscalEnvironmentBanner />
       
       <Tabs defaultValue="operacional" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="operacional">
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            Operacional
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger 
+            value="operacional"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Visão Geral
           </TabsTrigger>
-          <TabsTrigger value="history">
-            <FileText className="mr-2 h-4 w-4" />
-            Notas Fiscais
+          <TabsTrigger 
+            value="insights"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Insights & IA
           </TabsTrigger>
-          <TabsTrigger value="insights">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Insights Bella
+          <TabsTrigger 
+            value="history"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Documentos
           </TabsTrigger>
-          <TabsTrigger value="config">
-            <Settings className="mr-2 h-4 w-4" />
+          <TabsTrigger 
+            value="config"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
             Configuração
           </TabsTrigger>
         </TabsList>
@@ -156,6 +139,30 @@ function FiscalDashboardPage() {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <KpiSection>
+            <KpiCard
+              label="Notas autorizadas"
+              value={totals ? formatNumber(totals.authorized) : "—"}
+              loading={dashboard.isLoading}
+              highlight
+            />
+            <KpiCard
+              label="Em processamento"
+              value={formatNumber(processing)}
+              loading={dashboard.isLoading}
+            />
+            <KpiCard
+              label="Rejeitadas / Erro"
+              value={totals ? formatNumber(totals.rejected + totals.error) : "—"}
+              loading={dashboard.isLoading}
+              highlight={totals && (totals.rejected + totals.error) > 0}
+            />
+            <KpiCard
+              label="Ambiente"
+              value={readiness.environment === "production" ? "Produção" : "Homologação"}
+              loading={readiness.isLoading}
+            />
+          </KpiSection>
           <BellaFiscalPanel companyId={company.id} />
         </TabsContent>
 

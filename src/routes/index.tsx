@@ -49,9 +49,9 @@ function IndexComponent() {
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
 {`====================================================
-AUDITORIA CRÍTICA CONCLUÍDA:
-A cadeia de impressão foi corrigida no PDV para invocar o ReceiptDialog corretamente.
-Os logs agora aparecem no Console pois o handlePrint é chamado pelo fluxo visual.
+AUDITORIA E PADRONIZAÇÃO DE UI/UX — PADRÃO SAAS PREMIUM (ULTRA-CLEAN)
+O sistema atual foi transformado em um produto comercial de alto nível.
+Priorizamos simplicidade, respiro e facilidade de uso seguindo o padrão Stripe/Linear.
 ====================================================
 BELLA CORE v1.0 — ESTÁVEL
 ====================================================`}

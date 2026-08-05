@@ -146,7 +146,7 @@ export function DataTableToolbar({
   return (
     <div
       data-testid="data-table-toolbar"
-      className="flex flex-col gap-3 border-b border-border px-4 py-3"
+      className="flex flex-col gap-3 px-0 py-3"
     >
       {title || description || actions ? (
         <SectionHeader title={title ?? ""} description={description} actions={actions} />
@@ -368,9 +368,7 @@ export function EnterpriseDataTable<T>({
     <div
       data-testid="enterprise-data-table"
       className={cn(
-        "overflow-hidden border border-border bg-card text-card-foreground",
-        RADIUS_TOKENS.xl,
-        SHADOW_TOKENS.card,
+        "overflow-hidden border-none bg-transparent text-card-foreground shadow-none",
         className,
       )}
     >

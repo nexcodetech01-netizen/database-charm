@@ -86,19 +86,29 @@ function CustomersPage() {
     <PageLayout
       icon={Users}
       title="Clientes"
-      description="Quem são meus clientes? Cadastre, segmente e acompanhe cada relacionamento."
+      meta={`${data?.total ?? 0} cadastrados`}
       actions={
         <ActionToolbar
-          createLabel="Novo cliente"
           onCreate={() => navigate({ to: "/clientes/novo" })}
+          createLabel="Novo"
         />
       }
-      kpis={<CustomerMetrics companyId={company.id} />}
+      kpis={null}
     >
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="list">Lista de Clientes</TabsTrigger>
-          <TabsTrigger value="insights">Insights & CRM Bella</TabsTrigger>
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger 
+            value="list" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Insights & IA
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-0 border-none p-0 outline-none">
@@ -121,7 +131,8 @@ function CustomersPage() {
           />
         </TabsContent>
 
-        <TabsContent value="insights" className="space-y-4 border-none p-0 outline-none">
+        <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          <CustomerMetrics companyId={company.id} />
           <BellaCrmPanel companyId={company.id} />
         </TabsContent>
       </Tabs>

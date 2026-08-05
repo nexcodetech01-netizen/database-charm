@@ -167,9 +167,9 @@ function FinancePage() {
   return (
     <PageLayout
       title="Financeiro"
-      description="Quanto tenho? Saldo, a receber, a pagar e resultado — o essencial primeiro."
+      meta={data ? `Resultado: ${formatCurrency(monthResult ?? 0)}` : "Carregando..."}
       actions={actions}
-      kpis={kpis}
+      kpis={null}
     >
 
       <Tabs
@@ -177,20 +177,53 @@ function FinancePage() {
         onValueChange={(v) => setTab(v as FinanceTab)}
         className="space-y-8 pt-2"
       >
-        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-muted p-1">
-          <TabsTrigger value="summary" className={tabTriggerClass}>Resumo</TabsTrigger>
-          <TabsTrigger value="receivables" className={tabTriggerClass}>A receber</TabsTrigger>
-          <TabsTrigger value="payables" className={tabTriggerClass}>A pagar</TabsTrigger>
-          <TabsTrigger value="reconciliation" className={tabTriggerClass}>Conciliação</TabsTrigger>
-          <TabsTrigger value="cashflow" className={tabTriggerClass}>Fluxo</TabsTrigger>
-          <TabsTrigger value="categories" className={tabTriggerClass}>Categorias</TabsTrigger>
-          <TabsTrigger value="accounts" className={tabTriggerClass}>Contas</TabsTrigger>
-          <TabsTrigger value="cleanup" className={tabTriggerClass}>Saneamento</TabsTrigger>
-          <TabsTrigger value="insights" className={tabTriggerClass}>Insights Bella</TabsTrigger>
-          <TabsTrigger value="reports" className={tabTriggerClass}>Relatórios</TabsTrigger>
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-6 overflow-x-auto no-scrollbar">
+          <TabsTrigger 
+            value="summary" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Insights & IA
+          </TabsTrigger>
+          <TabsTrigger 
+            value="receivables" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Receber
+          </TabsTrigger>
+          <TabsTrigger 
+            value="payables" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Pagar
+          </TabsTrigger>
+          <TabsTrigger 
+            value="reconciliation" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Conciliação
+          </TabsTrigger>
+          <TabsTrigger 
+            value="cashflow" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Fluxo
+          </TabsTrigger>
+          <TabsTrigger 
+            value="accounts" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Contas
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="space-y-6">
+        <TabsContent value="summary" className="space-y-8">
+          {kpis}
           <FinanceSummaryPanel companyId={company.id} />
           <BellaPayCard />
         </TabsContent>
