@@ -369,25 +369,27 @@
  * ========================================================= */
 .receipt {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.35;
   color: #000;
   background: #fff;
   padding: 8px 10px;
   margin: 0 auto;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   overflow-wrap: break-word;
 }
 .receipt-58 {
-  width: 48mm;
+  width: 100% !important;
+  max-width: 260px !important;
   padding: 0;
 }
 .receipt-80 {
-  width: 80mm;
+  width: 100% !important;
+  max-width: 380px !important;
 }
 
 .receipt * {
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 }
 
 .receipt-header {
@@ -409,7 +411,7 @@
   width: 100%;
 }
 .receipt-sub {
-  font-size: 11px;
+  font-size: 10px;
   width: 100%;
 }
 
@@ -437,17 +439,24 @@
 .receipt-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 8px;
   font-size: 11px;
   width: 100%;
 }
 .receipt-row dt {
   font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
 }
 .receipt-row dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .receipt-row-strong {
   font-size: 13px;
@@ -480,7 +489,9 @@
 }
 .receipt-item-desc {
   font-size: 11px;
-  overflow-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 .receipt-item-line {
@@ -582,7 +593,8 @@
   .receipt {
     color: #000 !important;
     background: #fff !important;
-    padding: 0 !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
