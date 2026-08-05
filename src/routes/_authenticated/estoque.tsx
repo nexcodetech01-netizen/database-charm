@@ -41,73 +41,84 @@ function InventoryPage() {
   const list = useMovementsList(company.id, effective);
   const recent = useRecentMovements(company.id, 8);
   const metrics = useInventoryMetrics(company.id);
-  // Lista de Interesse: apenas leitura para apoiar a sugestão de compra.
   const { waitingByProduct } = useInterestSummary(company.id);
 
   return (
     <PageLayout
       icon={Boxes}
       title="Estoque"
-      meta={`${metrics.data?.totalProducts ?? 0} produtos`}
+      meta={`${metrics.data?.productCount ?? 0} produtos`}
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="outline" asChild className="rounded-xl">
             <Link to="/estoque/reconciliacao">
               <Scale className="mr-1.5 h-4 w-4" /> Reconciliação
             </Link>
           </Button>
-          <Button size="sm" onClick={() => setOpenForm(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Nova movimentação
+          <Button size="sm" onClick={() => setOpenForm(true)} className="rounded-xl">
+            <Plus className="mr-1.5 h-4 w-4" /> Novo
           </Button>
         </div>
       }
-      kpis={<InventoryMetrics companyId={company.id} />}
+      kpis={null}
     >
-      <BellaInventoryPanel companyId={company.id} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <MovementsTimeline
-            rows={recent.data ?? []}
-            isLoading={recent.isLoading}
-            title="Últimas movimentações"
-          />
-        </div>
-        <div className="space-y-4">
-          <LowStockAlerts
-            items={metrics.data?.belowMin ?? []}
-            waitingByProduct={waitingByProduct}
-          />
-          <StagnantProducts items={metrics.data?.stagnant ?? []} />
-        </div>
-      </div>
-
-      <Tabs defaultValue="list" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="list">Movimentações</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline completa</TabsTrigger>
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList className="mb-4 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
+          <TabsTrigger 
+            value="list"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium"
+          >
+            Insights & IA
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="list" className="space-y-4">
-          <MovementFilters
-            filters={filters}
-            onChange={(p) => setFilters((f) => ({ ...f, ...p }))}
-            onReset={() => setFilters(DEFAULT_MOVEMENT_FILTERS)}
-          />
-          <MovementsTable
-            rows={list.data?.rows ?? []}
-            total={list.data?.total ?? 0}
-            isLoading={list.isLoading}
-            page={filters.page}
-            pageSize={filters.pageSize}
-            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-          />
+
+        <TabsContent value="list" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <MovementsTimeline
+                rows={recent.data ?? []}
+                isLoading={recent.isLoading}
+                title="Últimas movimentações"
+              />
+            </div>
+            <div className="space-y-6">
+              <LowStockAlerts
+                items={metrics.data?.belowMin ?? []}
+                waitingByProduct={waitingByProduct}
+              />
+              <StagnantProducts items={metrics.data?.stagnant ?? []} />
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground">Histórico</h2>
+              <MovementFilters
+                filters={filters}
+                onChange={(p) => setFilters((f) => ({ ...f, ...p }))}
+                onReset={() => setFilters(DEFAULT_MOVEMENT_FILTERS)}
+              />
+            </div>
+            <MovementsTable
+              rows={list.data?.rows ?? []}
+              total={list.data?.total ?? 0}
+              isLoading={list.isLoading}
+              page={filters.page}
+              pageSize={filters.pageSize}
+              onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            />
+          </div>
         </TabsContent>
-        <TabsContent value="timeline">
-          <MovementsTimeline
-            rows={list.data?.rows ?? []}
-            isLoading={list.isLoading}
-            title="Movimentações filtradas"
-          />
+
+        <TabsContent value="insights" className="space-y-6">
+          <InventoryMetrics companyId={company.id} />
+          <BellaInventoryPanel companyId={company.id} />
         </TabsContent>
       </Tabs>
 
