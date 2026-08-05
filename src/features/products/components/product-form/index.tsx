@@ -118,6 +118,10 @@ const schema = z.object({
       .or(z.literal("")),
   ),
   brand: z.string().trim().max(120).optional().or(z.literal("")),
+  weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
+  width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
+  height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
+  length: z.preprocess((v) => num(v as any), z.number().positive("Comprimento deve ser maior que zero")),
 });
 
 type FormState = {
@@ -174,10 +178,10 @@ const empty: FormState = {
   stock: "0",
   min_stock: "0",
   tags: [],
-  weight: "0",
-  width: "0",
-  height: "0",
-  length: "0",
+  weight: "",
+  width: "",
+  height: "",
+  length: "",
 };
 
 function toState(p?: Product): FormState {
@@ -207,10 +211,10 @@ function toState(p?: Product): FormState {
     stock: String(p.stock),
     min_stock: String(p.min_stock),
     tags: p.tags ?? [],
-    weight: String((p as any).weight ?? 0),
-    width: String((p as any).width ?? 0),
-    height: String((p as any).height ?? 0),
-    length: String((p as any).length ?? 0),
+    weight: (p as any).weight ? String((p as any).weight) : "",
+    width: (p as any).width ? String((p as any).width) : "",
+    height: (p as any).height ? String((p as any).height) : "",
+    length: (p as any).length ? String((p as any).length) : "",
   };
 }
 
@@ -283,6 +287,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       other_costs: "0",
       stock: "0", // estoque inicia zerado
       min_stock: base.min_stock, // mantém política de reposição
+      weight: base.weight, // dimensões logísticas são do produto físico
+      width: base.width,
+      height: base.height,
+      length: base.length,
     });
     // Permite reaplicar os custos operacionais padrão da empresa no clone.
     defaultsAppliedRef.current = false;
@@ -1079,6 +1087,39 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               }
               disabled={saving}
             />
+          </Section>
+          
+          <Section title="Dimensões Logísticas" description="Informações obrigatórias para cálculo de frete (Mercado Livre e transportadoras).">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Peso (kg) *" hint="Peso bruto do produto com embalagem">
+                <NumInput
+                  value={form.weight}
+                  onChange={(v) => set("weight", v)}
+                  placeholder="Ex: 0.500"
+                />
+              </Field>
+              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+                <NumInput
+                  value={form.length}
+                  onChange={(v) => set("length", v)}
+                  placeholder="Ex: 20"
+                />
+              </Field>
+              <Field label="Largura (cm) *" hint="Dimensão lateral">
+                <NumInput
+                  value={form.width}
+                  onChange={(v) => set("width", v)}
+                  placeholder="Ex: 15"
+                />
+              </Field>
+              <Field label="Altura (cm) *" hint="Espessura/Altura">
+                <NumInput
+                  value={form.height}
+                  onChange={(v) => set("height", v)}
+                  placeholder="Ex: 10"
+                />
+              </Field>
+            </div>
           </Section>
 
           {/* ─── Bloco INFORMAÇÕES ─── */}
@@ -1997,7 +2038,13 @@ function NumInput({
       value={value}
       disabled={disabled}
       placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        const val = e.target.value;
+        // Permite apenas números, ponto e vírgula
+        if (val === "" || /^[0-9.,]*$/.test(val)) {
+          onChange(val);
+        }
+      }}
       className="tabular-nums"
     />
   );
