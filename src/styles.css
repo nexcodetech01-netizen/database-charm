@@ -593,7 +593,8 @@
   .receipt {
     color: #000 !important;
     background: #fff !important;
-    padding: 0 !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
