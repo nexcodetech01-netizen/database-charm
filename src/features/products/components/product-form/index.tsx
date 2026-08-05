@@ -178,10 +178,10 @@ const empty: FormState = {
   stock: "0",
   min_stock: "0",
   tags: [],
-  weight: "0",
-  width: "0",
-  height: "0",
-  length: "0",
+  weight: "",
+  width: "",
+  height: "",
+  length: "",
 };
 
 function toState(p?: Product): FormState {
