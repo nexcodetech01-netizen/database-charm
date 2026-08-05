@@ -407,6 +407,12 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
 
   // 2) Upsert conversa (preserva status e assignment já definidos pelo operador).
+  // Quando uma mensagem de cliente é recebida, garantimos que o status seja 'open'
+  // se não estiver em um estado final (resolved/archived) ou sob operador (human).
+  const newStatus = (conversationStatus === "resolved" || conversationStatus === "archived" || conversationStatus === "human") 
+    ? conversationStatus 
+    : "open";
+
   const { data: conversation } = await db
     .from("whatsapp_conversations")
     .upsert(
@@ -415,6 +421,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         contact_id: contactId,
         last_inbound_at: new Date(msg.timestamp).toISOString(),
         ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
+        status: newStatus,
       },
       { onConflict: "company_id,contact_id" },
     )
