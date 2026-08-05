@@ -2903,3 +2903,60 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
       saleNumber,
     };
   });
+
+// ---------------------------------------------------------------- EXPORT XML
+export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { from: string; to: string }) =>
+    z.object({ from: z.string(), to: z.string() }).strict().parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ name: string; contentBase64: string }[]> => {
+    const supabase = context.supabase as SB;
+    const companyId = await resolveCompanyId(supabase, context.userId);
+    await ensurePermission(supabase, context.userId, companyId, "fiscal.export");
+
+    // Buscamos apenas notas autorizadas ou canceladas que tenham XML
+    const { data: rows, error } = await supabase
+      .from("fiscal_documents")
+      .select("number, access_key, xml_authorized_path, xml_cancellation_path")
+      .eq("company_id", companyId)
+      .gte("created_at", data.from)
+      .lte("created_at", data.to)
+      .or("status.eq.authorized,status.eq.cancelled");
+
+    if (error) throw error;
+    if (!rows || rows.length === 0) {
+      throw new Error("Nenhum XML encontrado no período selecionado.");
+    }
+
+    const files: { name: string; contentBase64: string }[] = [];
+
+    for (const row of rows) {
+      // Prioridade para XML autorizado
+      const path = row.xml_authorized_path || row.xml_cancellation_path;
+      if (!path) continue;
+
+      try {
+        const { data: blob, error: downloadErr } = await supabase.storage
+          .from("fiscal_artifacts")
+          .download(path);
+
+        if (downloadErr || !blob) continue;
+
+        const buffer = await blob.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        
+        const fileName = `${row.access_key || row.number || "nota"}.xml`;
+        files.push({ name: fileName, contentBase64: base64 });
+      } catch (err) {
+        console.error(`Falha ao baixar XML: ${path}`, err);
+      }
+    }
+
+    if (files.length === 0) {
+      throw new Error("Nenhum arquivo XML pôde ser baixado.");
+    }
+
+    return files;
+  });
+

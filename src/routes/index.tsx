@@ -48,15 +48,11 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`Por favor, atualize o formulário/modal de cadastro e edição de produtos no módulo de estoque (/estoque):
+{`Por favor, adicione a funcionalidade de exportação em lote no módulo Fiscal (/fiscal):
 
-1. Adicione os campos numéricos obrigatórios de dimensões para cálculo de frete:
-   - Peso (kg)
-   - Comprimento (cm)
-   - Largura (cm)
-   - Altura (cm)
-2. Garanta a validação via Zod exigindo que esses valores sejam positivos.
-3. Sincronize o formulário para salvar e ler diretamente essas colunas na tabela 'products' do Supabase para que a integração com o Mercado Livre utilize os dados no cálculo de frete.`}
+1. Na listagem de notas (NF-e / NFC-e), adicione um botão superior "Exportar XMLs (ZIP)".
+2. Ao clicar, abra um modal permitindo selecionar o intervalo de datas (mês atual, mês anterior ou período personalizado).
+3. Busque os XMLs das notas emitidas/autorizadas no Supabase dentro do período e gere o download de um único arquivo .zip contendo todos os arquivos .xml selecionados.`}
           </pre>
         </div>
       </div>
