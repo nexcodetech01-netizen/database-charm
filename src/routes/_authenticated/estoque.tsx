@@ -48,7 +48,7 @@ function InventoryPage() {
     <PageLayout
       icon={Boxes}
       title="Estoque"
-      description="Quanto tenho em estoque? Acompanhe saldo, movimentações e alertas de reposição."
+      meta={`${metrics.data?.totalProducts ?? 0} produtos`}
       actions={
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>

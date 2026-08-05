@@ -28,8 +28,8 @@ export function StatusBadge({
   status = "neutral",
   children,
   label,
-  appearance = "soft",
-  withDot = false,
+  appearance = "outline",
+  withDot = true,
   className,
 }: StatusBadgeProps) {
   const token = statusToken(status);
@@ -38,15 +38,15 @@ export function StatusBadge({
       ? token.solid
       : appearance === "outline"
         ? cn("border bg-transparent", token.border, token.text)
-        : cn("border", token.soft);
+        : cn("border-none bg-accent/20", token.soft, token.text);
 
   return (
     <span
       data-status={status ?? "neutral"}
       data-appearance={appearance}
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 font-medium",
-        RADIUS_TOKENS.sm,
+        "inline-flex items-center gap-1.5 px-2 py-0.5 font-medium",
+        RADIUS_TOKENS.lg,
         TEXT_TOKENS.xs,
         INTERACTION_TOKENS.hover,
         tone,

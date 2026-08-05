@@ -368,9 +368,7 @@ export function EnterpriseDataTable<T>({
     <div
       data-testid="enterprise-data-table"
       className={cn(
-        "overflow-hidden border-none bg-transparent text-card-foreground",
-        RADIUS_TOKENS.none,
-        SHADOW_TOKENS.none,
+        "overflow-hidden border-none bg-transparent text-card-foreground shadow-none",
         className,
       )}
     >
