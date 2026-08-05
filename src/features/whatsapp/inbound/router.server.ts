@@ -407,6 +407,21 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
 
   // 2) Upsert conversa (preserva status e assignment já definidos pelo operador).
+  // Busca status atual para decidir se devemos reabrir ou manter.
+  const { data: existingConv } = await db
+    .from("whatsapp_conversations")
+    .select("id, status, unread_count, bella_state")
+    .eq("company_id", tenant.companyId)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const currentStatus = (existingConv?.status as string) || "open";
+  // Se estiver resolvida/arquivada, reabre. Se for nova, nasce 'open'.
+  // Se estiver com 'human', mantém 'human' para não interromper o operador.
+  const newStatus = (currentStatus === "resolved" || currentStatus === "archived" || currentStatus === "open" || currentStatus === "bella") 
+    ? "open" 
+    : currentStatus;
+
   const { data: conversation } = await db
     .from("whatsapp_conversations")
     .upsert(
@@ -415,8 +430,9 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         contact_id: contactId,
         last_inbound_at: new Date(msg.timestamp).toISOString(),
         ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
+        status: newStatus,
       },
-      { onConflict: "company_id,contact_id" },
+      { onConflict: "company_id,contact_id" }
     )
     .select("id, bella_state, status, unread_count")
     .single();

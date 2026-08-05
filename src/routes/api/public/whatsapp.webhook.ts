@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         } catch {
           parsedForLog = raw;
         }
-        console.log("=== WEBHOOK METAPOST RECEBIDO ===", JSON.stringify(parsedForLog, null, 2));
+        console.log("Mensagem recebida do Webhook:", JSON.stringify(parsedForLog));
 
         try {
           // 2) Rate limit + verificação de assinatura (antes de qualquer persistência).
@@ -108,23 +108,6 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
             payload = JSON.parse(raw) as Record<string, unknown>;
           } catch {
             return new Response("EVENT_RECEIVED", { status: 200 });
-          }
-
-          // Extração explícita para log/debug.
-          try {
-            const body = payload as any;
-            const value = body?.entry?.[0]?.changes?.[0]?.value;
-            const message = value?.messages?.[0];
-            const fromNumber = message?.from;
-            const textBody = message?.text?.body;
-            console.log("[whatsapp.webhook] payload extraído", {
-              fromNumber,
-              textBody,
-              hasValue: Boolean(value),
-              hasMessage: Boolean(message),
-            });
-          } catch (extractErr) {
-            console.error("Erro ao extrair payload do Webhook:", extractErr);
           }
 
           // 5) Processa mensagens/status AGUARDANDO (sem fire-and-forget).

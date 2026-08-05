@@ -48,18 +48,19 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`AJUSTAR ATALHO DE ENVIO DE MENSAGEM NO CHAT (ENTER PARA ENVIAR)
+{`VERIFICAÇÃO E RECEPÇÃO DE WEBHOOK DO WHATSAPP META
 
-No componente de input do chat (caixa de texto de resposta):
+Por favor, revise a rota/função de Webhook do WhatsApp no backend:
 
-1. Modifique o evento 'onKeyDown' da caixa de texto (textarea) para:
-   - Se a tecla pressionada for 'Enter' E NÃO estiver segurando 'Shift' (e.key === 'Enter' && !e.shiftKey):
-     - Executar 'e.preventDefault()' para não pular linha.
-     - Disparar a função de envio da mensagem ('handleSendMessage').
-   - Se pressionar 'Shift + Enter':
-     - Permitir o comportamento padrão (pular linha no texto).
+1. ROTA GET (Validação Meta):
+   - Deve responder ao desafio de verificação da Meta (hub.challenge) confirmando o 'hub.verify_token'.
 
-2. Atualize a legenda explicativa abaixo do botão de envio de "Ctrl/⌘ + Enter para enviar" para "Pressione Enter para enviar • Shift + Enter para quebra de linha".`}
+2. ROTA POST (Recebimento de Mensagens):
+   - Deve processar o payload 'entry[0].changes[0].value.messages[0]'.
+   - Quando uma mensagem de cliente for recebida:
+     a) Salvar a mensagem no banco de dados vinculada à conversa do cliente.
+     b) ATUALIZAR O STATUS DA JANELA DA CONVERSA para "ABERTA" (janela de 24h ativada).
+     c) Adicionar console.log("Mensagem recebida do Webhook:", JSON.stringify(body)) para depuração.`}
           </pre>
         </div>
       </div>
