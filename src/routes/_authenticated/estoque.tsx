@@ -112,14 +112,12 @@ function InventoryPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground">Catálogo de Produtos</h2>
-            <ProductFilters
-              filters={productFilters}
-              onChange={(p) => setProductFilters((f) => ({ ...f, ...p }))}
-              onReset={() => setProductFilters(DEFAULT_PRODUCT_FILTERS)}
-            />
-          </div>
+          <ProductFilters
+            companyId={company.id}
+            filters={productFilters}
+            onChange={(p) => setProductFilters((f) => ({ ...f, ...p }))}
+            onReset={() => setProductFilters(DEFAULT_PRODUCT_FILTERS)}
+          />
           <ProductTable
             rows={products.data?.rows ?? []}
             total={products.data?.total ?? 0}
