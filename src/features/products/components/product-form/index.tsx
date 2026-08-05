@@ -118,10 +118,10 @@ const schema = z.object({
       .or(z.literal("")),
   ),
   brand: z.string().trim().max(120).optional().or(z.literal("")),
-  weight: z.preprocess((v) => num(v), z.number().positive("Peso deve ser maior que zero")),
-  width: z.preprocess((v) => num(v), z.number().positive("Largura deve ser maior que zero")),
-  height: z.preprocess((v) => num(v), z.number().positive("Altura deve ser maior que zero")),
-  length: z.preprocess((v) => num(v), z.number().positive("Comprimento deve ser maior que zero")),
+  weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
+  width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
+  height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
+  length: z.preprocess((v) => num(v as any), z.number().positive("Comprimento deve ser maior que zero")),
 });
 
 type FormState = {
