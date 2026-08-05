@@ -54,7 +54,7 @@ export function PageLayout({
   contentClassName,
 }: PageLayoutProps) {
   return (
-    <div className={cn("mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6", className)}>
+    <div className={cn("mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6", className)}>
       {showBreadcrumb ? <BreadcrumbNav /> : null}
       <PageHeader
         title={title}
@@ -62,6 +62,7 @@ export function PageLayout({
         icon={icon}
         meta={meta}
         actions={actions}
+        compactMeta={true}
       />
       {kpis}
       {toolbar}
