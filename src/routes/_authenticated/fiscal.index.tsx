@@ -39,6 +39,12 @@ function FiscalDashboardPage() {
   const [issueOpen, setIssueOpen] = useState(false);
 
   const totals = dashboard.data?.totals;
+  const processing = totals
+    ? totals.draft +
+      totals.validating +
+      totals.signing +
+      totals.sending
+    : 0;
   const totalDocs = totals ? Object.values(totals).reduce((a, b) => a + b, 0) : 0;
   const hasDocuments = totalDocs > 0;
   const emitDisabled = readiness.blockers > 0;
@@ -76,14 +82,14 @@ function FiscalDashboardPage() {
           />
           <KpiCard
             label="Em processamento"
-            value={totals ? formatNumber(totals.processing) : "—"}
+            value={formatNumber(processing)}
             loading={dashboard.isLoading}
           />
           <KpiCard
             label="Rejeitadas / Erro"
             value={totals ? formatNumber(totals.rejected + totals.error) : "—"}
             loading={dashboard.isLoading}
-            variant={totals && (totals.rejected + totals.error) > 0 ? "destructive" : "default"}
+            highlight={totals && (totals.rejected + totals.error) > 0}
           />
           <KpiCard
             label="Ambiente"
