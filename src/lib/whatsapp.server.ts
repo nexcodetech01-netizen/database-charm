@@ -165,16 +165,17 @@ export async function sendWhatsAppTemplateRaw(
       type: "body",
       parameters: input.variables.map((v) => ({
         type: "text",
-        text: String(v ?? " "), // Requisito 2: fallback para não quebrar a API
+        text: String(v ?? " "), // Mapeia variáveis {{1}}, {{2}}, etc. (ex: nome do cliente)
       })),
     });
   } else {
-    // Requisito 1: enviar parameters como array vazio ou omitir se não houver variáveis
+    // Garante array de parâmetros vazio se o template não tiver variáveis
     componentsList.push({
       type: "body",
       parameters: [],
     });
   }
+
 
   const body = {
     messaging_product: "whatsapp",
