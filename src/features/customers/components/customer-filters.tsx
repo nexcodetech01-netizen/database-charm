@@ -23,23 +23,24 @@ interface Props {
 
 export function CustomerFilters({ filters, onChange, onReset }: Props) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,180px))_auto]">
-        <div className="relative">
+    <div className="mb-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[280px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={filters.search}
             onChange={(e) => onChange({ search: e.target.value, page: 1 })}
-            placeholder="Nome, CPF/CNPJ, e-mail, telefone, cidade..."
-            className="pl-9"
+            placeholder="Buscar por nome, documento, e-mail..."
+            className="pl-9 h-9"
           />
         </div>
 
-        <Select
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
           value={filters.status || "__all"}
           onValueChange={(v) => onChange({ status: v === "__all" ? "" : v, page: 1 })}
         >
-          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all">Todos os status</SelectItem>
             {CUSTOMER_STATUS_OPTIONS.map((s) => (
@@ -52,7 +53,7 @@ export function CustomerFilters({ filters, onChange, onReset }: Props) {
           value={filters.segment || "__all"}
           onValueChange={(v) => onChange({ segment: v === "__all" ? "" : v, page: 1 })}
         >
-          <SelectTrigger><SelectValue placeholder="Segmento" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Segmento" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all">Todos os segmentos</SelectItem>
             {CUSTOMER_SEGMENT_OPTIONS.map((s) => (
@@ -65,7 +66,7 @@ export function CustomerFilters({ filters, onChange, onReset }: Props) {
           value={filters.state || "__all"}
           onValueChange={(v) => onChange({ state: v === "__all" ? "" : v, page: 1 })}
         >
-          <SelectTrigger><SelectValue placeholder="UF" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[80px]"><SelectValue placeholder="UF" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all">Todas as UFs</SelectItem>
             {BR_STATES.map((s) => (
@@ -81,7 +82,7 @@ export function CustomerFilters({ filters, onChange, onReset }: Props) {
             onChange({ sortBy, sortDir, page: 1 });
           }}
         >
-          <SelectTrigger><SelectValue placeholder="Ordenar" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Ordenar" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="created_at:desc">Mais recentes</SelectItem>
             <SelectItem value="created_at:asc">Mais antigos</SelectItem>
@@ -90,11 +91,12 @@ export function CustomerFilters({ filters, onChange, onReset }: Props) {
             <SelectItem value="last_interaction_at:desc">Interação recente</SelectItem>
             <SelectItem value="city:asc">Cidade A→Z</SelectItem>
           </SelectContent>
-        </Select>
+          </Select>
 
-        <Button variant="ghost" onClick={onReset} className="justify-self-end">
-          <X className="mr-1.5 h-4 w-4" /> Limpar
-        </Button>
+          <Button variant="ghost" size="sm" onClick={onReset} className="h-9 px-2 text-muted-foreground hover:text-foreground">
+            <X className="mr-1.5 h-4 w-4" /> Limpar
+          </Button>
+        </div>
       </div>
     </div>
   );

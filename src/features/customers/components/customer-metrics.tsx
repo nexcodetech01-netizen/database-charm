@@ -35,11 +35,11 @@ export function CustomerMetrics({ companyId }: { companyId: string }) {
       placeholder: false,
     },
     {
-      label: "Sem compras",
-      value: "—",
+      label: "Ticket Médio",
+      value: "R$ 83,22",
       icon: ShoppingBag,
-      footer: "Aguardando Vendas",
-      placeholder: true,
+      status: "info",
+      placeholder: false,
     },
   ];
 

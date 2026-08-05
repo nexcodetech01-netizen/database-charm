@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Users } from "lucide-react";
@@ -94,25 +95,36 @@ function CustomersPage() {
       }
       kpis={<CustomerMetrics companyId={company.id} />}
     >
-      <BellaCrmPanel companyId={company.id} />
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list">Lista de Clientes</TabsTrigger>
+          <TabsTrigger value="insights">Insights & CRM Bella</TabsTrigger>
+        </TabsList>
 
-      <CustomerFilters
-        filters={filters}
-        onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
-        onReset={() => setFilters(DEFAULT)}
-      />
+        <TabsContent value="list" className="space-y-0 border-none p-0 outline-none">
+          <CustomerFilters
+            filters={filters}
+            onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
+            onReset={() => setFilters(DEFAULT)}
+          />
 
-      <CustomerTable
-        rows={data?.rows ?? []}
-        total={data?.total ?? 0}
-        isLoading={isLoading}
-        page={filters.page}
-        pageSize={filters.pageSize}
-        onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-        onArchive={handleArchive}
-        onRestore={handleRestore}
-        onDelete={handleDelete}
-      />
+          <CustomerTable
+            rows={data?.rows ?? []}
+            total={data?.total ?? 0}
+            isLoading={isLoading}
+            page={filters.page}
+            pageSize={filters.pageSize}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onArchive={handleArchive}
+            onRestore={handleRestore}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+
+        <TabsContent value="insights" className="space-y-4 border-none p-0 outline-none">
+          <BellaCrmPanel companyId={company.id} />
+        </TabsContent>
+      </Tabs>
     </PageLayout>
   );
 }
