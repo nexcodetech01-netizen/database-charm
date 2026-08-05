@@ -1,6 +1,5 @@
 import { Phone, Hash, Bot, UserCircle2 } from "lucide-react";
 import { ConversationStatusBadge } from "./ConversationStatus";
-import { PresenceIndicator } from "./PresenceIndicator";
 import { WhatsAppWindowIndicator } from "./WhatsAppWindowIndicator";
 import { ConversationActions } from "./ConversationActions";
 import { AssignmentManager } from "./AssignmentManager";
@@ -26,40 +25,43 @@ export function ConversationHeader({
   deleting?: boolean;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-3 border-b p-4">
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-4">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/5 border border-primary/10 text-sm font-semibold text-primary">
           {(conversation.contact_name || conversation.contact_phone || "?").slice(0, 2).toUpperCase()}
-          <PresenceIndicator
-            lastAt={conversation.last_inbound_at}
-            className="absolute -bottom-0.5 -right-0.5 ring-2 ring-background"
+          <WhatsAppWindowIndicator 
+            lastAt={conversation.ultima_mensagem_cliente_at} 
+            variant="dot"
+            className="absolute bottom-0 right-0 ring-2 ring-background h-3 w-3" 
           />
         </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-sm font-semibold">
+        <div className="min-w-0 space-y-0.5">
+          <div className="flex items-center gap-3">
+            <h2 className="truncate text-base font-bold tracking-tight">
               {conversation.contact_name || conversation.contact_phone || conversation.contact_wa_id}
             </h2>
             <ConversationStatusBadge status={conversation.status} />
-            <WhatsAppWindowIndicator lastAt={conversation.ultima_mensagem_cliente_at} />
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Phone className="h-3 w-3" /> {conversation.contact_phone || conversation.contact_wa_id}
+          <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5 opacity-70" /> {conversation.contact_phone || conversation.contact_wa_id}
             </span>
             {conversation.protocol ? (
-              <span className="inline-flex items-center gap-1">
-                <Hash className="h-3 w-3" /> {conversation.protocol}
+              <span className="inline-flex items-center gap-1.5 border-l pl-4">
+                <Hash className="h-3.5 w-3.5 opacity-70" /> {conversation.protocol}
               </span>
             ) : null}
-            <AssignmentManager conversation={conversation} />
+            <div className="border-l pl-4">
+              <AssignmentManager conversation={conversation} />
+            </div>
             {conversation.assigned_operator_name ? (
-              <span className="inline-flex items-center gap-1">
-                <UserCircle2 className="h-3 w-3" /> {conversation.assigned_operator_name}
+              <span className="inline-flex items-center gap-1.5 border-l pl-4">
+                <UserCircle2 className="h-3.5 w-3.5 opacity-70" /> {conversation.assigned_operator_name}
               </span>
             ) : conversation.status === "bella" || conversation.status === "open" ? (
-              <span className="inline-flex items-center gap-1">
-                <Bot className="h-3 w-3 text-violet-500" /> Respondendo automaticamente
+              <span className="inline-flex items-center gap-1.5 border-l pl-4">
+                <Bot className="h-3.5 w-3.5 text-violet-500" /> 
+                <span className="text-violet-600 dark:text-violet-400 font-medium">Auto-atendimento</span>
               </span>
             ) : null}
           </div>
