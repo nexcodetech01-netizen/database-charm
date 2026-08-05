@@ -211,10 +211,10 @@ function toState(p?: Product): FormState {
     stock: String(p.stock),
     min_stock: String(p.min_stock),
     tags: p.tags ?? [],
-    weight: String((p as any).weight ?? 0),
-    width: String((p as any).width ?? 0),
-    height: String((p as any).height ?? 0),
-    length: String((p as any).length ?? 0),
+    weight: (p as any).weight ? String((p as any).weight) : "",
+    width: (p as any).width ? String((p as any).width) : "",
+    height: (p as any).height ? String((p as any).height) : "",
+    length: (p as any).length ? String((p as any).length) : "",
   };
 }
 
