@@ -1084,6 +1084,39 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               disabled={saving}
             />
           </Section>
+          
+          <Section title="Dimensões Logísticas" description="Informações obrigatórias para cálculo de frete (Mercado Livre e transportadoras).">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Peso (kg) *" hint="Peso bruto do produto com embalagem">
+                <NumInput
+                  value={form.weight}
+                  onChange={(v) => set("weight", v)}
+                  placeholder="Ex: 0.500"
+                />
+              </Field>
+              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+                <NumInput
+                  value={form.length}
+                  onChange={(v) => set("length", v)}
+                  placeholder="Ex: 20"
+                />
+              </Field>
+              <Field label="Largura (cm) *" hint="Dimensão lateral">
+                <NumInput
+                  value={form.width}
+                  onChange={(v) => set("width", v)}
+                  placeholder="Ex: 15"
+                />
+              </Field>
+              <Field label="Altura (cm) *" hint="Espessura/Altura">
+                <NumInput
+                  value={form.height}
+                  onChange={(v) => set("height", v)}
+                  placeholder="Ex: 10"
+                />
+              </Field>
+            </div>
+          </Section>
 
           {/* ─── Bloco INFORMAÇÕES ─── */}
           <Section title="Informações" description="O básico para identificar o produto.">
