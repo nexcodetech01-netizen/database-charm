@@ -48,10 +48,10 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`Por favor, corrija o aviso de 'Hydration Mismatch' em componentes que exibem datas e horários em todo o sistema:
+{`Por favor, ajuste o Dashboard Executivo e o módulo de Relatórios (/relatorios):
 
-1. Identifique os locais onde 'new Date()' ou formatações de data/hora são renderizadas diretamente no JSX/SSR.
-2. Crie ou utilize um componente/hook utilitário de formatação de data (ex: DateFormatter ou useHydrated) que garanta a renderização padronizada do fuso horário apenas após a montagem do componente no cliente (useEffect / client-side).`}
+1. Na aba de Insights do Dashboard, adicione um badge ou tooltip informativo nos gráficos de "Previsão de Faturamento" informando: "Requer ao menos 30 dias de histórico de vendas para projeção avançada".
+2. No módulo de /relatorios, substitua os placeholders de "Relatório de Impostos Retidos" por um estado de 'Em breve / Configuração Fiscal', explicando que a funcionalidade aguarda o mapeamento completo das guias tributárias da empresa.`}
           </pre>
         </div>
       </div>
