@@ -114,7 +114,7 @@ function SuppliersPage() {
           />
           <KpiCard
             label="Arquivados"
-            value={metrics.data ? formatNumber(metrics.data.archived) : "—"}
+            value={metrics.data ? formatNumber(metrics.data.total - metrics.data.active) : "—"}
             loading={metrics.isLoading}
           />
         </KpiSection>
