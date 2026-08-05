@@ -222,7 +222,7 @@ export async function sendWhatsAppTemplateRaw(
         scope: "sendWhatsAppTemplate",
         level: "info",
         msg: "template enviado",
-        templateName: input.templateName,
+        templateName: templateName,
         to,
         waMessageId,
       }),
