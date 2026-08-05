@@ -167,7 +167,7 @@ export async function sendWhatsAppTemplateRaw(
     to,
     type: "template",
     template: {
-      name: input.templateName,
+      name: templateName,
       language: { code: languageCode },
       ...(componentsList.length > 0 ? { components: componentsList } : {}),
     },
