@@ -80,7 +80,7 @@ export function ReceiptDialog(props: Props) {
       .join("\n");
 
     // Injeta a regra @page térmica
-    const thermalPageStyle = `@page { size: ${effectiveWidth === "58mm" ? 58 : 80}mm auto; margin: ${printPrefs.marginMm}mm; }`;
+    const thermalPageStyle = `@page { size: ${effectiveWidth === "58mm" ? 48 : 80}mm auto; margin: 0; }`;
 
     // Monta o documento HTML completo para o iframe
     // Importante: .receipt-print-area deve ser o body ou estar visível
