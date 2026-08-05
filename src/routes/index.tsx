@@ -48,10 +48,12 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`Por favor, ajuste o Dashboard Executivo e o módulo de Relatórios (/relatorios):
+{`Por favor, corrija o layout de impressão do Cupom Não Fiscal (ESC/POS e web print no PDV):
 
-1. Na aba de Insights do Dashboard, adicione um badge ou tooltip informativo nos gráficos de "Previsão de Faturamento" informando: "Requer ao menos 30 dias de histórico de vendas para projeção avançada".
-2. No módulo de /relatorios, substitua os placeholders de "Relatório de Impostos Retidos" por um estado de 'Em breve / Configuração Fiscal', explicando que a funcionalidade aguarda o mapeamento completo das guias tributárias da empresa.`}
+1. Margens e Alinhamento: Adicione uma margem interna à esquerda (padding-left/margin-left de pelo menos 8px a 12px) no container da bobina para que nenhum texto fique cortado na borda papel.
+2. Largura da Bobina: Ajuste o container de impressão para respeitar a largura padrão de cupom térmico (58mm/80mm ou approx. 48 caracteres por linha no ESC/POS).
+3. Quebra de Linha (Word Wrap): Adicione 'word-break: break-word' ou garanta que os rótulos de tabela (ex: Venda Nº, Data, Hora, Cliente, Itens, Forma de Pagamento) fiquem em colunas bem dimensionadas.
+4. Alinhamento dos Totais: Mantenha as descrições dos produtos alinhadas à esquerda com margem suficiente e os valores (R$) alinhados à direita.`}
           </pre>
         </div>
       </div>
