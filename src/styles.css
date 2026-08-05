@@ -489,7 +489,9 @@
 }
 .receipt-item-desc {
   font-size: 11px;
-  overflow-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 .receipt-item-line {
