@@ -48,11 +48,13 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`Por favor, adicione a funcionalidade de exportação em lote no módulo Fiscal (/fiscal):
+{`Adicione um botão para exportar o XML de cada nota individualmente direto da linha na tabela do módulo Fiscal.
 
-1. Na listagem de notas (NF-e / NFC-e), adicione um botão superior "Exportar XMLs (ZIP)".
-2. Ao clicar, abra um modal permitindo selecionar o intervalo de datas (mês atual, mês anterior ou período personalizado).
-3. Busque os XMLs das notas emitidas/autorizadas no Supabase dentro do período e gere o download de um único arquivo .zip contendo todos os arquivos .xml selecionados.`}
+Implemente filtros na listagem para eu escolher quais notas exportar (autorizadas, canceladas ou ambos) e aplicar também filtros por CFOP/cliente quando disponível.
+
+Inclua uma barra de progresso e feedback de carregamento durante a geração do ZIP para eu acompanhar o andamento do download no módulo Fiscal.
+
+Implemente validação e limites para eu evitar exportações muito grandes, com mensagens claras quando ultrapassar o número máximo de XMLs no intervalo selecionado.`}
           </pre>
         </div>
       </div>
