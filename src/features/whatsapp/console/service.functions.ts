@@ -75,16 +75,16 @@ export const createConversation = createServerFn({ method: "POST" })
       throw new Error(convError?.message ?? "Não foi possível criar a conversa.");
     }
 
-    // Dispara template 'jaspers_market_order_confirmation_v1' (Requisito 2) para abrir a janela de 24h.
+    // Dispara template 'boas_vindas' (Requisito 2) para abrir a janela de 24h.
     let templateSent = false;
     let templateError: string | null = null;
     try {
       const { sendWhatsAppTemplateRaw } = await import("@/lib/whatsapp.server");
       const sent = await sendWhatsAppTemplateRaw({
         to: waId,
-        templateName: "jaspers_market_order_confirmation_v1",
-        languageCode: "en_US",
-        variables: ["Cliente Teste", "12345", "04/08/2026"], // Exatamente 3 parâmetros (Requisito 2)
+        templateName: "boas_vindas",
+        languageCode: "pt_BR",
+        variables: [displayName || "Cliente"], // Exatamente 1 parâmetro (Requisito 2)
       });
       templateSent = sent.ok;
       templateError = sent.error;
@@ -95,7 +95,7 @@ export const createConversation = createServerFn({ method: "POST" })
         contact_id: contact.id,
         direction: "outbound",
         wa_message_id: sent.waMessageId,
-        text: "Confirmação de Pedido (Template)",
+        text: "Mensagem de Boas-vindas (Template)",
         status: sent.ok ? "sent" : "failed",
         error: sent.error,
         provider: "operator",
@@ -446,12 +446,18 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
 
     let sent;
     if (data.type === "template" && data.templateName) {
-      // Requisito 1: No front-end/service, garante 3 parâmetros para o template específico
+      // Requisito 1: No front-end/service, garante 1 parâmetro para os templates específicos
       let vars = data.variables;
-      if (data.templateName === "jaspers_market_order_confirmation_v1") {
-        vars = vars && vars.length === 3 ? vars : ["Cliente", "001", "Hoje"];
+      if (data.templateName === "boas_vindas" || data.templateName === "cobranca_criada") {
+        const clienteNome = (conv.contact as any)?.profile_name || "Cliente";
+        vars = vars && vars.length === 1 ? vars : [clienteNome];
       }
-      sent = await sendWhatsAppTemplateRaw({ to, templateName: data.templateName, variables: vars });
+      sent = await sendWhatsAppTemplateRaw({ 
+        to, 
+        templateName: data.templateName, 
+        variables: vars,
+        languageCode: "pt_BR" 
+      });
     } else if (isWindowOpen) {
       sent = await sendWhatsAppText({ to, text: data.text });
     } else {

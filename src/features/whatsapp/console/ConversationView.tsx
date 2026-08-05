@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Send, StickyNote, MessageCircle, MessageSquarePlus } from "lucide-react";
+import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +66,11 @@ export function ConversationView({
     mutations.assume.isPending ||
     mutations.returnToBella.isPending ||
     mutations.setStatus.isPending;
+
+  const lastInboundAt = conv.ultima_mensagem_cliente_at;
+  const isOpen = lastInboundAt 
+    ? (Date.now() - new Date(lastInboundAt).getTime()) <= 24 * 60 * 60 * 1000 
+    : false;
 
   const handleSubmit = async () => {
     const value = text.trim();
@@ -150,23 +156,68 @@ export function ConversationView({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="reply" className="mt-2 space-y-2">
-            <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Escreva uma resposta para o cliente…"
-              className="min-h-[72px] text-sm"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault();
-                  void handleSubmit();
-                }
-              }}
-            />
+            <div className="relative">
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={!isOpen ? "Janela Fechada. Envie um Template para reabrir..." : "Escreva uma resposta para o cliente…"}
+                disabled={!isOpen}
+                className={cn(
+                  "min-h-[72px] text-sm",
+                  !isOpen && "bg-muted/50 cursor-not-allowed opacity-60"
+                )}
+                onKeyDown={(e) => {
+                  if (isOpen && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    void handleSubmit();
+                  }
+                }}
+              />
+              {!isOpen && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="bg-background/80 px-3 py-1 rounded-md text-xs font-medium text-amber-600 border border-amber-200 shadow-sm flex items-center gap-1.5 pointer-events-auto">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Campo desabilitado (Janela Fechada)
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] text-muted-foreground">
-                Ctrl/⌘ + Enter para enviar · janela de 24h da Meta
-              </p>
-              <Button size="sm" onClick={handleSubmit} disabled={mutations.sendMessage.isPending}>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 text-[10px]"
+                  disabled={mutations.sendMessage.isPending}
+                  onClick={() => mutations.sendMessage.mutate({
+                    conversationId: conv.id,
+                    text: "Enviando template de boas-vindas...",
+                    type: "template",
+                    templateName: "boas_vindas"
+                  })}
+                >
+                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Template Boas-vindas
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 text-[10px]"
+                  disabled={mutations.sendMessage.isPending}
+                  onClick={() => mutations.sendMessage.mutate({
+                    conversationId: conv.id,
+                    text: "Enviando template de cobrança...",
+                    type: "template",
+                    templateName: "cobranca_criada"
+                  })}
+                >
+                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Template Cobrança
+                </Button>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleSubmit} 
+                disabled={!isOpen || mutations.sendMessage.isPending}
+              >
                 <Send className="mr-1.5 h-3.5 w-3.5" /> Enviar
               </Button>
             </div>
