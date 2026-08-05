@@ -46,30 +46,27 @@ export function CustomerTable({
         id: "name",
         header: "Cliente",
         cell: (c) => (
-          <>
+          <div className="py-1">
             <Link
               to="/clientes/$customerId"
               params={{ customerId: c.id }}
-              className="font-medium text-foreground hover:text-primary"
+              className="block font-bold text-foreground hover:text-primary leading-tight"
             >
               {c.name}
             </Link>
-            {c.document ? (
-              <div className="text-xs text-muted-foreground">{c.document}</div>
-            ) : null}
-          </>
+            <div className="flex flex-col text-[11px] leading-tight text-muted-foreground mt-0.5">
+              <span>{c.email || "Sem e-mail"}</span>
+              <span>{c.phone || c.whatsapp || ""}</span>
+            </div>
+          </div>
         ),
       },
       {
-        id: "contact",
-        header: "Contato",
+        id: "document",
+        header: "Documento",
         className: "text-muted-foreground",
-        cell: (c) => (
-          <>
-            <div className="truncate">{c.email ?? "—"}</div>
-            <div className="text-xs">{c.phone ?? c.whatsapp ?? ""}</div>
-          </>
-        ),
+        hideBelow: "lg",
+        cell: (c) => <span className="text-xs">{c.document || "—"}</span>,
       },
       {
         id: "city",
