@@ -116,6 +116,9 @@ export async function sendWhatsAppTemplateRaw(
 ): Promise<SendTemplateResult> {
   const { configured, phoneNumberId, accessToken, missing } = getWhatsAppCredentials();
   const to = normalizeBrazilianPhone(input.to);
+
+  // Garantia de nome de template em minúsculas e underscores (Requisito 2)
+  const templateName = (input.templateName ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   const languageCode = input.languageCode ?? "pt_BR";
 
   if (!configured) return whatsAppNotConfiguredResult(to, missing);
@@ -134,7 +137,7 @@ export async function sendWhatsAppTemplateRaw(
   }
 
   // Validação Crítica de Parâmetros (Requisito 2)
-  if (input.templateName === "jaspers_market_order_confirmation_v1") {
+  if (templateName === "jaspers_market_order_confirmation_v1") {
     const varsCount = input.variables?.length ?? 0;
     if (varsCount !== 3) {
       const errorMsg = `O template 'jaspers_market_order_confirmation_v1' exige exatamente 3 parâmetros. Recebidos: ${varsCount}.`;
@@ -164,7 +167,7 @@ export async function sendWhatsAppTemplateRaw(
     to,
     type: "template",
     template: {
-      name: input.templateName,
+      name: templateName,
       language: { code: languageCode },
       ...(componentsList.length > 0 ? { components: componentsList } : {}),
     },
@@ -197,7 +200,7 @@ export async function sendWhatsAppTemplateRaw(
           scope: "sendWhatsAppTemplate",
           level: "warn",
           msg: "Meta rejeitou envio",
-          templateName: input.templateName,
+          templateName: templateName,
           to,
           status: res.status,
           error: msg,
@@ -219,7 +222,7 @@ export async function sendWhatsAppTemplateRaw(
         scope: "sendWhatsAppTemplate",
         level: "info",
         msg: "template enviado",
-        templateName: input.templateName,
+        templateName: templateName,
         to,
         waMessageId,
       }),
@@ -232,7 +235,7 @@ export async function sendWhatsAppTemplateRaw(
         scope: "sendWhatsAppTemplate",
         level: "error",
         msg: "falha de rede",
-        templateName: input.templateName,
+        templateName: templateName,
         to,
         error: message,
       }),
