@@ -118,8 +118,22 @@ export async function sendWhatsAppTemplateRaw(
   const to = normalizeBrazilianPhone(input.to);
 
   // Garantia de nome de template em minúsculas e underscores (Requisito 2)
-  const templateName = (input.templateName ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
-  const languageCode = input.languageCode ?? "pt_BR";
+  // Garantia de nome de template e idioma (Requisito: valores verificados Meta)
+  let templateName = (input.templateName ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  let languageCode = input.languageCode ?? "pt_BR";
+
+  // Mapeamento exato de templates verificados
+  if (templateName === "boas_vindas" || templateName === "inicio_conversa") {
+    templateName = "boas_vindas";
+    languageCode = "pt_BR";
+  } else if (templateName === "cobranca_criada" || templateName === "fatura_aberta") {
+    templateName = "cobranca_criada";
+    languageCode = "pt_BR";
+  } else if (templateName === "hello_world") {
+    templateName = "hello_world";
+    languageCode = "en_US";
+  }
+
 
   if (!configured) return whatsAppNotConfiguredResult(to, missing);
   if (!to) {
