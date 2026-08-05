@@ -1,18 +1,19 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Plus, ShoppingCart, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Plus, ShoppingCart, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { PageLayout } from "@/components/layout";
+import { PageLayout, KpiSection, KpiCard } from "@/components/layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   SaleFilters,
-  SaleMetrics,
   SaleTable,
   salesService,
   useDeleteSale,
   useSalesList,
   useSetSaleStatus,
+  useSaleMetrics,
 } from "@/features/sales";
 import { SalesBellaHints } from "@/features/bella-ai";
 import { BellaSalesPanel } from "@/features/accounting-ai/sales";
@@ -32,8 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useBellaSales } from "@/features/accounting-ai/sales/use-bella-sales";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/vendas")({
   beforeLoad: requirePermission("sales.view"),
@@ -88,8 +89,7 @@ function SalesPage() {
   const { company } = Route.useRouteContext();
   const [filters, setFilters] = useState<SaleListFilters>(DEFAULT);
   const [rangeKey, setRangeKey] = useState<RangeKey>("month");
-  const [alertsOpen, setAlertsOpen] = useState(true);
-  const [bellaOpen, setBellaOpen] = useState(false);
+
 
   const range = useMemo(() => resolveRange(rangeKey), [rangeKey]);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
@@ -99,7 +99,9 @@ function SalesPage() {
   );
   
   const { data, isLoading } = useSalesList(company.id, effective);
+  const metrics = useSaleMetrics(company.id, range);
   const { view, isLoading: bellaLoading } = useBellaSales(company.id);
+
 
   const setStatusMut = useSetSaleStatus();
   const deleteMut = useDeleteSale();
@@ -257,39 +259,50 @@ function SalesPage() {
           </Button>
         </div>
       }
+      kpis={
+        <KpiSection>
+          <KpiCard
+            label="Vendas do dia"
+            value={metrics.data ? formatCurrency(metrics.data.dayTotal) : "—"}
+            hint={metrics.data ? `${formatNumber(metrics.data.dayCount)} pedidos` : undefined}
+            loading={metrics.isLoading}
+          />
+          <KpiCard
+            label="Faturamento"
+            value={metrics.data ? formatCurrency(metrics.data.monthTotal) : "—"}
+            hint={metrics.data ? `${formatNumber(metrics.data.monthCount)} pedidos` : undefined}
+            loading={metrics.isLoading}
+            highlight
+          />
+          <KpiCard
+            label="Ticket médio"
+            value={metrics.data ? formatCurrency(metrics.data.averageTicket) : "—"}
+            loading={metrics.isLoading}
+          />
+          <KpiCard
+            label="A Receber"
+            value={metrics.data ? formatCurrency(metrics.data.paidTotal) : "—"}
+            loading={metrics.isLoading}
+          />
+        </KpiSection>
+      }
     >
-      <div className="space-y-6">
-        <SaleMetrics companyId={company.id} range={range} />
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list">Lista de Vendas</TabsTrigger>
+          <TabsTrigger value="insights" className="relative">
+            Insights & IA Bella
+            {hasAlerts && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground animate-pulse">
+                {view.alerts.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-        {hasAlerts && (
-          <Collapsible
-            open={alertsOpen}
-            onOpenChange={setAlertsOpen}
-            className="rounded-2xl border border-warning/20 bg-warning/5 overflow-hidden"
-          >
-            <CollapsibleTrigger asChild>
-              <button className="flex w-full items-center justify-between p-4 hover:bg-warning/10 transition-colors">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-warning" />
-                  <span className="text-sm font-semibold text-warning">Necessita Atenção</span>
-                  <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
-                    {view.alerts.length}
-                  </span>
-                </div>
-                {alertsOpen ? <ChevronUp className="h-4 w-4 text-warning" /> : <ChevronDown className="h-4 w-4 text-warning" />}
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="px-4 pb-4">
-                <BellaSalesPanel companyId={company.id} className="border-0 bg-transparent p-0 shadow-none" hideHeader hideSummary hideRecommendations hideActions />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-
-        <div className="space-y-4">
+        <TabsContent value="list" className="space-y-4 border-none p-0 outline-none">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">Histórico de Vendas</h2>
+            <h2 className="text-sm font-semibold tracking-tight text-muted-foreground">Histórico Operacional</h2>
             <SaleFilters
               companyId={company.id}
               filters={filters}
@@ -310,29 +323,24 @@ function SalesPage() {
             onCancel={(s) => handleStatus(s, "cancelled", "cancelada")}
             onDelete={handleDelete}
           />
-        </div>
+        </TabsContent>
 
-        <Collapsible
-          open={bellaOpen}
-          onOpenChange={setBellaOpen}
-          className="rounded-2xl border border-border/70 bg-card overflow-hidden"
-        >
-          <CollapsibleTrigger asChild>
-            <button className="flex w-full items-center justify-between p-4 hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">Bella Vendas</span>
+        <TabsContent value="insights" className="space-y-6 border-none p-0 outline-none">
+          {hasAlerts && (
+            <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <span className="text-sm font-semibold text-warning">Alertas Críticos ({view.alerts.length})</span>
               </div>
-              {bellaOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="p-4 pt-0">
-              <BellaSalesPanel companyId={company.id} className="border-0 bg-transparent shadow-none" hideAlerts />
+              <BellaSalesPanel companyId={company.id} className="border-0 bg-transparent p-0 shadow-none" hideHeader hideSummary hideRecommendations hideActions />
             </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
+          )}
+          
+          <SalesBellaHints companyId={company.id} />
+          <BellaSalesPanel companyId={company.id} className="border-none shadow-none bg-accent/5" hideAlerts />
+        </TabsContent>
+      </Tabs>
+
 
       <SettleTransactionDialog
         open={!!settleSale && !!settleTx}
