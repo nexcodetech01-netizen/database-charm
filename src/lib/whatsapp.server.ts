@@ -151,10 +151,10 @@ export async function sendWhatsAppTemplateRaw(
   }
 
   // Validação Crítica de Parâmetros (Requisito 2)
-  if (templateName === "jaspers_market_order_confirmation_v1") {
+  if (templateName === "boas_vindas" || templateName === "cobranca_criada") {
     const varsCount = input.variables?.length ?? 0;
-    if (varsCount !== 3) {
-      const errorMsg = `O template 'jaspers_market_order_confirmation_v1' exige exatamente 3 parâmetros. Recebidos: ${varsCount}.`;
+    if (varsCount !== 1) {
+      const errorMsg = `O template '${templateName}' exige exatamente 1 parâmetro (Nome). Recebidos: ${varsCount}.`;
       console.error(`[VALIDATION ERROR] ${errorMsg}`);
       return { ok: false, waMessageId: null, to, error: errorMsg };
     }

@@ -48,25 +48,28 @@ function IndexComponent() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="p-8 border rounded-xl bg-card shadow-2xl space-y-6 font-mono text-sm leading-relaxed overflow-auto max-h-[80vh]">
           <pre className="whitespace-pre-wrap">
-{`CORREÇÃO DE PARÂMETROS META CLOUD API (ERRO #132000)
+{`CORREÇÃO DE ENVIO NO CHAT (JANELA FECHADA E TEMPLATES REAIS)
 
-A Meta retornou o erro "(#132000) Number of parameters does not match the expected number of params".
+No chat de atendimento (onde aparece a badge 'Janela Fechada'):
 
-Por favor, revise a construção do array 'components' na função 'sendWhatsAppTemplateRaw' em 'src/lib/whatsapp.server.ts':
+1. MAPEAMENTO DE TEMPLATES DO CHAT:
+   - Certifique-se de que os botões de envio de template no chat usem APENAS os nomes reais aprovados na Meta: "boas_vindas" ou "cobranca_criada".
+   - Remova ou substitua referências a templates inexistentes na Meta (como "Confirmação de Pedido").
 
-1. Garanta que o número de objetos inseridos no array 'parameters' corresponda EXATAMENTE à quantidade de variáveis {{1}}, {{2}}, etc. cadastradas no corpo do template na Meta.
+2. ESTRUTURA DO PAYLOAD PARA "boas_vindas" E "cobranca_criada":
+   - Mande language.code: "pt_BR".
+   - Envie EXATAMENTE 1 parâmetro dentro do body (referente ao {{1}}):
+     "components": [
+       {
+         "type": "body",
+         "parameters": [
+           { "type": "text", "text": clienteNome || "Cliente" }
+         ]
+       }
+     ]
 
-2. Exemplo de estrutura para 1 variável (ex: nome):
-"components": [
-  {
-    "type": "body",
-    "parameters": [
-      { "type": "text", "text": clienteNome || "Cliente" }
-    ]
-  }
-]
-
-3. Se o template exigir mais variáveis (ex: {{1}} para Nome, {{2}} para Valor), certifique-se de incluir todos os itens na ordem correta no array 'parameters'.`}
+3. ALERTA DE JANELA FECHADA:
+   - Se a janela estiver FECHADA ('Janela Fechada'), desabilite ou avise o operador que o campo de texto livre (como "oiii") não funcionará até que um Template (como 'boas_vindas') seja enviado e respondido/entregue.`}
           </pre>
         </div>
       </div>
