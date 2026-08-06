@@ -965,6 +965,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       }),
     onSuccess: (res) => {
       setDescription(res.description);
+      if (res.title) setTitle(res.title);
       const attrs = res.attributes;
       if (attrs) {
         if (attrs.product_type) setProductType(attrs.product_type);
