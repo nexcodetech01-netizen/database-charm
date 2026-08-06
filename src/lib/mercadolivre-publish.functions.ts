@@ -769,7 +769,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       }
 
       throw new Error(
-        `Falha ao publicar no Mercado Livre (${itemRes.status}): ${itemText.slice(0, 400)}${causeDetails} | PAYLOAD_ENVIADO=${JSON.stringify(body)}`,
+        `Falha ao publicar no Mercado Livre (${itemRes.status}): ${parsedErr.message || itemText.slice(0, 200)}${causeDetails}`,
       );
     }
 
