@@ -585,7 +585,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       // Aqui vamos simular o sucesso e atualizar o cache.
       return res.processedImages[0];
     },
-    onSuccess: () => {
+    onSuccess: (processed, { path }) => {
+      if (processed.processedUrl) {
+        setLocalImageUrls(prev => {
+          const next = new Map(prev);
+          next.set(path, processed.processedUrl!);
+          return next;
+        });
+      }
       qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
       toast.success("Imagem tratada com IA com sucesso.");
     },
