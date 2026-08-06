@@ -489,7 +489,7 @@ export function PDVScreen({
 
       <PDVItemDiscountDialog
         item={editingAdditionItem}
-        open={!!editingAdditionKey}
+        open={!!editingAdditionItem}
         onOpenChange={(open) => !open && setEditingAdditionItem(null)}
         onConfirm={pdv.setItemAddition}
         type="addition"
