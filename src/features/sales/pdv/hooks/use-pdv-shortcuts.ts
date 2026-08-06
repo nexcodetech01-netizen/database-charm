@@ -194,7 +194,7 @@ export function isPdvOwnedKey(event: PdvShortcutEvent): boolean {
   const ctrl = Boolean(event.ctrlKey || event.metaKey);
   if (ctrl) {
     const key = event.key.toLowerCase();
-    return key === "l" || key === "delete";
+    return ["l", "delete", "p", "c", "s", "r"].includes(key);
   }
   return OWNED_FUNCTION_KEYS.includes(
     event.key as (typeof OWNED_FUNCTION_KEYS)[number],
