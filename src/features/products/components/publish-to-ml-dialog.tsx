@@ -280,9 +280,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
   const photosQuery = useQuery({
-    queryKey: ["product-images", product.id],
-    queryFn: () => productImagesService.list(product.id),
-    enabled: open,
+    queryKey: ["product-images", product?.id],
+    queryFn: () => productImagesService.list(product?.id ?? ""),
+    enabled: open && !!product?.id,
     staleTime: 60_000,
   });
   const photoPaths = useMemo(
