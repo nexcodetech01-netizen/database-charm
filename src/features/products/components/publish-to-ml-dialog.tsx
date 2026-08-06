@@ -22,6 +22,7 @@ import {
   resolveChannelFee,
   solvePriceForTargetProfit,
 } from "@/features/pricing/official";
+import { ErrorBoundary } from "react-error-boundary";
 
 /** Comissão clássica do Mercado Livre (canal, não taxa de recebimento). */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,9 @@ import {
   ArrowLeft,
   ArrowRight,
   GripVertical,
+  AlertTriangle,
+  Wand2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -82,7 +86,6 @@ import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pr
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
 import { productImagesService } from "@/features/products/services/product-images.service";
 import { formatCurrency } from "@/lib/format";
-import { AlertTriangle, Wand2, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Product } from "../types";
 
@@ -101,7 +104,26 @@ interface CategoryHit {
   domainName: string | null;
 }
 
-export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Props) {
+export function PublishToMercadoLivreDialog(props: Props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <Alert variant="destructive" className="m-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Erro no Módulo de Publicação</AlertTitle>
+          <AlertDescription>
+            Ocorreu um erro inesperado ao carregar o diálogo do Mercado Livre.
+            Por favor, tente fechar e abrir novamente.
+          </AlertDescription>
+        </Alert>
+      }
+    >
+      <PublishToMercadoLivreDialogContent {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -135,29 +157,29 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   // Preço sugerido do Mercado Livre (mesma fórmula do card "Preços por canal")
   const pricingQuery = useQuery({
-    queryKey: ["pricing", "product-intelligence", product.company_id, product.id],
+    queryKey: ["pricing", "product-intelligence", product?.company_id, product?.id],
     queryFn: () =>
       getProductPricingIntelligence({
-        data: { companyId: product.company_id, productId: product.id },
+        data: { companyId: product?.company_id, productId: product?.id },
       }),
-    enabled: open && Boolean(product.company_id && product.id),
+    enabled: open && Boolean(product?.company_id && product?.id),
     staleTime: 60_000,
   });
   const channelSettingsQuery = useQuery({
-    queryKey: ["pricing", "channel-settings", product.company_id, product.id],
+    queryKey: ["pricing", "channel-settings", product?.company_id, product?.id],
     queryFn: () =>
       getProductChannelSettings({
-        data: { companyId: product.company_id, productId: product.id },
+        data: { companyId: product?.company_id, productId: product?.id },
       }),
-    enabled: open && Boolean(product.company_id && product.id),
+    enabled: open && Boolean(product?.company_id && product?.id),
     staleTime: 60_000,
   });
 
   const mlSuggestedPrice = useMemo(() => {
     const snap = pricingQuery.data;
     if (!snap) return null;
-    const costTotal = snap.product.costTotalCents / 100;
-    const currentStorePrice = snap.product.currentPriceCents / 100;
+    const costTotal = (snap.product?.costTotalCents ?? 0) / 100;
+    const currentStorePrice = (snap.product?.currentPriceCents ?? 0) / 100;
     const targetMarginPct = snap.targetMarginPct;
     const mlChan = channelSettingsQuery.data?.channels?.ml;
     const globalStrategy = channelSettingsQuery.data?.globalStrategy ?? "policy";
@@ -176,8 +198,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       // MOTOR ÚNICO — o preço que preserva o lucro da loja é resolvido pelo motor.
       const solved = solvePriceForTargetProfit(
         {
-          companyId: product.company_id,
-          productId: product.id,
+          companyId: product?.company_id ?? "",
+          productId: product?.id ?? "",
           costs: { acquisition: costTotal },
           margins: { minPct: 0, targetPct: marginPct },
           fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
@@ -190,8 +212,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     } else {
       // MOTOR ÚNICO (FASE 1/2) — nenhuma fórmula local.
       const official = computeOfficialPricing({
-        companyId: product.company_id,
-        productId: product.id,
+        companyId: product?.company_id ?? "",
+        productId: product?.id ?? "",
         costs: { acquisition: costTotal },
         margins: { minPct: 0, targetPct: marginPct },
         fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
@@ -204,10 +226,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     const base = Math.floor(raw);
     const candidate = base + 0.9;
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
-  }, [pricingQuery.data, channelSettingsQuery.data, product.company_id, product.id]);
+  }, [pricingQuery.data, channelSettingsQuery.data, product?.company_id, product?.id]);
 
-  const rawProductPrice = Number(product.price ?? 0);
-  const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
+  const rawProductPrice = Number(product?.price ?? 0);
+  const initialTitle = useMemo(() => (product?.name ?? "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [walletTarget, setWalletTarget] = useState<string>("");
@@ -217,9 +239,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [descCopied, setDescCopied] = useState(false);
 
   const [quantity, setQuantity] = useState<number>(
-    Math.max(1, Math.floor(Number(product.stock ?? 0))),
+    Math.max(1, Math.floor(Number(product?.stock ?? 0))),
   );
-  const [description, setDescription] = useState(product.description ?? "");
+  const [description, setDescription] = useState(product?.description ?? "");
   const [categoryId, setCategoryId] = useState("");
   const [categoryLabel, setCategoryLabel] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
@@ -258,9 +280,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
   const photosQuery = useQuery({
-    queryKey: ["product-images", product.id],
-    queryFn: () => productImagesService.list(product.id),
-    enabled: open,
+    queryKey: ["product-images", product?.id],
+    queryFn: () => productImagesService.list(product?.id ?? ""),
+    enabled: open && !!product?.id,
     staleTime: 60_000,
   });
   const photoPaths = useMemo(
@@ -271,9 +293,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     [photosQuery.data],
   );
   const photoSignedUrlsQuery = useQuery({
-    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
+    queryKey: ["product-images-signed", product?.id, photoPaths.join("|")],
     queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
-    enabled: open && photoPaths.length > 0,
+    enabled: open && photoPaths.length > 0 && !!product?.id,
     staleTime: 60_000,
   });
   const photoUrlByPath = useMemo(() => {
@@ -335,6 +357,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   const publish = useMutation({
     mutationFn: async () => {
+      if (!product?.id) throw new Error("ID do produto não encontrado");
       return await publishFn({
         data: {
           productId: product.id,
@@ -365,7 +388,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             }
           : undefined,
       });
-      qc.invalidateQueries({ queryKey: ["product", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product", product.id] });
+      }
       qc.invalidateQueries({ queryKey: ["products"] });
       onOpenChange(false);
     },
@@ -392,15 +417,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   // Reset state on open
   useEffect(() => {
     if (open) {
-      const t = (product.name ?? "").slice(0, 60);
+      const t = (product?.name ?? "").slice(0, 60);
       setTitle(t);
-      const rawPrice = Number(product.price ?? 0);
+      const rawPrice = Number(product?.price ?? 0);
       setPrice(rawPrice);
       setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setQuantity(Math.max(1, Math.floor(Number(product.stock ?? 0))));
-      setDescription(product.description ?? "");
+      setQuantity(Math.max(1, Math.floor(Number(product?.stock ?? 0))));
+      setDescription(product?.description ?? "");
       setCategoryId("");
       setCategoryLabel("");
       setCategorySearch(t);
@@ -413,7 +438,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand("Generica");
-      const currentModel = ((product as any).model ?? "").trim();
+      const currentModel = ((product as any)?.model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
         const words = t.split(/\s+/).filter(w => w.length > 2);
@@ -429,7 +454,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setLocalImageUrls(new Map());
       setImgErrorMap(new Map());
       
-      setVideoUrl((product as any).video_url ?? "");
+      setVideoUrl((product as any)?.video_url ?? "");
       autoRanRef.current = false;
       publish.reset(); // Reseta estados de erro da mutação ao abrir
     }
@@ -515,7 +540,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   // Auto-suggest category on open based on product title
   useEffect(() => {
     if (!open || autoRanRef.current) return;
-    const t = (product.name ?? "").trim();
+    const t = (product?.name ?? "").trim();
     if (!t) return;
     autoRanRef.current = true;
     void runPredict(t, { auto: true });
@@ -597,6 +622,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const uploadPhoto = useMutation({
     mutationFn: async ({ file, slotIndex }: { file: File; slotIndex: number }) => {
       const nextPosition = photosQuery.data?.length ?? 0;
+      if (!product?.company_id || !product?.id) throw new Error("Dados da empresa ou produto não encontrados");
       const path = await productImagesService.upload(product.company_id, product.id, file);
       
       // Get the signed URL to show immediately
@@ -623,7 +649,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         }
         return newPaths;
       });
-      qc.invalidateQueries({ queryKey: ["product-images", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product-images", product.id] });
+      }
       qc.invalidateQueries({ queryKey: ["product-images-signed"] });
       toast.success("Foto adicionada com sucesso.");
     },
@@ -711,7 +739,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       } else {
         toast.info("A IA não retornou um resultado válido, mantendo original.");
       }
-      qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
+      }
       toast.success("Imagem tratada com IA com sucesso.");
     },
     onError: (err) => {
@@ -880,7 +910,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
     const tipo = capitalize(productType.trim() || "Bolsa");
     const resBrand = capitalize(brand.trim() || "T&G");
-    const resModel = capitalize(model.trim() || (product.name ?? "").slice(0, 20));
+    const resModel = capitalize(model.trim() || (product?.name ?? "").slice(0, 20));
     const resAttr = capitalize(color.trim() || material.trim() || "Liso");
 
     let out = [tipo, resBrand, resModel, resAttr].filter(Boolean).join(" ");
@@ -908,9 +938,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           price: price > 0 ? price : undefined,
           categoryLabel: categoryLabel || undefined,
           categoryId: categoryId || undefined,
-          brand: (product as { brand?: string | null }).brand ?? undefined,
-          productName: product.name,
-          productDetails: product.description ?? undefined,
+          brand: (product as { brand?: string | null })?.brand ?? undefined,
+          productName: product?.name,
+          productDetails: product?.description ?? undefined,
         },
       }),
     onSuccess: (res) => {
@@ -948,7 +978,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       categoryId,
       brand,
       model,
-    });
+    } as any);
   }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
 
   const canPublish = validation.isReady && !publish.isPending && !isExpired;

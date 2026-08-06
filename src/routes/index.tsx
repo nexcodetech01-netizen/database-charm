@@ -49,21 +49,21 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">✅ BANCO DE DADOS E IA OTIMIZADOS</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🛡️ CORREÇÃO DE CRASH E HARDENING</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. ESTRUTURA DE DADOS:</h3>
+              <h3 className="font-medium text-primary">1. SEGURANÇA RUNTIME (ERROR BOUNDARY):</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Colunas 'ml_status', 'ml_item_id' e 'ml_permalink' criadas/garantidas.</li>
-                <li>Fallback seguro no update pós-publicação implementado no motor.</li>
+                <li>Componente isolado com Error Boundary para evitar crashes globais.</li>
+                <li>Optional Chaining (product?.prop) aplicado em todo o motor de render.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. PERFORMANCE DA IA:</h3>
+              <h3 className="font-medium text-primary">2. UX & PRECIFICAÇÃO:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Prompt direto e sucinto configurado (redução de latência).</li>
-                <li>Limite de 500 tokens aplicado para respostas rápidas.</li>
-                <li>Feedback visual "Gerando descrição rápida..." ativado no botão.</li>
+                <li>Estrutura de 3 abas consolidada e botão de IA destacado.</li>
+                <li>Precificação Premium (15% + Frete ML) recalibrada.</li>
+                <li>Validações defensivas para produtos com dados incompletos.</li>
               </ul>
             </section>
           </div>
