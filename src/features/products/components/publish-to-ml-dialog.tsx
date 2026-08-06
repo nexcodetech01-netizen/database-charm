@@ -250,10 +250,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     if (open) {
       const t = (product.name ?? "").slice(0, 60);
       setTitle(t);
-      setPrice(Number(product.price ?? 0));
+      const rawPrice = Number(product.price ?? 0);
+      setPrice(rawPrice);
+      setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setWalletTarget("");
       setQuantity(Math.max(1, Math.floor(Number(product.stock ?? 0))));
       setDescription(product.description ?? "");
       setCategoryId("");
