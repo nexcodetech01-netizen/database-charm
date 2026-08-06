@@ -675,7 +675,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           <img
             src={url}
             alt=""
-            className="h-full w-full object-contain bg-white"
+            className="h-full w-full object-cover rounded-lg"
             loading="lazy"
             onError={() => {
               console.error("Erro ao carregar imagem no slot", index + 1, url);
@@ -1133,7 +1133,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                             <img
                               src={url}
                               alt=""
-                              className="h-full w-full object-contain bg-white"
+                              className="h-full w-full object-cover rounded"
                               loading="lazy"
                             />
                           ) : (
