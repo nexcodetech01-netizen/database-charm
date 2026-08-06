@@ -3,6 +3,7 @@ import { ShoppingBag, ArrowRight, RefreshCw, Link as LinkIcon, AlertCircle } fro
 import { PageLayout } from "@/components/layout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getExternalOrders, importExternalOrder } from "@/lib/external-orders.functions";
+import { syncMercadoLivreProducts } from "@/lib/mercadolivre.functions";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -46,16 +47,42 @@ function MercadoLivreOrdersPage() {
     },
   });
 
+  const syncProductsMutation = useMutation({
+    mutationFn: () => syncMercadoLivreProducts(),
+    onSuccess: (data) => {
+      toast.success(
+        `Sincronização concluída: ${data.imported} novos produtos, ${data.updated} atualizados.`
+      );
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error: any) => {
+      toast.error(`Falha ao sincronizar anúncios: ${error.message}`);
+    },
+  });
+
   return (
     <PageLayout
       icon={ShoppingBag}
       title="Pedidos Mercado Livre"
       description="Gerencie e importe pedidos recebidos do Mercado Livre."
       actions={
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncProductsMutation.mutate()}
+            disabled={syncProductsMutation.isPending}
+          >
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${syncProductsMutation.isPending ? "animate-spin" : ""}`}
+            />
+            Importar Anúncios
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Atualizar Pedidos
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4">

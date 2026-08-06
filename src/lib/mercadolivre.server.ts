@@ -461,3 +461,155 @@ export async function deleteIntegration(
   const { error } = await supabase.from(TABLE).delete().eq("company_id", companyId);
   if (error) throw error;
 }
+
+export async function syncMLProducts(
+  supabase: AnySupabase,
+  companyId: string,
+  userId: string,
+): Promise<{ imported: number; updated: number }> {
+  const row = await readSummaryRow(supabase, companyId);
+  if (!row?.access_token_encrypted || !row.ml_user_id) {
+    throw new Error("Integração com Mercado Livre não encontrada ou não autorizada.");
+  }
+
+  const token = decryptToken(row.access_token_encrypted);
+  if (!token) throw new Error("Falha ao decifrar token do Mercado Livre.");
+
+  // 1. Buscar IDs de anúncios ativos
+  const searchUrl = `${API}/users/${row.ml_user_id}/items/search?status=active`;
+  const searchRes = await integrationFetch(
+    searchUrl,
+    { headers: { Authorization: `Bearer ${token}` } },
+    { integration: "mercadolivre:search-items", timeoutMs: 15_000 },
+  );
+
+  if (!searchRes.ok) {
+    throw new Error(`Falha ao buscar anúncios (${searchRes.status})`);
+  }
+
+  const searchData = await searchRes.json();
+  const itemIds: string[] = searchData.results || [];
+
+  if (itemIds.length === 0) return { imported: 0, updated: 0 };
+
+  // 2. Buscar detalhes dos itens (em lotes de 20 para performance e limites da API)
+  let imported = 0;
+  let updated = 0;
+  const batchSize = 20;
+
+  for (let i = 0; i < itemIds.length; i += batchSize) {
+    const batchIds = itemIds.slice(i, i + batchSize);
+    const multigetUrl = `${API}/items?ids=${batchIds.join(",")}`;
+    const multigetRes = await integrationFetch(
+      multigetUrl,
+      { headers: { Authorization: `Bearer ${token}` } },
+      { integration: "mercadolivre:multiget-items", timeoutMs: 20_000 },
+    );
+
+    if (!multigetRes.ok) continue;
+
+    const items = await multigetRes.json();
+
+    for (const itemWrapper of items) {
+      const item = itemWrapper.body;
+      if (!item || itemWrapper.code !== 200) continue;
+
+      // Buscar produto existente por ml_item_id ou SKU
+      const { data: existing } = await supabase
+        .from("products")
+        .select("id, ml_item_id, sku")
+        .eq("company_id", companyId)
+        .or(`ml_item_id.eq.${item.id},sku.eq.${item.seller_custom_field || item.id}`)
+        .maybeSingle();
+
+      const productPayload = {
+        company_id: companyId,
+        name: item.title,
+        sku: item.seller_custom_field || item.id,
+        price: item.price,
+        stock: item.available_quantity,
+        ml_item_id: item.id,
+        ml_permalink: item.permalink,
+        status: "active",
+        cover_image_path: item.thumbnail,
+        updated_at: new Date().toISOString(),
+        // Se for novo, garante que o canal de venda inclua mercado_livre
+        sales_channels: existing ? undefined : ["mercado_livre", "loja_fisica"],
+      };
+
+      if (existing) {
+        const { error: upErr } = await supabase
+          .from("products")
+          .update(productPayload)
+          .eq("id", existing.id);
+        if (!upErr) updated++;
+      } else {
+        const { error: insErr } = await supabase.from("products").insert({
+          ...productPayload,
+          created_at: new Date().toISOString(),
+        });
+        if (!insErr) imported++;
+      }
+    }
+  }
+
+  return { imported, updated };
+}
+
+export async function ensureMLProduct(
+  supabase: AnySupabase,
+  companyId: string,
+  mlItemId: string,
+  accessToken: string,
+): Promise<string | null> {
+  // 1. Tentar buscar por ml_item_id ou sku (se o sku for o próprio ml_item_id no fallback)
+  const { data: existing } = await supabase
+    .from("products")
+    .select("id")
+    .eq("company_id", companyId)
+    .or(`ml_item_id.eq.${mlItemId},sku.eq.${mlItemId}`)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  // 2. Não encontrado: Buscar detalhes no ML para criar
+  try {
+    const res = await integrationFetch(
+      `${API}/items/${mlItemId}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+      { integration: "mercadolivre:get-item", timeoutMs: 10_000 },
+    );
+
+    if (!res.ok) return null;
+    const item = await res.json();
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .insert({
+        company_id: companyId,
+        name: item.title,
+        sku: item.seller_custom_field || item.id,
+        price: item.price,
+        stock: item.available_quantity,
+        ml_item_id: item.id,
+        ml_permalink: item.permalink,
+        status: "active",
+        cover_image_path: item.thumbnail,
+        sales_channels: ["mercado_livre", "loja_fisica"],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[mercadolivre] falha ao criar produto automático:", error.message);
+      return null;
+    }
+
+    return product.id;
+  } catch (err) {
+    console.error("[mercadolivre] erro ao assegurar produto:", err);
+    return null;
+  }
+}
