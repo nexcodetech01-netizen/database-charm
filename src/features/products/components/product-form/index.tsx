@@ -90,6 +90,7 @@ import {
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
 import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
 import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
+import { validateMercadoLivreRequirements } from "../../utils/ml-validation";
 
 interface Props {
   companyId: string;
