@@ -170,6 +170,17 @@ const PDVCartRow = memo(function PDVCartRow({
           >
             <PlusCircle className="h-3.5 w-3.5" />
           </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground/70 hover:text-primary hover:bg-primary/10"
+            disabled={readOnly}
+            onClick={() => onEditNotes?.(item)}
+            title="Observações do item"
+          >
+            <MessageSquare className={cn("h-3.5 w-3.5", hasNotes && "text-primary fill-primary/10")} />
+          </Button>
         </div>
 
         <div className="flex items-center rounded-lg border bg-background">
