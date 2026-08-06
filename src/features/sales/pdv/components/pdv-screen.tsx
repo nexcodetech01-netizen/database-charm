@@ -336,7 +336,6 @@ export function PDVScreen({
           }
         : undefined,
       "finalize": () => clickPdvElement(PDV_FINALIZE_BUTTON_ID),
-    },
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
       "print-receipt": completed ? () => {
         console.log("[PDVScreen] Atalho print-receipt detectado.");
