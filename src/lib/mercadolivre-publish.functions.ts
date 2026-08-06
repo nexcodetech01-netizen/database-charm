@@ -424,7 +424,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       (candidate) => candidate.length > 0 && !isGenericBrand(candidate),
     );
     const resolvedBrand = sanitizeMlTitle(
-      brandCandidates[0] ?? SELLER_DEFAULT_BRAND,
+      brandCandidates[0] ?? "Generica",
     ).slice(0, 60);
     if (!resolvedBrand || resolvedBrand.length < 2) {
       throw new Error(
@@ -600,7 +600,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     };
 
     const baseAttrs: MlAttr[] = [
-      { id: "BRAND", value_name: SELLER_DEFAULT_BRAND },
+      { id: "BRAND", value_name: resolvedBrand || "Generica" },
       { id: "MODEL", value_name: pick("MODEL", model || SELLER_DEFAULT_BRAND) },
       { id: "COLOR", value_name: pick("COLOR", color || "Caramelo") },
       { id: "GENDER", value_name: pick("GENDER", "Feminino") },

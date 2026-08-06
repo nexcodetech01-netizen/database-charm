@@ -272,7 +272,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setBagType("");
       setStyle("");
       setColor("");
-      setBrand(((product as { brand?: string | null }).brand ?? "").trim() || "T&G");
+      setBrand(((product as { brand?: string | null }).brand ?? "").trim());
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
@@ -1592,8 +1592,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               </div>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Marca é obrigatória — se ficar em branco, publicamos como <strong>T&amp;G</strong>{" "}
-              (marca oficial). O Mercado Livre recusa &quot;Genérica&quot; ou &quot;Sem marca&quot;.
+              Marca é obrigatória — se ficar em branco, publicamos como <strong>Generica</strong>.
             </p>
             <p className="text-[11px] text-muted-foreground">
               Estes campos são enviados como atributos oficiais do Mercado Livre e ajudam o anúncio
