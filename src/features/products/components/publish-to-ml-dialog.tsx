@@ -1194,7 +1194,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Premium 💳</span>
                         <Badge className="text-[8px] sm:text-[9px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
                       </div>
-                      <span className="text-xl font-black text-primary">
+                      <span className="text-lg sm:text-xl font-black text-primary">
                         {premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}
                       </span>
                       <p className="text-[10px] leading-tight text-muted-foreground">
