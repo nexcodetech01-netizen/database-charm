@@ -870,12 +870,28 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       onOpenChange(false);
     },
     onError: (err: any) => {
-      // Exibe a mensagem real retornada pela API do Mercado Livre (sanitizada no handler)
-      const message = err instanceof Error ? err.message : "Erro desconhecido na publicação";
+      // Tenta extrair a mensagem de erro detalhada do servidor
+      let errorMessage = "Erro desconhecido na publicação";
       
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object') {
+        try {
+          errorMessage = JSON.stringify(err, null, 2);
+        } catch {
+          errorMessage = String(err);
+        }
+      }
+
       toast.error("Erro no Mercado Livre", {
-        description: message,
-        duration: 8000,
+        description: (
+          <div className="mt-2 text-xs font-mono bg-slate-900 p-2 rounded text-slate-100 max-h-[300px] overflow-auto whitespace-pre-wrap">
+            {errorMessage}
+          </div>
+        ),
+        duration: 15000,
       });
       
       console.error("[MercadoLivre] Falha na publicação:", message);
