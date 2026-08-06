@@ -530,7 +530,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSelectedPhotoPaths(prev => prev.filter(p => p !== oldPath));
     }
 
-    uploadPhoto.mutate({ file, slotIndex: uploadingSlot });
+    uploadPhoto.mutate({ file, slotIndex: uploadingSlot ?? 0 });
   }
 
   function movePhoto(index: number, direction: "left" | "right") {
