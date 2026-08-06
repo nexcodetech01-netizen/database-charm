@@ -403,27 +403,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // BRAND ABSOLUTA: "Generica" é o valor obrigatório.
     // Ignoramos qualquer lógica de marca do produto, fornecedor ou empresa.
     const brand = "Generica";
-    const brandCandidates = [overrideBrand, productBrand, supplierName, companyBrand].filter(
-      (candidate) => candidate.length > 0 && !isGenericBrand(candidate),
-    );
-    const resolvedBrand = sanitizeMlTitle(
-      brandCandidates[0] ?? "Generica",
-    ).slice(0, 60);
-    if (!resolvedBrand || resolvedBrand.length < 2) {
-      throw new Error(
-        "Marca inválida: preencha o campo 'Marca' do produto antes de publicar.",
-      );
-    }
-
-    // Persiste no cadastro do produto a marca resolvida quando ele estiver
-    // vazio ou marcado como genérico — evita repetir o mesmo ajuste manual em
-    // futuras publicações do mesmo item.
-    if (!productBrand || isGenericBrand(productBrand)) {
-      await supabase
-        .from("products")
-        .update({ brand: resolvedBrand })
-        .eq("id", data.productId);
-    }
+    const resolvedBrand = "Generica";
 
 
     if (!title || title.length < 3) throw new Error("Título muito curto (mínimo 3 caracteres após sanitização).");
@@ -584,7 +564,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     const baseAttrs: MlAttr[] = [
       { id: "BRAND", value_name: resolvedBrand || "Generica" },
-      { id: "MODEL", value_name: pick("MODEL", model || SELLER_DEFAULT_BRAND) },
+      { id: "MODEL", value_name: pick("MODEL", model || "Generica") },
       { id: "COLOR", value_name: pick("COLOR", color || "Caramelo") },
       { id: "GENDER", value_name: pick("GENDER", "Feminino") },
       { id: "MAIN_MATERIAL", value_name: pick("MAIN_MATERIAL", "Sintético") },
