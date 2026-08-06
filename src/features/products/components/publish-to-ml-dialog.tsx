@@ -296,7 +296,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   // Limpeza automática de URLs de erro no estado
   useEffect(() => {
     if (!open) return;
-    const isInvalid = (u: string) => typeof u === 'string' && (u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...'));
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
     
     let hasChanges = false;
     const nextLocal = new Map(localImageUrls);
