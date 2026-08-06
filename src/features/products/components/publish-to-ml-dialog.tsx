@@ -433,6 +433,13 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     if (!file) {
       setUploadingSlot(null);
       return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem.");
+      setUploadingSlot(null);
+      return;
+    }
+    uploadPhoto.mutate(file);
   }
 
   function movePhoto(index: number, direction: "left" | "right") {
