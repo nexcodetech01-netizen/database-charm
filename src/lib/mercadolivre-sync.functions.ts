@@ -1,28 +1,81 @@
 /**
- * Sincronização NexOS → Mercado Livre.
- *
- * Chamada em background (fire-and-forget) sempre que:
- *  - `products.price` ou `products.stock` mudam via UI;
- *  - Uma venda muda o estoque disparando `apply_sale_to_inventory`.
- *
- * Faz PUT em https://api.mercadolibre.com/items/{ml_item_id} atualizando
- * `available_quantity` e/ou `price`. É idempotente e silenciosa em erros —
- * problemas de conexão não devem quebrar o fluxo principal (venda, edição
- * de produto). Erros são logados; a UI de integrações reflete o estado
- * expirado via `getIntegrationSummary`.
+ * Atualiza o status de um anúncio no Mercado Livre (ativo/pausado)
+ * e o estoque (quantidade disponível).
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireServerPermission } from "@/features/rbac/guards/server-guards";
+import { integrationFetch } from "@/lib/http-client.server";
 
-export const syncProductToMercadoLivre = createServerFn({ method: "POST" })
+const ML_API = "https://api.mercadolibre.com";
+
+async function getAccessToken(supabase: any, companyId: string, userId: string) {
+  const { ensureFreshAccessToken } = await import("./mercadolivre.server");
+  await ensureFreshAccessToken(supabase, companyId, userId);
+
+  const { data: integ, error: iErr } = await supabase
+    .from("mercadolivre_integrations")
+    .select("access_token_encrypted")
+    .eq("company_id", companyId)
+    .maybeSingle();
+  if (iErr) throw iErr;
+  const enc = (integ as { access_token_encrypted: string | null } | null)
+    ?.access_token_encrypted;
+  if (!enc) {
+    throw new Error(
+      "Integração Mercado Livre desconectada. Reautorize em Configurações → Integrações.",
+    );
+  }
+  const { decryptToken } = await import("./meta-crypto.server");
+  return decryptToken(enc);
+}
+
+export const updateMercadoLivreItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { productId: string }) => {
-    const productId = String(input?.productId ?? "").trim();
-    if (!productId) throw new Error("productId obrigatório.");
-    return { productId };
+  .inputValidator((input: { productId: string; status?: "paused" | "active"; quantity?: number; price?: number }) => {
+    return input;
   })
   .handler(async ({ data, context }) => {
+    await requireServerPermission(context, "products.update", {
+      action: "mercadolivre.item.update",
+      module: "mercadolivre",
+    });
     const { supabase, userId } = context;
-    const { syncProductToMercadoLivreCore } = await import("@/lib/marketplace-sync.server");
-    return syncProductToMercadoLivreCore(supabase, { productId: data.productId, userId });
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .select("id, company_id, ml_item_id")
+      .eq("id", data.productId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    if (!product?.ml_item_id) throw new Error("Produto não publicado no Mercado Livre.");
+
+    const token = await getAccessToken(supabase, product.company_id, userId);
+
+    const payload: any = {};
+    if (data.status) payload.status = data.status;
+    if (data.quantity !== undefined) payload.available_quantity = data.quantity;
+    if (data.price !== undefined) payload.price = data.price;
+
+    const res = await integrationFetch(
+      `${ML_API}/items/${product.ml_item_id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+      { integration: "mercadolivre:item-update", timeoutMs: 20_000 },
+    );
+    
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`Erro ML (${res.status}): ${text}`);
+    }
+    
+    return { ok: true };
   });
