@@ -16,6 +16,7 @@ type Props = {
   changeDue?: number | null;
   /** Bloqueia edição depois que a venda foi gravada. */
   readOnly?: boolean;
+  onOpenNotes?: () => void;
 };
 
 function discountHint(evaluation: DiscountEvaluation): string | null {
