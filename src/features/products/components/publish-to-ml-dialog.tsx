@@ -643,6 +643,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       transform: CSS.Transform.toString(transform),
       transition,
       zIndex: isDragging ? 10 : undefined,
+      pointerEvents: isProcessing ? 'none' as const : 'auto' as const,
     };
 
     return (
@@ -651,7 +652,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         style={style}
         className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 ${
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
-        }`}
+        } ${isProcessing ? "cursor-wait" : ""}`}
       >
         {url ? (
           <img
