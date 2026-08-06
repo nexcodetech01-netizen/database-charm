@@ -255,6 +255,139 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
+  
+  // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
+  const photosQuery = useQuery({
+    queryKey: ["product-images", product.id],
+    queryFn: () => productImagesService.list(product.id),
+    enabled: open,
+    staleTime: 60_000,
+  });
+  const photoPaths = useMemo(
+    () =>
+      (photosQuery.data ?? [])
+        .map((img) => (img as { path: string | null }).path)
+        .filter((p): p is string => !!p),
+    [photosQuery.data],
+  );
+  const photoSignedUrlsQuery = useQuery({
+    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
+    queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
+    enabled: open && photoPaths.length > 0,
+    staleTime: 60_000,
+  });
+  const photoUrlByPath = useMemo(() => {
+    const map = new Map<string, string>();
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
+    
+    // Primeiro as URLs assinadas do banco
+    for (const it of photoSignedUrlsQuery.data ?? []) {
+      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
+        map.set(it.path, it.signedUrl);
+      }
+    }
+    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
+    localImageUrls.forEach((url, path) => {
+      if (!isInvalid(url)) {
+        map.set(path, url);
+      }
+    });
+    return map;
+  }, [photoSignedUrlsQuery.data, localImageUrls]);
+
+  // Imagens para override (sem remoção de fundo, apenas envio direto)
+  const imageOverrides = useMemo(() => {
+    const overrides: Record<string, string> = {};
+    localImageUrls.forEach((url, path) => {
+      const isInvalid = (u: string) => typeof u === 'string' && (
+        u.toLowerCase().startsWith('failed') || 
+        u.toLowerCase().startsWith('error') || 
+        u.toLowerCase().includes('background...')
+      );
+      if (url.startsWith('http') && !isInvalid(url)) {
+        overrides[path] = url;
+      }
+    });
+    return overrides;
+  }, [localImageUrls]);
+
+  // Atributos estendidos (extraídos da ficha técnica preenchida)
+  const extraAttributes = useMemo(() => {
+    const list: Array<{ id: string; value_name: string }> = [];
+    const push = (id: string, value: string) => {
+      const v = value.trim();
+      if (v) list.push({ id, value_name: v });
+    };
+    push("GENDER", gender || "Feminino");
+    push("MAIN_MATERIAL", material);
+    push("BAG_TYPE", bagType);
+    push("STYLE", style);
+    push("PATTERN_NAME", pattern || "Liso");
+    push("WITH_ZIPPER", withZipper || "Sim");
+    push("AGE_GROUP", ageGroup || "Adultos");
+    push("SEASON", season || "Permanente");
+    return list;
+  }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
+
+  const publish = useMutation({
+    mutationFn: async () => {
+      return await publishFn({
+        data: {
+          productId: product.id,
+          categoryId,
+          listingTypeId: listingType,
+          condition,
+          title,
+          price,
+          availableQuantity: quantity,
+          description,
+          color: color.trim() || undefined,
+          brand: brand.trim() || undefined,
+          model: model.trim() || undefined,
+          picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+          imageOverrides,
+          extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
+          videoUrl: videoUrl.trim() || undefined,
+        },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success("Anúncio publicado com sucesso no Mercado Livre!", {
+        description: res.permalink ?? res.mlItemId,
+        action: res.permalink
+          ? {
+              label: "Abrir",
+              onClick: () => window.open(res.permalink!, "_blank", "noopener"),
+            }
+          : undefined,
+      });
+      qc.invalidateQueries({ queryKey: ["product", product.id] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      onOpenChange(false);
+    },
+    onError: (err: any) => {
+      let errorMessage = "Erro desconhecido na publicação";
+      if (err instanceof Error) errorMessage = err.message;
+      else if (typeof err === 'string') errorMessage = err;
+      else if (err && typeof err === 'object') {
+        try { errorMessage = JSON.stringify(err, null, 2); } catch { errorMessage = String(err); }
+      }
+      toast.error("Erro no Mercado Livre", {
+        description: (
+          <div className="mt-2 text-xs font-mono bg-slate-900 p-2 rounded text-slate-100 max-h-[300px] overflow-auto whitespace-pre-wrap">
+            {errorMessage}
+          </div>
+        ),
+        duration: 15000,
+      });
+      console.error("[MercadoLivre] Falha na publicação:", errorMessage);
+    },
+  });
+
 
   // Reset state on open
   useEffect(() => {
@@ -298,8 +431,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
+      publish.reset(); // Reseta estados de erro da mutação ao abrir
     }
-  }, [open, product]);
+  }, [open, product, publish]);
 
   // Limpeza automática de URLs de erro no estado
   useEffect(() => {
@@ -439,47 +573,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }, [categoryId, open]);
 
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
-  const photosQuery = useQuery({
-    queryKey: ["product-images", product.id],
-    queryFn: () => productImagesService.list(product.id),
-    enabled: open,
-    staleTime: 60_000,
-  });
-  const photoPaths = useMemo(
-    () =>
-      (photosQuery.data ?? [])
-        .map((img) => (img as { path: string | null }).path)
-        .filter((p): p is string => !!p),
-    [photosQuery.data],
-  );
-  const photoSignedUrlsQuery = useQuery({
-    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
-    queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
-    enabled: open && photoPaths.length > 0,
-    staleTime: 60_000,
-  });
-  const photoUrlByPath = useMemo(() => {
-    const map = new Map<string, string>();
-    const isInvalid = (u: string) => typeof u === 'string' && (
-      u.toLowerCase().startsWith('failed') || 
-      u.toLowerCase().startsWith('error') || 
-      u.toLowerCase().includes('background...')
-    );
-    
-    // Primeiro as URLs assinadas do banco
-    for (const it of photoSignedUrlsQuery.data ?? []) {
-      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
-        map.set(it.path, it.signedUrl);
-      }
-    }
-    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
-    localImageUrls.forEach((url, path) => {
-      if (!isInvalid(url)) {
-        map.set(path, url);
-      }
-    });
-    return map;
-  }, [photoSignedUrlsQuery.data, localImageUrls]);
 
   // Ao carregar fotos, pré-seleciona até 5 primeiras (se ainda não escolheu).
   useEffect(() => {
@@ -772,22 +865,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }
 
   // Monta a ficha técnica estendida enviada como attributes extras ao ML.
-  const extraAttributes = useMemo(() => {
-    const list: Array<{ id: string; value_name: string }> = [];
-    const push = (id: string, value: string) => {
-      const v = value.trim();
-      if (v) list.push({ id, value_name: v });
-    };
-    push("GENDER", gender || "Feminino");
-    push("MAIN_MATERIAL", material);
-    push("BAG_TYPE", bagType);
-    push("STYLE", style);
-    push("PATTERN_NAME", pattern || "Liso");
-    push("WITH_ZIPPER", withZipper || "Sim");
-    push("AGE_GROUP", ageGroup || "Adultos");
-    push("SEASON", season || "Permanente");
-    return list;
-  }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
   // Sugestão de título SEO no padrão oficial ML:
   // [Tipo de Produto] + [Marca] + [Modelo] + [Atributo Principal]
@@ -822,89 +899,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     toast.success("Título otimizado para o Mercado Livre.");
   }
 
-  const imageOverrides = useMemo(() => {
-    const overrides: Record<string, string> = {};
-    localImageUrls.forEach((url, path) => {
-      // Consideramos override qualquer URL que não seja a original do bucket
-      // ou que venha explicitamente do processamento IA
-      if (url.startsWith('http')) {
-        overrides[path] = url;
-      }
-    });
-    return overrides;
-  }, [localImageUrls]);
-
-  const publish = useMutation({
-    mutationFn: async () => {
-      try {
-        return await publishFn({
-          data: {
-            productId: product.id,
-            categoryId,
-            listingTypeId: listingType,
-            condition,
-            title,
-            price,
-            availableQuantity: quantity,
-            description,
-            color: color.trim() || undefined,
-            brand: brand.trim() || undefined,
-            model: model.trim() || undefined,
-            picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
-            imageOverrides,
-            extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
-            videoUrl: videoUrl.trim() || undefined,
-          },
-        });
-      } catch (err) {
-        // Intercepta erros de rede ou do servidor antes que eles cheguem ao onError do useMutation
-        // se houver lógica de dump no caminho do servidor.
-        throw err;
-      }
-    },
-
-    onSuccess: (res) => {
-      toast.success("Anúncio publicado com sucesso no Mercado Livre!", {
-        description: res.permalink ?? res.mlItemId,
-        action: res.permalink
-          ? {
-              label: "Abrir",
-              onClick: () => window.open(res.permalink!, "_blank", "noopener"),
-            }
-          : undefined,
-      });
-      qc.invalidateQueries({ queryKey: ["product", product.id] });
-      qc.invalidateQueries({ queryKey: ["products"] });
-      onOpenChange(false);
-    },
-    onError: (err: any) => {
-      // Tenta extrair a mensagem de erro detalhada do servidor
-      let errorMessage = "Erro desconhecido na publicação";
-      
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      } else if (err && typeof err === 'object') {
-        try {
-          errorMessage = JSON.stringify(err, null, 2);
-        } catch {
-          errorMessage = String(err);
-        }
-      }
-
-      toast.error("Erro no Mercado Livre", {
-        description: (
-          <div className="mt-2 text-xs font-mono bg-slate-900 p-2 rounded text-slate-100 max-h-[300px] overflow-auto whitespace-pre-wrap">
-            {errorMessage}
-          </div>
-        ),
-        duration: 15000,
-      });
-      
-      console.error("[MercadoLivre] Falha na publicação:", errorMessage);
-    },
-  });
 
   const generateDesc = useMutation({
     mutationFn: () =>
@@ -961,7 +955,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
             <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
@@ -1005,776 +999,470 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             </AlertDescription>
           </Alert>
         ) : null}
-
-        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
-          <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
-            <h4 className="text-sm font-semibold flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-              {validation.requirements.map((req) => (
-                <div key={req.id} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    {req.isValid ? (
-                      <Check className="h-3 w-3 text-success" />
-                    ) : req.critical ? (
-                      <AlertTriangle className="h-3 w-3 text-destructive" />
-                    ) : (
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    )}
-                    <span className={`text-[11px] font-medium ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-muted-foreground'}`}>
-                      {req.label}
-                    </span>
-                  </div>
-                  {!req.isValid && (
-                    <span className="text-[10px] text-muted-foreground line-clamp-1 pl-4">
-                      {req.message}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="ml-title">Título do anúncio</Label>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1.5 text-xs"
-                onClick={buildSeoTitle}
-                title="Gera no padrão [Tipo] [Gênero/Estilo] [Modelo] [Cor]"
-              >
-                <Wand2 className="h-3.5 w-3.5 text-primary" /> Título otimizado (SEO)
-              </Button>
-            </div>
-            <Input
-              id="ml-title"
-              value={title}
-              maxLength={60}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {title.length}/60 caracteres · padrão ML:{" "}
-              <strong>Tipo + Gênero/Estilo + Modelo + Cor</strong>
-            </p>
-            {title.trim().length > 0 && title.trim().length < 35 ? (
-              <p className="text-xs text-amber-600 dark:text-amber-500">
-                Título curto ({title.trim().length}/35+). Para aumentar a nota de qualidade,
-                acrescente detalhes como tipo, gênero, modelo ou cor.
-              </p>
-            ) : null}
-          </div>
-
-          {/* Fotos do anúncio — 5 slots fixos: selecionadas + botão de upload */}
-          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-4">
-                <Label>Fotos do anúncio</Label>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {selectedPhotoPaths.length}/5 selecionadas
-              </span>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileSelected}
-            />
-            <div className="flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0 scrollbar-hide">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={selectedPhotoPaths}
-                  strategy={rectSortingStrategy}
-                >
-                  {Array.from({ length: 5 }).map((_, slot) => {
-                    const path = selectedPhotoPaths[slot];
-                    const url = path ? photoUrlByPath.get(path) : undefined;
-                    const isUploadingHere = uploadPhoto.isPending && uploadingSlot === slot;
-                    
-                    if (path) {
-                      return (
-                        <SortablePhotoItem
-                          key={path}
-                          path={path}
-                          index={slot}
-                          url={url}
-                          onToggle={togglePhoto}
-                        />
-                      );
-                    }
-                    
-                    return (
-                      <button
-                        key={`slot-${slot}`}
-                        type="button"
-                        onClick={() => openFilePicker(slot)}
-                        disabled={uploadPhoto.isPending}
-                        className="flex aspect-square min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                        title={`Adicionar foto ${slot + 1}`}
-                      >
-                        {isUploadingHere ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <span className="text-2xl leading-none">+</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </SortableContext>
-              </DndContext>
+        <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+          <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 sm:px-6 py-2 border-b border-border bg-muted/10">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info" className="text-xs sm:text-sm">1. Dados & Fotos</TabsTrigger>
+                <TabsTrigger value="price" className="text-xs sm:text-sm">2. Preço & Estoque</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm">3. Ficha & Descrição</TabsTrigger>
+              </TabsList>
             </div>
 
-            {/* Fotos já cadastradas no produto que ainda não foram selecionadas */}
-            {(() => {
-              const unselected = photoPaths.filter((p) => !selectedPhotoPaths.includes(p));
-              if (unselected.length === 0) return null;
-              return (
-                <div className="mt-1 grid gap-1.5">
-                  <p className="text-[11px] font-medium text-muted-foreground">
-                    Fotos já cadastradas neste produto (clique para incluir):
-                  </p>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-8 sm:overflow-x-visible">
-                    {unselected.map((path) => {
-                      const url = photoUrlByPath.get(path);
-                      return (
-                        <button
-                          key={path}
-                          type="button"
-                          onClick={() => togglePhoto(path)}
-                          className="aspect-square w-12 h-12 sm:w-auto sm:h-auto overflow-hidden rounded border border-border transition hover:border-primary shrink-0"
-                        >
-                          {url ? (
-                            <img
-                              src={url}
-                              alt=""
-                              className="h-full w-full object-cover rounded"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-full w-full bg-muted" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-
-            <p className="text-[11px] text-muted-foreground">
-              A primeira foto (slot 1) será a capa do anúncio. Anúncios com 4–5 fotos tendem a
-              atingir notas mais altas no Mercado Livre.
-            </p>
-
-            {/* Campo de Vídeo do Mercado Livre */}
-            <div className="mt-4 grid gap-2 border-t border-border pt-4">
-              <Label htmlFor="ml-video" className="flex items-center gap-2">
-                Vídeo do Anúncio (YouTube)
-                <Badge variant="outline" className="text-[10px] py-0 h-4">Apenas YouTube</Badge>
-              </Label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Input
-                    id="ml-video"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    className="pr-10"
-                  />
-                  {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Check className="h-4 w-4 text-success" />
-                    </div>
-                  )}
-                </div>
-                {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) ? (
-                  <div className="w-full sm:w-40 aspect-video bg-black rounded-md overflow-hidden relative group">
-                    {(() => {
-                      const getYoutubeId = (url: string) => {
-                        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                        const match = url.match(regExp);
-                        return (match && match[2].length === 11) ? match[2] : null;
-                      };
-                      const videoId = getYoutubeId(videoUrl);
-                      if (videoId) {
-                        return (
-                          <img 
-                            src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
-                            alt="Preview do vídeo"
-                            className="w-full h-full object-contain bg-black opacity-70"
-                            onError={(e) => {
-                              // Se falhar o mqdefault, tenta o default básico
-                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
-                            }}
-                          />
-                        );
-                      }
-                      return null;
-                    })()}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="bg-red-600 rounded-full p-2 text-white shadow-lg">
-                        <Smartphone className="h-4 w-4" />
-                      </div>
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={() => setVideoUrl("")}
-                      className="absolute top-1 right-1 bg-black/50 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ) : videoUrl ? (
-                  <p className="text-[10px] text-destructive flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    O Mercado Livre aceita apenas links do YouTube.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 border-t border-border pt-4">
-            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 items-end">
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold text-sm sm:text-base">
-                  Quanto você quer receber no bolso? (R$)
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
-                  <Input
-                    id="ml-wallet-target"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="0,00"
-                    className="h-11 pl-9 border-primary/40 text-lg focus-visible:ring-primary font-bold"
-                    value={walletTarget}
-                    onChange={(e) => setWalletTarget(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2 w-full">
-                <Label htmlFor="ml-qty" className="font-semibold text-sm sm:text-base">Estoque disponível</Label>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Progresso de Requisitos (Compacto) */}
+              <div className="flex items-center justify-between gap-4 p-2 px-3 bg-muted/20 border border-border rounded-lg">
                 <div className="flex items-center gap-2">
-                  <Input
-                    id="ml-qty"
-                    type="number"
-                    min={1}
-                    step={1}
-                    className="h-11"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                  />
-                  <Badge variant="secondary" className="h-11 px-3 whitespace-nowrap">
-                    Físico: {Number(product.stock ?? 0)}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(() => {
-                const desired = Number(walletTarget);
-                // Preços calculados para exibição nos cards
-                const isPremium = listingType === "gold_pro";
-                const classicFeePct = 0.135;
-                const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
-                const classicShipping = desired >= 79 ? 23.5 : 0;
-                const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
-
-                const premiumFeePct = 0.185;
-                const premiumFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - premiumFeePct) : 0;
-
-                return (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setListingType("gold_special")}
-                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative min-h-[44px] ${
-                        listingType === "gold_special"
-                          ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
-                        {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <span className="text-lg sm:text-xl font-black text-primary">
-                        {classicFinal > 0 ? formatCurrency(classicFinal) : "---"}
-                      </span>
-                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
-                        Comissão 13,5% | Parcelado c/ juros
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setListingType("gold_pro")}
-                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative min-h-[44px] ${
-                        listingType === "gold_pro"
-                          ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Premium 💳</span>
-                        <Badge className="text-[8px] sm:text-[9px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
-                      </div>
-                      <span className="text-lg sm:text-xl font-black text-primary">
-                        {premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}
-                      </span>
-                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
-                        12x Sem Juros + Exposição Máxima
-                      </p>
-                    </button>
-                  </>
-                );
-              })()}
-            </div>
-
-            <div className="grid gap-2 p-4 bg-muted/30 rounded-xl border border-dashed border-border">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="ml-price" className="text-sm font-semibold text-muted-foreground">
-                  Preço Final de Venda (BRL)
-                </Label>
-                {usingMlSuggested && !priceTouched && (
-                  <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">
-                    <Sparkles className="h-3 w-3 mr-1" /> Sugerido
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <Input
-                  id="ml-price"
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  className="h-12 font-mono text-lg sm:text-xl font-black text-foreground bg-background border-2 focus-visible:ring-primary"
-                  value={price}
-                  onChange={(e) => {
-                    setPrice(Number(e.target.value));
-                    setPriceTouched(true);
-                    setUsingMlSuggested(false);
-                  }}
-                />
-                <div className="flex flex-col text-[10px] text-muted-foreground whitespace-nowrap bg-background px-3 py-1.5 rounded-lg border border-border">
-                  <span className="font-bold">Taxa ML: {listingType === "gold_pro" ? "18,5%" : "13,5%"}</span>
-                  <span>Frete Grátis: {Number(walletTarget) >= 79 ? "Sim" : "Não"}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="ml-category-search" className="flex items-center gap-1.5">
-                Categoria do Mercado Livre
-                {autoSuggested && categoryId ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                    <Sparkles className="h-3 w-3" /> Sugerida automaticamente
-                  </span>
-                ) : null}
-              </Label>
-              {categoryId ? (
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    setCategoryId("");
-                    setCategoryLabel("");
-                    setAutoSuggested(false);
-                  }}
-                >
-                  Trocar
-                </button>
-              ) : null}
-            </div>
-
-            {categoryId ? (
-              <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">{categoryLabel || categoryId}</p>
-                    <p className="text-[11px] text-muted-foreground">{categoryId}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="ml-category-search"
-                    className="pl-9"
-                    placeholder="Pesquise por nome (ex.: Bolsas, Mochilas)"
-                    value={categorySearch}
-                    onChange={(e) => setCategorySearch(e.target.value)}
-                  />
-                  {isSuggesting ? (
-                    <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                  ) : null}
-                </div>
-
-                {suggestions.length > 0 ? (
-                  <div className="max-h-52 overflow-y-auto rounded-md border border-border bg-background">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s.categoryId}
-                        type="button"
-                        onClick={() => {
-                          setCategoryId(s.categoryId);
-                          setCategoryLabel(`${s.categoryName}`);
-                          setAutoSuggested(false);
-                        }}
-                        className="flex w-full items-start justify-between gap-3 border-b border-border/60 px-3 py-2 text-left text-sm last:border-0 hover:bg-accent"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{s.categoryName}</p>
-                          {s.domainName ? (
-                            <p className="truncate text-xs text-muted-foreground">{s.domainName}</p>
-                          ) : null}
-                        </div>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          {s.categoryId}
-                        </span>
-                      </button>
+                  <div className="flex -space-x-1">
+                    {validation.requirements.map((req, idx) => (
+                      <div 
+                        key={req.id} 
+                        className={`h-2 w-6 rounded-full border border-background ${req.isValid ? 'bg-success' : req.critical ? 'bg-destructive/40' : 'bg-muted'}`}
+                        title={req.label}
+                      />
                     ))}
                   </div>
-                ) : !isSuggesting && categorySearch.trim().length >= 3 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Nenhuma categoria encontrada. Refine a busca.
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Digite pelo menos 3 caracteres para buscar.
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Tipo de anúncio</Label>
-              <Select value={listingType} onValueChange={(v) => setListingType(v as ListingType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gold_special">Clássico (gold_special)</SelectItem>
-                  <SelectItem value="gold_pro">Premium (gold_pro)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Condição</Label>
-              <Select value={condition} onValueChange={(v) => setCondition(v as Condition)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">Novo</SelectItem>
-                  <SelectItem value="used">Usado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Ficha técnica estendida — melhora a nota de qualidade em Moda/Bolsas */}
-          <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label>Ficha técnica (opcional, aumenta a nota do anúncio)</Label>
-            </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="ml-attr-type" className="text-xs font-normal text-muted-foreground">
-                  Tipo de produto
-                </Label>
-                <Input
-                  id="ml-attr-type"
-                  placeholder="Ex.: Bolsa"
-                  value={productType}
-                  onChange={(e) => setProductType(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-gender"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Gênero (GENDER)
-                </Label>
-                <Select value={gender || undefined} onValueChange={setGender}>
-                  <SelectTrigger id="ml-attr-gender">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Feminino">Feminino</SelectItem>
-                    <SelectItem value="Masculino">Masculino</SelectItem>
-                    <SelectItem value="Sem gênero">Sem gênero</SelectItem>
-                    <SelectItem value="Infantil">Infantil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-bagtype"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Tipo de bolsa (BAG_TYPE)
-                </Label>
-                <Input
-                  id="ml-attr-bagtype"
-                  placeholder="Ex.: Tote, Sacola, Mochila"
-                  value={bagType}
-                  onChange={(e) => setBagType(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-material"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Material (MATERIAL)
-                </Label>
-                <Input
-                  id="ml-attr-material"
-                  placeholder="Ex.: Couro sintético"
-                  value={material}
-                  onChange={(e) => setMaterial(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-style"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Estilo (STYLE)
-                </Label>
-                <Input
-                  id="ml-attr-style"
-                  placeholder="Ex.: Casual, Elegante"
-                  value={style}
-                  onChange={(e) => setStyle(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-color"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Cor (COLOR)
-                </Label>
-                <Input
-                  id="ml-attr-color"
-                  placeholder="Ex.: Caramelo"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-brand"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Marca (BRAND) *
-                </Label>
-                <Input
-                  id="ml-attr-brand"
-                  placeholder="Ex.: T&G"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label
-                  htmlFor="ml-attr-model"
-                  className="text-xs font-normal text-muted-foreground"
-                >
-                  Modelo (MODEL)
-                </Label>
-                <Input
-                  id="ml-attr-model"
-                  placeholder="Ex.: Fabíola"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                />
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Marca é obrigatória — se ficar em branco, publicamos como <strong>Generica</strong>.
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              Estes campos são enviados como atributos oficiais do Mercado Livre e ajudam o anúncio
-              a atingir nota de qualidade 80+.
-            </p>
-          </div>
-
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="ml-desc">Descrição</Label>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={async () => {
-                    const text = description.trim();
-                    if (!text) {
-                      toast.error("Nada para copiar ainda.");
-                      return;
-                    }
-                    try {
-                      if (navigator.clipboard?.writeText) {
-                        await navigator.clipboard.writeText(text);
-                      } else {
-                        const ta = document.createElement("textarea");
-                        ta.value = text;
-                        ta.style.position = "fixed";
-                        ta.style.opacity = "0";
-                        document.body.appendChild(ta);
-                        ta.select();
-                        const ok = document.execCommand("copy");
-                        document.body.removeChild(ta);
-                        if (!ok) throw new Error("execCommand copy falhou");
-                      }
-                      setDescCopied(true);
-                      toast.success("Descrição copiada para a área de transferência.");
-                      window.setTimeout(() => setDescCopied(false), 2000);
-                    } catch (err) {
-                      toast.error(
-                        `Não foi possível copiar: ${err instanceof Error ? err.message : "erro desconhecido"}`,
-                      );
-                    }
-                  }}
-                  disabled={!description.trim() || generateDesc.isPending}
-                >
-                  {descCopied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" /> Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" /> Copiar
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={() => generateDesc.mutate()}
-                  disabled={generateDesc.isPending || !title.trim()}
-                >
-                  {generateDesc.isPending ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando descrição rápida...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3.5 w-3.5 text-primary" /> Gerar com IA
-                    </>
-                  )}
-
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-[1fr_240px]">
-              <Textarea
-                id="ml-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={10}
-                placeholder="Descrição do produto (pré-preenchida do cadastro)"
-                disabled={generateDesc.isPending}
-              />
-
-              {/* Pré-visualização mobile em tempo real */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Smartphone className="h-3.5 w-3.5" />
-                  Pré-visualização mobile
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {validation.requirements.filter(r => r.isValid).length}/{validation.requirements.length} Requisitos
+                  </span>
                 </div>
-                <div className="w-[220px] rounded-[28px] border-[6px] border-neutral-800 bg-neutral-900 shadow-lg dark:border-neutral-700">
-                  <div className="mx-auto mt-1 h-1 w-10 rounded-full bg-neutral-700" />
-                  <div className="m-1 h-[340px] overflow-hidden rounded-[20px] bg-background">
-                    <div className="border-b bg-muted/40 px-3 py-2">
-                      <p className="line-clamp-2 text-[11px] font-semibold leading-tight">
-                        {title.trim() || "Título do anúncio"}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {price > 0 ? formatCurrency(price) : "R$ 0,00"}
-                      </p>
-                    </div>
-                    <div className="h-[280px] overflow-y-auto px-3 py-2">
-                      {generateDesc.isPending && !description ? (
-                        <div className="flex h-full items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin" /> Gerando…
+                <div className="flex gap-1.5 overflow-hidden">
+                  {validation.requirements.filter(r => !r.isValid && r.critical).slice(0, 2).map(req => (
+                    <Badge key={req.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
+                      Falta {req.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <TabsContent value="info" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+                {/* Título */}
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="ml-title">Título do anúncio</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={buildSeoTitle}
+                      title="Gera no padrão [Tipo] [Gênero/Estilo] [Modelo] [Cor]"
+                    >
+                      <Wand2 className="h-3.5 w-3.5 text-primary" /> Título otimizado (SEO)
+                    </Button>
+                  </div>
+                  <Input
+                    id="ml-title"
+                    value={title}
+                    maxLength={60}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {title.length}/60 caracteres · padrão ML: <strong>Tipo + Gênero/Estilo + Modelo + Cor</strong>
+                  </p>
+                </div>
+
+                {/* Categoria */}
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="ml-category-search" className="flex items-center gap-1.5 text-sm font-semibold">
+                      Categoria do Mercado Livre
+                      {autoSuggested && categoryId ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          <Sparkles className="h-3 w-3" /> Sugerida
+                        </span>
+                      ) : null}
+                    </Label>
+                    {categoryId ? (
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setCategoryId("");
+                          setCategoryLabel("");
+                          setAutoSuggested(false);
+                        }}
+                      >
+                        Trocar
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {categoryId ? (
+                    <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">{categoryLabel || categoryId}</p>
+                          <p className="text-[11px] text-muted-foreground">{categoryId}</p>
                         </div>
-                      ) : description.trim() ? (
-                        <p className="whitespace-pre-wrap break-words text-[10px] leading-snug text-foreground">
-                          {description}
-                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="ml-category-search"
+                          className="pl-9"
+                          placeholder="Pesquise por nome (ex.: Bolsas, Mochilas)"
+                          value={categorySearch}
+                          onChange={(e) => setCategorySearch(e.target.value)}
+                        />
+                        {isSuggesting ? (
+                          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                        ) : null}
+                      </div>
+
+                      {suggestions.length > 0 ? (
+                        <div className="max-h-52 overflow-y-auto rounded-md border border-border bg-background">
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.categoryId}
+                              type="button"
+                              onClick={() => {
+                                setCategoryId(s.categoryId);
+                                setCategoryLabel(`${s.categoryName}`);
+                                setAutoSuggested(false);
+                              }}
+                              className="flex w-full items-start justify-between gap-3 border-b border-border/60 px-3 py-2 text-left text-sm last:border-0 hover:bg-accent"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">{s.categoryName}</p>
+                                {s.domainName ? (
+                                  <p className="truncate text-xs text-muted-foreground">{s.domainName}</p>
+                                ) : null}
+                              </div>
+                              <span className="shrink-0 text-[11px] text-muted-foreground">
+                                {s.categoryId}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : !isSuggesting && categorySearch.trim().length >= 3 ? (
+                        <p className="text-xs text-muted-foreground">Nenhuma categoria encontrada.</p>
                       ) : (
-                        <p className="text-[10px] italic text-muted-foreground">
-                          A descrição aparecerá aqui conforme você digita ou gera com IA.
-                        </p>
+                        <p className="text-xs text-muted-foreground">Digite 3+ caracteres para buscar.</p>
                       )}
+                    </>
+                  )}
+                </div>
+
+                {/* Fotos */}
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">Fotos do anúncio</Label>
+                    <span className="text-xs text-muted-foreground">{selectedPhotoPaths.length}/5 selecionadas</span>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+                  
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={selectedPhotoPaths} strategy={rectSortingStrategy}>
+                        {Array.from({ length: 5 }).map((_, slot) => {
+                          const path = selectedPhotoPaths[slot];
+                          const url = path ? photoUrlByPath.get(path) : undefined;
+                          const isUploadingHere = uploadPhoto.isPending && uploadingSlot === slot;
+                          
+                          if (path) {
+                            return (
+                              <SortablePhotoItem key={path} path={path} index={slot} url={url} onToggle={togglePhoto} />
+                            );
+                          }
+                          
+                          return (
+                            <button
+                              key={`slot-${slot}`}
+                              type="button"
+                              onClick={() => openFilePicker(slot)}
+                              disabled={uploadPhoto.isPending}
+                              className="flex aspect-square min-w-[100px] h-[100px] items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:opacity-60"
+                            >
+                              {isUploadingHere ? <Loader2 className="h-5 w-5 animate-spin" /> : <span className="text-2xl">+</span>}
+                            </button>
+                          );
+                        })}
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+
+                  {(() => {
+                    const unselected = photoPaths.filter((p) => !selectedPhotoPaths.includes(p));
+                    if (unselected.length === 0) return null;
+                    return (
+                      <div className="mt-1 grid gap-1.5">
+                        <p className="text-[10px] font-medium text-muted-foreground">Fotos do produto (clique para incluir):</p>
+                        <div className="flex gap-1.5 overflow-x-auto pb-1">
+                          {unselected.map((path) => {
+                            const url = photoUrlByPath.get(path);
+                            return (
+                              <button
+                                key={path}
+                                type="button"
+                                onClick={() => togglePhoto(path)}
+                                className="aspect-square w-12 h-12 overflow-hidden rounded border border-border hover:border-primary shrink-0"
+                              >
+                                {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-muted" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Vídeo */}
+                <div className="grid gap-2 border-t border-border pt-4">
+                  <Label htmlFor="ml-video" className="flex items-center gap-2 text-sm font-semibold">
+                    Vídeo (YouTube)
+                    <Badge variant="outline" className="text-[9px] py-0 h-4">Opcional</Badge>
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Input
+                      id="ml-video"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                    />
+                    {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) && (
+                      <div className="w-full sm:w-32 aspect-video bg-black rounded-md overflow-hidden shrink-0">
+                        {(() => {
+                          const getYoutubeId = (url: string) => {
+                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                            const match = url.match(regExp);
+                            return (match && match[2].length === 11) ? match[2] : null;
+                          };
+                          const videoId = getYoutubeId(videoUrl);
+                          return videoId ? <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt="Preview" className="w-full h-full object-contain" /> : null;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="price" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+                <div className="grid gap-6">
+                  {/* Cards de Modalidade */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(() => {
+                      const desired = Number(walletTarget);
+                      const isPremium = listingType === "gold_pro";
+                      const classicFeePct = 0.135;
+                      const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
+                      const classicShipping = desired >= 79 ? 23.5 : 0;
+                      const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
+                      const premiumFeePct = 0.185;
+                      const premiumFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - premiumFeePct) : 0;
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setListingType("gold_special")}
+                            className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all ${
+                              listingType === "gold_special"
+                                ? "border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm"
+                                : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Clássico</span>
+                              {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
+                            </div>
+                            <span className="text-xl font-black text-primary">{classicFinal > 0 ? formatCurrency(classicFinal) : "---"}</span>
+                            <p className="text-[10px] text-muted-foreground">Comissão 13,5% | Parcelado c/ juros</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setListingType("gold_pro")}
+                            className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all ${
+                              listingType === "gold_pro"
+                                ? "border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm"
+                                : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Premium 💳</span>
+                              <Badge className="text-[8px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
+                            </div>
+                            <span className="text-xl font-black text-primary">{premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}</span>
+                            <p className="text-[10px] text-muted-foreground">12x Sem Juros + Exposição Máxima</p>
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Input de Preço Final e Quanto recebe */}
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2 p-4 bg-muted/30 rounded-xl border border-dashed border-border">
+                      <Label htmlFor="ml-price" className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">
+                        Preço Final de Venda
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="ml-price"
+                          type="number"
+                          className="h-12 font-mono text-xl font-black bg-background border-2 focus-visible:ring-primary"
+                          value={price}
+                          onChange={(e) => {
+                            setPrice(Number(e.target.value));
+                            setPriceTouched(true);
+                            setUsingMlSuggested(false);
+                          }}
+                        />
+                        {usingMlSuggested && !priceTouched && (
+                          <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 shrink-0">
+                            <Sparkles className="h-3 w-3 mr-1" /> Sugerido
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 p-4 bg-success/5 rounded-xl border border-dashed border-success/30">
+                      <Label className="text-xs font-semibold text-success uppercase tracking-tight">
+                        Quanto você recebe (Líquido)
+                      </Label>
+                      <div className="flex items-center gap-2 h-12 px-3 bg-background/50 rounded-lg border border-success/20">
+                        <span className="font-mono text-xl font-black text-success">
+                          {walletTarget ? formatCurrency(Number(walletTarget)) : "---"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Estoque e Condição */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="ml-qty">Estoque disponível</Label>
+                      <Input
+                        id="ml-qty"
+                        type="number"
+                        min={1}
+                        value={quantity}
+                        onChange={(e) => setQuantity(Number(e.target.value))}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Condição</Label>
+                      <Select value={condition} onValueChange={(v) => setCondition(v as Condition)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">Novo</SelectItem>
+                          <SelectItem value="used">Usado</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </TabsContent>
 
-            {(() => {
-              const HARD_LIMIT = 50000;
-              const RECOMMENDED = 5000;
-              const len = description.length;
-              const overHard = len > HARD_LIMIT;
-              const overSoft = len > RECOMMENDED;
-              return (
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    {generateDesc.isPending
-                      ? "A IA está montando uma descrição otimizada para o Mercado Livre…"
-                      : overHard
-                        ? `Excede o limite do Mercado Livre (${HARD_LIMIT.toLocaleString("pt-BR")} caracteres). Reduza antes de publicar.`
-                        : overSoft
-                          ? `Acima do recomendado (${RECOMMENDED.toLocaleString("pt-BR")} caracteres). Textos mais curtos convertem melhor.`
-                          : "Pré-preenchida a partir do cadastro. Clique em ‘Gerar com IA’ para criar um texto pronto para o Mercado Livre."}
-                  </p>
-                  <span
-                    className={`shrink-0 text-xs tabular-nums ${
-                      overHard
-                        ? "text-destructive font-medium"
-                        : overSoft
-                          ? "text-amber-600 dark:text-amber-500"
-                          : "text-muted-foreground"
-                    }`}
-                    aria-live="polite"
-                  >
-                    {len.toLocaleString("pt-BR")} / {HARD_LIMIT.toLocaleString("pt-BR")}
-                  </span>
+              <TabsContent value="desc" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+                {/* Ficha Técnica - Grid */}
+                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-4">
+                  <Label className="text-sm font-semibold">Ficha Técnica (Atributos)</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-type" className="text-[10px] text-muted-foreground uppercase">Tipo</Label>
+                      <Input id="ml-attr-type" value={productType} onChange={(e) => setProductType(e.target.value)} placeholder="Bolsa" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-brand" className="text-[10px] text-muted-foreground uppercase">Marca *</Label>
+                      <Input id="ml-attr-brand" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Generica" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-model" className="text-[10px] text-muted-foreground uppercase">Modelo</Label>
+                      <Input id="ml-attr-model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Padrão" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-gender" className="text-[10px] text-muted-foreground uppercase">Gênero</Label>
+                      <Select value={gender || undefined} onValueChange={setGender}>
+                        <SelectTrigger id="ml-attr-gender"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Feminino">Feminino</SelectItem>
+                          <SelectItem value="Masculino">Masculino</SelectItem>
+                          <SelectItem value="Sem gênero">Sem gênero</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-material" className="text-[10px] text-muted-foreground uppercase">Material</Label>
+                      <Input id="ml-attr-material" value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="Couro" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ml-attr-color" className="text-[10px] text-muted-foreground uppercase">Cor</Label>
+                      <Input id="ml-attr-color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="Preta" />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">* Marca é obrigatória para evitar erros de publicação.</p>
                 </div>
-              );
-            })()}
-          </div>
+
+                {/* Descrição */}
+                <div className="grid gap-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="ml-desc" className="text-sm font-semibold">Descrição do Anúncio</Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-[10px]"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(description);
+                          setDescCopied(true);
+                          toast.success("Copiado!");
+                          setTimeout(() => setDescCopied(false), 2000);
+                        }}
+                        disabled={!description.trim()}
+                      >
+                        {descCopied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                        {descCopied ? "Copiado" : "Copiar"}
+                      </Button>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="default"
+                      className="w-full h-12 text-sm font-bold bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-lg group transition-all"
+                      onClick={() => generateDesc.mutate()}
+                      disabled={generateDesc.isPending || !title.trim()}
+                    >
+                      {generateDesc.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Gerando descrição otimizada...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-5 w-5 text-amber-300 group-hover:scale-110 transition-transform" />
+                          ✨ Gerar Descrição Otimizada com IA
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <Textarea
+                    id="ml-desc"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={12}
+                    className="font-sans text-sm leading-relaxed resize-none focus-visible:ring-primary/30"
+                    placeholder="A descrição profissional aparecerá aqui..."
+                  />
+                  
+                  <div className="flex justify-between items-center text-[10px] text-muted-foreground">
+                    <span>Dica: Descrições diretas e com benefícios vendem mais.</span>
+                    <span className={description.length > 50000 ? "text-destructive font-bold" : ""}>
+                      {description.length.toLocaleString()} / 50.000
+                    </span>
+                  </div>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
 
         <DialogFooter className="p-4 sm:p-6 border-t border-border bg-background shrink-0">
@@ -1783,22 +1471,22 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={publish.isPending}
-              className="w-full sm:w-auto min-h-[44px]"
+              className="w-full sm:w-auto h-11"
             >
               Cancelar
             </Button>
             <Button 
               onClick={() => publish.mutate()} 
               disabled={!canPublish}
-              className="w-full sm:w-auto min-h-[44px]"
+              className="w-full sm:w-auto h-11 px-8 font-bold"
             >
               {publish.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Publicando…
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publicando…
                 </>
               ) : (
                 <>
-                  <ExternalLink className="mr-1.5 h-4 w-4" /> Publicar no Mercado Livre
+                  <ExternalLink className="mr-2 h-4 w-4" /> Publicar no Mercado Livre
                 </>
               )}
             </Button>
