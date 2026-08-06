@@ -195,6 +195,7 @@ function toState(p?: Product): FormState {
     ncm: p.ncm ?? "",
     cest: (p as { cest?: string | null }).cest ?? "",
     brand: p.brand ?? "",
+    model: (p as any).model ?? "",
     description: p.description ?? "",
     category_id: p.category_id ?? "",
     supplier_id: p.supplier_id ?? "",
