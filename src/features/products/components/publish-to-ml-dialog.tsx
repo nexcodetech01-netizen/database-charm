@@ -95,6 +95,16 @@ interface CategoryHit {
 }
 
 export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Props) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   const qc = useQueryClient();
   const predictFn = useServerFn(predictMercadoLivreCategory);
   const publishFn = useServerFn(publishProductToMercadoLivre);
