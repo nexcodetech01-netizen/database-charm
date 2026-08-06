@@ -39,6 +39,7 @@ export interface FiscalAutofillState {
   source: FiscalSource;
   categorySuggestion: { ncm: string; cest: string; categoryName: string } | null;
   historySuggestions: FiscalHistorySuggestion[];
+  masterSuggestions: NcmMasterEntry[];
   historyLoading: boolean;
   masterLoading: boolean;
   applySuggestion: (values: { ncm: string; cest?: string | null }, source: FiscalSource) => void;
@@ -56,7 +57,7 @@ export function useFiscalAutofill({
   onApply,
 }: Params): FiscalAutofillState {
   const [source, setSource] = useState<FiscalSource>(ncm ? "manual" : "category");
-  const [masterLoading, setMasterLoading] = useState(false);
+  const [isCheckingMaster, setIsCheckingMaster] = useState(false);
   const sourceRef = useRef(source);
   sourceRef.current = source;
 
@@ -85,7 +86,7 @@ export function useFiscalAutofill({
       
       lastCategoryRef.current = categoryId;
       lastMaterialRef.current = material || null;
-      setMasterLoading(true);
+      setIsCheckingMaster(true);
 
       try {
         const masterSuggestion = await ncmMasterService.suggest(category.name, material);
@@ -94,11 +95,10 @@ export function useFiscalAutofill({
         const targetCest = categorySuggestion?.cest || cest;
 
         if (!targetNcm) {
-          // Apenas avisa se não houver NENHUMA sugestão (nem categoria nem mestre)
-          if (!ncm) {
-            toast.info("Nenhuma sugestão de NCM encontrada para esta categoria. Preencha manualmente ou revise a categoria.", {
-              description: "A tabela mestre e o histórico ainda não possuem dados para este item.",
-              duration: 5000,
+          if (!ncm && categoryId) {
+            toast.info("Nenhuma sugestão automática para esta categoria.", {
+              description: "Selecione uma categoria diferente ou preencha o NCM manualmente.",
+              duration: 4000,
             });
           }
           return;
@@ -118,9 +118,8 @@ export function useFiscalAutofill({
         }
       } catch (error) {
         console.error("[useFiscalAutofill] Master lookup error:", error);
-        toast.error("Falha ao buscar sugestão de NCM na tabela mestre.");
       } finally {
-        setMasterLoading(false);
+        setIsCheckingMaster(false);
       }
     }
 
@@ -128,10 +127,21 @@ export function useFiscalAutofill({
   }, [categoryId, material, category, categorySuggestion, ncm, cest, onApply]);
 
   const debouncedName = useDebouncedValue(name.trim(), 450);
+  
+  // 2) Histórico inteligente
   const { data: historySuggestions = [], isFetching: historyLoading } = useQuery({
     queryKey: ["products", "fiscal-suggestions", companyId, debouncedName],
     queryFn: () => fiscalSuggestionService.byName(companyId, debouncedName),
-    enabled: Boolean(companyId) && debouncedName.length >= 3,
+    // Reduzido para 2 caracteres conforme pedido ("mesmo com produto tendo menos de 3 letras")
+    enabled: Boolean(companyId) && debouncedName.length >= 2,
+    staleTime: 60_000,
+  });
+
+  // 3) Busca na Tabela Mestre por termo (fallback quando não tem categoria ou histórico fraco)
+  const { data: masterSuggestions = [], isFetching: isSearchingMaster } = useQuery({
+    queryKey: ["products", "ncm-master-search", debouncedName],
+    queryFn: () => ncmMasterService.search(debouncedName),
+    enabled: debouncedName.length >= 3,
     staleTime: 60_000,
   });
 
@@ -153,8 +163,9 @@ export function useFiscalAutofill({
     source,
     categorySuggestion,
     historySuggestions,
+    masterSuggestions,
     historyLoading,
-    masterLoading,
+    masterLoading: isCheckingMaster || isSearchingMaster,
     applySuggestion,
     markManual,
   };
