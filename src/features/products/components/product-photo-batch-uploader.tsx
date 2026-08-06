@@ -100,24 +100,52 @@ export function ProductPhotoBatchUploader({ companyId, productId, maxPhotos = 5,
           images: queue.map((img, idx) => ({
             id: img.id,
             url: img.preview,
-            isMain: idx === 0 && !img.isExisting // Apenas se a nova foto for colocada em 1º
-          }))
+            isMain: idx === 0
+          })),
+          enableMultiview: queue.length === 1 && !queue[0].isExisting
         }
       });
 
       if (result.success) {
-        setQueue(prev => prev.map(img => {
-          const processed = result.processedImages.find((p: any) => p.id === img.id);
-          if (!processed || img.isExisting) return img; // Preserva existentes
-          
-          return {
-            ...img,
-            processedUrl: processed.processedUrl || img.preview,
-            isProcessing: false,
-            status: "success"
-          };
-        }));
-        toast.success("IA: Novas fotos de detalhe otimizadas!");
+        const newQueue: QueuedImage[] = [];
+        
+        // 1. Atualiza imagens existentes na fila
+        queue.forEach(img => {
+          const processed = result.processedImages.find((p: any) => p.id === img.id && !p.isGenerated);
+          if (processed && !img.isExisting) {
+            newQueue.push({
+              ...img,
+              processedUrl: processed.processedUrl || img.preview,
+              isProcessing: false,
+              status: "success"
+            });
+          } else {
+            newQueue.push({ ...img, isProcessing: false });
+          }
+        });
+
+        // 2. Adiciona variações geradas (Multiview)
+        const generated = result.processedImages.filter((p: any) => p.isGenerated);
+        generated.forEach((gen: any) => {
+          if (newQueue.length < maxPhotos) {
+            newQueue.push({
+              id: gen.id,
+              preview: gen.url,
+              processedUrl: gen.processedUrl,
+              isProcessing: false,
+              status: "success",
+              isExisting: false
+            });
+          }
+        });
+
+        setQueue(newQueue);
+        
+        if (generated.length > 0) {
+          toast.success("IA: Foto 1 otimizada e novos ângulos gerados!");
+        } else {
+          toast.success("IA: Fotos otimizadas com sucesso!");
+        }
       }
     } catch (error) {
       setQueue(prev => prev.map(img => 
