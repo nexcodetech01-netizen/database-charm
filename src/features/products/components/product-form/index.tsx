@@ -936,9 +936,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       margin: num(form.margin),
       use_category_margin: form.use_category_margin && hasCategoryMargin,
       price: parsedPrice,
-      // Estoque inicial só na criação — em edição o saldo é alterado
-      // exclusivamente por movimentação de estoque.
-      ...(product ? {} : { stock: num(form.stock) }),
+      // Estoque agora pode ser editado manualmente também na edição (liberação solicitada).
+      stock: num(form.stock),
       min_stock: num(form.min_stock),
       tags: normalizeTags(form.tags),
       weight: num(form.weight),
@@ -2123,7 +2122,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           <Section title="Estoque" description="Saldo, mínimo e movimentações.">
             <div className="grid gap-4 sm:grid-cols-2">
               {product ? (
-                <Field label="Saldo em estoque" hint="Alterado somente por movimentação de estoque">
+                <Field label="Saldo em estoque" hint="Editável manualmente ou via movimentação">
                   <div className="space-y-2">
                     <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
                     <div className="flex flex-wrap gap-2">
