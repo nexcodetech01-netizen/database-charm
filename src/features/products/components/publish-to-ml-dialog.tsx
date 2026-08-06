@@ -243,6 +243,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
+  const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const autoRanRef = useRef(false);
 
   // Reset state on open
@@ -282,6 +283,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setAgeGroup("Adultos");
       setSeason("Permanente");
       setSelectedPhotoPaths([]);
+      setLocalImageUrls(new Map());
       autoRanRef.current = false;
     }
   }, [open, product]);
@@ -294,8 +296,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
     const isPremium = listingType === "gold_pro";
     const feePct = isPremium ? 0.185 : 0.135;
-    const fixedFee = desired < 79 ? 6.5 : 0;
-    const shipping = desired < 79 ? 0 : 23.5;
+    const fixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
+    const shipping = desired >= 79 ? 23.5 : 0;
     const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
     const roundedFinal = Number(calculatedFinal.toFixed(2));
 
@@ -420,11 +422,16 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
   const photoUrlByPath = useMemo(() => {
     const map = new Map<string, string>();
+    // Primeiro as URLs assinadas do banco
     for (const it of photoSignedUrlsQuery.data ?? []) {
       if (it.path && it.signedUrl) map.set(it.path, it.signedUrl);
     }
+    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
+    localImageUrls.forEach((url, path) => {
+      map.set(path, url);
+    });
     return map;
-  }, [photoSignedUrlsQuery.data]);
+  }, [photoSignedUrlsQuery.data, localImageUrls]);
 
   // Ao carregar fotos, pré-seleciona até 5 primeiras (se ainda não escolheu).
   useEffect(() => {
@@ -468,14 +475,28 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         throw new Error("Falha ao otimizar imagem com IA");
       }
 
+      const mainProcessed = res.processedImages[0];
+      if (mainProcessed.processedUrl) {
+        setLocalImageUrls(prev => {
+          const next = new Map(prev);
+          next.set(path, mainProcessed.processedUrl!);
+          return next;
+        });
+      }
+
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
       // Se gerou multiview, adicionar as novas imagens
       const generated = res.processedImages.filter(img => (img as any).isGenerated);
       if (generated.length > 0) {
         for (const gen of generated) {
-          // Em um cenário real, salvaríamos essas imagens no bucket.
-          // Por agora, apenas incluímos no estado para exibição.
+          if (gen.processedUrl) {
+            setLocalImageUrls(prev => {
+              const next = new Map(prev);
+              next.set(gen.id, gen.processedUrl!);
+              return next;
+            });
+          }
           setSelectedPhotoPaths(prev => {
             if (prev.length < 5 && !prev.includes(gen.id)) {
               return [...prev, gen.id];
