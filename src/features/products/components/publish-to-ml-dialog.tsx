@@ -679,7 +679,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         />
 
         {/* Badge de Posição */}
-        <span className="absolute left-1 top-1 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-sm">
+        <span className="absolute left-1 top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm sm:h-4 sm:w-4 sm:text-[9px]">
           {index + 1}
         </span>
 
