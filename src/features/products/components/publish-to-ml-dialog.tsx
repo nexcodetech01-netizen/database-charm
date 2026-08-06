@@ -913,25 +913,31 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   const publish = useMutation({
     mutationFn: async () => {
-      return await publishFn({
-        data: {
-          productId: product.id,
-          categoryId,
-          listingTypeId: listingType,
-          condition,
-          title,
-          price,
-          availableQuantity: quantity,
-          description,
-          color: color.trim() || undefined,
-          brand: brand.trim() || undefined,
-          model: model.trim() || undefined,
-          picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
-          imageOverrides,
-          extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
-          videoUrl: videoUrl.trim() || undefined,
-        },
-      });
+      try {
+        return await publishFn({
+          data: {
+            productId: product.id,
+            categoryId,
+            listingTypeId: listingType,
+            condition,
+            title,
+            price,
+            availableQuantity: quantity,
+            description,
+            color: color.trim() || undefined,
+            brand: brand.trim() || undefined,
+            model: model.trim() || undefined,
+            picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+            imageOverrides,
+            extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
+            videoUrl: videoUrl.trim() || undefined,
+          },
+        });
+      } catch (err) {
+        // Intercepta erros de rede ou do servidor antes que eles cheguem ao onError do useMutation
+        // se houver lógica de dump no caminho do servidor.
+        throw err;
+      }
     },
 
     onSuccess: (res) => {
@@ -949,12 +955,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       onOpenChange(false);
     },
     onError: (err) => {
-      // Exibe apenas a mensagem de erro amigável sem printar o JSON inteiro ou bloco de código
-      const errorMessage = err instanceof Error ? err.message : "Falha ao publicar no Mercado Livre";
+      // JAMAIS exiba JSON ou dump da API. Exibe apenas toast amigável.
+      const errorMessage = err instanceof Error ? err.message : "Ocorreu um erro na publicação, verifique os dados.";
       const cleanMessage = errorMessage.split('|')[0].trim(); 
-      toast.error("Erro na Publicação", {
-        description: cleanMessage,
+      
+      toast.error("Aviso: Falha na Publicação", {
+        description: "Verifique se todos os campos obrigatórios estão preenchidos corretamente.",
       });
+      
+      console.error("[MercadoLivre] Erro capturado:", errorMessage);
     },
   });
 
