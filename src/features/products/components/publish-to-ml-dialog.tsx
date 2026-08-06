@@ -22,6 +22,7 @@ import {
   resolveChannelFee,
   solvePriceForTargetProfit,
 } from "@/features/pricing/official";
+import { ErrorBoundary } from "react-error-boundary";
 
 /** Comissão clássica do Mercado Livre (canal, não taxa de recebimento). */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,9 @@ import {
   ArrowLeft,
   ArrowRight,
   GripVertical,
+  AlertTriangle,
+  Wand2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -82,7 +86,6 @@ import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pr
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
 import { productImagesService } from "@/features/products/services/product-images.service";
 import { formatCurrency } from "@/lib/format";
-import { AlertTriangle, Wand2, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Product } from "../types";
 
