@@ -136,6 +136,12 @@ export function resolvePdvShortcut(
       return "focus-discount";
     case "F5":
       return "open-payment";
+    case "F6":
+      return "edit-price";
+    case "F7":
+      return "edit-discount";
+    case "F8":
+      return "edit-addition";
     case "F12":
       return "close-cash";
     case "Delete":
@@ -144,6 +150,27 @@ export function resolvePdvShortcut(
     default:
       return null;
   }
+}
+
+/** 
+ * Mapas customizados para atalhos combinados (CTRL+...).
+ * Re-implementando lógica de detecção de teclas especiais.
+ */
+export function resolvePdvCombinedShortcut(
+  event: PdvShortcutEvent,
+  context: PdvShortcutContext = {},
+): PdvShortcutAction | null {
+  const ctrl = Boolean(event.ctrlKey || event.metaKey);
+  if (!ctrl || context.dialogOpen) return null;
+
+  const key = event.key.toLowerCase();
+  if (key === "p") return "focus-search";
+  if (key === "c") return "open-customer";
+  if (key === "s") return "suspend-sale";
+  if (key === "r") return "recover-sales";
+  if (key === "l" || key === "delete") return "clear-cart";
+
+  return null;
 }
 
 export type PdvShortcutHandlers = Partial<
