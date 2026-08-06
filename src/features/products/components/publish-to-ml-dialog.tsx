@@ -878,7 +878,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     },
 
     onSuccess: (res) => {
-      toast.success("Anúncio publicado no Mercado Livre", {
+      toast.success("Anúncio publicado com sucesso no Mercado Livre!", {
         description: res.permalink ?? res.mlItemId,
         action: res.permalink
           ? {
@@ -892,9 +892,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       onOpenChange(false);
     },
     onError: (err) => {
-      // Extrai apenas a mensagem de erro amigável sem printar o JSON inteiro
+      // Exibe apenas a mensagem de erro amigável sem printar o JSON inteiro ou bloco de código
       const errorMessage = err instanceof Error ? err.message : "Falha ao publicar no Mercado Livre";
-      const cleanMessage = errorMessage.split('|')[0].trim(); // Remove detalhes técnicos após o pipe se houver
+      const cleanMessage = errorMessage.split('|')[0].trim(); 
       toast.error("Erro na Publicação", {
         description: cleanMessage,
       });
