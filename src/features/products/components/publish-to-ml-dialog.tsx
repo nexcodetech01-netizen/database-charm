@@ -690,7 +690,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             e.stopPropagation();
             onToggle(path);
           }}
-          className="absolute right-1 top-1 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-destructive"
+          className="absolute right-1 top-1 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-100 shadow-sm transition-opacity sm:h-5 sm:w-5 sm:opacity-0 group-hover:opacity-100 hover:bg-destructive"
           title="Remover foto"
         >
           <X className="h-3 w-3" />
