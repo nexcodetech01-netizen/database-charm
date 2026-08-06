@@ -403,8 +403,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
   // Sugestão de título SEO no padrão oficial ML:
-  // [Tipo de Produto] + [Gênero] + [Material/Estilo] + [Modelo] + [Cor]
-  // Ex.: "Bolsa Feminina Transversal Em Couro Sintético Fabíola Caramelo"
+  // [Tipo de Produto] + [Marca] + [Modelo] + [Atributo Principal]
+  // Ex.: "Bolsa Feminina Fabíola Caramelo Transversal"
   function buildSeoTitle() {
     const capitalize = (s: string) =>
       s
@@ -415,55 +415,20 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         .join(" ");
 
     const tipo = capitalize(productType.trim() || "Bolsa");
-    const genero = capitalize(gender.trim() || "Feminino");
+    const resBrand = capitalize(brand.trim() || "T&G");
+    const resModel = capitalize(model.trim() || (product.name ?? "").slice(0, 20));
+    const resAttr = capitalize(color.trim() || material.trim() || "Liso");
 
-    // Material/Estilo — combina os dois com "Em" quando houver material.
-    const mat = capitalize(material.trim());
-    const est = capitalize(bagType.trim() || style.trim());
-    let materialEstilo = "";
-    if (est && mat) materialEstilo = `${est} Em ${mat}`;
-    else if (mat) materialEstilo = `Em ${mat}`;
-    else if (est) materialEstilo = est;
-
-    // Modelo — usa o nome do produto, removendo termos já presentes no título.
-    const rawModelo = (product.name ?? "").trim();
-    const stripTokens = new Set(
-      [tipo, genero, mat, est, color.trim()]
-        .filter(Boolean)
-        .flatMap((t) => t.toLowerCase().split(/\s+/)),
-    );
-    const modelo = capitalize(
-      rawModelo
-        .split(/\s+/)
-        .filter((w) => w && !stripTokens.has(w.toLowerCase()))
-        .join(" "),
-    );
-
-    const cor = capitalize(color.trim());
-
-    const orderedParts = [tipo, genero, materialEstilo, modelo, cor].filter(
-      (s) => s && s.length > 0,
-    );
-
-    let out = orderedParts.join(" ").replace(/\s+/g, " ").trim();
-
-    // Garante mínimo de ~40 caracteres com complementos neutros aceitos pelo ML.
-    const fillers = ["Original", "Alta Qualidade", "Envio Rápido"];
-    let i = 0;
-    while (out.length < 40 && i < fillers.length) {
-      const candidate = `${out} ${fillers[i]}`.trim();
-      if (candidate.length > 60) break;
-      out = candidate;
-      i += 1;
-    }
+    let out = [tipo, resBrand, resModel, resAttr].filter(Boolean).join(" ");
+    
+    // Remove palavras proibidas
+    const blacklist = ["promoção", "oferta", "grátis", "original", "lançamento", "barato"];
+    out = out.split(" ").filter(w => !blacklist.includes(w.toLowerCase())).join(" ");
 
     if (out.length > 60) out = out.slice(0, 60).trim();
 
-    if (out.length < 35) {
-      toast.info(
-        "Preencha Tipo, Gênero, Material e Cor para gerar um título com pelo menos 35 caracteres.",
-      );
-      return;
+    if (out.length < 25) {
+      toast.info("Preencha Marca e Modelo para um título melhor.");
     }
 
     setTitle(out);
