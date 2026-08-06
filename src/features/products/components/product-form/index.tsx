@@ -268,6 +268,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [taxPct, setTaxPct] = useState("0");
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [mlDialogOpen, setMlDialogOpen] = useState(false);
   const [form, setForm] = useEntityForm(product, toState);
   const initialPriceAppliedRef = useRef(false);
   useEffect(() => {
