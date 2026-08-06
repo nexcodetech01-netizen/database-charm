@@ -229,7 +229,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [style, setStyle] = useState("");
   const [color, setColor] = useState("");
   // Marca (BRAND) e Modelo (MODEL) editáveis antes de enviar ao ML.
-  const [brand, setBrand] = useState<string>("");
+  const [brand, setBrand] = useState<string>("Generica");
   const [model, setModel] = useState<string>("");
   // Atributos opcionais otimizados (aumentam a nota do anúncio).
   // Enviados sempre no payload — com defaults, sobrescritos pela IA/usuário.
@@ -271,10 +271,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setBagType("");
       setStyle("");
       setColor("");
-      const currentBrand = ((product as { brand?: string | null }).brand ?? "").trim();
-      const forbiddenBrands = ["47 Street", "Tg", "TG", "T&G"];
-      const isForbidden = forbiddenBrands.some(b => currentBrand.toLowerCase() === b.toLowerCase());
-      setBrand(currentBrand && !isForbidden ? currentBrand : "Generica");
+      setBrand("Generica");
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
@@ -420,7 +417,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
         if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
         if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
-        if (!brand) setBrand("Generica");
+        setBrand("Generica");
         
         toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
       } catch (err) {

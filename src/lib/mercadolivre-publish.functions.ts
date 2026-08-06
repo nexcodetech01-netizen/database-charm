@@ -400,34 +400,9 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       .replace(/\s+/g, " ")
       .trim();
 
-    // BRAND dinâmica: prioriza override enviado no payload (edição no diálogo
-    // de publicação); depois o valor cadastrado no produto; depois o nome do
-    // fornecedor vinculado; por último o nome fantasia / razão social da
-    // empresa ativa. Fallback final é "Generica" —
-    // nunca "Sem marca", que o Mercado Livre recusa com o erro
-    // "A marca do produto não é genérica".
-    const SELLER_DEFAULT_BRAND = "Generica";
-    const GENERIC_BRAND_TOKENS = ["generica", "sem marca", "no brand", "generico", "tg", "t&g", "47 street"];
-    const isGenericBrand = (value: string) => {
-      const norm = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-      return !norm || GENERIC_BRAND_TOKENS.some((token) => norm.includes(token));
-    };
-    const supplierId = (product as { supplier_id: string | null }).supplier_id;
-    const [supplierRes, companyRes] = await Promise.all([
-      supplierId
-        ? supabase.from("product_suppliers").select("name").eq("id", supplierId).maybeSingle()
-        : Promise.resolve({ data: null, error: null } as const),
-      supabase
-        .from("companies")
-        .select("name, trade_name")
-        .eq("id", companyId)
-        .maybeSingle(),
-    ]);
-    const supplierName = ((supplierRes.data as { name?: string | null } | null)?.name ?? "").trim();
-    const companyRow = companyRes.data as { name?: string | null; trade_name?: string | null } | null;
-    const companyBrand = (companyRow?.trade_name ?? companyRow?.name ?? "").trim();
-    const productBrand = ((product as { brand: string | null }).brand ?? "").trim();
-    const overrideBrand = (data.brand ?? "").trim();
+    // BRAND ABSOLUTA: "Generica" é o valor obrigatório.
+    // Ignoramos qualquer lógica de marca do produto, fornecedor ou empresa.
+    const brand = "Generica";
     const brandCandidates = [overrideBrand, productBrand, supplierName, companyBrand].filter(
       (candidate) => candidate.length > 0 && !isGenericBrand(candidate),
     );
