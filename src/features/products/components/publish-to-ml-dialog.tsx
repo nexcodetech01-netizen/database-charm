@@ -119,17 +119,27 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       <DialogContent className="max-w-4xl p-0 overflow-hidden bg-slate-950 border-slate-800 h-[90vh] flex flex-col">
         <ErrorBoundary
           key={key}
-          fallback={
+          fallbackRender={({ error }: { error: any }) => (
             <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4 text-center">
               <div className="bg-destructive/10 p-4 rounded-full">
                 <AlertTriangle className="h-10 w-10 text-destructive" />
               </div>
-              <div>
+              <div className="max-w-md w-full">
                 <h2 className="text-xl font-bold text-white">Falha ao carregar dados</h2>
-                <p className="text-slate-400 mt-2 max-w-md">
+                <p className="text-slate-400 mt-2 text-sm">
                   Não foi possível preparar as informações do produto para o Mercado Livre. 
-                  Verifique se o produto possui preço e nome válidos.
                 </p>
+                
+                <div className="mt-6 p-4 bg-slate-900 border border-slate-800 rounded-md text-left overflow-auto max-h-[300px]">
+                  <p className="text-destructive font-mono text-xs break-all">
+                    {String(error)}
+                  </p>
+                  {error?.stack && (
+                    <pre className="mt-2 text-[10px] text-slate-500 font-mono leading-tight whitespace-pre-wrap">
+                      {String(error.stack)}
+                    </pre>
+                  )}
+                </div>
               </div>
               <Button 
                 variant="outline" 
@@ -139,7 +149,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 Fechar Diálogo
               </Button>
             </div>
-          }
+          )}
         >
           <PublishToMercadoLivreDialogContent product={product} open={open} onOpenChange={onOpenChange} />
         </ErrorBoundary>
@@ -149,6 +159,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 }
 
 function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Props) {
+  // Defensive check: if product is missing, show a clear message instead of crashing
+  if (!product) {
+    throw new Error("Dados do produto não fornecidos ao diálogo.");
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -253,8 +268,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
   }, [pricingQuery.data, channelSettingsQuery.data, product?.company_id, product?.id]);
 
-  const rawProductPrice = Number(product?.price ?? 0);
-  const initialTitle = useMemo(() => (product?.name ?? "").slice(0, 60), [product]);
+  const rawProductPrice = Number(product?.price || 0);
+  const initialTitle = useMemo(() => (product?.name || "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [walletTarget, setWalletTarget] = useState<string>("");
@@ -264,9 +279,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [descCopied, setDescCopied] = useState(false);
 
   const [quantity, setQuantity] = useState<number>(
-    Math.max(1, Math.floor(Number(product?.stock ?? 0))),
+    Math.max(1, Math.floor(Number(product?.stock || 0))),
   );
-  const [description, setDescription] = useState(product?.description ?? "");
+  const [description, setDescription] = useState(product?.description || "");
   const [categoryId, setCategoryId] = useState("");
   const [categoryLabel, setCategoryLabel] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
@@ -382,10 +397,11 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   const publish = useMutation({
     mutationFn: async () => {
-      if (!product?.id) throw new Error("ID do produto não encontrado");
+      const productId = product?.id;
+      if (!productId) throw new Error("ID do produto não encontrado");
       return await publishFn({
         data: {
-          productId: product.id,
+          productId: productId,
           categoryId,
           listingTypeId: listingType,
           condition,
@@ -441,16 +457,16 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   // Reset state on open
   useEffect(() => {
-    if (open) {
-      const t = (product?.name ?? "").slice(0, 60);
+    if (open && product) {
+      const t = (product?.name || "").slice(0, 60);
       setTitle(t);
-      const rawPrice = Number(product?.price ?? 0);
+      const rawPrice = Number(product?.price || 0);
       setPrice(rawPrice);
       setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setQuantity(Math.max(1, Math.floor(Number(product?.stock ?? 0))));
-      setDescription(product?.description ?? "");
+      setQuantity(Math.max(1, Math.floor(Number(product?.stock || 0))));
+      setDescription(product?.description || "");
       setCategoryId("");
       setCategoryLabel("");
       setCategorySearch(t);
@@ -463,7 +479,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand("Generica");
-      const currentModel = ((product as any)?.model ?? "").trim();
+      const currentModel = (product?.model || "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
         const words = t.split(/\s+/).filter(w => w.length > 2);
@@ -1037,11 +1053,11 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
               <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${(validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100}%` }}
+                  style={{ width: `${(validation.requirements.filter(r => r?.isValid).length / (validation.requirements?.length || 1)) * 100}%` }}
                 />
               </div>
               <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
-                {Math.round((validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100)}%
+                {Math.round((validation.requirements.filter(r => r?.isValid).length / (validation.requirements?.length || 1)) * 100)}%
               </span>
             </div>
           </div>
