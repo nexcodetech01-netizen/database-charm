@@ -157,21 +157,21 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   // Preço sugerido do Mercado Livre (mesma fórmula do card "Preços por canal")
   const pricingQuery = useQuery({
-    queryKey: ["pricing", "product-intelligence", product.company_id, product.id],
+    queryKey: ["pricing", "product-intelligence", product?.company_id, product?.id],
     queryFn: () =>
       getProductPricingIntelligence({
-        data: { companyId: product.company_id, productId: product.id },
+        data: { companyId: product?.company_id, productId: product?.id },
       }),
-    enabled: open && Boolean(product.company_id && product.id),
+    enabled: open && Boolean(product?.company_id && product?.id),
     staleTime: 60_000,
   });
   const channelSettingsQuery = useQuery({
-    queryKey: ["pricing", "channel-settings", product.company_id, product.id],
+    queryKey: ["pricing", "channel-settings", product?.company_id, product?.id],
     queryFn: () =>
       getProductChannelSettings({
-        data: { companyId: product.company_id, productId: product.id },
+        data: { companyId: product?.company_id, productId: product?.id },
       }),
-    enabled: open && Boolean(product.company_id && product.id),
+    enabled: open && Boolean(product?.company_id && product?.id),
     staleTime: 60_000,
   });
 
