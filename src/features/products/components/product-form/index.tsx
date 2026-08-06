@@ -124,6 +124,7 @@ const schema = z.object({
   length: z.preprocess((v) => num(v as any), z.number().min(0, "Comprimento não pode ser negativo").optional().default(15)),
   category_id: z.string().min(1, "Categoria obrigatória"),
   price: z.preprocess((v) => num(v as any), z.number().positive("Preço de venda deve ser maior que zero")),
+  cost: z.preprocess((v) => num(v as any), z.number().min(0).optional().default(0)),
 });
 
 type FormState = {
