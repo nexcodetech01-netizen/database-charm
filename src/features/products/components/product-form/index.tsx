@@ -1839,9 +1839,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
           Cancelar
         </Button>
-        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking}>
+        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {product ? "Salvar alterações" : "Criar produto"}
+          {product ? "Salvar alterações" : "Salvar Produto"}
         </Button>
       </div>
 
