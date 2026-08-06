@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -55,6 +55,9 @@ export function PurchaseItemsEditor({
   const [options, setOptions] = useState<ProductOption[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const rowRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
 
   useEffect(() => {
@@ -87,24 +90,28 @@ export function PurchaseItemsEditor({
   }, [query, companyId, enabled]);
 
   function addProduct(p: ProductOption) {
-    onChange([
-      ...items,
-      {
-        product_id: p.id,
-        description: p.name,
-        quantity: 1,
-        unit_price: p.cost ?? 0,
-        discount: 0,
-        sku: p.sku,
-        image_url: publicImageUrl(p.cover_image_path),
-        unit: p.unit,
-        stock_available: p.stock,
-        last_cost: p.cost,
-      },
-    ]);
+    const newItem = {
+      product_id: p.id,
+      description: p.name,
+      quantity: 1,
+      unit_price: p.cost ?? 0,
+      discount: 0,
+      sku: p.sku,
+      image_url: publicImageUrl(p.cover_image_path),
+      unit: p.unit,
+      stock_available: p.stock,
+      last_cost: p.cost,
+    };
+    onChange([...items, newItem]);
     setQuery("");
     setOptions([]);
     setShowResults(false);
+    
+    // Auto-focus na quantidade do novo item
+    setTimeout(() => {
+      const nextIdx = items.length;
+      rowRefs.current.get(nextIdx)?.focus();
+    }, 10);
   }
 
   function addManual() {
@@ -118,6 +125,12 @@ export function PurchaseItemsEditor({
         discount: 0,
       },
     ]);
+    
+    // Auto-focus na descrição do novo item
+    setTimeout(() => {
+      const nextIdx = items.length;
+      rowRefs.current.get(nextIdx)?.focus();
+    }, 10);
   }
 
   function updateItem(index: number, patch: Partial<PurchaseItemDraft>) {
@@ -135,6 +148,14 @@ export function PurchaseItemsEditor({
       undo: () => onChange(prev),
     });
   }
+
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      searchInputRef.current?.focus();
+    }
+  };
 
   const totalUnits = items.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0);
 
@@ -161,12 +182,18 @@ export function PurchaseItemsEditor({
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
+              ref={searchInputRef}
               value={query}
               onFocus={() => setShowResults(true)}
               onBlur={() => setTimeout(() => setShowResults(false), 150)}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setShowResults(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !showResults) {
+                  e.preventDefault();
+                }
               }}
               placeholder="Buscar produto por nome, SKU ou código de barras..."
               className="h-14 pl-12 text-base font-medium shadow-sm"
@@ -307,10 +334,15 @@ export function PurchaseItemsEditor({
                           </div>
                         ) : (
                           <Input
+                            ref={(el) => {
+                              if (el) rowRefs.current.set(idx, el);
+                              else rowRefs.current.delete(idx);
+                            }}
                             value={it.description}
                             onChange={(e) =>
                               updateItem(idx, { description: e.target.value })
                             }
+                            onKeyDown={(e) => handleKeyDown(e, idx)}
                             placeholder="Descrição do item"
                             className="h-8 text-sm font-medium"
                           />
@@ -339,6 +371,10 @@ export function PurchaseItemsEditor({
                       const fractional = isFractionalUnit(it.unit);
                       return (
                         <Input
+                          ref={(el) => {
+                            // Se for produto, a Qtd é o primeiro campo focável
+                            if (it.product_id && el) rowRefs.current.set(idx, el);
+                          }}
                           type="number"
                           inputMode={fractional ? "decimal" : "numeric"}
                           min={fractional ? 0 : 1}
@@ -349,6 +385,7 @@ export function PurchaseItemsEditor({
                               quantity: parseQuantity(e.target.value, fractional),
                             })
                           }
+                          onKeyDown={(e) => handleKeyDown(e, idx)}
                           className="h-8 text-right tabular-nums"
                         />
                       );
@@ -364,6 +401,7 @@ export function PurchaseItemsEditor({
                       onChange={(e) =>
                         updateItem(idx, { unit_price: Number(e.target.value) || 0 })
                       }
+                      onKeyDown={(e) => handleKeyDown(e, idx)}
                       className="h-8 text-right tabular-nums"
                     />
                   </td>
@@ -377,6 +415,7 @@ export function PurchaseItemsEditor({
                       onChange={(e) =>
                         updateItem(idx, { discount: Number(e.target.value) || 0 })
                       }
+                      onKeyDown={(e) => handleKeyDown(e, idx)}
                       className="h-8 text-right tabular-nums"
                       title="Desconto do item"
                     />
