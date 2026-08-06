@@ -66,12 +66,14 @@ const PDVCartRow = memo(function PDVCartRow({
   const hasPriceChange = item.original_unit_price != null && item.unit_price !== item.original_unit_price;
   const hasDiscount = (item.discount || 0) > 0;
   const hasAddition = (item.addition || 0) > 0;
+  const hasNotes = !!item.notes;
 
   return (
     <li
       data-active={active || undefined}
       onFocus={activate}
       onMouseDown={activate}
+      onDoubleClick={() => onQuantityChange(uiKey, item.quantity)} // Handled by PDVCart input but adding support
       className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
