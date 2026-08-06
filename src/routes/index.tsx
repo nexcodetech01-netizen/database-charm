@@ -49,20 +49,20 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DEFINITIVA DO VALOR PADRÃO DE MARCA</h2>
+          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO URGENTE DO FIELD 'BRAND'</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. REMOÇÃO DE MARCAS FALSAS:</h3>
+              <h3 className="font-medium text-primary">1. REMOÇÃO DE AUTOCOMPLETE/DEFAULT:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Valores como "47 Street", "Tg" e "TG" foram removidos do código.</li>
-                <li>O campo 'Marca' agora inicia em branco, permitindo preenchimento manual ou via cadastro.</li>
+                <li>O campo 'Marca' não é mais preenchido automaticamente com sugestões da API.</li>
+                <li>O valor inicial foi definido como "Generica" para garantir a publicação imediata.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. FALLBACK INTELIGENTE:</h3>
+              <h3 className="font-medium text-primary">2. OVERWRITE FORCE:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Se o campo estiver vazio ao publicar, o sistema envia automaticamente "Generica".</li>
-                <li>Garantia de conformidade com as exigências da API do Mercado Livre.</li>
+                <li>Implementado fallback forçado para "Generica" se o campo estiver vazio ou for inválido.</li>
+                <li>Eliminação definitiva de marcas temporárias (ex: "47 Street", "Tg").</li>
               </ul>
             </section>
           </div>
