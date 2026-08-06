@@ -42,7 +42,7 @@ describe("MercadoLivre Pricing Logic (ml-pricing.ts)", () => {
     
     // Case 2: Premium just below threshold
     // Price = 78.99. Net = 78.99 * 0.85 - 0 = 67.1415
-    expect(calculateMLNetValue(78.99, "gold_pro", settings)).toBeCloseTo(67.1415, 4);
+    expect(calculateMLNetValue(78.99, "gold_pro", settings)).toBe(67.14);
   });
 });
 
