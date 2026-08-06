@@ -121,6 +121,12 @@ export const productsService = {
    * como movimentação de estoque — nunca é criado um duplicado.
    */
   async create(input: ProductInsert) {
+    // Sanitização de marca: TG ou vazio vira Generica
+    const brand = (input.brand ?? "").trim();
+    if (!brand || brand.toLowerCase() === "tg") {
+      input.brand = "Generica";
+    }
+
     const parsed = productCreateSchema.safeParse(input);
     if (!parsed.success) {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
