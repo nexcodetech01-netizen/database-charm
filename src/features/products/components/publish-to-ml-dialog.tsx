@@ -228,8 +228,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
   }, [pricingQuery.data, channelSettingsQuery.data, product?.company_id, product?.id]);
 
-  const rawProductPrice = Number(product.price ?? 0);
-  const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
+  const rawProductPrice = Number(product?.price ?? 0);
+  const initialTitle = useMemo(() => (product?.name ?? "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [walletTarget, setWalletTarget] = useState<string>("");
