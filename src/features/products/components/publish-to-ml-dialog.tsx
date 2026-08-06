@@ -842,6 +842,18 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     toast.success("Título otimizado para o Mercado Livre.");
   }
 
+  const imageOverrides = useMemo(() => {
+    const overrides: Record<string, string> = {};
+    localImageUrls.forEach((url, path) => {
+      // Consideramos override qualquer URL que não seja a original do bucket
+      // ou que venha explicitamente do processamento IA
+      if (url.startsWith('http')) {
+        overrides[path] = url;
+      }
+    });
+    return overrides;
+  }, [localImageUrls]);
+
   const publish = useMutation({
     mutationFn: () =>
       publishFn({
@@ -858,6 +870,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           brand: brand.trim() || undefined,
           model: model.trim() || undefined,
           picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+          imageOverrides,
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
           videoUrl: videoUrl.trim() || undefined,
         },
