@@ -118,7 +118,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg duration-200 h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg duration-200 max-h-[90vh] h-auto md:h-[85vh] flex flex-col overflow-hidden">
         <ErrorBoundary
           key={key}
           fallbackRender={({ error }: { error: any }) => (
@@ -1706,7 +1706,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
               Cancelar
             </Button>
             <Button 
-              onClick={() => publish.mutate()} 
+              onClick={() => {
+                if (publish.isPending) return;
+                publish.mutate();
+              }} 
               disabled={!canPublish}
               className="w-full sm:w-auto h-11 px-8 font-bold"
             >
