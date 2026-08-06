@@ -660,7 +660,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       pictures: pictures,
       description: description,
       attributes: sanitizedAttrs,
-      video_id: data.videoUrl ? (data.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/) || [])[1] : undefined,
+      video_id: undefined as string | undefined,
+      video_url: undefined as string | undefined,
       shipping: {
         mode: "me2",
         local_pick_up: false,
@@ -670,6 +671,47 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
 
+
+    // Tratamento de Vídeo: YouTube ou Upload Direto
+    if (data.videoUrl) {
+      const youtubeMatch = data.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/);
+      const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
+
+      if (youtubeId) {
+        body.video_id = youtubeId;
+      } else if (data.videoUrl.startsWith('http') && (data.videoUrl.toLowerCase().includes('.mp4') || data.videoUrl.includes('supabase'))) {
+        // Tentativa de upload direto para o Mercado Livre Media
+        try {
+          console.log("[mercadolivre] Baixando vídeo para upload direto no ML...");
+          const videoFetch = await fetch(data.videoUrl);
+          if (videoFetch.ok) {
+            const videoBlob = await videoFetch.blob();
+            const formData = new FormData();
+            formData.append('file', videoBlob, 'video.mp4');
+
+            const mediaRes = await fetch(`${ML_API}/media/upload`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: formData
+            });
+
+            if (mediaRes.ok) {
+              const mediaData = await mediaRes.json();
+              console.log("[mercadolivre] Vídeo enviado com sucesso ao ML Media ID:", mediaData.id);
+              body.video_id = mediaData.id; // ML aceita o media ID no campo video_id em algumas categorias ou videos array
+              // Em algumas categorias novas o campo é multimidia ou similar, mas video_id costuma ser o fallback
+            } else {
+              const errTxt = await mediaRes.text();
+              console.warn("[mercadolivre] Falha ao subir vídeo para ML Media:", mediaRes.status, errTxt);
+            }
+          }
+        } catch (err) {
+          console.warn("[mercadolivre] Erro no processamento de vídeo para upload direto:", err);
+        }
+      }
+    }
 
     const requestBody = {
       ...body,
