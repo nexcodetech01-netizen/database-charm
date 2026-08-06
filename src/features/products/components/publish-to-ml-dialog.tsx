@@ -1325,6 +1325,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       const desired = Number(walletTarget);
                       const isPremium = listingType === "gold_pro";
                       const classicFeePct = 0.135;
+                      const classicShipping = desired >= 79 ? 24.65 : 0;
                       let classicFixedFee = 0;
                       let classicFinal = desired > 0 ? (desired + classicShipping) / (1 - classicFeePct) : 0;
                       if (classicFinal > 0 && classicFinal < 79) {
