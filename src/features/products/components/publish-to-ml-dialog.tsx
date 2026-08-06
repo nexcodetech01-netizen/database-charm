@@ -1203,7 +1203,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                             <img
                               src={url}
                               alt=""
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain bg-white"
                               loading="lazy"
                             />
                           ) : (
