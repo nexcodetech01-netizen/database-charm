@@ -504,11 +504,18 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
     const isPremium = listingType === "gold_pro";
     const feePct = isPremium ? 0.15 : 0.135; 
-    const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
     const shipping = desired >= 79 ? 24.65 : 0;
-    const calculatedFinal = isPremium 
-      ? (desired + shipping) / (1 - 0.15) 
-      : (desired + fixedFee + shipping) / (1 - feePct);
+    
+    // Estimativa inicial sem taxa fixa
+    let calculatedFinal = isPremium 
+      ? (desired + shipping) / 0.85 
+      : (desired + shipping) / (1 - feePct);
+    
+    // Se o preço final estimado for < 79 e não for Premium, aplica taxa fixa de R$ 6,50
+    if (!isPremium && calculatedFinal < 79) {
+      calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
+    }
+    
     const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
 
     // Se o preço atual for diferente do calculado, atualiza
@@ -991,8 +998,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       categoryId,
       brand,
       model,
+      listingType,
+      walletTarget: Number(walletTarget),
     } as any);
-  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
+  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model, listingType, walletTarget]);
 
   const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
@@ -1300,15 +1309,30 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
               <TabsContent value="price" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 <div className="grid gap-4">
+                  {validation.requirements.find(r => r.id === "price_formula")?.isValid === false && (
+                    <Alert variant="destructive" className="py-2 bg-destructive/10 border-destructive/20">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle className="text-xs font-bold uppercase">Preço Insuficiente</AlertTitle>
+                      <AlertDescription className="text-[11px]">
+                        O preço de venda atual não cobre as taxas de comissão e o frete fixo/grátis (R$ 24,65). 
+                        Aumente o preço ou escolha uma modalidade com menor custo.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {/* Cards de Modalidade */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(() => {
                       const desired = Number(walletTarget);
                       const isPremium = listingType === "gold_pro";
                       const classicFeePct = 0.135;
-                      const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
                       const classicShipping = desired >= 79 ? 24.65 : 0;
-                      const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
+                      let classicFixedFee = 0;
+                      let classicFinal = desired > 0 ? (desired + classicShipping) / (1 - classicFeePct) : 0;
+                      if (classicFinal > 0 && classicFinal < 79) {
+                        classicFixedFee = 6.5;
+                        classicFinal = (desired + 6.5 + classicShipping) / (1 - classicFeePct);
+                      }
+                      
                       const premiumFeePct = 0.15; 
                       const premiumFinal = desired > 0 ? (desired + classicShipping) / (1 - premiumFeePct) : 0;
 
@@ -1336,7 +1360,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
-                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
+                                   <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
                                   <span>Líquido a receber</span>
@@ -1368,7 +1392,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
-                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
+                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : "R$ 0,00"}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
                                   <span>Líquido a receber</span>
@@ -1392,12 +1416,27 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                         <Input
                           id="ml-price"
                           type="number"
-                          className="h-12 font-mono text-xl font-black bg-background border-2 focus-visible:ring-primary"
+                          step="0.01"
+                          className={`h-12 font-mono text-xl font-black bg-background border-2 focus-visible:ring-primary ${
+                            validation.requirements.find(r => r.id === "price_formula")?.isValid === false 
+                            ? "border-destructive focus-visible:ring-destructive" 
+                            : ""
+                          }`}
                           value={price}
                           onChange={(e) => {
-                            setPrice(Number(e.target.value));
+                            const val = Number(e.target.value);
+                            setPrice(val);
                             setPriceTouched(true);
                             setUsingMlSuggested(false);
+                            
+                            // Re-calcula o líquido reverso para exibição visual imediata
+                            const isPremium = listingType === "gold_pro";
+                            const shipping = val >= 79 ? 24.65 : 0;
+                            const fixedFee = (!isPremium && val < 79 && val > 0) ? 6.5 : 0;
+                            const calculatedNet = isPremium 
+                              ? (val * 0.85) - shipping
+                              : (val * 0.865) - fixedFee - shipping;
+                            setWalletTarget(Math.max(0, calculatedNet).toFixed(2));
                           }}
                         />
                         {usingMlSuggested && !priceTouched && (
@@ -1405,15 +1444,66 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                             <Sparkles className="h-3 w-3 mr-1" /> Sugerido
                           </Badge>
                         )}
+                        {priceTouched && !usingMlSuggested && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-50"
+                            onClick={() => {
+                              setPriceTouched(false);
+                              // Isso vai disparar o useEffect de sincronização
+                              const desired = Number(walletTarget);
+                              if (desired > 0) {
+                                const isPremium = listingType === "gold_pro";
+                                const feePct = isPremium ? 0.15 : 0.135; 
+                                const shipping = desired >= 79 ? 24.65 : 0;
+                                let calculatedFinal = isPremium 
+                                  ? (desired + shipping) / 0.85 
+                                  : (desired + shipping) / (1 - feePct);
+                                
+                                if (!isPremium && calculatedFinal < 79) {
+                                  calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
+                                }
+                                
+                                const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
+                                setPrice(roundedFinal);
+                              }
+                            }}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" /> Reverter à Fórmula
+                          </Button>
+                        )}
                       </div>
+                      {validation.requirements.find(r => r.id === "price_formula")?.isValid === false && (
+                        <p className="text-[10px] text-destructive font-medium animate-in fade-in slide-in-from-top-1">
+                          {validation.requirements.find(r => r.id === "price_formula")?.message}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="grid gap-2 p-3 bg-success/5 rounded-xl border border-dashed border-success/30">
-                      <Label className="text-xs font-semibold text-success uppercase tracking-tight">
+                    <div className={`grid gap-2 p-3 rounded-xl border border-dashed transition-colors ${
+                      validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                      ? "bg-destructive/5 border-destructive/30"
+                      : "bg-success/5 border-success/30"
+                    }`}>
+                      <Label className={`text-xs font-semibold uppercase tracking-tight ${
+                        validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                        ? "text-destructive"
+                        : "text-success"
+                      }`}>
                         Quanto você recebe (Líquido)
                       </Label>
-                      <div className="flex items-center gap-2 h-12 px-3 bg-background/50 rounded-lg border border-success/20">
-                        <span className="font-mono text-xl font-black text-success">
+                      <div className={`flex items-center gap-2 h-12 px-3 bg-background/50 rounded-lg border ${
+                        validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                        ? "border-destructive/20"
+                        : "border-success/20"
+                      }`}>
+                        <span className={`font-mono text-xl font-black ${
+                          validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                          ? "text-destructive"
+                          : "text-success"
+                        }`}>
                           {walletTarget ? formatCurrency(Number(walletTarget)) : "---"}
                         </span>
                       </div>
