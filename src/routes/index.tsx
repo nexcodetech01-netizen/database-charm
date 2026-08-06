@@ -49,20 +49,21 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🚀 INTEGRAÇÃO MERCADO LIVRE V2</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">⚡ SPRINT 7.2 — PDV ENTERPRISE</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. WEBHOOKS E SINCRONIZAÇÃO:</h3>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Sincronização bidirecional de estoque e preços (NexOS ↔ ML).</li>
-                <li>Recebimento de vendas via Webhook (topic: orders_v2) com baixa automática.</li>
-              </ul>
+              <h3 className="font-medium text-primary uppercase">Foco: Velocidade Operacional</h3>
+              <p className="text-muted-foreground mt-1">
+                Implementação de recursos profissionais: Suspensão/Recuperação de vendas, múltiplos carrinhos, 
+                atalhos globais (F6-F8, CTRL+P/C/S/R), observações por item e pesquisa instantânea multi-critério.
+              </p>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. GESTÃO RÁPIDA NO DASHBOARD:</h3>
+              <h3 className="font-medium text-primary">STATUS: EM DESENVOLVIMENTO</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Botões de ação rápida na tabela de produtos (Pausar, Reativar, Sincronizar).</li>
-                <li>Suporte nativo a variações de produto (Cor/Tamanho) no payload.</li>
+                <li>UX otimizada para operador de caixa (Scanner sempre ativo).</li>
+                <li>Resumo financeiro detalhado com margem e lucro estimado.</li>
+                <li>Zero novas regras de negócio — Reuso total do Motor Comercial V2.</li>
               </ul>
             </section>
           </div>
