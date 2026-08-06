@@ -1071,7 +1071,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   <p className="text-[11px] font-medium text-muted-foreground">
                     Fotos já cadastradas neste produto (clique para incluir):
                   </p>
-                  <div className="grid grid-cols-8 gap-1.5">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-8 sm:overflow-x-visible">
                     {unselected.map((path) => {
                       const url = photoUrlByPath.get(path);
                       return (
