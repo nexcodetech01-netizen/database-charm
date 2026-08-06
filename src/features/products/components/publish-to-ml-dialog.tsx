@@ -540,7 +540,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   // Auto-suggest category on open based on product title
   useEffect(() => {
     if (!open || autoRanRef.current) return;
-    const t = (product.name ?? "").trim();
+    const t = (product?.name ?? "").trim();
     if (!t) return;
     autoRanRef.current = true;
     void runPredict(t, { auto: true });
