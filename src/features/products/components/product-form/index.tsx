@@ -162,6 +162,7 @@ const empty: FormState = {
   ncm: "",
   cest: "",
   brand: "",
+  model: "",
   description: "",
   category_id: "",
   supplier_id: "",
