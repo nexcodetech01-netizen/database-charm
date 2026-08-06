@@ -511,20 +511,20 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     );
     
     let hasChanges = false;
-    const nextLocal = new Map(localImageUrls);
+    const nextLocal = new Map();
     
     localImageUrls.forEach((url, path) => {
       if (isInvalid(url)) {
-        nextLocal.delete(path);
         hasChanges = true;
+      } else {
+        nextLocal.set(path, url);
       }
     });
 
     if (hasChanges) {
-      console.warn("Limpando URLs de erro detectadas no estado local");
       setLocalImageUrls(nextLocal);
     }
-  }, [localImageUrls, open]);
+  }, [open]); // Removido localImageUrls das dependências para evitar loop infinito
 
   // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
   useEffect(() => {
@@ -533,7 +533,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     if (!(desired > 0)) return;
 
     const isPremium = listingType === "gold_pro";
-    const feePct = isPremium ? 0.15 : 0.135; // 15% Premium, 13.5% Clássico
+    const feePct = isPremium ? 0.15 : 0.135; 
     const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
     const shipping = desired >= 79 ? 23.5 : 0;
     const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
@@ -543,7 +543,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     if (Math.abs(price - roundedFinal) > 0.01) {
       setPrice(roundedFinal);
     }
-  }, [walletTarget, listingType, open]);
+  }, [walletTarget, listingType, open, price]); // Adicionado price para consistência sem loop manual
 
   // Se o preço sugerido do ML estiver disponível e o usuário não tiver definido um alvo "No Bolso",
   // aplica como padrão (só se o usuário ainda não editou manualmente).
