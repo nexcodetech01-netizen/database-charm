@@ -1511,7 +1511,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 </div>
               </Field>
 
-              <Field label="Marca *" hint="Fabricante ou marca do produto">
+              <Field label="Marca" hint="Fabricante ou marca do produto (Opcional)">
                 <Input
                   value={form.brand}
                   onChange={(e) => set("brand", e.target.value)}
@@ -1520,7 +1520,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 />
               </Field>
 
-              <Field label="Modelo *" hint="Modelo específico do produto">
+              <Field label="Modelo" hint="Modelo específico do produto (Opcional)">
                 <Input
                   value={form.model}
                   onChange={(e) => set("model", e.target.value)}
