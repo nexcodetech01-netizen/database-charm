@@ -272,7 +272,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       const currentBrand = ((product as { brand?: string | null }).brand ?? "").trim();
-      setBrand(currentBrand && !["Tg", "TG", "T&G", "47 Street"].some(b => currentBrand.toLowerCase().includes(b.toLowerCase())) ? currentBrand : "");
+      const forbiddenBrands = ["47 Street", "Tg", "TG", "T&G"];
+      const isForbidden = forbiddenBrands.some(b => currentBrand.toLowerCase().includes(b.toLowerCase()));
+      setBrand(currentBrand && !isForbidden ? currentBrand : "Generica");
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
@@ -418,7 +420,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
         if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
         if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
-        if (!brand || ["Generica", "Tg", "TG", "T&G", "47 Street"].some(b => brand.toLowerCase().includes(b.toLowerCase()))) setBrand(findVal("BRAND", ["Generica"]) || "");
+        if (!brand) setBrand("Generica");
         
         toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
       } catch (err) {
