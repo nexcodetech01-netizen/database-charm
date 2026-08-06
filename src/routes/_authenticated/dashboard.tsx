@@ -154,8 +154,23 @@ function DashboardPage() {
   const isLoading = salesMetrics.isLoading || finance.isLoading || inventory.isLoading;
 
   return (
-    <div
-      className={cn(
+    <ErrorBoundary
+      fallbackRender={({ error }) => (
+        <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center">
+          <AlertTriangle className="mb-4 h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-bold">Erro ao carregar o dashboard</h2>
+          <p className="mt-2 text-muted-foreground">Ocorreu uma falha na renderização de um componente. Nossa equipe foi notificada.</p>
+          <pre className="mt-4 max-w-full overflow-auto rounded bg-muted p-4 text-left text-xs text-destructive">
+            {String(error)}
+          </pre>
+          <Button className="mt-6" onClick={() => window.location.reload()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+    >
+      <div
+        className={cn(
         "mx-auto w-full max-w-7xl p-4 sm:p-6",
         SPACING_TOKENS.relaxed.stack,
       )}
@@ -383,6 +398,7 @@ function DashboardPage() {
           ]}
         />
       </Section>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
