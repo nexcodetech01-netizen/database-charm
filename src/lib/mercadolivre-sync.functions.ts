@@ -30,10 +30,61 @@ async function getAccessToken(supabase: any, companyId: string, userId: string) 
   return decryptToken(enc);
 }
 
+export const syncProductToMercadoLivre = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { productId: string }) => {
+    const productId = String(input?.productId ?? "").trim();
+    if (!productId) throw new Error("productId obrigatório.");
+    return { productId };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .select("id, company_id, ml_item_id, stock, price")
+      .eq("id", data.productId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    if (!product?.ml_item_id) return { ok: true, skipped: "not_published" };
+
+    const token = await getAccessToken(supabase, product.company_id, userId);
+
+    // No payload de sincronização rápida, enviamos apenas preço e estoque.
+    // O status (active/paused) é gerido por outra função ou via dashboard.
+    const res = await integrationFetch(
+      `${ML_API}/items/${product.ml_item_id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          price: Number(product.price),
+          available_quantity: Math.max(0, Math.floor(Number(product.stock))),
+        }),
+      },
+      { integration: "mercadolivre:item-sync", timeoutMs: 20_000 },
+    );
+    
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(`[ml-sync] falha ao sincronizar produto ${product.id}: ${text}`);
+      return { ok: false, error: text };
+    }
+    
+    return { ok: true };
+  });
+
 export const updateMercadoLivreItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { productId: string; status?: "paused" | "active"; quantity?: number; price?: number }) => {
-    return input;
+    const productId = String(input?.productId ?? "").trim();
+    if (!productId) throw new Error("productId obrigatório.");
+    return { ...input, productId };
   })
   .handler(async ({ data, context }) => {
     await requireServerPermission(context, "products.update", {
