@@ -572,47 +572,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }, [categoryId, open]);
 
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
-  const photosQuery = useQuery({
-    queryKey: ["product-images", product.id],
-    queryFn: () => productImagesService.list(product.id),
-    enabled: open,
-    staleTime: 60_000,
-  });
-  const photoPaths = useMemo(
-    () =>
-      (photosQuery.data ?? [])
-        .map((img) => (img as { path: string | null }).path)
-        .filter((p): p is string => !!p),
-    [photosQuery.data],
-  );
-  const photoSignedUrlsQuery = useQuery({
-    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
-    queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
-    enabled: open && photoPaths.length > 0,
-    staleTime: 60_000,
-  });
-  const photoUrlByPath = useMemo(() => {
-    const map = new Map<string, string>();
-    const isInvalid = (u: string) => typeof u === 'string' && (
-      u.toLowerCase().startsWith('failed') || 
-      u.toLowerCase().startsWith('error') || 
-      u.toLowerCase().includes('background...')
-    );
-    
-    // Primeiro as URLs assinadas do banco
-    for (const it of photoSignedUrlsQuery.data ?? []) {
-      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
-        map.set(it.path, it.signedUrl);
-      }
-    }
-    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
-    localImageUrls.forEach((url, path) => {
-      if (!isInvalid(url)) {
-        map.set(path, url);
-      }
-    });
-    return map;
-  }, [photoSignedUrlsQuery.data, localImageUrls]);
 
   // Ao carregar fotos, pré-seleciona até 5 primeiras (se ainda não escolheu).
   useEffect(() => {
