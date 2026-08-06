@@ -1276,7 +1276,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                           <button
                             type="button"
                             onClick={() => setListingType("gold_special")}
-                            className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all ${
+                            className={`flex flex-col gap-3 p-4 rounded-xl border-2 text-left transition-all relative ${
                               listingType === "gold_special"
                                 ? "border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm"
                                 : "border-border hover:border-primary/40"
@@ -1286,14 +1286,29 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Clássico</span>
                               {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
                             </div>
-                            <span className="text-xl font-black text-primary">{classicFinal > 0 ? formatCurrency(classicFinal) : "---"}</span>
-                            <p className="text-[10px] text-muted-foreground">Comissão 13,5% | Parcelado c/ juros</p>
+                            <div>
+                              <span className="text-xl font-black text-primary">{classicFinal > 0 ? formatCurrency(classicFinal) : "---"}</span>
+                              <div className="mt-2 space-y-1">
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-muted-foreground">Comissão (13,5%)</span>
+                                  <span className="font-medium">-{classicFinal > 0 ? formatCurrency(classicFinal * 0.135) : "---"}</span>
+                                </div>
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
+                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
+                                </div>
+                                <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
+                                  <span>Líquido a receber</span>
+                                  <span>{classicFinal > 0 ? formatCurrency(desired) : "---"}</span>
+                                </div>
+                              </div>
+                            </div>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setListingType("gold_pro")}
-                            className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all ${
+                            className={`flex flex-col gap-3 p-4 rounded-xl border-2 text-left transition-all relative ${
                               listingType === "gold_pro"
                                 ? "border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm"
                                 : "border-border hover:border-primary/40"
@@ -1303,8 +1318,23 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Premium 💳</span>
                               <Badge className="text-[8px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
                             </div>
-                            <span className="text-xl font-black text-primary">{premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}</span>
-                            <p className="text-[10px] text-muted-foreground">12x Sem Juros + Exposição Máxima</p>
+                            <div>
+                              <span className="text-xl font-black text-primary">{premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}</span>
+                              <div className="mt-2 space-y-1">
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-muted-foreground">Comissão (15%)</span>
+                                  <span className="font-medium">-{premiumFinal > 0 ? formatCurrency(premiumFinal * 0.15) : "---"}</span>
+                                </div>
+                                <div className="flex justify-between text-[10px]">
+                                  <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
+                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
+                                </div>
+                                <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
+                                  <span>Líquido a receber</span>
+                                  <span>{premiumFinal > 0 ? formatCurrency(desired) : "---"}</span>
+                                </div>
+                              </div>
+                            </div>
                           </button>
                         </>
                       );
