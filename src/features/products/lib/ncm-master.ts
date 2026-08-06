@@ -87,6 +87,36 @@ export const ncmMasterService = {
   },
 
   /**
+   * Busca NCMs por termo (código ou descrição) para preenchimento manual/combobox.
+   */
+  async search(query: string): Promise<NcmMasterEntry[]> {
+    const term = query.trim();
+    if (!term) return [];
+
+    try {
+      // Se for apenas dígitos e tiver 4+, busca por código na BrasilAPI primeiro (fallback rápido)
+      const digits = term.replace(/\D/g, "");
+      if (digits.length >= 4 && digits.length <= 8) {
+        const brasilMatch = await fetchBrasilApiNcm(digits);
+        if (brasilMatch) return [brasilMatch];
+      }
+
+      // Busca na base local por categoria ou descrição
+      const { data, error } = await (supabase as any)
+        .from("ncm_master")
+        .select("*")
+        .or(`category.ilike.%${term}%,description.ilike.%${term}%,ncm.ilike.%${term}%`)
+        .limit(10);
+
+      if (error) throw error;
+      return (data || []) as NcmMasterEntry[];
+    } catch (error) {
+      console.error("[ncm-master] Search error:", error);
+      return [];
+    }
+  },
+
+  /**
    * Lista entradas da tabela mestre para gestão.
    */
   async listEntries() {
