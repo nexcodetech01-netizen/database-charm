@@ -18,6 +18,7 @@ interface Input {
   brand?: string;
   productName?: string;
   productDetails?: string;
+  supplier?: string;
 }
 
 const AttributesSchema = z.object({
@@ -46,6 +47,18 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
   .inputValidator((input: Input) => {
     const title = String(input?.title ?? "").trim();
     if (!title) throw new Error("Título é obrigatório para gerar a descrição.");
+    
+    // Sanitização MANDATÓRIA: Remover nomes de fornecedores/distribuidores dos detalhes
+    let details = input.productDetails?.toString() || "";
+    const supplier = input.supplier?.toString().trim();
+    if (supplier && supplier.length > 2) {
+      const escaped = supplier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'gi');
+      details = details.replace(regex, "[REMOVIDO]");
+    }
+    // Remoção fixa de termos internos conhecidos
+    details = details.replace(/Lilo Acessórios/gi, "[REMOVIDO]");
+
     return {
       title: title.slice(0, 120),
       price: typeof input.price === "number" && input.price > 0 ? input.price : undefined,
@@ -53,7 +66,8 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       categoryId: input.categoryId?.toString().trim() || undefined,
       brand: input.brand?.toString().trim() || undefined,
       productName: input.productName?.toString().trim() || undefined,
-      productDetails: input.productDetails?.toString().slice(0, 4000) || undefined,
+      productDetails: details.slice(0, 4000) || undefined,
+      supplier: supplier,
     };
   })
   .handler(async ({ data }) => {
@@ -76,9 +90,14 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       : "Detalhes cadastrados: não informados. Use inferências razoáveis sem inventar especificações técnicas.";
 
     const system = [
-      "Você é um copywriter especialista em anúncios do Mercado Livre Brasil, focado em bolsas e moda.",
+      "Você é um copywriter especialista em anúncios de e-commerce (B2C) no Mercado Livre Brasil, focado em bolsas e moda.",
       "Sua tarefa é DEVOLVER UM JSON com três campos: `title`, `description` e `attributes`.",
-      "Seja DIRETO e SUCINTO. Evite floreios longos.",
+      "Linguagem persuasiva e voltada para vendas diretas ao consumidor final.",
+      "",
+      "REGRA DE OURO MANDATÓRIA:",
+      "- NUNCA inclua nomes de fornecedores, distribuidores, marcas de atacado (ex: Lilo Acessórios) ou termos internos do sistema.",
+      "- Ignore qualquer menção a fornecedores nos dados de entrada.",
+      "- Foque exclusivamente nos atributos comerciais para o cliente final.",
       "",
       "REGRAS PARA `title` (Título otimizado do anúncio, pt-BR):",
       "- Estrutura obrigatória: [Tipo de Produto] + [Marca] + [Modelo] + [Atributo Principal].",
@@ -88,6 +107,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       "REGRAS PARA `description` (texto simples padronizado em pt-BR):",
       "- Máximo de 4000 caracteres, idealmente curto e impactante.",
       "- Sem HTML, Markdown ou emojis.",
+      "- FOCO B2C: Descreva Material, Tipo, Estilo, Cor, Funcionalidades, Compartimentos e Ocasião de uso.",
       "- Estrutura em tópicos: [INTRODUÇÃO], FICHA TÉCNICA, CONTEÚDO DA EMBALAGEM, CUIDADOS, GARANTIA.",
       "",
       "REGRAS PARA `attributes` (Ficha Técnica):",
@@ -121,14 +141,23 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
 
       });
 
-      const cleanedDescription = (output.description ?? "")
+      let cleanedDescription = (output.description ?? "")
         .replace(/^```[a-z]*\n?/i, "")
         .replace(/```$/i, "")
         .replace(/\*\*/g, "")
         .replace(/^#+\s*/gm, "")
         .trim();
 
-      if (!cleanedDescription) throw new Error("A IA retornou uma descrição vazia.");
+      // Filtro de segurança pós-geração: remover termos de fornecedor
+      cleanedDescription = cleanedDescription.replace(/Lilo Acessórios/gi, "");
+      if (data.supplier && data.supplier.length > 2) {
+        const escaped = data.supplier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, 'gi');
+        cleanedDescription = cleanedDescription.replace(regex, "");
+      }
+      cleanedDescription = cleanedDescription.replace(/\s+/g, " ").trim();
+
+      if (!cleanedDescription) throw new Error("A IA retornou uma descrição vazia após a filtragem de segurança.");
 
       return {
         title: normalizeTitle(output.title, data.title),
