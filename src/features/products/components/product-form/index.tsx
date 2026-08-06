@@ -2057,13 +2057,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         </div>
 
         <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
-          Cancelar
-        </Button>
-        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {product ? "Salvar alterações" : "Salvar Produto"}
-        </Button>
+          <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {product ? "Salvar alterações" : "Salvar Produto"}
+          </Button>
+        </div>
       </div>
 
       <SupplierQuickFormDialog
