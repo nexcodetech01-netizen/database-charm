@@ -28,9 +28,10 @@ export const processProductImages = createServerFn({ method: "POST" })
     const processed = data.images.map((img) => {
       // Mock de URL processada: adicionamos um parâmetro para simular uma imagem nova/tratada
       // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
-      const processedUrl = img.url.includes('?') 
-        ? `${img.url}&processed=true&bg=white` 
-        : `${img.url}?processed=true&bg=white`;
+      // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
+      // Para o mock, usamos uma URL de placeholder que indica "fundo removido" visualmente.
+      const processedUrl = `https://images.placeholders.dev/?width=800&height=800&text=AI+Processed+Background+Removed&bgColor=%23ffffff&textColor=%23000000`;
+
 
       return {
         ...img,
