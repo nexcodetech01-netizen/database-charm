@@ -1412,9 +1412,19 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                           }`}
                           value={price}
                           onChange={(e) => {
-                            setPrice(Number(e.target.value));
+                            const val = Number(e.target.value);
+                            setPrice(val);
                             setPriceTouched(true);
                             setUsingMlSuggested(false);
+                            
+                            // Re-calcula o líquido reverso para exibição visual imediata
+                            const isPremium = listingType === "gold_pro";
+                            const shipping = val >= 79 ? 24.65 : 0;
+                            const fixedFee = (val < 79 && val > 0) ? 6.5 : 0;
+                            const calculatedNet = isPremium 
+                              ? (val * 0.85) - shipping
+                              : (val * 0.865) - fixedFee - shipping;
+                            setWalletTarget(Math.max(0, calculatedNet).toFixed(2));
                           }}
                         />
                         {usingMlSuggested && !priceTouched && (
