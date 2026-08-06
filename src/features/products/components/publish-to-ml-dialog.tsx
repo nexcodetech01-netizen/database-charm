@@ -424,8 +424,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setQuantity(Math.max(1, Math.floor(Number(product.stock ?? 0))));
-      setDescription(product.description ?? "");
+      setQuantity(Math.max(1, Math.floor(Number(product?.stock ?? 0))));
+      setDescription(product?.description ?? "");
       setCategoryId("");
       setCategoryLabel("");
       setCategorySearch(t);
