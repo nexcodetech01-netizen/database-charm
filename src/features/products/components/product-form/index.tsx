@@ -1003,11 +1003,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   return (
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="geral">Dados gerais</TabsTrigger>
-          <TabsTrigger value="custos">Custos e precificação</TabsTrigger>
-          <TabsTrigger value="canais">Precificação por canal</TabsTrigger>
-          <TabsTrigger value="estoque">Estoque e fiscal</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+          <TabsTrigger value="geral" className="py-2.5">Dados gerais</TabsTrigger>
+          <TabsTrigger value="logistica" className="py-2.5">Integração ML & Logística</TabsTrigger>
+          <TabsTrigger value="custos" className="py-2.5">Custos e precificação</TabsTrigger>
+          <TabsTrigger value="canais" className="py-2.5">Canais de venda</TabsTrigger>
+          <TabsTrigger value="estoque" className="py-2.5">Estoque e fiscal</TabsTrigger>
         </TabsList>
 
         {/* ══════════════ ABA 1 — DADOS GERAIS ══════════════ */}
