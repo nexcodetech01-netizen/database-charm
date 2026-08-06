@@ -457,16 +457,16 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   // Reset state on open
   useEffect(() => {
-    if (open) {
-      const t = (product?.name ?? "").slice(0, 60);
+    if (open && product) {
+      const t = (product?.name || "").slice(0, 60);
       setTitle(t);
-      const rawPrice = Number(product?.price ?? 0);
+      const rawPrice = Number(product?.price || 0);
       setPrice(rawPrice);
       setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setQuantity(Math.max(1, Math.floor(Number(product?.stock ?? 0))));
-      setDescription(product?.description ?? "");
+      setQuantity(Math.max(1, Math.floor(Number(product?.stock || 0))));
+      setDescription(product?.description || "");
       setCategoryId("");
       setCategoryLabel("");
       setCategorySearch(t);
@@ -479,7 +479,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand("Generica");
-      const currentModel = ((product as any)?.model ?? "").trim();
+      const currentModel = (product?.model || "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
         const words = t.split(/\s+/).filter(w => w.length > 2);
