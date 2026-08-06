@@ -31,6 +31,8 @@ export type UsePDV = {
   setItemPrice: (uiKey: string, price: number, reason?: string) => void;
   setItemDiscount: (uiKey: string, discount: number) => void;
   setItemAddition: (uiKey: string, addition: number) => void;
+  setItemNotes: (uiKey: string, notes: string) => void;
+  setNotes: (notes: string) => void;
   clear: () => void;
 };
 
