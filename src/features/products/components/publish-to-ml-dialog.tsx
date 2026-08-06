@@ -554,20 +554,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
 
   const validation = useMemo(() => {
-    const errors: string[] = [];
-    if (isExpired) errors.push("Integração expirada");
-    if (!categoryId) errors.push("Selecione uma categoria");
-    if (!title.trim() || title.trim().length < 25) errors.push("Título muito curto");
-    if (price <= 0) errors.push("Preço deve ser maior que zero");
-    if (quantity <= 0) errors.push("Estoque deve ser maior que zero");
-    if (selectedPhotoPaths.length === 0) errors.push("Adicione ao menos uma imagem");
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }, [isExpired, categoryId, title, price, quantity, selectedPhotoPaths]);
+    return validateMercadoLivreRequirements({
+      ...product,
+      name: title,
+      price: price,
+      stock: quantity,
+      selectedPhotoPaths,
+      categoryId,
+      brand,
+      model,
+    });
+  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
 
-  const canPublish = validation.isValid && !publish.isPending;
+  const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
