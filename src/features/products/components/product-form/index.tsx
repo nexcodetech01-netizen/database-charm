@@ -116,8 +116,8 @@ const schema = z.object({
       .optional()
       .or(z.literal("")),
   ),
-  brand: z.string().trim().min(1, "Marca obrigatória").max(120),
-  model: z.string().trim().min(1, "Modelo obrigatório").max(120),
+  brand: z.string().trim().optional().default("Genérico"),
+  model: z.string().trim().optional().default("Padrão"),
   weight: z.preprocess((v) => num(v as any), z.number().min(0, "Peso não pode ser negativo").optional().default(0.3)),
   width: z.preprocess((v) => num(v as any), z.number().min(0, "Largura não pode ser negativa").optional().default(15)),
   height: z.preprocess((v) => num(v as any), z.number().min(0, "Altura não pode ser negativa").optional().default(15)),
@@ -164,13 +164,13 @@ const empty: FormState = {
   barcode: "SEM GTIN",
   ncm: "",
   cest: "",
-  brand: "",
-  model: "",
+  brand: "Genérico",
+  model: "Padrão",
   description: "",
   category_id: "",
   supplier_id: "",
   status: "active",
-  unit: "un",
+  unit: "UN",
   sales_channels: ["loja_fisica"],
   cost: "0",
   freight: "0",
@@ -183,10 +183,10 @@ const empty: FormState = {
   stock: "1",
   min_stock: "0",
   tags: [],
-  weight: "",
-  width: "",
-  height: "",
-  length: "",
+  weight: "0.3",
+  width: "15",
+  height: "15",
+  length: "15",
 };
 
 function toState(p?: Product): FormState {
@@ -1511,7 +1511,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 </div>
               </Field>
 
-              <Field label="Marca *" hint="Fabricante ou marca do produto">
+              <Field label="Marca" hint="Fabricante ou marca do produto (Opcional)">
                 <Input
                   value={form.brand}
                   onChange={(e) => set("brand", e.target.value)}
@@ -1520,7 +1520,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 />
               </Field>
 
-              <Field label="Modelo *" hint="Modelo específico do produto">
+              <Field label="Modelo" hint="Modelo específico do produto (Opcional)">
                 <Input
                   value={form.model}
                   onChange={(e) => set("model", e.target.value)}

@@ -16,15 +16,15 @@ export const PRODUCT_STATUS_OPTIONS: { value: ProductStatus; label: string }[] =
 ];
 
 export const PRODUCT_UNIT_OPTIONS = [
-  { value: "un", label: "Unidade (un)" },
-  { value: "cx", label: "Caixa (cx)" },
-  { value: "kg", label: "Quilograma (kg)" },
-  { value: "g", label: "Grama (g)" },
-  { value: "l", label: "Litro (l)" },
-  { value: "ml", label: "Mililitro (ml)" },
-  { value: "m", label: "Metro (m)" },
-  { value: "m2", label: "Metro² (m²)" },
-  { value: "pc", label: "Peça (pc)" },
+  { value: "UN", label: "Unidade (UN)" },
+  { value: "CX", label: "Caixa (CX)" },
+  { value: "KG", label: "Quilograma (KG)" },
+  { value: "G", label: "Grama (G)" },
+  { value: "L", label: "Litro (L)" },
+  { value: "ML", label: "Mililitro (ML)" },
+  { value: "M", label: "Metro (M)" },
+  { value: "M2", label: "Metro² (M²)" },
+  { value: "PC", label: "Peça (PC)" },
 ];
 
 export const SALES_CHANNEL_OPTIONS = [
