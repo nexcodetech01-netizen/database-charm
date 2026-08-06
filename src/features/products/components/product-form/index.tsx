@@ -378,7 +378,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   }, [isEdit]);
   const restoreDraft = () => {
     const found = draft.load();
-    if (found?.data) setForm(found.data as FormState);
+    if (found?.data) {
+      const draftData = found.data as FormState;
+      // Garante que o rascunho recuperado não sobrescreva o auto-foco se o nome ainda estiver vazio
+      setForm(draftData);
+    }
     toast.success("Rascunho recuperado");
     setRecoveryOpen(false);
   };
@@ -386,6 +390,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     draft.discard();
     setRecoveryOpen(false);
   };
+
+  // Preenchimento de SKU ao selecionar categoria para novos produtos
+  useEffect(() => {
+    if (isEdit || !form.category_id || form.sku.trim()) return;
+    if (!form.name.trim()) return;
+
+    regenerateSku();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category_id, isEdit]);
 
   // ─── Geração automática de SKU (apenas em novo produto) ───
   // skuAuto = true enquanto o usuário não editar o campo manualmente.
