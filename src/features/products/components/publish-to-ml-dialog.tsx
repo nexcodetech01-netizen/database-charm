@@ -159,6 +159,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 }
 
 function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Props) {
+  // Defensive check: if product is missing, show a clear message instead of crashing
+  if (!product) {
+    throw new Error("Dados do produto não fornecidos ao diálogo.");
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -392,10 +397,11 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   const publish = useMutation({
     mutationFn: async () => {
-      if (!product?.id) throw new Error("ID do produto não encontrado");
+      const productId = product?.id;
+      if (!productId) throw new Error("ID do produto não encontrado");
       return await publishFn({
         data: {
-          productId: product.id,
+          productId: productId,
           categoryId,
           listingTypeId: listingType,
           condition,
