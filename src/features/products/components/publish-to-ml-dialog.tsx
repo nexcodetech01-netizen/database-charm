@@ -1683,13 +1683,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 >
                   {generateDesc.isPending ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando…
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando descrição rápida...
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-3.5 w-3.5 text-primary" /> Gerar com IA
                     </>
                   )}
+
                 </Button>
               </div>
             </div>
