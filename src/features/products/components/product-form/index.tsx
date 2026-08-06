@@ -10,6 +10,8 @@ import {
   Loader2,
   Plus,
   Settings2,
+  ShoppingBag,
+  Smartphone,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -87,6 +89,7 @@ import {
 } from "../../lib/fiscal-suggestions";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
 import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
+import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
 
 interface Props {
   companyId: string;
@@ -1673,6 +1676,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               </Field>
             </div>
           </Section>
+
+          {product && (
+            <PublishToMercadoLivreDialog
+              product={product}
+              open={mlDialogOpen}
+              onOpenChange={setMlDialogOpen}
+            />
+          )}
 
           <Section
             title="Dimensões & Peso"
