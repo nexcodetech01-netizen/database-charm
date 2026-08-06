@@ -1147,7 +1147,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
 
                 {/* Categoria */}
-                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="ml-category-search" className="flex items-center gap-1.5 text-sm font-semibold">
                       Categoria do Mercado Livre
