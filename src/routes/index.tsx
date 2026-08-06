@@ -63,6 +63,7 @@ function IndexComponent() {
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
                 <li>UX otimizada para operador de caixa (Scanner sempre ativo).</li>
                 <li>Resumo financeiro detalhado com margem e lucro estimado.</li>
+                <li>Campo de preço livre com suporte a decimais e sobreposição manual.</li>
                 <li>Zero novas regras de negócio — Reuso total do Motor Comercial V2.</li>
               </ul>
             </section>
