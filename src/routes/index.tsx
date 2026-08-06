@@ -64,6 +64,7 @@ function IndexComponent() {
                 <li>UX otimizada para operador de caixa (Scanner sempre ativo).</li>
                 <li>Resumo financeiro detalhado com margem e lucro estimado.</li>
                 <li>Campo de preço livre com suporte a decimais e sobreposição manual.</li>
+                <li>Atalhos Enterprise: Enter para adicionar item e foco automático na busca.</li>
                 <li>Zero novas regras de negócio — Reuso total do Motor Comercial V2.</li>
               </ul>
             </section>
