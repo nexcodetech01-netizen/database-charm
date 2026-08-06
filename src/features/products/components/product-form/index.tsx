@@ -1513,6 +1513,52 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     set("ncm", normalizeNcm(e.target.value));
                   }}
                 />
+                {form.ncm && fiscal.source !== "manual" ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    {fiscal.source === "category"
+                      ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
+                      : fiscal.source === "barcode"
+                        ? "Sugerido pelo EAN cadastrado — edite se precisar."
+                        : "Sugerido pelo histórico de produtos — edite se precisar."}
+                  </p>
+                ) : null}
+
+                {fiscal.historyLoading && !form.ncm ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
+                  </p>
+                ) : null}
+
+                {fiscal.historySuggestions.length ? (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Usados em produtos semelhantes:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fiscal.historySuggestions.map((s) => (
+                        <Button
+                          key={s.ncm}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 px-2 text-[11px]"
+                          onClick={() =>
+                            fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
+                          }
+                          title={`${s.sampleName} — ${s.usageCount} produto(s)`}
+                        >
+                          <Wand2 className="h-3 w-3" />
+                          {formatNcm(s.ncm)}
+                          {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
+                          <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
+                            {s.usageCount}
+                          </Badge>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </Field>
             </div>
           </Section>
