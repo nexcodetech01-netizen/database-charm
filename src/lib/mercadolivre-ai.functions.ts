@@ -118,6 +118,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
         maxTokens: 500,
         output: Output.object({ schema: OutputSchema }),
 
+
       });
 
       const cleanedDescription = (output.description ?? "")
