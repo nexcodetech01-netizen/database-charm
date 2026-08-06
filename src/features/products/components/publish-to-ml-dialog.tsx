@@ -474,14 +474,28 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         throw new Error("Falha ao otimizar imagem com IA");
       }
 
+      const mainProcessed = res.processedImages[0];
+      if (mainProcessed.processedUrl) {
+        setLocalImageUrls(prev => {
+          const next = new Map(prev);
+          next.set(path, mainProcessed.processedUrl!);
+          return next;
+        });
+      }
+
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
       // Se gerou multiview, adicionar as novas imagens
       const generated = res.processedImages.filter(img => (img as any).isGenerated);
       if (generated.length > 0) {
         for (const gen of generated) {
-          // Em um cenário real, salvaríamos essas imagens no bucket.
-          // Por agora, apenas incluímos no estado para exibição.
+          if (gen.processedUrl) {
+            setLocalImageUrls(prev => {
+              const next = new Map(prev);
+              next.set(gen.id, gen.processedUrl!);
+              return next;
+            });
+          }
           setSelectedPhotoPaths(prev => {
             if (prev.length < 5 && !prev.includes(gen.id)) {
               return [...prev, gen.id];
