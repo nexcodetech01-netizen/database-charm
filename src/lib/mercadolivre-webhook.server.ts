@@ -186,8 +186,9 @@ export async function processMercadoLivreNotification(
       .from("products")
       .select("id, company_id")
       .eq("company_id", row.company_id)
-      .eq("ml_item_id", mlItemId)
+      .or(`ml_item_id.eq.${mlItemId},sku.eq.${oi.item?.id || ""}`)
       .maybeSingle();
+
     const product = prod as { id: string; company_id: string } | null;
     if (!product) continue;
 
