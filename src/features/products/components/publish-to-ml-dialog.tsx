@@ -936,7 +936,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </Alert>
         ) : null}
 
-        <div className={`grid gap-4 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
             <h4 className="text-sm font-semibold flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
