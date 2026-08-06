@@ -14,12 +14,15 @@ import {
 export const PDV_SHORTCUTS: { key: string; label: string }[] = [
   { key: "ENTER", label: "Adicionar" },
   { key: "F2", label: "Cliente" },
-  { key: "F3", label: "Quantidade" },
-  { key: "F4", label: "Desconto" },
+  { key: "F3", label: "Qtd" },
+  { key: "F6", label: "Preço" },
+  { key: "F7", label: "Desc Item" },
+  { key: "F8", label: "Acrés Item" },
   { key: "F5", label: "Pagamento" },
-  { key: "ESC", label: "Limpar" },
-  { key: "DEL", label: "Remover item" },
-  { key: "CTRL+L", label: "Limpar carrinho" },
+  { key: "CTRL+S", label: "Suspender" },
+  { key: "CTRL+R", label: "Recuperar" },
+  { key: "CTRL+L", label: "Limpar" },
+  { key: "DEL", label: "Remover" },
 ];
 
 /**

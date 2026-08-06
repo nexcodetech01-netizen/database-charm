@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { Edit2, ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2, Percent, PlusCircle } from "lucide-react";
+import { Edit2, ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2, Percent, PlusCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
@@ -7,6 +7,7 @@ import { PDV_LAYOUT } from "../lib/layout";
 import { pdvQuantityInputId } from "../lib/focus";
 import { computeItemTotal, type SaleItemDraft } from "../../types";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type Props = {
   items: SaleItemDraft[];
@@ -20,6 +21,7 @@ type Props = {
   onEditPrice?: (item: SaleItemDraft) => void;
   onEditDiscount?: (item: SaleItemDraft) => void;
   onEditAddition?: (item: SaleItemDraft) => void;
+  onEditNotes?: (item: SaleItemDraft) => void;
 };
 
 type RowProps = {
@@ -33,6 +35,7 @@ type RowProps = {
   onEditPrice?: (item: SaleItemDraft) => void;
   onEditDiscount?: (item: SaleItemDraft) => void;
   onEditAddition?: (item: SaleItemDraft) => void;
+  onEditNotes?: (item: SaleItemDraft) => void;
 };
 
 function stockLabel(stock: number | null | undefined): string {
@@ -55,6 +58,7 @@ const PDVCartRow = memo(function PDVCartRow({
   onEditPrice,
   onEditDiscount,
   onEditAddition,
+  onEditNotes,
 }: RowProps) {
   const activate = useCallback(() => onActivate?.(uiKey), [onActivate, uiKey]);
   const stock = item.stock_available;
@@ -63,12 +67,14 @@ const PDVCartRow = memo(function PDVCartRow({
   const hasPriceChange = item.original_unit_price != null && item.unit_price !== item.original_unit_price;
   const hasDiscount = (item.discount || 0) > 0;
   const hasAddition = (item.addition || 0) > 0;
+  const hasNotes = !!item.notes;
 
   return (
     <li
       data-active={active || undefined}
       onFocus={activate}
       onMouseDown={activate}
+      onDoubleClick={() => onQuantityChange(uiKey, item.quantity)}
       className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
@@ -165,6 +171,17 @@ const PDVCartRow = memo(function PDVCartRow({
           >
             <PlusCircle className="h-3.5 w-3.5" />
           </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground/70 hover:text-primary hover:bg-primary/10"
+            disabled={readOnly}
+            onClick={() => onEditNotes?.(item)}
+            title="Observações do item"
+          >
+            <MessageSquare className={cn("h-3.5 w-3.5", hasNotes && "text-primary fill-primary/10")} />
+          </Button>
         </div>
 
         <div className="flex items-center rounded-lg border bg-background">
@@ -234,6 +251,7 @@ export function PDVCart({
   onEditPrice,
   onEditDiscount,
   onEditAddition,
+  onEditNotes,
 }: Props) {
   return (
     <div className="flex flex-col rounded-xl border bg-card shadow-sm">
@@ -280,6 +298,7 @@ export function PDVCart({
                 onEditPrice={onEditPrice}
                 onEditDiscount={onEditDiscount}
                 onEditAddition={onEditAddition}
+                onEditNotes={onEditNotes}
               />
             );
           })}

@@ -145,6 +145,8 @@ export interface SaleItemDraft {
   average_cost?: number | null;
   last_purchase_cost?: number | null;
   cost_method?: "average" | "last_purchase" | null;
+  /** Observações por item (Sprint 7.2) — persistidas no banco se a coluna existir, ou apenas UX. */
+  notes?: string | null;
 }
 
 

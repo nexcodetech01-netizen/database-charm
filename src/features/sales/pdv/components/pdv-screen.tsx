@@ -7,7 +7,8 @@ import {
   lazy,
   Suspense,
 } from "react";
-import { Wallet } from "lucide-react";
+import { Wallet, History, MessageSquare, Tag } from "lucide-react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,7 @@ import {
   clickPdvElement,
   PDV_CUSTOMER_TRIGGER_ID,
   PDV_FINALIZE_BUTTON_ID,
+  PDV_DISCOUNT_INPUT_ID,
 } from "../hooks/use-pdv-shortcuts";
 import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
 
@@ -58,6 +60,12 @@ const CheckoutDialog = lazy(() =>
 );
 const ReceiptDialog = lazy(() =>
   import("../../components/receipt-dialog").then((m) => ({ default: m.ReceiptDialog })),
+);
+const PDVSuspendedDialog = lazy(() =>
+  import("./pdv-suspended-dialog").then((m) => ({ default: m.PDVSuspendedDialog })),
+);
+const PDVNotesDialog = lazy(() =>
+  import("./pdv-notes-dialog").then((m) => ({ default: m.PDVNotesDialog })),
 );
 
 
@@ -171,6 +179,9 @@ export function PDVScreen({
   const [editingPriceItem, setEditingPriceItem] = useState<SaleItemDraft | null>(null);
   const [editingDiscountItem, setEditingDiscountItem] = useState<SaleItemDraft | null>(null);
   const [editingAdditionItem, setEditingAdditionItem] = useState<SaleItemDraft | null>(null);
+  const [editingNotesItem, setEditingNotesItem] = useState<SaleItemDraft | null>(null);
+  const [saleNotesOpen, setSaleNotesOpen] = useState(false);
+  const [suspendedOpen, setSuspendedOpen] = useState(false);
 
   const handleAddProduct = useCallback(
     (product: Parameters<typeof pdv.addProduct>[0]) => {
@@ -199,6 +210,45 @@ export function PDVScreen({
     pdv.clear();
     setActiveKey(null);
     focus.focusSearch();
+  }
+
+  function handleSuspendSale() {
+    if (pdv.state.items.length === 0) {
+      toast.error("Adicione itens ao carrinho antes de suspender.");
+      return;
+    }
+    const customer = pdv.state.customerId ? null : "Consumidor Final"; // Mock simple retrieval or reuse existing data
+    // In a real scenario, we might need a small hook/service to get the customer name if we only have ID
+    // But per instructions "Sem consultas novas. Reutilizar serviços existentes."
+    // We can just use what's in the state.
+    
+    import("../lib/suspended-sales").then(({ saveSuspendedSale }) => {
+      saveSuspendedSale(companyId, {
+        id: crypto.randomUUID(),
+        number: pdv.state.number,
+        timestamp: new Date().toISOString(),
+        customerId: pdv.state.customerId || "",
+        customerName: null, // UI handles this or we could fetch
+        itemCount: pdv.itemCount,
+        total: pdv.totals.grand_total,
+        state: pdv.state,
+      });
+      toast.success("Venda suspensa com sucesso");
+      pdv.clear();
+      setActiveKey(null);
+      focus.focusSearch();
+    });
+  }
+
+  function handleRecoverSale(suspended: import("../lib/suspended-sales").SuspendedSale) {
+    pdv.hydrate(suspended.state);
+    import("../lib/suspended-sales").then(({ removeSuspendedSale }) => {
+      removeSuspendedSale(companyId, suspended.id);
+      setSuspendedOpen(false);
+      toast.success("Venda recuperada");
+      setActiveKey(null);
+      focus.focusSearch();
+    });
   }
 
   function handlePrintReceipt() {
@@ -234,9 +284,12 @@ export function PDVScreen({
       dialogOpen: receiptOpen || 
                   checkoutOpen || 
                   closeCashOpen || 
+                  suspendedOpen ||
+                  saleNotesOpen ||
                   !!editingPriceItem || 
                   !!editingDiscountItem || 
-                  !!editingAdditionItem 
+                  !!editingAdditionItem ||
+                  !!editingNotesItem
     },
     handlers: {
       "focus-search": focus.focusSearch,
@@ -260,9 +313,29 @@ export function PDVScreen({
           ? () => {
               pdv.removeItem(effectiveActiveKey);
               setActiveKey(null);
-              focus.focusSearch();
             }
           : undefined,
+      "suspend-sale": handleSuspendSale,
+      "recover-sale": () => setSuspendedOpen(true),
+      "price-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingPriceItem(item);
+          }
+        : undefined,
+      "discount-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingDiscountItem(item);
+          }
+        : () => clickPdvElement(PDV_DISCOUNT_INPUT_ID),
+      "addition-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingAdditionItem(item);
+          }
+        : undefined,
+      "finalize": () => clickPdvElement(PDV_FINALIZE_BUTTON_ID),
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
       "print-receipt": completed ? () => {
         console.log("[PDVScreen] Atalho print-receipt detectado.");
@@ -376,6 +449,7 @@ export function PDVScreen({
               onEditPrice={setEditingPriceItem}
               onEditDiscount={setEditingDiscountItem}
               onEditAddition={setEditingAdditionItem}
+              onEditNotes={setEditingNotesItem}
             />
 
             {pdv.stockIssues.length > 0 && (
@@ -396,6 +470,7 @@ export function PDVScreen({
               />
             </Suspense>
             <PDVSummary
+              items={pdv.state.items}
               totals={pdv.totals}
               itemCount={pdv.itemCount}
               lineCount={pdv.state.items.length}
@@ -405,8 +480,8 @@ export function PDVScreen({
               changeDue={
                 completed && completed.paymentMethod === "cash" ? 0 : null
               }
-
               readOnly={cartLocked}
+              onOpenNotes={() => setSaleNotesOpen(true)}
             />
             {completed ? (
               <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl" />}>
@@ -418,7 +493,7 @@ export function PDVScreen({
                   fiscal={fiscal}
                   fiscalPending={fiscalPending}
                   onRetryFiscal={() => void pdvFiscal.issue(completed.id)}
-                />
+          />
               </Suspense>
             ) : (
               <PDVPaymentPanel
@@ -494,6 +569,35 @@ export function PDVScreen({
         onConfirm={pdv.setItemAddition}
         type="addition"
       />
+
+      <PDVSuspendedDialog
+        companyId={companyId}
+        open={suspendedOpen}
+        onOpenChange={setSuspendedOpen}
+        onSelect={handleRecoverSale}
+      />
+
+      <PDVNotesDialog
+        title="Observações da Venda"
+        open={saleNotesOpen}
+        onOpenChange={setSaleNotesOpen}
+        initialValue={pdv.state.notes || ""}
+        onConfirm={pdv.setNotes}
+      />
+
+      {editingNotesItem && (
+        <PDVNotesDialog
+          title="Observações do Item"
+          open={!!editingNotesItem}
+          onOpenChange={(open) => !open && setEditingNotesItem(null)}
+          initialValue={editingNotesItem.notes || ""}
+          onConfirm={(notes) => {
+            if (editingNotesItem.ui_key) {
+              pdv.setItemNotes(editingNotesItem.ui_key, notes);
+            }
+          }}
+        />
+      )}
 
       {cashDialogs}
     </>

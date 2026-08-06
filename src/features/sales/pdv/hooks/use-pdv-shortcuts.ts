@@ -46,7 +46,13 @@ export type PdvShortcutAction =
   | "print-receipt"
   | "confirm-dialog"
   | "close-dialog"
-  | "close-cash";
+  | "close-cash"
+  | "suspend-sale"
+  | "recover-sale"
+  | "price-edit"
+  | "discount-edit"
+  | "addition-edit"
+  | "finalize";
 
 /** Alvo do evento, no mínimo necessário para decidir (sem depender do DOM). */
 export type PdvShortcutTarget = {
@@ -131,6 +137,12 @@ export function resolvePdvShortcut(
       return "focus-discount";
     case "F5":
       return "open-payment";
+    case "F6":
+      return "price-edit";
+    case "F7":
+      return "discount-edit";
+    case "F8":
+      return "addition-edit";
     case "F12":
       return "close-cash";
     case "Delete":
@@ -139,6 +151,27 @@ export function resolvePdvShortcut(
     default:
       return null;
   }
+}
+
+/** 
+ * Mapas customizados para atalhos combinados (CTRL+...).
+ * Re-implementando lógica de detecção de teclas especiais.
+ */
+export function resolvePdvCombinedShortcut(
+  event: PdvShortcutEvent,
+  context: PdvShortcutContext = {},
+): PdvShortcutAction | null {
+  const ctrl = Boolean(event.ctrlKey || event.metaKey);
+  if (!ctrl || context.dialogOpen) return null;
+
+  const key = event.key.toLowerCase();
+  if (key === "p") return "focus-search";
+  if (key === "c") return "open-customer";
+  if (key === "s") return "suspend-sale";
+  if (key === "r") return "recover-sale";
+  if (key === "l" || key === "delete") return "clear-cart";
+
+  return null;
 }
 
 export type PdvShortcutHandlers = Partial<
@@ -155,14 +188,14 @@ type MinimalEvent = PdvShortcutEvent & { preventDefault?: () => void };
  * Teclas de edição de texto (ENTER, ESC, DELETE) só são bloqueadas quando o
  * PDV realmente as usa — digitar em um campo continua normal.
  */
-const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5", "F12"] as const;
+const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5", "F6", "F7", "F8", "F12"] as const;
 
 export function isPdvOwnedKey(event: PdvShortcutEvent): boolean {
   if (event.altKey) return false;
   const ctrl = Boolean(event.ctrlKey || event.metaKey);
   if (ctrl) {
     const key = event.key.toLowerCase();
-    return key === "l" || key === "delete";
+    return ["l", "delete", "p", "c", "s", "r"].includes(key);
   }
   return OWNED_FUNCTION_KEYS.includes(
     event.key as (typeof OWNED_FUNCTION_KEYS)[number],
@@ -181,7 +214,8 @@ export function createPdvShortcutHandler(
   getContext: () => PdvShortcutContext = () => ({}),
 ) {
   return function onKeyDown(event: MinimalEvent) {
-    const action = resolvePdvShortcut(event, getContext());
+    const context = getContext();
+    const action = resolvePdvShortcut(event, context) || resolvePdvCombinedShortcut(event, context);
     const owned = isPdvOwnedKey(event);
     if (action || owned) event.preventDefault?.();
     if (!action) return;
