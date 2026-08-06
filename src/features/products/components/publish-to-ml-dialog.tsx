@@ -997,8 +997,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   return (
     <>
       <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
-          <div className="space-y-1">
+        <DialogHeader className="p-4 border-b border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
             <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
@@ -1031,8 +1031,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
               </span>
             </div>
           </div>
-        </div>
-      </DialogHeader>
+          </div>
+        </DialogHeader>
 
         {isExpired ? (
           <Alert variant="destructive" className="border-destructive/40">
@@ -1056,7 +1056,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         ) : null}
         <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 py-4 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
+            <div className="px-4 py-3 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
@@ -1089,7 +1089,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             </div>
 
             <div className="flex-1 overflow-y-auto scrollbar-thin">
-              <TabsContent value="info" className="m-0 space-y-4 p-6 focus-visible:outline-none">
+              <TabsContent value="info" className="m-0 space-y-4 p-4 focus-visible:outline-none">
                 {/* Título */}
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between gap-2">
