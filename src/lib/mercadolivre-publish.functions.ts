@@ -718,6 +718,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     const requestBody = {
       ...body,
       attributes: sanitizedAttrs,
+      variations: data.variations,
     };
 
     // Remove sale_terms redundantes
