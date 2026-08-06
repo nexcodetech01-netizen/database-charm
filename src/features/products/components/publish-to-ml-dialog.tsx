@@ -938,9 +938,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           price: price > 0 ? price : undefined,
           categoryLabel: categoryLabel || undefined,
           categoryId: categoryId || undefined,
-          brand: (product as { brand?: string | null }).brand ?? undefined,
-          productName: product.name,
-          productDetails: product.description ?? undefined,
+          brand: (product as { brand?: string | null })?.brand ?? undefined,
+          productName: product?.name,
+          productDetails: product?.description ?? undefined,
         },
       }),
     onSuccess: (res) => {
