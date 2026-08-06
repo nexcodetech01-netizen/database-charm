@@ -28,6 +28,9 @@ export type UsePDV = {
   setItemQuantity: (uiKey: string, quantity: number) => void;
   setDiscount: (value: number) => void;
   setCustomer: (customerId: string) => void;
+  setItemPrice: (uiKey: string, price: number, reason?: string) => void;
+  setItemDiscount: (uiKey: string, discount: number) => void;
+  setItemAddition: (uiKey: string, addition: number) => void;
   clear: () => void;
 };
 
@@ -103,6 +106,21 @@ export function usePDV(companyId: string): UsePDV {
     dispatch({ type: "SET_CUSTOMER", value: customerId });
   }, []);
 
+  const setItemPrice = useCallback(
+    (uiKey: string, price: number, reason?: string) => {
+      dispatch({ type: "UPDATE_ITEM_PRICE", uiKey, price, reason });
+    },
+    [],
+  );
+
+  const setItemDiscount = useCallback((uiKey: string, discount: number) => {
+    dispatch({ type: "UPDATE_ITEM_DISCOUNT", uiKey, discount });
+  }, []);
+
+  const setItemAddition = useCallback((uiKey: string, addition: number) => {
+    dispatch({ type: "UPDATE_ITEM_ADDITION", uiKey, addition });
+  }, []);
+
   const clear = useCallback(() => {
     dispatch({ type: "RESET", state: { number: nextPdvSaleNumber() } });
     setSearch("");
@@ -121,6 +139,9 @@ export function usePDV(companyId: string): UsePDV {
     setItemQuantity,
     setDiscount: setDiscountValue,
     setCustomer,
+    setItemPrice,
+    setItemDiscount,
+    setItemAddition,
     clear,
   };
 }

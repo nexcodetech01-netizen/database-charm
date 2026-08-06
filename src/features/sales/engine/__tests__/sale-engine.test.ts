@@ -37,6 +37,19 @@ describe("SaleEngine · totais", () => {
     const state = createSaleDraftState({ items: [item({ unit_price: 1, quantity: 1 })], discount: 999 });
     expect(SaleEngine.computeTotals(state).grand_total).toBe(0);
   });
+
+  it("considera acréscimo e desconto por item", () => {
+    const state = createSaleDraftState({
+      items: [
+        item({ ui_key: "k1", unit_price: 100, quantity: 1, discount: 10 }), // 90
+        item({ ui_key: "k2", unit_price: 100, quantity: 1, addition: 20 }), // 120
+      ],
+      discount: 0,
+      shipping: 0,
+    });
+    const t = SaleEngine.computeTotals(state);
+    expect(t.items_total).toBe(210);
+  });
 });
 
 describe("SaleEngine · validações", () => {
@@ -170,5 +183,22 @@ describe("SaleStore · reducer", () => {
     expect(s4.discount).toBe(0);
 
     expect(saleReducer(s4, { type: "RESET" })).toEqual(createSaleDraftState());
+  });
+
+  it("aplica alteração de preço, desconto e acréscimo por item", () => {
+    const s0 = createSaleDraftState({ items: [item({ unit_price: 100 })] });
+    
+    // Preço
+    const s1 = saleReducer(s0, { type: "UPDATE_ITEM_PRICE", uiKey: "k1", price: 120 });
+    expect(s1.items[0].unit_price).toBe(120);
+    expect(s1.items[0].original_unit_price).toBe(100);
+
+    // Desconto
+    const s2 = saleReducer(s1, { type: "UPDATE_ITEM_DISCOUNT", uiKey: "k1", discount: 10 });
+    expect(s2.items[0].discount).toBe(10);
+
+    // Acréscimo
+    const s3 = saleReducer(s2, { type: "UPDATE_ITEM_ADDITION", uiKey: "k1", addition: 5 });
+    expect(s3.items[0].addition).toBe(5);
   });
 });
