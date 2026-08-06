@@ -1253,7 +1253,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
                       const classicShipping = desired >= 79 ? 23.5 : 0;
                       const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
-                      const premiumFeePct = 0.185;
+                      const premiumFeePct = 0.15; // Atualizado para 15% conforme solicitado
                       const premiumFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - premiumFeePct) : 0;
 
                       return (
