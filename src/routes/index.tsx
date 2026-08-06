@@ -46,25 +46,32 @@ function IndexComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-4">
-        <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
-        <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
+        <h1 className="text-2xl font-bold">Bolsa Social Feminina com Monograma</h1>
+        <p className="text-muted-foreground">Ideal para quem busca estilo, praticidade e elegância no dia a dia.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DO ATRIBUTO MARCA</h2>
-          <div className="space-y-4 text-sm leading-relaxed">
+          <div className="space-y-6 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. CAMPO OBRIGATÓRIO DE MARCA:</h3>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Input "Marca" adicionado ao formulário de publicação.</li>
-                <li>Mapeado para o atributo 'BRAND' da API do Mercado Livre.</li>
-                <li>Valor padrão "Generica" definido automaticamente se o campo estiver vazio.</li>
+              <h2 className="text-lg font-semibold mb-2">ESPECIFICAÇÕES:</h2>
+              <ul className="list-none space-y-1 text-muted-foreground">
+                <li>• Material: Sintético de alta qualidade</li>
+                <li>• Fechamento: Zíper resistente</li>
+                <li>• Alça: De ombro</li>
+                <li>• Estilo: Social / Casual</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. SANITIZAÇÃO E CONSISTÊNCIA:</h3>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Removido fallback antigo para "T&G".</li>
-                <li>Garantida a persistência do valor correto no payload enviado.</li>
+              <h2 className="text-lg font-semibold mb-2">CONTEÚDO DA EMBALAGEM:</h2>
+              <ul className="list-none space-y-1 text-muted-foreground">
+                <li>• 1x Bolsa Social Feminina Monograma</li>
               </ul>
+            </section>
+            <section>
+              <h2 className="text-lg font-semibold mb-2">CUIDADOS:</h2>
+              <p className="text-muted-foreground">Limpeza com pano úmido e sabão neutro. Secar à sombra.</p>
+            </section>
+            <section>
+              <h2 className="text-lg font-semibold mb-2">GARANTIA:</h2>
+              <p className="text-muted-foreground">30 dias contra defeitos de fabricação.</p>
             </section>
           </div>
         </div>
