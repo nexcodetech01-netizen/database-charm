@@ -8,7 +8,9 @@ import {
   ImageIcon, 
   CheckCircle2,
   RefreshCw,
-  LayoutGrid
+  LayoutGrid,
+  Eye,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +50,7 @@ export function ProductPhotoBatchUploader({ companyId, productId, maxPhotos = 5,
     }));
   });
   const [activeTab, setActiveTab] = useState<"upload" | "preview">(existingImages.length > 0 ? "preview" : "upload");
+  const [comparingIndex, setComparingIndex] = useState<number | null>(null);
   const processImagesFn = useServerFn(processProductImages);
 
   const onFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,43 +182,76 @@ export function ProductPhotoBatchUploader({ companyId, productId, maxPhotos = 5,
                 )}
               >
                 <img 
-                  src={img.processedUrl || img.preview} 
+                  src={comparingIndex === index ? img.preview : (img.processedUrl || img.preview)} 
                   alt={`Preview ${index + 1}`}
                   className={cn(
-                    "h-full w-full object-cover transition-opacity",
-                    img.isProcessing && "opacity-40"
+                    "h-full w-full object-cover transition-all duration-200",
+                    img.isProcessing && "opacity-40",
+                    comparingIndex === index && "scale-105 brightness-110"
                   )}
                 />
                 
                 {index === 0 && (
-                  <Badge className="absolute top-1 left-1 px-1.5 py-0 text-[9px] bg-primary text-primary-foreground">
+                  <Badge className="absolute top-1 left-1 px-1.5 py-0 text-[9px] bg-primary text-primary-foreground shadow-sm">
                     CAPA
                   </Badge>
                 )}
 
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                  <div className="flex gap-1">
+                {/* IA Status Badges */}
+                {img.status === "success" && !img.isProcessing && (
+                  <div className="absolute top-1 right-1 flex flex-col items-end gap-1">
+                    {index === 0 ? (
+                      <Badge variant="secondary" className="bg-green-500 hover:bg-green-600 text-white border-none text-[8px] px-1.5 h-4 flex items-center gap-1 shadow-sm">
+                        <CheckCircle2 className="h-2 w-2" />
+                        Fundo Removido (ML OK)
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-blue-500 hover:bg-blue-600 text-white border-none text-[8px] px-1.5 h-4 flex items-center gap-1 shadow-sm">
+                        <Sparkles className="h-2 w-2" />
+                        Estúdio Minimalista
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 backdrop-blur-[2px]">
+                  <div className="flex flex-col gap-2 p-2 w-full max-w-[80%]">
+                    {img.processedUrl && img.processedUrl !== img.preview && (
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="h-7 text-[10px] gap-1 font-bold bg-white/90 hover:bg-white text-black border-none"
+                        onMouseDown={() => setComparingIndex(index)}
+                        onMouseUp={() => setComparingIndex(null)}
+                        onMouseLeave={() => setComparingIndex(null)}
+                        onTouchStart={() => setComparingIndex(index)}
+                        onTouchEnd={() => setComparingIndex(null)}
+                      >
+                        <Eye className="h-3 w-3" />
+                        Ver Original
+                      </Button>
+                    )}
                     <Button 
-                      size="icon" 
+                      size="sm" 
                       variant="destructive" 
-                      className="h-7 w-7"
+                      className="h-7 text-[10px] gap-1"
                       onClick={() => removeImage(img.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
+                      Remover
                     </Button>
                   </div>
                 </div>
 
                 {img.isProcessing && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[1px]">
-                    <Loader2 className="h-5 w-5 animate-spin text-white" />
-                    <span className="text-[9px] text-white mt-1 font-medium">IA...</span>
-                  </div>
-                )}
-
-                {img.status === "success" && (
-                  <div className="absolute bottom-1 right-1">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 fill-white" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                    <div className="relative">
+                      <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-yellow-400 animate-pulse" />
+                    </div>
+                    <span className="text-[10px] text-white mt-2 font-bold tracking-tight uppercase bg-black/40 px-2 py-0.5 rounded-full">
+                      IA Otimizando...
+                    </span>
                   </div>
                 )}
               </div>
@@ -258,6 +294,13 @@ export function ProductPhotoBatchUploader({ companyId, productId, maxPhotos = 5,
           </div>
         </div>
       )}
+
+      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+        <Info className="h-4 w-4 shrink-0 text-amber-600" />
+        <p className="text-[11px] font-medium leading-relaxed">
+          ⚠️ <span className="font-bold">Dica:</span> Clique nas imagens acima para conferir o resultado da otimização e ampliar. Exclua e refaça se o resultado não estiver perfeito antes de salvar o produto.
+        </p>
+      </div>
 
       <div className="rounded-lg bg-primary/5 border border-primary/10 p-3 flex gap-3">
         <div className="p-2 rounded-md bg-white border border-primary/20 shrink-0">
