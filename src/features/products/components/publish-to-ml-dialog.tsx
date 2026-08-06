@@ -616,6 +616,35 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         ) : null}
 
         <div className={`grid gap-4 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+          <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+              {validation.requirements.map((req) => (
+                <div key={req.id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    {req.isValid ? (
+                      <Check className="h-3 w-3 text-success" />
+                    ) : req.critical ? (
+                      <AlertTriangle className="h-3 w-3 text-destructive" />
+                    ) : (
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    <span className={`text-[11px] font-medium ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {req.label}
+                    </span>
+                  </div>
+                  {!req.isValid && (
+                    <span className="text-[10px] text-muted-foreground line-clamp-1 pl-4">
+                      {req.message}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="ml-title">Título do anúncio</Label>
