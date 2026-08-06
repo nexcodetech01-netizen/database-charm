@@ -293,6 +293,7 @@ interface PublishInput {
   brand?: string;
   model?: string;
   picturePaths?: string[];
+  videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
 }
 
@@ -341,6 +342,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       brand: input.brand?.toString().trim() || undefined,
       model: input.model?.toString().trim() || undefined,
       picturePaths,
+      videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
     };
   })
@@ -357,7 +359,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     const { data: product, error: productError } = await supabase
       .from("products")
       .select(
-        "id, company_id, name, description, price, stock, brand, sku, barcode, supplier_id, ml_item_id, ml_permalink",
+        "id, company_id, name, description, price, stock, brand, sku, barcode, supplier_id, ml_item_id, ml_permalink, video_url",
       )
       .eq("id", data.productId)
       .maybeSingle();
@@ -638,6 +640,15 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       description: description,
       attributes: baseAttrs,
     };
+    
+    // Adiciona o vídeo se disponível (na carga útil do ML o campo é 'video_id', 
+    // mas para links externos ou integração rápida muitas vezes é passado via attributes 
+    // ou campo específico dependendo da API. Para ML oficial de clips/vídeos: 'video_id')
+    const videoToUse = data.videoUrl || (product as any).video_url;
+    if (videoToUse) {
+      body.video_id = videoToUse; // No ML, vídeos externos são vinculados pelo ID ou link dependendo da versão
+    }
+
     if (productSku) body.seller_custom_field = productSku;
 
     // Parcelamento sem juros: no Premium (gold_pro) o ML aceita configurar

@@ -15,6 +15,7 @@ import {
   Sparkles,
   Wand2,
   Info,
+  Video,
 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,7 @@ import {
 } from "../../lib/fiscal-suggestions";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
 import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
+import { productMediaService } from "../../services/product-media.service";
 import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
 import { validateMercadoLivreRequirements } from "../../utils/ml-validation";
 
@@ -162,6 +164,7 @@ type FormState = {
   width: string;
   height: string;
   length: string;
+  video_url: string;
 };
 
 const empty: FormState = {
@@ -193,6 +196,7 @@ const empty: FormState = {
   width: "15",
   height: "15",
   length: "15",
+  video_url: "",
 };
 
 function toState(p?: Product): FormState {
@@ -227,6 +231,7 @@ function toState(p?: Product): FormState {
     width: (p as any).width ? String((p as any).width) : "",
     height: (p as any).height ? String((p as any).height) : "",
     length: (p as any).length ? String((p as any).length) : "",
+    video_url: (p as any).video_url ?? "",
   };
 }
 
@@ -310,6 +315,38 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     defaultsAppliedRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duplicateOf?.id, product]);
+
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      toast.error("Por favor, selecione um arquivo de vídeo (MP4 ou MOV).");
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("O vídeo deve ter no máximo 50MB.");
+      return;
+    }
+
+    setUploadingVideo(true);
+    try {
+      // Usar um ID temporário se for novo produto, ou o ID real se for edição
+      const prodId = product?.id || "temp-" + Date.now();
+      const url = await productMediaService.uploadVideo(companyId, prodId, file);
+      setForm(prev => ({ ...prev, video_url: url }));
+      toast.success("Vídeo carregado com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao carregar vídeo: " + (err as Error).message);
+    } finally {
+      setUploadingVideo(false);
+      e.target.value = "";
+    }
+  }
+
 
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
