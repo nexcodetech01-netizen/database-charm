@@ -726,19 +726,18 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
     if (!itemRes.ok) {
-      // Extrai o array `cause` do ML para diagnóstico preciso no toast do frontend.
-      let causeDetails = "";
-      let parsedErr: { message?: string; error?: string; cause?: unknown } = {};
+      let parsedErr: { message?: string; error?: string; cause?: any[] } = {};
       try {
-        parsedErr = JSON.parse(itemText) as typeof parsedErr;
-        if (parsedErr.cause) {
-          causeDetails = ` | cause=${JSON.stringify(parsedErr.cause)}`;
-        } else if (parsedErr.message) {
-          causeDetails = ` | ${parsedErr.message}`;
-        }
-      } catch {
-        // resposta não-JSON — mantém o texto bruto abaixo.
-      }
+        parsedErr = JSON.parse(itemText);
+      } catch {}
+
+      // Extrai a causa específica se houver (ex.: erro de GTIN)
+      const cause = Array.isArray(parsedErr.cause) 
+        ? parsedErr.cause.map((c: any) => c.message || c.code).join(", ") 
+        : "";
+
+      const friendlyMessage = parsedErr.message || "Erro desconhecido na API do Mercado Livre";
+      
       console.error("[mercadolivre] POST /items falhou:", itemRes.status, itemText);
 
       // 403 seller.unable_to_list → conta com pendências (cadastro/fiscal/termos).
@@ -749,9 +748,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         );
       }
 
-      throw new Error(
-        `Falha ao publicar no Mercado Livre (${itemRes.status}): ${parsedErr.message || itemText.slice(0, 200)}${causeDetails}`,
-      );
+      throw new Error(`${friendlyMessage}${cause ? ` | detalhe: ${cause}` : ""}`);
     }
 
     const item = JSON.parse(itemText) as {
