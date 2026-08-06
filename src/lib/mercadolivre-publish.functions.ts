@@ -620,8 +620,11 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // então a estratégia segura é omitir ambos quando o produto não possui
     // código de barras cadastrado.
     const rawBarcode = (productBarcode ?? "").trim();
-    const isNotApplicable = /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(rawBarcode);
-    if (rawBarcode && !isNotApplicable) {
+    const isInvalidGtin = !rawBarcode || 
+      /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(rawBarcode) || 
+      /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(rawBarcode);
+
+    if (!isInvalidGtin) {
       baseAttrs.push({ id: "GTIN", value_name: rawBarcode });
     }
 
