@@ -1474,9 +1474,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
               </TabsContent>
 
-              <TabsContent value="desc" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+              <TabsContent value="desc" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 {/* Ficha Técnica - Grid */}
-                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <Label className="text-sm font-semibold">Ficha Técnica (Atributos)</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
