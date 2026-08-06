@@ -58,9 +58,7 @@ function buildItemRow(it: SaleItemDraft, saleId: string, idx: number) {
     description: it.description,
     quantity: it.quantity,
     unit_price: it.unit_price,
-    original_unit_price: it.original_unit_price ?? it.unit_price,
     discount: it.discount,
-    addition: it.addition || 0,
     total: revenue,
     position: idx,
     // Snapshot imutável da Política Comercial no momento da venda
@@ -88,9 +86,7 @@ const saleItemSchema = z.object({
   description: z.string().trim().min(1, "Descrição do item é obrigatória."),
   quantity: z.number().positive("Quantidade deve ser maior que zero."),
   unit_price: z.number().nonnegative("Preço não pode ser negativo."),
-  original_unit_price: z.number().nonnegative().optional(),
   discount: z.number().nonnegative().optional(),
-  addition: z.number().nonnegative().optional(),
 }).passthrough();
 
 /**
