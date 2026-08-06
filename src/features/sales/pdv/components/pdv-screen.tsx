@@ -469,6 +469,7 @@ export function PDVScreen({
               />
             </Suspense>
             <PDVSummary
+              items={pdv.state.items}
               totals={pdv.totals}
               itemCount={pdv.itemCount}
               lineCount={pdv.state.items.length}
@@ -478,8 +479,8 @@ export function PDVScreen({
               changeDue={
                 completed && completed.paymentMethod === "cash" ? 0 : null
               }
-
               readOnly={cartLocked}
+              onOpenNotes={() => setSaleNotesOpen(true)}
             />
             {completed ? (
               <Suspense fallback={<Skeleton className="h-[200px] w-full rounded-xl" />}>
