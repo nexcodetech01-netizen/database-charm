@@ -870,16 +870,16 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       qc.invalidateQueries({ queryKey: ["products"] });
       onOpenChange(false);
     },
-    onError: (err) => {
-      // JAMAIS exiba JSON ou dump da API. Exibe apenas toast amigável.
-      const errorMessage = err instanceof Error ? err.message : "Ocorreu um erro na publicação, verifique os dados.";
-      const cleanMessage = errorMessage.split('|')[0].trim(); 
+    onError: (err: any) => {
+      // Exibe a mensagem real retornada pela API do Mercado Livre (sanitizada no handler)
+      const message = err instanceof Error ? err.message : "Erro desconhecido na publicação";
       
-      toast.error("Aviso: Falha na Publicação", {
-        description: "Verifique se todos os campos obrigatórios estão preenchidos corretamente.",
+      toast.error("Erro no Mercado Livre", {
+        description: message,
+        duration: 8000,
       });
       
-      console.error("[MercadoLivre] Erro capturado:", errorMessage);
+      console.error("[MercadoLivre] Falha na publicação:", message);
     },
   });
 
