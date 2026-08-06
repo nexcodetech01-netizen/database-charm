@@ -18,6 +18,10 @@ import {
   Smartphone,
   Sparkles,
   RefreshCw,
+  X,
+  Trash2,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
