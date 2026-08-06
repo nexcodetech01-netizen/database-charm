@@ -1170,7 +1170,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
                         {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
                       </div>
                       <span className="text-xl font-black text-primary">
