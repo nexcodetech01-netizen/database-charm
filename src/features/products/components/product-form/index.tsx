@@ -1111,6 +1111,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
                   onBlur={handleTitleCaseBlur((v) => set("name", v))}
+                  autoFocus
                 />
               </Field>
               <Field label="Categoria *">
