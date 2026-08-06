@@ -913,101 +913,52 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               onChange={handleFileSelected}
             />
             <div className="grid grid-cols-5 gap-2">
-              {Array.from({ length: 5 }).map((_, slot) => {
-                const path = selectedPhotoPaths[slot];
-                const url = path ? photoUrlByPath.get(path) : undefined;
-                const isUploadingHere = uploadPhoto.isPending && uploadingSlot === slot;
-                if (path) {
-                  return (
-                    <div
-                      key={`slot-${slot}`}
-                      className="group relative aspect-square overflow-hidden rounded-md border-2 border-primary ring-2 ring-primary/30 transition"
-                    >
-                      {url ? (
-                        <img
-                          src={url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={selectedPhotoPaths}
+                  strategy={rectSortingStrategy}
+                >
+                  {Array.from({ length: 5 }).map((_, slot) => {
+                    const path = selectedPhotoPaths[slot];
+                    const url = path ? photoUrlByPath.get(path) : undefined;
+                    const isUploadingHere = uploadPhoto.isPending && uploadingSlot === slot;
+                    
+                    if (path) {
+                      return (
+                        <SortablePhotoItem
+                          key={path}
+                          path={path}
+                          index={slot}
+                          url={url}
+                          onToggle={togglePhoto}
+                          onReprocess={(p, i) => reprocessPhoto.mutate({ path: p, index: i })}
                         />
-                      ) : (
-                        <div className="h-full w-full bg-muted" />
-                      )}
-                      
-                      {/* Badge de Posição */}
-                      <span className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-sm">
-                        {slot + 1}
-                      </span>
-
-                      {/* Botão Remover (X) */}
+                      );
+                    }
+                    
+                    return (
                       <button
+                        key={`slot-${slot}`}
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePhoto(path);
-                        }}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-destructive"
-                        title="Remover foto"
+                        onClick={() => openFilePicker(slot)}
+                        disabled={uploadPhoto.isPending}
+                        className="flex aspect-square items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        title={`Adicionar foto ${slot + 1}`}
                       >
-                        <X className="h-3 w-3" />
+                        {isUploadingHere ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <span className="text-2xl leading-none">+</span>
+                        )}
                       </button>
-
-                      {/* Botões de Reordenação e IA Overlay */}
-                      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <div className="flex justify-between gap-1">
-                          <button
-                            type="button"
-                            disabled={slot === 0}
-                            onClick={() => movePhoto(slot, "left")}
-                            className="flex h-5 w-full items-center justify-center rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30"
-                          >
-                            <ArrowLeft className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={slot === selectedPhotoPaths.length - 1}
-                            onClick={() => movePhoto(slot, "right")}
-                            className="flex h-5 w-full items-center justify-center rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30"
-                          >
-                            <ArrowRight className="h-3 w-3" />
-                          </button>
-                        </div>
-                        
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          className="h-5 w-full px-0 text-[9px] font-bold uppercase tracking-tighter"
-                          disabled={reprocessPhoto.isPending}
-                          onClick={() => reprocessPhoto.mutate({ path, index: slot })}
-                        >
-                          {reprocessPhoto.isPending && reprocessPhoto.variables?.path === path ? (
-                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                          ) : (
-                            "Tratar com IA"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <button
-                    key={`slot-${slot}`}
-                    type="button"
-                    onClick={() => openFilePicker(slot)}
-                    disabled={uploadPhoto.isPending}
-                    className="flex aspect-square items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                    title={`Adicionar foto ${slot + 1}`}
-                  >
-                    {isUploadingHere ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <span className="text-2xl leading-none">+</span>
-                    )}
-                  </button>
-                );
-              })}
+                    );
+                  })}
+                </SortableContext>
+              </DndContext>
             </div>
 
             {/* Fotos já cadastradas no produto que ainda não foram selecionadas */}
