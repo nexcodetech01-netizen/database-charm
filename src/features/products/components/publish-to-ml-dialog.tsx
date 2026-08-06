@@ -116,7 +116,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-slate-950 border-slate-800 h-[90vh] flex flex-col">
+      <DialogContent className="max-h-[90vh] h-[90vh] max-w-4xl w-full fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden flex flex-col p-0 bg-slate-950 border-slate-800">
         <ErrorBoundary
           key={key}
           fallbackRender={({ error }: { error: any }) => (
@@ -1086,41 +1086,40 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         ) : null}
         <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 sm:px-6 py-2 border-b border-border bg-muted/10">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
-                <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Modalidade</TabsTrigger>
-                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha Técnica & Descrição</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-              {/* Progresso de Requisitos (Compacto) */}
-              <div className="flex items-center justify-between gap-4 p-2 px-3 bg-muted/20 border border-border rounded-lg">
+            <div className="px-6 py-4 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
                     {validation.requirements.map((req, idx) => (
                       <div 
-                        key={req.id} 
-                        className={`h-2 w-6 rounded-full border border-background ${req.isValid ? 'bg-success' : req.critical ? 'bg-destructive/40' : 'bg-muted'}`}
-                        title={req.label}
+                        key={req?.id || idx} 
+                        className={`h-2 w-6 rounded-full border border-background ${req?.isValid ? 'bg-success' : req?.critical ? 'bg-destructive/40' : 'bg-muted'}`}
+                        title={req?.label}
                       />
                     ))}
                   </div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {validation.requirements.filter(r => r.isValid).length}/{validation.requirements.length} Requisitos
+                    {validation.requirements.filter(r => r?.isValid).length}/{validation.requirements.length} Requisitos
                   </span>
                 </div>
                 <div className="flex gap-1.5 overflow-hidden">
-                  {validation.requirements.filter(r => !r.isValid && r.critical).slice(0, 2).map(req => (
-                    <Badge key={req.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
-                      Falta {req.label}
+                  {validation.requirements.filter(r => !r?.isValid && r?.critical).slice(0, 2).map(req => (
+                    <Badge key={req?.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
+                      Falta {req?.label}
                     </Badge>
                   ))}
                 </div>
               </div>
 
-              <TabsContent value="info" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+              <TabsList className="grid w-full grid-cols-3 h-10 bg-slate-900/50 p-1">
+                <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
+                <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Estoque</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha & Descrição</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
+              <TabsContent value="info" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 {/* Título */}
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between gap-2">
@@ -1148,7 +1147,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
 
                 {/* Categoria */}
-                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="ml-category-search" className="flex items-center gap-1.5 text-sm font-semibold">
                       Categoria do Mercado Livre
@@ -1234,7 +1233,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
 
                 {/* Fotos */}
-                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold">Fotos do anúncio</Label>
                     <span className="text-xs text-muted-foreground">{selectedPhotoPaths.length}/5 selecionadas</span>
@@ -1327,8 +1326,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
               </TabsContent>
 
-              <TabsContent value="price" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
-                <div className="grid gap-6">
+              <TabsContent value="price" className="m-0 space-y-4 p-6 focus-visible:outline-none">
+                <div className="grid gap-4">
                   {/* Cards de Modalidade */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(() => {
@@ -1413,7 +1412,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
                   {/* Input de Preço Final e Quanto recebe */}
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2 p-4 bg-muted/30 rounded-xl border border-dashed border-border">
+                    <div className="grid gap-2 p-3 bg-muted/20 rounded-xl border border-dashed border-border">
                       <Label htmlFor="ml-price" className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">
                         Preço Final de Venda
                       </Label>
@@ -1437,7 +1436,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       </div>
                     </div>
 
-                    <div className="grid gap-2 p-4 bg-success/5 rounded-xl border border-dashed border-success/30">
+                    <div className="grid gap-2 p-3 bg-success/5 rounded-xl border border-dashed border-success/30">
                       <Label className="text-xs font-semibold text-success uppercase tracking-tight">
                         Quanto você recebe (Líquido)
                       </Label>
@@ -1475,9 +1474,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
               </TabsContent>
 
-              <TabsContent value="desc" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+              <TabsContent value="desc" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 {/* Ficha Técnica - Grid */}
-                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <Label className="text-sm font-semibold">Ficha Técnica (Atributos)</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
@@ -1580,7 +1579,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           </Tabs>
         </div>
 
-        <DialogFooter className="p-4 sm:p-6 border-t border-border bg-background shrink-0">
+        <DialogFooter className="px-6 py-4 border-t border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
             <Button
               variant="outline"
