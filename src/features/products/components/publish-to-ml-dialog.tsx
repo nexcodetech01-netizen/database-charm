@@ -294,6 +294,42 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySearch, open]);
 
+  const [attrLoading, setAttrLoading] = useState(false);
+  useEffect(() => {
+    if (!open || !categoryId) return;
+    
+    async function autoFillAttributes() {
+      setAttrLoading(true);
+      try {
+        const attrs = await getCategoryAttrsFn({ data: { categoryId } });
+        // Mapeamento automático básico para campos obrigatórios comuns
+        // se eles estiverem vazios.
+        const findVal = (id: string, search: string[]) => {
+          const attr = attrs.find((a: any) => a.id === id);
+          if (!attr || !attr.values) return "";
+          const match = attr.values.find((v: any) => 
+            search.some(s => v.name.toLowerCase().includes(s.toLowerCase()))
+          );
+          return match?.name || attr.values[0]?.name || "";
+        };
+
+        if (!gender) setGender(findVal("GENDER", ["Feminino", "Mulher", "Femea"]));
+        if (!pattern) setPattern(findVal("PATTERN_NAME", ["Liso", "Solido"]));
+        if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
+        if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
+        if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
+        
+        toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
+      } catch (err) {
+        console.warn("Falha ao buscar atributos da categoria", err);
+      } finally {
+        setAttrLoading(false);
+      }
+    }
+
+    void autoFillAttributes();
+  }, [categoryId, open]);
+
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
   const photosQuery = useQuery({
     queryKey: ["product-images", product.id],
