@@ -430,27 +430,43 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     mutationFn: async (file: File) => {
       const nextPosition = photosQuery.data?.length ?? 0;
       const path = await productImagesService.upload(product.company_id, product.id, file);
+      
+      // CRITICAL: Force IA processing immediately after upload
+      const tempUrls = await productImagesService.signedUrls([path], 60 * 5);
+      const url = tempUrls[0]?.signedUrl;
+      
+      if (!url) throw new Error("Falha ao gerar URL para processamento");
+
+      const res = await processProductImages({
+        data: {
+          images: [{ id: path, url, isMain: selectedPhotoPaths.length === 0 }],
+          enableMultiview: false,
+        },
+      });
+
+      if (!res.success || !res.processedImages[0]) {
+        throw new Error("Falha ao otimizar imagem com IA");
+      }
+
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
       return path;
     },
     onSuccess: (path) => {
-      setSelectedPhotoPaths((prev) =>
-        prev.includes(path) || prev.length >= 5 ? prev : [...prev, path],
-      );
+      setSelectedPhotoPaths((prev) => {
+        if (prev.includes(path) || prev.length >= 5) return prev;
+        return [...prev, path];
+      });
       qc.invalidateQueries({ queryKey: ["product-images", product.id] });
-      toast.success("Foto adicionada ao anúncio.");
+      qc.invalidateQueries({ queryKey: ["product-images-signed"] });
+      toast.success("Foto otimizada com IA e adicionada.");
     },
     onError: (err) => {
-      toast.error("Não foi possível subir a foto", { description: (err as Error).message });
+      toast.error("Falha no processamento", { description: (err as Error).message });
     },
     onSettled: () => setUploadingSlot(null),
   });
 
   function openFilePicker(slotIndex: number) {
-    if (selectedPhotoPaths.length >= 5) {
-      toast.info("Você pode selecionar no máximo 5 fotos.");
-      return;
-    }
     setUploadingSlot(slotIndex);
     fileInputRef.current?.click();
   }
@@ -467,6 +483,12 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setUploadingSlot(null);
       return;
     }
+
+    if (uploadingSlot !== null && selectedPhotoPaths[uploadingSlot]) {
+      const oldPath = selectedPhotoPaths[uploadingSlot];
+      setSelectedPhotoPaths(prev => prev.filter(p => p !== oldPath));
+    }
+
     uploadPhoto.mutate(file);
   }
 
