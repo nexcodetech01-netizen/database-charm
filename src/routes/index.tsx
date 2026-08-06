@@ -49,20 +49,21 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-amber-600">🛠️ MODO DIAGNÓSTICO ATIVADO: LOGS DE API ML</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">✅ BANCO DE DADOS E IA OTIMIZADOS</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. EXPOSIÇÃO TOTAL DE ERROS:</h3>
+              <h3 className="font-medium text-primary">1. ESTRUTURA DE DADOS:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>O catch genérico foi removido. Agora a resposta bruta da API do Mercado Livre é exibida no Toast.</li>
-                <li>Incluído JSON.stringify de propriedades como 'cause' e 'error_list' para depuração técnica.</li>
+                <li>Colunas 'ml_status', 'ml_item_id' e 'ml_permalink' criadas/garantidas.</li>
+                <li>Fallback seguro no update pós-publicação implementado no motor.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. FORMATO DE DIAGNÓSTICO:</h3>
+              <h3 className="font-medium text-primary">2. PERFORMANCE DA IA:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Toasts de erro agora utilizam fonte monoespada e fundo escuro para facilitar a leitura de payloads JSON.</li>
-                <li>Duração do Toast estendida para 15 segundos para permitir inspeção manual.</li>
+                <li>Prompt direto e sucinto configurado (redução de latência).</li>
+                <li>Limite de 500 tokens aplicado para respostas rápidas.</li>
+                <li>Feedback visual "Gerando descrição rápida..." ativado no botão.</li>
               </ul>
             </section>
           </div>

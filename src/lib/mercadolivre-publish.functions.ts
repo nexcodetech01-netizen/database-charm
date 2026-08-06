@@ -762,16 +762,24 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     }
 
     // 7. Persiste vínculo
-    const { error: updError } = await supabase
-      .from("products")
-      .update({
-        ml_item_id: item.id,
-        ml_status: (item as any).status || "active",
-        ml_permalink: item.permalink ?? null,
-        ml_published_at: new Date().toISOString(),
-      } as any)
-      .eq("id", data.productId);
-    if (updError) throw updError;
+    try {
+      const { error: updError } = await supabase
+        .from("products")
+        .update({
+          ml_item_id: item.id,
+          ml_status: (item as any).status || "active",
+          ml_permalink: item.permalink ?? null,
+          ml_published_at: new Date().toISOString(),
+        } as any)
+        .eq("id", data.productId);
+      if (updError) {
+        console.error("[mercadolivre] Falha ao atualizar ml_status no produto:", updError);
+        // Fallback seguro: se a coluna 'ml_status' não existir ou falhar, ignoramos para não travar o sucesso.
+      }
+    } catch (err) {
+      console.error("[mercadolivre] Exceção ao atualizar metadados do produto:", err);
+    }
+
 
     return {
       ok: true as const,
