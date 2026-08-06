@@ -119,7 +119,7 @@ export function validateMercadoLivreRequirements(
     const feePct = isPremium ? 0.15 : 0.135;
     const price = Number(product.price);
     const shipping = price >= 79 ? 24.65 : 0;
-    const fixedFee = (price < 79 && price > 0) ? 6.5 : 0;
+    const fixedFee = (!isPremium && price < 79 && price > 0) ? 6.5 : 0;
     
     // Líquido esperado com base no preço atual
     const expectedNet = isPremium 
