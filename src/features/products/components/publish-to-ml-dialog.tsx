@@ -1126,8 +1126,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="ml-qty" className="font-semibold">Estoque disponível</Label>
+              <div className="grid gap-2 w-full">
+                <Label htmlFor="ml-qty" className="font-semibold text-sm sm:text-base">Estoque disponível</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="ml-qty"
