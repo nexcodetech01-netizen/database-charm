@@ -549,23 +549,43 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     },
   });
 
-  const canPublish =
-    !isExpired &&
-    !!categoryId &&
-    !!title.trim() &&
-    price > 0 &&
-    quantity > 0 &&
-    description.length <= 50000 &&
-    !publish.isPending;
+  const validation = useMemo(() => {
+    const errors: string[] = [];
+    if (isExpired) errors.push("Integração expirada");
+    if (!categoryId) errors.push("Selecione uma categoria");
+    if (!title.trim() || title.trim().length < 25) errors.push("Título muito curto");
+    if (price <= 0) errors.push("Preço deve ser maior que zero");
+    if (quantity <= 0) errors.push("Estoque deve ser maior que zero");
+    if (selectedPhotoPaths.length === 0) errors.push("Adicione ao menos uma imagem");
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }, [isExpired, categoryId, title, price, quantity, selectedPhotoPaths]);
+
+  const canPublish = validation.isValid && !publish.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" />
-            Anunciar no Mercado Livre
-          </DialogTitle>
+          <div className="flex items-center justify-between pr-8">
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-primary" />
+              Anunciar no Mercado Livre
+            </DialogTitle>
+            {validation.isValid ? (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
+                <Check className="h-3 w-3" />
+                Pronto para Publicar
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1.5 py-1 px-3">
+                <AlertTriangle className="h-3 w-3" />
+                Pendente
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
             Revise os dados do produto e escolha a categoria e o tipo de anúncio antes de publicar.
           </DialogDescription>
