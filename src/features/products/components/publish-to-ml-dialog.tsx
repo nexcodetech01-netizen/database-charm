@@ -293,6 +293,31 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
   }, [open, product]);
 
+  // Limpeza automática de URLs de erro no estado
+  useEffect(() => {
+    if (!open) return;
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
+    
+    let hasChanges = false;
+    const nextLocal = new Map(localImageUrls);
+    
+    localImageUrls.forEach((url, path) => {
+      if (isInvalid(url)) {
+        nextLocal.delete(path);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      console.warn("Limpando URLs de erro detectadas no estado local");
+      setLocalImageUrls(nextLocal);
+    }
+  }, [localImageUrls, open]);
+
   // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
   useEffect(() => {
     if (!open) return;
@@ -427,13 +452,23 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
   const photoUrlByPath = useMemo(() => {
     const map = new Map<string, string>();
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
+    
     // Primeiro as URLs assinadas do banco
     for (const it of photoSignedUrlsQuery.data ?? []) {
-      if (it.path && it.signedUrl) map.set(it.path, it.signedUrl);
+      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
+        map.set(it.path, it.signedUrl);
+      }
     }
     // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
     localImageUrls.forEach((url, path) => {
-      map.set(path, url);
+      if (!isInvalid(url)) {
+        map.set(path, url);
+      }
     });
     return map;
   }, [photoSignedUrlsQuery.data, localImageUrls]);
@@ -469,69 +504,70 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       
       if (!url) throw new Error("Falha ao gerar URL para processamento");
 
-      const res = await withRetry(
-        () => processProductImages({
-          data: {
-            images: [{ id: path, url, isMain: slotIndex === 0 }],
-            enableMultiview: slotIndex === 0, // Restore multiview for slot 1
-          },
-        }),
-        {
-          onRetry: (err, attempt) => {
-            console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+      let finalUrl = url;
+      try {
+        const res = await withRetry(
+          () => processProductImages({
+            data: {
+              images: [{ id: path, url, isMain: slotIndex === 0 }],
+              enableMultiview: slotIndex === 0, 
+            },
+          }),
+          {
+            onRetry: (err, attempt) => {
+              console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+            }
           }
-        }
-      );
+        );
 
-      if (!res.success || !res.processedImages[0]) {
-        throw new Error("Falha ao otimizar imagem com IA");
-      }
+        if (res.success && res.processedImages[0]) {
+          const mainProcessed = res.processedImages[0];
+          const isInvalid = (u: string) => typeof u === 'string' && (
+            u.toLowerCase().startsWith('failed') || 
+            u.toLowerCase().startsWith('error') || 
+            u.toLowerCase().includes('background...')
+          );
+          
+          if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
+            finalUrl = mainProcessed.processedUrl;
+          }
 
-      const mainProcessed = res.processedImages[0];
-      // CRITICAL: Garantir que a URL original NUNCA permaneça na tela.
-      // Forçamos a substituição no estado pela URL tratada (fundo branco).
-      const finalUrl = mainProcessed.processedUrl || url;
-      
-      setLocalImageUrls(prev => {
-        const next = new Map(prev);
-        next.set(path, finalUrl);
-        return next;
-      });
+          // Se gerou multiview (slots extras automáticos), processamos cada uma
+          const generated = res.processedImages.filter(img => (img as any).isGenerated);
+          if (generated.length > 0) {
+            // Criamos registros e URLs para as imagens geradas
+            for (let i = 0; i < generated.length; i++) {
+              const gen = generated[i];
+              const genUrl = gen.processedUrl;
+              if (genUrl && !isInvalid(genUrl)) {
+                const genId = gen.id;
+                
+                setLocalImageUrls(prev => new Map(prev).set(genId, genUrl));
 
-      // Se gerou multiview (slots extras automáticos), processamos cada uma
-      const generated = res.processedImages.filter(img => (img as any).isGenerated);
-      if (generated.length > 0) {
-        // Criamos registros e URLs para as imagens geradas
-        for (let i = 0; i < generated.length; i++) {
-          const gen = generated[i];
-          if (gen.processedUrl) {
-            const genId = gen.id;
-            
-            // Sincroniza estado visual das fotos geradas
-            setLocalImageUrls(prev => {
-              const next = new Map(prev);
-              next.set(genId, gen.processedUrl!);
-              return next;
-            });
+                setSelectedPhotoPaths(prev => {
+                  if (prev.length < 5 && !prev.includes(genId)) {
+                    return [...prev, genId];
+                  }
+                  return prev;
+                });
 
-            // Adiciona ao array de seleção (até o limite de 5)
-            setSelectedPhotoPaths(prev => {
-              if (prev.length < 5 && !prev.includes(genId)) {
-                return [...prev, genId];
+                await productImagesService.createRecord(
+                  product.company_id, 
+                  product.id, 
+                  genId, 
+                  nextPosition + 1 + i
+                );
               }
-              return prev;
-            });
-
-            // Persiste o registro no banco (opcional dependendo da regra, mas recomendado para consistência)
-            await productImagesService.createRecord(
-              product.company_id, 
-              product.id, 
-              genId, 
-              nextPosition + 1 + i
-            );
+            }
           }
         }
+      } catch (err) {
+        console.error("Erro no processamento IA, mantendo original:", err);
+        toast.error("IA indisponível", { description: "Mantendo foto original sem tratamento." });
       }
+
+      setLocalImageUrls(prev => new Map(prev).set(path, finalUrl));
+
 
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
@@ -620,12 +656,20 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       return res.processedImages[0];
     },
     onSuccess: (processed, { path }) => {
-      if (processed.processedUrl) {
+      const isInvalid = (u: string) => typeof u === 'string' && (
+        u.toLowerCase().startsWith('failed') || 
+        u.toLowerCase().startsWith('error') || 
+        u.toLowerCase().includes('background...')
+      );
+      
+      if (processed.processedUrl && !isInvalid(processed.processedUrl)) {
         setLocalImageUrls(prev => {
           const next = new Map(prev);
           next.set(path, processed.processedUrl!);
           return next;
         });
+      } else {
+        toast.info("A IA não retornou um resultado válido, mantendo original.");
       }
       qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
       toast.success("Imagem tratada com IA com sucesso.");
@@ -693,7 +737,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           <img
             src={url}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain bg-white"
             loading="lazy"
             onError={() => {
               console.error("Erro ao carregar imagem no slot", index + 1, url);
@@ -1159,7 +1203,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                             <img
                               src={url}
                               alt=""
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain bg-white"
                               loading="lazy"
                             />
                           ) : (
@@ -1213,7 +1257,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                           <img 
                             src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
                             alt="Preview do vídeo"
-                            className="w-full h-full object-cover opacity-70"
+                            className="w-full h-full object-contain bg-black opacity-70"
                             onError={(e) => {
                               // Se falhar o mqdefault, tenta o default básico
                               (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
