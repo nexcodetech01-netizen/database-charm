@@ -49,20 +49,20 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🛡️ ESTABILIZAÇÃO E PERFORMANCE V2</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🛡️ CÁLCULO FISCAL E FRETE ATUALIZADOS</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. RESOLUÇÃO DE LOOP INFINITO (ERROR #185):</h3>
+              <h3 className="font-medium text-primary">1. ATUALIZAÇÃO DE TABELA DE FRETE:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Removidos 'useEffect' de sincronização em favor de inicialização direta via hooks.</li>
-                <li>Uso de 'key' baseada no ID do produto para reset de estado atômico.</li>
+                <li>Frete Grátis base ajustado para <strong>R$ 24,65</strong> (acima de R$ 79,00).</li>
+                <li>Fórmula de reversão Premium otimizada para 0.15 de comissão direta.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. TRAVA DE LAYOUT E CONTAINER:</h3>
+              <h3 className="font-medium text-primary">2. PRECISÃO NO ARREDONDAMENTO:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Container fixo e centralizado com altura controlada (85vh).</li>
-                <li>Header e Footer com 'flex-shrink-0' e scroll isolado no conteúdo das abas.</li>
+                <li>Implementado arredondamento via <code>Math.ceil</code> para proteção de centavos.</li>
+                <li>Sincronização instantânea no diálogo de publicação do Mercado Livre.</li>
               </ul>
             </section>
           </div>
