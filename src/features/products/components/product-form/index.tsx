@@ -124,6 +124,7 @@ const schema = z.object({
   length: z.preprocess((v) => num(v as any), z.number().min(0, "Comprimento não pode ser negativo").optional().default(15)),
   category_id: z.string().min(1, "Categoria obrigatória"),
   price: z.preprocess((v) => num(v as any), z.number().positive("Preço de venda deve ser maior que zero")),
+  cost: z.preprocess((v) => num(v as any), z.number().min(0).optional().default(0)),
 });
 
 type FormState = {
@@ -160,7 +161,7 @@ type FormState = {
 const empty: FormState = {
   name: "",
   sku: "",
-  barcode: "",
+  barcode: "SEM GTIN",
   ncm: "",
   cest: "",
   brand: "",
@@ -179,7 +180,7 @@ const empty: FormState = {
   margin: "",
   use_category_margin: true,
   price: "0",
-  stock: "0",
+  stock: "1",
   min_stock: "0",
   tags: [],
   weight: "",
@@ -378,7 +379,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   }, [isEdit]);
   const restoreDraft = () => {
     const found = draft.load();
-    if (found?.data) setForm(found.data as FormState);
+    if (found?.data) {
+      const draftData = found.data as FormState;
+      // Garante que o rascunho recuperado não sobrescreva o auto-foco se o nome ainda estiver vazio
+      setForm(draftData);
+    }
     toast.success("Rascunho recuperado");
     setRecoveryOpen(false);
   };
@@ -386,6 +391,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     draft.discard();
     setRecoveryOpen(false);
   };
+
+  // Preenchimento de SKU ao selecionar categoria para novos produtos
+  useEffect(() => {
+    if (isEdit || !form.category_id || form.sku.trim()) return;
+    if (!form.name.trim()) return;
+
+    regenerateSku();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category_id, isEdit]);
 
   // ─── Geração automática de SKU (apenas em novo produto) ───
   // skuAuto = true enquanto o usuário não editar o campo manualmente.
@@ -736,10 +750,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         toast.error("Selecione um fornecedor antes de salvar a duplicação.");
         return;
       }
-      if (num(form.cost) <= 0) {
-        toast.error("Informe o Preço de Custo antes de salvar a duplicação.");
-        return;
-      }
+      // Preço de custo é permitido como zero/vazio.
+
       if (num(form.price) <= 0) {
         toast.error("Informe o Preço de Venda antes de salvar a duplicação.");
         return;
@@ -1111,6 +1123,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
                   onBlur={handleTitleCaseBlur((v) => set("name", v))}
+                  autoFocus
                 />
               </Field>
               <Field label="Categoria *">
@@ -1457,6 +1470,16 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     className="flex-1"
                     value={form.barcode}
                     onChange={(e) => set("barcode", e.target.value.toUpperCase().slice(0, 20))}
+                    onFocus={(e) => {
+                      if (form.barcode === "SEM GTIN") {
+                        set("barcode", "");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!form.barcode.trim()) {
+                        set("barcode", "SEM GTIN");
+                      }
+                    }}
                     placeholder="Ex: 7891234567890 ou SEM GTIN"
                   />
                   <Button
