@@ -963,6 +963,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const hasPricing = totalCost > 0 && price > 0;
 
   const isFormValid = useMemo(() => {
+    // Para agilidade (PDV/ML), validamos os campos essenciais.
+    // O schema agora também cuida dos opcionais logísticos.
     return schema.safeParse(form).success;
   }, [form]);
 
