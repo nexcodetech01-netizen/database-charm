@@ -49,21 +49,21 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🛡️ CORREÇÃO DE CRASH E HARDENING</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">🛡️ ESTABILIZAÇÃO E PERFORMANCE</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. SEGURANÇA RUNTIME (ERROR BOUNDARY):</h3>
+              <h3 className="font-medium text-primary">1. ELIMINAÇÃO DE LOOPS INFINITOS:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Componente isolado com Error Boundary para evitar crashes globais.</li>
-                <li>Optional Chaining (product?.prop) aplicado em todo o motor de render.</li>
+                <li>Loops de renderização corrigidos em 'PublishToMercadoLivreDialog' (Error #185).</li>
+                <li>Dependências de 'useEffect' otimizadas para evitar atualizações circulares.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. UX & PRECIFICAÇÃO:</h3>
+              <h3 className="font-medium text-primary">2. UX & PERFORMANCE:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Estrutura de 3 abas consolidada e botão de IA destacado.</li>
-                <li>Precificação Premium (15% + Frete ML) recalibrada.</li>
-                <li>Validações defensivas para produtos com dados incompletos.</li>
+                <li>Modal fixo centralizado com scroll isolado nas abas.</li>
+                <li>Reset automático de estados ao abrir e fechar o diálogo.</li>
+                <li>Hardening em cálculos de preço e sincronização "No Bolso".</li>
               </ul>
             </section>
           </div>
