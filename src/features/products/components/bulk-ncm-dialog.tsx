@@ -113,9 +113,9 @@ export function BulkNcmDialog({ companyId, label }: Props) {
         <DialogHeader>
           <DialogTitle>Preencher NCM automaticamente</DialogTitle>
           <DialogDescription>
-            Varre os produtos sem NCM e sugere o código com base no NCM padrão da categoria
-            e no histórico de produtos semelhantes já cadastrados. Nenhum NCM existente é
-            sobrescrito.
+            Varre os produtos sem NCM e sugere o código com base na categoria, 
+            histórico de similares ou busca inteligente por palavras-chave (bolsa, cinto, etc). 
+            Nenhum NCM existente é sobrescrito.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,7 +154,9 @@ export function BulkNcmDialog({ companyId, label }: Props) {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{c.name}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                          {c.source === "category" ? "Categoria" : "Similar"}: {c.reference}
+                          {c.source === "category" ? "Categoria" : 
+                           c.source === "history" ? "Similar" :
+                           c.source === "master_keyword" ? "Palavra-chave" : "Padrão"}: {c.reference}
                         </p>
                       </div>
                       <Badge variant="secondary" className="font-mono">
@@ -169,8 +171,7 @@ export function BulkNcmDialog({ companyId, label }: Props) {
             {scan.unresolved > 0 && (
               <p className="flex items-start gap-2 text-xs text-muted-foreground">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                {scan.unresolved} produto(s) sem categoria com NCM padrão nem histórico
-                semelhante. Defina o NCM padrão da categoria para ampliar a cobertura.
+                {scan.unresolved} produto(s) não puderam ser mapeados nem pelo padrão de segurança.
               </p>
             )}
           </div>
