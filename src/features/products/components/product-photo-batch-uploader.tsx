@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { processProductImages } from "../../lib/image-processing.functions";
+import { processProductImages } from "../lib/image-processing.functions";
 
 interface QueuedImage {
   id: string;
@@ -82,7 +82,7 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
 
       if (result.success) {
         setQueue(prev => prev.map(img => {
-          const processed = result.processedImages.find(p => p.id === img.id);
+          const processed = result.processedImages.find((p: any) => p.id === img.id);
           return {
             ...img,
             processedUrl: processed?.processedUrl || img.preview,
