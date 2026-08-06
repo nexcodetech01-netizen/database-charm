@@ -476,8 +476,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       }
 
       const mainProcessed = res.processedImages[0];
-      // Em produção, a processedUrl teria o fundo removido.
-      // Substituímos a exibição para forçar APENAS a URL processada.
+      // CRITICAL: Garantir que a URL original NUNCA permaneça na tela.
+      // Forçamos a substituição no estado pela URL tratada (fundo branco).
       const finalUrl = mainProcessed.processedUrl || url;
       
       setLocalImageUrls(prev => {
@@ -486,27 +486,42 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         return next;
       });
 
-      await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
-
-      // Se gerou multiview, adicionar as novas imagens
+      // Se gerou multiview (slots extras automáticos), processamos cada uma
       const generated = res.processedImages.filter(img => (img as any).isGenerated);
       if (generated.length > 0) {
-        for (const gen of generated) {
+        // Criamos registros e URLs para as imagens geradas
+        for (let i = 0; i < generated.length; i++) {
+          const gen = generated[i];
           if (gen.processedUrl) {
+            const genId = gen.id;
+            
+            // Sincroniza estado visual das fotos geradas
             setLocalImageUrls(prev => {
               const next = new Map(prev);
-              next.set(gen.id, gen.processedUrl!);
+              next.set(genId, gen.processedUrl!);
               return next;
             });
+
+            // Adiciona ao array de seleção (até o limite de 5)
+            setSelectedPhotoPaths(prev => {
+              if (prev.length < 5 && !prev.includes(genId)) {
+                return [...prev, genId];
+              }
+              return prev;
+            });
+
+            // Persiste o registro no banco (opcional dependendo da regra, mas recomendado para consistência)
+            await productImagesService.createRecord(
+              product.company_id, 
+              product.id, 
+              genId, 
+              nextPosition + 1 + i
+            );
           }
-          setSelectedPhotoPaths(prev => {
-            if (prev.length < 5 && !prev.includes(gen.id)) {
-              return [...prev, gen.id];
-            }
-            return prev;
-          });
         }
       }
+
+      await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
       return path;
     },
