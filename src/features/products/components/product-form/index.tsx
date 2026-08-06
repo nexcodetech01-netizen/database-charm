@@ -316,7 +316,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const suggestTagsFn = useServerFn(suggestProductTags);
   const [newCategory, setNewCategory] = useState("");
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
-  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
 
