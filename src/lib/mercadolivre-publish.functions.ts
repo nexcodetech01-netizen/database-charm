@@ -609,12 +609,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       { id: "BAG_TYPE", value_name: pick("BAG_TYPE", "Transversal") },
       // SKU do vendedor — reforço de rastreabilidade além de seller_custom_field.
       { id: "SELLER_SKU", value_name: pick("SELLER_SKU", productSku || "SKU") },
-      // Dimensões padrão de embalagem para bolsas (30x20x10 cm / 500 g) — evita
-      // penalização de qualidade quando o vendedor não preencheu manualmente.
-      { id: "PACKAGE_LENGTH", value_name: pick("PACKAGE_LENGTH", "30 cm") },
-      { id: "PACKAGE_WIDTH", value_name: pick("PACKAGE_WIDTH", "20 cm") },
-      { id: "PACKAGE_HEIGHT", value_name: pick("PACKAGE_HEIGHT", "10 cm") },
-      { id: "PACKAGE_WEIGHT", value_name: pick("PACKAGE_WEIGHT", "500 g") },
     ];
     // GTIN: envia o EAN apenas quando cadastrado e válido. Caso contrário,
     // NÃO envia nada — nem GTIN, nem EMPTY_GTIN_REASON. O ML tem rejeitado
@@ -636,6 +630,46 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       seenIds.add(id);
     }
 
+    // Defesa final antes do POST:
+    // 1) o ML rejeita family_name dentro de attributes;
+    // 2) atributos com value_name/value_id null/undefined/vazio disparam
+    //    "invalid item attribute values" — remover;
+    // 3) GTIN e EMPTY_GTIN_REASON só podem existir com valor válido;
+    //    quando o EAN não está cadastrado, ambos devem ser removidos.
+    const sanitizedAttrs = filterMlFamilyNameAttribute(baseAttrs).filter((a) => {
+      if (a.id === "GTIN" || a.id === "EMPTY_GTIN_REASON") {
+        const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
+        const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
+        
+        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", nulo ou vazio, remove o GTIN e envia motivo apropriado
+        if (a.id === "GTIN") {
+          const isInvalid = !v || v === "SEM GTIN" || /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
+          if (isInvalid) return false;
+        }
+        
+        if (!v && !vid) return false;
+      }
+      const hasStruct = Array.isArray(a.values) && a.values.length > 0;
+      if (hasStruct) return true;
+      const hasValueId = typeof a.value_id === "string" && a.value_id.trim().length > 0;
+      const hasValueName = typeof a.value_name === "string" && a.value_name.trim().length > 0;
+      return hasValueId || hasValueName;
+    });
+
+    // Adiciona EMPTY_GTIN_REASON se GTIN foi removido ou não existe
+    if (!sanitizedAttrs.find(a => a.id === "GTIN")) {
+      sanitizedAttrs.push({
+        id: "EMPTY_GTIN_REASON",
+        value_name: "NÃO APLICA"
+      });
+    }
+
+    // Dimensões padrão para ME2 (Mercado Envíos)
+    const weight = Number((product as any).weight || 0.5) * 1000; // kg -> g
+    const length = Number((product as any).length || 30);
+    const width = Number((product as any).width || 20);
+    const height = Number((product as any).height || 10);
+
     const body: Record<string, unknown> = {
       family_name: cleanTitle.substring(0, 50),
       category_id: "MLB457449",
@@ -647,70 +681,17 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       condition: "new",
       pictures: pictures,
       description: description,
-      attributes: baseAttrs,
+      attributes: sanitizedAttrs,
+      shipping: {
+        mode: "me2",
+        local_pick_up: false,
+        free_shipping: price >= 79,
+        dimensions: `${width}x${height}x${length},${weight}`
+      }
     };
-    
-    // Adiciona o vídeo se disponível (na carga útil do ML o campo é 'video_id', 
-    // mas para links externos ou integração rápida muitas vezes é passado via attributes 
-    // ou campo específico dependendo da API. Para ML oficial de clips/vídeos: 'video_id')
-    const videoToUse = data.videoUrl || (product as any).video_url;
-    if (videoToUse) {
-      body.video_id = videoToUse; // No ML, vídeos externos são vinculados pelo ID ou link dependendo da versão
-    }
-
-    if (productSku) body.seller_custom_field = productSku;
-
-    // Parcelamento sem juros: no Premium (gold_pro) o ML aceita configurar
-    // parcelas sem acréscimo via sale_terms, o que sobe o score do anúncio e
-    // exibe o selo "sem juros" na vitrine. Calculamos até 12x mantendo o valor
-    // mínimo por parcela em R$ 5 (regra padrão do ML).
-    const effectiveListingType = listingTypeId || "gold_special";
-    if (effectiveListingType === "gold_pro") {
-      const maxInstallments = Math.max(
-        1,
-        Math.min(12, Math.floor(Number(price) / 5)),
-      );
-      if (maxInstallments >= 2) {
-        const installmentAmount = Number(
-          (Number(price) / maxInstallments).toFixed(2),
-        );
-        body.sale_terms = [
-          {
-            id: "INSTALLMENTS",
-            value_struct: {
-              number: maxInstallments,
-              amount: installmentAmount,
-              rate: 0,
-            },
-            value_name: `${maxInstallments}x de ${installmentAmount} sem juros`,
-          },
-        ];
-      }
-    }
 
 
 
-    // Defesa final antes do POST:
-    // 1) o ML rejeita family_name dentro de attributes;
-    // 2) atributos com value_name/value_id null/undefined/vazio disparam
-    //    "invalid item attribute values" — remover;
-    // 3) GTIN e EMPTY_GTIN_REASON só podem existir com valor válido;
-    //    quando o EAN não está cadastrado, ambos devem ser removidos.
-    const sanitizedAttrs = filterMlFamilyNameAttribute(baseAttrs).filter((a) => {
-      if (a.id === "GTIN" || a.id === "EMPTY_GTIN_REASON") {
-        const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
-        const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
-        if (!v && !vid) return false;
-        if (a.id === "GTIN" && /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v)) {
-          return false;
-        }
-      }
-      const hasStruct = Array.isArray(a.values) && a.values.length > 0;
-      if (hasStruct) return true;
-      const hasValueId = typeof a.value_id === "string" && a.value_id.trim().length > 0;
-      const hasValueName = typeof a.value_name === "string" && a.value_name.trim().length > 0;
-      return hasValueId || hasValueName;
-    });
 
     const requestBody = {
       ...body,
@@ -745,19 +726,18 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
     if (!itemRes.ok) {
-      // Extrai o array `cause` do ML para diagnóstico preciso no toast do frontend.
-      let causeDetails = "";
-      let parsedErr: { message?: string; error?: string; cause?: unknown } = {};
+      let parsedErr: { message?: string; error?: string; cause?: any[] } = {};
       try {
-        parsedErr = JSON.parse(itemText) as typeof parsedErr;
-        if (parsedErr.cause) {
-          causeDetails = ` | cause=${JSON.stringify(parsedErr.cause)}`;
-        } else if (parsedErr.message) {
-          causeDetails = ` | ${parsedErr.message}`;
-        }
-      } catch {
-        // resposta não-JSON — mantém o texto bruto abaixo.
-      }
+        parsedErr = JSON.parse(itemText);
+      } catch {}
+
+      // Extrai a causa específica se houver (ex.: erro de GTIN)
+      const cause = Array.isArray(parsedErr.cause) 
+        ? parsedErr.cause.map((c: any) => c.message || c.code).join(", ") 
+        : "";
+
+      const friendlyMessage = parsedErr.message || "Erro desconhecido na API do Mercado Livre";
+      
       console.error("[mercadolivre] POST /items falhou:", itemRes.status, itemText);
 
       // 403 seller.unable_to_list → conta com pendências (cadastro/fiscal/termos).
@@ -768,9 +748,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         );
       }
 
-      throw new Error(
-        `Falha ao publicar no Mercado Livre (${itemRes.status}): ${parsedErr.message || itemText.slice(0, 200)}${causeDetails}`,
-      );
+      throw new Error(`${friendlyMessage}${cause ? ` | detalhe: ${cause}` : ""}`);
     }
 
     const item = JSON.parse(itemText) as {

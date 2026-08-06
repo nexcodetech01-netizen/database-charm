@@ -892,7 +892,12 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Falha ao publicar no Mercado Livre");
+      // Extrai apenas a mensagem de erro amigável sem printar o JSON inteiro
+      const errorMessage = err instanceof Error ? err.message : "Falha ao publicar no Mercado Livre";
+      const cleanMessage = errorMessage.split('|')[0].trim(); // Remove detalhes técnicos após o pipe se houver
+      toast.error("Erro na Publicação", {
+        description: cleanMessage,
+      });
     },
   });
 
