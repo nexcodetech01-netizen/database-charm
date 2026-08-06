@@ -22,9 +22,9 @@ import {
 } from "./fiscal-suggestions";
 import { ncmMasterService } from "./ncm-master";
 
-/** Fallback de segurança para vestuário/acessórios quando nada for encontrado. */
-const GLOBAL_FALLBACK_NCM = "71179000"; // Outras bijuterias/acessórios (comum no NexOS)
-const GLOBAL_FALLBACK_LABEL = "Acessórios (Padrão)";
+/** NCM de segurança padrão para vestuário/acessórios quando houver indicação clara. */
+const BIJUTERIA_FALLBACK_NCM = "71179000"; 
+const BIJUTERIA_FALLBACK_LABEL = "Bijuteria (Sugestão)";
 
 /** Similaridade mínima aceita para preencher a partir do histórico. */
 const MIN_SIMILARITY = 0.35;
@@ -158,37 +158,53 @@ export const bulkNcmService = {
             };
           }
 
-          // 3) Fallback Inteligente: Busca por palavra-chave no Nome do Produto na Tabela Mestre
-          const nameTerms = product.name.toLowerCase().split(/\s+/);
-          // Palavras-chave prioritárias baseadas na ncm_master
-          const priorityKeywords = ["bolsa", "carteira", "mochila", "cinto", "calçado", "sapato", "tênis", "camiseta", "vestuário", "bijuteria", "óculos", "relógio", "necessaire"];
-          const foundKeyword = nameTerms.find(term => priorityKeywords.includes(term));
+          // 3) Fallback Inteligente: Busca por palavra-chave no Nome do Produto
+          const nameLower = product.name.toLowerCase();
           
-          if (foundKeyword) {
-            const masterMatch = await ncmMasterService.suggest(foundKeyword.charAt(0).toUpperCase() + foundKeyword.slice(1));
-            if (masterMatch && isValidNcm(masterMatch.ncm)) {
+          // Regras específicas por palavra-chave (Prioridade 1)
+          const specificRules = [
+            { 
+              keywords: ["perfume", "body splash", "colônia", "colonia", "fragrância"], 
+              ncm: "33072010", 
+              label: "Perfumaria/Desodorante",
+              ref: "Termo: Perfume/Body Splash" 
+            },
+            { 
+              keywords: ["bolsa", "carteira", "mochila", "necessaire"], 
+              ncm: "42022200", 
+              label: "Bolsas/Plástico/Têxtil",
+              ref: "Termo: Bolsa/Carteira" 
+            },
+            { 
+              keywords: ["couro", "sintético"], 
+              ncm: "42022100", 
+              label: "Bolsas/Couro",
+              ref: "Termo: Couro" 
+            },
+            { 
+              keywords: ["brinco", "colar", "pulseira", "anel", "bijuteria"], 
+              ncm: BIJUTERIA_FALLBACK_NCM, 
+              label: "Bijuteria",
+              ref: "Termo: Bijuteria" 
+            }
+          ];
+
+          for (const rule of specificRules) {
+            if (rule.keywords.some(k => nameLower.includes(k))) {
               return {
                 id: product.id,
                 name: product.name,
                 sku: product.sku,
-                ncm: masterMatch.ncm,
-                cest: normalizeCest(product.cest) ? null : null,
+                ncm: rule.ncm,
+                cest: null,
                 source: "master_keyword",
-                reference: `Termo: ${foundKeyword}`,
+                reference: rule.ref,
               };
             }
           }
 
-          // 4) Fallback Geral: NCM de segurança para Acessórios
-          return {
-            id: product.id,
-            name: product.name,
-            sku: product.sku,
-            ncm: GLOBAL_FALLBACK_NCM,
-            cest: normalizeCest(product.cest) ? null : null,
-            source: "fallback",
-            reference: GLOBAL_FALLBACK_LABEL,
-          };
+          // 4) Se não encontrou nada, não aplica fallback genérico
+          return null;
         } finally {
           done += 1;
           onProgress?.(done, total);

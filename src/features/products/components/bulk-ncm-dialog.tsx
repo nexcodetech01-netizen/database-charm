@@ -114,7 +114,7 @@ export function BulkNcmDialog({ companyId, label }: Props) {
           <DialogTitle>Preencher NCM automaticamente</DialogTitle>
           <DialogDescription>
             Varre os produtos sem NCM e sugere o código com base na categoria, 
-            histórico de similares ou busca inteligente por palavras-chave (bolsa, cinto, etc). 
+            histórico de similares ou regras específicas por palavras-chave (perfume, bolsa, bijuteria). 
             Nenhum NCM existente é sobrescrito.
           </DialogDescription>
         </DialogHeader>
