@@ -464,10 +464,32 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     onError: (err: any) => {
       let errorMessage = "Erro desconhecido na publicação";
       if (err instanceof Error) errorMessage = err.message;
-      else if (typeof err === 'string') errorMessage = err;
-      else if (err && typeof err === 'object') {
-        try { errorMessage = JSON.stringify(err, null, 2); } catch { errorMessage = String(err); }
+      else if (typeof err === "string") errorMessage = err;
+      else if (err && typeof err === "object") {
+        try {
+          errorMessage = JSON.stringify(err, null, 2);
+        } catch {
+          errorMessage = String(err);
+        }
       }
+
+      // Hardening: Redirecionamento suave em erro 401/403 ou "unauthorized"
+      const lowerErr = errorMessage.toLowerCase();
+      if (
+        lowerErr.includes("401") ||
+        lowerErr.includes("403") ||
+        lowerErr.includes("unauthorized") ||
+        lowerErr.includes("invalid_token")
+      ) {
+        toast.error("Sessão do Mercado Livre expirada", {
+          description: "Redirecionando para reconexão em 3 segundos...",
+        });
+        setTimeout(() => {
+          window.location.href = "/configuracoes?tab=integracoes";
+        }, 3000);
+        return;
+      }
+
       toast.error("Erro no Mercado Livre", {
         description: (
           <div className="mt-2 text-xs font-mono bg-slate-900 p-2 rounded text-slate-100 max-h-[300px] overflow-auto whitespace-pre-wrap">
