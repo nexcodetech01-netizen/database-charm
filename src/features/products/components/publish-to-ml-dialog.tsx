@@ -623,12 +623,16 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       return res.processedImages[0];
     },
     onSuccess: (processed, { path }) => {
-      if (processed.processedUrl) {
+      const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+      
+      if (processed.processedUrl && !isInvalid(processed.processedUrl)) {
         setLocalImageUrls(prev => {
           const next = new Map(prev);
           next.set(path, processed.processedUrl!);
           return next;
         });
+      } else {
+        toast.info("A IA não retornou um resultado válido, mantendo original.");
       }
       qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
       toast.success("Imagem tratada com IA com sucesso.");
