@@ -656,7 +656,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       return res.processedImages[0];
     },
     onSuccess: (processed, { path }) => {
-      const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+      const isInvalid = (u: string) => typeof u === 'string' && (
+        u.toLowerCase().startsWith('failed') || 
+        u.toLowerCase().startsWith('error') || 
+        u.toLowerCase().includes('background...')
+      );
       
       if (processed.processedUrl && !isInvalid(processed.processedUrl)) {
         setLocalImageUrls(prev => {
