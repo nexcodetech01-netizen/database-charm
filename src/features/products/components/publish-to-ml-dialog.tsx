@@ -1149,19 +1149,21 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       }}
                       className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
                         listingType === "gold_special"
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
                           : "border-border hover:border-primary/40 hover:bg-muted/50"
                       }`}
                     >
                       <div className="flex justify-between items-start">
-                        <span className="text-sm font-bold">Clássico</span>
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1">Parcelado c/ Juros</Badge>
+                        <span className="text-sm font-bold">Anúncio Clássico</span>
+                        <Badge variant="outline" className="text-[9px] h-4 px-1 border-primary/30">Padrão</Badge>
                       </div>
                       <span className="text-lg font-black text-primary">
                         {formatCurrency(classicFinal)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1">
-                        Taxa {classicFeePct * 100}% + {formatCurrency(classicFixedFee + classicShipping)} custos
+                      <span className="text-[10px] text-muted-foreground line-clamp-2">
+                        Comissão 13,5% | Parcelado c/ juros
+                        <br />
+                        Taxa fixa + frete inclusos
                       </span>
                     </button>
 
@@ -1176,10 +1178,24 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       }}
                       className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
                         listingType === "gold_pro"
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
                           : "border-border hover:border-primary/40 hover:bg-muted/50"
                       }`}
                     >
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-bold">Anúncio Premium 💳</span>
+                        <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">Destaque</Badge>
+                      </div>
+                      <span className="text-lg font-black text-primary">
+                        {formatCurrency(premiumFinal)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground line-clamp-2">
+                        12x Sem Juros + Exposição Máxima
+                        <br />
+                        Taxa 18,5% | Melhor visibilidade
+                      </span>
+                    </button>
+                  </div>
                       <div className="flex justify-between items-start">
                         <span className="text-sm font-bold">Premium</span>
                         <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">12x Sem Juros</Badge>
