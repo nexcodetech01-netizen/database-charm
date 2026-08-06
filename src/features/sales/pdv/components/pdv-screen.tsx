@@ -313,6 +313,29 @@ export function PDVScreen({
           ? () => {
               pdv.removeItem(effectiveActiveKey);
               setActiveKey(null);
+            }
+          : undefined,
+      "suspend-sale": handleSuspendSale,
+      "recover-sale": () => setSuspendedOpen(true),
+      "price-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingPriceItem(item);
+          }
+        : undefined,
+      "discount-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingDiscountItem(item);
+          }
+        : () => clickPdvElement(PDV_DISCOUNT_INPUT_ID),
+      "addition-edit": effectiveActiveKey
+        ? () => {
+            const item = pdv.state.items.find((it) => it.ui_key === effectiveActiveKey);
+            if (item) setEditingAdditionItem(item);
+          }
+        : undefined,
+      "finalize": () => clickPdvElement(PDV_FINALIZE_BUTTON_ID),
               focus.focusSearch();
             }
           : undefined,
