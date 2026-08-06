@@ -1233,7 +1233,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
 
                 {/* Fotos */}
-                <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold">Fotos do anúncio</Label>
                     <span className="text-xs text-muted-foreground">{selectedPhotoPaths.length}/5 selecionadas</span>
