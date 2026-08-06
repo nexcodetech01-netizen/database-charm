@@ -25,6 +25,7 @@ export type SaleAction =
   | { type: "UPDATE_ITEM_PRICE"; uiKey: string; price: number; reason?: string }
   | { type: "UPDATE_ITEM_DISCOUNT"; uiKey: string; discount: number }
   | { type: "UPDATE_ITEM_ADDITION"; uiKey: string; addition: number }
+  | { type: "UPDATE_ITEM_NOTES"; uiKey: string; notes: string }
   | { type: "HYDRATE"; state: SaleDraftState }
   | { type: "RESET"; state?: Partial<SaleDraftState> };
 
