@@ -63,6 +63,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   publishProductToMercadoLivre,
   predictMercadoLivreCategory,
 } from "@/lib/mercadolivre-publish.functions";
