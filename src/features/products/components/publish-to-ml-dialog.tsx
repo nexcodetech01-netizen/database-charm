@@ -1394,7 +1394,12 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                         <Input
                           id="ml-price"
                           type="number"
-                          className="h-12 font-mono text-xl font-black bg-background border-2 focus-visible:ring-primary"
+                          step="0.01"
+                          className={`h-12 font-mono text-xl font-black bg-background border-2 focus-visible:ring-primary ${
+                            validation.requirements.find(r => r.id === "price_formula")?.isValid === false 
+                            ? "border-destructive focus-visible:ring-destructive" 
+                            : ""
+                          }`}
                           value={price}
                           onChange={(e) => {
                             setPrice(Number(e.target.value));
@@ -1408,14 +1413,35 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                           </Badge>
                         )}
                       </div>
+                      {validation.requirements.find(r => r.id === "price_formula")?.isValid === false && (
+                        <p className="text-[10px] text-destructive font-medium animate-in fade-in slide-in-from-top-1">
+                          {validation.requirements.find(r => r.id === "price_formula")?.message}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="grid gap-2 p-3 bg-success/5 rounded-xl border border-dashed border-success/30">
-                      <Label className="text-xs font-semibold text-success uppercase tracking-tight">
+                    <div className={`grid gap-2 p-3 rounded-xl border border-dashed transition-colors ${
+                      validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                      ? "bg-destructive/5 border-destructive/30"
+                      : "bg-success/5 border-success/30"
+                    }`}>
+                      <Label className={`text-xs font-semibold uppercase tracking-tight ${
+                        validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                        ? "text-destructive"
+                        : "text-success"
+                      }`}>
                         Quanto você recebe (Líquido)
                       </Label>
-                      <div className="flex items-center gap-2 h-12 px-3 bg-background/50 rounded-lg border border-success/20">
-                        <span className="font-mono text-xl font-black text-success">
+                      <div className={`flex items-center gap-2 h-12 px-3 bg-background/50 rounded-lg border ${
+                        validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                        ? "border-destructive/20"
+                        : "border-success/20"
+                      }`}>
+                        <span className={`font-mono text-xl font-black ${
+                          validation.requirements.find(r => r.id === "price_formula")?.isValid === false
+                          ? "text-destructive"
+                          : "text-success"
+                        }`}>
                           {walletTarget ? formatCurrency(Number(walletTarget)) : "---"}
                         </span>
                       </div>
