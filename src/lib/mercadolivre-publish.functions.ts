@@ -605,7 +605,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // 2) atributos com value_name/value_id null/undefined/vazio disparam
     //    "invalid item attribute values" — remover;
     // 3) GTIN e EMPTY_GTIN_REASON só podem existir com valor válido;
-    //    quando o EAN não está cadastrado, ambos devem ser removidos.
+    //    quando o EAN não está cadastrado, ambos devem ser removidos por segurança
+    //    ou o EMPTY_GTIN_REASON deve usar um value_id oficial se a categoria exigir.
     const sanitizedAttrs = filterMlFamilyNameAttribute(baseAttrs).filter((a) => {
       // Lista de atributos que devem ser removidos do array attributes (enviados em shipping ou omitidos)
       const forbiddenIds = ["PACKAGE_LENGTH", "PACKAGE_WIDTH", "PACKAGE_HEIGHT", "PACKAGE_WEIGHT"];
@@ -615,12 +616,17 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
         const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
         
-        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", "SEM EAN", nulo ou vazio, remove o GTIN do payload
         if (a.id === "GTIN") {
           const isInvalid = !v || 
             /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(v) || 
             /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
           if (isInvalid) return false;
+        }
+
+        if (a.id === "EMPTY_GTIN_REASON") {
+          // Remove se vier com string "NÃO APLICA" pura (que causa erro na API se não tiver value_id)
+          // A estratégia mais segura recomendada é REMOVER ambos se não houver GTIN.
+          return false; 
         }
         
         if (!v && !vid) return false;
