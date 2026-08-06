@@ -49,20 +49,20 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-red-600">🚨 SPRINT FINALIZADA: REGRA ABSOLUTA DE MARCA ('Generica')</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">✅ SPRINT FINALIZADA: CORREÇÃO GTIN / EMPTY_GTIN_REASON</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. DEFAULT INVIOLÁVEL:</h3>
+              <h3 className="font-medium text-primary">1. REMOÇÃO DE ATRIBUTOS INVÁLIDOS:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Campo 'Marca (BRAND)' agora inicia e reseta obrigatoriamente como "Generica".</li>
-                <li>Eliminada qualquer lógica de preenchimento automático via nome da loja ou produto.</li>
+                <li>Quando o produto não possui código de barras, os atributos 'GTIN' e 'EMPTY_GTIN_REASON' são totalmente removidos do payload.</li>
+                <li>Eliminado o erro "Attribute [EMPTY_GTIN_REASON] is not valid, item values [(null:NÃO APLICA)]".</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. SEGURANÇA NO BACKEND:</h3>
+              <h3 className="font-medium text-primary">2. SANITIZAÇÃO DE PAYLOAD:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Motor de publicação agora ignora overrides e força 'BRAND': 'Generica' em todas as chamadas.</li>
-                <li>Sanitização total de marcas proibidas (TG, 47 Street, Lilo Acessorios).</li>
+                <li>Garantido que nenhum atributo com value_id nulo ou vazio seja enviado para a API.</li>
+                <li>Removidas strings de escape como "SEM GTIN" ou "N/A" antes do envio.</li>
               </ul>
             </section>
           </div>

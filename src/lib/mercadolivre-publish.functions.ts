@@ -632,13 +632,9 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       return hasValueId || hasValueName;
     });
 
-    // Adiciona EMPTY_GTIN_REASON se GTIN foi removido ou não existe
-    if (!sanitizedAttrs.find(a => a.id === "GTIN")) {
-      sanitizedAttrs.push({
-        id: "EMPTY_GTIN_REASON",
-        value_name: "NÃO APLICA"
-      });
-    }
+    // Adiciona EMPTY_GTIN_REASON apenas se for explicitamente necessário com value_id válido.
+    // Conforme regra de tratamento: REMOVER completamente é a opção mais segura.
+    // Omitimos a inserção automática de "NÃO APLICA" que estava causando erro.
 
     // Dimensões padrão para ME2 (Mercado Envíos)
     const weight = Number((product as any).weight || 0.5) * 1000; // kg -> g
