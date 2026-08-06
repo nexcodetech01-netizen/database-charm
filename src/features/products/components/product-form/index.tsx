@@ -1560,6 +1560,19 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   </div>
                 ) : null}
               </Field>
+
+              <Field label="CEST" hint="7 dígitos — apenas para produtos com substituição tributária (ST).">
+                <Input
+                  value={form.cest}
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="00.000.00 ou 0000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("cest", normalizeCest(e.target.value));
+                  }}
+                />
+              </Field>
             </div>
           </Section>
 
