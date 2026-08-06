@@ -649,7 +649,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
         const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
         
-        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", "SEM EAN", nulo ou vazio, remove o GTIN
+        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", "SEM EAN", nulo ou vazio, remove o GTIN do payload
         if (a.id === "GTIN") {
           const isInvalid = !v || 
             /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(v) || 
