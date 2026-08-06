@@ -305,6 +305,7 @@ interface PublishInput {
   imageOverrides?: Record<string, string>;
   videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
+  videoUrl?: string;
 }
 
 export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
@@ -353,6 +354,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       model: input.model?.toString().trim() || undefined,
       picturePaths,
       imageOverrides: typeof input.imageOverrides === "object" ? input.imageOverrides : undefined,
+      videoUrl: input.videoUrl?.toString().trim() || undefined,
       videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
     };
@@ -565,12 +567,13 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     const baseAttrs: MlAttr[] = [
       { id: "BRAND", value_name: resolvedBrand || "Generica" },
-      { id: "MODEL", value_name: pick("MODEL", model || "Generica") },
+      { id: "MODEL", value_name: pick("MODEL", model || "Bolsa Social") },
       { id: "COLOR", value_name: pick("COLOR", color || "Caramelo") },
       { id: "GENDER", value_name: pick("GENDER", "Feminino") },
-      { id: "MAIN_MATERIAL", value_name: pick("MAIN_MATERIAL", "Sintético") },
+      { id: "MAIN_MATERIAL", value_name: pick("MAIN_MATERIAL", "Sintético / Courino") },
       { id: "PATTERN_NAME", value_name: pick("PATTERN_NAME", "Liso") },
       { id: "WITH_ZIPPER", value_name: pick("WITH_ZIPPER", "Sim") },
+      { id: "WITH_REMOVABLE_STRAP", value_name: pick("WITH_REMOVABLE_STRAP", "Sim") },
       { id: "AGE_GROUP", value_name: pick("AGE_GROUP", "Adultos") },
       { id: "SEASON", value_name: pick("SEASON", "Permanente") },
       // Tipo de bolsa — atributo relevante para busca/filtros e score de ficha.
@@ -578,11 +581,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       // SKU do vendedor — reforço de rastreabilidade além de seller_custom_field.
       { id: "SELLER_SKU", value_name: pick("SELLER_SKU", productSku || "SKU") },
     ];
-    // GTIN: envia o EAN apenas quando cadastrado e válido. Caso contrário,
-    // NÃO envia nada — nem GTIN, nem EMPTY_GTIN_REASON. O ML tem rejeitado
-    // EMPTY_GTIN_REASON como "attribute is not valid" em várias categorias,
-    // então a estratégia segura é omitir ambos quando o produto não possui
-    // código de barras cadastrado.
+    // GTIN: envia o EAN apenas quando cadastrado e válido.
+    // Caso contrário, envia EMPTY_GTIN_REASON para não perder qualidade.
     const rawBarcode = (productBarcode ?? "").trim();
     const isInvalidGtin = !rawBarcode || 
       /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(rawBarcode) || 
@@ -590,6 +590,9 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     if (!isInvalidGtin) {
       baseAttrs.push({ id: "GTIN", value_name: rawBarcode });
+    } else {
+      // Justificativa aceita pela API do ML para produtos sem código de barras
+      baseAttrs.push({ id: "EMPTY_GTIN_REASON", value_id: "7000000" }); // 7000000 = N/A ou justificativa padrão
     }
 
 
@@ -625,9 +628,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         }
 
         if (a.id === "EMPTY_GTIN_REASON") {
-          // Remove se vier com string "NÃO APLICA" pura (que causa erro na API se não tiver value_id)
-          // A estratégia mais segura recomendada é REMOVER ambos se não houver GTIN.
-          return false; 
+          return true; // Mantém EMPTY_GTIN_REASON conforme solicitado para qualidade
         }
         
         if (!v && !vid) return false;
@@ -661,6 +662,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       pictures: pictures,
       description: description,
       attributes: sanitizedAttrs,
+      video_id: data.videoUrl ? (data.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/) || [])[1] : undefined,
       shipping: {
         mode: "me2",
         local_pick_up: false,
