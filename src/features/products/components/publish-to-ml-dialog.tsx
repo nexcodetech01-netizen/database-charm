@@ -246,7 +246,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
-  const [useAI, setUseAI] = useState(true);
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
 
@@ -289,7 +288,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
       setImgErrorMap(new Map());
-      setUseAI(true);
+      
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
@@ -500,79 +499,16 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       const nextPosition = photosQuery.data?.length ?? 0;
       const path = await productImagesService.upload(product.company_id, product.id, file);
       
-      // CRITICAL: Force IA processing immediately after upload
-      const tempUrls = await productImagesService.signedUrls([path], 60 * 5);
+      // Get the signed URL to show immediately
+      const tempUrls = await productImagesService.signedUrls([path], 60 * 60 * 24);
       const url = tempUrls[0]?.signedUrl;
       
-      if (!url) throw new Error("Falha ao gerar URL para processamento");
+      if (!url) throw new Error("Falha ao gerar URL da imagem");
 
-      let finalUrl = url;
-      if (useAI) {
-        try {
-          const res = await withRetry(
-            () => processProductImages({
-              data: {
-                images: [{ id: path, url, isMain: slotIndex === 0 }],
-                enableMultiview: slotIndex === 0, 
-              },
-            }),
-            {
-              onRetry: (err, attempt) => {
-                console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
-              }
-            }
-          );
+      // Save the local URL mapping for immediate display
+      setLocalImageUrls(prev => new Map(prev).set(path, url));
 
-          if (res.success && res.processedImages[0]) {
-            const mainProcessed = res.processedImages[0];
-            const isInvalid = (u: string) => typeof u === 'string' && (
-              u.toLowerCase().startsWith('failed') || 
-              u.toLowerCase().startsWith('error') || 
-              u.toLowerCase().includes('background...')
-            );
-            
-            if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
-              finalUrl = mainProcessed.processedUrl;
-            }
-
-            // Se gerou multiview (slots extras automáticos), processamos cada uma
-            const generated = res.processedImages.filter(img => (img as any).isGenerated);
-            if (generated.length > 0) {
-              // Criamos registros e URLs para as imagens geradas
-              for (let i = 0; i < generated.length; i++) {
-                const gen = generated[i];
-                const genUrl = gen.processedUrl;
-                if (genUrl && !isInvalid(genUrl)) {
-                  const genId = gen.id;
-                  
-                  setLocalImageUrls(prev => new Map(prev).set(genId, genUrl));
-
-                  setSelectedPhotoPaths(prev => {
-                    if (prev.length < 5 && !prev.includes(genId)) {
-                      return [...prev, genId];
-                    }
-                    return prev;
-                  });
-
-                  await productImagesService.createRecord(
-                    product.company_id, 
-                    product.id, 
-                    genId, 
-                    nextPosition + 1 + i
-                  );
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Erro no processamento IA, mantendo original:", err);
-          toast.error("IA indisponível", { description: "Mantendo foto original sem tratamento." });
-        }
-      }
-
-      setLocalImageUrls(prev => new Map(prev).set(path, finalUrl));
-
-
+      // Create the record in the database
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
       return path;
@@ -589,7 +525,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       });
       qc.invalidateQueries({ queryKey: ["product-images", product.id] });
       qc.invalidateQueries({ queryKey: ["product-images-signed"] });
-      toast.success("Foto otimizada com IA e adicionada.");
+      toast.success("Foto adicionada com sucesso.");
     },
     onError: (err) => {
       toast.error("Falha no processamento", { description: (err as Error).message });
@@ -702,15 +638,13 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     index, 
     url, 
     onToggle, 
-    onReprocess 
   }: { 
     path: string; 
     index: number; 
     url?: string;
     onToggle: (p: string) => void;
-    onReprocess: (p: string, i: number) => void;
   }) {
-    const isProcessing = (uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index);
+    const isProcessing = (uploadPhoto.isPending && uploadingSlot === index);
     const hasError = imgErrorMap.get(path) === true;
 
     const {
@@ -763,7 +697,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         {isProcessing ? (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/70 text-white backdrop-blur-[2px]">
             <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest px-2 text-center drop-shadow-md">Processando IA...</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-2 text-center drop-shadow-md">Enviando...</span>
           </div>
         ) : null}
         
@@ -824,24 +758,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               <ArrowRight className="h-3 w-3" />
             </button>
           </div>
-          
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="h-5 w-full px-0 text-[9px] font-bold uppercase tracking-tighter"
-            disabled={reprocessPhoto.isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              onReprocess(path, index);
-            }}
-          >
-            {reprocessPhoto.isPending && reprocessPhoto.variables?.path === path ? (
-              <Loader2 className="h-2.5 w-2.5 animate-spin" />
-            ) : (
-              "Remover Fundo via IA"
-            )}
-          </Button>
           </div>
         )}
       </div>
