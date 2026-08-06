@@ -48,6 +48,7 @@ import {
   publishProductToMercadoLivre,
   predictMercadoLivreCategory,
 } from "@/lib/mercadolivre-publish.functions";
+import { processProductImages } from "@/features/products/lib/image-processing.functions";
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
 import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
 import { validateMercadoLivreRequirements } from "@/features/products/utils/ml-validation";
