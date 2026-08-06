@@ -1325,11 +1325,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       const desired = Number(walletTarget);
                       const isPremium = listingType === "gold_pro";
                       const classicFeePct = 0.135;
-                      const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
-                      const classicShipping = desired >= 79 ? 24.65 : 0;
-                      
+                      let classicFixedFee = 0;
                       let classicFinal = desired > 0 ? (desired + classicShipping) / (1 - classicFeePct) : 0;
                       if (classicFinal > 0 && classicFinal < 79) {
+                        classicFixedFee = 6.5;
                         classicFinal = (desired + 6.5 + classicShipping) / (1 - classicFeePct);
                       }
                       
@@ -1360,7 +1359,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
-                                   <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (currentClassicFixedFee > 0 ? formatCurrency(currentClassicFixedFee) : "R$ 0,00")}</span>
+                                   <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
                                   <span>Líquido a receber</span>
