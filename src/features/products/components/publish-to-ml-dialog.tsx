@@ -586,9 +586,26 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             alt=""
             className="h-full w-full object-cover"
             loading="lazy"
+            onClick={(e) => {
+              e.stopPropagation();
+              openFilePicker(index);
+            }}
           />
         ) : (
-          <div className="h-full w-full bg-muted" />
+          <div 
+            className="h-full w-full bg-muted cursor-pointer flex items-center justify-center"
+            onClick={() => openFilePicker(index)}
+          >
+            <span className="text-muted-foreground text-xs">Vazio</span>
+          </div>
+        )}
+        
+        {/* Loader de Otimização */}
+        {uploadPhoto.isPending && uploadingSlot === index && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 text-white">
+            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+            <span className="text-[10px] font-medium px-2 text-center">Otimizando imagem...</span>
+          </div>
         )}
         
         {/* Grip handle for drag */}
