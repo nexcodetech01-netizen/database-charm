@@ -284,9 +284,12 @@ export function PDVScreen({
       dialogOpen: receiptOpen || 
                   checkoutOpen || 
                   closeCashOpen || 
+                  suspendedOpen ||
+                  saleNotesOpen ||
                   !!editingPriceItem || 
                   !!editingDiscountItem || 
-                  !!editingAdditionItem 
+                  !!editingAdditionItem ||
+                  !!editingNotesItem
     },
     handlers: {
       "focus-search": focus.focusSearch,
