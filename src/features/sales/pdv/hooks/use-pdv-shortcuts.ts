@@ -187,7 +187,7 @@ type MinimalEvent = PdvShortcutEvent & { preventDefault?: () => void };
  * Teclas de edição de texto (ENTER, ESC, DELETE) só são bloqueadas quando o
  * PDV realmente as usa — digitar em um campo continua normal.
  */
-const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5", "F12"] as const;
+const OWNED_FUNCTION_KEYS = ["F2", "F3", "F4", "F5", "F6", "F7", "F8", "F12"] as const;
 
 export function isPdvOwnedKey(event: PdvShortcutEvent): boolean {
   if (event.altKey) return false;
