@@ -2125,7 +2125,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               {product ? (
                 <Field label="Saldo em estoque" hint="Alterado somente por movimentação de estoque">
                   <div className="space-y-2">
-                    <NumInput value={form.stock} onChange={() => {}} disabled />
+                    <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
                     <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
