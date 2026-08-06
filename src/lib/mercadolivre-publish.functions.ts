@@ -305,7 +305,6 @@ interface PublishInput {
   imageOverrides?: Record<string, string>;
   videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
-  videoUrl?: string;
 }
 
 export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
@@ -354,7 +353,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       model: input.model?.toString().trim() || undefined,
       picturePaths,
       imageOverrides: typeof input.imageOverrides === "object" ? input.imageOverrides : undefined,
-      videoUrl: input.videoUrl?.toString().trim() || undefined,
       videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
     };
