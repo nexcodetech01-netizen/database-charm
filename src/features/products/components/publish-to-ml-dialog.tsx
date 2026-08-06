@@ -399,18 +399,18 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   // Atributos estendidos (extraídos da ficha técnica preenchida)
   const extraAttributes = useMemo(() => {
     const list: Array<{ id: string; value_name: string }> = [];
-    const push = (id: string, value: string) => {
-      const v = value.trim();
+    const push = (id: string, value: string, fallback: string) => {
+      const v = value.trim() || fallback;
       if (v) list.push({ id, value_name: v });
     };
-    push("GENDER", gender || "Feminino");
-    push("MAIN_MATERIAL", material);
-    push("BAG_TYPE", bagType);
-    push("STYLE", style);
-    push("PATTERN_NAME", pattern || "Liso");
-    push("WITH_ZIPPER", withZipper || "Sim");
-    push("AGE_GROUP", ageGroup || "Adultos");
-    push("SEASON", season || "Permanente");
+    push("GENDER", gender, "Unissex");
+    push("MAIN_MATERIAL", material, "Geral");
+    push("BAG_TYPE", bagType, "Geral");
+    push("STYLE", style, "Geral");
+    push("PATTERN_NAME", pattern, "Liso");
+    push("WITH_ZIPPER", withZipper, "Sim");
+    push("AGE_GROUP", ageGroup, "Adultos");
+    push("SEASON", season, "Permanente");
     return list;
   }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
@@ -418,19 +418,26 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     mutationFn: async () => {
       const productId = product?.id;
       if (!productId) throw new Error("ID do produto não encontrado");
+      
+      // Strict title limit & fallbacks
+      const finalTitle = title.slice(0, 60).trim();
+      const finalBrand = brand.trim() || "Sem marca";
+      const finalModel = model.trim() || "Geral";
+      const finalColor = color.trim() || "Preto";
+
       return await publishFn({
         data: {
           productId: productId,
           categoryId,
           listingTypeId: listingType,
           condition,
-          title,
+          title: finalTitle,
           price,
           availableQuantity: quantity,
           description,
-          color: color.trim() || undefined,
-          brand: brand.trim() || undefined,
-          model: model.trim() || undefined,
+          color: finalColor,
+          brand: finalBrand,
+          model: finalModel,
           picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
           imageOverrides,
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
@@ -951,8 +958,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
 
   const generateDesc = useMutation({
-    mutationFn: () =>
-      generateDescFn({
+    mutationFn: () => {
+      if (!title.trim()) throw new Error("Título é obrigatório para gerar descrição.");
+      return generateDescFn({
         data: {
           title: title.trim(),
           price: price > 0 ? price : undefined,
@@ -963,7 +971,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           productDetails: product?.description ?? undefined,
           supplier: (product as any)?.supplier || (product as any)?.brand_supplier,
         },
-      }),
+      });
+    },
     onSuccess: (res) => {
       setAiPreview({ title: res.title, description: res.description });
       

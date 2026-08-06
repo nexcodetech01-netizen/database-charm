@@ -113,7 +113,12 @@ export async function refreshAccessToken(params: {
     { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
   );
   const text = await res.text();
-  if (!res.ok) throw new Error(`ML refresh failed (${res.status}): ${text.slice(0, 300)}`);
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      console.warn(`[ML_REFRESH_AUTH_EXPIRED] HTTP ${res.status}`);
+    }
+    throw new Error(`ML refresh failed (${res.status}): ${text.slice(0, 300)}`);
+  }
   return JSON.parse(text) as MLTokenResponse;
 }
 
