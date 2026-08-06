@@ -1594,10 +1594,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   </div>
                 ) : null}
 
-                {fiscal?.historySuggestions && fiscal.historySuggestions.length === 0 && 
-                 fiscal?.masterSuggestions && fiscal.masterSuggestions.length === 0 && 
+                {fiscal?.historySuggestions?.length === 0 && 
+                 fiscal?.masterSuggestions?.length === 0 && 
                  !fiscal.masterLoading && form.name.length >= 3 ? (
-                  <p className="mt-2 text-[10px] text-muted-foreground italic">
+                  <p className="mt-2 text-[10px] text-muted-foreground italic animate-in fade-in duration-500">
                     Nenhuma sugestão encontrada para "{form.name}". Tente selecionar uma categoria ou digite o NCM manualmente.
                   </p>
                 ) : null}
