@@ -508,6 +508,142 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     },
   });
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setSelectedPhotoPaths((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over.id as string);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
+
+  // Componente interno para item ordenável
+  function SortablePhotoItem({ 
+    path, 
+    index, 
+    url, 
+    onToggle, 
+    onReprocess 
+  }: { 
+    path: string; 
+    index: number; 
+    url?: string;
+    onToggle: (p: string) => void;
+    onReprocess: (p: string, i: number) => void;
+  }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: path });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 10 : undefined,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
+          isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
+        }`}
+      >
+        {url ? (
+          <img
+            src={url}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-full w-full bg-muted" />
+        )}
+        
+        {/* Grip handle for drag */}
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+          title="Arraste para reordenar"
+        />
+
+        {/* Badge de Posição */}
+        <span className="absolute left-1 top-1 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-sm">
+          {index + 1}
+        </span>
+
+        {/* Botão Remover (X) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle(path);
+          }}
+          className="absolute right-1 top-1 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-destructive"
+          title="Remover foto"
+        >
+          <X className="h-3 w-3" />
+        </button>
+
+        {/* Botões de Reordenação e IA Overlay */}
+        <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex justify-between gap-1">
+            <button
+              type="button"
+              disabled={index === 0}
+              onClick={(e) => {
+                e.stopPropagation();
+                movePhoto(index, "left");
+              }}
+              className="flex h-5 w-full items-center justify-center rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30"
+            >
+              <ArrowLeft className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              disabled={index === selectedPhotoPaths.length - 1}
+              onClick={(e) => {
+                e.stopPropagation();
+                movePhoto(index, "right");
+              }}
+              className="flex h-5 w-full items-center justify-center rounded bg-white/20 text-white hover:bg-white/40 disabled:opacity-30"
+            >
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+          
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="h-5 w-full px-0 text-[9px] font-bold uppercase tracking-tighter"
+            disabled={reprocessPhoto.isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReprocess(path, index);
+            }}
+          >
+            {reprocessPhoto.isPending && reprocessPhoto.variables?.path === path ? (
+              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+            ) : (
+              "Tratar com IA"
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Monta a ficha técnica estendida enviada como attributes extras ao ML.
   const extraAttributes = useMemo(() => {
     const list: Array<{ id: string; value_name: string }> = [];
