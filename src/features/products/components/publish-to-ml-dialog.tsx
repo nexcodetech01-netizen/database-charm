@@ -119,17 +119,27 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       <DialogContent className="max-w-4xl p-0 overflow-hidden bg-slate-950 border-slate-800 h-[90vh] flex flex-col">
         <ErrorBoundary
           key={key}
-          fallback={
+          fallbackRender={({ error }) => (
             <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4 text-center">
               <div className="bg-destructive/10 p-4 rounded-full">
                 <AlertTriangle className="h-10 w-10 text-destructive" />
               </div>
-              <div>
+              <div className="max-w-md w-full">
                 <h2 className="text-xl font-bold text-white">Falha ao carregar dados</h2>
-                <p className="text-slate-400 mt-2 max-w-md">
+                <p className="text-slate-400 mt-2 text-sm">
                   Não foi possível preparar as informações do produto para o Mercado Livre. 
-                  Verifique se o produto possui preço e nome válidos.
                 </p>
+                
+                <div className="mt-6 p-4 bg-slate-900 border border-slate-800 rounded-md text-left overflow-auto max-h-[300px]">
+                  <p className="text-destructive font-mono text-xs break-all">
+                    {error?.toString()}
+                  </p>
+                  {error?.stack && (
+                    <pre className="mt-2 text-[10px] text-slate-500 font-mono leading-tight whitespace-pre-wrap">
+                      {error.stack}
+                    </pre>
+                  )}
+                </div>
               </div>
               <Button 
                 variant="outline" 
@@ -139,7 +149,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 Fechar Diálogo
               </Button>
             </div>
-          }
+          )}
         >
           <PublishToMercadoLivreDialogContent product={product} open={open} onOpenChange={onOpenChange} />
         </ErrorBoundary>
