@@ -293,6 +293,27 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
   }, [open, product]);
 
+  // Limpeza automática de URLs de erro no estado
+  useEffect(() => {
+    if (!open) return;
+    const isInvalid = (u: string) => typeof u === 'string' && (u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...'));
+    
+    let hasChanges = false;
+    const nextLocal = new Map(localImageUrls);
+    
+    localImageUrls.forEach((url, path) => {
+      if (isInvalid(url)) {
+        nextLocal.delete(path);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      console.warn("Limpando URLs de erro detectadas no estado local");
+      setLocalImageUrls(nextLocal);
+    }
+  }, [localImageUrls, open]);
+
   // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
   useEffect(() => {
     if (!open) return;
