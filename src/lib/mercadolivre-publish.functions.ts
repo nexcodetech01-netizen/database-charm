@@ -707,7 +707,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         mode: "me2",
         local_pick_up: false,
         free_shipping: price >= 79,
-        dimensions: `${width}x${height}x${length},${weight}`
       }
     };
 
