@@ -283,6 +283,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setAgeGroup("Adultos");
       setSeason("Permanente");
       setSelectedPhotoPaths([]);
+      setLocalImageUrls(new Map());
       autoRanRef.current = false;
     }
   }, [open, product]);
