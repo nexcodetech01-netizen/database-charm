@@ -628,6 +628,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     onToggle: (p: string) => void;
     onReprocess: (p: string, i: number) => void;
   }) {
+    const isProcessing = (uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index);
+
     const {
       attributes,
       listeners,
