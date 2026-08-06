@@ -116,7 +116,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] h-[90vh] max-w-4xl w-full fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden flex flex-col p-0 bg-slate-950 border-slate-800">
+      <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg duration-200 h-[85vh] flex flex-col overflow-hidden">
         <ErrorBoundary
           key={key}
           fallbackRender={({ error }: { error: any }) => (
@@ -151,7 +151,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             </div>
           )}
         >
-          <PublishToMercadoLivreDialogContent product={product} open={open} onOpenChange={onOpenChange} />
+          <PublishToMercadoLivreDialogContent key={product?.id} product={product} open={open} onOpenChange={onOpenChange} />
         </ErrorBoundary>
       </DialogContent>
     </Dialog>
@@ -272,7 +272,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const initialTitle = useMemo(() => (product?.name || "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
-  const [walletTarget, setWalletTarget] = useState<string>("");
+  const [walletTarget, setWalletTarget] = useState<string>(rawProductPrice > 0 ? rawProductPrice.toString() : "");
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
@@ -284,7 +284,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [description, setDescription] = useState(product?.description || "");
   const [categoryId, setCategoryId] = useState("");
   const [categoryLabel, setCategoryLabel] = useState("");
-  const [categorySearch, setCategorySearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState(initialTitle);
   const [suggestions, setSuggestions] = useState<CategoryHit[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [autoSuggested, setAutoSuggested] = useState(false);
@@ -300,7 +300,14 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [color, setColor] = useState("");
   // Marca (BRAND) e Modelo (MODEL) editáveis antes de enviar ao ML.
   const [brand, setBrand] = useState<string>("Generica");
-  const [model, setModel] = useState<string>("");
+  const [model, setModel] = useState<string>(() => {
+    const currentModel = (product?.model || "").trim();
+    if (!currentModel) {
+      const words = (product?.name || "").slice(0, 60).split(/\s+/).filter(w => w.length > 2);
+      return words[0] || "Padrão";
+    }
+    return currentModel;
+  });
   // Atributos opcionais otimizados (aumentam a nota do anúncio).
   // Enviados sempre no payload — com defaults, sobrescritos pela IA/usuário.
   const [pattern, setPattern] = useState("Liso");
@@ -315,7 +322,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState((product as any)?.video_url ?? "");
   const autoRanRef = useRef(false);
   
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
@@ -455,51 +462,13 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   });
 
 
-  // Reset state on open
+  // Reset state on open logic removed in favor of `key={product?.id}` for initializations.
+  // The state is now initialized directly in useState hooks above.
   useEffect(() => {
-    if (open && product) {
-      const t = (product?.name || "").slice(0, 60);
-      setTitle(t);
-      const rawPrice = Number(product?.price || 0);
-      setPrice(rawPrice);
-      setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
-      setPriceTouched(false);
-      setUsingMlSuggested(false);
-      setQuantity(Math.max(1, Math.floor(Number(product?.stock || 0))));
-      setDescription(product?.description || "");
-      setCategoryId("");
-      setCategoryLabel("");
-      setCategorySearch(t);
-      setSuggestions([]);
-      setAutoSuggested(false);
-      setProductType("");
-      setGender("");
-      setMaterial("");
-      setBagType("");
-      setStyle("");
-      setColor("");
-      setBrand("Generica");
-      const currentModel = (product?.model || "").trim();
-      if (!currentModel) {
-        // Extrai a primeira palavra significativa do título se modelo estiver vazio
-        const words = t.split(/\s+/).filter(w => w.length > 2);
-        setModel(words[0] || "Padrão");
-      } else {
-        setModel(currentModel);
-      }
-      setPattern("Liso");
-      setWithZipper("Sim");
-      setAgeGroup("Adultos");
-      setSeason("Permanente");
-      setSelectedPhotoPaths([]);
-      setLocalImageUrls(new Map());
-      setImgErrorMap(new Map());
-      
-      setVideoUrl((product as any)?.video_url ?? "");
-      autoRanRef.current = false;
-      publish.reset(); // Reseta estados de erro da mutação ao abrir
+    if (open) {
+      publish.reset();
     }
-  }, [open, product, publish]);
+  }, [open, publish]);
 
   // Limpeza automática de URLs de erro no estado
   useEffect(() => {
@@ -527,6 +496,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   }, [open]); // Removido localImageUrls das dependências para evitar loop infinito
 
   // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
+  // Protegido contra loop infinito comparando referências estáveis
   useEffect(() => {
     if (!open) return;
     const desired = Number(walletTarget);
@@ -543,7 +513,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     if (Math.abs(price - roundedFinal) > 0.01) {
       setPrice(roundedFinal);
     }
-  }, [walletTarget, listingType, open, price]); // Adicionado price para consistência sem loop manual
+  }, [walletTarget, listingType, open]); // Removido price das dependências
 
   // Se o preço sugerido do ML estiver disponível e o usuário não tiver definido um alvo "No Bolso",
   // aplica como padrão (só se o usuário ainda não editou manualmente).
@@ -1026,7 +996,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   return (
     <>
-      <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
+      <DialogHeader className="p-4 border-b border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
           <div className="space-y-1">
             <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
@@ -1086,7 +1056,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         ) : null}
         <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 py-4 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
+            <div className="px-4 py-3 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
@@ -1119,7 +1089,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             </div>
 
             <div className="flex-1 overflow-y-auto scrollbar-thin">
-              <TabsContent value="info" className="m-0 space-y-4 p-6 focus-visible:outline-none">
+              <TabsContent value="info" className="m-0 space-y-4 p-4 focus-visible:outline-none">
                 {/* Título */}
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between gap-2">
@@ -1579,7 +1549,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           </Tabs>
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
+        <DialogFooter className="px-4 py-4 border-t border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
             <Button
               variant="outline"
