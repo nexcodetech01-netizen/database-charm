@@ -286,6 +286,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSeason("Permanente");
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
+      setImgErrorMap(new Map());
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
