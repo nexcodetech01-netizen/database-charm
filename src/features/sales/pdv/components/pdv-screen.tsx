@@ -241,24 +241,14 @@ export function PDVScreen({
   }
 
   function handleRecoverSale(suspended: import("../lib/suspended-sales").SuspendedSale) {
-    pdv.clear();
-    // Re-hydrate pdv state. We need a way to set full state.
-    // usePDV doesn't expose a hydrate method directly, but we can add it or just reset with full state.
-    // The current reset in use-pdv.ts only takes number.
-    // Let's assume we can pass more state to RESET if we modify sale-store or just use a new action.
-    // Actually, createSaleDraftState merges overrides.
-    pdv.clear(); // clears search
-    // We need to dispatch a manual RESET with full state if usePDV allowed it.
-    // Since I can't easily change usePDV return type without more edits, 
-    // I'll ensure RESET handles full state in sale-store.ts (which it does).
-    // I need to expose it in use-pdv.ts or add an addItems / setCustomer loop.
-    
-    // Better: let's use a simpler approach for now to satisfy the "Recupera instantaneamente"
-    // by adding items one by one if needed, but the RESET with full state is better.
-    // I will update use-pdv.ts to allow full state reset.
-    
-    // For now, I'll use a hack if I don't edit use-pdv yet, but I should.
-    // Let's assume I'll add 'hydrate' to usePDV.
+    pdv.hydrate(suspended.state);
+    import("../lib/suspended-sales").then(({ removeSuspendedSale }) => {
+      removeSuspendedSale(companyId, suspended.id);
+      setSuspendedOpen(false);
+      toast.success("Venda recuperada");
+      setActiveKey(null);
+      focus.focusSearch();
+    });
   }
 
   function handlePrintReceipt() {
