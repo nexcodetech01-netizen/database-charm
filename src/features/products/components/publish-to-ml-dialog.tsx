@@ -991,8 +991,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       categoryId,
       brand,
       model,
+      listingType,
+      walletTarget: Number(walletTarget),
     } as any);
-  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
+  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model, listingType, walletTarget]);
 
   const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
