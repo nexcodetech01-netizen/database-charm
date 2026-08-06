@@ -894,7 +894,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         duration: 15000,
       });
       
-      console.error("[MercadoLivre] Falha na publicação:", message);
+      console.error("[MercadoLivre] Falha na publicação:", errorMessage);
     },
   });
 
