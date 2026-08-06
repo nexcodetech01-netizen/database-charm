@@ -14,6 +14,7 @@ import {
   Smartphone,
   Sparkles,
   Wand2,
+  Info,
 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,7 @@ import {
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
 import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
 import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
+import { validateMercadoLivreRequirements } from "../../utils/ml-validation";
 
 interface Props {
   companyId: string;
@@ -742,6 +744,25 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   };
 
   const isDuplicating = !!duplicateOf && !product;
+
+  const mlValidation = useMemo(() => {
+    return validateMercadoLivreRequirements({
+      ...product,
+      company_id: companyId,
+      name: form.name,
+      price: num(form.price),
+      ncm: form.ncm,
+      weight: num(form.weight),
+      width: num(form.width),
+      height: num(form.height),
+      length: num(form.length),
+      brand: form.brand,
+      model: form.model,
+      // No formulário, usamos a categoria do ERP, que deve ser mapeada
+      categoryId: form.category_id, 
+    });
+  }, [product, companyId, form]);
+
 
   const submit = async () => {
     // Validações estritas para duplicação: exige categoria, fornecedor e
@@ -1494,6 +1515,57 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           </Section>
 
           <Section
+            title="Checklist Mercado Livre"
+            description="Status dos requisitos obrigatórios e recomendados para publicação."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {mlValidation.requirements.map((req) => (
+                <div 
+                  key={req.id} 
+                  className={`p-3 rounded-lg border flex flex-col gap-1.5 transition-colors ${
+                    req.isValid 
+                      ? 'bg-success/5 border-success/20' 
+                      : req.critical 
+                        ? 'bg-destructive/5 border-destructive/20' 
+                        : 'bg-muted/50 border-border'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-xs font-semibold ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-foreground'}`}>
+                      {req.label}
+                    </span>
+                    {req.isValid ? (
+                      <Check className="h-3.5 w-3.5 text-success" />
+                    ) : req.critical ? (
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                    ) : (
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    {req.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {mlValidation.isReady && (
+              <div className="mt-4 p-3 bg-success/10 border border-success/30 rounded-lg flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-success" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-success">Excelente! Produto pronto para o Mercado Livre.</p>
+                  <p className="text-[10px] text-success/80">Todos os requisitos críticos foram atendidos. Qualidade atual: {mlValidation.score}%.</p>
+                </div>
+                {product?.id && (
+                  <Button size="sm" className="bg-success hover:bg-success/90 text-white border-none h-8" onClick={() => setMlDialogOpen(true)}>
+                    Publicar Agora
+                  </Button>
+                )}
+              </div>
+            )}
+          </Section>
+
+
+          <Section
             title="Identificação & Marca"
             description="Informações obrigatórias para sincronização com o Mercado Livre."
           >
@@ -2004,14 +2076,47 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
-          Cancelar
-        </Button>
-        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {product ? "Salvar alterações" : "Salvar Produto"}
-        </Button>
+      <div className="flex items-center justify-between gap-4 py-4 border-t border-border mt-6">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Qualidade ML</span>
+            <div className={`h-2 w-24 rounded-full bg-muted overflow-hidden`}>
+              <div 
+                className={`h-full transition-all ${mlValidation.score >= 80 ? 'bg-success' : mlValidation.score >= 50 ? 'bg-warning' : 'bg-destructive'}`} 
+                style={{ width: `${mlValidation.score}%` }} 
+              />
+            </div>
+            <span className={`text-xs font-bold tabular-nums ${mlValidation.score >= 80 ? 'text-success' : mlValidation.score >= 50 ? 'text-warning' : 'text-destructive'}`}>
+              {mlValidation.score}%
+            </span>
+          </div>
+          
+          <div className="h-4 w-px bg-border" />
+          
+          <div className="flex items-center gap-2">
+            {mlValidation.isReady ? (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1 py-0 px-2 h-6">
+                <Check className="h-3 w-3" />
+                Pronto para ML
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1 py-0 px-2 h-6">
+                <AlertTriangle className="h-3 w-3" />
+                Pendente ML
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {product ? "Salvar alterações" : "Salvar Produto"}
+          </Button>
+        </div>
       </div>
 
       <SupplierQuickFormDialog

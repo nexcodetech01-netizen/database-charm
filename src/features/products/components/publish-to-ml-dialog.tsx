@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,12 +45,13 @@ import {
 } from "@/lib/mercadolivre-publish.functions";
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
 import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
+import { validateMercadoLivreRequirements } from "@/features/products/utils/ml-validation";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
 import { productImagesService } from "@/features/products/services/product-images.service";
 import { formatCurrency } from "@/lib/format";
-import { AlertTriangle, Wand2 } from "lucide-react";
+import { AlertTriangle, Wand2, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Product } from "../types";
 
@@ -554,20 +554,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
 
   const validation = useMemo(() => {
-    const errors: string[] = [];
-    if (isExpired) errors.push("Integração expirada");
-    if (!categoryId) errors.push("Selecione uma categoria");
-    if (!title.trim() || title.trim().length < 25) errors.push("Título muito curto");
-    if (price <= 0) errors.push("Preço deve ser maior que zero");
-    if (quantity <= 0) errors.push("Estoque deve ser maior que zero");
-    if (selectedPhotoPaths.length === 0) errors.push("Adicione ao menos uma imagem");
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }, [isExpired, categoryId, title, price, quantity, selectedPhotoPaths]);
+    return validateMercadoLivreRequirements({
+      ...product,
+      name: title,
+      price: price,
+      stock: quantity,
+      selectedPhotoPaths,
+      categoryId,
+      brand,
+      model,
+    });
+  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
 
-  const canPublish = validation.isValid && !publish.isPending;
+  const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -578,7 +577,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
             </DialogTitle>
-            {validation.isValid ? (
+            {validation.isReady ? (
               <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
                 <Check className="h-3 w-3" />
                 Pronto para Publicar
@@ -617,6 +616,35 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         ) : null}
 
         <div className={`grid gap-4 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+          <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
+            <h4 className="text-sm font-semibold flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+              {validation.requirements.map((req) => (
+                <div key={req.id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    {req.isValid ? (
+                      <Check className="h-3 w-3 text-success" />
+                    ) : req.critical ? (
+                      <AlertTriangle className="h-3 w-3 text-destructive" />
+                    ) : (
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    <span className={`text-[11px] font-medium ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {req.label}
+                    </span>
+                  </div>
+                  {!req.isValid && (
+                    <span className="text-[10px] text-muted-foreground line-clamp-1 pl-4">
+                      {req.message}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="ml-title">Título do anúncio</Label>
