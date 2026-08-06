@@ -1,6 +1,8 @@
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export type Product = Tables<"products">;
+export type Product = Tables<"products"> & {
+  video_url?: string | null;
+};
 export type ProductInsert = TablesInsert<"products">;
 export type ProductUpdate = TablesUpdate<"products">;
 export type ProductCategory = Tables<"product_categories">;

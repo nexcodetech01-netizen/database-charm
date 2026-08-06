@@ -493,6 +493,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           model: model.trim() || undefined,
           picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
+          videoUrl: (product as any).video_url || undefined,
         },
       }),
 
