@@ -177,8 +177,6 @@ export async function processMercadoLivreNotification(
 
   const referenceNumber = `ML-${order.id}`;
 
-  const referenceNumber = `ML-${order.id}`;
-
   for (const oi of order.order_items ?? []) {
     const mlItemId = oi.item?.id;
     const qty = Number(oi.quantity ?? 0);
