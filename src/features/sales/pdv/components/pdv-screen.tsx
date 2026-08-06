@@ -21,6 +21,8 @@ import { PDVShortcutBar } from "./pdv-shortcut-bar";
 import { PDVOperationBar } from "./pdv-operation-bar";
 import { PDVSummary } from "./pdv-summary";
 import { PDVPaymentPanel } from "./pdv-payment-panel";
+import { PDVItemPriceDialog, PDVItemDiscountDialog } from "./pdv-item-dialogs";
+import type { SaleItemDraft } from "../../types";
 import { toFinancePaymentMethod } from "../lib/payments";
 import { usePdvFiscal } from "../hooks/use-pdv-fiscal";
 import {
@@ -165,6 +167,11 @@ export function PDVScreen({
     [pdv.state.items, activeKey],
   );
 
+  // Estados para diálogos de item
+  const [editingPriceItem, setEditingPriceItem] = useState<SaleItemDraft | null>(null);
+  const [editingDiscountItem, setEditingDiscountItem] = useState<SaleItemDraft | null>(null);
+  const [editingAdditionItem, setEditingAdditionItem] = useState<SaleItemDraft | null>(null);
+
   const handleAddProduct = useCallback(
     (product: Parameters<typeof pdv.addProduct>[0]) => {
       pdv.addProduct(product);
@@ -223,7 +230,14 @@ export function PDVScreen({
     enabled: access.canOperate,
     // P0.1: com qualquer diálogo aberto (recibo ou pagamento) os atalhos da
     // tela ficam suspensos — nada vaza para trás do modal nem para o browser.
-    context: { dialogOpen: receiptOpen || checkoutOpen || closeCashOpen },
+    context: { 
+      dialogOpen: receiptOpen || 
+                  checkoutOpen || 
+                  closeCashOpen || 
+                  !!editingPriceItem || 
+                  !!editingDiscountItem || 
+                  !!editingAdditionItem 
+    },
     handlers: {
       "focus-search": focus.focusSearch,
       "clear-search": () => {
@@ -359,6 +373,9 @@ export function PDVScreen({
               activeKey={effectiveActiveKey}
               onActivate={setActiveKey}
               readOnly={cartLocked}
+              onEditPrice={setEditingPriceItem}
+              onEditDiscount={setEditingDiscountItem}
+              onEditAddition={setEditingAdditionItem}
             />
 
             {pdv.stockIssues.length > 0 && (
@@ -454,6 +471,30 @@ export function PDVScreen({
           />
         </Suspense>
       ) : null}
+      
+      <PDVItemPriceDialog
+        item={editingPriceItem}
+        open={!!editingPriceItem}
+        onOpenChange={(open) => !open && setEditingPriceItem(null)}
+        onConfirm={pdv.setItemPrice}
+      />
+
+      <PDVItemDiscountDialog
+        item={editingDiscountItem}
+        open={!!editingDiscountItem}
+        onOpenChange={(open) => !open && setEditingDiscountItem(null)}
+        onConfirm={pdv.setItemDiscount}
+        type="discount"
+      />
+
+      <PDVItemDiscountDialog
+        item={editingAdditionItem}
+        open={!!editingAdditionKey}
+        onOpenChange={(open) => !open && setEditingAdditionItem(null)}
+        onConfirm={pdv.setItemAddition}
+        type="addition"
+      />
+
       {cashDialogs}
     </>
   );
