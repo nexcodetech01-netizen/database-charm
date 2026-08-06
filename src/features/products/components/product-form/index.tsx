@@ -131,6 +131,7 @@ type FormState = {
   ncm: string;
   cest: string;
   brand: string;
+  model: string;
   description: string;
   category_id: string;
   supplier_id: string;
