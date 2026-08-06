@@ -1327,7 +1327,12 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       const classicFeePct = 0.135;
                       const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
                       const classicShipping = desired >= 79 ? 24.65 : 0;
-                      const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
+                      
+                      let classicFinal = desired > 0 ? (desired + classicShipping) / (1 - classicFeePct) : 0;
+                      if (classicFinal > 0 && classicFinal < 79) {
+                        classicFinal = (desired + 6.5 + classicShipping) / (1 - classicFeePct);
+                      }
+                      
                       const premiumFeePct = 0.15; 
                       const premiumFinal = desired > 0 ? (desired + classicShipping) / (1 - premiumFeePct) : 0;
 
