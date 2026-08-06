@@ -22,6 +22,9 @@ export type SaleAction =
   | { type: "ADD_ITEM"; item: SaleItemDraft }
   | { type: "UPDATE_ITEM"; uiKey: string; patch: Partial<SaleItemDraft> }
   | { type: "REMOVE_ITEM"; uiKey: string }
+  | { type: "UPDATE_ITEM_PRICE"; uiKey: string; price: number; reason?: string }
+  | { type: "UPDATE_ITEM_DISCOUNT"; uiKey: string; discount: number }
+  | { type: "UPDATE_ITEM_ADDITION"; uiKey: string; addition: number }
   | { type: "HYDRATE"; state: SaleDraftState }
   | { type: "RESET"; state?: Partial<SaleDraftState> };
 
@@ -75,6 +78,33 @@ export function saleReducer(
       return {
         ...state,
         items: state.items.filter((it) => it.ui_key !== action.uiKey),
+      };
+    case "UPDATE_ITEM_PRICE":
+      return {
+        ...state,
+        items: state.items.map((it) =>
+          it.ui_key === action.uiKey
+            ? {
+                ...it,
+                unit_price: action.price,
+                original_unit_price: it.original_unit_price ?? it.unit_price,
+              }
+            : it,
+        ),
+      };
+    case "UPDATE_ITEM_DISCOUNT":
+      return {
+        ...state,
+        items: state.items.map((it) =>
+          it.ui_key === action.uiKey ? { ...it, discount: action.discount } : it,
+        ),
+      };
+    case "UPDATE_ITEM_ADDITION":
+      return {
+        ...state,
+        items: state.items.map((it) =>
+          it.ui_key === action.uiKey ? { ...it, addition: action.addition } : it,
+        ),
       };
     case "HYDRATE":
       return { ...action.state };
