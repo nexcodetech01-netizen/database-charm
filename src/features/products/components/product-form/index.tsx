@@ -844,6 +844,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       ncm: normalizeNcm(form.ncm) || null,
       cest: normalizeCest(form.cest) || null,
       brand: toTitleCasePtBr(form.brand) || null,
+      model: form.model.trim() || null,
       description: form.description.trim() || null,
       category_id: resolvedCategoryId,
       supplier_id: form.supplier_id || null,
