@@ -160,7 +160,7 @@ type FormState = {
 const empty: FormState = {
   name: "",
   sku: "",
-  barcode: "",
+  barcode: "SEM GTIN",
   ncm: "",
   cest: "",
   brand: "",
@@ -179,7 +179,7 @@ const empty: FormState = {
   margin: "",
   use_category_margin: true,
   price: "0",
-  stock: "0",
+  stock: "1",
   min_stock: "0",
   tags: [],
   weight: "",
