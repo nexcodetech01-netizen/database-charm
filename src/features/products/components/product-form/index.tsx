@@ -1594,7 +1594,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   </div>
                 ) : null}
 
-                {!fiscal.historySuggestions.length && !fiscal.masterSuggestions.length && !fiscal.masterLoading && name.length >= 3 && (
+                {!fiscal.historySuggestions.length && !fiscal.masterSuggestions.length && !fiscal.masterLoading && name.length >= 3 ? (
                   <p className="mt-2 text-[10px] text-muted-foreground italic">
                     Nenhuma sugestão encontrada para "{name}". Tente selecionar uma categoria ou digite o NCM manualmente.
                   </p>
