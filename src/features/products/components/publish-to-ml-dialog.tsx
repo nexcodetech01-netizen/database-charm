@@ -294,8 +294,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
     const isPremium = listingType === "gold_pro";
     const feePct = isPremium ? 0.185 : 0.135;
-    const fixedFee = desired < 79 ? 6.5 : 0;
-    const shipping = desired < 79 ? 0 : 23.5;
+    const fixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
+    const shipping = desired >= 79 ? 23.5 : 0;
     const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
     const roundedFinal = Number(calculatedFinal.toFixed(2));
 
