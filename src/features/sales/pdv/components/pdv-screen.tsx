@@ -449,6 +449,7 @@ export function PDVScreen({
               onEditPrice={setEditingPriceItem}
               onEditDiscount={setEditingDiscountItem}
               onEditAddition={setEditingAdditionItem}
+              onEditNotes={setEditingNotesItem}
             />
 
             {pdv.stockIssues.length > 0 && (
