@@ -1106,9 +1106,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </div>
 
           <div className="grid gap-4 border-t border-border pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-              <div className="grid gap-2">
-                <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold">
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 items-end">
+              <div className="grid gap-2 w-full">
+                <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold text-sm sm:text-base">
                   Quanto você quer receber no bolso? (R$)
                 </Label>
                 <div className="relative">
