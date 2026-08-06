@@ -43,7 +43,7 @@ import {
   predictMercadoLivreCategory,
 } from "@/lib/mercadolivre-publish.functions";
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
-import { getMercadoLivreIntegration } from "@/lib/mercadolivre.functions";
+import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
