@@ -638,7 +638,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
+        className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 ${
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
         }`}
       >
@@ -679,7 +679,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         />
 
         {/* Badge de Posição */}
-        <span className="absolute left-1 top-1 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-sm">
+        <span className="absolute left-1 top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm sm:h-4 sm:w-4 sm:text-[9px]">
           {index + 1}
         </span>
 
@@ -690,7 +690,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             e.stopPropagation();
             onToggle(path);
           }}
-          className="absolute right-1 top-1 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-destructive"
+          className="absolute right-1 top-1 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-100 shadow-sm transition-opacity sm:h-5 sm:w-5 sm:opacity-0 group-hover:opacity-100 hover:bg-destructive"
           title="Remover foto"
         >
           <X className="h-3 w-3" />
@@ -891,10 +891,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
             </DialogTitle>
@@ -936,7 +936,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </Alert>
         ) : null}
 
-        <div className={`grid gap-4 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
             <h4 className="text-sm font-semibold flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
@@ -1013,7 +1013,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               className="hidden"
               onChange={handleFileSelected}
             />
-            <div className="grid grid-cols-5 gap-2">
+            <div className="flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0 scrollbar-hide">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -1047,7 +1047,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         type="button"
                         onClick={() => openFilePicker(slot)}
                         disabled={uploadPhoto.isPending}
-                        className="flex aspect-square items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex aspect-square min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
                         title={`Adicionar foto ${slot + 1}`}
                       >
                         {isUploadingHere ? (
@@ -1071,7 +1071,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   <p className="text-[11px] font-medium text-muted-foreground">
                     Fotos já cadastradas neste produto (clique para incluir):
                   </p>
-                  <div className="grid grid-cols-8 gap-1.5">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-8 sm:overflow-x-visible">
                     {unselected.map((path) => {
                       const url = photoUrlByPath.get(path);
                       return (
@@ -1079,7 +1079,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                           key={path}
                           type="button"
                           onClick={() => togglePhoto(path)}
-                          className="aspect-square overflow-hidden rounded border border-border transition hover:border-primary"
+                          className="aspect-square w-12 h-12 sm:w-auto sm:h-auto overflow-hidden rounded border border-border transition hover:border-primary shrink-0"
                         >
                           {url ? (
                             <img
@@ -1106,9 +1106,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </div>
 
           <div className="grid gap-4 border-t border-border pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-              <div className="grid gap-2">
-                <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold">
+            <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 items-end">
+              <div className="grid gap-2 w-full">
+                <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold text-sm sm:text-base">
                   Quanto você quer receber no bolso? (R$)
                 </Label>
                 <div className="relative">
@@ -1126,8 +1126,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="ml-qty" className="font-semibold">Estoque disponível</Label>
+              <div className="grid gap-2 w-full">
+                <Label htmlFor="ml-qty" className="font-semibold text-sm sm:text-base">Estoque disponível</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="ml-qty"
@@ -1145,7 +1145,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(() => {
                 const desired = Number(walletTarget);
                 // Preços calculados para exibição nos cards
@@ -1163,20 +1163,20 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     <button
                       type="button"
                       onClick={() => setListingType("gold_special")}
-                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative ${
+                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative min-h-[44px] ${
                         listingType === "gold_special"
                           ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
                           : "border-border hover:border-primary/40 hover:bg-muted/50"
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
                         {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
                       </div>
-                      <span className="text-xl font-black text-primary">
+                      <span className="text-lg sm:text-xl font-black text-primary">
                         {classicFinal > 0 ? formatCurrency(classicFinal) : "---"}
                       </span>
-                      <p className="text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
                         Comissão 13,5% | Parcelado c/ juros
                       </p>
                     </button>
@@ -1184,20 +1184,20 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     <button
                       type="button"
                       onClick={() => setListingType("gold_pro")}
-                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative ${
+                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative min-h-[44px] ${
                         listingType === "gold_pro"
                           ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
                           : "border-border hover:border-primary/40 hover:bg-muted/50"
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Premium 💳</span>
-                        <Badge className="text-[8px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
+                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Premium 💳</span>
+                        <Badge className="text-[8px] sm:text-[9px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
                       </div>
-                      <span className="text-xl font-black text-primary">
+                      <span className="text-lg sm:text-xl font-black text-primary">
                         {premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}
                       </span>
-                      <p className="text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
                         12x Sem Juros + Exposição Máxima
                       </p>
                     </button>
@@ -1223,7 +1223,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   type="number"
                   min={0.01}
                   step="0.01"
-                  className="h-12 font-mono text-xl font-black text-foreground bg-background border-2 focus-visible:ring-primary"
+                  className="h-12 font-mono text-lg sm:text-xl font-black text-foreground bg-background border-2 focus-visible:ring-primary"
                   value={price}
                   onChange={(e) => {
                     setPrice(Number(e.target.value));
@@ -1639,25 +1639,32 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </div>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={publish.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={() => publish.mutate()} disabled={!canPublish}>
-            {publish.isPending ? (
-              <>
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Publicando…
-              </>
-            ) : (
-              <>
-                <ExternalLink className="mr-1.5 h-4 w-4" /> Publicar no Mercado Livre
-              </>
-            )}
-          </Button>
+        <DialogFooter className="p-4 sm:p-6 border-t border-border bg-background shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={publish.isPending}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => publish.mutate()} 
+              disabled={!canPublish}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              {publish.isPending ? (
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Publicando…
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-1.5 h-4 w-4" /> Publicar no Mercado Livre
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
