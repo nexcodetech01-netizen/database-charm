@@ -269,6 +269,7 @@ export function resolveClosedListValue(
 export function sanitizeMlTitle(rawTitle: string | null | undefined): string {
   return (rawTitle ?? "")
     .replace(/[–—]/g, "-")
+    .replace(/\bT&G\b|\bTG\b/gi, "") // Remove 'T&G' ou 'TG' como palavra isolada
     .replace(/[^\w\s\-.áéíóúÁÉÍÓÚãõÃÕâêîôûÂÊÎÔÛçÇ]/g, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -386,7 +387,10 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     const price = data.price ?? Number((product as { price: number }).price ?? 0);
     const availableQuantity =
       data.availableQuantity ?? Math.max(0, Math.floor(Number((product as { stock: number }).stock ?? 0)));
-    const description = data.description ?? ((product as { description: string | null }).description ?? "");
+    const description = (data.description ?? ((product as { description: string | null }).description ?? ""))
+      .replace(/\bT&G\b|\bTG\b/gi, "") // Remove 'T&G' ou 'TG' da descrição
+      .replace(/\s+/g, " ")
+      .trim();
 
     // BRAND dinâmica: prioriza override enviado no payload (edição no diálogo
     // de publicação); depois o valor cadastrado no produto; depois o nome do
@@ -637,13 +641,19 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // 3) GTIN e EMPTY_GTIN_REASON só podem existir com valor válido;
     //    quando o EAN não está cadastrado, ambos devem ser removidos.
     const sanitizedAttrs = filterMlFamilyNameAttribute(baseAttrs).filter((a) => {
+      // Lista de atributos que devem ser removidos do array attributes (enviados em shipping ou omitidos)
+      const forbiddenIds = ["PACKAGE_LENGTH", "PACKAGE_WIDTH", "PACKAGE_HEIGHT", "PACKAGE_WEIGHT"];
+      if (forbiddenIds.includes(a.id)) return false;
+
       if (a.id === "GTIN" || a.id === "EMPTY_GTIN_REASON") {
         const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
         const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
         
-        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", nulo ou vazio, remove o GTIN e envia motivo apropriado
+        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", "SEM EAN", nulo ou vazio, remove o GTIN
         if (a.id === "GTIN") {
-          const isInvalid = !v || v === "SEM GTIN" || /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
+          const isInvalid = !v || 
+            /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(v) || 
+            /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
           if (isInvalid) return false;
         }
         
