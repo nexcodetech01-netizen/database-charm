@@ -679,12 +679,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         ) : null}
         
         {/* Grip handle for drag */}
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
-          title="Arraste para reordenar"
-        />
+        {!isProcessing && (
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+            title="Arraste para reordenar"
+          />
+        )}
 
         {/* Badge de Posição */}
         <span className="absolute left-1 top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm sm:h-4 sm:w-4 sm:text-[9px]">
