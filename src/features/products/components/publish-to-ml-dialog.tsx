@@ -166,6 +166,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const rawProductPrice = Number(product.price ?? 0);
   const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
+  const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
@@ -231,7 +232,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand(((product as { brand?: string | null }).brand ?? "").trim() || "T&G");
-      setModel("");
+      const currentModel = ((product as any).model ?? "").trim();
+      if (!currentModel) {
+        // Extrai a primeira palavra significativa do título se modelo estiver vazio
+        const words = t.split(/\s+/).filter(w => w.length > 2);
+        setModel(words[0] || "Padrão");
+      } else {
+        setModel(currentModel);
+      }
       setPattern("Liso");
       setWithZipper("Sim");
       setAgeGroup("Adultos");
