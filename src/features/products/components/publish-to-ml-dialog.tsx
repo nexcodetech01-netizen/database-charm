@@ -1302,6 +1302,16 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
               <TabsContent value="price" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 <div className="grid gap-4">
+                  {validation.requirements.find(r => r.id === "price_formula")?.isValid === false && (
+                    <Alert variant="destructive" className="py-2 bg-destructive/10 border-destructive/20">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle className="text-xs font-bold uppercase">Preço Insuficiente</AlertTitle>
+                      <AlertDescription className="text-[11px]">
+                        O preço de venda atual não cobre as taxas de comissão e o frete fixo/grátis (R$ 24,65). 
+                        Aumente o preço ou escolha uma modalidade com menor custo.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {/* Cards de Modalidade */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(() => {
