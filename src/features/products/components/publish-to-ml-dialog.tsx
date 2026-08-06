@@ -671,7 +671,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         )}
         
         {/* Loader de Otimização */}
-        {(uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index) ? (
+        {isProcessing ? (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/70 text-white backdrop-blur-[2px]">
             <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
             <span className="text-[10px] font-bold uppercase tracking-widest px-2 text-center drop-shadow-md">Processando IA...</span>
