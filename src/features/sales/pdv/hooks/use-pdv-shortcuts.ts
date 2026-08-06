@@ -213,7 +213,8 @@ export function createPdvShortcutHandler(
   getContext: () => PdvShortcutContext = () => ({}),
 ) {
   return function onKeyDown(event: MinimalEvent) {
-    const action = resolvePdvShortcut(event, getContext());
+    const context = getContext();
+    const action = resolvePdvShortcut(event, context) || resolvePdvCombinedShortcut(event, context);
     const owned = isPdvOwnedKey(event);
     if (action || owned) event.preventDefault?.();
     if (!action) return;
