@@ -706,29 +706,30 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
     if (!itemRes.ok) {
-      let parsedErr: { message?: string; error?: string; cause?: any[] } = {};
+      let parsedErr: any = {};
       try {
         parsedErr = JSON.parse(itemText);
-      } catch {}
+      } catch {
+        parsedErr = { error: "raw_response", message: itemText };
+      }
 
-      // Extrai a causa específica se houver (ex.: erro de GTIN)
-      const cause = Array.isArray(parsedErr.cause) 
-        ? parsedErr.cause.map((c: any) => c.message || c.code).join(", ") 
-        : "";
-
-      const friendlyMessage = parsedErr.message || "Erro desconhecido na API do Mercado Livre";
-      
       console.error("[mercadolivre] POST /items falhou:", itemRes.status, itemText);
 
       // 403 seller.unable_to_list → conta com pendências (cadastro/fiscal/termos).
-      const rawBlob = `${parsedErr.error ?? ""} ${parsedErr.message ?? ""} ${itemText}`.toLowerCase();
+      const rawBlob = (itemText || "").toLowerCase();
       if (itemRes.status === 403 || rawBlob.includes("unable_to_list")) {
         throw new Error(
-          "Sua conta do Mercado Livre não está autorizada a publicar anúncios no momento. Verifique se há pendências de cadastro, validação fiscal ou aceite de termos diretamente no painel do Mercado Livre.",
+          "Sua conta do Mercado Livre não está autorizada a publicar anúncios no momento. Verifique se há pendências de cadastro, validação fiscal ou aceite de termos diretamente no painel do Mercado Livre."
         );
       }
 
-      throw new Error(`${friendlyMessage}${cause ? ` | detalhe: ${cause}` : ""}`);
+      // Conforme solicitação: exibir resposta COMPLETA da API
+      // Incluímos um marcador [ML_ERROR] para o frontend identificar e formatar se desejar,
+      // mas garantimos que o JSON completo esteja na mensagem.
+      const friendlyMessage = parsedErr.message || "Erro na API do Mercado Livre";
+      const fullDetails = JSON.stringify(parsedErr, null, 2);
+      
+      throw new Error(`[ML_ERROR] ${friendlyMessage}\n\nDetalhamento Completo:\n${fullDetails}`);
     }
 
     const item = JSON.parse(itemText) as {
