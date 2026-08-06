@@ -648,10 +648,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             alt=""
             className="h-full w-full object-cover"
             loading="lazy"
-            onClick={(e) => {
-              e.stopPropagation();
-              openFilePicker(index);
-            }}
           />
         ) : (
           <div 
