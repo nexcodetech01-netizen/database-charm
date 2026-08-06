@@ -663,6 +663,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     onReprocess: (p: string, i: number) => void;
   }) {
     const isProcessing = (uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index);
+    const hasError = imgErrorMap.get(path) === true;
 
     const {
       attributes,
@@ -680,8 +681,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       pointerEvents: isProcessing ? 'none' as const : 'auto' as const,
     };
 
-    const [imgError, setImgError] = useState(false);
-
     return (
       <div
         ref={setNodeRef}
@@ -690,7 +689,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
         } ${isProcessing ? "cursor-wait" : ""}`}
       >
-        {url && !imgError ? (
+        {url && !hasError ? (
           <img
             src={url}
             alt=""
@@ -698,7 +697,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             loading="lazy"
             onError={() => {
               console.error("Erro ao carregar imagem no slot", index + 1, url);
-              setImgError(true);
+              setImgErrorMap(prev => new Map(prev).set(path, true));
             }}
           />
         ) : (
@@ -706,7 +705,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             className="h-full w-full bg-muted cursor-pointer flex items-center justify-center"
             onClick={() => openFilePicker(index)}
           >
-            <span className="text-muted-foreground text-xs">{imgError ? "Erro Carregamento" : "Vazio"}</span>
+            <span className="text-muted-foreground text-[10px] text-center px-1">
+              {hasError ? "Erro Carregamento" : "Vazio"}
+            </span>
           </div>
         )}
         
