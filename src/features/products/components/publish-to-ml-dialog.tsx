@@ -1073,9 +1073,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   </span>
                 ) : null}
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary">
+                  <Label htmlFor="ml-wallet-target" className="flex items-center gap-1.5 text-primary font-semibold">
                     Quanto você quer receber no bolso? (R$)
                   </Label>
                   <Input
@@ -1084,18 +1084,93 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     min={0}
                     step="0.01"
                     placeholder="Ex: 40.00"
-                    className="border-primary/40 focus-visible:ring-primary"
+                    className="h-11 border-primary/40 text-lg focus-visible:ring-primary"
                     value={walletTarget}
                     onChange={(e) => setWalletTarget(e.target.value)}
                   />
-                  <p className="text-[10px] text-muted-foreground">
-                    Calcularemos o preço final cobrindo comissões e frete.
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Digite o valor líquido desejado. Calcularemos as taxas automaticamente.
                   </p>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="ml-price" className="flex items-center gap-1.5">
-                    Preço Final (BRL)
+                {/* Cards de Opção de Anúncio (Clássico vs Premium) */}
+                {(() => {
+                  const desired = Number(walletTarget);
+                  if (!(desired > 0)) return null;
+
+                  // Cálculo Clássico (13.5%)
+                  const classicFeePct = 0.135;
+                  const classicFixedFee = desired < 79 ? 6.5 : 0;
+                  const classicShipping = desired < 79 ? 0 : 23.5;
+                  const classicFinal = (desired + classicFixedFee + classicShipping) / (1 - classicFeePct);
+
+                  // Cálculo Premium (18.5%)
+                  const premiumFeePct = 0.185;
+                  const premiumFixedFee = desired < 79 ? 6.5 : 0;
+                  const premiumShipping = desired < 79 ? 0 : 23.5;
+                  const premiumFinal = (desired + premiumFixedFee + premiumShipping) / (1 - premiumFeePct);
+
+                  return (
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrice(Number(classicFinal.toFixed(2)));
+                          setListingType("gold_special");
+                          setPriceTouched(true);
+                          setUsingMlSuggested(false);
+                          toast.success("Plano Clássico selecionado");
+                        }}
+                        className={`flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                          listingType === "gold_special"
+                            ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
+                            : "border-border hover:border-primary/40 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
+                        </div>
+                        <span className="text-xl font-black text-primary">
+                          {formatCurrency(classicFinal)}
+                        </span>
+                        <p className="text-[10px] leading-tight text-muted-foreground mt-1">
+                          Comissão 13,5% | Parcelado c/ juros
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrice(Number(premiumFinal.toFixed(2)));
+                          setListingType("gold_pro");
+                          setPriceTouched(true);
+                          setUsingMlSuggested(false);
+                          toast.success("Plano Premium selecionado");
+                        }}
+                        className={`flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                          listingType === "gold_pro"
+                            ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
+                            : "border-border hover:border-primary/40 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Anúncio Premium 💳</span>
+                          <Badge className="text-[8px] h-3.5 px-1 bg-amber-500 hover:bg-amber-600 border-none">Destaque</Badge>
+                        </div>
+                        <span className="text-xl font-black text-primary">
+                          {formatCurrency(premiumFinal)}
+                        </span>
+                        <p className="text-[10px] leading-tight text-muted-foreground mt-1">
+                          12x Sem Juros + Exposição Máxima
+                        </p>
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                <div className="grid gap-2 pt-2 border-t border-dashed border-border">
+                  <Label htmlFor="ml-price" className="flex items-center gap-1.5 text-xs font-medium">
+                    Preço Final de Venda (BRL)
                     {usingMlSuggested && !priceTouched ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                         <Sparkles className="h-3 w-3" /> Sugerido
@@ -1107,6 +1182,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     type="number"
                     min={0.01}
                     step="0.01"
+                    className="font-mono font-bold text-muted-foreground bg-muted/30"
                     value={price}
                     onChange={(e) => {
                       setPrice(Number(e.target.value));
@@ -1116,84 +1192,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   />
                 </div>
               </div>
-
-              {/* Cards de Opção de Anúncio (Clássico vs Premium) */}
-              {(() => {
-                const desired = Number(walletTarget);
-                if (!(desired > 0)) return null;
-
-                // Cálculo Clássico (13.5%)
-                const classicFeePct = 0.135;
-                const classicFixedFee = desired < 79 ? 6.5 : 0;
-                const classicShipping = desired < 79 ? 0 : 23.5;
-                const classicFinal = (desired + classicFixedFee + classicShipping) / (1 - classicFeePct);
-
-                // Cálculo Premium (18.5%)
-                const premiumFeePct = 0.185;
-                const premiumFixedFee = desired < 79 ? 6.5 : 0;
-                const premiumShipping = desired < 79 ? 0 : 23.5;
-                const premiumFinal = (desired + premiumFixedFee + premiumShipping) / (1 - premiumFeePct);
-
-                // Sincroniza o preço final se o usuário não tocou ou se está alternando tipos
-                // mas sem entrar em loop. Usamos useEffect para efeitos colaterais.
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPrice(Number(classicFinal.toFixed(2)));
-                        setListingType("gold_special");
-                        setPriceTouched(true);
-                        setUsingMlSuggested(false);
-                        toast.success("Plano Clássico selecionado");
-                      }}
-                      className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
-                        listingType === "gold_special"
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span className="text-sm font-bold">Clássico</span>
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1">Parcelado c/ Juros</Badge>
-                      </div>
-                      <span className="text-lg font-black text-primary">
-                        {formatCurrency(classicFinal)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1">
-                        Taxa {classicFeePct * 100}% + {formatCurrency(classicFixedFee + classicShipping)} custos
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPrice(Number(premiumFinal.toFixed(2)));
-                        setListingType("gold_pro");
-                        setPriceTouched(true);
-                        setUsingMlSuggested(false);
-                        toast.success("Plano Premium selecionado");
-                      }}
-                      className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
-                        listingType === "gold_pro"
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span className="text-sm font-bold">Premium</span>
-                        <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">12x Sem Juros</Badge>
-                      </div>
-                      <span className="text-lg font-black text-primary">
-                        {formatCurrency(premiumFinal)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1">
-                        Taxa {premiumFeePct * 100}% + {formatCurrency(premiumFixedFee + premiumShipping)} custos
-                      </span>
-                    </button>
-                  </div>
-                );
-              })()}
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
                 {pricingQuery.isLoading ? (
