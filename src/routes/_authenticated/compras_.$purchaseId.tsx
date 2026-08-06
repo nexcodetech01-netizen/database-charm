@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
   ArrowLeft,
@@ -34,6 +34,13 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId")({
 
 function PurchaseDetailPage() {
   const { purchaseId } = Route.useParams();
+  const isEditing = window.location.pathname.endsWith("/editar");
+
+  if (isEditing) {
+    return <Outlet />;
+  }
+
+
   const { data: purchase, isLoading } = usePurchase(purchaseId);
   const setStatus = useSetPurchaseStatus();
   const reprocess = useReprocessPurchaseReceipt();
