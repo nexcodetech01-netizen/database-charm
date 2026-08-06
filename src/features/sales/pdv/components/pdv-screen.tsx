@@ -492,7 +492,6 @@ export function PDVScreen({
                   fiscal={fiscal}
                   fiscalPending={fiscalPending}
                   onRetryFiscal={() => void pdvFiscal.issue(completed.id)}
-            onOpenNotes={() => setSaleNotesOpen(true)}
           />
               </Suspense>
             ) : (
