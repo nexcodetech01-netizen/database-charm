@@ -1728,7 +1728,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Preço de venda base (R$)
+                    Preço de venda base (R$) *
                   </Label>
                   <div className="mt-1.5">
                     <NumInput value={form.price} onChange={(v) => set("price", v)} />
