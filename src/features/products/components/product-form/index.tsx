@@ -99,15 +99,14 @@ interface Props {
 const schema = z.object({
   name: z.string().trim().min(1, "Nome obrigatório").max(200),
   sku: z.string().trim().min(1, "SKU obrigatório").max(80),
-  barcode: z.string().trim().max(80).optional().or(z.literal("")),
+  barcode: z.string().trim().min(1, "EAN/GTIN obrigatório (use 'SEM GTIN' se isento)").max(80),
   // NCM/CEST aceitam entrada formatada (4202.21.00) — só os dígitos são validados.
   ncm: z.preprocess(
     (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
     z
       .string()
-      .regex(/^\d{8}$/, "NCM deve ter 8 dígitos")
-      .optional()
-      .or(z.literal("")),
+      .regex(/^\d{8}$/, "NCM deve ter exatamente 8 dígitos")
+      .min(1, "NCM obrigatório"),
   ),
   cest: z.preprocess(
     (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
@@ -117,7 +116,8 @@ const schema = z.object({
       .optional()
       .or(z.literal("")),
   ),
-  brand: z.string().trim().max(120).optional().or(z.literal("")),
+  brand: z.string().trim().min(1, "Marca obrigatória").max(120),
+  model: z.string().trim().min(1, "Modelo obrigatório").max(120),
   weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
   width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
   height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
