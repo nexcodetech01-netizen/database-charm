@@ -522,7 +522,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
         if (res.success && res.processedImages[0]) {
           const mainProcessed = res.processedImages[0];
-          const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+          const isInvalid = (u: string) => typeof u === 'string' && (
+            u.toLowerCase().startsWith('failed') || 
+            u.toLowerCase().startsWith('error') || 
+            u.toLowerCase().includes('background...')
+          );
           
           if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
             finalUrl = mainProcessed.processedUrl;
