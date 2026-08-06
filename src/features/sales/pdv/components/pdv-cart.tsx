@@ -7,6 +7,7 @@ import { PDV_LAYOUT } from "../lib/layout";
 import { pdvQuantityInputId } from "../lib/focus";
 import { computeItemTotal, type SaleItemDraft } from "../../types";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type Props = {
   items: SaleItemDraft[];
@@ -250,6 +251,7 @@ export function PDVCart({
   onEditPrice,
   onEditDiscount,
   onEditAddition,
+  onEditNotes,
 }: Props) {
   return (
     <div className="flex flex-col rounded-xl border bg-card shadow-sm">
@@ -296,6 +298,7 @@ export function PDVCart({
                 onEditPrice={onEditPrice}
                 onEditDiscount={onEditDiscount}
                 onEditAddition={onEditAddition}
+                onEditNotes={onEditNotes}
               />
             );
           })}

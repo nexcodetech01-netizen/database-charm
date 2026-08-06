@@ -33,6 +33,7 @@ export type UsePDV = {
   setItemAddition: (uiKey: string, addition: number) => void;
   setItemNotes: (uiKey: string, notes: string) => void;
   setNotes: (notes: string) => void;
+  hydrate: (state: SaleDraftState) => void;
   clear: () => void;
 };
 
@@ -131,6 +132,10 @@ export function usePDV(companyId: string): UsePDV {
     dispatch({ type: "SET_NOTES", value: notes });
   }, []);
 
+  const hydrate = useCallback((newState: SaleDraftState) => {
+    dispatch({ type: "HYDRATE", state: newState });
+  }, []);
+
   const clear = useCallback(() => {
     dispatch({ type: "RESET", state: { number: nextPdvSaleNumber() } });
     setSearch("");
@@ -154,6 +159,7 @@ export function usePDV(companyId: string): UsePDV {
     setItemAddition,
     setItemNotes,
     setNotes,
+    hydrate,
     clear,
   };
 }
