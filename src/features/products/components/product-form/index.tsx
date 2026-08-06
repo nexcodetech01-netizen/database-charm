@@ -118,10 +118,12 @@ const schema = z.object({
   ),
   brand: z.string().trim().min(1, "Marca obrigatória").max(120),
   model: z.string().trim().min(1, "Modelo obrigatório").max(120),
-  weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
-  width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
-  height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
-  length: z.preprocess((v) => num(v as any), z.number().positive("Comprimento deve ser maior que zero")),
+  weight: z.preprocess((v) => num(v as any), z.number().min(0, "Peso não pode ser negativo").optional().default(0.3)),
+  width: z.preprocess((v) => num(v as any), z.number().min(0, "Largura não pode ser negativa").optional().default(15)),
+  height: z.preprocess((v) => num(v as any), z.number().min(0, "Altura não pode ser negativa").optional().default(15)),
+  length: z.preprocess((v) => num(v as any), z.number().min(0, "Comprimento não pode ser negativo").optional().default(15)),
+  category_id: z.string().min(1, "Categoria obrigatória"),
+  price: z.preprocess((v) => num(v as any), z.number().positive("Preço de venda deve ser maior que zero")),
 });
 
 type FormState = {
