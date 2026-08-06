@@ -127,6 +127,11 @@ export class ProductRepository {
   }
 
   async insert(input: ProductInsert): Promise<Product> {
+    // Sanitização de marca
+    const brand = (input.brand ?? "").trim();
+    if (!brand || brand.toLowerCase() === "tg") {
+      input.brand = "Generica";
+    }
     // company_id é responsabilidade do Service (nunca do payload do usuário)
     const { data, error } = await this.supabase
       .from("products")

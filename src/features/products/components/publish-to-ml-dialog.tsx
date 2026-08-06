@@ -273,7 +273,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setColor("");
       const currentBrand = ((product as { brand?: string | null }).brand ?? "").trim();
       const forbiddenBrands = ["47 Street", "Tg", "TG", "T&G"];
-      const isForbidden = forbiddenBrands.some(b => currentBrand.toLowerCase().includes(b.toLowerCase()));
+      const isForbidden = forbiddenBrands.some(b => currentBrand.toLowerCase() === b.toLowerCase());
       setBrand(currentBrand && !isForbidden ? currentBrand : "Generica");
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {

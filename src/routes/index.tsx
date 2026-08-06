@@ -49,20 +49,20 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO URGENTE DO FIELD 'BRAND'</h2>
+          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: AUDITORIA E CORREÇÃO DE MARCA (BRAND = "TG")</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. REMOÇÃO DE AUTOCOMPLETE/DEFAULT:</h3>
+              <h3 className="font-medium text-primary">1. AUDITORIA NO BANCO DE DADOS:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>O campo 'Marca' não é mais preenchido automaticamente com sugestões da API.</li>
-                <li>O valor inicial foi definido como "Generica" para garantir a publicação imediata.</li>
+                <li>Update executado em todos os produtos onde a marca era "TG" (substituído por "Generica").</li>
+                <li>Garantia de integridade para anúncios novos e existentes.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. OVERWRITE FORCE:</h3>
+              <h3 className="font-medium text-primary">2. SANITIZAÇÃO NO CADASTRO:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Implementado fallback forçado para "Generica" se o campo estiver vazio ou for inválido.</li>
-                <li>Eliminação definitiva de marcas temporárias (ex: "47 Street", "Tg").</li>
+                <li>Nova regra de negócio: qualquer produto novo com marca "TG" ou vazia é salvo como "Generica".</li>
+                <li>Aplicado tanto no serviço legado quanto no repositório V2.</li>
               </ul>
             </section>
           </div>
