@@ -116,7 +116,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-slate-950 border-slate-800 h-[90vh] flex flex-col">
+      <DialogContent className="max-h-[90vh] h-[90vh] max-w-4xl w-full fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden flex flex-col p-0 bg-slate-950 border-slate-800">
         <ErrorBoundary
           key={key}
           fallbackRender={({ error }: { error: any }) => (
