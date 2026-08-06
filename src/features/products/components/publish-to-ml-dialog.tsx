@@ -74,6 +74,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const publishFn = useServerFn(publishProductToMercadoLivre);
   const integrationFn = useServerFn(getMercadoLivreIntegration);
   const generateDescFn = useServerFn(generateMercadoLivreDescription);
+  const getCategoryAttrsFn = useServerFn(getMercadoLivreCategoryAttributes);
 
   // Status da integração: bloqueia publicação se expirado
   const integrationQuery = useQuery({
