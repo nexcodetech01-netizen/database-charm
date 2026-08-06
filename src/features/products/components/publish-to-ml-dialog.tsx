@@ -178,8 +178,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const mlSuggestedPrice = useMemo(() => {
     const snap = pricingQuery.data;
     if (!snap) return null;
-    const costTotal = snap.product.costTotalCents / 100;
-    const currentStorePrice = snap.product.currentPriceCents / 100;
+    const costTotal = (snap.product?.costTotalCents ?? 0) / 100;
+    const currentStorePrice = (snap.product?.currentPriceCents ?? 0) / 100;
     const targetMarginPct = snap.targetMarginPct;
     const mlChan = channelSettingsQuery.data?.channels?.ml;
     const globalStrategy = channelSettingsQuery.data?.globalStrategy ?? "policy";
@@ -198,8 +198,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       // MOTOR ÚNICO — o preço que preserva o lucro da loja é resolvido pelo motor.
       const solved = solvePriceForTargetProfit(
         {
-          companyId: product.company_id,
-          productId: product.id,
+          companyId: product?.company_id ?? "",
+          productId: product?.id ?? "",
           costs: { acquisition: costTotal },
           margins: { minPct: 0, targetPct: marginPct },
           fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
@@ -212,8 +212,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     } else {
       // MOTOR ÚNICO (FASE 1/2) — nenhuma fórmula local.
       const official = computeOfficialPricing({
-        companyId: product.company_id,
-        productId: product.id,
+        companyId: product?.company_id ?? "",
+        productId: product?.id ?? "",
         costs: { acquisition: costTotal },
         margins: { minPct: 0, targetPct: marginPct },
         fee: { pct: feePct, fixed: fixedCost, label: "Mercado Livre" },
@@ -226,7 +226,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     const base = Math.floor(raw);
     const candidate = base + 0.9;
     return candidate + 1e-9 >= raw ? candidate : base + 1.9;
-  }, [pricingQuery.data, channelSettingsQuery.data, product.company_id, product.id]);
+  }, [pricingQuery.data, channelSettingsQuery.data, product?.company_id, product?.id]);
 
   const rawProductPrice = Number(product.price ?? 0);
   const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
