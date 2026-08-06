@@ -138,11 +138,11 @@ export function resolvePdvShortcut(
     case "F5":
       return "open-payment";
     case "F6":
-      return "edit-price";
+      return "price-edit";
     case "F7":
-      return "edit-discount";
+      return "discount-edit";
     case "F8":
-      return "edit-addition";
+      return "addition-edit";
     case "F12":
       return "close-cash";
     case "Delete":
