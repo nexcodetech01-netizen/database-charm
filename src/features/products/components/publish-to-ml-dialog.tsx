@@ -19,7 +19,6 @@ import {
   Sparkles,
   RefreshCw,
   X,
-  Trash2,
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
