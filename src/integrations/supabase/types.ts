@@ -3612,6 +3612,50 @@ export type Database = {
           },
         ]
       }
+      mercadolivre_settings: {
+        Row: {
+          classic_fee_percent: number
+          company_id: string
+          created_at: string
+          fixed_fee_value: number
+          free_shipping_threshold: number
+          free_shipping_value: number
+          id: string
+          premium_fee_percent: number
+          updated_at: string
+        }
+        Insert: {
+          classic_fee_percent?: number
+          company_id: string
+          created_at?: string
+          fixed_fee_value?: number
+          free_shipping_threshold?: number
+          free_shipping_value?: number
+          id?: string
+          premium_fee_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          classic_fee_percent?: number
+          company_id?: string
+          created_at?: string
+          fixed_fee_value?: number
+          free_shipping_threshold?: number
+          free_shipping_value?: number
+          id?: string
+          premium_fee_percent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mercadolivre_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_integrations: {
         Row: {
           access_token: string

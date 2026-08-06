@@ -1,4 +1,5 @@
 import { Product } from "../types";
+import { DEFAULT_ML_SETTINGS } from "./ml-pricing";
 
 export interface MercadoLivreRequirement {
   id: string;
@@ -116,15 +117,13 @@ export function validateMercadoLivreRequirements(
   // 8. Validação de Preço e Frete (Fórmula Mercado Livre)
   if (product.listingType && product.price) {
     const isPremium = product.listingType === "gold_pro";
-    const feePct = isPremium ? 0.15 : 0.135;
+    const feePct = isPremium ? DEFAULT_ML_SETTINGS.premiumFeePercent : DEFAULT_ML_SETTINGS.classicFeePercent;
     const price = Number(product.price);
-    const shipping = price >= 79 ? 24.65 : 0;
-    const fixedFee = (!isPremium && price < 79 && price > 0) ? 6.5 : 0;
+    const shipping = price >= DEFAULT_ML_SETTINGS.freeShippingThreshold ? DEFAULT_ML_SETTINGS.freeShippingValue : 0;
+    const fixedFee = (!isPremium && price < DEFAULT_ML_SETTINGS.freeShippingThreshold && price > 0) ? DEFAULT_ML_SETTINGS.fixedFeeValue : 0;
     
     // Líquido esperado com base no preço atual
-    const expectedNet = isPremium 
-      ? (price * (1 - 0.15)) - shipping
-      : (price * (1 - 0.135)) - fixedFee - shipping;
+    const expectedNet = (price * (1 - feePct)) - shipping - fixedFee;
 
     requirements.push({
       id: "price_formula",

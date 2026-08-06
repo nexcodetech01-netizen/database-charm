@@ -10,7 +10,9 @@ import {
   ShieldCheck,
   ShoppingBag,
   XCircle,
+  Settings2,
 } from "lucide-react";
+import { MercadoLivrePricingSettingsDialog } from "@/features/products/components/ml-pricing-settings-dialog";
 import {
   Dialog,
   DialogContent,
@@ -155,6 +157,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [inlineError, setInlineError] = useState<{ title: string; description: string; recovery?: string } | null>(null);
+  const [pricingSettingsOpen, setPricingSettingsOpen] = useState(false);
 
   const refresh = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -383,6 +386,12 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
           </div>
           <div className="flex gap-2">
             {connected && (
+              <Button variant="outline" onClick={() => setPricingSettingsOpen(true)}>
+                <Settings2 className="mr-1.5 h-4 w-4" />
+                Custos de Venda
+              </Button>
+            )}
+            {connected && (
               <Button variant="ghost" onClick={handleDisconnect} className="text-destructive">
                 Desconectar
               </Button>
@@ -393,6 +402,10 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
           </div>
         </DialogFooter>
       </DialogContent>
+      <MercadoLivrePricingSettingsDialog 
+        open={pricingSettingsOpen} 
+        onOpenChange={setPricingSettingsOpen} 
+      />
     </Dialog>
   );
 }

@@ -80,6 +80,8 @@ import { processProductImages } from "@/features/products/lib/image-processing.f
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
 import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
 import { validateMercadoLivreRequirements } from "@/features/products/utils/ml-validation";
+import { calculateMLFinalPrice, calculateMLNetValue, DEFAULT_ML_SETTINGS } from "../utils/ml-pricing";
+import { getMercadoLivreSettings } from "../lib/mercadolivre-settings.functions";
 import { withRetry } from "@/lib/retry";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
@@ -275,6 +277,15 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [walletTarget, setWalletTarget] = useState<string>(rawProductPrice > 0 ? rawProductPrice.toString() : "");
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
+  const getSettingsFn = useServerFn(getMercadoLivreSettings);
+  const { data: mlSettings } = useQuery({
+    queryKey: ["mercadolivre-settings"],
+    queryFn: () => getSettingsFn(),
+    staleTime: 60_000,
+  });
+
+  const settings = mlSettings || DEFAULT_ML_SETTINGS;
+
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
   const [descCopied, setDescCopied] = useState(false);
 
@@ -503,19 +514,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     if (!(desired > 0)) return;
 
     const isPremium = listingType === "gold_pro";
-    const feePct = isPremium ? 0.15 : 0.135; 
-    const shipping = desired >= 79 ? 24.65 : 0;
-    
-    // Estimativa inicial sem taxa fixa
-    let calculatedFinal = isPremium 
-      ? (desired + shipping) / 0.85 
-      : (desired + shipping) / (1 - feePct);
-    
-    // Se o preço final estimado for < 79 e não for Premium, aplica taxa fixa de R$ 6,50
-    if (!isPremium && calculatedFinal < 79) {
-      calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
-    }
-    
+    const calculatedFinal = calculateMLFinalPrice(desired, listingType, settings);
     const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
 
     // Se o preço atual for diferente do calculado, atualiza
@@ -1314,7 +1313,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       <AlertTriangle className="h-4 w-4" />
                       <AlertTitle className="text-xs font-bold uppercase">Preço Insuficiente</AlertTitle>
                       <AlertDescription className="text-[11px]">
-                        O preço de venda atual não cobre as taxas de comissão e o frete fixo/grátis (R$ 24,65). 
+                        O preço de venda atual não cobre as taxas de comissão e o frete fixo/grátis ({formatCurrency(settings.freeShippingValue)}). 
                         Aumente o preço ou escolha uma modalidade com menor custo.
                       </AlertDescription>
                     </Alert>
@@ -1324,17 +1323,12 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                     {(() => {
                       const desired = Number(walletTarget);
                       const isPremium = listingType === "gold_pro";
-                      const classicFeePct = 0.135;
-                      const classicShipping = desired >= 79 ? 24.65 : 0;
-                      let classicFixedFee = 0;
-                      let classicFinal = desired > 0 ? (desired + classicShipping) / (1 - classicFeePct) : 0;
-                      if (classicFinal > 0 && classicFinal < 79) {
-                        classicFixedFee = 6.5;
-                        classicFinal = (desired + 6.5 + classicShipping) / (1 - classicFeePct);
-                      }
+                      const classicFinal = calculateMLFinalPrice(desired, "gold_special", settings);
+                      const classicShipping = classicFinal >= settings.freeShippingThreshold ? settings.freeShippingValue : 0;
+                      const classicFixedFee = (!isPremium && classicFinal < settings.freeShippingThreshold && classicFinal > 0) ? settings.fixedFeeValue : 0;
                       
-                      const premiumFeePct = 0.15; 
-                      const premiumFinal = desired > 0 ? (desired + classicShipping) / (1 - premiumFeePct) : 0;
+                      const premiumFinal = calculateMLFinalPrice(desired, "gold_pro", settings);
+                      const premiumShipping = premiumFinal >= settings.freeShippingThreshold ? settings.freeShippingValue : 0;
 
                       return (
                         <>
@@ -1355,8 +1349,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                               <span className="text-xl font-black text-primary">{classicFinal > 0 ? formatCurrency(classicFinal) : "---"}</span>
                               <div className="mt-2 space-y-1">
                                 <div className="flex justify-between text-[10px]">
-                                  <span className="text-muted-foreground">Comissão (13,5%)</span>
-                                  <span className="font-medium">-{classicFinal > 0 ? formatCurrency(classicFinal * 0.135) : "---"}</span>
+                                  <span className="text-muted-foreground">Comissão ({(settings.classicFeePercent * 100).toFixed(1)}%)</span>
+                                  <span className="font-medium">-{classicFinal > 0 ? formatCurrency(classicFinal * settings.classicFeePercent) : "---"}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
@@ -1387,12 +1381,12 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                               <span className="text-xl font-black text-primary">{premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}</span>
                               <div className="mt-2 space-y-1">
                                 <div className="flex justify-between text-[10px]">
-                                  <span className="text-muted-foreground">Comissão (15%)</span>
-                                  <span className="font-medium">-{premiumFinal > 0 ? formatCurrency(premiumFinal * 0.15) : "---"}</span>
+                                  <span className="text-muted-foreground">Comissão ({(settings.premiumFeePercent * 100).toFixed(1)}%)</span>
+                                  <span className="font-medium">-{premiumFinal > 0 ? formatCurrency(premiumFinal * settings.premiumFeePercent) : "---"}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
-                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : "R$ 0,00"}</span>
+                                  <span className="font-medium">-{premiumShipping > 0 ? formatCurrency(premiumShipping) : "R$ 0,00"}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
                                   <span>Líquido a receber</span>
@@ -1430,12 +1424,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                             setUsingMlSuggested(false);
                             
                             // Re-calcula o líquido reverso para exibição visual imediata
-                            const isPremium = listingType === "gold_pro";
-                            const shipping = val >= 79 ? 24.65 : 0;
-                            const fixedFee = (!isPremium && val < 79 && val > 0) ? 6.5 : 0;
-                            const calculatedNet = isPremium 
-                              ? (val * 0.85) - shipping
-                              : (val * 0.865) - fixedFee - shipping;
+                            const calculatedNet = calculateMLNetValue(val, listingType, settings);
                             setWalletTarget(Math.max(0, calculatedNet).toFixed(2));
                           }}
                         />
