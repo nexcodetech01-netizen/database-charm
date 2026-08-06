@@ -49,27 +49,20 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DEFINITIVA DO CAMPO MARCA</h2>
+          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DEFINITIVA DO VALOR PADRÃO DE MARCA</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. REMOÇÃO DO VALOR "TG":</h3>
+              <h3 className="font-medium text-primary">1. REMOÇÃO DE MARCAS FALSAS:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Valor "Tg/TG/T&G" removido permanentemente do estado inicial.</li>
-                <li>Filtro de limpeza aplicado ao carregar o produto.</li>
+                <li>Valores como "47 Street", "Tg" e "TG" foram removidos do código.</li>
+                <li>O campo 'Marca' agora inicia em branco, permitindo preenchimento manual ou via cadastro.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. PADRÃO "GENERICA":</h3>
+              <h3 className="font-medium text-primary">2. FALLBACK INTELIGENTE:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Novo valor padrão "Generica" (sem acento) implementado.</li>
-                <li>Preenchimento automático no formulário e no payload da API.</li>
-              </ul>
-            </section>
-            <section>
-              <h3 className="font-medium text-primary">3. INTEGRIDADE DO ESTADO:</h3>
-              <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Reset de formulário forçado para garantir limpeza visual.</li>
-                <li>Autofill de categoria atualizado para priorizar o novo padrão.</li>
+                <li>Se o campo estiver vazio ao publicar, o sistema envia automaticamente "Generica".</li>
+                <li>Garantia de conformidade com as exigências da API do Mercado Livre.</li>
               </ul>
             </section>
           </div>

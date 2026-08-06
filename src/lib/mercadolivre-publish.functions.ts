@@ -399,7 +399,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // nunca "Sem marca", que o Mercado Livre recusa com o erro
     // "A marca do produto não é genérica".
     const SELLER_DEFAULT_BRAND = "Generica";
-    const GENERIC_BRAND_TOKENS = ["generica", "sem marca", "no brand", "generico", "tg", "t&g"];
+    const GENERIC_BRAND_TOKENS = ["generica", "sem marca", "no brand", "generico", "tg", "t&g", "47 street"];
     const isGenericBrand = (value: string) => {
       const norm = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
       return !norm || GENERIC_BRAND_TOKENS.some((token) => norm.includes(token));
