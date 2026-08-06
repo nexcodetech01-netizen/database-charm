@@ -45,12 +45,13 @@ import {
 } from "@/lib/mercadolivre-publish.functions";
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
 import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
+import { validateMercadoLivreRequirements } from "@/features/products/utils/ml-validation";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
 import { productImagesService } from "@/features/products/services/product-images.service";
 import { formatCurrency } from "@/lib/format";
-import { AlertTriangle, Wand2 } from "lucide-react";
+import { AlertTriangle, Wand2, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { Product } from "../types";
 
