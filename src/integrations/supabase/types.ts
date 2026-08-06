@@ -4805,6 +4805,7 @@ export type Database = {
           unit: string
           updated_at: string
           use_category_margin: boolean
+          video_url: string | null
           weight: number | null
           width: number | null
         }
@@ -4847,6 +4848,7 @@ export type Database = {
           unit?: string
           updated_at?: string
           use_category_margin?: boolean
+          video_url?: string | null
           weight?: number | null
           width?: number | null
         }
@@ -4889,6 +4891,7 @@ export type Database = {
           unit?: string
           updated_at?: string
           use_category_margin?: boolean
+          video_url?: string | null
           weight?: number | null
           width?: number | null
         }
