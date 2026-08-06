@@ -1366,16 +1366,27 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                         )}
                       </Button>
                     </div>
-                    {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) && (
-                      <div className="w-full sm:w-32 aspect-video bg-black rounded-md overflow-hidden shrink-0">
+                    {videoUrl && (
+                      <div className="w-full sm:w-32 aspect-video bg-black rounded-md overflow-hidden shrink-0 flex items-center justify-center">
                         {(() => {
-                          const getYoutubeId = (url: string) => {
-                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                            const match = url.match(regExp);
-                            return (match && match[2].length === 11) ? match[2] : null;
-                          };
-                          const videoId = getYoutubeId(videoUrl);
-                          return videoId ? <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt="Preview" className="w-full h-full object-contain" /> : null;
+                          const isYouTube = videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be");
+                          if (isYouTube) {
+                            const getYoutubeId = (url: string) => {
+                              const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                              const match = url.match(regExp);
+                              return (match && match[2].length === 11) ? match[2] : null;
+                            };
+                            const videoId = getYoutubeId(videoUrl);
+                            return videoId ? (
+                              <img src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} alt="YouTube Preview" className="w-full h-full object-contain" />
+                            ) : null;
+                          }
+                          
+                          if (videoUrl.startsWith('http') && videoUrl.toLowerCase().includes('.mp4')) {
+                            return <video src={videoUrl} className="w-full h-full object-contain" controls />;
+                          }
+
+                          return <Sparkles className="h-6 w-6 text-primary/40" />;
                         })()}
                       </div>
                     )}
