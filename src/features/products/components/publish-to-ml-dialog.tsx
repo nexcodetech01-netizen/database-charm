@@ -1579,7 +1579,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           </Tabs>
         </div>
 
-        <DialogFooter className="p-4 sm:p-6 border-t border-border bg-background shrink-0">
+        <DialogFooter className="px-6 py-4 border-t border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
             <Button
               variant="outline"
