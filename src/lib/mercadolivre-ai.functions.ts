@@ -171,7 +171,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       if (!cleanedDescription) throw new Error("A IA retornou uma descrição vazia após a filtragem de segurança.");
 
       return {
-        title: normalizeTitle(output.title, data.title),
+        title: output.title.slice(0, 60).trim(),
         description: cleanedDescription.slice(0, 4000),
         attributes: normalizeAttributes(output.attributes),
       };

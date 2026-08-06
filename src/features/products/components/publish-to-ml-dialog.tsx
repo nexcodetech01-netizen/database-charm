@@ -293,6 +293,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     Math.max(1, Math.floor(Number(product?.stock || 0))),
   );
   const [description, setDescription] = useState(product?.description || "");
+  const [aiPreview, setAiPreview] = useState<{ title: string; description: string } | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [categoryLabel, setCategoryLabel] = useState("");
   const [categorySearch, setCategorySearch] = useState(initialTitle);
@@ -964,8 +965,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         },
       }),
     onSuccess: (res) => {
-      setDescription(res.description);
-      if (res.title) setTitle(res.title);
+      setAiPreview({ title: res.title, description: res.description });
+      
       const attrs = res.attributes;
       if (attrs) {
         if (attrs.product_type) setProductType(attrs.product_type);
@@ -979,10 +980,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         if (attrs.age_group) setAgeGroup(attrs.age_group);
         if (attrs.season) setSeason(attrs.season);
       }
-      if (res.title && res.title.trim().length >= 35) {
-        setTitle(res.title.slice(0, 60));
-      }
-      toast.success("Título, descrição e ficha técnica gerados com IA");
+      toast.success("Sugestão de IA gerada! Revise na prévia abaixo.");
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Falha ao gerar descrição");
@@ -1610,6 +1608,62 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       )}
                     </Button>
                   </div>
+
+                  {aiPreview && (
+                    <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold flex items-center gap-2 text-primary">
+                          <Sparkles className="h-4 w-4" /> Prévia da IA
+                        </h4>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px]"
+                            onClick={() => setAiPreview(null)}
+                          >
+                            Descartar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 text-[10px] bg-primary text-primary-foreground"
+                            onClick={() => {
+                              const checkTemplate = (text: string) => {
+                                const blocks = ["👜 DESCRIÇÃO", "✨ DESTAQUES", "💡 COMO USAR", "📦 ENVIO"];
+                                const hasAll = blocks.every(b => text.includes(b));
+                                const hasPlaceholders = /\[.*?\]/.test(text);
+                                return hasAll && !hasPlaceholders;
+                              };
+
+                              if (!checkTemplate(aiPreview.description)) {
+                                toast.error("Descrição incompleta", { 
+                                  description: "A IA não preencheu todos os blocos obrigatórios ou deixou campos [entre colchetes]. Revise manualmente." 
+                                });
+                              }
+
+                              setTitle(aiPreview.title.slice(0, 60).trim());
+                              setDescription(aiPreview.description);
+                              setAiPreview(null);
+                              toast.success("Aplicado com sucesso!");
+                            }}
+                          >
+                            Aplicar Sugestão
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="p-2 bg-background rounded border text-xs font-medium">
+                          <span className="text-muted-foreground mr-2 font-bold uppercase text-[9px]">Título:</span>
+                          {aiPreview.title}
+                        </div>
+                        <div className="p-2 bg-background rounded border text-xs whitespace-pre-wrap max-h-[150px] overflow-y-auto font-mono text-[10px] leading-relaxed">
+                          {aiPreview.description}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <Textarea
                     id="ml-desc"
