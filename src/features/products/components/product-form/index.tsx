@@ -1458,6 +1458,16 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     className="flex-1"
                     value={form.barcode}
                     onChange={(e) => set("barcode", e.target.value.toUpperCase().slice(0, 20))}
+                    onFocus={(e) => {
+                      if (form.barcode === "SEM GTIN") {
+                        set("barcode", "");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!form.barcode.trim()) {
+                        set("barcode", "SEM GTIN");
+                      }
+                    }}
                     placeholder="Ex: 7891234567890 ou SEM GTIN"
                   />
                   <Button
