@@ -1,6 +1,12 @@
+import { Info, TrendingUp, DollarSign, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { computeSaleMetrics, type SaleItemDraft } from "../../types";
 import type { SaleTotals } from "../../engine/types";
+import type { DiscountEvaluation } from "../../lib/discounts";
 import type { DiscountEvaluation } from "../../lib/discounts";
 
 type Props = {
