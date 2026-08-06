@@ -2024,7 +2024,39 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex items-center justify-between gap-4 py-4 border-t border-border mt-6">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Qualidade ML</span>
+            <div className={`h-2 w-24 rounded-full bg-muted overflow-hidden`}>
+              <div 
+                className={`h-full transition-all ${mlValidation.score >= 80 ? 'bg-success' : mlValidation.score >= 50 ? 'bg-warning' : 'bg-destructive'}`} 
+                style={{ width: `${mlValidation.score}%` }} 
+              />
+            </div>
+            <span className={`text-xs font-bold tabular-nums ${mlValidation.score >= 80 ? 'text-success' : mlValidation.score >= 50 ? 'text-warning' : 'text-destructive'}`}>
+              {mlValidation.score}%
+            </span>
+          </div>
+          
+          <div className="h-4 w-px bg-border" />
+          
+          <div className="flex items-center gap-2">
+            {mlValidation.isReady ? (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1 py-0 px-2 h-6">
+                <Check className="h-3 w-3" />
+                Pronto para ML
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1 py-0 px-2 h-6">
+                <AlertTriangle className="h-3 w-3" />
+                Pendente ML
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
           Cancelar
         </Button>
