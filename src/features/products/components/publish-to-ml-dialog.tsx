@@ -678,6 +678,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       pointerEvents: isProcessing ? 'none' as const : 'auto' as const,
     };
 
+    const [imgError, setImgError] = useState(false);
+
     return (
       <div
         ref={setNodeRef}
@@ -686,19 +688,23 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
         } ${isProcessing ? "cursor-wait" : ""}`}
       >
-        {url ? (
+        {url && !imgError ? (
           <img
             src={url}
             alt=""
             className="h-full w-full object-cover"
             loading="lazy"
+            onError={() => {
+              console.error("Erro ao carregar imagem no slot", index + 1, url);
+              setImgError(true);
+            }}
           />
         ) : (
           <div 
             className="h-full w-full bg-muted cursor-pointer flex items-center justify-center"
             onClick={() => openFilePicker(index)}
           >
-            <span className="text-muted-foreground text-xs">Vazio</span>
+            <span className="text-muted-foreground text-xs">{imgError ? "Erro Carregamento" : "Vazio"}</span>
           </div>
         )}
         
