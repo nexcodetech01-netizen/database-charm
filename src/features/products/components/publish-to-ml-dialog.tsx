@@ -250,10 +250,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     if (open) {
       const t = (product.name ?? "").slice(0, 60);
       setTitle(t);
-      setPrice(Number(product.price ?? 0));
+      const rawPrice = Number(product.price ?? 0);
+      setPrice(rawPrice);
+      setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
       setUsingMlSuggested(false);
-      setWalletTarget("");
       setQuantity(Math.max(1, Math.floor(Number(product.stock ?? 0))));
       setDescription(product.description ?? "");
       setCategoryId("");
@@ -285,15 +286,34 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
   }, [open, product]);
 
-  // Assim que o preço sugerido do ML fica disponível, aplica como padrão
-  // (só se o usuário ainda não editou manualmente).
+  // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
   useEffect(() => {
-    if (!open || priceTouched) return;
+    if (!open) return;
+    const desired = Number(walletTarget);
+    if (!(desired > 0)) return;
+
+    const isPremium = listingType === "gold_pro";
+    const feePct = isPremium ? 0.185 : 0.135;
+    const fixedFee = desired < 79 ? 6.5 : 0;
+    const shipping = desired < 79 ? 0 : 23.5;
+    const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
+    const roundedFinal = Number(calculatedFinal.toFixed(2));
+
+    // Se o preço atual for diferente do calculado, atualiza
+    if (Math.abs(price - roundedFinal) > 0.01) {
+      setPrice(roundedFinal);
+    }
+  }, [walletTarget, listingType, open]);
+
+  // Se o preço sugerido do ML estiver disponível e o usuário não tiver definido um alvo "No Bolso",
+  // aplica como padrão (só se o usuário ainda não editou manualmente).
+  useEffect(() => {
+    if (!open || priceTouched || walletTarget !== "") return;
     if (mlSuggestedPrice && mlSuggestedPrice > 0) {
       setPrice(mlSuggestedPrice);
       setUsingMlSuggested(true);
     }
-  }, [open, priceTouched, mlSuggestedPrice]);
+  }, [open, priceTouched, mlSuggestedPrice, walletTarget]);
 
   async function runPredict(query: string, opts?: { auto?: boolean }) {
     if (!query.trim()) return;
@@ -1098,83 +1118,82 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               </div>
 
               {/* Cards de Opção de Anúncio (Clássico vs Premium) */}
-              {Number(walletTarget) > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                  {(() => {
-                    const desired = Number(walletTarget);
-                    
-                    // Cálculo Clássico (13.5%)
-                    const classicFeePct = 0.135;
-                    const classicFixedFee = desired < 79 ? 6.5 : 0;
-                    const classicShipping = desired < 79 ? 0 : 23.5;
-                    const classicFinal = (desired + classicFixedFee + classicShipping) / (1 - classicFeePct);
-                    
-                    // Cálculo Premium (18.5%)
-                    const premiumFeePct = 0.185;
-                    const premiumFixedFee = desired < 79 ? 6.5 : 0;
-                    const premiumShipping = desired < 79 ? 0 : 23.5;
-                    const premiumFinal = (desired + premiumFixedFee + premiumShipping) / (1 - premiumFeePct);
+              {(() => {
+                const desired = Number(walletTarget);
+                if (!(desired > 0)) return null;
 
-                    return (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPrice(Number(classicFinal.toFixed(2)));
-                            setListingType("gold_special");
-                            setPriceTouched(true);
-                            setUsingMlSuggested(false);
-                            toast.success("Plano Clássico selecionado");
-                          }}
-                          className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
-                            listingType === "gold_special" && Math.abs(price - classicFinal) < 0.01
-                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-border hover:border-primary/40 hover:bg-muted/50"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <span className="text-sm font-bold">Clássico</span>
-                            <Badge variant="secondary" className="text-[9px] h-4 px-1">Parcelado c/ Juros</Badge>
-                          </div>
-                          <span className="text-lg font-black text-primary">
-                            {formatCurrency(classicFinal)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground line-clamp-1">
-                            Taxa {classicFeePct * 100}% + {formatCurrency(classicFixedFee + classicShipping)} custos
-                          </span>
-                        </button>
+                // Cálculo Clássico (13.5%)
+                const classicFeePct = 0.135;
+                const classicFixedFee = desired < 79 ? 6.5 : 0;
+                const classicShipping = desired < 79 ? 0 : 23.5;
+                const classicFinal = (desired + classicFixedFee + classicShipping) / (1 - classicFeePct);
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPrice(Number(premiumFinal.toFixed(2)));
-                            setListingType("gold_pro");
-                            setPriceTouched(true);
-                            setUsingMlSuggested(false);
-                            toast.success("Plano Premium selecionado");
-                          }}
-                          className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
-                            listingType === "gold_pro" && Math.abs(price - premiumFinal) < 0.01
-                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-border hover:border-primary/40 hover:bg-muted/50"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <span className="text-sm font-bold">Premium</span>
-                            <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">12x Sem Juros</Badge>
-                          </div>
-                          <span className="text-lg font-black text-primary">
-                            {formatCurrency(premiumFinal)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground line-clamp-1">
-                            Taxa {premiumFeePct * 100}% + {formatCurrency(premiumFixedFee + premiumShipping)} custos
-                          </span>
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+                // Cálculo Premium (18.5%)
+                const premiumFeePct = 0.185;
+                const premiumFixedFee = desired < 79 ? 6.5 : 0;
+                const premiumShipping = desired < 79 ? 0 : 23.5;
+                const premiumFinal = (desired + premiumFixedFee + premiumShipping) / (1 - premiumFeePct);
+
+                // Sincroniza o preço final se o usuário não tocou ou se está alternando tipos
+                // mas sem entrar em loop. Usamos useEffect para efeitos colaterais.
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrice(Number(classicFinal.toFixed(2)));
+                        setListingType("gold_special");
+                        setPriceTouched(true);
+                        setUsingMlSuggested(false);
+                        toast.success("Plano Clássico selecionado");
+                      }}
+                      className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
+                        listingType === "gold_special"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-bold">Clássico</span>
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">Parcelado c/ Juros</Badge>
+                      </div>
+                      <span className="text-lg font-black text-primary">
+                        {formatCurrency(classicFinal)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground line-clamp-1">
+                        Taxa {classicFeePct * 100}% + {formatCurrency(classicFixedFee + classicShipping)} custos
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrice(Number(premiumFinal.toFixed(2)));
+                        setListingType("gold_pro");
+                        setPriceTouched(true);
+                        setUsingMlSuggested(false);
+                        toast.success("Plano Premium selecionado");
+                      }}
+                      className={`flex flex-col gap-1 p-3 rounded-lg border-2 text-left transition-all ${
+                        listingType === "gold_pro"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-bold">Premium</span>
+                        <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">12x Sem Juros</Badge>
+                      </div>
+                      <span className="text-lg font-black text-primary">
+                        {formatCurrency(premiumFinal)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground line-clamp-1">
+                        Taxa {premiumFeePct * 100}% + {formatCurrency(premiumFixedFee + premiumShipping)} custos
+                      </span>
+                    </button>
+                  </div>
+                );
+              })()}
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
                 {pricingQuery.isLoading ? (
