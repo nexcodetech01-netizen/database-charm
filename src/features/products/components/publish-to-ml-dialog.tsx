@@ -1197,7 +1197,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       <span className="text-lg sm:text-xl font-black text-primary">
                         {premiumFinal > 0 ? formatCurrency(premiumFinal) : "---"}
                       </span>
-                      <p className="text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
                         12x Sem Juros + Exposição Máxima
                       </p>
                     </button>
