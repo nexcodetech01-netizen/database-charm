@@ -298,8 +298,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
+      publish.reset(); // Reseta estados de erro da mutação ao abrir
     }
-  }, [open, product]);
+  }, [open, product, publish]);
 
   // Limpeza automática de URLs de erro no estado
   useEffect(() => {
