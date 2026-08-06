@@ -85,6 +85,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       "- Sem emojis, sem aspas, sem #, sem **, sem pontuação decorativa. Use hífen simples se precisar.",
       "- Cada palavra com Primeira Letra Maiúscula (exceto conectivos curtos como 'de', 'em', 'e').",
       "- NÃO invente marca. NÃO repita palavras. NÃO use 'N/A'.",
+      "- PROIBIDO: NUNCA inclua as siglas 'TG' ou 'T&G' no título ou na descrição.",
       "- PROIBIDO (política do Mercado Livre) — NUNCA use no título: 'Original', '100% Original', 'Autêntico', 'Promoção', 'Oferta', 'Liquidação', 'Barato', 'Frete Grátis', 'Entrega Rápida', 'Novo', 'Lançamento', 'Qualidade', 'Top', 'Melhor', 'Excelente'.",
       "- Se a marca for genérica ('Genérica', 'Outras marcas', 'Sem marca'), foque APENAS em atributos físicos (tipo, marca, modelo, cor, material). Nunca use 'Original'.",
       "- Se faltar informação para atingir o mínimo, complete com atributos físicos reais (material, estilo, tipo de alça) — nunca com termos promocionais.",
