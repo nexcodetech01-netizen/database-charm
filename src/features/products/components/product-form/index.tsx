@@ -99,15 +99,14 @@ interface Props {
 const schema = z.object({
   name: z.string().trim().min(1, "Nome obrigatório").max(200),
   sku: z.string().trim().min(1, "SKU obrigatório").max(80),
-  barcode: z.string().trim().max(80).optional().or(z.literal("")),
+  barcode: z.string().trim().min(1, "EAN/GTIN obrigatório (use 'SEM GTIN' se isento)").max(80),
   // NCM/CEST aceitam entrada formatada (4202.21.00) — só os dígitos são validados.
   ncm: z.preprocess(
     (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
     z
       .string()
-      .regex(/^\d{8}$/, "NCM deve ter 8 dígitos")
-      .optional()
-      .or(z.literal("")),
+      .regex(/^\d{8}$/, "NCM deve ter exatamente 8 dígitos")
+      .min(1, "NCM obrigatório"),
   ),
   cest: z.preprocess(
     (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
@@ -117,7 +116,8 @@ const schema = z.object({
       .optional()
       .or(z.literal("")),
   ),
-  brand: z.string().trim().max(120).optional().or(z.literal("")),
+  brand: z.string().trim().min(1, "Marca obrigatória").max(120),
+  model: z.string().trim().min(1, "Modelo obrigatório").max(120),
   weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
   width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
   height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
@@ -131,6 +131,7 @@ type FormState = {
   ncm: string;
   cest: string;
   brand: string;
+  model: string;
   description: string;
   category_id: string;
   supplier_id: string;
@@ -161,6 +162,7 @@ const empty: FormState = {
   ncm: "",
   cest: "",
   brand: "",
+  model: "",
   description: "",
   category_id: "",
   supplier_id: "",
@@ -193,6 +195,7 @@ function toState(p?: Product): FormState {
     ncm: p.ncm ?? "",
     cest: (p as { cest?: string | null }).cest ?? "",
     brand: p.brand ?? "",
+    model: (p as any).model ?? "",
     description: p.description ?? "",
     category_id: p.category_id ?? "",
     supplier_id: p.supplier_id ?? "",
@@ -841,6 +844,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       ncm: normalizeNcm(form.ncm) || null,
       cest: normalizeCest(form.cest) || null,
       brand: toTitleCasePtBr(form.brand) || null,
+      model: form.model.trim() || null,
       description: form.description.trim() || null,
       category_id: resolvedCategoryId,
       supplier_id: form.supplier_id || null,
@@ -956,6 +960,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
+  const isFormValid = useMemo(() => {
+    return schema.safeParse(form).success;
+  }, [form]);
+
   /** Faixa escolhida pelo usuário (UX apenas — não altera o motor). */
   const [priceTier, setPriceTier] = useState<"min" | "recommended" | "premium">("recommended");
 
@@ -999,11 +1007,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   return (
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="geral">Dados gerais</TabsTrigger>
-          <TabsTrigger value="custos">Custos e precificação</TabsTrigger>
-          <TabsTrigger value="canais">Precificação por canal</TabsTrigger>
-          <TabsTrigger value="estoque">Estoque e fiscal</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+          <TabsTrigger value="geral" className="py-2.5">Dados gerais</TabsTrigger>
+          <TabsTrigger value="logistica" className="py-2.5">Integração ML & Logística</TabsTrigger>
+          <TabsTrigger value="custos" className="py-2.5">Custos e precificação</TabsTrigger>
+          <TabsTrigger value="canais" className="py-2.5">Canais de venda</TabsTrigger>
+          <TabsTrigger value="estoque" className="py-2.5">Estoque e fiscal</TabsTrigger>
         </TabsList>
 
         {/* ══════════════ ABA 1 — DADOS GERAIS ══════════════ */}
@@ -1089,38 +1098,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             />
           </Section>
           
-          <Section title="Dimensões Logísticas" description="Informações obrigatórias para cálculo de frete (Mercado Livre e transportadoras).">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Peso (kg) *" hint="Peso bruto do produto com embalagem">
-                <NumInput
-                  value={form.weight}
-                  onChange={(v) => set("weight", v)}
-                  placeholder="Ex: 0.500"
-                />
-              </Field>
-              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
-                <NumInput
-                  value={form.length}
-                  onChange={(v) => set("length", v)}
-                  placeholder="Ex: 20"
-                />
-              </Field>
-              <Field label="Largura (cm) *" hint="Dimensão lateral">
-                <NumInput
-                  value={form.width}
-                  onChange={(v) => set("width", v)}
-                  placeholder="Ex: 15"
-                />
-              </Field>
-              <Field label="Altura (cm) *" hint="Espessura/Altura">
-                <NumInput
-                  value={form.height}
-                  onChange={(v) => set("height", v)}
-                  placeholder="Ex: 10"
-                />
-              </Field>
-            </div>
-          </Section>
 
           {/* ─── Bloco INFORMAÇÕES ─── */}
           <Section title="Informações" description="O básico para identificar o produto.">
@@ -1268,43 +1245,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     </p>
                   )
                 ) : null}
-              </Field>
-              <Field
-                label="Código de barras (EAN)"
-                hint="Opcional — use a busca para autopreencher os dados cadastrais"
-              >
-                <div className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    value={form.barcode}
-                    inputMode="numeric"
-                    maxLength={14}
-                    onChange={(e) => set("barcode", e.target.value.replace(/\D/g, "").slice(0, 14))}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1.5"
-                    onClick={handleEanLookup}
-                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
-                    title="Consulta bases públicas e o histórico interno pelo EAN"
-                  >
-                    {eanLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    Buscar EAN
-                  </Button>
-                </div>
-              </Field>
-              <Field label="Marca">
-                <Input
-                  value={form.brand}
-                  onChange={(e) => set("brand", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
-                />
               </Field>
               <Field label="Status">
                 <Select value={form.status} onValueChange={(v) => set("status", v)}>
@@ -1494,6 +1434,194 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 </div>
               ) : null}
             </Field>
+          </Section>
+        </TabsContent>
+
+        {/* ══════════════ ABA 2 — INTEGRAÇÃO ML & LOGÍSTICA ══════════════ */}
+        <TabsContent value="logistica" className="space-y-6">
+          <Section
+            title="Identificação & Marca"
+            description="Informações obrigatórias para sincronização com o Mercado Livre."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="EAN / GTIN *"
+                hint="Código de barras global de 8 a 14 dígitos. Use 'SEM GTIN' se o produto for artesanal ou isento."
+              >
+                <div className="flex gap-2">
+                  <Input
+                    className="flex-1"
+                    value={form.barcode}
+                    onChange={(e) => set("barcode", e.target.value.toUpperCase().slice(0, 20))}
+                    placeholder="Ex: 7891234567890 ou SEM GTIN"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() => set("barcode", "SEM GTIN")}
+                    title="Marca o produto como isento de código de barras"
+                  >
+                    Isento
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={handleEanLookup}
+                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
+                    title="Consulta bases públicas e o histórico interno pelo EAN"
+                  >
+                    {eanLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar
+                  </Button>
+                </div>
+              </Field>
+
+              <Field label="Marca *" hint="Fabricante ou marca do produto">
+                <Input
+                  value={form.brand}
+                  onChange={(e) => set("brand", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
+                  placeholder="Ex: Nike, Samsung, Artesanal..."
+                />
+              </Field>
+
+              <Field label="Modelo *" hint="Modelo específico do produto">
+                <Input
+                  value={form.model}
+                  onChange={(e) => set("model", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("model", v))}
+                  placeholder="Ex: Air Max, Galaxy S21, V1..."
+                />
+              </Field>
+
+              <Field label="NCM *" hint="8 dígitos — essencial para cálculo de impostos e frete.">
+                <Input
+                  value={form.ncm}
+                  inputMode="numeric"
+                  maxLength={12}
+                  placeholder="0000.00.00 ou 00000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("ncm", normalizeNcm(e.target.value));
+                  }}
+                />
+                {form.ncm && fiscal.source !== "manual" ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    {fiscal.source === "category"
+                      ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
+                      : fiscal.source === "barcode"
+                        ? "Sugerido pelo EAN cadastrado — edite se precisar."
+                        : "Sugerido pelo histórico de produtos — edite se precisar."}
+                  </p>
+                ) : null}
+
+                {fiscal.historyLoading && !form.ncm ? (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
+                  </p>
+                ) : null}
+
+                {fiscal.historySuggestions.length ? (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Usados em produtos semelhantes:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fiscal.historySuggestions.map((s) => (
+                        <Button
+                          key={s.ncm}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 gap-1.5 px-2 text-[11px]"
+                          onClick={() =>
+                            fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
+                          }
+                          title={`${s.sampleName} — ${s.usageCount} produto(s)`}
+                        >
+                          <Wand2 className="h-3 w-3" />
+                          {formatNcm(s.ncm)}
+                          {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
+                          <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
+                            {s.usageCount}
+                          </Badge>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </Field>
+
+              <Field label="CEST" hint="7 dígitos — apenas para produtos com substituição tributária (ST).">
+                <Input
+                  value={form.cest}
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="00.000.00 ou 0000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("cest", normalizeCest(e.target.value));
+                  }}
+                />
+              </Field>
+            </div>
+          </Section>
+
+          <Section
+            title="Dimensões & Peso"
+            description="Medidas da embalagem para cálculo exato de frete (Mercado Livre e transportadoras)."
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Peso (kg) *" hint="Peso bruto com embalagem">
+                <div className="relative">
+                  <NumInput
+                    value={form.weight}
+                    onChange={(v) => set("weight", v)}
+                    placeholder="Ex: 0.500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">kg</span>
+                </div>
+              </Field>
+              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+                <div className="relative">
+                  <NumInput
+                    value={form.length}
+                    onChange={(v) => set("length", v)}
+                    placeholder="Ex: 20"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+              <Field label="Largura (cm) *" hint="Dimensão lateral">
+                <div className="relative">
+                  <NumInput
+                    value={form.width}
+                    onChange={(v) => set("width", v)}
+                    placeholder="Ex: 15"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+              <Field label="Altura (cm) *" hint="Espessura/Altura">
+                <div className="relative">
+                  <NumInput
+                    value={form.height}
+                    onChange={(v) => set("height", v)}
+                    placeholder="Ex: 10"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+            </div>
           </Section>
         </TabsContent>
 
@@ -1762,143 +1890,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             ) : null}
           </Section>
 
-          <Section title="Fiscal" description="Classificação fiscal usada na emissão de notas.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="NCM" hint="8 dígitos — obrigatório para emitir NF-e">
-                <Input
-                  value={form.ncm}
-                  inputMode="numeric"
-                  maxLength={12}
-                  placeholder="0000.00.00 ou 00000000"
-                  onChange={(e) => {
-                    fiscal.markManual();
-                    set("ncm", normalizeNcm(e.target.value));
-                  }}
-                />
-                {form.ncm && fiscal.source !== "manual" ? (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-primary" />
-                    {fiscal.source === "category"
-                      ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
-                      : fiscal.source === "barcode"
-                        ? "Sugerido pelo EAN cadastrado — edite se precisar."
-                        : "Sugerido pelo histórico de produtos — edite se precisar."}
-                  </p>
-                ) : null}
 
-                {fiscal.historyLoading && !form.ncm ? (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
-                  </p>
-                ) : null}
-
-                {fiscal.historySuggestions.length ? (
-                  <div className="mt-2 space-y-1.5">
-                    <p className="text-[11px] font-medium text-muted-foreground">
-                      Usados em produtos semelhantes:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {fiscal.historySuggestions.map((s) => (
-                        <Button
-                          key={s.ncm}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 gap-1.5 px-2 text-[11px]"
-                          onClick={() =>
-                            fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
-                          }
-                          title={`${s.sampleName} — ${s.usageCount} produto(s)`}
-                        >
-                          <Wand2 className="h-3 w-3" />
-                          {formatNcm(s.ncm)}
-                          {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
-                          <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
-                            {s.usageCount}
-                          </Badge>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </Field>
-              <Field label="CEST" hint="7 dígitos — apenas para substituição tributária">
-                <Input
-                  value={form.cest}
-                  inputMode="numeric"
-                  maxLength={11}
-                  placeholder="00.000.00 ou 0000000"
-                  onChange={(e) => {
-                    fiscal.markManual();
-                    set("cest", normalizeCest(e.target.value));
-                  }}
-                />
-              </Field>
-            </div>
-          </Section>
-
-          <Section
-            title="Dimensões e peso"
-            description="Medidas oficiais usadas para o cálculo exato de frete nos Marketplaces (Mercado Livre, etc)."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field 
-                label="Peso (kg)" 
-                hint="Peso total com embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.weight} 
-                    onChange={(v) => set("weight", v)} 
-                    placeholder="0,000"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">kg</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Altura (cm)" 
-                hint="Altura da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.height} 
-                    onChange={(v) => set("height", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Largura (cm)" 
-                hint="Largura da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.width} 
-                    onChange={(v) => set("width", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Comprimento (cm)" 
-                hint="Comprimento da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.length} 
-                    onChange={(v) => set("length", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-            </div>
-          </Section>
         </TabsContent>
       </Tabs>
 
@@ -1906,9 +1898,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
           Cancelar
         </Button>
-        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking}>
+        <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {product ? "Salvar alterações" : "Criar produto"}
+          {product ? "Salvar alterações" : "Salvar Produto"}
         </Button>
       </div>
 

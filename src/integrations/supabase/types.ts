@@ -4756,6 +4756,7 @@ export type Database = {
           ml_item_id: string | null
           ml_permalink: string | null
           ml_published_at: string | null
+          model: string | null
           name: string
           ncm: string | null
           other_costs: number
@@ -4797,6 +4798,7 @@ export type Database = {
           ml_item_id?: string | null
           ml_permalink?: string | null
           ml_published_at?: string | null
+          model?: string | null
           name: string
           ncm?: string | null
           other_costs?: number
@@ -4838,6 +4840,7 @@ export type Database = {
           ml_item_id?: string | null
           ml_permalink?: string | null
           ml_published_at?: string | null
+          model?: string | null
           name?: string
           ncm?: string | null
           other_costs?: number
