@@ -1639,25 +1639,32 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           </div>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={publish.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={() => publish.mutate()} disabled={!canPublish}>
-            {publish.isPending ? (
-              <>
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Publicando…
-              </>
-            ) : (
-              <>
-                <ExternalLink className="mr-1.5 h-4 w-4" /> Publicar no Mercado Livre
-              </>
-            )}
-          </Button>
+        <DialogFooter className="p-4 sm:p-6 border-t border-border bg-background shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={publish.isPending}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => publish.mutate()} 
+              disabled={!canPublish}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              {publish.isPending ? (
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Publicando…
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-1.5 h-4 w-4" /> Publicar no Mercado Livre
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
