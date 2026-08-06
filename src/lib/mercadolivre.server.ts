@@ -323,7 +323,7 @@ export async function markReconnectRequired(
 }
 
 /** Refresh window: renew tokens when less than this many seconds remain. */
-const REFRESH_THRESHOLD_SECONDS = 60 * 60 * 24; // 24h
+const REFRESH_THRESHOLD_SECONDS = 60 * 30; // 30 min
 
 /**
  * If the stored access token is expired or about to expire, uses the refresh
