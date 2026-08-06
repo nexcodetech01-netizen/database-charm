@@ -85,6 +85,14 @@ export const mlPublishPayloadSchema = z
     description: z.string().optional(),
     seller_custom_field: z.string().trim().min(1).max(80).optional(),
     sale_terms: z.array(z.record(z.string(), z.unknown())).optional(),
+    shipping: z
+      .object({
+        mode: z.string(),
+        local_pick_up: z.boolean(),
+        free_shipping: z.boolean(),
+      })
+      .passthrough()
+      .optional(),
     attributes: z.array(mlAttributeSchema).superRefine((attrs, ctx) => {
       const ids = new Set(attrs.map((a) => a.id));
       for (const required of ["BRAND", "MODEL"]) {
@@ -97,7 +105,7 @@ export const mlPublishPayloadSchema = z
       }
     }),
   })
-  .strict();
+  .passthrough();
 
 
 
