@@ -999,8 +999,42 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             </AlertDescription>
           </Alert>
         ) : null}
+        <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+          <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 sm:px-6 py-2 border-b border-border bg-muted/10">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info" className="text-xs sm:text-sm">1. Dados & Fotos</TabsTrigger>
+                <TabsTrigger value="price" className="text-xs sm:text-sm">2. Preço & Estoque</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm">3. Ficha & Descrição</TabsTrigger>
+              </TabsList>
+            </div>
 
-        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Progresso de Requisitos (Compacto) */}
+              <div className="flex items-center justify-between gap-4 p-2 px-3 bg-muted/20 border border-border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-1">
+                    {validation.requirements.map((req, idx) => (
+                      <div 
+                        key={req.id} 
+                        className={`h-2 w-6 rounded-full border border-background ${req.isValid ? 'bg-success' : req.critical ? 'bg-destructive/40' : 'bg-muted'}`}
+                        title={req.label}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {validation.requirements.filter(r => r.isValid).length}/{validation.requirements.length} Requisitos
+                  </span>
+                </div>
+                <div className="flex gap-1.5 overflow-hidden">
+                  {validation.requirements.filter(r => !r.isValid && r.critical).slice(0, 2).map(req => (
+                    <Badge key={req.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
+                      Falta {req.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
           <div className="grid gap-2 p-3 bg-muted/20 border border-border rounded-lg">
             <h4 className="text-sm font-semibold flex items-center gap-2">
               <Check className="h-4 w-4 text-primary" /> Requisitos de Publicação
