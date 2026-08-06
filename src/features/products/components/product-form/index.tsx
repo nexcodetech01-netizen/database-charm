@@ -1514,6 +1514,57 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           </Section>
 
           <Section
+            title="Checklist Mercado Livre"
+            description="Status dos requisitos obrigatórios e recomendados para publicação."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {mlValidation.requirements.map((req) => (
+                <div 
+                  key={req.id} 
+                  className={`p-3 rounded-lg border flex flex-col gap-1.5 transition-colors ${
+                    req.isValid 
+                      ? 'bg-success/5 border-success/20' 
+                      : req.critical 
+                        ? 'bg-destructive/5 border-destructive/20' 
+                        : 'bg-muted/50 border-border'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-xs font-semibold ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-foreground'}`}>
+                      {req.label}
+                    </span>
+                    {req.isValid ? (
+                      <Check className="h-3.5 w-3.5 text-success" />
+                    ) : req.critical ? (
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                    ) : (
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    {req.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {mlValidation.isReady && (
+              <div className="mt-4 p-3 bg-success/10 border border-success/30 rounded-lg flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-success" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-success">Excelente! Produto pronto para o Mercado Livre.</p>
+                  <p className="text-[10px] text-success/80">Todos os requisitos críticos foram atendidos. Qualidade atual: {mlValidation.score}%.</p>
+                </div>
+                {product?.id && (
+                  <Button size="sm" className="bg-success hover:bg-success/90 text-white border-none h-8" onClick={() => setMlDialogOpen(true)}>
+                    Publicar Agora
+                  </Button>
+                )}
+              </div>
+            )}
+          </Section>
+
+
+          <Section
             title="Identificação & Marca"
             description="Informações obrigatórias para sincronização com o Mercado Livre."
           >
