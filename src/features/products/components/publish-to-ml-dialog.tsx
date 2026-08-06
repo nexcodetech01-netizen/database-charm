@@ -70,6 +70,7 @@ import { processProductImages } from "@/features/products/lib/image-processing.f
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
 import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
 import { validateMercadoLivreRequirements } from "@/features/products/utils/ml-validation";
+import { withRetry } from "@/lib/retry";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
@@ -464,12 +465,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       
       if (!url) throw new Error("Falha ao gerar URL para processamento");
 
-      const res = await processProductImages({
-        data: {
-          images: [{ id: path, url, isMain: slotIndex === 0 }],
-          enableMultiview: slotIndex === 0, // Restore multiview for slot 1
-        },
-      });
+      const res = await withRetry(
+        () => processProductImages({
+          data: {
+            images: [{ id: path, url, isMain: slotIndex === 0 }],
+            enableMultiview: slotIndex === 0, // Restore multiview for slot 1
+          },
+        }),
+        {
+          onRetry: (err, attempt) => {
+            console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+          }
+        }
+      );
 
       if (!res.success || !res.processedImages[0]) {
         throw new Error("Falha ao otimizar imagem com IA");
@@ -585,12 +593,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       const url = photoUrlByPath.get(path);
       if (!url) throw new Error("URL da imagem não encontrada");
 
-      const res = await processProductImages({
-        data: {
-          images: [{ id: path, url, isMain: index === 0 }],
-          enableMultiview: false,
-        },
-      });
+      const res = await withRetry(
+        () => processProductImages({
+          data: {
+            images: [{ id: path, url, isMain: index === 0 }],
+            enableMultiview: false,
+          },
+        }),
+        {
+          onRetry: (err, attempt) => {
+            console.warn(`Retry attempt ${attempt} for (re)processProductImages due to error:`, err);
+          }
+        }
+      );
 
       if (!res.success || !res.processedImages[0]) {
         throw new Error("Falha ao processar imagem");
