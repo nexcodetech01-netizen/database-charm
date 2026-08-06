@@ -123,6 +123,14 @@ export function usePDV(companyId: string): UsePDV {
     dispatch({ type: "UPDATE_ITEM_ADDITION", uiKey, addition });
   }, []);
 
+  const setItemNotes = useCallback((uiKey: string, notes: string) => {
+    dispatch({ type: "UPDATE_ITEM_NOTES", uiKey, notes });
+  }, []);
+
+  const setNotes = useCallback((notes: string) => {
+    dispatch({ type: "SET_NOTES", value: notes });
+  }, []);
+
   const clear = useCallback(() => {
     dispatch({ type: "RESET", state: { number: nextPdvSaleNumber() } });
     setSearch("");
@@ -144,6 +152,8 @@ export function usePDV(companyId: string): UsePDV {
     setItemPrice,
     setItemDiscount,
     setItemAddition,
+    setItemNotes,
+    setNotes,
     clear,
   };
 }
