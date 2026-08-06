@@ -20,6 +20,7 @@ type Props = {
   onEditPrice?: (item: SaleItemDraft) => void;
   onEditDiscount?: (item: SaleItemDraft) => void;
   onEditAddition?: (item: SaleItemDraft) => void;
+  onEditNotes?: (item: SaleItemDraft) => void;
 };
 
 type RowProps = {
