@@ -475,34 +475,65 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       
       if (!url) throw new Error("Falha ao gerar URL para processamento");
 
-      const res = await withRetry(
-        () => processProductImages({
-          data: {
-            images: [{ id: path, url, isMain: slotIndex === 0 }],
-            enableMultiview: slotIndex === 0, // Restore multiview for slot 1
-          },
-        }),
-        {
-          onRetry: (err, attempt) => {
-            console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+      let finalUrl = url;
+      try {
+        const res = await withRetry(
+          () => processProductImages({
+            data: {
+              images: [{ id: path, url, isMain: slotIndex === 0 }],
+              enableMultiview: slotIndex === 0, 
+            },
+          }),
+          {
+            onRetry: (err, attempt) => {
+              console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+            }
+          }
+        );
+
+        if (res.success && res.processedImages[0]) {
+          const mainProcessed = res.processedImages[0];
+          const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+          
+          if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
+            finalUrl = mainProcessed.processedUrl;
+          }
+
+          // Se gerou multiview (slots extras automáticos), processamos cada uma
+          const generated = res.processedImages.filter(img => (img as any).isGenerated);
+          if (generated.length > 0) {
+            // Criamos registros e URLs para as imagens geradas
+            for (let i = 0; i < generated.length; i++) {
+              const gen = generated[i];
+              const genUrl = gen.processedUrl;
+              if (genUrl && !isInvalid(genUrl)) {
+                const genId = gen.id;
+                
+                setLocalImageUrls(prev => new Map(prev).set(genId, genUrl));
+
+                setSelectedPhotoPaths(prev => {
+                  if (prev.length < 5 && !prev.includes(genId)) {
+                    return [...prev, genId];
+                  }
+                  return prev;
+                });
+
+                await productImagesService.createRecord(
+                  product.company_id, 
+                  product.id, 
+                  genId, 
+                  nextPosition + 1 + i
+                );
+              }
+            }
           }
         }
-      );
-
-      if (!res.success || !res.processedImages[0]) {
-        throw new Error("Falha ao otimizar imagem com IA");
+      } catch (err) {
+        console.error("Erro no processamento IA, mantendo original:", err);
+        toast.error("IA indisponível", { description: "Mantendo foto original sem tratamento." });
       }
 
-      const mainProcessed = res.processedImages[0];
-      // CRITICAL: Garantir que a URL original NUNCA permaneça na tela.
-      // Forçamos a substituição no estado pela URL tratada (fundo branco).
-      const finalUrl = mainProcessed.processedUrl || url;
-      
-      setLocalImageUrls(prev => {
-        const next = new Map(prev);
-        next.set(path, finalUrl);
-        return next;
-      });
+      setLocalImageUrls(prev => new Map(prev).set(path, finalUrl));
 
       // Se gerou multiview (slots extras automáticos), processamos cada uma
       const generated = res.processedImages.filter(img => (img as any).isGenerated);
