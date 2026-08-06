@@ -438,7 +438,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand("Generica");
-      const currentModel = ((product as any).model ?? "").trim();
+      const currentModel = ((product as any)?.model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
         const words = t.split(/\s+/).filter(w => w.length > 2);
