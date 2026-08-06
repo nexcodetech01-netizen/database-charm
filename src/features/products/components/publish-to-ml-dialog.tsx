@@ -1392,7 +1392,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 </div>
                                 <div className="flex justify-between text-[10px]">
                                   <span className="text-muted-foreground">Frete (Fixo/Gratis)</span>
-                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : (classicFixedFee > 0 ? formatCurrency(classicFixedFee) : "R$ 0,00")}</span>
+                                  <span className="font-medium">-{classicShipping > 0 ? formatCurrency(classicShipping) : "R$ 0,00"}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] pt-1 border-t border-primary/10 font-semibold text-primary/80">
                                   <span>Líquido a receber</span>
