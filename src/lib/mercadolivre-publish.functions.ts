@@ -650,7 +650,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     const body: Record<string, unknown> = {
       family_name: cleanTitle.substring(0, 50),
-      category_id: "MLB457449",
+      category_id: data.categoryId || "MLB457449",
       price: Number(price),
       available_quantity: Number(quantity),
       currency_id: "BRL",
@@ -660,7 +660,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       pictures: pictures,
       description: description,
       attributes: sanitizedAttrs,
-      video_id: data.videoUrl ? (data.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/) || [])[1] : undefined,
+      video_id: undefined as string | undefined,
       shipping: {
         mode: "me2",
         local_pick_up: false,
@@ -671,14 +671,50 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
 
+    // Tratamento de Vídeo: YouTube ou Upload Direto
+    if (data.videoUrl) {
+      const youtubeMatch = data.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/);
+      const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
+
+      if (youtubeId) {
+        body.video_id = youtubeId;
+      } else if (data.videoUrl.startsWith('http')) {
+        // Tentativa de upload direto para o Mercado Livre Media
+        try {
+          console.log("[mercadolivre] Tentando upload de vídeo externo no ML Media...");
+          
+          const mediaRes = await fetch(`${ML_API}/media/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              source: data.videoUrl
+            })
+          });
+
+          if (mediaRes.ok) {
+            const mediaData = await mediaRes.json();
+            console.log("[mercadolivre] Vídeo registrado com sucesso no ML Media ID:", mediaData.id);
+            body.video_id = mediaData.id;
+          } else {
+            const errTxt = await mediaRes.text();
+            console.warn("[mercadolivre] Falha ao registrar vídeo no ML Media:", mediaRes.status, errTxt);
+          }
+        } catch (err) {
+          console.warn("[mercadolivre] Erro no processamento de vídeo para upload direto:", err);
+        }
+      }
+    }
+
     const requestBody = {
       ...body,
       attributes: sanitizedAttrs,
     };
 
-    // Remove sale_terms redundantes que podem causar erro 400 (parcelamento é auto pelo listing_type)
+    // Remove sale_terms redundantes
     delete (requestBody as any).sale_terms;
-
 
     const validation = mlPublishPayloadSchema.safeParse(requestBody);
     if (!validation.success) {
