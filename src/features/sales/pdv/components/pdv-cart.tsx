@@ -1,11 +1,12 @@
 import { memo, useCallback } from "react";
-import { ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Edit2, ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2, Percent, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
 import { PDV_LAYOUT } from "../lib/layout";
 import { pdvQuantityInputId } from "../lib/focus";
 import { computeItemTotal, type SaleItemDraft } from "../../types";
+import { Badge } from "@/components/ui/badge";
 
 type Props = {
   items: SaleItemDraft[];
@@ -16,6 +17,9 @@ type Props = {
   onActivate?: (uiKey: string) => void;
   /** Somente leitura após a venda ter sido gravada. */
   readOnly?: boolean;
+  onEditPrice?: (item: SaleItemDraft) => void;
+  onEditDiscount?: (item: SaleItemDraft) => void;
+  onEditAddition?: (item: SaleItemDraft) => void;
 };
 
 type RowProps = {
@@ -26,6 +30,9 @@ type RowProps = {
   onQuantityChange: (uiKey: string, quantity: number) => void;
   onRemove: (uiKey: string) => void;
   onActivate?: (uiKey: string) => void;
+  onEditPrice?: (item: SaleItemDraft) => void;
+  onEditDiscount?: (item: SaleItemDraft) => void;
+  onEditAddition?: (item: SaleItemDraft) => void;
 };
 
 function stockLabel(stock: number | null | undefined): string {
@@ -45,10 +52,17 @@ const PDVCartRow = memo(function PDVCartRow({
   onQuantityChange,
   onRemove,
   onActivate,
+  onEditPrice,
+  onEditDiscount,
+  onEditAddition,
 }: RowProps) {
   const activate = useCallback(() => onActivate?.(uiKey), [onActivate, uiKey]);
   const stock = item.stock_available;
   const lowStock = stock != null && stock < item.quantity;
+  
+  const hasPriceChange = item.original_unit_price != null && item.unit_price !== item.original_unit_price;
+  const hasDiscount = (item.discount || 0) > 0;
+  const hasAddition = (item.addition || 0) > 0;
 
   return (
     <li
@@ -74,23 +88,85 @@ const PDVCartRow = memo(function PDVCartRow({
       </div>
 
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold leading-tight">
-          {item.description}
-        </p>
-        <div className="flex items-center gap-x-1.5 truncate text-[11px] leading-tight text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-semibold leading-tight">
+            {item.description}
+          </p>
+          {hasPriceChange && (
+            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-amber-500/10 text-amber-600 border-amber-500/20">
+              Preço alterado
+            </Badge>
+          )}
+          {hasDiscount && (
+            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-green-500/10 text-green-600 border-green-500/20">
+              Desconto
+            </Badge>
+          )}
+          {hasAddition && (
+            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-blue-500/10 text-blue-600 border-blue-500/20">
+              Acréscimo
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-x-1.5 truncate text-[11px] leading-tight text-muted-foreground mt-0.5">
           <span className="font-mono">{item.sku ?? "sem SKU"}</span>
           <span aria-hidden="true">·</span>
           <span className={lowStock ? "font-medium text-destructive" : ""}>
             {stockLabel(stock)}
           </span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">
-            {formatCurrency(item.unit_price)}
-          </span>
+          <div className="flex items-center gap-1 tabular-nums">
+            {hasPriceChange && (
+              <>
+                <span className="line-through text-muted-foreground/60">{formatCurrency(item.original_unit_price!)}</span>
+                <span className="text-amber-600">↓</span>
+              </>
+            )}
+            <span className={hasPriceChange ? "font-bold text-amber-700" : ""}>
+              {formatCurrency(item.unit_price)}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="flex items-center gap-1 mr-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground/70 hover:text-primary hover:bg-primary/10"
+            disabled={readOnly}
+            onClick={() => onEditPrice?.(item)}
+            title="Alterar preço"
+          >
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground/70 hover:text-green-600 hover:bg-green-600/10"
+            disabled={readOnly}
+            onClick={() => onEditDiscount?.(item)}
+            title="Desconto"
+          >
+            <Percent className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground/70 hover:text-blue-600 hover:bg-blue-600/10"
+            disabled={readOnly}
+            onClick={() => onEditAddition?.(item)}
+            title="Acréscimo"
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
         <div className="flex items-center rounded-lg border bg-background">
           <Button
             type="button"
@@ -103,7 +179,6 @@ const PDVCartRow = memo(function PDVCartRow({
           >
             <Minus className="h-4 w-4" />
           </Button>
-          {/* Edição inline da quantidade (Sprint 2.8). */}
           <Input
             id={pdvQuantityInputId(uiKey)}
             type="number"
@@ -149,10 +224,6 @@ const PDVCartRow = memo(function PDVCartRow({
   );
 });
 
-/**
- * Carrinho do PDV — manipula apenas o draft canônico da venda.
- * Sprint 3.1: hierarquia visual, respiro e empty state profissional.
- */
 export function PDVCart({
   items,
   onQuantityChange,
@@ -160,6 +231,9 @@ export function PDVCart({
   activeKey,
   onActivate,
   readOnly,
+  onEditPrice,
+  onEditDiscount,
+  onEditAddition,
 }: Props) {
   return (
     <div className="flex flex-col rounded-xl border bg-card shadow-sm">
@@ -203,6 +277,9 @@ export function PDVCart({
                 onQuantityChange={onQuantityChange}
                 onRemove={onRemove}
                 onActivate={onActivate}
+                onEditPrice={onEditPrice}
+                onEditDiscount={onEditDiscount}
+                onEditAddition={onEditAddition}
               />
             );
           })}
