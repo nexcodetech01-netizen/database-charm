@@ -744,6 +744,25 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
   const isDuplicating = !!duplicateOf && !product;
 
+  const mlValidation = useMemo(() => {
+    return validateMercadoLivreRequirements({
+      ...product,
+      company_id: companyId,
+      name: form.name,
+      price: num(form.price),
+      ncm: form.ncm,
+      weight: num(form.weight),
+      width: num(form.width),
+      height: num(form.height),
+      length: num(form.length),
+      brand: form.brand,
+      model: form.model,
+      // No formulário, usamos a categoria do ERP, que deve ser mapeada
+      categoryId: form.category_id, 
+    });
+  }, [product, companyId, form]);
+
+
   const submit = async () => {
     // Validações estritas para duplicação: exige categoria, fornecedor e
     // preços informados explicitamente antes de criar o novo registro.
