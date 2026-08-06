@@ -25,6 +25,8 @@ export function validateMercadoLivreRequirements(
     categoryId?: string;
     brand?: string;
     model?: string;
+    listingType?: string;
+    walletTarget?: number;
   }
 ): MercadoLivreValidationResult {
   const requirements: MercadoLivreRequirement[] = [];
@@ -110,6 +112,30 @@ export function validateMercadoLivreRequirements(
       : "Marca e Modelo são obrigatórios para a maioria das categorias",
     critical: false,
   });
+
+  // 8. Validação de Preço e Frete (Fórmula Mercado Livre)
+  if (product.listingType && product.price) {
+    const isPremium = product.listingType === "gold_pro";
+    const feePct = isPremium ? 0.15 : 0.135;
+    const price = Number(product.price);
+    const shipping = price >= 79 ? 24.65 : 0;
+    const fixedFee = (price < 79 && price > 0) ? 6.5 : 0;
+    
+    // Líquido esperado com base no preço atual
+    const expectedNet = isPremium 
+      ? (price * (1 - 0.15)) - shipping
+      : (price * (1 - 0.135)) - fixedFee - shipping;
+
+    requirements.push({
+      id: "price_formula",
+      label: "Fórmula de Preço",
+      isValid: expectedNet > 0,
+      message: expectedNet > 0 
+        ? "Margem líquida positiva" 
+        : "Preço insuficiente para cobrir taxas e frete",
+      critical: true,
+    });
+  }
 
   const criticals = requirements.filter(r => r.critical);
   const isReady = criticals.every(r => r.isValid);
