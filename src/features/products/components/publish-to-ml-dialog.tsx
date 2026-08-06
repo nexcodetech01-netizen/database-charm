@@ -960,6 +960,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           brand: (product as { brand?: string | null })?.brand ?? undefined,
           productName: product?.name,
           productDetails: product?.description ?? undefined,
+          supplier: (product as any)?.supplier || (product as any)?.brand_supplier,
         },
       }),
     onSuccess: (res) => {
