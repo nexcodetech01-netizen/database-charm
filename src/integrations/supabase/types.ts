@@ -3686,6 +3686,39 @@ export type Database = {
           },
         ]
       }
+      ncm_master: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          material: string | null
+          ncm: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          material?: string | null
+          ncm: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          material?: string | null
+          ncm?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nexos_event_log: {
         Row: {
           company_id: string

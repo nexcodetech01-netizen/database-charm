@@ -1,26 +1,18 @@
 /**
  * Automação de preenchimento fiscal (NCM/CEST) no cadastro de produtos.
- *
- * Regras:
- * - Sugestão por CATEGORIA: ao selecionar uma categoria com NCM padrão, o
- *   campo é preenchido automaticamente SOMENTE se estiver vazio ou se o valor
- *   atual tiver vindo de outra sugestão automática. Nunca sobrescreve algo
- *   digitado pelo usuário.
- * - Sugestão por HISTÓRICO: busca em tempo real (debounce) produtos com nome
- *   similar já cadastrados na empresa. Nunca preenche sozinho — é sempre uma
- *   sugestão que o usuário aplica com um clique.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { toast } from "sonner";
 import {
   fiscalSuggestionService,
   normalizeCest,
   normalizeNcm,
   type FiscalHistorySuggestion,
 } from "../lib/fiscal-suggestions";
-import { ncmMasterService } from "../lib/ncm-master";
+import { ncmMasterService, type NcmMasterEntry } from "../lib/ncm-master";
 
 export type FiscalSource = "manual" | "category" | "history" | "barcode";
 
@@ -47,7 +39,9 @@ export interface FiscalAutofillState {
   source: FiscalSource;
   categorySuggestion: { ncm: string; cest: string; categoryName: string } | null;
   historySuggestions: FiscalHistorySuggestion[];
+  masterSuggestions: NcmMasterEntry[];
   historyLoading: boolean;
+  masterLoading: boolean;
   applySuggestion: (values: { ncm: string; cest?: string | null }, source: FiscalSource) => void;
   markManual: () => void;
 }
@@ -62,8 +56,8 @@ export function useFiscalAutofill({
   cest,
   onApply,
 }: Params): FiscalAutofillState {
-  // Origem do valor atual — controla se a automação pode sobrescrever.
   const [source, setSource] = useState<FiscalSource>(ncm ? "manual" : "category");
+  const [isCheckingMaster, setIsCheckingMaster] = useState(false);
   const sourceRef = useRef(source);
   sourceRef.current = source;
 
@@ -82,7 +76,6 @@ export function useFiscalAutofill({
     };
   }, [category]);
 
-  // 1) Sugestão por Categoria (Tabela Mestre e Padrão da Categoria)
   const lastCategoryRef = useRef<string | null>(null);
   const lastMaterialRef = useRef<string | null>(null);
 
@@ -90,35 +83,65 @@ export function useFiscalAutofill({
     async function checkMasterNcm() {
       if (!category) return;
       if (lastCategoryRef.current === categoryId && lastMaterialRef.current === material) return;
+      
       lastCategoryRef.current = categoryId;
       lastMaterialRef.current = material || null;
+      setIsCheckingMaster(true);
 
-      // Prioridade 1: Tabela Mestre (NCM Master)
-      const masterSuggestion = await ncmMasterService.suggest(category.name, material);
-      
-      const targetNcm = masterSuggestion?.ncm || categorySuggestion?.ncm;
-      const targetCest = categorySuggestion?.cest || cest;
+      try {
+        const masterSuggestion = await ncmMasterService.suggest(category.name, material);
+        
+        const targetNcm = masterSuggestion?.ncm || categorySuggestion?.ncm;
+        const targetCest = categorySuggestion?.cest || cest;
 
-      if (!targetNcm) return;
+        if (!targetNcm) {
+          if (!ncm && categoryId) {
+            toast.info("Nenhuma sugestão automática para esta categoria.", {
+              description: "Selecione uma categoria diferente ou preencha o NCM manualmente.",
+              duration: 4000,
+            });
+          }
+          return;
+        }
 
-      const canOverwrite = !ncm || sourceRef.current === "category";
-      if (!canOverwrite) return;
-      if (ncm === targetNcm && cest === targetCest) return;
+        const canOverwrite = !ncm || sourceRef.current === "category";
+        if (!canOverwrite) return;
+        if (ncm === targetNcm && cest === targetCest) return;
 
-      setSource("category");
-      onApply({ ncm: targetNcm, cest: targetCest });
+        setSource("category");
+        onApply({ ncm: targetNcm, cest: targetCest });
+        
+        if (masterSuggestion) {
+          toast.success(`NCM sugerido: ${targetNcm}`, {
+            description: `Baseado na categoria "${category.name}"${material ? ` e material "${material}"` : ""}.`,
+          });
+        }
+      } catch (error) {
+        console.error("[useFiscalAutofill] Master lookup error:", error);
+      } finally {
+        setIsCheckingMaster(false);
+      }
     }
 
     checkMasterNcm();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, material, category, categorySuggestion]);
+  }, [categoryId, material, category, categorySuggestion, ncm, cest, onApply]);
 
-  // 2) Histórico inteligente por similaridade de nome.
   const debouncedName = useDebouncedValue(name.trim(), 450);
+  
+  // 2) Histórico inteligente
   const { data: historySuggestions = [], isFetching: historyLoading } = useQuery({
     queryKey: ["products", "fiscal-suggestions", companyId, debouncedName],
     queryFn: () => fiscalSuggestionService.byName(companyId, debouncedName),
-    enabled: Boolean(companyId) && debouncedName.length >= 3,
+    // Reduzido para 2 caracteres conforme pedido ("mesmo com produto tendo menos de 3 letras")
+    enabled: Boolean(companyId) && debouncedName.length >= 2,
+    staleTime: 60_000,
+  });
+
+  // 3) Busca na Tabela Mestre por termo (fallback quando não tem categoria ou histórico fraco)
+  const { data: masterSuggestions = [], isFetching: isSearchingMaster } = useQuery({
+    queryKey: ["products", "ncm-master-search", debouncedName],
+    queryFn: () => ncmMasterService.search(debouncedName),
+    enabled: debouncedName.length >= 3,
     staleTime: 60_000,
   });
 
@@ -129,6 +152,7 @@ export function useFiscalAutofill({
         ncm: normalizeNcm(values.ncm),
         cest: values.cest ? normalizeCest(values.cest) : cest,
       });
+      toast.success("Sugestão fiscal aplicada!");
     },
     [onApply, cest],
   );
@@ -139,7 +163,9 @@ export function useFiscalAutofill({
     source,
     categorySuggestion,
     historySuggestions,
+    masterSuggestions,
     historyLoading,
+    masterLoading: isCheckingMaster || isSearchingMaster,
     applySuggestion,
     markManual,
   };

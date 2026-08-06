@@ -1507,42 +1507,53 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               </Field>
 
               <Field label="NCM *" hint="8 dígitos — essencial para cálculo de impostos e frete.">
-                <Input
-                  value={form.ncm}
-                  inputMode="numeric"
-                  maxLength={12}
-                  placeholder="0000.00.00 ou 00000000"
-                  onChange={(e) => {
-                    fiscal.markManual();
-                    set("ncm", normalizeNcm(e.target.value));
-                  }}
-                />
+                <div className="relative">
+                  <Input
+                    value={form.ncm}
+                    inputMode="numeric"
+                    maxLength={12}
+                    placeholder="0000.00.00 ou 00000000"
+                    onChange={(e) => {
+                      fiscal.markManual();
+                      set("ncm", normalizeNcm(e.target.value));
+                    }}
+                    className={fiscal.masterLoading || fiscal.historyLoading ? "pr-10" : ""}
+                  />
+                  {(fiscal.masterLoading || (fiscal.historyLoading && !form.ncm)) && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                      <span className="text-[10px] text-muted-foreground animate-pulse hidden sm:inline">Buscando...</span>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                    </div>
+                  )}
+                </div>
+
                 {form.ncm && fiscal.source !== "manual" ? (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-primary animate-in fade-in slide-in-from-left-1">
+                    <Sparkles className="h-3.5 w-3.5" />
                     {fiscal.source === "category"
                       ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
                       : fiscal.source === "barcode"
                         ? "Sugerido pelo EAN cadastrado — edite se precisar."
-                        : "Sugerido pelo histórico de produtos — edite se precisar."}
+                        : "Sugerido pelo histórico — edite se precisar."}
                   </p>
                 ) : null}
 
-                {fiscal.historyLoading && !form.ncm ? (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando produtos semelhantes…
+                {fiscal.historyLoading && !form.ncm && !fiscal.masterLoading ? (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando no histórico…
                   </p>
                 ) : null}
 
                 {fiscal.historySuggestions.length ? (
                   <div className="mt-2 space-y-1.5">
                     <p className="text-[11px] font-medium text-muted-foreground">
-                      Usados em produtos semelhantes:
+                      Sugestões do histórico e tabela mestre:
                     </p>
                     <div className="flex flex-wrap gap-1.5">
+                      {/* Sugestões do Histórico */}
                       {fiscal.historySuggestions.map((s) => (
                         <Button
-                          key={s.ncm}
+                          key={`hist-${s.ncm}`}
                           type="button"
                           variant="outline"
                           size="sm"
@@ -1560,8 +1571,35 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                           </Badge>
                         </Button>
                       ))}
+
+                      {/* Sugestões da Tabela Mestre / BrasilAPI */}
+                      {fiscal.masterSuggestions.map((s) => (
+                        <Button
+                          key={`master-${s.ncm}`}
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 gap-1.5 px-2 text-[11px] bg-primary/5 hover:bg-primary/10 border-primary/20"
+                          onClick={() =>
+                            fiscal.applySuggestion({ ncm: s.ncm }, "history")
+                          }
+                          title={s.description || ""}
+                        >
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          {formatNcm(s.ncm)}
+                          {s.category ? <span className="opacity-60">({s.category})</span> : null}
+                        </Button>
+                      ))}
                     </div>
                   </div>
+                ) : null}
+
+                {fiscal?.historySuggestions?.length === 0 && 
+                 fiscal?.masterSuggestions?.length === 0 && 
+                 !fiscal.masterLoading && form.name.length >= 3 ? (
+                  <p className="mt-2 text-[10px] text-muted-foreground italic animate-in fade-in duration-500">
+                    Nenhuma sugestão encontrada para "{form.name}". Tente selecionar uma categoria ou digite o NCM manualmente.
+                  </p>
                 ) : null}
               </Field>
 

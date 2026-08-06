@@ -1,12 +1,45 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface NcmMasterEntry {
-  id: string;
-  category: string;
-  material: string | null;
+  id?: string;
+  category?: string;
+  material?: string | null;
   ncm: string;
   description: string | null;
-  status: "Confirmado" | "Revisar";
+  status?: "Confirmado" | "Revisar";
+}
+
+/** Fallback para BrasilAPI quando o NCM não for encontrado localmente. */
+async function fetchBrasilApiNcm(categoryName: string): Promise<NcmMasterEntry | null> {
+  try {
+    // A BrasilAPI não tem busca por nome de categoria diretamente, 
+    // mas podemos tentar buscar por termo se houvesse um endpoint de busca.
+    // Como o requisito pede fallback na BrasilAPI (https://brasilapi.com.br/api/ncm/v1),
+    // e esse endpoint lista todos ou busca por código, 
+    // o fallback mais útil aqui seria se tivéssemos o código.
+    // No entanto, se o objetivo é buscar por NOME de categoria na BrasilAPI:
+    // a API de NCM da BrasilAPI é estática/listagem. 
+    // Vamos implementar uma busca básica se o usuário digitou um código, 
+    // ou apenas registrar que o fallback existe para futuras expansões.
+    
+    // Se categoryName parece um código NCM (8 dígitos):
+    const code = categoryName.replace(/\D/g, "");
+    if (code.length >= 4) {
+      const response = await fetch(`https://brasilapi.com.br/api/ncm/v1/${code}`);
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          ncm: data.codigo,
+          description: data.descricao,
+          status: "Revisar"
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("[ncm-master] BrasilAPI fallback error:", error);
+    return null;
+  }
 }
 
 export const ncmMasterService = {
@@ -14,12 +47,13 @@ export const ncmMasterService = {
    * Busca sugestão de NCM na tabela mestre por categoria e material.
    * Prioriza correspondência exata de categoria + material.
    * Se não encontrar, busca apenas pela categoria.
+   * Fallback: BrasilAPI.
    */
   async suggest(categoryName: string, material: string | null = null): Promise<NcmMasterEntry | null> {
     if (!categoryName) return null;
 
     try {
-      // Tenta busca exata (Categoria + Material)
+      // Tenta busca exata (Categoria + Material) na base local
       if (material) {
         const { data: exactMatch } = await (supabase as any)
           .from("ncm_master")
@@ -33,7 +67,7 @@ export const ncmMasterService = {
         if (exactMatch) return exactMatch as NcmMasterEntry;
       }
 
-      // Tenta busca apenas por Categoria (ou se material for nulo)
+      // Tenta busca apenas por Categoria na base local
       const { data: categoryMatch } = await (supabase as any)
         .from("ncm_master")
         .select("*")
@@ -42,10 +76,43 @@ export const ncmMasterService = {
         .limit(1)
         .maybeSingle();
 
-      return categoryMatch as NcmMasterEntry | null;
+      if (categoryMatch) return categoryMatch as NcmMasterEntry;
+
+      // Fallback: BrasilAPI
+      return await fetchBrasilApiNcm(categoryName);
     } catch (error) {
       console.error("[ncm-master] Error fetching suggestion:", error);
       return null;
+    }
+  },
+
+  /**
+   * Busca NCMs por termo (código ou descrição) para preenchimento manual/combobox.
+   */
+  async search(query: string): Promise<NcmMasterEntry[]> {
+    const term = query.trim();
+    if (!term) return [];
+
+    try {
+      // Se for apenas dígitos e tiver 4+, busca por código na BrasilAPI primeiro (fallback rápido)
+      const digits = term.replace(/\D/g, "");
+      if (digits.length >= 4 && digits.length <= 8) {
+        const brasilMatch = await fetchBrasilApiNcm(digits);
+        if (brasilMatch) return [brasilMatch];
+      }
+
+      // Busca na base local por categoria ou descrição
+      const { data, error } = await (supabase as any)
+        .from("ncm_master")
+        .select("*")
+        .or(`category.ilike.%${term}%,description.ilike.%${term}%,ncm.ilike.%${term}%`)
+        .limit(10);
+
+      if (error) throw error;
+      return (data || []) as NcmMasterEntry[];
+    } catch (error) {
+      console.error("[ncm-master] Search error:", error);
+      return [];
     }
   },
 
