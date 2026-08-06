@@ -709,7 +709,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         )}
 
         {/* Botões de Reordenação e IA Overlay */}
-        <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {!isProcessing && (
+          <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
           <div className="flex justify-between gap-1">
             <button
               type="button"
