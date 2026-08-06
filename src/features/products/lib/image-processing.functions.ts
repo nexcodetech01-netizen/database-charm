@@ -51,7 +51,7 @@ export const processProductImages = createServerFn({ method: "POST" })
         url: mainImg.url, // Referência à imagem base
         processedUrl: `${mainImg.url}${mainImg.url.includes('?') ? '&' : '?'}angle=${angle}&bg=white`, // Simulação da variação gerada
         isMain: false,
-        status: "success",
+        status: "success" as const,
         appliedEffect: "neutral_studio_setting",
         isGenerated: true,
         angle,
