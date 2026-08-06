@@ -4,16 +4,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PurchaseForm, usePurchase } from "@/features/purchases";
 
 export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/editar")({
-  beforeLoad: requirePermission("purchases.view"),
+  beforeLoad: requirePermission("purchases.update"),
   component: EditPurchasePage,
 });
 
 function EditPurchasePage() {
   const { company } = Route.useRouteContext();
   const { purchaseId } = Route.useParams();
-  console.log("[EditPurchasePage] Rota acessada:", { purchaseId, companyId: company?.id });
-  const { data: purchase, isLoading, error } = usePurchase(purchaseId);
-  console.log("[EditPurchasePage] Dados da compra:", { purchase: !!purchase, isLoading, error });
+  const { data: purchase, isLoading } = usePurchase(purchaseId);
 
   if (isLoading) {
     return (
