@@ -630,6 +630,12 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       seenIds.add(id);
     }
 
+    // Dimensões padrão para ME2 (Mercado Envíos)
+    const weight = Number((product as any).weight || 0.5) * 1000; // kg -> g
+    const length = Number((product as any).length || 30);
+    const width = Number((product as any).width || 20);
+    const height = Number((product as any).height || 10);
+
     const body: Record<string, unknown> = {
       family_name: cleanTitle.substring(0, 50),
       category_id: "MLB457449",
@@ -641,7 +647,13 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       condition: "new",
       pictures: pictures,
       description: description,
-      attributes: baseAttrs,
+      attributes: sanitizedAttrs,
+      shipping: {
+        mode: "me2",
+        local_pick_up: false,
+        free_shipping: price >= 79,
+        dimensions: `${width}x${height}x${length},${weight}`
+      }
     };
     
     // Adiciona o vídeo se disponível (na carga útil do ML o campo é 'video_id', 
