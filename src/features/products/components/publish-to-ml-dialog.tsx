@@ -289,6 +289,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
       setImgErrorMap(new Map());
+      setUseAI(true);
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
