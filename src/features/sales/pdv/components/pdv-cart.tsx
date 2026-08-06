@@ -57,6 +57,7 @@ const PDVCartRow = memo(function PDVCartRow({
   onEditPrice,
   onEditDiscount,
   onEditAddition,
+  onEditNotes,
 }: RowProps) {
   const activate = useCallback(() => onActivate?.(uiKey), [onActivate, uiKey]);
   const stock = item.stock_available;
