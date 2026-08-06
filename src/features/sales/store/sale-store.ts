@@ -107,6 +107,13 @@ export function saleReducer(
           it.ui_key === action.uiKey ? { ...it, addition: action.addition } : it,
         ),
       };
+    case "UPDATE_ITEM_NOTES":
+      return {
+        ...state,
+        items: state.items.map((it) =>
+          it.ui_key === action.uiKey ? { ...it, notes: action.notes } : it,
+        ),
+      };
     case "HYDRATE":
       return { ...action.state };
     case "RESET":
