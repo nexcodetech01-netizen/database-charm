@@ -126,7 +126,9 @@ export interface SaleItemDraft {
   description: string;
   quantity: number;
   unit_price: number;
+  original_unit_price: number;
   discount: number;
+  addition: number;
   // Transient (não persistidos em sale_items — usados apenas para UX)
   sku?: string | null;
   image_url?: string | null;
@@ -151,9 +153,10 @@ export function computeItemTotal(item: {
   quantity: number;
   unit_price: number;
   discount: number;
+  addition: number;
 }): number {
   const gross = (item.quantity || 0) * (item.unit_price || 0);
-  return Math.max(0, gross - (item.discount || 0));
+  return Math.max(0, gross - (item.discount || 0) + (item.addition || 0));
 }
 
 /**
@@ -177,7 +180,7 @@ export function computeItemMargin(item: SaleItemDraft): {
 }
 
 export function computeTotals(
-  items: { quantity: number; unit_price: number; discount: number }[],
+  items: { quantity: number; unit_price: number; discount: number; addition: number }[],
   extras: { discount: number; shipping: number },
 ) {
   const items_total = items.reduce((sum, it) => sum + computeItemTotal(it), 0);
