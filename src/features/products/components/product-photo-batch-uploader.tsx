@@ -19,22 +19,35 @@ import { processProductImages } from "../lib/image-processing.functions";
 
 interface QueuedImage {
   id: string;
-  file: File;
+  file?: File;
   preview: string;
   processedUrl?: string;
   isProcessing: boolean;
   status: "pending" | "processing" | "success" | "error";
   error?: string;
+  isExisting?: boolean;
 }
 
 interface Props {
   companyId: string;
+  productId?: string;
   maxPhotos?: number;
+  existingImages?: Array<{ path: string; signedUrl: string }>;
+  onUpdate?: (images: Array<{ path: string; isProcessed: boolean }>) => void;
 }
 
-export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
-  const [queue, setQueue] = useState<QueuedImage[]>([]);
-  const [activeTab, setActiveTab] = useState<"upload" | "preview">("upload");
+export function ProductPhotoBatchUploader({ companyId, productId, maxPhotos = 5, existingImages = [], onUpdate }: Props) {
+  const [queue, setQueue] = useState<QueuedImage[]>(() => {
+    return existingImages.map(img => ({
+      id: img.path,
+      preview: img.signedUrl,
+      processedUrl: img.signedUrl,
+      isProcessing: false,
+      status: "success",
+      isExisting: true
+    }));
+  });
+  const [activeTab, setActiveTab] = useState<"upload" | "preview">(existingImages.length > 0 ? "preview" : "upload");
   const processImagesFn = useServerFn(processProductImages);
 
   const onFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +63,7 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
       preview: URL.createObjectURL(file),
       isProcessing: false,
       status: "pending",
+      isExisting: false
     }));
 
     setQueue((prev) => [...prev, ...newEntries]);
@@ -65,9 +79,17 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
   };
 
   const startBatchProcessing = async () => {
-    if (queue.length === 0) return;
+    const toProcess = queue.filter(img => img.status === "pending" || img.status === "error");
+    if (toProcess.length === 0) {
+      toast.info("Não há novas fotos para otimizar.");
+      return;
+    }
 
-    setQueue(prev => prev.map(img => ({ ...img, isProcessing: true, status: "processing" })));
+    setQueue(prev => prev.map(img => 
+      (img.status === "pending" || img.status === "error") 
+        ? { ...img, isProcessing: true, status: "processing" }
+        : img
+    ));
     
     try {
       const result = await processImagesFn({
@@ -75,7 +97,7 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
           images: queue.map((img, idx) => ({
             id: img.id,
             url: img.preview,
-            isMain: idx === 0
+            isMain: idx === 0 && !img.isExisting // Apenas se a nova foto for colocada em 1º
           }))
         }
       });
@@ -83,17 +105,21 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
       if (result.success) {
         setQueue(prev => prev.map(img => {
           const processed = result.processedImages.find((p: any) => p.id === img.id);
+          if (!processed || img.isExisting) return img; // Preserva existentes
+          
           return {
             ...img,
-            processedUrl: processed?.processedUrl || img.preview,
+            processedUrl: processed.processedUrl || img.preview,
             isProcessing: false,
             status: "success"
           };
         }));
-        toast.success("IA: Fotos otimizadas com sucesso!");
+        toast.success("IA: Novas fotos de detalhe otimizadas!");
       }
     } catch (error) {
-      setQueue(prev => prev.map(img => ({ ...img, isProcessing: false, status: "error" })));
+      setQueue(prev => prev.map(img => 
+        img.status === "processing" ? { ...img, isProcessing: false, status: "error" } : img
+      ));
       toast.error("Falha no processamento de IA.");
     }
   };
@@ -114,7 +140,7 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
             Otimização por IA (Mercado Livre)
           </h4>
           <p className="text-[11px] text-muted-foreground">
-            A 1ª foto terá fundo branco puro. As demais, cenários de estúdio elegantes.
+            Novas fotos recém-adicionadas receberão cenários de estúdio (privacidade). Foto 1 preservada se já existir.
           </p>
         </div>
         <Badge variant="secondary" className="text-[10px]">
@@ -128,7 +154,7 @@ export function ProductPhotoBatchUploader({ companyId, maxPhotos = 5 }: Props) {
             <Camera className="h-8 w-8 text-primary" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium">Capturar fotos em lote</p>
+            <p className="text-sm font-medium">Adicionar fotos de detalhe em lote</p>
             <p className="text-xs text-muted-foreground mt-1">
               Tire até {maxPhotos} fotos agora ou selecione da galeria.
             </p>
