@@ -243,6 +243,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
+  const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const autoRanRef = useRef(false);
 
   // Reset state on open
