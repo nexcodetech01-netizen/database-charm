@@ -622,6 +622,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const uploadPhoto = useMutation({
     mutationFn: async ({ file, slotIndex }: { file: File; slotIndex: number }) => {
       const nextPosition = photosQuery.data?.length ?? 0;
+      if (!product?.company_id || !product?.id) throw new Error("Dados da empresa ou produto não encontrados");
       const path = await productImagesService.upload(product.company_id, product.id, file);
       
       // Get the signed URL to show immediately
