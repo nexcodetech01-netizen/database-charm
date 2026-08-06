@@ -245,6 +245,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
+  const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
 
@@ -286,6 +287,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSeason("Permanente");
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
+      setImgErrorMap(new Map());
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
@@ -661,6 +663,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     onReprocess: (p: string, i: number) => void;
   }) {
     const isProcessing = (uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index);
+    const hasError = imgErrorMap.get(path) === true;
 
     const {
       attributes,
@@ -686,19 +689,25 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
         } ${isProcessing ? "cursor-wait" : ""}`}
       >
-        {url ? (
+        {url && !hasError ? (
           <img
             src={url}
             alt=""
             className="h-full w-full object-cover"
             loading="lazy"
+            onError={() => {
+              console.error("Erro ao carregar imagem no slot", index + 1, url);
+              setImgErrorMap(prev => new Map(prev).set(path, true));
+            }}
           />
         ) : (
           <div 
             className="h-full w-full bg-muted cursor-pointer flex items-center justify-center"
             onClick={() => openFilePicker(index)}
           >
-            <span className="text-muted-foreground text-xs">Vazio</span>
+            <span className="text-muted-foreground text-[10px] text-center px-1">
+              {hasError ? "Erro Carregamento" : "Vazio"}
+            </span>
           </div>
         )}
         
@@ -1205,6 +1214,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                             src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
                             alt="Preview do vídeo"
                             className="w-full h-full object-cover opacity-70"
+                            onError={(e) => {
+                              // Se falhar o mqdefault, tenta o default básico
+                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+                            }}
                           />
                         );
                       }
