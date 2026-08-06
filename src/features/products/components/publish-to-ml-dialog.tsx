@@ -1412,7 +1412,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
                   {/* Input de Preço Final e Quanto recebe */}
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2 p-4 bg-muted/30 rounded-xl border border-dashed border-border">
+                    <div className="grid gap-2 p-3 bg-muted/20 rounded-xl border border-dashed border-border">
                       <Label htmlFor="ml-price" className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">
                         Preço Final de Venda
                       </Label>
