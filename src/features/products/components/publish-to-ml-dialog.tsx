@@ -739,7 +739,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       } else {
         toast.info("A IA não retornou um resultado válido, mantendo original.");
       }
-      qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
+      }
       toast.success("Imagem tratada com IA com sucesso.");
     },
     onError: (err) => {
