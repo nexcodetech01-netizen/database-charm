@@ -330,7 +330,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   // Seleção de fotos (até 5). Guarda os `path` no bucket product-images.
   const [selectedPhotoPaths, setSelectedPhotoPaths] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
@@ -1310,16 +1312,60 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 {/* Vídeo */}
                 <div className="grid gap-2 border-t border-border pt-4">
                   <Label htmlFor="ml-video" className="flex items-center gap-2 text-sm font-semibold">
-                    Vídeo (YouTube)
+                    Vídeo do Anúncio (Upload MP4 ou Link)
                     <Badge variant="outline" className="text-[9px] py-0 h-4">Opcional</Badge>
                   </Label>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Input
-                      id="ml-video"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                    />
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        id="ml-video"
+                        placeholder="Link do YouTube ou selecione um arquivo MP4..."
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                      />
+                      <input 
+                        ref={videoInputRef} 
+                        type="file" 
+                        accept="video/mp4" 
+                        className="hidden" 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          if (file.size > 50 * 1024 * 1024) {
+                            toast.error("Vídeo muito grande. Limite de 50MB.");
+                            return;
+                          }
+
+                          try {
+                            setIsUploadingVideo(true);
+                            const path = await productImagesService.upload(product.company_id, product.id, file);
+                            const url = await productImagesService.signedUrl(path, 60 * 60 * 24 * 7);
+                            setVideoUrl(url);
+                            toast.success("Vídeo enviado com sucesso!");
+                          } catch (err) {
+                            console.error("Erro ao subir vídeo:", err);
+                            toast.error("Falha ao enviar vídeo.");
+                          } finally {
+                            setIsUploadingVideo(false);
+                          }
+                        }} 
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full text-xs"
+                        disabled={isUploadingVideo}
+                        onClick={() => videoInputRef.current?.click()}
+                      >
+                        {isUploadingVideo ? (
+                          <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Enviando...</>
+                        ) : (
+                          "Selecionar arquivo MP4"
+                        )}
+                      </Button>
+                    </div>
                     {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) && (
                       <div className="w-full sm:w-32 aspect-video bg-black rounded-md overflow-hidden shrink-0">
                         {(() => {
