@@ -1326,8 +1326,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                 </div>
               </TabsContent>
 
-              <TabsContent value="price" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
-                <div className="grid gap-6">
+              <TabsContent value="price" className="m-0 space-y-4 p-6 focus-visible:outline-none">
+                <div className="grid gap-4">
                   {/* Cards de Modalidade */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(() => {
