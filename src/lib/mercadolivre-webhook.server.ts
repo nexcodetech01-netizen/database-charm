@@ -177,20 +177,27 @@ export async function processMercadoLivreNotification(
 
   const referenceNumber = `ML-${order.id}`;
 
+  const referenceNumber = `ML-${order.id}`;
+
   for (const oi of order.order_items ?? []) {
     const mlItemId = oi.item?.id;
     const qty = Number(oi.quantity ?? 0);
     if (!mlItemId || qty <= 0) continue;
 
-    const { data: prod } = await supabaseAdmin
-      .from("products")
-      .select("id, company_id")
-      .eq("company_id", row.company_id)
-      .or(`ml_item_id.eq.${mlItemId},sku.eq.${oi.item?.id || ""}`)
-      .maybeSingle();
+    const { ensureMLProduct } = await import("./mercadolivre.server");
+    const productId = await ensureMLProduct(
+      supabaseAdmin,
+      row.company_id,
+      mlItemId,
+      token
+    );
 
-    const product = prod as { id: string; company_id: string } | null;
-    if (!product) continue;
+    if (!productId) {
+      console.warn(`[ml-webhook] não foi possível encontrar ou criar o produto ${mlItemId}`);
+      continue;
+    }
+
+    const product = { id: productId, company_id: row.company_id };
 
     const { error: mvErr } = await supabaseAdmin.from("inventory_movements").insert({
       company_id: product.company_id,
