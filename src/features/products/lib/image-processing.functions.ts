@@ -28,9 +28,10 @@ export const processProductImages = createServerFn({ method: "POST" })
     const processed = data.images.map((img) => {
       // Mock de URL processada: adicionamos um parâmetro para simular uma imagem nova/tratada
       // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
-      const processedUrl = img.url.includes('?') 
-        ? `${img.url}&processed=true&bg=white` 
-        : `${img.url}?processed=true&bg=white`;
+      // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
+      // Para o mock, usamos uma URL de placeholder que indica "fundo removido" visualmente.
+      const processedUrl = `https://images.placeholders.dev/?width=800&height=800&text=AI+Processed+Background+Removed&bgColor=%23ffffff&textColor=%23000000`;
+
 
       return {
         ...img,
@@ -49,7 +50,7 @@ export const processProductImages = createServerFn({ method: "POST" })
       const variations = ["perspective_left", "perspective_right", "close_up"].map((angle, idx) => ({
         id: `gen_${mainImg.id}_${idx}`,
         url: mainImg.url, // Referência à imagem base
-        processedUrl: `${mainImg.url}${mainImg.url.includes('?') ? '&' : '?'}angle=${angle}&bg=white`, // Simulação da variação gerada
+        processedUrl: `https://images.placeholders.dev/?width=800&height=800&text=AI+Angle+${angle}+Generated&bgColor=%23ffffff&textColor=%23000000`, // Simulação da variação gerada
         isMain: false,
         status: "success" as const,
         appliedEffect: "neutral_studio_setting",

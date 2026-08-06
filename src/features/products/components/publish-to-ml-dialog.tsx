@@ -245,6 +245,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
+  const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
 
   // Reset state on open
@@ -285,6 +286,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSeason("Permanente");
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
+      setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
   }, [open, product]);
@@ -780,7 +782,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             {reprocessPhoto.isPending && reprocessPhoto.variables?.path === path ? (
               <Loader2 className="h-2.5 w-2.5 animate-spin" />
             ) : (
-              "Tratar com IA"
+              "Remover Fundo via IA"
             )}
           </Button>
           </div>
@@ -840,6 +842,18 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     toast.success("Título otimizado para o Mercado Livre.");
   }
 
+  const imageOverrides = useMemo(() => {
+    const overrides: Record<string, string> = {};
+    localImageUrls.forEach((url, path) => {
+      // Consideramos override qualquer URL que não seja a original do bucket
+      // ou que venha explicitamente do processamento IA
+      if (url.startsWith('http')) {
+        overrides[path] = url;
+      }
+    });
+    return overrides;
+  }, [localImageUrls]);
+
   const publish = useMutation({
     mutationFn: () =>
       publishFn({
@@ -856,8 +870,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           brand: brand.trim() || undefined,
           model: model.trim() || undefined,
           picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+          imageOverrides,
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
-          videoUrl: (product as any).video_url || undefined,
+          videoUrl: videoUrl.trim() || undefined,
         },
       }),
 
@@ -1147,6 +1162,68 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               A primeira foto (slot 1) será a capa do anúncio. Anúncios com 4–5 fotos tendem a
               atingir notas mais altas no Mercado Livre.
             </p>
+
+            {/* Campo de Vídeo do Mercado Livre */}
+            <div className="mt-4 grid gap-2 border-t border-border pt-4">
+              <Label htmlFor="ml-video" className="flex items-center gap-2">
+                Link do Vídeo do YouTube (Shorts/Demonstração)
+                <Badge variant="outline" className="text-[10px] py-0 h-4">Apenas YouTube</Badge>
+              </Label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Input
+                    id="ml-video"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="pr-10"
+                  />
+                  {videoUrl && videoUrl.includes("youtube.com") && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Check className="h-4 w-4 text-success" />
+                    </div>
+                  )}
+                </div>
+                {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) ? (
+                  <div className="w-full sm:w-40 aspect-video bg-black rounded-md overflow-hidden relative group">
+                    {(() => {
+                      const getYoutubeId = (url: string) => {
+                        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                        const match = url.match(regExp);
+                        return (match && match[2].length === 11) ? match[2] : null;
+                      };
+                      const videoId = getYoutubeId(videoUrl);
+                      if (videoId) {
+                        return (
+                          <img 
+                            src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
+                            alt="Preview do vídeo"
+                            className="w-full h-full object-cover opacity-70"
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-red-600 rounded-full p-2 text-white shadow-lg">
+                        <Smartphone className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setVideoUrl("")}
+                      className="absolute top-1 right-1 bg-black/50 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : videoUrl ? (
+                  <p className="text-[10px] text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    O Mercado Livre aceita apenas links do YouTube.
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-4 border-t border-border pt-4">

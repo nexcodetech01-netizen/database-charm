@@ -293,6 +293,7 @@ interface PublishInput {
   brand?: string;
   model?: string;
   picturePaths?: string[];
+  imageOverrides?: Record<string, string>;
   videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
 }
@@ -342,6 +343,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       brand: input.brand?.toString().trim() || undefined,
       model: input.model?.toString().trim() || undefined,
       picturePaths,
+      imageOverrides: typeof input.imageOverrides === "object" ? input.imageOverrides : undefined,
       videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
     };
@@ -528,6 +530,13 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     const pictures: { source: string }[] = [];
     for (const path of imagePaths) {
+      // Prioridade 1: URL enviada via override (processada por IA no frontend)
+      if (data.imageOverrides && data.imageOverrides[path]) {
+        pictures.push({ source: data.imageOverrides[path] });
+        continue;
+      }
+      
+      // Prioridade 2: URL assinada do storage
       const { data: signed, error: sErr } = await supabase.storage
         .from(IMAGE_BUCKET)
         .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 dias
