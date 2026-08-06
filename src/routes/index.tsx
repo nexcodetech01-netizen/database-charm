@@ -49,22 +49,21 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DE VALIDAÇÃO E DETALHAMENTO DE ERRO</h2>
+          <h2 className="text-lg font-semibold mb-4 text-green-600">✅ SPRINT FINALIZADA: CORREÇÃO DO ATRIBUTO MARCA</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary">1. MENSAGENS REAIS DA API DO MERCADO LIVRE:</h3>
+              <h3 className="font-medium text-primary">1. CAMPO OBRIGATÓRIO DE MARCA:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Toasts agora exibem a causa exata do erro retornada pelo ML (ex: "O campo Cor é obrigatório").</li>
-                <li>Aumentado o tempo de exibição do toast de erro para 8 segundos para facilitar a leitura.</li>
+                <li>Input "Marca" adicionado ao formulário de publicação.</li>
+                <li>Mapeado para o atributo 'BRAND' da API do Mercado Livre.</li>
+                <li>Valor padrão "Generica" definido automaticamente se o campo estiver vazio.</li>
               </ul>
             </section>
             <section>
-              <h3 className="font-medium text-primary">2. SANITIZAÇÃO E CHECKLIST DE ENVIO:</h3>
+              <h3 className="font-medium text-primary">2. SANITIZAÇÃO E CONSISTÊNCIA:</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li><strong>Pictures:</strong> URLs diretas do Storage, sem modificação de IA.</li>
-                <li><strong>Sale Terms:</strong> Removida a chave 'INSTALLMENTS' do payload.</li>
-                <li><strong>GTIN/EAN:</strong> Removido se for "SEM GTIN" ou equivalente. Adicionado fallback 'EMPTY_GTIN_REASON'.</li>
-                <li><strong>Atributos:</strong> Removidos campos de dimensões (PACKAGE_*) do array de atributos (enviados em shipping).</li>
+                <li>Removido fallback antigo para "T&G".</li>
+                <li>Garantida a persistência do valor correto no payload enviado.</li>
               </ul>
             </section>
           </div>
