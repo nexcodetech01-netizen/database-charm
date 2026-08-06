@@ -650,7 +650,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
     const body: Record<string, unknown> = {
       family_name: cleanTitle.substring(0, 50),
-      category_id: "MLB457449",
+      category_id: data.categoryId || "MLB457449",
       price: Number(price),
       available_quantity: Number(quantity),
       currency_id: "BRL",
@@ -661,7 +661,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       description: description,
       attributes: sanitizedAttrs,
       video_id: undefined as string | undefined,
-      video_url: undefined as string | undefined,
       shipping: {
         mode: "me2",
         local_pick_up: false,
@@ -679,33 +678,29 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
       if (youtubeId) {
         body.video_id = youtubeId;
-      } else if (data.videoUrl.startsWith('http') && (data.videoUrl.toLowerCase().includes('.mp4') || data.videoUrl.includes('supabase'))) {
+      } else if (data.videoUrl.startsWith('http')) {
         // Tentativa de upload direto para o Mercado Livre Media
         try {
-          console.log("[mercadolivre] Baixando vídeo para upload direto no ML...");
-          const videoFetch = await fetch(data.videoUrl);
-          if (videoFetch.ok) {
-            const videoBlob = await videoFetch.blob();
-            const formData = new FormData();
-            formData.append('file', videoBlob, 'video.mp4');
+          console.log("[mercadolivre] Tentando upload de vídeo externo no ML Media...");
+          
+          const mediaRes = await fetch(`${ML_API}/media/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              source: data.videoUrl
+            })
+          });
 
-            const mediaRes = await fetch(`${ML_API}/media/upload`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-              },
-              body: formData
-            });
-
-            if (mediaRes.ok) {
-              const mediaData = await mediaRes.json();
-              console.log("[mercadolivre] Vídeo enviado com sucesso ao ML Media ID:", mediaData.id);
-              body.video_id = mediaData.id; // ML aceita o media ID no campo video_id em algumas categorias ou videos array
-              // Em algumas categorias novas o campo é multimidia ou similar, mas video_id costuma ser o fallback
-            } else {
-              const errTxt = await mediaRes.text();
-              console.warn("[mercadolivre] Falha ao subir vídeo para ML Media:", mediaRes.status, errTxt);
-            }
+          if (mediaRes.ok) {
+            const mediaData = await mediaRes.json();
+            console.log("[mercadolivre] Vídeo registrado com sucesso no ML Media ID:", mediaData.id);
+            body.video_id = mediaData.id;
+          } else {
+            const errTxt = await mediaRes.text();
+            console.warn("[mercadolivre] Falha ao registrar vídeo no ML Media:", mediaRes.status, errTxt);
           }
         } catch (err) {
           console.warn("[mercadolivre] Erro no processamento de vídeo para upload direto:", err);
@@ -718,9 +713,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       attributes: sanitizedAttrs,
     };
 
-    // Remove sale_terms redundantes que podem causar erro 400 (parcelamento é auto pelo listing_type)
+    // Remove sale_terms redundantes
     delete (requestBody as any).sale_terms;
-
 
     const validation = mlPublishPayloadSchema.safeParse(requestBody);
     if (!validation.success) {
