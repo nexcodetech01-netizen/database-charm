@@ -1184,7 +1184,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     <button
                       type="button"
                       onClick={() => setListingType("gold_pro")}
-                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative ${
+                      className={`flex flex-col gap-2 p-4 rounded-xl border-2 text-left transition-all relative min-h-[44px] ${
                         listingType === "gold_pro"
                           ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
                           : "border-border hover:border-primary/40 hover:bg-muted/50"
