@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatCurrency } from "@/lib/format";
-import type { SaleItemDraft } from "../types";
+import type { SaleItemDraft } from "../../types";
 
 type PriceDialogProps = {
   item: SaleItemDraft | null;
