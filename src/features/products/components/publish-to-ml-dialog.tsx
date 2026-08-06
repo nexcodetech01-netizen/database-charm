@@ -956,27 +956,42 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
-            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              Anunciar no Mercado Livre
-            </DialogTitle>
-            {validation.isReady ? (
-              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
-                <Check className="h-3 w-3" />
-                Pronto para Publicar
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1.5 py-1 px-3">
-                <AlertTriangle className="h-3 w-3" />
-                Pendente
-              </Badge>
-            )}
+            <div className="space-y-1">
+              <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                Anunciar no Mercado Livre
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Revise os dados do produto e escolha a modalidade de anúncio.
+              </DialogDescription>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {validation.isReady ? (
+                <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
+                  <Check className="h-3 w-3" />
+                  Pronto para Publicar
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1.5 py-1 px-3">
+                  <AlertTriangle className="h-3 w-3" />
+                  Pendente
+                </Badge>
+              )}
+              <div className="flex items-center gap-2 w-full max-w-[150px]">
+                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-500" 
+                    style={{ width: `${(validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  {Math.round((validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100)}%
+                </span>
+              </div>
+            </div>
           </div>
-          <DialogDescription>
-            Revise os dados do produto e escolha a categoria e o tipo de anúncio antes de publicar.
-          </DialogDescription>
         </DialogHeader>
 
         {isExpired ? (
