@@ -104,7 +104,26 @@ interface CategoryHit {
   domainName: string | null;
 }
 
-export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Props) {
+export function PublishToMercadoLivreDialog(props: Props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <Alert variant="destructive" className="m-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Erro no Módulo de Publicação</AlertTitle>
+          <AlertDescription>
+            Ocorreu um erro inesperado ao carregar o diálogo do Mercado Livre.
+            Por favor, tente fechar e abrir novamente.
+          </AlertDescription>
+        </Alert>
+      }
+    >
+      <PublishToMercadoLivreDialogContent {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
