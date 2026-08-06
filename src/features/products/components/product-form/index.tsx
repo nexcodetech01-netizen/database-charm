@@ -1547,12 +1547,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 {fiscal.historySuggestions.length ? (
                   <div className="mt-2 space-y-1.5">
                     <p className="text-[11px] font-medium text-muted-foreground">
-                      Usados em produtos semelhantes:
+                      Sugestões do histórico e tabela mestre:
                     </p>
                     <div className="flex flex-wrap gap-1.5">
+                      {/* Sugestões do Histórico */}
                       {fiscal.historySuggestions.map((s) => (
                         <Button
-                          key={s.ncm}
+                          key={`hist-${s.ncm}`}
                           type="button"
                           variant="outline"
                           size="sm"
@@ -1570,8 +1571,33 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                           </Badge>
                         </Button>
                       ))}
+
+                      {/* Sugestões da Tabela Mestre / BrasilAPI */}
+                      {fiscal.masterSuggestions.map((s) => (
+                        <Button
+                          key={`master-${s.ncm}`}
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-7 gap-1.5 px-2 text-[11px] bg-primary/5 hover:bg-primary/10 border-primary/20"
+                          onClick={() =>
+                            fiscal.applySuggestion({ ncm: s.ncm }, "history")
+                          }
+                          title={s.description || ""}
+                        >
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          {formatNcm(s.ncm)}
+                          {s.category ? <span className="opacity-60">({s.category})</span> : null}
+                        </Button>
+                      ))}
                     </div>
                   </div>
+                ) : null}
+
+                {!fiscal.historySuggestions.length && !fiscal.masterSuggestions.length && !fiscal.masterLoading && name.length >= 3 && (
+                  <p className="mt-2 text-[10px] text-muted-foreground italic">
+                    Nenhuma sugestão encontrada para "{name}". Tente selecionar uma categoria ou digite o NCM manualmente.
+                  </p>
                 ) : null}
               </Field>
 

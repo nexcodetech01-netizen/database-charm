@@ -12,7 +12,7 @@ import {
   normalizeNcm,
   type FiscalHistorySuggestion,
 } from "../lib/fiscal-suggestions";
-import { ncmMasterService } from "../lib/ncm-master";
+import { ncmMasterService, type NcmMasterEntry } from "../lib/ncm-master";
 
 export type FiscalSource = "manual" | "category" | "history" | "barcode";
 
