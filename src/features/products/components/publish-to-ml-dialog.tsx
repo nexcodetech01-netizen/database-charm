@@ -690,10 +690,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             e.stopPropagation();
             onToggle(path);
           }}
-          className="absolute right-1 top-1 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-100 shadow-sm transition-opacity sm:h-5 sm:w-5 sm:opacity-0 group-hover:opacity-100 hover:bg-destructive"
+          className="absolute right-1 top-1 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-2 ring-white hover:bg-red-600 active:scale-95 transition-all"
           title="Remover foto"
         >
-          <X className="h-3 w-3" />
+          <X className="h-4 w-4 stroke-[3px]" />
         </button>
 
         {/* Botões de Reordenação e IA Overlay */}
