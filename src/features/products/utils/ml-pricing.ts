@@ -67,5 +67,5 @@ export function calculateMLNetValue(
   const fixedFee = (!isPremium && finalPrice < settings.freeShippingThreshold) ? settings.fixedFeeValue : 0;
 
   const net = (finalPrice * (1 - feePct)) - shipping - fixedFee;
-  return Math.max(0, net);
+  return Math.max(0, Math.round(net * 100) / 100);
 }
