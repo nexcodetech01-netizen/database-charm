@@ -228,9 +228,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [bagType, setBagType] = useState("");
   const [style, setStyle] = useState("");
   const [color, setColor] = useState("");
-  // Marca (BRAND) e Modelo (MODEL) editáveis antes de enviar ao ML. Marca é
-  // obrigatória pela API — o backend faz fallback para "T&G" quando vazia.
-  const [brand, setBrand] = useState<string>("");
+  // Marca (BRAND) e Modelo (MODEL) editáveis antes de enviar ao ML.
+  const [brand, setBrand] = useState<string>("Generica");
   const [model, setModel] = useState<string>("");
   // Atributos opcionais otimizados (aumentam a nota do anúncio).
   // Enviados sempre no payload — com defaults, sobrescritos pela IA/usuário.
@@ -272,7 +271,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setBagType("");
       setStyle("");
       setColor("");
-      setBrand(((product as { brand?: string | null }).brand ?? "").trim());
+      const currentBrand = ((product as { brand?: string | null }).brand ?? "").trim();
+      setBrand(currentBrand && !["Tg", "TG", "T&G"].includes(currentBrand) ? currentBrand : "Generica");
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
@@ -418,7 +418,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
         if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
         if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
-        if (!brand || brand === "Genérico") setBrand(findVal("BRAND", ["T&G", "Genérica"]));
+        if (!brand || ["Generica", "Tg", "TG", "T&G"].includes(brand)) setBrand(findVal("BRAND", ["Generica", "Genérica"]));
         
         toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
       } catch (err) {
