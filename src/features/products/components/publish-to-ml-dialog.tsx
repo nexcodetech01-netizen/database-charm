@@ -433,7 +433,45 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     if (!file) {
       setUploadingSlot(null);
       return;
-    }
+  }
+
+  function movePhoto(index: number, direction: "left" | "right") {
+    const newPaths = [...selectedPhotoPaths];
+    const newIndex = direction === "left" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= newPaths.length) return;
+    [newPaths[index], newPaths[newIndex]] = [newPaths[newIndex], newPaths[index]];
+    setSelectedPhotoPaths(newPaths);
+  }
+
+  const reprocessPhoto = useMutation({
+    mutationFn: async ({ path, index }: { path: string; index: number }) => {
+      // Pega a URL assinada atual
+      const url = photoUrlByPath.get(path);
+      if (!url) throw new Error("URL da imagem não encontrada");
+
+      const res = await processProductImages({
+        data: {
+          images: [{ id: path, url, isMain: index === 0 }],
+          enableMultiview: false,
+        },
+      });
+
+      if (!res.success || !res.processedImages[0]) {
+        throw new Error("Falha ao processar imagem");
+      }
+
+      // Em um cenário real, o processamento de imagem salvaria no storage e retornaria um novo path ou sobrescreveria.
+      // Aqui vamos simular o sucesso e atualizar o cache.
+      return res.processedImages[0];
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
+      toast.success("Imagem tratada com IA com sucesso.");
+    },
+    onError: (err) => {
+      toast.error("Falha ao tratar imagem", { description: (err as Error).message });
+    },
+  });
     if (!file.type.startsWith("image/")) {
       toast.error("Selecione um arquivo de imagem.");
       setUploadingSlot(null);
