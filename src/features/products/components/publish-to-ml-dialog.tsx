@@ -996,9 +996,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   return (
     <>
-      <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
-        <DialogHeader className="p-4 border-b border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+      <DialogHeader className="p-4 border-b border-border bg-slate-950/50 backdrop-blur-sm shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+          <div className="space-y-1">
             <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
@@ -1031,8 +1031,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
               </span>
             </div>
           </div>
-          </div>
-        </DialogHeader>
+        </div>
+      </DialogHeader>
 
         {isExpired ? (
           <Alert variant="destructive" className="border-destructive/40">
