@@ -210,17 +210,18 @@ function normalizeAttributes(raw: unknown): MlAiAttributes {
   };
 }
 
-const TITLE_CONNECTORS = new Set(["de", "da", "do", "e", "em", "com", "para"]);
+const TITLE_CONNECTORS = new Set(["de", "da", "do", "e", "em", "com", "para", "com", "para"]);
 
 // Termos proibidos pelo Mercado Livre em títulos (política oficial).
 const TITLE_BLACKLIST = [
-  "original", "originais", "autentico", "autêntico",
+  "original", "originais", "autentico", "autêntico", "autentica", "autêntica",
   "promocao", "promoção", "oferta", "ofertas", "liquidacao", "liquidação",
   "barato", "barata", "baratos", "baratas",
   "frete", "gratis", "grátis",
   "novo", "nova", "novos", "novas", "lancamento", "lançamento",
   "qualidade", "top", "melhor", "melhores", "excelente", "excelentes",
-  "imperdivel", "imperdível",
+  "imperdivel", "imperdível", "presente", "brinde", "bonus", "bônus",
+  "envio", "imediato", "hoje", "agora",
 ];
 
 function stripBlacklistedTerms(text: string): string {
