@@ -118,10 +118,12 @@ const schema = z.object({
   ),
   brand: z.string().trim().min(1, "Marca obrigatória").max(120),
   model: z.string().trim().min(1, "Modelo obrigatório").max(120),
-  weight: z.preprocess((v) => num(v as any), z.number().positive("Peso deve ser maior que zero")),
-  width: z.preprocess((v) => num(v as any), z.number().positive("Largura deve ser maior que zero")),
-  height: z.preprocess((v) => num(v as any), z.number().positive("Altura deve ser maior que zero")),
-  length: z.preprocess((v) => num(v as any), z.number().positive("Comprimento deve ser maior que zero")),
+  weight: z.preprocess((v) => num(v as any), z.number().min(0, "Peso não pode ser negativo").optional().default(0.3)),
+  width: z.preprocess((v) => num(v as any), z.number().min(0, "Largura não pode ser negativa").optional().default(15)),
+  height: z.preprocess((v) => num(v as any), z.number().min(0, "Altura não pode ser negativa").optional().default(15)),
+  length: z.preprocess((v) => num(v as any), z.number().min(0, "Comprimento não pode ser negativo").optional().default(15)),
+  category_id: z.string().min(1, "Categoria obrigatória"),
+  price: z.preprocess((v) => num(v as any), z.number().positive("Preço de venda deve ser maior que zero")),
 });
 
 type FormState = {
@@ -961,6 +963,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const hasPricing = totalCost > 0 && price > 0;
 
   const isFormValid = useMemo(() => {
+    // Para agilidade (PDV/ML), validamos os campos essenciais.
+    // O schema agora também cuida dos opcionais logísticos.
     return schema.safeParse(form).success;
   }, [form]);
 
@@ -1109,7 +1113,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   onBlur={handleTitleCaseBlur((v) => set("name", v))}
                 />
               </Field>
-              <Field label="Categoria">
+              <Field label="Categoria *">
                 <div className="flex gap-2">
                   <Select
                     value={form.category_id || "__none"}
@@ -1581,27 +1585,27 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             description="Medidas da embalagem para cálculo exato de frete (Mercado Livre e transportadoras)."
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Peso (kg) *" hint="Peso bruto com embalagem">
+              <Field label="Peso (kg)" hint="Opcional. Padrão: 0.3kg">
                 <div className="relative">
                   <NumInput
                     value={form.weight}
                     onChange={(v) => set("weight", v)}
-                    placeholder="Ex: 0.500"
+                    placeholder="Ex: 0.300"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">kg</span>
                 </div>
               </Field>
-              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+              <Field label="Comprimento (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.length}
                     onChange={(v) => set("length", v)}
-                    placeholder="Ex: 20"
+                    placeholder="Ex: 15"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
               </Field>
-              <Field label="Largura (cm) *" hint="Dimensão lateral">
+              <Field label="Largura (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.width}
@@ -1611,12 +1615,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
               </Field>
-              <Field label="Altura (cm) *" hint="Espessura/Altura">
+              <Field label="Altura (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.height}
                     onChange={(v) => set("height", v)}
-                    placeholder="Ex: 10"
+                    placeholder="Ex: 15"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
@@ -1724,7 +1728,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Preço de venda base (R$)
+                    Preço de venda base (R$) *
                   </Label>
                   <div className="mt-1.5">
                     <NumInput value={form.price} onChange={(v) => set("price", v)} />
