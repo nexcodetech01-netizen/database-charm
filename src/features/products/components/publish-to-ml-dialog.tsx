@@ -1123,7 +1123,18 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           {/* Fotos do anúncio — 5 slots fixos: selecionadas + botão de upload */}
           <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-2">
-              <Label>Fotos do anúncio</Label>
+              <div className="flex items-center gap-4">
+                <Label>Fotos do anúncio</Label>
+                <div className="flex items-center gap-2 bg-background/50 px-2 py-0.5 rounded-full border border-border cursor-pointer select-none active:scale-95 transition-transform" onClick={() => setUseAI(!useAI)}>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors ${useAI ? 'bg-primary' : 'bg-muted'}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${useAI ? 'left-4.5' : 'left-0.5'}`} />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                    <Sparkles className={`h-3 w-3 ${useAI ? 'text-primary' : 'text-muted-foreground'}`} />
+                    IA Otimizar
+                  </span>
+                </div>
+              </div>
               <span className="text-xs text-muted-foreground">
                 {selectedPhotoPaths.length}/5 selecionadas
               </span>
