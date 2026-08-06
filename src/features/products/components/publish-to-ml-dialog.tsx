@@ -1223,7 +1223,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   type="number"
                   min={0.01}
                   step="0.01"
-                  className="h-12 font-mono text-xl font-black text-foreground bg-background border-2 focus-visible:ring-primary"
+                  className="h-12 font-mono text-lg sm:text-xl font-black text-foreground bg-background border-2 focus-visible:ring-primary"
                   value={price}
                   onChange={(e) => {
                     setPrice(Number(e.target.value));
