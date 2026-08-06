@@ -239,9 +239,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [descCopied, setDescCopied] = useState(false);
 
   const [quantity, setQuantity] = useState<number>(
-    Math.max(1, Math.floor(Number(product.stock ?? 0))),
+    Math.max(1, Math.floor(Number(product?.stock ?? 0))),
   );
-  const [description, setDescription] = useState(product.description ?? "");
+  const [description, setDescription] = useState(product?.description ?? "");
   const [categoryId, setCategoryId] = useState("");
   const [categoryLabel, setCategoryLabel] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
