@@ -960,6 +960,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   // evita "prejuízo de -100%" em produtos ainda sem precificação.
   const hasPricing = totalCost > 0 && price > 0;
 
+  const isFormValid = useMemo(() => {
+    return schema.safeParse(form).success;
+  }, [form]);
+
   /** Faixa escolhida pelo usuário (UX apenas — não altera o motor). */
   const [priceTier, setPriceTier] = useState<"min" | "recommended" | "premium">("recommended");
 
