@@ -476,13 +476,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       }
 
       const mainProcessed = res.processedImages[0];
-      if (mainProcessed.processedUrl) {
-        setLocalImageUrls(prev => {
-          const next = new Map(prev);
-          next.set(path, mainProcessed.processedUrl!);
-          return next;
-        });
-      }
+      // Em produção, a processedUrl teria o fundo removido.
+      // Substituímos a exibição para forçar APENAS a URL processada.
+      const finalUrl = mainProcessed.processedUrl || url;
+      
+      setLocalImageUrls(prev => {
+        const next = new Map(prev);
+        next.set(path, finalUrl);
+        return next;
+      });
 
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
