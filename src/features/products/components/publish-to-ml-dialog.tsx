@@ -417,9 +417,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   // Reset state on open
   useEffect(() => {
     if (open) {
-      const t = (product.name ?? "").slice(0, 60);
+      const t = (product?.name ?? "").slice(0, 60);
       setTitle(t);
-      const rawPrice = Number(product.price ?? 0);
+      const rawPrice = Number(product?.price ?? 0);
       setPrice(rawPrice);
       setWalletTarget(rawPrice > 0 ? rawPrice.toString() : "");
       setPriceTouched(false);
