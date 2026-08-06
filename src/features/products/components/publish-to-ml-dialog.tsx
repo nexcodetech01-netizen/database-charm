@@ -577,7 +577,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
             </DialogTitle>
-            {validation.isValid ? (
+            {validation.isReady ? (
               <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
                 <Check className="h-3 w-3" />
                 Pronto para Publicar
