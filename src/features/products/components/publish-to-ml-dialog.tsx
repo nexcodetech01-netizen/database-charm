@@ -104,22 +104,47 @@ interface CategoryHit {
   domainName: string | null;
 }
 
-export function PublishToMercadoLivreDialog(props: Props) {
+export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Props) {
+  // Reset de estados locais e de erro antes de montar o conteúdo pesado
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      setKey(prev => prev + 1);
+    }
+  }, [open]);
+
   return (
-    <ErrorBoundary
-      fallback={
-        <Alert variant="destructive" className="m-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Erro no Módulo de Publicação</AlertTitle>
-          <AlertDescription>
-            Ocorreu um erro inesperado ao carregar o diálogo do Mercado Livre.
-            Por favor, tente fechar e abrir novamente.
-          </AlertDescription>
-        </Alert>
-      }
-    >
-      <PublishToMercadoLivreDialogContent {...props} />
-    </ErrorBoundary>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-slate-950 border-slate-800 h-[90vh] flex flex-col">
+        <ErrorBoundary
+          key={key}
+          fallback={
+            <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-4 text-center">
+              <div className="bg-destructive/10 p-4 rounded-full">
+                <AlertTriangle className="h-10 w-10 text-destructive" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Falha ao carregar dados</h2>
+                <p className="text-slate-400 mt-2 max-w-md">
+                  Não foi possível preparar as informações do produto para o Mercado Livre. 
+                  Verifique se o produto possui preço e nome válidos.
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="border-slate-700 text-slate-300 hover:bg-slate-900"
+              >
+                Fechar Diálogo
+              </Button>
+            </div>
+          }
+        >
+          <PublishToMercadoLivreDialogContent product={product} open={open} onOpenChange={onOpenChange} />
+        </ErrorBoundary>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -984,45 +1009,44 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
-            <div className="space-y-1">
-              <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                Anunciar no Mercado Livre
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Revise os dados do produto e escolha a modalidade de anúncio.
-              </DialogDescription>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              {validation.isReady ? (
-                <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
-                  <Check className="h-3 w-3" />
-                  Pronto para Publicar
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1.5 py-1 px-3">
-                  <AlertTriangle className="h-3 w-3" />
-                  Pendente
-                </Badge>
-              )}
-              <div className="flex items-center gap-2 w-full max-w-[150px]">
-                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-500" 
-                    style={{ width: `${(validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
-                  {Math.round((validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100)}%
-                </span>
+    <>
+      <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0 border-b border-border/50 bg-muted/5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+          <div className="space-y-1">
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-primary" />
+              Anunciar no Mercado Livre
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Revise os dados do produto e escolha a modalidade de anúncio.
+            </DialogDescription>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            {validation.isReady ? (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
+                <Check className="h-3 w-3" />
+                Pronto para Publicar
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1.5 py-1 px-3">
+                <AlertTriangle className="h-3 w-3" />
+                Pendente
+              </Badge>
+            )}
+            <div className="flex items-center gap-2 w-full max-w-[150px]">
+              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-500" 
+                  style={{ width: `${(validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100}%` }}
+                />
               </div>
+              <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                {Math.round((validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100)}%
+              </span>
             </div>
           </div>
-        </DialogHeader>
+        </div>
+      </DialogHeader>
 
         {isExpired ? (
           <Alert variant="destructive" className="border-destructive/40">
@@ -1567,7 +1591,6 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             </Button>
           </div>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }

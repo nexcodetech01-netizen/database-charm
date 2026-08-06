@@ -181,6 +181,7 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                console.log("Abrindo modal de publicação para o produto:", p.id);
                 setPublishTarget(p as Product);
               }}
               title={mlItemId ? "Reanunciar no Mercado Livre" : "Anunciar no Mercado Livre"}
