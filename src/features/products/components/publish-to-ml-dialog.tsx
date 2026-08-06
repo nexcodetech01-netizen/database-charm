@@ -1176,7 +1176,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       <span className="text-lg sm:text-xl font-black text-primary">
                         {classicFinal > 0 ? formatCurrency(classicFinal) : "---"}
                       </span>
-                      <p className="text-[10px] leading-tight text-muted-foreground">
+                      <p className="text-[9px] sm:text-[10px] leading-tight text-muted-foreground">
                         Comissão 13,5% | Parcelado c/ juros
                       </p>
                     </button>
