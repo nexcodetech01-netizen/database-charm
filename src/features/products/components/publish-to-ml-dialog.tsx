@@ -891,10 +891,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-primary" />
               Anunciar no Mercado Livre
             </DialogTitle>
