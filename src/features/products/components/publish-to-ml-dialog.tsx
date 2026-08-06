@@ -63,6 +63,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   publishProductToMercadoLivre,
   predictMercadoLivreCategory,
 } from "@/lib/mercadolivre-publish.functions";
@@ -112,6 +118,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const integrationFn = useServerFn(getMercadoLivreIntegration);
   const generateDescFn = useServerFn(generateMercadoLivreDescription);
   const getCategoryAttrsFn = useServerFn(getMercadoLivreCategoryAttributes);
+
+  const [activeTab, setActiveTab] = useState("info");
 
   // Status da integração: bloqueia publicação se expirado
   const integrationQuery = useQuery({
