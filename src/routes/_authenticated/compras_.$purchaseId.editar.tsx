@@ -11,7 +11,9 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/edita
 function EditPurchasePage() {
   const { company } = Route.useRouteContext();
   const { purchaseId } = Route.useParams();
-  const { data: purchase, isLoading } = usePurchase(purchaseId);
+  console.log("[EditPurchasePage] Rota acessada:", { purchaseId, companyId: company?.id });
+  const { data: purchase, isLoading, error } = usePurchase(purchaseId);
+  console.log("[EditPurchasePage] Dados da compra:", { purchase: !!purchase, isLoading, error });
 
   if (isLoading) {
     return (

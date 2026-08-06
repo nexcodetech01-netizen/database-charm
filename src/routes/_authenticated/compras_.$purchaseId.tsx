@@ -34,7 +34,8 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId")({
 
 function PurchaseDetailPage() {
   const { purchaseId } = Route.useParams();
-  const { data: purchase, isLoading } = usePurchase(purchaseId);
+  const { data: purchase, isLoading, error } = usePurchase(purchaseId);
+  console.log("[PurchaseDetail] Carregando compra:", { purchaseId, purchase: !!purchase, isLoading, error });
   const setStatus = useSetPurchaseStatus();
   const reprocess = useReprocessPurchaseReceipt();
 
@@ -122,6 +123,7 @@ function PurchaseDetailPage() {
             <Link
               to="/compras/$purchaseId/editar"
               params={{ purchaseId: purchase.id }}
+              onClick={() => console.log("[PurchaseDetail] Clique em Editar:", purchase.id)}
             >
               <Pencil className="mr-1.5 h-4 w-4" /> Editar
             </Link>

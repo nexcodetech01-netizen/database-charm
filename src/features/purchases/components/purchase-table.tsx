@@ -136,6 +136,7 @@ export function PurchaseTable({
                           <Link
                             to="/compras/$purchaseId/editar"
                             params={{ purchaseId: p.id }}
+                            onClick={() => console.log("[PurchaseTable] Navegando para editar:", p.id)}
                           >
                             <Pencil className="mr-2 h-4 w-4" /> Editar
                           </Link>
