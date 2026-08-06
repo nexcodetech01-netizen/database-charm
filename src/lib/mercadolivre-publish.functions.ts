@@ -609,12 +609,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       { id: "BAG_TYPE", value_name: pick("BAG_TYPE", "Transversal") },
       // SKU do vendedor — reforço de rastreabilidade além de seller_custom_field.
       { id: "SELLER_SKU", value_name: pick("SELLER_SKU", productSku || "SKU") },
-      // Dimensões padrão de embalagem para bolsas (30x20x10 cm / 500 g) — evita
-      // penalização de qualidade quando o vendedor não preencheu manualmente.
-      { id: "PACKAGE_LENGTH", value_name: pick("PACKAGE_LENGTH", "30 cm") },
-      { id: "PACKAGE_WIDTH", value_name: pick("PACKAGE_WIDTH", "20 cm") },
-      { id: "PACKAGE_HEIGHT", value_name: pick("PACKAGE_HEIGHT", "10 cm") },
-      { id: "PACKAGE_WEIGHT", value_name: pick("PACKAGE_WEIGHT", "500 g") },
     ];
     // GTIN: envia o EAN apenas quando cadastrado e válido. Caso contrário,
     // NÃO envia nada — nem GTIN, nem EMPTY_GTIN_REASON. O ML tem rejeitado
@@ -700,10 +694,14 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       if (a.id === "GTIN" || a.id === "EMPTY_GTIN_REASON") {
         const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
         const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
-        if (!v && !vid) return false;
-        if (a.id === "GTIN" && /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v)) {
-          return false;
+        
+        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", nulo ou vazio, remove o GTIN e envia motivo apropriado
+        if (a.id === "GTIN") {
+          const isInvalid = !v || v === "SEM GTIN" || /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
+          if (isInvalid) return false;
         }
+        
+        if (!v && !vid) return false;
       }
       const hasStruct = Array.isArray(a.values) && a.values.length > 0;
       if (hasStruct) return true;
@@ -711,6 +709,14 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       const hasValueName = typeof a.value_name === "string" && a.value_name.trim().length > 0;
       return hasValueId || hasValueName;
     });
+
+    // Adiciona EMPTY_GTIN_REASON se GTIN foi removido ou não existe
+    if (!sanitizedAttrs.find(a => a.id === "GTIN")) {
+      sanitizedAttrs.push({
+        id: "EMPTY_GTIN_REASON",
+        value_name: "NÃO APLICA"
+      });
+    }
 
     const requestBody = {
       ...body,
