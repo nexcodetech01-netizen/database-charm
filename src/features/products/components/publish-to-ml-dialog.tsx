@@ -753,7 +753,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               "Tratar com IA"
             )}
           </Button>
-        </div>
+          </div>
+        )}
       </div>
     );
   }
