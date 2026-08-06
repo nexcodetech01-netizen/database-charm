@@ -1145,7 +1145,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(() => {
                 const desired = Number(walletTarget);
                 // Preços calculados para exibição nos cards
