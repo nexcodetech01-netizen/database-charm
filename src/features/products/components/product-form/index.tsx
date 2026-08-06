@@ -750,10 +750,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         toast.error("Selecione um fornecedor antes de salvar a duplicação.");
         return;
       }
-      if (num(form.cost) <= 0) {
-        toast.error("Informe o Preço de Custo antes de salvar a duplicação.");
-        return;
-      }
+      // Preço de custo é permitido como zero/vazio.
+
       if (num(form.price) <= 0) {
         toast.error("Informe o Preço de Venda antes de salvar a duplicação.");
         return;
