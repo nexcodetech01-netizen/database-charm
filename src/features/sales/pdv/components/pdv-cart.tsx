@@ -34,6 +34,7 @@ type RowProps = {
   onEditPrice?: (item: SaleItemDraft) => void;
   onEditDiscount?: (item: SaleItemDraft) => void;
   onEditAddition?: (item: SaleItemDraft) => void;
+  onEditNotes?: (item: SaleItemDraft) => void;
 };
 
 function stockLabel(stock: number | null | undefined): string {
