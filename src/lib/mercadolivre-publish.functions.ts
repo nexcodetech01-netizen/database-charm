@@ -318,7 +318,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       ? input.picturePaths
           .map((p) => String(p ?? "").trim())
           .filter((p) => p.length > 0)
-          .slice(0, 8)
+          .slice(0, 10) // ML permite até 10-12, estamos usando 5 no frontend mas payload pode vir maior
       : undefined;
     const extraAttributes = Array.isArray(input.extraAttributes)
       ? input.extraAttributes

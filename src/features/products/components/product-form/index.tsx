@@ -1547,7 +1547,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   </Button>
                 </div>
               )}
-              <ProductPhotoBatchUploader companyId={companyId} />
+              <ProductPhotoBatchUploader 
+                companyId={companyId} 
+                productId={product?.id}
+                existingImages={existingImages.slice(1).map(img => ({
+                  path: img.path,
+                  signedUrl: signed.find(s => s.path === img.path)?.signedUrl || ""
+                }))}
+              />
             </div>
           </Section>
 

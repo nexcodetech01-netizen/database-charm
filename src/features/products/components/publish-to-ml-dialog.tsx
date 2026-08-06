@@ -366,6 +366,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   useEffect(() => {
     if (!open) return;
     if (selectedPhotoPaths.length > 0) return;
+    // Pega até 5 fotos registradas no produto (Capa + Detalhes)
     if (photoPaths.length === 0) return;
     setSelectedPhotoPaths(photoPaths.slice(0, 5));
   }, [open, photoPaths, selectedPhotoPaths.length]);
