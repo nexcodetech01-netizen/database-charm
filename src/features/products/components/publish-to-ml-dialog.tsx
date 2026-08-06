@@ -1436,7 +1436,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       </div>
                     </div>
 
-                    <div className="grid gap-2 p-4 bg-success/5 rounded-xl border border-dashed border-success/30">
+                    <div className="grid gap-2 p-3 bg-success/5 rounded-xl border border-dashed border-success/30">
                       <Label className="text-xs font-semibold text-success uppercase tracking-tight">
                         Quanto você recebe (Líquido)
                       </Label>
