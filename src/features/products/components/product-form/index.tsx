@@ -14,6 +14,7 @@ import {
   Smartphone,
   Sparkles,
   Wand2,
+  Info,
 } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
