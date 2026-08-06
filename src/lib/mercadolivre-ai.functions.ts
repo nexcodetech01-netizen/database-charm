@@ -166,7 +166,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
         const regex = new RegExp(escaped, 'gi');
         cleanedDescription = cleanedDescription.replace(regex, "");
       }
-      cleanedDescription = cleanedDescription.replace(/\s+/g, " ").trim();
+      cleanedDescription = cleanedDescription.trim();
 
       if (!cleanedDescription) throw new Error("A IA retornou uma descrição vazia após a filtragem de segurança.");
 
