@@ -1552,6 +1552,70 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           </Section>
 
           <Section
+            title="Vídeo e Clip do Produto"
+            description="Adicione um vídeo curto (MP4/MOV) para aumentar as vendas no Mercado Livre e canais digitais."
+          >
+            <div className="space-y-4">
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="video_url">URL do Vídeo</Label>
+                    <Input
+                      id="video_url"
+                      placeholder="https://..."
+                      value={form.video_url}
+                      readOnly
+                      className="bg-muted cursor-default h-10"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 px-6 border-dashed"
+                      onClick={() => document.getElementById("video-upload")?.click()}
+                      disabled={uploadingVideo}
+                    >
+                      {uploadingVideo ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Video className="mr-2 h-4 w-4" />
+                      )}
+                      Upload Vídeo
+                    </Button>
+                    <input
+                      id="video-upload"
+                      type="file"
+                      accept="video/mp4,video/quicktime"
+                      className="hidden"
+                      onChange={handleVideoUpload}
+                    />
+                  </div>
+                </div>
+
+                {form.video_url && (
+                  <div className="relative rounded-xl overflow-hidden border bg-black aspect-video max-w-lg mx-auto shadow-lg group">
+                    <video
+                      src={form.video_url}
+                      controls
+                      className="w-full h-full object-contain"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setForm(prev => ({ ...prev, video_url: "" }))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Section>
+
+
+          <Section
             title="Checklist Mercado Livre"
             description="Status dos requisitos obrigatórios e recomendados para publicação."
           >
