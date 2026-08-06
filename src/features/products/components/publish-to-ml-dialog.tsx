@@ -910,7 +910,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
     const tipo = capitalize(productType.trim() || "Bolsa");
     const resBrand = capitalize(brand.trim() || "T&G");
-    const resModel = capitalize(model.trim() || (product.name ?? "").slice(0, 20));
+    const resModel = capitalize(model.trim() || (product?.name ?? "").slice(0, 20));
     const resAttr = capitalize(color.trim() || material.trim() || "Liso");
 
     let out = [tipo, resBrand, resModel, resAttr].filter(Boolean).join(" ");
