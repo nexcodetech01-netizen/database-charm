@@ -649,7 +649,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         }
         return newPaths;
       });
-      qc.invalidateQueries({ queryKey: ["product-images", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product-images", product.id] });
+      }
       qc.invalidateQueries({ queryKey: ["product-images-signed"] });
       toast.success("Foto adicionada com sucesso.");
     },
