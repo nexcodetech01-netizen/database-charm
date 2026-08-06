@@ -160,7 +160,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
         .trim();
 
       // Filtro de segurança pós-geração: remover termos de fornecedor
-      cleanedDescription = cleanedDescription.replace(/Lilo Acessórios/gi, "");
+      cleanedDescription = cleanedDescription.replace(/Lilo Acessórios|Atacado/gi, "");
       if (data.supplier && data.supplier.length > 2) {
         const escaped = data.supplier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(escaped, 'gi');
