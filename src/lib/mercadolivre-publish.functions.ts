@@ -395,11 +395,11 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // BRAND dinâmica: prioriza override enviado no payload (edição no diálogo
     // de publicação); depois o valor cadastrado no produto; depois o nome do
     // fornecedor vinculado; por último o nome fantasia / razão social da
-    // empresa ativa. Fallback final é "T&G" (marca oficial do vendedor) —
-    // nunca "Genérica" / "Sem marca", que o Mercado Livre recusa com o erro
+    // empresa ativa. Fallback final é "Generica" —
+    // nunca "Sem marca", que o Mercado Livre recusa com o erro
     // "A marca do produto não é genérica".
-    const SELLER_DEFAULT_BRAND = "T&G";
-    const GENERIC_BRAND_TOKENS = ["generica", "sem marca", "no brand", "generico"];
+    const SELLER_DEFAULT_BRAND = "Generica";
+    const GENERIC_BRAND_TOKENS = ["generica", "sem marca", "no brand", "generico", "tg", "t&g"];
     const isGenericBrand = (value: string) => {
       const norm = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
       return !norm || GENERIC_BRAND_TOKENS.some((token) => norm.includes(token));
