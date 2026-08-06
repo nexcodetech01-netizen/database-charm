@@ -454,7 +454,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       setLocalImageUrls(new Map());
       setImgErrorMap(new Map());
       
-      setVideoUrl((product as any).video_url ?? "");
+      setVideoUrl((product as any)?.video_url ?? "");
       autoRanRef.current = false;
       publish.reset(); // Reseta estados de erro da mutação ao abrir
     }
