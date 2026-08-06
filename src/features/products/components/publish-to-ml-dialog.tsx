@@ -245,6 +245,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
+  const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
 
