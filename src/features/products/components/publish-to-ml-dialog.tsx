@@ -978,7 +978,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       categoryId,
       brand,
       model,
-    });
+    } as any);
   }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model]);
 
   const canPublish = validation.isReady && !publish.isPending && !isExpired;
