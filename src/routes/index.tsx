@@ -64,17 +64,23 @@ STATUS DOS MÓDULOS:
 - Segurança RLS: 100% (Nota 10.0 - Hardening Total)
 
 ==================================================
-CORREÇÃO CRÍTICA NA API DE FOTOS E FALLBACK ('PublishToMercadoLivreDialog'):
+REESCRITA OBRIGATÓRIA DA FUNÇÃO DE PUBLICAÇÃO ('PublishToMercadoLivreDialog'):
 
-1. ERRO GRAVE DE RETORNO DA API:
-   - Quando a remoção de fundo por IA falha, o sistema está salvando o texto do erro/status ("Failed Background...") no lugar da URL da imagem.
-   - TRATAMENTO OBRIGATÓRIO: Se o serviço de remoção de fundo retornar erro ou falhar, NUNCA substitua a imagem por texto de erro. Mantenha a FOTO ORIGINAL ENVIADA PELO USUÁRIO com o fundo intacto.
+1. ERRO CRÍTICO DE EXBIÇÃO:
+   - O aplicativo ainda está "cuspindo" o JSON bruto da API do Mercado Livre (a lista gigante de 'attributes', 'cause_id', etc.) direto na tela em um modal branco. O saneamento que você prometeu NÃO está funcionando.
 
-2. DESATIVAR REMOÇÃO DE FUNDO OBRIGATÓRIA / ADICIONAR TOGGLE:
-   - Se a API de remoção de fundo estiver instável ou sem créditos, não bloqueie o upload. Permita que a foto original enviada pelo usuário seja carregada diretamente no slot sem passar pela IA, garantindo que a foto real da bolsa apareça.
+2. AÇÃO IMEDIATA (CÓDIGO EXPLICÍTO):
+   - Refatore a função que lida com o envio do formulário (provavelmente 'handleSubmit' ou 'onPublish'):
+     * Envolva toda a chamada de API num bloco 'try / catch'.
+     * NO BLOCO 'CATCH' (Quando der erro): NÃO use 'alert(JSON.stringify(error))' ou renderize o erro no DOM.
+     * Use APENAS: 'toast.error("Ocorreu um erro na publicação, verifique os dados.")' ou exiba um ALERT AMIGÁVEL com 'Aviso: Preencha todos os campos obrigatórios'.
+     * NUNCA MAIS exiba o código cru da API para o usuário final.
 
-3. LIMPEZA DOS SLOTS:
-   - Limpe do estado qualquer slot que contenha a URL/texto "Failed Background..." e renderize apenas arquivos de imagem válidos.
+3. CORREÇÃO DE ATRIBUTOS (CAUSA DO ERRO):
+   - Remova o atributo 'GTIN' do payload enviado se o valor for "SEM GTIN".
+   - Remova 'PACKAGE_LENGTH', 'PACKAGE_WIDTH', 'PACKAGE_HEIGHT' e 'PACKAGE_WEIGHT' do array 'attributes'.
+
+O modal de erro branco precisa sumir agora!
 `}
           </pre>
         </div>
