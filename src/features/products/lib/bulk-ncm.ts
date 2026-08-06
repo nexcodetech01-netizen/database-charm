@@ -20,6 +20,11 @@ import {
   normalizeCest,
   normalizeNcm,
 } from "./fiscal-suggestions";
+import { ncmMasterService } from "./ncm-master";
+
+/** Fallback de segurança para vestuário/acessórios quando nada for encontrado. */
+const GLOBAL_FALLBACK_NCM = "71179000"; // Outras bijuterias/acessórios (comum no NexOS)
+const GLOBAL_FALLBACK_LABEL = "Acessórios (Padrão)";
 
 /** Similaridade mínima aceita para preencher a partir do histórico. */
 const MIN_SIMILARITY = 0.35;
@@ -32,7 +37,7 @@ export interface BulkNcmCandidate {
   sku: string | null;
   ncm: string;
   cest: string | null;
-  source: "category" | "history";
+  source: "category" | "history" | "master_keyword" | "fallback";
   reference: string;
 }
 
@@ -153,7 +158,37 @@ export const bulkNcmService = {
             };
           }
 
-          return null;
+          // 3) Fallback Inteligente: Busca por palavra-chave no Nome do Produto na Tabela Mestre
+          const nameTerms = product.name.toLowerCase().split(/\s+/);
+          // Palavras-chave prioritárias baseadas na ncm_master
+          const priorityKeywords = ["bolsa", "carteira", "mochila", "cinto", "calçado", "sapato", "tênis", "camiseta", "vestuário", "bijuteria", "óculos", "relógio", "necessaire"];
+          const foundKeyword = nameTerms.find(term => priorityKeywords.includes(term));
+          
+          if (foundKeyword) {
+            const masterMatch = await ncmMasterService.suggest(foundKeyword.charAt(0).toUpperCase() + foundKeyword.slice(1));
+            if (masterMatch && isValidNcm(masterMatch.ncm)) {
+              return {
+                id: product.id,
+                name: product.name,
+                sku: product.sku,
+                ncm: masterMatch.ncm,
+                cest: normalizeCest(product.cest) ? null : null,
+                source: "master_keyword",
+                reference: `Termo: ${foundKeyword}`,
+              };
+            }
+          }
+
+          // 4) Fallback Geral: NCM de segurança para Acessórios
+          return {
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            ncm: GLOBAL_FALLBACK_NCM,
+            cest: normalizeCest(product.cest) ? null : null,
+            source: "fallback",
+            reference: GLOBAL_FALLBACK_LABEL,
+          };
         } finally {
           done += 1;
           onProgress?.(done, total);
