@@ -1433,6 +1433,135 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           </Section>
         </TabsContent>
 
+        {/* ══════════════ ABA 2 — INTEGRAÇÃO ML & LOGÍSTICA ══════════════ */}
+        <TabsContent value="logistica" className="space-y-6">
+          <Section
+            title="Identificação & Marca"
+            description="Informações obrigatórias para sincronização com o Mercado Livre."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="EAN / GTIN *"
+                hint="Código de barras global de 8 a 14 dígitos. Use 'SEM GTIN' se o produto for artesanal ou isento."
+              >
+                <div className="flex gap-2">
+                  <Input
+                    className="flex-1"
+                    value={form.barcode}
+                    onChange={(e) => set("barcode", e.target.value.toUpperCase().slice(0, 20))}
+                    placeholder="Ex: 7891234567890 ou SEM GTIN"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() => set("barcode", "SEM GTIN")}
+                    title="Marca o produto como isento de código de barras"
+                  >
+                    Isento
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={handleEanLookup}
+                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
+                    title="Consulta bases públicas e o histórico interno pelo EAN"
+                  >
+                    {eanLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar
+                  </Button>
+                </div>
+              </Field>
+
+              <Field label="Marca *" hint="Fabricante ou marca do produto">
+                <Input
+                  value={form.brand}
+                  onChange={(e) => set("brand", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
+                  placeholder="Ex: Nike, Samsung, Artesanal..."
+                />
+              </Field>
+
+              <Field label="Modelo *" hint="Modelo específico do produto">
+                <Input
+                  value={form.model}
+                  onChange={(e) => set("model", e.target.value)}
+                  onBlur={handleTitleCaseBlur((v) => set("model", v))}
+                  placeholder="Ex: Air Max, Galaxy S21, V1..."
+                />
+              </Field>
+
+              <Field label="NCM *" hint="8 dígitos — essencial para cálculo de impostos e frete.">
+                <Input
+                  value={form.ncm}
+                  inputMode="numeric"
+                  maxLength={12}
+                  placeholder="0000.00.00 ou 00000000"
+                  onChange={(e) => {
+                    fiscal.markManual();
+                    set("ncm", normalizeNcm(e.target.value));
+                  }}
+                />
+              </Field>
+            </div>
+          </Section>
+
+          <Section
+            title="Dimensões & Peso"
+            description="Medidas da embalagem para cálculo exato de frete (Mercado Livre e transportadoras)."
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Peso (kg) *" hint="Peso bruto com embalagem">
+                <div className="relative">
+                  <NumInput
+                    value={form.weight}
+                    onChange={(v) => set("weight", v)}
+                    placeholder="Ex: 0.500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">kg</span>
+                </div>
+              </Field>
+              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+                <div className="relative">
+                  <NumInput
+                    value={form.length}
+                    onChange={(v) => set("length", v)}
+                    placeholder="Ex: 20"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+              <Field label="Largura (cm) *" hint="Dimensão lateral">
+                <div className="relative">
+                  <NumInput
+                    value={form.width}
+                    onChange={(v) => set("width", v)}
+                    placeholder="Ex: 15"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+              <Field label="Altura (cm) *" hint="Espessura/Altura">
+                <div className="relative">
+                  <NumInput
+                    value={form.height}
+                    onChange={(v) => set("height", v)}
+                    placeholder="Ex: 10"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
+                </div>
+              </Field>
+            </div>
+          </Section>
+        </TabsContent>
+
         {/* ══════════════ ABA 2 — CUSTOS E PRECIFICAÇÃO ══════════════ */}
         <TabsContent value="custos" className="space-y-6">
           <div className="rounded-xl border border-border bg-card p-6">
