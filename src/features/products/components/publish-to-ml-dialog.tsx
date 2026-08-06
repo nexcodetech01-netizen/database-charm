@@ -1053,11 +1053,11 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
               <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${(validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100}%` }}
+                  style={{ width: `${(validation.requirements.filter(r => r?.isValid).length / (validation.requirements?.length || 1)) * 100}%` }}
                 />
               </div>
               <span className="text-[10px] font-medium text-muted-foreground whitespace-nowrap">
-                {Math.round((validation.requirements.filter(r => r.isValid).length / validation.requirements.length) * 100)}%
+                {Math.round((validation.requirements.filter(r => r?.isValid).length / (validation.requirements?.length || 1)) * 100)}%
               </span>
             </div>
           </div>
