@@ -479,13 +479,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       toast.error("Falha ao tratar imagem", { description: (err as Error).message });
     },
   });
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecione um arquivo de imagem.");
-      setUploadingSlot(null);
-      return;
-    }
-    uploadPhoto.mutate(file);
-  }
 
   // Monta a ficha técnica estendida enviada como attributes extras ao ML.
   const extraAttributes = useMemo(() => {
