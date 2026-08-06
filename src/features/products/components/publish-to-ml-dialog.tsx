@@ -388,7 +388,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             }
           : undefined,
       });
-      qc.invalidateQueries({ queryKey: ["product", product.id] });
+      if (product?.id) {
+        qc.invalidateQueries({ queryKey: ["product", product.id] });
+      }
       qc.invalidateQueries({ queryKey: ["products"] });
       onOpenChange(false);
     },
