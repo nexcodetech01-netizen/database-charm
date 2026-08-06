@@ -1047,7 +1047,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         type="button"
                         onClick={() => openFilePicker(slot)}
                         disabled={uploadPhoto.isPending}
-                        className="flex aspect-square items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex aspect-square min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 items-center justify-center rounded-md border-2 border-dashed border-border bg-background/50 text-muted-foreground transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
                         title={`Adicionar foto ${slot + 1}`}
                       >
                         {isUploadingHere ? (
