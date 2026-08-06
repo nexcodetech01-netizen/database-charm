@@ -121,6 +121,10 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       "📦 ENVIO",
       "Despachamos em até 24h úteis. Embalada com cuidado para chegar perfeita até você.",
       "",
+      "REGRAS DE VALIDAÇÃO:",
+      "- NUNCA deixe colchetes vazios ou preenchimentos genéricos como '[Detalhe]'. Substitua TUDO por informações reais.",
+      "- Todos os 4 blocos (DESCRIÇÃO, DESTAQUES, COMO USAR, ENVIO) são obrigatórios.",
+      "",
       "REGRAS PARA `attributes` (Ficha Técnica):",
       "- product_type, gender, bag_type, material, style, color.",
       "- pattern (default 'Liso'), with_zipper ('Sim'), age_group ('Adultos'), season ('Permanente').",
@@ -171,7 +175,7 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       if (!cleanedDescription) throw new Error("A IA retornou uma descrição vazia após a filtragem de segurança.");
 
       return {
-        title: normalizeTitle(output.title, data.title),
+        title: output.title.slice(0, 60).trim(),
         description: cleanedDescription.slice(0, 4000),
         attributes: normalizeAttributes(output.attributes),
       };
