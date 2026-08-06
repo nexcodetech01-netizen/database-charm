@@ -86,6 +86,7 @@ import {
   normalizeNcm,
 } from "../../lib/fiscal-suggestions";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
+import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
 
 interface Props {
   companyId: string;
@@ -1456,6 +1457,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
         {/* ══════════════ ABA 2 — INTEGRAÇÃO ML & LOGÍSTICA ══════════════ */}
         <TabsContent value="logistica" className="space-y-6">
+          <Section
+            title="Fotos Otimizadas"
+            description="Tire fotos em lote e deixe que nossa IA aplique os fundos ideais para o Mercado Livre."
+          >
+            <ProductPhotoBatchUploader companyId={companyId} />
+          </Section>
+
           <Section
             title="Identificação & Marca"
             description="Informações obrigatórias para sincronização com o Mercado Livre."
