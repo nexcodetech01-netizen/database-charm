@@ -1086,41 +1086,40 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
         ) : null}
         <div className={`flex-1 overflow-hidden flex flex-col ${isExpired ? "pointer-events-none opacity-50" : ""}`}>
           <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 sm:px-6 py-2 border-b border-border bg-muted/10">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
-                <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Modalidade</TabsTrigger>
-                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha Técnica & Descrição</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-              {/* Progresso de Requisitos (Compacto) */}
-              <div className="flex items-center justify-between gap-4 p-2 px-3 bg-muted/20 border border-border rounded-lg">
+            <div className="px-6 py-4 flex-shrink-0 border-b border-border bg-slate-950/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-1">
                     {validation.requirements.map((req, idx) => (
                       <div 
-                        key={req.id} 
-                        className={`h-2 w-6 rounded-full border border-background ${req.isValid ? 'bg-success' : req.critical ? 'bg-destructive/40' : 'bg-muted'}`}
-                        title={req.label}
+                        key={req?.id || idx} 
+                        className={`h-2 w-6 rounded-full border border-background ${req?.isValid ? 'bg-success' : req?.critical ? 'bg-destructive/40' : 'bg-muted'}`}
+                        title={req?.label}
                       />
                     ))}
                   </div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {validation.requirements.filter(r => r.isValid).length}/{validation.requirements.length} Requisitos
+                    {validation.requirements.filter(r => r?.isValid).length}/{validation.requirements.length} Requisitos
                   </span>
                 </div>
                 <div className="flex gap-1.5 overflow-hidden">
-                  {validation.requirements.filter(r => !r.isValid && r.critical).slice(0, 2).map(req => (
-                    <Badge key={req.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
-                      Falta {req.label}
+                  {validation.requirements.filter(r => !r?.isValid && r?.critical).slice(0, 2).map(req => (
+                    <Badge key={req?.id} variant="outline" className="text-[9px] py-0 h-4 border-destructive/30 text-destructive bg-destructive/5">
+                      Falta {req?.label}
                     </Badge>
                   ))}
                 </div>
               </div>
 
-              <TabsContent value="info" className="m-0 space-y-6 pt-2 focus-visible:outline-none">
+              <TabsList className="grid w-full grid-cols-3 h-10 bg-slate-900/50 p-1">
+                <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
+                <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Estoque</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha & Descrição</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
+              <TabsContent value="info" className="m-0 space-y-4 p-6 focus-visible:outline-none">
                 {/* Título */}
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between gap-2">
