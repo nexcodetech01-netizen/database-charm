@@ -42,7 +42,7 @@ export function InsightCards({
     );
   }
 
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <p
         data-testid="insight-cards-empty"
@@ -55,7 +55,7 @@ export function InsightCards({
 
   return (
     <div data-testid="insight-cards" className={cn("grid gap-3 sm:grid-cols-2", className)}>
-      {items.map((item) => {
+      {(items || []).map((item) => {
         const Icon = item.icon;
         const token = statusToken(item.status ?? "neutral");
         return (
