@@ -1,5 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   computeOfficialPricing,
   resolveChannelFee,
   solvePriceForTargetProfit,
@@ -21,6 +39,7 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
+  GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
