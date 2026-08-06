@@ -1591,7 +1591,6 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             </Button>
           </div>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }
