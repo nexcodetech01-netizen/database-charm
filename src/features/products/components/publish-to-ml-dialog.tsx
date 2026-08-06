@@ -504,11 +504,18 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
     const isPremium = listingType === "gold_pro";
     const feePct = isPremium ? 0.15 : 0.135; 
-    const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
     const shipping = desired >= 79 ? 24.65 : 0;
-    const calculatedFinal = isPremium 
-      ? (desired + shipping) / (1 - 0.15) 
-      : (desired + fixedFee + shipping) / (1 - feePct);
+    
+    // Estimativa inicial sem taxa fixa
+    let calculatedFinal = isPremium 
+      ? (desired + shipping) / 0.85 
+      : (desired + shipping) / (1 - feePct);
+    
+    // Se o preço final estimado for < 79 e não for Premium, aplica taxa fixa de R$ 6,50
+    if (!isPremium && calculatedFinal < 79) {
+      calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
+    }
+    
     const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
 
     // Se o preço atual for diferente do calculado, atualiza
