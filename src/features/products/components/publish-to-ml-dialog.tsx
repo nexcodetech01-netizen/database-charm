@@ -694,17 +694,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         </span>
 
         {/* Botão Remover (X) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle(path);
-          }}
-          className="absolute right-1 top-1 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-2 ring-white hover:bg-red-600 active:scale-95 transition-all"
-          title="Remover foto"
-        >
-          <X className="h-4 w-4 stroke-[3px]" />
-        </button>
+        {!isProcessing && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(path);
+            }}
+            className="absolute right-1 top-1 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-2 ring-white hover:bg-red-600 active:scale-95 transition-all"
+            title="Remover foto"
+          >
+            <X className="h-4 w-4 stroke-[3px]" />
+          </button>
+        )}
 
         {/* Botões de Reordenação e IA Overlay */}
         <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
