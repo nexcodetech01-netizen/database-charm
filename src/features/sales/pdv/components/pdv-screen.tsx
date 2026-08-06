@@ -569,6 +569,35 @@ export function PDVScreen({
         type="addition"
       />
 
+      <PDVSuspendedDialog
+        companyId={companyId}
+        open={suspendedOpen}
+        onOpenChange={setSuspendedOpen}
+        onSelect={handleRecoverSale}
+      />
+
+      <PDVNotesDialog
+        title="Observações da Venda"
+        open={saleNotesOpen}
+        onOpenChange={setSaleNotesOpen}
+        initialValue={pdv.state.notes || ""}
+        onConfirm={pdv.setNotes}
+      />
+
+      {editingNotesItem && (
+        <PDVNotesDialog
+          title="Observações do Item"
+          open={!!editingNotesItem}
+          onOpenChange={(open) => !open && setEditingNotesItem(null)}
+          initialValue={editingNotesItem.notes || ""}
+          onConfirm={(notes) => {
+            if (editingNotesItem.ui_key) {
+              pdv.setItemNotes(editingNotesItem.ui_key, notes);
+            }
+          }}
+        />
+      )}
+
       {cashDialogs}
     </>
   );
