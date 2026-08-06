@@ -46,7 +46,12 @@ export type PdvShortcutAction =
   | "print-receipt"
   | "confirm-dialog"
   | "close-dialog"
-  | "close-cash";
+  | "close-cash"
+  | "suspend-sale"
+  | "recover-sales"
+  | "edit-price"
+  | "edit-discount"
+  | "edit-addition";
 
 /** Alvo do evento, no mínimo necessário para decidir (sem depender do DOM). */
 export type PdvShortcutTarget = {
