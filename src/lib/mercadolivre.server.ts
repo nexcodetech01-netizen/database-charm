@@ -113,7 +113,12 @@ export async function refreshAccessToken(params: {
     { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
   );
   const text = await res.text();
-  if (!res.ok) throw new Error(`ML refresh failed (${res.status}): ${text.slice(0, 300)}`);
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      console.warn(`[ML_REFRESH_AUTH_EXPIRED] HTTP ${res.status}`);
+    }
+    throw new Error(`ML refresh failed (${res.status}): ${text.slice(0, 300)}`);
+  }
   return JSON.parse(text) as MLTokenResponse;
 }
 
@@ -323,7 +328,7 @@ export async function markReconnectRequired(
 }
 
 /** Refresh window: renew tokens when less than this many seconds remain. */
-const REFRESH_THRESHOLD_SECONDS = 60 * 60 * 24; // 24h
+const REFRESH_THRESHOLD_SECONDS = 60 * 30; // 30 min
 
 /**
  * If the stored access token is expired or about to expire, uses the refresh

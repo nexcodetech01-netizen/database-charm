@@ -88,7 +88,7 @@ export const getMercadoLivreIntegration = createServerFn({ method: "GET" })
     const companyId = await requireCurrentCompanyId(context.supabase, context.userId);
     const summary = await getIntegrationSummary(context.supabase, companyId, {
       userId: context.userId,
-      autoRefresh: false,
+      autoRefresh: true,
     });
     return { ...summary, redirectUri: buildRedirectUri() };
   });
