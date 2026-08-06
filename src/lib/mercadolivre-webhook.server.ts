@@ -27,7 +27,7 @@ const TOPIC_RESOURCE_PATTERNS: Record<string, RegExp> = {
   payments: /^\/(collections|payments)\/\d{1,20}$/,
 };
 
-const PROCESSED_TOPICS = new Set(["orders_v2"]);
+const PROCESSED_TOPICS = new Set(["orders_v2", "items"]);
 
 export interface MLNotification {
   resource?: unknown;
@@ -101,6 +101,53 @@ export async function processMercadoLivreNotification(
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { decryptToken } = await import("@/lib/meta-crypto.server");
+
+  // topic: items -> Sincronização de estoque e preço do ML para o NexOS
+  if (valid.topic === "items") {
+    const mlItemId = valid.resource.split("/").pop();
+    if (!mlItemId) return { status: 400, body: "invalid item resource" };
+
+    const { data: product } = await supabaseAdmin
+      .from("products")
+      .select("id, company_id")
+      .eq("ml_item_id", mlItemId)
+      .maybeSingle();
+
+    if (!product) return { status: 200, body: "item not linked" };
+
+    const { data: integ } = await supabaseAdmin
+      .from("mercadolivre_integrations")
+      .select("access_token_encrypted")
+      .eq("company_id", product.company_id)
+      .maybeSingle();
+
+    if (!integ?.access_token_encrypted) return { status: 200, body: "no integration" };
+    const token = decryptToken(integ.access_token_encrypted);
+
+    const itemRes = await integrationFetch(
+      `${ML_API}/items/${mlItemId}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+      { integration: "mercadolivre:item-detail", timeoutMs: 10_000 }
+    );
+
+    if (!itemRes.ok) return { status: 200, body: "failed to fetch item details" };
+    const itemData = await itemRes.json();
+
+    // Sincroniza preço e estoque se houver divergência
+    const updates: any = {};
+    if (itemData.price !== undefined) updates.price = itemData.price;
+    
+    // Estoque é mais complexo: se o ML diz que tem X, e no NexOS tem Y,
+    // o ML é o master para vendas marketplace. 
+    // Mas aqui apenas logamos ou atualizamos se for política da empresa.
+    // Para esta sprint, vamos apenas atualizar o ml_status/permalink se mudarem.
+    updates.ml_permalink = itemData.permalink;
+    updates.updated_at = new Date().toISOString();
+
+    await supabaseAdmin.from("products").update(updates).eq("id", product.id);
+
+    return { status: 200, body: "item synced" };
+  }
 
   const { data: integ } = await supabaseAdmin
     .from("mercadolivre_integrations")
