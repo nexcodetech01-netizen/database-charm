@@ -421,11 +421,16 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
   const photoUrlByPath = useMemo(() => {
     const map = new Map<string, string>();
+    // Primeiro as URLs assinadas do banco
     for (const it of photoSignedUrlsQuery.data ?? []) {
       if (it.path && it.signedUrl) map.set(it.path, it.signedUrl);
     }
+    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
+    localImageUrls.forEach((url, path) => {
+      map.set(path, url);
+    });
     return map;
-  }, [photoSignedUrlsQuery.data]);
+  }, [photoSignedUrlsQuery.data, localImageUrls]);
 
   // Ao carregar fotos, pré-seleciona até 5 primeiras (se ainda não escolheu).
   useEffect(() => {
