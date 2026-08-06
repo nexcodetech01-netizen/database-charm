@@ -168,7 +168,7 @@ export function resolvePdvCombinedShortcut(
   if (key === "p") return "focus-search";
   if (key === "c") return "open-customer";
   if (key === "s") return "suspend-sale";
-  if (key === "r") return "recover-sales";
+  if (key === "r") return "recover-sale";
   if (key === "l" || key === "delete") return "clear-cart";
 
   return null;
