@@ -1134,8 +1134,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                 const premiumShipping = desired < 79 ? 0 : 23.5;
                 const premiumFinal = (desired + premiumFixedFee + premiumShipping) / (1 - premiumFeePct);
 
-                // Sincroniza o preço final se o usuário não tocou ou se está alternando tipos
-                // mas sem entrar em loop. Usamos useEffect para efeitos colaterais.
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
                     <button
@@ -1193,18 +1191,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         12x Sem Juros + Exposição Máxima
                         <br />
                         Taxa 18,5% | Melhor visibilidade
-                      </span>
-                    </button>
-                  </div>
-                      <div className="flex justify-between items-start">
-                        <span className="text-sm font-bold">Premium</span>
-                        <Badge className="text-[9px] h-4 px-1 bg-amber-500 hover:bg-amber-600">12x Sem Juros</Badge>
-                      </div>
-                      <span className="text-lg font-black text-primary">
-                        {formatCurrency(premiumFinal)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1">
-                        Taxa {premiumFeePct * 100}% + {formatCurrency(premiumFixedFee + premiumShipping)} custos
                       </span>
                     </button>
                   </div>
