@@ -357,6 +357,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
 
   const publish = useMutation({
     mutationFn: async () => {
+      if (!product?.id) throw new Error("ID do produto não encontrado");
       return await publishFn({
         data: {
           productId: product.id,
