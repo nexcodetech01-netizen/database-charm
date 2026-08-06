@@ -1020,7 +1020,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
                 <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Modalidade</TabsTrigger>
-                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha & Descrição</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha Técnica & Descrição</TabsTrigger>
               </TabsList>
             </div>
 
