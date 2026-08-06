@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PurchaseForm, usePurchase } from "@/features/purchases";
 
 export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/editar")({
-  beforeLoad: requirePermission("purchases.view"),
+  beforeLoad: requirePermission("purchases.update"),
   component: EditPurchasePage,
 });
 
