@@ -2355,8 +2355,8 @@ function NumInput({
       placeholder={placeholder}
       onChange={(e) => {
         const val = e.target.value;
-        // Permite apenas números, ponto e vírgula
-        if (val === "" || /^[0-9.,]*$/.test(val)) {
+        // Permite números, vírgula, ponto e sinal de menos
+        if (val === "" || /^[0-9,.\-]*$/.test(val)) {
           onChange(val);
         }
       }}
