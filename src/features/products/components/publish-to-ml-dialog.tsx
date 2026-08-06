@@ -1173,7 +1173,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                         <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Anúncio Clássico</span>
                         {listingType === "gold_special" && <Check className="h-4 w-4 text-primary" />}
                       </div>
-                      <span className="text-xl font-black text-primary">
+                      <span className="text-lg sm:text-xl font-black text-primary">
                         {classicFinal > 0 ? formatCurrency(classicFinal) : "---"}
                       </span>
                       <p className="text-[10px] leading-tight text-muted-foreground">
