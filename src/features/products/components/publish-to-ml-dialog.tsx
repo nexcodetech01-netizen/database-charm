@@ -1452,11 +1452,15 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                               if (desired > 0) {
                                 const isPremium = listingType === "gold_pro";
                                 const feePct = isPremium ? 0.15 : 0.135; 
-                                const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
                                 const shipping = desired >= 79 ? 24.65 : 0;
-                                const calculatedFinal = isPremium 
-                                  ? (desired + shipping) / (1 - 0.15) 
-                                  : (desired + fixedFee + shipping) / (1 - feePct);
+                                let calculatedFinal = isPremium 
+                                  ? (desired + shipping) / 0.85 
+                                  : (desired + shipping) / (1 - feePct);
+                                
+                                if (!isPremium && calculatedFinal < 79) {
+                                  calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
+                                }
+                                
                                 const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
                                 setPrice(roundedFinal);
                               }
