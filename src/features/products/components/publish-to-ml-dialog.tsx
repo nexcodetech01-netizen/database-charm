@@ -864,22 +864,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }
 
   // Monta a ficha técnica estendida enviada como attributes extras ao ML.
-  const extraAttributes = useMemo(() => {
-    const list: Array<{ id: string; value_name: string }> = [];
-    const push = (id: string, value: string) => {
-      const v = value.trim();
-      if (v) list.push({ id, value_name: v });
-    };
-    push("GENDER", gender || "Feminino");
-    push("MAIN_MATERIAL", material);
-    push("BAG_TYPE", bagType);
-    push("STYLE", style);
-    push("PATTERN_NAME", pattern || "Liso");
-    push("WITH_ZIPPER", withZipper || "Sim");
-    push("AGE_GROUP", ageGroup || "Adultos");
-    push("SEASON", season || "Permanente");
-    return list;
-  }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
   // Sugestão de título SEO no padrão oficial ML:
   // [Tipo de Produto] + [Marca] + [Modelo] + [Atributo Principal]
