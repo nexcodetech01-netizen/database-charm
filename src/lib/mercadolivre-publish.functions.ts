@@ -692,39 +692,6 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
 
-    // Defesa final antes do POST:
-    // 1) o ML rejeita family_name dentro de attributes;
-    // 2) atributos com value_name/value_id null/undefined/vazio disparam
-    //    "invalid item attribute values" — remover;
-    // 3) GTIN e EMPTY_GTIN_REASON só podem existir com valor válido;
-    //    quando o EAN não está cadastrado, ambos devem ser removidos.
-    const sanitizedAttrs = filterMlFamilyNameAttribute(baseAttrs).filter((a) => {
-      if (a.id === "GTIN" || a.id === "EMPTY_GTIN_REASON") {
-        const v = typeof a.value_name === "string" ? a.value_name.trim() : "";
-        const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
-        
-        // CORREÇÃO CRÍTICA: Se for "SEM GTIN", nulo ou vazio, remove o GTIN e envia motivo apropriado
-        if (a.id === "GTIN") {
-          const isInvalid = !v || v === "SEM GTIN" || /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
-          if (isInvalid) return false;
-        }
-        
-        if (!v && !vid) return false;
-      }
-      const hasStruct = Array.isArray(a.values) && a.values.length > 0;
-      if (hasStruct) return true;
-      const hasValueId = typeof a.value_id === "string" && a.value_id.trim().length > 0;
-      const hasValueName = typeof a.value_name === "string" && a.value_name.trim().length > 0;
-      return hasValueId || hasValueName;
-    });
-
-    // Adiciona EMPTY_GTIN_REASON se GTIN foi removido ou não existe
-    if (!sanitizedAttrs.find(a => a.id === "GTIN")) {
-      sanitizedAttrs.push({
-        id: "EMPTY_GTIN_REASON",
-        value_name: "NÃO APLICA"
-      });
-    }
 
     const requestBody = {
       ...body,
