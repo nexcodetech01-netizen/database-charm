@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,7 +44,7 @@ import {
   predictMercadoLivreCategory,
 } from "@/lib/mercadolivre-publish.functions";
 import { generateMercadoLivreDescription } from "@/lib/mercadolivre-ai.functions";
-import { getMercadoLivreIntegration } from "@/lib/mercadolivre.functions";
+import { getMercadoLivreIntegration, getMercadoLivreCategoryAttributes } from "@/lib/mercadolivre.functions";
 
 import { getProductPricingIntelligence } from "@/features/pricing/lib/product-pricing.functions";
 import { getProductChannelSettings } from "@/features/pricing/lib/channel-settings.functions";
@@ -74,6 +75,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const publishFn = useServerFn(publishProductToMercadoLivre);
   const integrationFn = useServerFn(getMercadoLivreIntegration);
   const generateDescFn = useServerFn(generateMercadoLivreDescription);
+  const getCategoryAttrsFn = useServerFn(getMercadoLivreCategoryAttributes);
 
   // Status da integração: bloqueia publicação se expirado
   const integrationQuery = useQuery({
@@ -293,6 +295,42 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySearch, open]);
 
+  const [attrLoading, setAttrLoading] = useState(false);
+  useEffect(() => {
+    if (!open || !categoryId) return;
+    
+    async function autoFillAttributes() {
+      setAttrLoading(true);
+      try {
+        const attrs = await getCategoryAttrsFn({ data: { categoryId } });
+        // Mapeamento automático básico para campos obrigatórios comuns
+        // se eles estiverem vazios.
+        const findVal = (id: string, search: string[]) => {
+          const attr = attrs.find((a: any) => a.id === id);
+          if (!attr || !attr.values) return "";
+          const match = attr.values.find((v: any) => 
+            search.some(s => v.name.toLowerCase().includes(s.toLowerCase()))
+          );
+          return match?.name || attr.values[0]?.name || "";
+        };
+
+        if (!gender) setGender(findVal("GENDER", ["Feminino", "Mulher", "Femea"]));
+        if (!pattern) setPattern(findVal("PATTERN_NAME", ["Liso", "Solido"]));
+        if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
+        if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
+        if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
+        
+        toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
+      } catch (err) {
+        console.warn("Falha ao buscar atributos da categoria", err);
+      } finally {
+        setAttrLoading(false);
+      }
+    }
+
+    void autoFillAttributes();
+  }, [categoryId, open]);
+
   // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
   const photosQuery = useQuery({
     queryKey: ["product-images", product.id],
@@ -403,8 +441,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
   // Sugestão de título SEO no padrão oficial ML:
-  // [Tipo de Produto] + [Gênero] + [Material/Estilo] + [Modelo] + [Cor]
-  // Ex.: "Bolsa Feminina Transversal Em Couro Sintético Fabíola Caramelo"
+  // [Tipo de Produto] + [Marca] + [Modelo] + [Atributo Principal]
+  // Ex.: "Bolsa Feminina Fabíola Caramelo Transversal"
   function buildSeoTitle() {
     const capitalize = (s: string) =>
       s
@@ -415,55 +453,20 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         .join(" ");
 
     const tipo = capitalize(productType.trim() || "Bolsa");
-    const genero = capitalize(gender.trim() || "Feminino");
+    const resBrand = capitalize(brand.trim() || "T&G");
+    const resModel = capitalize(model.trim() || (product.name ?? "").slice(0, 20));
+    const resAttr = capitalize(color.trim() || material.trim() || "Liso");
 
-    // Material/Estilo — combina os dois com "Em" quando houver material.
-    const mat = capitalize(material.trim());
-    const est = capitalize(bagType.trim() || style.trim());
-    let materialEstilo = "";
-    if (est && mat) materialEstilo = `${est} Em ${mat}`;
-    else if (mat) materialEstilo = `Em ${mat}`;
-    else if (est) materialEstilo = est;
-
-    // Modelo — usa o nome do produto, removendo termos já presentes no título.
-    const rawModelo = (product.name ?? "").trim();
-    const stripTokens = new Set(
-      [tipo, genero, mat, est, color.trim()]
-        .filter(Boolean)
-        .flatMap((t) => t.toLowerCase().split(/\s+/)),
-    );
-    const modelo = capitalize(
-      rawModelo
-        .split(/\s+/)
-        .filter((w) => w && !stripTokens.has(w.toLowerCase()))
-        .join(" "),
-    );
-
-    const cor = capitalize(color.trim());
-
-    const orderedParts = [tipo, genero, materialEstilo, modelo, cor].filter(
-      (s) => s && s.length > 0,
-    );
-
-    let out = orderedParts.join(" ").replace(/\s+/g, " ").trim();
-
-    // Garante mínimo de ~40 caracteres com complementos neutros aceitos pelo ML.
-    const fillers = ["Original", "Alta Qualidade", "Envio Rápido"];
-    let i = 0;
-    while (out.length < 40 && i < fillers.length) {
-      const candidate = `${out} ${fillers[i]}`.trim();
-      if (candidate.length > 60) break;
-      out = candidate;
-      i += 1;
-    }
+    let out = [tipo, resBrand, resModel, resAttr].filter(Boolean).join(" ");
+    
+    // Remove palavras proibidas
+    const blacklist = ["promoção", "oferta", "grátis", "original", "lançamento", "barato"];
+    out = out.split(" ").filter(w => !blacklist.includes(w.toLowerCase())).join(" ");
 
     if (out.length > 60) out = out.slice(0, 60).trim();
 
-    if (out.length < 35) {
-      toast.info(
-        "Preencha Tipo, Gênero, Material e Cor para gerar um título com pelo menos 35 caracteres.",
-      );
-      return;
+    if (out.length < 25) {
+      toast.info("Preencha Marca e Modelo para um título melhor.");
     }
 
     setTitle(out);
@@ -547,23 +550,43 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     },
   });
 
-  const canPublish =
-    !isExpired &&
-    !!categoryId &&
-    !!title.trim() &&
-    price > 0 &&
-    quantity > 0 &&
-    description.length <= 50000 &&
-    !publish.isPending;
+  const validation = useMemo(() => {
+    const errors: string[] = [];
+    if (isExpired) errors.push("Integração expirada");
+    if (!categoryId) errors.push("Selecione uma categoria");
+    if (!title.trim() || title.trim().length < 25) errors.push("Título muito curto");
+    if (price <= 0) errors.push("Preço deve ser maior que zero");
+    if (quantity <= 0) errors.push("Estoque deve ser maior que zero");
+    if (selectedPhotoPaths.length === 0) errors.push("Adicione ao menos uma imagem");
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }, [isExpired, categoryId, title, price, quantity, selectedPhotoPaths]);
+
+  const canPublish = validation.isValid && !publish.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" />
-            Anunciar no Mercado Livre
-          </DialogTitle>
+          <div className="flex items-center justify-between pr-8">
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-primary" />
+              Anunciar no Mercado Livre
+            </DialogTitle>
+            {validation.isValid ? (
+              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1.5 py-1 px-3">
+                <Check className="h-3 w-3" />
+                Pronto para Publicar
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1.5 py-1 px-3">
+                <AlertTriangle className="h-3 w-3" />
+                Pendente
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
             Revise os dados do produto e escolha a categoria e o tipo de anúncio antes de publicar.
           </DialogDescription>

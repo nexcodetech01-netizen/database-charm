@@ -10,6 +10,8 @@ import {
   Loader2,
   Plus,
   Settings2,
+  ShoppingBag,
+  Smartphone,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -87,6 +89,7 @@ import {
 } from "../../lib/fiscal-suggestions";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
 import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
+import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
 
 interface Props {
   companyId: string;
@@ -265,6 +268,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [taxPct, setTaxPct] = useState("0");
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [mlDialogOpen, setMlDialogOpen] = useState(false);
   const [form, setForm] = useEntityForm(product, toState);
   const initialPriceAppliedRef = useRef(false);
   useEffect(() => {
@@ -311,7 +316,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const suggestTagsFn = useServerFn(suggestProductTags);
   const [newCategory, setNewCategory] = useState("");
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
-  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
 
@@ -1458,10 +1462,35 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         {/* ══════════════ ABA 2 — INTEGRAÇÃO ML & LOGÍSTICA ══════════════ */}
         <TabsContent value="logistica" className="space-y-6">
           <Section
-            title="Fotos Otimizadas"
-            description="Tire fotos em lote e deixe que nossa IA aplique os fundos ideais para o Mercado Livre."
+            title="Publicação & Fotos"
+            description="Valide os requisitos e publique no Mercado Livre com tratamento de IA."
           >
-            <ProductPhotoBatchUploader companyId={companyId} />
+            <div className="flex flex-col gap-6">
+              {product?.id && (
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <ShoppingBag className="h-4 w-4 text-primary" />
+                      Pronto para Publicar
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Título, Preço, NCM e Imagens validados para o Mercado Livre.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="gap-2 shadow-sm"
+                    onClick={() => setMlDialogOpen(true)}
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Publicar no Mercado Livre
+                  </Button>
+                </div>
+              )}
+              <ProductPhotoBatchUploader companyId={companyId} />
+            </div>
           </Section>
 
           <Section
@@ -1648,6 +1677,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               </Field>
             </div>
           </Section>
+
+          {product && (
+            <PublishToMercadoLivreDialog
+              product={product}
+              open={mlDialogOpen}
+              onOpenChange={setMlDialogOpen}
+            />
+          )}
 
           <Section
             title="Dimensões & Peso"

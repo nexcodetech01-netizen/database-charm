@@ -110,3 +110,48 @@ export const syncMercadoLivreProducts = createServerFn({ method: "POST" })
     const result = await syncMLProducts(context.supabase, companyId, context.userId);
     return result;
   });
+
+export const getMercadoLivreCategoryAttributes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { categoryId: string }) => {
+    const categoryId = String(input?.categoryId ?? "").trim();
+    if (!categoryId) throw new Error("categoryId obrigatório.");
+    return { categoryId };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { getIntegrationSummary } = await import("./mercadolivre.server");
+    const companyId = await resolveCompanyId(supabase, userId);
+    const summary = await getIntegrationSummary(supabase, companyId, {
+      userId,
+      autoRefresh: true,
+    });
+    
+    if (!summary.connected) throw new Error("Integração não conectada.");
+
+    const { data: row } = await supabase
+      .from("mercadolivre_integrations")
+      .select("access_token_encrypted")
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (!row?.access_token_encrypted) throw new Error("Token não encontrado.");
+
+    const { decryptToken } = await import("./meta-crypto.server");
+    const token = decryptToken(row.access_token_encrypted);
+    if (!token) throw new Error("Falha ao decifrar token.");
+
+    const res = await fetch(
+      `https://api.mercadolibre.com/categories/${data.categoryId}/attributes`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      }
+    );
+    
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Falha ao buscar atributos (${res.status}): ${text}`);
+    }
+
+    return await res.json();
+  });

@@ -80,7 +80,12 @@ export async function syncProductToMercadoLivreCore(
 
   const price = p.price != null ? Number(p.price) : null;
   const availableQuantity = Math.max(0, Math.floor(Number(p.stock ?? 0)));
-  const patch: Record<string, unknown> = { available_quantity: availableQuantity };
+  const status = availableQuantity === 0 ? "paused" : "active";
+  
+  const patch: Record<string, unknown> = { 
+    available_quantity: availableQuantity,
+    status: status
+  };
   if (price != null && price > 0) patch.price = Math.round(price * 100) / 100;
 
   const res = await integrationFetch(
