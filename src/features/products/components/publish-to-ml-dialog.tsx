@@ -427,13 +427,19 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
   const photoUrlByPath = useMemo(() => {
     const map = new Map<string, string>();
+    const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+    
     // Primeiro as URLs assinadas do banco
     for (const it of photoSignedUrlsQuery.data ?? []) {
-      if (it.path && it.signedUrl) map.set(it.path, it.signedUrl);
+      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
+        map.set(it.path, it.signedUrl);
+      }
     }
     // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
     localImageUrls.forEach((url, path) => {
-      map.set(path, url);
+      if (!isInvalid(url)) {
+        map.set(path, url);
+      }
     });
     return map;
   }, [photoSignedUrlsQuery.data, localImageUrls]);
