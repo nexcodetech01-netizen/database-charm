@@ -24,6 +24,7 @@ import {
   StatStack,
   StatusBadge,
 } from "@/components/design";
+import { ErrorBoundary } from "react-error-boundary";
 import { Button } from "@/components/ui/button";
 import { SPACING_TOKENS, TEXT_TOKENS } from "@/design";
 import { cn } from "@/lib/utils";
