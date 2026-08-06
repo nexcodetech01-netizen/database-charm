@@ -305,6 +305,12 @@ interface PublishInput {
   imageOverrides?: Record<string, string>;
   videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
+  variations?: Array<{
+    price: number;
+    available_quantity: number;
+    attribute_combinations: Array<{ id: string; value_name: string }>;
+    picture_ids?: string[];
+  }>;
 }
 
 export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
@@ -355,6 +361,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       imageOverrides: typeof input.imageOverrides === "object" ? input.imageOverrides : undefined,
       videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
+      variations: Array.isArray(input.variations) ? input.variations : undefined,
     };
   })
 
@@ -711,6 +718,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     const requestBody = {
       ...body,
       attributes: sanitizedAttrs,
+      variations: data.variations,
     };
 
     // Remove sale_terms redundantes

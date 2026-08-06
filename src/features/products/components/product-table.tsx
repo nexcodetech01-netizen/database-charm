@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Package, ShoppingBag, PowerOff, Tag } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Package, ShoppingBag, PowerOff, Tag, Play, Pause, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ import { PublishToMercadoLivreDialog } from "./publish-to-ml-dialog";
 import { useSignedImageUrls, useDeactivateProduct } from "../hooks/use-products";
 import type { Product } from "../types";
 import { LabelPrintDialog } from "@/features/printing";
+import { updateMercadoLivreItem, syncProductToMercadoLivre } from "@/lib/mercadolivre-sync.functions";
 
 type Row = Product & {
   category?: { id: string; name: string } | null;
@@ -47,6 +49,33 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
   const [labelTarget, setLabelTarget] = useState<Product | null>(null);
   const deactivate = useDeactivateProduct();
+  const updateMlItem = useServerFn(updateMercadoLivreItem);
+  const syncMlItem = useServerFn(syncProductToMercadoLivre);
+  const [isUpdatingMl, setIsUpdatingMl] = useState<string | null>(null);
+
+  const handleUpdateMlStatus = async (productId: string, status: "active" | "paused") => {
+    setIsUpdatingMl(productId);
+    try {
+      await updateMlItem({ data: { productId, status } });
+      toast.success(status === "active" ? "Anúncio reativado" : "Anúncio pausado");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar anúncio");
+    } finally {
+      setIsUpdatingMl(null);
+    }
+  };
+
+  const handleSyncMlPrice = async (productId: string) => {
+    setIsUpdatingMl(productId);
+    try {
+      await syncMlItem({ data: { productId } });
+      toast.success("Preço e estoque sincronizados com o ML");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao sincronizar");
+    } finally {
+      setIsUpdatingMl(null);
+    }
+  };
 
   // Agrega paths do dataset atual em UMA única assinatura em lote (evita N queries).
   const coverPaths = useMemo(
@@ -199,6 +228,44 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
                 <Tag className="mr-2 h-4 w-4" />
                 Imprimir etiqueta
               </DropdownMenuItem>
+
+              {mlItemId && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={!!isUpdatingMl}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      handleUpdateMlStatus(p.id, "active");
+                    }}
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Reativar no ML
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!!isUpdatingMl}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      handleUpdateMlStatus(p.id, "paused");
+                    }}
+                  >
+                    <Pause className="mr-2 h-4 w-4" />
+                    Pausar no ML
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!!isUpdatingMl}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      handleSyncMlPrice(p.id);
+                    }}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isUpdatingMl === p.id ? "animate-spin" : ""}`} />
+                    Sincronizar Preço/Estoque
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
               {p.status === "active" ? (
                 <DropdownMenuItem
                   onSelect={(e) => {

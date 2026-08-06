@@ -444,6 +444,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           imageOverrides,
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
           videoUrl: videoUrl.trim() || undefined,
+          variations: (product as any).variations,
         },
       });
     },
