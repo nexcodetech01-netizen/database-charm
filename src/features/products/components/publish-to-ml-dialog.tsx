@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Smartphone,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -166,6 +167,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const rawProductPrice = Number(product.price ?? 0);
   const initialTitle = useMemo(() => (product.name ?? "").slice(0, 60), [product]);
   const [title, setTitle] = useState(initialTitle);
+  const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
@@ -231,7 +233,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setStyle("");
       setColor("");
       setBrand(((product as { brand?: string | null }).brand ?? "").trim() || "T&G");
-      setModel("");
+      const currentModel = ((product as any).model ?? "").trim();
+      if (!currentModel) {
+        // Extrai a primeira palavra significativa do título se modelo estiver vazio
+        const words = t.split(/\s+/).filter(w => w.length > 2);
+        setModel(words[0] || "Padrão");
+      } else {
+        setModel(currentModel);
+      }
       setPattern("Liso");
       setWithZipper("Sim");
       setAgeGroup("Adultos");
@@ -808,7 +817,29 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                   setUsingMlSuggested(false);
                 }}
               />
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  className="h-7 text-[10px] px-2 py-0 gap-1 border-primary/20 hover:bg-primary/5 text-primary"
+                  onClick={() => {
+                    const desiredValue = Number(product.price) || 40;
+                    const feePct = 0.11;
+                    const fixedFee = 6.5;
+                    const calculated = (desiredValue + fixedFee) / (1 - feePct);
+                    setPrice(Number(calculated.toFixed(2)));
+                    setPriceTouched(true);
+                    setUsingMlSuggested(false);
+                    toast.success("Preço calculado para cobrir taxas", {
+                      description: `Base: ${formatCurrency(desiredValue)} + Taxas: ${formatCurrency(calculated - desiredValue)}`,
+                    });
+                  }}
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Calcular Preço para Cobrir Taxas
+                </Button>
+
                 {pricingQuery.isLoading ? (
                   <span className="inline-flex items-center gap-1">
                     <Loader2 className="h-3 w-3 animate-spin" /> Calculando preço sugerido…
