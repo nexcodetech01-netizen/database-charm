@@ -855,8 +855,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   }, [localImageUrls]);
 
   const publish = useMutation({
-    mutationFn: () =>
-      publishFn({
+    mutationFn: async () => {
+      return await publishFn({
         data: {
           productId: product.id,
           categoryId,
@@ -874,7 +874,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
           videoUrl: videoUrl.trim() || undefined,
         },
-      }),
+      });
+    },
 
     onSuccess: (res) => {
       toast.success("Anúncio publicado no Mercado Livre", {
@@ -1166,7 +1167,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             {/* Campo de Vídeo do Mercado Livre */}
             <div className="mt-4 grid gap-2 border-t border-border pt-4">
               <Label htmlFor="ml-video" className="flex items-center gap-2">
-                Link do Vídeo do YouTube (Shorts/Demonstração)
+                Vídeo do Anúncio (YouTube)
                 <Badge variant="outline" className="text-[10px] py-0 h-4">Apenas YouTube</Badge>
               </Label>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1178,7 +1179,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                     onChange={(e) => setVideoUrl(e.target.value)}
                     className="pr-10"
                   />
-                  {videoUrl && videoUrl.includes("youtube.com") && (
+                  {videoUrl && (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Check className="h-4 w-4 text-success" />
                     </div>
@@ -1204,14 +1205,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                       }
                       return null;
                     })()}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="bg-red-600 rounded-full p-2 text-white shadow-lg">
                         <Smartphone className="h-4 w-4" />
                       </div>
                     </div>
                     <button 
+                      type="button"
                       onClick={() => setVideoUrl("")}
-                      className="absolute top-1 right-1 bg-black/50 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-black/50 hover:bg-black/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     >
                       <X className="h-3 w-3" />
                     </button>
