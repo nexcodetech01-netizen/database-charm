@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Boxes, Plus, Scale, History, Lightbulb } from "lucide-react";
+import { Boxes, Plus, Scale, History, Lightbulb, RefreshCw } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { syncMercadoLivreProducts } from "@/lib/mercadolivre.functions";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageLayout } from "@/components/layout";
@@ -47,6 +50,20 @@ const DEFAULT_PRODUCT_FILTERS: ProductListFilters = {
 function InventoryPage() {
   const { company } = Route.useRouteContext();
   const [openForm, setOpenForm] = useState(false);
+  const queryClient = useQueryClient();
+
+  const syncProductsMutation = useMutation({
+    mutationFn: () => syncMercadoLivreProducts(),
+    onSuccess: (data) => {
+      toast.success(
+        `Sincronização concluída: ${data.imported} novos produtos, ${data.updated} atualizados.`
+      );
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error: any) => {
+      toast.error(`Falha ao sincronizar anúncios: ${error.message}`);
+    },
+  });
   
   // State para Aba 1 (Produtos)
   const [productFilters, setProductFilters] = useState<ProductListFilters>(DEFAULT_PRODUCT_FILTERS);
@@ -77,6 +94,18 @@ function InventoryPage() {
       meta={`${metrics.data?.productCount ?? 0} produtos`}
       actions={
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => syncProductsMutation.mutate()}
+            disabled={syncProductsMutation.isPending}
+          >
+            <RefreshCw
+              className={`mr-1.5 h-4 w-4 ${syncProductsMutation.isPending ? "animate-spin" : ""}`}
+            />
+            Importar ML
+          </Button>
           <Button size="sm" variant="outline" asChild className="rounded-xl">
             <Link to="/estoque/reconciliacao">
               <Scale className="mr-1.5 h-4 w-4" /> Reconciliação
