@@ -1113,7 +1113,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   onBlur={handleTitleCaseBlur((v) => set("name", v))}
                 />
               </Field>
-              <Field label="Categoria">
+              <Field label="Categoria *">
                 <div className="flex gap-2">
                   <Select
                     value={form.category_id || "__none"}
