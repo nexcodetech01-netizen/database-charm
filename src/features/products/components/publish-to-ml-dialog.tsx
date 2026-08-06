@@ -333,6 +333,61 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     return list;
   }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
+  const publish = useMutation({
+    mutationFn: async () => {
+      return await publishFn({
+        data: {
+          productId: product.id,
+          categoryId,
+          listingTypeId: listingType,
+          condition,
+          title,
+          price,
+          availableQuantity: quantity,
+          description,
+          color: color.trim() || undefined,
+          brand: brand.trim() || undefined,
+          model: model.trim() || undefined,
+          picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+          imageOverrides,
+          extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
+          videoUrl: videoUrl.trim() || undefined,
+        },
+      });
+    },
+    onSuccess: (res) => {
+      toast.success("Anúncio publicado com sucesso no Mercado Livre!", {
+        description: res.permalink ?? res.mlItemId,
+        action: res.permalink
+          ? {
+              label: "Abrir",
+              onClick: () => window.open(res.permalink!, "_blank", "noopener"),
+            }
+          : undefined,
+      });
+      qc.invalidateQueries({ queryKey: ["product", product.id] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      onOpenChange(false);
+    },
+    onError: (err: any) => {
+      let errorMessage = "Erro desconhecido na publicação";
+      if (err instanceof Error) errorMessage = err.message;
+      else if (typeof err === 'string') errorMessage = err;
+      else if (err && typeof err === 'object') {
+        try { errorMessage = JSON.stringify(err, null, 2); } catch { errorMessage = String(err); }
+      }
+      toast.error("Erro no Mercado Livre", {
+        description: (
+          <div className="mt-2 text-xs font-mono bg-slate-900 p-2 rounded text-slate-100 max-h-[300px] overflow-auto whitespace-pre-wrap">
+            {errorMessage}
+          </div>
+        ),
+        duration: 15000,
+      });
+      console.error("[MercadoLivre] Falha na publicação:", errorMessage);
+    },
+  });
+
 
   // Reset state on open
   useEffect(() => {
