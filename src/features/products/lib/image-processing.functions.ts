@@ -50,7 +50,7 @@ export const processProductImages = createServerFn({ method: "POST" })
       const variations = ["perspective_left", "perspective_right", "close_up"].map((angle, idx) => ({
         id: `gen_${mainImg.id}_${idx}`,
         url: mainImg.url, // Referência à imagem base
-        processedUrl: `${mainImg.url}${mainImg.url.includes('?') ? '&' : '?'}angle=${angle}&bg=white`, // Simulação da variação gerada
+        processedUrl: `https://images.placeholders.dev/?width=800&height=800&text=AI+Angle+${angle}+Generated&bgColor=%23ffffff&textColor=%23000000`, // Simulação da variação gerada
         isMain: false,
         status: "success" as const,
         appliedEffect: "neutral_studio_setting",
