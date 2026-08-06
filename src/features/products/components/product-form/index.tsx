@@ -802,21 +802,52 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
 
   const submit = async () => {
-    // Validações estritas para duplicação: exige categoria, fornecedor e
-    // preços informados explicitamente antes de criar o novo registro.
+    // Validações estritas e amigáveis (UX Enterprise).
+    // Não bloqueamos o botão 'Salvar', mas validamos ao clicar.
+    const validation = schema.safeParse(form);
+    
+    if (!validation.success) {
+      // Mapeia erros de Zod para mensagens legíveis.
+      const firstError = validation.error.errors[0];
+      const fieldName = firstError.path[0];
+      
+      // Mapeamento de nomes internos para nomes de exibição amigáveis
+      const fieldLabels: Record<string, string> = {
+        name: "Nome",
+        sku: "SKU",
+        barcode: "Código de Barras",
+        ncm: "NCM",
+        category_id: "Categoria",
+        price: "Preço de Venda",
+        cost: "Preço de Custo"
+      };
+
+      toast.error(`Informação pendente: ${fieldLabels[fieldName as string] || fieldName}`, {
+        description: firstError.message,
+      });
+
+      // Se possível, muda para a aba onde está o erro (UX)
+      if (["name", "category_id", "sku"].includes(fieldName as string)) setTab("geral");
+      else if (["ncm", "barcode"].includes(fieldName as string)) setTab("estoque");
+      else if (["price", "cost"].includes(fieldName as string)) setTab("custos");
+
+      return;
+    }
+
     if (isDuplicating) {
       if (!form.category_id) {
         toast.error("Selecione uma categoria antes de salvar a duplicação.");
+        setTab("geral");
         return;
       }
       if (!form.supplier_id) {
         toast.error("Selecione um fornecedor antes de salvar a duplicação.");
+        setTab("geral");
         return;
       }
-      // Preço de custo é permitido como zero/vazio.
-
       if (num(form.price) <= 0) {
         toast.error("Informe o Preço de Venda antes de salvar a duplicação.");
+        setTab("custos");
         return;
       }
     }
@@ -2225,7 +2256,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
             Cancelar
           </Button>
-          <Button type="button" onClick={submit} disabled={saving || skuTaken || skuChecking || !isFormValid}>
+          <Button type="button" onClick={submit} disabled={saving || skuChecking}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {product ? "Salvar alterações" : "Salvar Produto"}
           </Button>
