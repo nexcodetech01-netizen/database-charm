@@ -293,9 +293,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     [photosQuery.data],
   );
   const photoSignedUrlsQuery = useQuery({
-    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
+    queryKey: ["product-images-signed", product?.id, photoPaths.join("|")],
     queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
-    enabled: open && photoPaths.length > 0,
+    enabled: open && photoPaths.length > 0 && !!product?.id,
     staleTime: 60_000,
   });
   const photoUrlByPath = useMemo(() => {
