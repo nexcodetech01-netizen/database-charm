@@ -638,7 +638,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
+        className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 ${
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
         }`}
       >
