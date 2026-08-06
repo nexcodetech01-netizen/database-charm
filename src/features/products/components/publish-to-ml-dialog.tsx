@@ -1422,6 +1422,32 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                             <Sparkles className="h-3 w-3 mr-1" /> Sugerido
                           </Badge>
                         )}
+                        {priceTouched && !usingMlSuggested && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2 text-[10px] border-amber-500/30 text-amber-600 hover:bg-amber-50"
+                            onClick={() => {
+                              setPriceTouched(false);
+                              // Isso vai disparar o useEffect de sincronização
+                              const desired = Number(walletTarget);
+                              if (desired > 0) {
+                                const isPremium = listingType === "gold_pro";
+                                const feePct = isPremium ? 0.15 : 0.135; 
+                                const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
+                                const shipping = desired >= 79 ? 24.65 : 0;
+                                const calculatedFinal = isPremium 
+                                  ? (desired + shipping) / (1 - 0.15) 
+                                  : (desired + fixedFee + shipping) / (1 - feePct);
+                                const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
+                                setPrice(roundedFinal);
+                              }
+                            }}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" /> Reverter à Fórmula
+                          </Button>
+                        )}
                       </div>
                       {validation.requirements.find(r => r.id === "price_formula")?.isValid === false && (
                         <p className="text-[10px] text-destructive font-medium animate-in fade-in slide-in-from-top-1">
