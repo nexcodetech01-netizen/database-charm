@@ -2016,7 +2016,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                     Preço de venda base (R$) *
                   </Label>
                   <div className="mt-1.5">
-                    <NumInput value={form.price} onChange={(v) => set("price", v)} />
+                    <NumInput 
+                      value={form.price} 
+                      onChange={(v) => {
+                        // Digitação manual sobrepõe qualquer sugestão
+                        set("price", v);
+                      }} 
+                    />
                   </div>
 
                   {num(form.price) <= 0 ? (
