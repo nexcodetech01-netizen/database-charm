@@ -505,9 +505,11 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     const isPremium = listingType === "gold_pro";
     const feePct = isPremium ? 0.15 : 0.135; 
     const fixedFee = (desired < 79 && desired > 0) ? 6.5 : 0;
-    const shipping = desired >= 79 ? 23.5 : 0;
-    const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
-    const roundedFinal = Number(calculatedFinal.toFixed(2));
+    const shipping = desired >= 79 ? 24.65 : 0;
+    const calculatedFinal = isPremium 
+      ? (desired + shipping) / (1 - 0.15) 
+      : (desired + fixedFee + shipping) / (1 - feePct);
+    const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
 
     // Se o preço atual for diferente do calculado, atualiza
     if (Math.abs(price - roundedFinal) > 0.01) {
@@ -1305,10 +1307,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                       const isPremium = listingType === "gold_pro";
                       const classicFeePct = 0.135;
                       const classicFixedFee = desired < 79 && desired > 0 ? 6.5 : 0;
-                      const classicShipping = desired >= 79 ? 23.5 : 0;
+                      const classicShipping = desired >= 79 ? 24.65 : 0;
                       const classicFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - classicFeePct) : 0;
-                      const premiumFeePct = 0.15; // Atualizado para 15% conforme solicitado
-                      const premiumFinal = desired > 0 ? (desired + classicFixedFee + classicShipping) / (1 - premiumFeePct) : 0;
+                      const premiumFeePct = 0.15; 
+                      const premiumFinal = desired > 0 ? (desired + classicShipping) / (1 - premiumFeePct) : 0;
 
                       return (
                         <>
