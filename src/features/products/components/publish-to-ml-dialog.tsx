@@ -246,6 +246,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
 
   const [localImageUrls, setLocalImageUrls] = useState<Map<string, string>>(new Map());
   const [imgErrorMap, setImgErrorMap] = useState<Map<string, boolean>>(new Map());
+  const [useAI, setUseAI] = useState(true);
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
 
@@ -288,6 +289,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setSelectedPhotoPaths([]);
       setLocalImageUrls(new Map());
       setImgErrorMap(new Map());
+      setUseAI(true);
       setVideoUrl((product as any).video_url ?? "");
       autoRanRef.current = false;
     }
@@ -505,65 +507,67 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       if (!url) throw new Error("Falha ao gerar URL para processamento");
 
       let finalUrl = url;
-      try {
-        const res = await withRetry(
-          () => processProductImages({
-            data: {
-              images: [{ id: path, url, isMain: slotIndex === 0 }],
-              enableMultiview: slotIndex === 0, 
-            },
-          }),
-          {
-            onRetry: (err, attempt) => {
-              console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+      if (useAI) {
+        try {
+          const res = await withRetry(
+            () => processProductImages({
+              data: {
+                images: [{ id: path, url, isMain: slotIndex === 0 }],
+                enableMultiview: slotIndex === 0, 
+              },
+            }),
+            {
+              onRetry: (err, attempt) => {
+                console.warn(`Retry attempt ${attempt} for processProductImages due to error:`, err);
+              }
             }
-          }
-        );
-
-        if (res.success && res.processedImages[0]) {
-          const mainProcessed = res.processedImages[0];
-          const isInvalid = (u: string) => typeof u === 'string' && (
-            u.toLowerCase().startsWith('failed') || 
-            u.toLowerCase().startsWith('error') || 
-            u.toLowerCase().includes('background...')
           );
-          
-          if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
-            finalUrl = mainProcessed.processedUrl;
-          }
 
-          // Se gerou multiview (slots extras automáticos), processamos cada uma
-          const generated = res.processedImages.filter(img => (img as any).isGenerated);
-          if (generated.length > 0) {
-            // Criamos registros e URLs para as imagens geradas
-            for (let i = 0; i < generated.length; i++) {
-              const gen = generated[i];
-              const genUrl = gen.processedUrl;
-              if (genUrl && !isInvalid(genUrl)) {
-                const genId = gen.id;
-                
-                setLocalImageUrls(prev => new Map(prev).set(genId, genUrl));
+          if (res.success && res.processedImages[0]) {
+            const mainProcessed = res.processedImages[0];
+            const isInvalid = (u: string) => typeof u === 'string' && (
+              u.toLowerCase().startsWith('failed') || 
+              u.toLowerCase().startsWith('error') || 
+              u.toLowerCase().includes('background...')
+            );
+            
+            if (mainProcessed.processedUrl && !isInvalid(mainProcessed.processedUrl)) {
+              finalUrl = mainProcessed.processedUrl;
+            }
 
-                setSelectedPhotoPaths(prev => {
-                  if (prev.length < 5 && !prev.includes(genId)) {
-                    return [...prev, genId];
-                  }
-                  return prev;
-                });
+            // Se gerou multiview (slots extras automáticos), processamos cada uma
+            const generated = res.processedImages.filter(img => (img as any).isGenerated);
+            if (generated.length > 0) {
+              // Criamos registros e URLs para as imagens geradas
+              for (let i = 0; i < generated.length; i++) {
+                const gen = generated[i];
+                const genUrl = gen.processedUrl;
+                if (genUrl && !isInvalid(genUrl)) {
+                  const genId = gen.id;
+                  
+                  setLocalImageUrls(prev => new Map(prev).set(genId, genUrl));
 
-                await productImagesService.createRecord(
-                  product.company_id, 
-                  product.id, 
-                  genId, 
-                  nextPosition + 1 + i
-                );
+                  setSelectedPhotoPaths(prev => {
+                    if (prev.length < 5 && !prev.includes(genId)) {
+                      return [...prev, genId];
+                    }
+                    return prev;
+                  });
+
+                  await productImagesService.createRecord(
+                    product.company_id, 
+                    product.id, 
+                    genId, 
+                    nextPosition + 1 + i
+                  );
+                }
               }
             }
           }
+        } catch (err) {
+          console.error("Erro no processamento IA, mantendo original:", err);
+          toast.error("IA indisponível", { description: "Mantendo foto original sem tratamento." });
         }
-      } catch (err) {
-        console.error("Erro no processamento IA, mantendo original:", err);
-        toast.error("IA indisponível", { description: "Mantendo foto original sem tratamento." });
       }
 
       setLocalImageUrls(prev => new Map(prev).set(path, finalUrl));
@@ -1119,7 +1123,18 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           {/* Fotos do anúncio — 5 slots fixos: selecionadas + botão de upload */}
           <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
             <div className="flex items-center justify-between gap-2">
-              <Label>Fotos do anúncio</Label>
+              <div className="flex items-center gap-4">
+                <Label>Fotos do anúncio</Label>
+                <div className="flex items-center gap-2 bg-background/50 px-2 py-0.5 rounded-full border border-border cursor-pointer select-none active:scale-95 transition-transform" onClick={() => setUseAI(!useAI)}>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors ${useAI ? 'bg-primary' : 'bg-muted'}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${useAI ? 'left-4.5' : 'left-0.5'}`} />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-1">
+                    <Sparkles className={`h-3 w-3 ${useAI ? 'text-primary' : 'text-muted-foreground'}`} />
+                    IA Otimizar
+                  </span>
+                </div>
+              </div>
               <span className="text-xs text-muted-foreground">
                 {selectedPhotoPaths.length}/5 selecionadas
               </span>

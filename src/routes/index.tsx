@@ -64,14 +64,17 @@ STATUS DOS MÓDULOS:
 - Segurança RLS: 100% (Nota 10.0 - Hardening Total)
 
 ==================================================
-RECURSO: VINCULAÇÃO E INTELIGÊNCIA ML
-1. Webhook processa pedidos em tempo real.
-2. Busca inteligente tenta vincular por MLB_ID ou SKU do ML.
-3. Se falhar, pedido fica pendente para vinculação manual.
-4. Vinculação manual grava o de/para e automatiza vendas futuras.
-5. Baixa de estoque integrada via motor comercial/estoque.
+CORREÇÃO CRÍTICA NA API DE FOTOS E FALLBACK ('PublishToMercadoLivreDialog'):
 
-Pronto para operação em escala comercial.
+1. ERRO GRAVE DE RETORNO DA API:
+   - Quando a remoção de fundo por IA falha, o sistema está salvando o texto do erro/status ("Failed Background...") no lugar da URL da imagem.
+   - TRATAMENTO OBRIGATÓRIO: Se o serviço de remoção de fundo retornar erro ou falhar, NUNCA substitua a imagem por texto de erro. Mantenha a FOTO ORIGINAL ENVIADA PELO USUÁRIO com o fundo intacto.
+
+2. DESATIVAR REMOÇÃO DE FUNDO OBRIGATÓRIA / ADICIONAR TOGGLE:
+   - Se a API de remoção de fundo estiver instável ou sem créditos, não bloqueie o upload. Permita que a foto original enviada pelo usuário seja carregada diretamente no slot sem passar pela IA, garantindo que a foto real da bolsa apareça.
+
+3. LIMPEZA DOS SLOTS:
+   - Limpe do estado qualquer slot que contenha a URL/texto "Failed Background..." e renderize apenas arquivos de imagem válidos.
 `}
           </pre>
         </div>
