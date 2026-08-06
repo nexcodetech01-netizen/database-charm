@@ -392,7 +392,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // - remove emojis, aspas, símbolos e caracteres não-ASCII (mantém acentos PT-BR, dígitos, espaço, - e .)
     // - normaliza espaços duplos e força limite de 60 caracteres
     const title = sanitizeMlTitle(rawTitle);
-    const price = data.price ?? Number((product as { price: number }).price ?? 0);
+    const price = data.price || Number((product as { price: number }).price ?? 0);
     const availableQuantity =
       data.availableQuantity ?? Math.max(0, Math.floor(Number((product as { stock: number }).stock ?? 0)));
     const description = (data.description ?? ((product as { description: string | null }).description ?? ""))
@@ -407,6 +407,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
 
 
     if (!title || title.length < 3) throw new Error("Título muito curto (mínimo 3 caracteres após sanitização).");
+    console.log("Enviando Preço para o ML:", price);
     if (!(price > 0)) throw new Error("Preço deve ser maior que zero.");
     if (!(availableQuantity > 0)) throw new Error("Estoque disponível deve ser maior que zero.");
 

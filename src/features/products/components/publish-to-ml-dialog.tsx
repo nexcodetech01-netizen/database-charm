@@ -432,7 +432,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           listingTypeId: listingType,
           condition,
           title: finalTitle,
-          price,
+          price: Number(price),
           availableQuantity: quantity,
           description,
           color: finalColor,
@@ -1730,6 +1730,19 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
             <Button 
               onClick={() => {
                 if (publish.isPending) return;
+                
+                // Trava de segurança: Preço não pode ser menor ou igual ao custo/líquido desejado
+                const minPrice = Number(walletTarget) || 0;
+                console.log("Enviando Preço para o ML:", price);
+                
+                if (price <= minPrice) {
+                  toast.error("Preço de venda inválido", {
+                    description: `O preço final (R$ ${price.toFixed(2)}) deve ser maior que o valor desejado (R$ ${minPrice.toFixed(2)}). Ajuste o preço ou o valor líquido.`
+                  });
+                  setActiveTab("price");
+                  return;
+                }
+
                 publish.mutate();
               }} 
               disabled={!canPublish}
