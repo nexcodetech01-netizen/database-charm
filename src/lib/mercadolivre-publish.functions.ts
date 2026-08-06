@@ -708,6 +708,9 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       attributes: sanitizedAttrs,
     };
 
+    // Remove sale_terms redundantes que podem causar erro 400 (parcelamento é auto pelo listing_type)
+    delete (requestBody as any).sale_terms;
+
 
     const validation = mlPublishPayloadSchema.safeParse(requestBody);
     if (!validation.success) {
