@@ -101,3 +101,12 @@ export const disconnectMercadoLivre = createServerFn({ method: "POST" })
     await deleteIntegration(context.supabase, companyId);
     return { ok: true };
   });
+
+export const syncMercadoLivreProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { syncMLProducts } = await import("./mercadolivre.server");
+    const companyId = await requireCurrentCompanyId(context.supabase, context.userId);
+    const result = await syncMLProducts(context.supabase, companyId, context.userId);
+    return result;
+  });
