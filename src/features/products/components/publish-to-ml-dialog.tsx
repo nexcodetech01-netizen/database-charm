@@ -1079,7 +1079,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                           key={path}
                           type="button"
                           onClick={() => togglePhoto(path)}
-                          className="aspect-square overflow-hidden rounded border border-border transition hover:border-primary"
+                          className="aspect-square w-12 h-12 sm:w-auto sm:h-auto overflow-hidden rounded border border-border transition hover:border-primary shrink-0"
                         >
                           {url ? (
                             <img
