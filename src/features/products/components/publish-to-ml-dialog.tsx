@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -315,10 +316,12 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         };
 
         if (!gender) setGender(findVal("GENDER", ["Feminino", "Mulher", "Femea"]));
+        if (!material) setMaterial(findVal("MAIN_MATERIAL", ["Sintético", "Couro", "Lona"]));
         if (!pattern) setPattern(findVal("PATTERN_NAME", ["Liso", "Solido"]));
         if (!ageGroup) setAgeGroup(findVal("AGE_GROUP", ["Adulto", "Adultos"]));
         if (!withZipper) setWithZipper(findVal("WITH_ZIPPER", ["Sim", "Yes"]));
         if (!season) setSeason(findVal("SEASON", ["Permanente", "Toda"]));
+        if (!brand || brand === "Genérico") setBrand(findVal("BRAND", ["T&G", "Genérica"]));
         
         toast.info("Atributos obrigatórios pré-preenchidos para esta categoria.");
       } catch (err) {
