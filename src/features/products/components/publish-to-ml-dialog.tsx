@@ -452,7 +452,11 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   });
   const photoUrlByPath = useMemo(() => {
     const map = new Map<string, string>();
-    const isInvalid = (u: string) => !u || u.startsWith('Failed') || u.startsWith('Error') || u.includes('background...');
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
     
     // Primeiro as URLs assinadas do banco
     for (const it of photoSignedUrlsQuery.data ?? []) {
