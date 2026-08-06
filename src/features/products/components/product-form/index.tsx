@@ -1242,43 +1242,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   )
                 ) : null}
               </Field>
-              <Field
-                label="Código de barras (EAN)"
-                hint="Opcional — use a busca para autopreencher os dados cadastrais"
-              >
-                <div className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    value={form.barcode}
-                    inputMode="numeric"
-                    maxLength={14}
-                    onChange={(e) => set("barcode", e.target.value.replace(/\D/g, "").slice(0, 14))}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1.5"
-                    onClick={handleEanLookup}
-                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
-                    title="Consulta bases públicas e o histórico interno pelo EAN"
-                  >
-                    {eanLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    Buscar EAN
-                  </Button>
-                </div>
-              </Field>
-              <Field label="Marca">
-                <Input
-                  value={form.brand}
-                  onChange={(e) => set("brand", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
-                />
-              </Field>
               <Field label="Status">
                 <Select value={form.status} onValueChange={(v) => set("status", v)}>
                   <SelectTrigger>
