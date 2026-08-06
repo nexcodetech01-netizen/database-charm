@@ -1773,68 +1773,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             </div>
           </Section>
 
-          <Section
-            title="Dimensões e peso"
-            description="Medidas oficiais usadas para o cálculo exato de frete nos Marketplaces (Mercado Livre, etc)."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field 
-                label="Peso (kg)" 
-                hint="Peso total com embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.weight} 
-                    onChange={(v) => set("weight", v)} 
-                    placeholder="0,000"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">kg</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Altura (cm)" 
-                hint="Altura da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.height} 
-                    onChange={(v) => set("height", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Largura (cm)" 
-                hint="Largura da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.width} 
-                    onChange={(v) => set("width", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-
-              <Field 
-                label="Comprimento (cm)" 
-                hint="Comprimento da caixa/embalagem"
-              >
-                <div className="relative">
-                  <NumInput 
-                    value={form.length} 
-                    onChange={(v) => set("length", v)} 
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground uppercase">cm</span>
-                </div>
-              </Field>
-            </div>
-          </Section>
         </TabsContent>
       </Tabs>
 
