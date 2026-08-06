@@ -1211,6 +1211,10 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
                             src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`} 
                             alt="Preview do vídeo"
                             className="w-full h-full object-cover opacity-70"
+                            onError={(e) => {
+                              // Se falhar o mqdefault, tenta o default básico
+                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+                            }}
                           />
                         );
                       }
