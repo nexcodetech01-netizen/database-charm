@@ -1585,27 +1585,27 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             description="Medidas da embalagem para cálculo exato de frete (Mercado Livre e transportadoras)."
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Peso (kg) *" hint="Peso bruto com embalagem">
+              <Field label="Peso (kg)" hint="Opcional. Padrão: 0.3kg">
                 <div className="relative">
                   <NumInput
                     value={form.weight}
                     onChange={(v) => set("weight", v)}
-                    placeholder="Ex: 0.500"
+                    placeholder="Ex: 0.300"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">kg</span>
                 </div>
               </Field>
-              <Field label="Comprimento (cm) *" hint="Dimensão mais longa">
+              <Field label="Comprimento (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.length}
                     onChange={(v) => set("length", v)}
-                    placeholder="Ex: 20"
+                    placeholder="Ex: 15"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
               </Field>
-              <Field label="Largura (cm) *" hint="Dimensão lateral">
+              <Field label="Largura (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.width}
@@ -1615,12 +1615,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
               </Field>
-              <Field label="Altura (cm) *" hint="Espessura/Altura">
+              <Field label="Altura (cm)" hint="Opcional. Padrão: 15cm">
                 <div className="relative">
                   <NumInput
                     value={form.height}
                     onChange={(v) => set("height", v)}
-                    placeholder="Ex: 10"
+                    placeholder="Ex: 15"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
                 </div>
