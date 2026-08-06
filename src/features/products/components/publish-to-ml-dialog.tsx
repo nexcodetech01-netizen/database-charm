@@ -286,15 +286,34 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     }
   }, [open, product]);
 
-  // Assim que o preço sugerido do ML fica disponível, aplica como padrão
-  // (só se o usuário ainda não editou manualmente).
+  // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
   useEffect(() => {
-    if (!open || priceTouched) return;
+    if (!open) return;
+    const desired = Number(walletTarget);
+    if (!(desired > 0)) return;
+
+    const isPremium = listingType === "gold_pro";
+    const feePct = isPremium ? 0.185 : 0.135;
+    const fixedFee = desired < 79 ? 6.5 : 0;
+    const shipping = desired < 79 ? 0 : 23.5;
+    const calculatedFinal = (desired + fixedFee + shipping) / (1 - feePct);
+    const roundedFinal = Number(calculatedFinal.toFixed(2));
+
+    // Se o preço atual for diferente do calculado, atualiza
+    if (Math.abs(price - roundedFinal) > 0.01) {
+      setPrice(roundedFinal);
+    }
+  }, [walletTarget, listingType, open]);
+
+  // Se o preço sugerido do ML estiver disponível e o usuário não tiver definido um alvo "No Bolso",
+  // aplica como padrão (só se o usuário ainda não editou manualmente).
+  useEffect(() => {
+    if (!open || priceTouched || walletTarget !== "") return;
     if (mlSuggestedPrice && mlSuggestedPrice > 0) {
       setPrice(mlSuggestedPrice);
       setUsingMlSuggested(true);
     }
-  }, [open, priceTouched, mlSuggestedPrice]);
+  }, [open, priceTouched, mlSuggestedPrice, walletTarget]);
 
   async function runPredict(query: string, opts?: { auto?: boolean }) {
     if (!query.trim()) return;
