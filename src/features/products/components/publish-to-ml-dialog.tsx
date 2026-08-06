@@ -272,7 +272,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       setBagType("");
       setStyle("");
       setColor("");
-      setBrand(((product as { brand?: string | null }).brand ?? "").trim() || "T&G");
+      setBrand(((product as { brand?: string | null }).brand ?? "").trim());
       const currentModel = ((product as any).model ?? "").trim();
       if (!currentModel) {
         // Extrai a primeira palavra significativa do título se modelo estiver vazio
