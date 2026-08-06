@@ -476,13 +476,15 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       }
 
       const mainProcessed = res.processedImages[0];
-      if (mainProcessed.processedUrl) {
-        setLocalImageUrls(prev => {
-          const next = new Map(prev);
-          next.set(path, mainProcessed.processedUrl!);
-          return next;
-        });
-      }
+      // Em produção, a processedUrl teria o fundo removido.
+      // Substituímos a exibição para forçar APENAS a URL processada.
+      const finalUrl = mainProcessed.processedUrl || url;
+      
+      setLocalImageUrls(prev => {
+        const next = new Map(prev);
+        next.set(path, finalUrl);
+        return next;
+      });
 
       await productImagesService.createRecord(product.company_id, product.id, path, nextPosition);
 
@@ -583,7 +585,14 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       // Aqui vamos simular o sucesso e atualizar o cache.
       return res.processedImages[0];
     },
-    onSuccess: () => {
+    onSuccess: (processed, { path }) => {
+      if (processed.processedUrl) {
+        setLocalImageUrls(prev => {
+          const next = new Map(prev);
+          next.set(path, processed.processedUrl!);
+          return next;
+        });
+      }
       qc.invalidateQueries({ queryKey: ["product-images-signed", product.id] });
       toast.success("Imagem tratada com IA com sucesso.");
     },
@@ -619,6 +628,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
     onToggle: (p: string) => void;
     onReprocess: (p: string, i: number) => void;
   }) {
+    const isProcessing = (uploadPhoto.isPending && uploadingSlot === index) || (reprocessPhoto.isPending && reprocessPhoto.variables?.index === index);
+
     const {
       attributes,
       listeners,
@@ -632,6 +643,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
       transform: CSS.Transform.toString(transform),
       transition,
       zIndex: isDragging ? 10 : undefined,
+      pointerEvents: isProcessing ? 'none' as const : 'auto' as const,
     };
 
     return (
@@ -640,7 +652,7 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         style={style}
         className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all min-w-[100px] min-h-[100px] sm:min-w-0 sm:min-h-0 ${
           isDragging ? "border-primary opacity-50 scale-105" : "border-primary ring-2 ring-primary/30"
-        }`}
+        } ${isProcessing ? "cursor-wait" : ""}`}
       >
         {url ? (
           <img
@@ -648,10 +660,6 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
             alt=""
             className="h-full w-full object-cover"
             loading="lazy"
-            onClick={(e) => {
-              e.stopPropagation();
-              openFilePicker(index);
-            }}
           />
         ) : (
           <div 
@@ -663,20 +671,22 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         )}
         
         {/* Loader de Otimização */}
-        {uploadPhoto.isPending && uploadingSlot === index && (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/60 text-white">
-            <Loader2 className="h-6 w-6 animate-spin mb-2" />
-            <span className="text-[10px] font-medium px-2 text-center">Otimizando imagem...</span>
+        {isProcessing ? (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/70 text-white backdrop-blur-[2px]">
+            <Loader2 className="h-8 w-8 animate-spin mb-2 text-primary" />
+            <span className="text-[10px] font-bold uppercase tracking-widest px-2 text-center drop-shadow-md">Processando IA...</span>
           </div>
-        )}
+        ) : null}
         
         {/* Grip handle for drag */}
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
-          title="Arraste para reordenar"
-        />
+        {!isProcessing && (
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+            title="Arraste para reordenar"
+          />
+        )}
 
         {/* Badge de Posição */}
         <span className="absolute left-1 top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm sm:h-4 sm:w-4 sm:text-[9px]">
@@ -684,20 +694,23 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
         </span>
 
         {/* Botão Remover (X) */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle(path);
-          }}
-          className="absolute right-1 top-1 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-destructive/90 text-destructive-foreground opacity-100 shadow-sm transition-opacity sm:h-5 sm:w-5 sm:opacity-0 group-hover:opacity-100 hover:bg-destructive"
-          title="Remover foto"
-        >
-          <X className="h-3 w-3" />
-        </button>
+        {!isProcessing && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(path);
+            }}
+            className="absolute right-1 top-1 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-2 ring-white hover:bg-red-600 active:scale-95 transition-all"
+            title="Remover foto"
+          >
+            <X className="h-4 w-4 stroke-[3px]" />
+          </button>
+        )}
 
         {/* Botões de Reordenação e IA Overlay */}
-        <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {!isProcessing && (
+          <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">
           <div className="flex justify-between gap-1">
             <button
               type="button"
@@ -740,7 +753,8 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
               "Tratar com IA"
             )}
           </Button>
-        </div>
+          </div>
+        )}
       </div>
     );
   }
