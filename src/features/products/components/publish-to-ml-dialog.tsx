@@ -256,54 +256,104 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
   const [videoUrl, setVideoUrl] = useState("");
   const autoRanRef = useRef(false);
   
+  // Fotos do produto — para permitir seleção manual (até 5) no diálogo.
+  const photosQuery = useQuery({
+    queryKey: ["product-images", product.id],
+    queryFn: () => productImagesService.list(product.id),
+    enabled: open,
+    staleTime: 60_000,
+  });
+  const photoPaths = useMemo(
+    () =>
+      (photosQuery.data ?? [])
+        .map((img) => (img as { path: string | null }).path)
+        .filter((p): p is string => !!p),
+    [photosQuery.data],
+  );
+  const photoSignedUrlsQuery = useQuery({
+    queryKey: ["product-images-signed", product.id, photoPaths.join("|")],
+    queryFn: () => productImagesService.signedUrls(photoPaths, 60 * 60),
+    enabled: open && photoPaths.length > 0,
+    staleTime: 60_000,
+  });
+  const photoUrlByPath = useMemo(() => {
+    const map = new Map<string, string>();
+    const isInvalid = (u: string) => typeof u === 'string' && (
+      u.toLowerCase().startsWith('failed') || 
+      u.toLowerCase().startsWith('error') || 
+      u.toLowerCase().includes('background...')
+    );
+    
+    // Primeiro as URLs assinadas do banco
+    for (const it of photoSignedUrlsQuery.data ?? []) {
+      if (it.path && it.signedUrl && !isInvalid(it.signedUrl)) {
+        map.set(it.path, it.signedUrl);
+      }
+    }
+    // Depois as URLs locais (IA, geradas ou recém-upadas) que sobrescrevem ou complementam
+    localImageUrls.forEach((url, path) => {
+      if (!isInvalid(url)) {
+        map.set(path, url);
+      }
+    });
+    return map;
+  }, [photoSignedUrlsQuery.data, localImageUrls]);
+
   // Imagens para override (sem remoção de fundo, apenas envio direto)
   const imageOverrides = useMemo(() => {
-    return selectedPhotoPaths.map((path) => {
-      const url = photoUrlByPath.get(path);
-      return { path, url };
+    const overrides: Record<string, string> = {};
+    localImageUrls.forEach((url, path) => {
+      const isInvalid = (u: string) => typeof u === 'string' && (
+        u.toLowerCase().startsWith('failed') || 
+        u.toLowerCase().startsWith('error') || 
+        u.toLowerCase().includes('background...')
+      );
+      if (url.startsWith('http') && !isInvalid(url)) {
+        overrides[path] = url;
+      }
     });
-  }, [selectedPhotoPaths, photoUrlByPath]);
+    return overrides;
+  }, [localImageUrls]);
 
   // Atributos estendidos (extraídos da ficha técnica preenchida)
   const extraAttributes = useMemo(() => {
-    return [
-      { id: "GENDER", value_name: gender },
-      { id: "MAIN_MATERIAL", value_name: material },
-      { id: "BAG_TYPE", value_name: bagType },
-      { id: "STYLE", value_name: style },
-      { id: "COLOR", value_name: color },
-      { id: "PATTERN", value_name: pattern },
-      { id: "WITH_ZIPPER", value_name: withZipper },
-      { id: "AGE_GROUP", value_name: ageGroup },
-      { id: "SEASON", value_name: season },
-    ].filter((attr) => Boolean(attr.value_name));
-  }, [gender, material, bagType, style, color, pattern, withZipper, ageGroup, season]);
+    const list: Array<{ id: string; value_name: string }> = [];
+    const push = (id: string, value: string) => {
+      const v = value.trim();
+      if (v) list.push({ id, value_name: v });
+    };
+    push("GENDER", gender || "Feminino");
+    push("MAIN_MATERIAL", material);
+    push("BAG_TYPE", bagType);
+    push("STYLE", style);
+    push("PATTERN_NAME", pattern || "Liso");
+    push("WITH_ZIPPER", withZipper || "Sim");
+    push("AGE_GROUP", ageGroup || "Adultos");
+    push("SEASON", season || "Permanente");
+    return list;
+  }, [gender, material, bagType, style, pattern, withZipper, ageGroup, season]);
 
   const publish = useMutation({
     mutationFn: async () => {
-      try {
-        return await publishFn({
-          data: {
-            productId: product.id,
-            categoryId,
-            listingTypeId: listingType,
-            condition,
-            title,
-            price,
-            availableQuantity: quantity,
-            description,
-            color: color.trim() || undefined,
-            brand: brand.trim() || undefined,
-            model: model.trim() || undefined,
-            picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
-            imageOverrides,
-            extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
-            videoUrl: videoUrl.trim() || undefined,
-          },
-        });
-      } catch (err) {
-        throw err;
-      }
+      return await publishFn({
+        data: {
+          productId: product.id,
+          categoryId,
+          listingTypeId: listingType,
+          condition,
+          title,
+          price,
+          availableQuantity: quantity,
+          description,
+          color: color.trim() || undefined,
+          brand: brand.trim() || undefined,
+          model: model.trim() || undefined,
+          picturePaths: selectedPhotoPaths.length > 0 ? selectedPhotoPaths : undefined,
+          imageOverrides,
+          extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
+          videoUrl: videoUrl.trim() || undefined,
+        },
+      });
     },
     onSuccess: (res) => {
       toast.success("Anúncio publicado com sucesso no Mercado Livre!", {
