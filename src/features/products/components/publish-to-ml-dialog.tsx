@@ -1003,9 +1003,9 @@ export function PublishToMercadoLivreDialog({ product, open, onOpenChange }: Pro
           <Tabs defaultValue="info" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <div className="px-4 sm:px-6 py-2 border-b border-border bg-muted/10">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="info" className="text-xs sm:text-sm">1. Dados & Fotos</TabsTrigger>
-                <TabsTrigger value="price" className="text-xs sm:text-sm">2. Preço & Estoque</TabsTrigger>
-                <TabsTrigger value="desc" className="text-xs sm:text-sm">3. Ficha & Descrição</TabsTrigger>
+                <TabsTrigger value="info" className="text-xs sm:text-sm gap-1.5">📦 Dados & Fotos</TabsTrigger>
+                <TabsTrigger value="price" className="text-xs sm:text-sm gap-1.5">💰 Preço & Modalidade</TabsTrigger>
+                <TabsTrigger value="desc" className="text-xs sm:text-sm gap-1.5">📝 Ficha & Descrição</TabsTrigger>
               </TabsList>
             </div>
 
