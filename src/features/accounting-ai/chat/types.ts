@@ -57,6 +57,8 @@ export type BellaIntentId =
   | "explicar_estoque"
   | "explicar_resultado"
   | "explicar_indicadores"
+  | "consultar_distribuicao"
+  | "simular_distribuicao"
   | "desconhecida";
 
 export interface IntentMatch {

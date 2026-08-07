@@ -17,7 +17,9 @@ export type AdvisorQueryId =
   | "quanto_comprometido"
   | "quanto_pagar"
   | "quanto_receber"
-  | "reserva_impostos";
+  | "reserva_impostos"
+  | "quanto_distribui"
+  | "quanto_posso_distribuir";
 
 export interface AdvisorQueryAnswer {
   id: AdvisorQueryId;
@@ -131,6 +133,27 @@ export const advisorQueries = {
       "Reserva de impostos",
       advice.commitments.taxes,
       `Reserve ${formatCurrency(advice.commitments.taxes)} para os impostos apurados da competência.`,
+    );
+  },
+
+  quantoDistribui(advice: FinancialAdvice): AdvisorQueryAnswer {
+    if (!advice.available) return missing("quanto_distribui", "Já distribuído");
+    // O ERP não tem infra para histórico oficial, então informamos 0 por enquanto conforme requisitos
+    return answer(
+      "quanto_distribui",
+      "Já distribuído",
+      0,
+      "Não identifiquei distribuições de lucro registradas oficialmente neste período.",
+    );
+  },
+
+  quantoPossoDistribuir(advice: FinancialAdvice): AdvisorQueryAnswer {
+    if (!advice.available) return missing("quanto_posso_distribuir", "Ainda posso distribuir");
+    return answer(
+      "quanto_posso_distribuir",
+      "Ainda posso distribuir",
+      advice.withdrawal.safeAmount,
+      `Você ainda pode distribuir até ${formatCurrency(advice.withdrawal.safeAmount)} com segurança.`,
     );
   },
 };

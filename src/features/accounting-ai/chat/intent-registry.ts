@@ -648,6 +648,33 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     priority: 5,
     terms: [["vendi", "vendas", "faturamento", "faturei", "receita", "quanto entrou"]],
   },
+  {
+    intent: "consultar_distribuicao",
+    priority: 25,
+    terms: [
+      [
+        "quanto posso distribuir",
+        "quanto ainda posso distribuir",
+        "quanto ja distribui",
+        "ja distribui",
+        "posso distribuir",
+        "distribuicao de lucro",
+        "distribuir lucro",
+      ],
+    ],
+  },
+  {
+    intent: "simular_distribuicao",
+    priority: 26,
+    terms: [
+      [
+        "se eu distribuir",
+        "se distribuir",
+        "o que acontece se eu distribuir",
+        "qual o impacto se eu distribuir",
+      ],
+    ],
+  },
 ];
 
 /**
