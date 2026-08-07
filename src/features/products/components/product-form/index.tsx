@@ -119,6 +119,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [uploadingMainImage, setUploadingMainImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
@@ -253,22 +254,49 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     };
 
     try {
+      // 1. Se houver imagem principal pendente, enviar ANTES de salvar o produto
+      // para garantir que temos o path para o cover_image_path
+      let cover_image_path = product?.cover_image_path || null;
+      
+      if (mainImageFile) {
+        setUploadingMainImage(true);
+        try {
+          // Nota: Se for novo produto, usamos um ID temporário ou UUID
+          // O productImagesService.upload aceita qualquer string como productId
+          const tempId = product?.id || crypto.randomUUID();
+          const path = await productImagesService.upload(companyId, tempId, mainImageFile);
+          cover_image_path = path;
+        } catch (err) {
+          console.error("Erro no upload da imagem:", err);
+          throw new Error("Erro no upload da imagem. Verifique o tamanho do arquivo.");
+        } finally {
+          setUploadingMainImage(false);
+        }
+      }
+
+      const finalPayload: ProductUpdate = {
+        ...payload,
+        cover_image_path,
+      };
+
       const saved = isEdit 
-        ? await updateProduct.mutateAsync({ id: product.id, input: payload })
-        : await createProduct.mutateAsync({ ...payload, company_id: companyId } as ProductInsert);
+        ? await updateProduct.mutateAsync({ id: product.id, input: finalPayload })
+        : await createProduct.mutateAsync({ ...finalPayload, company_id: companyId } as ProductInsert);
       
       const savedId = isEdit ? product.id : (saved?.id as string);
 
-      if (mainImageFile) {
-        const path = await productImagesService.upload(companyId, savedId, mainImageFile);
-        await productImagesService.createRecord(companyId, savedId, path, 0);
-        await updateProduct.mutateAsync({ id: savedId, input: { cover_image_path: path } as ProductUpdate });
+      // Se enviamos uma nova imagem principal para um novo produto, criar o registro na product_images
+      if (mainImageFile && !isEdit && savedId) {
+        await productImagesService.createRecord(companyId, savedId, cover_image_path!, 0);
       }
 
       toast.success(isEdit ? "Atualizado" : "Criado");
       if (!isEdit && saved?.id) setCreatedProduct({ id: saved.id as string, name: payload.name as string });
       else navigate({ to: "/produtos" });
-    } catch (err) { toast.error("Erro ao salvar"); }
+    } catch (err: any) { 
+      const message = err?.message || "Erro ao salvar";
+      toast.error(message);
+    }
   };
 
   return (
@@ -280,8 +308,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => navigate({ to: "/produtos" })}>Cancelar</Button>
-          <Button onClick={submit} disabled={updateProduct.isPending || createProduct.isPending}>
-            {(updateProduct.isPending || createProduct.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={submit} disabled={updateProduct.isPending || createProduct.isPending || uploadingMainImage}>
+            {(updateProduct.isPending || createProduct.isPending || uploadingMainImage) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEdit ? "Salvar Alterações" : "Concluir Cadastro"}
           </Button>
         </div>
@@ -376,6 +404,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               mainImageFile={mainImageFile}
               setMainImageFile={setMainImageFile}
+              uploadingMainImage={uploadingMainImage}
               currentMainImageUrl={currentMainImageUrl || ""}
               uploadingVideo={uploadingVideo}
               onVideoUpload={handleVideoUpload}
