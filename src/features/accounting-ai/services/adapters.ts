@@ -4,6 +4,7 @@
  * Cada método é um *delegate* fino. É proibido adicionar cálculo de negócio
  * aqui: se o número não existe em um serviço, ele não existe para a Bella.
  */
+import { supabase } from "@/integrations/supabase/client";
 import { accountingService, lastNMonths } from "@/features/accounting";
 import { financeQueryService } from "@/features/finance";
 import { salesService } from "@/features/sales/services/sales.service";
@@ -15,6 +16,7 @@ import type { AccountingPeriod } from "../types";
 import { productsService } from "@/features/products/services/products.service";
 import { customersService } from "@/features/customers/services/customers.service";
 import { financeService } from "@/features/finance/services/finance.service";
+import { purchasesService } from "@/features/purchases/services/purchases.service";
 import { listFiscalDocuments } from "@/features/fiscal/v2";
 import { getFiscalSettings } from "@/features/fiscal/v2/functions/fiscal.functions";
 import type {
@@ -237,18 +239,15 @@ export const auditAdapter: AuditPort = {
       pageSize: limit,
     });
     
-    // Para auditar se tem financeiro/documento, precisamos buscar meta adicional se não estiver no list
-    // O list do purchaseService já traz supplier_name e items_count.
-    // Vamos verificar se tem faturas vinculadas (financial_transactions com reference_id = purchase_id)
     const purchaseIds = rows.map(r => r.id);
     const { data: transactions } = await supabase
       .from("financial_transactions")
       .select("reference_id")
       .in("reference_id", purchaseIds);
     
-    const transMap = new Set(transactions?.map(t => t.reference_id) || []);
+    const transMap = new Set(transactions?.map((t: any) => t.reference_id) || []);
 
-    return rows.map((r) => ({
+    return rows.map((r: any) => ({
       id: r.id,
       number: r.number == null ? null : String(r.number),
       status: String(r.status ?? ""),
@@ -258,7 +257,7 @@ export const auditAdapter: AuditPort = {
       supplierName: r.supplier_name ?? null,
       itemsCount: r.items_count ?? 0,
       hasFinance: transMap.has(r.id),
-      hasDocument: !!r.notes || false, // Fallback: se tiver notas talvez tenha anexo ou XML. No NexOS XML fica no bucket.
+      hasDocument: !!r.notes || false,
     }));
   },
   async suppliers(companyId, limit = 500) {
@@ -268,7 +267,7 @@ export const auditAdapter: AuditPort = {
       .eq("company_id", companyId)
       .limit(limit);
     if (error) throw error;
-    return (data || []).map(s => ({
+    return (data || []).map((s: any) => ({
       id: s.id,
       name: s.name,
       status: s.status

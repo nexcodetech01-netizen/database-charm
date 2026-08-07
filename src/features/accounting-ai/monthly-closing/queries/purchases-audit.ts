@@ -151,7 +151,7 @@ export function auditPurchasesClosing(
       id: "pur_high_average",
       domain: "purchases",
       title: "Compras Acima da Média",
-      status: "info",
+      status: "warning", // Mudado de "info" para "warning" para alinhar com o tipo checklist
       message: `${highPurchases.length} pedidos estão 50% acima do ticket médio de compra.`
     });
   }
@@ -167,7 +167,7 @@ export function auditPurchasesClosing(
 
   const healthScore: MonthlyClosingHealthScore = {
     score,
-    level: score >= 90 ? "Excelente" : score >= 70 ? "Boa" : score >= 40 ? "Atenção" : "Crítica",
+    level: score >= 90 ? "Exelente" : score >= 70 ? "Boa" : score >= 40 ? "Atenção" : "Crítica",
     label: score >= 90 
       ? "Processo de compras fluido e organizado." 
       : score >= 70 
