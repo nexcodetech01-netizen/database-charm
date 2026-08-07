@@ -636,7 +636,11 @@ export async function getOrderLabel(
     { headers: { Authorization: `Bearer ${token}` } },
     { integration: "mercadolivre:get-order", timeoutMs: 10_000 }
   );
-  if (!orderRes.ok) throw new Error(`Falha ao buscar pedido ML: ${orderRes.status}`);
+  if (!orderRes.ok) {
+    const errorBody = await orderRes.text();
+    console.error(`[ML_API_ERROR] /orders/${mlOrderId} status=${orderRes.status}:`, errorBody);
+    throw new Error(`Falha ao buscar pedido ML (${orderRes.status}): ${errorBody || 'Erro desconhecido'}`);
+  }
   const order = await orderRes.json();
   const shipmentId = order.shipping?.id;
   if (!shipmentId) throw new Error("O pedido não possui remessa associada.");

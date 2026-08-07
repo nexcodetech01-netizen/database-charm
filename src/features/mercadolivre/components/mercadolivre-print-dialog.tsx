@@ -45,6 +45,7 @@ export function MercadoLivrePrintDialog({
     if (!labelData) return;
     setLoadingPreview(true);
     try {
+      console.log(`[ML_PREVIEW_START] type=${labelData.type} id=${labelData.id}`);
       if (labelData.type === "pdf") {
         const byteCharacters = atob(labelData.content);
         const byteNumbers = new Array(byteCharacters.length);
@@ -56,16 +57,19 @@ export function MercadoLivrePrintDialog({
         setPdfBlob(blob);
         setPreviewUrl(URL.createObjectURL(blob));
       } else {
+        console.log(`[ZPL_CONVERSION_START] id=${labelData.id}`);
         const blob = await labelaryService.convertToPdf({
           id: labelData.id,
           zpl: labelData.content,
         });
+        console.log(`[ZPL_CONVERSION_SUCCESS] id=${labelData.id} size=${blob.size}`);
         setPdfBlob(blob);
         setPreviewUrl(URL.createObjectURL(blob));
       }
     } catch (error) {
-      console.error("Erro ao preparar preview:", error);
-      toast.error("Falha ao carregar visualização da etiqueta.");
+      console.error("[ML_PREVIEW_ERROR]:", error);
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(`Falha ao carregar visualização da etiqueta: ${message}`);
     } finally {
       setLoadingPreview(false);
     }
@@ -99,9 +103,11 @@ export function MercadoLivrePrintDialog({
         toast.success("Impressão enviada.");
         onOpenChange(false);
       } else {
-        throw new Error(result.message);
+        console.error(`[PRINT_SERVICE_ERROR] job=${result.jobId} message=${result.message}`);
+        throw new Error(result.message || "A impressora não respondeu corretamente.");
       }
     } catch (error) {
+      console.error("[HANDLE_PRINT_ERROR]:", error);
       toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro desconhecido"));
     } finally {
       setIsPrinting(false);
