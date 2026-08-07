@@ -73,7 +73,7 @@ export function CategoryFormDialog({
     setStatus((category?.status as CategoryStatus) ?? "active");
     setParentId(category?.parent_id ?? NO_PARENT);
     setDefaultNcm(normalizeNcm(category?.default_ncm));
-    setDefaultCest(normalizeCest(category?.default_cest));
+    setDefaultCest(normalizeCest(category?.default_cest) ?? "");
   }, [open, category]);
 
   const parentOptions = categories.filter(
