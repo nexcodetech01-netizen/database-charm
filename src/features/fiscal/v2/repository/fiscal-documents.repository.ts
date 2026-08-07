@@ -47,13 +47,22 @@ function map(row: Row): FiscalDocument {
     cancelledAt: (row.cancelled_at as string) ?? null,
     cancellationReason: (row.cancellation_reason as string) ?? null,
     cancellationProtocol: (row.cancellation_protocol as string) ?? null,
+    cancelledBy: (row.cancelled_by as string) ?? null,
+    xmlCancellationPath: (row.xml_cancellation_path as string) ?? null,
     rejectionCode: (row.rejection_code as string) ?? null,
     rejectionReason: (row.rejection_reason as string) ?? null,
     provider: (row.provider as string) ?? null,
+    discardedAt: (row.discarded_at as string) ?? null,
+    discardedBy: (row.discarded_by as string) ?? null,
+    discardReason: (row.discard_reason as string) ?? null,
+    artifactsPending: [], // Map if needed
+    artifactsLastError: null,
+    artifactsCheckedAt: null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
 }
+
 
 export interface CreateDocumentInput {
   saleId: string | null;

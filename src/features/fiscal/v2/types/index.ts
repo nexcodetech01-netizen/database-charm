@@ -1,10 +1,13 @@
 import { FiscalArtifactKind } from "../lib/artifacts";
 import { NfeEnvironment } from "./environment";
 
+export { NfeEnvironment };
+
 /**
  * NF-e Status canonico.
  */
 export type NfeStatus =
+
   | "draft"
   | "validating"
   | "signing"
