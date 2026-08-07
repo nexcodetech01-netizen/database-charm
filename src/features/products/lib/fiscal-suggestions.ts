@@ -45,7 +45,7 @@ export function formatNcm(value: string | null | undefined): string {
 /** Formata CEST para leitura: 28.038.00 */
 export function formatCest(value: string | null | undefined): string {
   const digits = normalizeCest(value);
-  if (digits.length !== 7) return digits;
+  if (!digits || digits.length !== 7) return digits ?? "";
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 7)}`;
 }
 
