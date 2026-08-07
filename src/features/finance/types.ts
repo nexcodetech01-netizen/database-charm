@@ -148,4 +148,10 @@ export interface FinanceOverview {
 
   upcomingIncome: { id: string; description: string; date: string; amount: number }[];
   upcomingExpense: { id: string; description: string; date: string; amount: number }[];
+  /** Receita Bruta: somatório das receitas pagas no mês (sem deduzir nada). */
+  grossRevenue: number;
+  /** Taxas e Deduções: valor retido em taxas de cartão/gateway ou estornos/devoluções pagos no mês. */
+  taxesAndDeductions: number;
+  /** Lucro operacional direto: receitas pagas - despesas pagas no mês. */
+  monthProfit: number;
 }

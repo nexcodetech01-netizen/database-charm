@@ -63,26 +63,36 @@ export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
 
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold">Resumo do mês</h3>
-          <p className="text-xs text-muted-foreground">Somente movimentações pagas.</p>
+          <h3 className="text-sm font-semibold">Resumo financeiro do mês</h3>
+          <p className="text-xs text-muted-foreground">Baseado em movimentações efetivamente pagas no período.</p>
         </div>
         {isLoading ? (
-          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-20 w-full" />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
             <MiniStat
-              label="Entradas"
-              value={formatCurrency(data?.monthIncome ?? 0)}
+              label="Receita Bruta"
+              value={formatCurrency(data?.grossRevenue ?? 0)}
+              tone="text-foreground"
+            />
+            <MiniStat
+              label="Taxas e Estornos"
+              value={formatCurrency(data?.taxesAndDeductions ?? 0)}
+              tone="text-destructive"
+            />
+            <MiniStat
+              label="Receita Líquida"
+              value={formatCurrency((data?.grossRevenue ?? 0) - (data?.taxesAndDeductions ?? 0))}
               tone="text-success"
             />
             <MiniStat
-              label="Saídas"
+              label="Despesas"
               value={formatCurrency(data?.monthExpense ?? 0)}
               tone="text-destructive"
             />
             <MiniStat
-              label="Resultado"
-              value={formatCurrency((data?.monthIncome ?? 0) - (data?.monthExpense ?? 0))}
+              label="Lucro"
+              value={formatCurrency(data?.monthProfit ?? 0)}
               tone="text-primary"
             />
           </div>

@@ -167,7 +167,7 @@ export function SettleTransactionDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="shrink-0 border-b px-5 py-3 text-left">
-            <DialogTitle>Registrar baixa</DialogTitle>
+            <DialogTitle>Registrar baixa de {verb.toLowerCase()}</DialogTitle>
             <DialogDescription>
               {transaction ? (
                 <>
@@ -274,7 +274,7 @@ export function SettleTransactionDialog({
             <div className="space-y-1.5">
 
               <Label>
-                Forma de recebimento <span className="text-destructive">*</span>
+                Forma de {verb.toLowerCase() === "pagar" ? "pagamento" : "recebimento"} <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={paymentMethod}
@@ -320,7 +320,7 @@ export function SettleTransactionDialog({
 
             <div className="space-y-1.5">
               <Label>
-                Data do recebimento <span className="text-destructive">*</span>
+                Data do {verb.toLowerCase() === "pagar" ? "pagamento" : "recebimento"} <span className="text-destructive">*</span>
               </Label>
               <Input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
             </div>

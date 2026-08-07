@@ -185,22 +185,28 @@ function FinancePage() {
             Visão Geral
           </TabsTrigger>
           <TabsTrigger 
-            value="insights" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Insights & IA
-          </TabsTrigger>
-          <TabsTrigger 
             value="receivables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
-            Receber
+            A Receber
           </TabsTrigger>
           <TabsTrigger 
             value="payables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
-            Pagar
+            A Pagar
+          </TabsTrigger>
+          <TabsTrigger 
+            value="cashflow" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Extrato
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insights" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            Análise Bella IA
           </TabsTrigger>
           <TabsTrigger 
             value="reconciliation" 
@@ -209,16 +215,16 @@ function FinancePage() {
             Conciliação
           </TabsTrigger>
           <TabsTrigger 
-            value="cashflow" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Fluxo
-          </TabsTrigger>
-          <TabsTrigger 
             value="accounts" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
             Contas
+          </TabsTrigger>
+          <TabsTrigger 
+            value="reports" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+          >
+            DRE Simplificado
           </TabsTrigger>
         </TabsList>
 

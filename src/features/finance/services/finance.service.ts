@@ -498,7 +498,7 @@ export const financeService = {
         .eq("company_id", companyId),
       supabase
         .from("financial_transactions")
-        .select("id,type,status,amount,transaction_date,due_date,description,paid_at")
+        .select("id,type,status,amount,transaction_date,due_date,description,paid_at,category_id")
         .eq("company_id", companyId)
         .neq("status", "cancelled"),
       // P2.4 — "hoje" no fuso horário da empresa (fonte da verdade no servidor)
@@ -525,6 +525,20 @@ export const financeService = {
       .reduce((s, a) => s + Number(a.current_balance ?? 0), 0);
 
     const tx = txRes.data ?? [];
+    
+    // Pega as categorias para identificar taxas/deduções (ex: Bella Pay, Taxas Cartão, Estornos)
+    const { data: categories } = await supabase
+      .from("financial_categories")
+      .select("id, name")
+      .eq("company_id", companyId);
+    
+    const categoryMap = new Map((categories ?? []).map(c => [c.id, c.name.toLowerCase()]));
+    const isTaxOrDeduction = (catId: string | null) => {
+      if (!catId) return false;
+      const name = categoryMap.get(catId) || "";
+      return name.includes("taxa") || name.includes("estorno") || name.includes("reembolso") || name.includes("dedução");
+    };
+
     // Não pagos e não estornados/cancelados — usados nas 3 faixas.
     const openIncome = tx.filter(
       (t) =>
@@ -571,12 +585,23 @@ export const financeService = {
       return Number.isFinite(ts) && ts >= monthStart && ts < dayEnd;
     };
 
-    const monthIncome = tx
-      .filter((t) => t.type === "income" && t.status === "paid" && paidInMonth(t))
+    const monthTransactions = tx.filter(t => t.status === "paid" && paidInMonth(t));
+    
+    const grossRevenue = monthTransactions
+      .filter(t => t.type === "income")
       .reduce((s, t) => s + Number(t.amount ?? 0), 0);
-    const monthExpense = tx
-      .filter((t) => t.type === "expense" && t.status === "paid" && paidInMonth(t))
+
+    const taxesAndDeductions = monthTransactions
+      .filter(t => t.type === "expense" && isTaxOrDeduction(t.category_id))
       .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+
+    const monthIncome = grossRevenue; // No financeiro, income é o que entrou bruto em receitas
+
+    const monthExpense = monthTransactions
+      .filter(t => t.type === "expense")
+      .reduce((s, t) => s + Number(t.amount ?? 0), 0);
+    
+    const monthProfit = grossRevenue - monthExpense;
 
 
     // Recebimentos de hoje = dinheiro que efetivamente entrou (baixas do dia).
@@ -646,6 +671,9 @@ export const financeService = {
           date: t.due_date ?? t.transaction_date,
           amount: Number(t.amount ?? 0),
         })),
+      grossRevenue,
+      taxesAndDeductions,
+      monthProfit,
     };
   },
 };
