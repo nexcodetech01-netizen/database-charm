@@ -86,7 +86,7 @@ export function GeneralInfoForm({ form, setForm, categories, suppliers, onTitleB
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PRODUCT_STATUS_OPTIONS.map((opt) => (
+            {PRODUCT_STATUS_OPTIONS.map((opt: any) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
@@ -105,7 +105,7 @@ export function GeneralInfoForm({ form, setForm, categories, suppliers, onTitleB
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PRODUCT_UNIT_OPTIONS.map((opt) => (
+            {PRODUCT_UNIT_OPTIONS.map((opt: any) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
