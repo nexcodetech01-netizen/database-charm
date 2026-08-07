@@ -257,7 +257,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         ? await updateProduct.mutateAsync({ id: product.id, input: payload })
         : await createProduct.mutateAsync({ ...payload, company_id: companyId } as ProductInsert);
       
-      const savedId = isEdit ? product.id : saved.id;
+      const savedId = isEdit ? product.id : (saved?.id as string);
 
       if (mainImageFile) {
         const path = await productImagesService.upload(companyId, savedId, mainImageFile);
