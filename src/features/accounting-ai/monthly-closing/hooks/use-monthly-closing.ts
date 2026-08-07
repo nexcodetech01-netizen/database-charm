@@ -27,15 +27,16 @@ export function useMonthlyClosingAudit(month: string) {
         throw new Error("Summary data not available");
       }
       
-      // Busca dados de auditoria fiscal, produtos, estoque e vendas via adaptadores existentes
-      const [fiscalDocs, products, ledger, purchases, suppliers, sales, customers] = await Promise.all([
+      // Busca dados de auditoria via adaptadores existentes
+      const [fiscalDocs, products, ledger, purchases, suppliers, sales, customers, cashSessions] = await Promise.all([
         accountingAiServices.audit.fiscalDocuments(companyId, 100),
         accountingAiServices.audit.products(companyId, 1000),
         accountingAiServices.inventory.ledgerAudit(companyId),
         accountingAiServices.audit.purchases(companyId, 100),
         accountingAiServices.audit.suppliers(companyId, 200),
         accountingAiServices.audit.sales(companyId, 200),
-        accountingAiServices.audit.customers(companyId, 200)
+        accountingAiServices.audit.customers(companyId, 200),
+        accountingAiServices.audit.cashSessions(companyId, 100)
       ]);
       
       const financialAudit = auditFinancialClosing(summaryQuery.data, month);
@@ -43,6 +44,7 @@ export function useMonthlyClosingAudit(month: string) {
       const inventoryAudit = auditInventoryClosing(summaryQuery.data, products, ledger, month);
       const purchasesAudit = auditPurchasesClosing(summaryQuery.data, purchases, products, suppliers, month);
       const salesAudit = auditSalesClosing(summaryQuery.data, sales, products, customers, month);
+      const cashAudit = auditCashClosing(summaryQuery.data, cashSessions, month);
 
       // Merge results
       const totalScore = 
@@ -50,15 +52,17 @@ export function useMonthlyClosingAudit(month: string) {
         fiscalAudit.healthScore.score + 
         inventoryAudit.healthScore.score + 
         purchasesAudit.healthScore.score +
-        salesAudit.healthScore.score;
+        salesAudit.healthScore.score +
+        cashAudit.healthScore.score;
         
-      const avgScore = Math.round(totalScore / 5);
+      const avgScore = Math.round(totalScore / 6);
       const minScore = Math.min(
         financialAudit.healthScore.score, 
         fiscalAudit.healthScore.score, 
         inventoryAudit.healthScore.score,
         purchasesAudit.healthScore.score,
-        salesAudit.healthScore.score
+        salesAudit.healthScore.score,
+        cashAudit.healthScore.score
       );
       
       return {
