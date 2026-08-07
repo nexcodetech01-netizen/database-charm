@@ -1063,15 +1063,6 @@ export const uploadFiscalCertificate = createServerFn({ method: "POST" })
     return cert;
   });
 
-
-    // Troca do A1 invalida o provisionamento: a próxima emissão volta a
-    // cadastrar a empresa/certificado no provedor uma única vez.
-    const { clearProviderProvisioning } = await import("./nfe-engine.server");
-    await clearProviderProvisioning(supabase, companyId);
-
-    return mapCert(row as unknown as Record<string, unknown>);
-  });
-
 export const deactivateFiscalCertificate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { certificateId: string }) =>
