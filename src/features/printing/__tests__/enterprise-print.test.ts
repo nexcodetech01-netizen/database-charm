@@ -29,8 +29,8 @@ describe("PrintManager Enterprise", () => {
     // Aguarda um ciclo pequeno para garantir que o job entrou na fila
     await new Promise(resolve => setTimeout(resolve, 50));
     
-    const queue = printQueue.getQueue();
-    const history = printQueue.getHistory();
+    const queue = printManager.getQueue();
+    const history = printManager.getHistory();
     expect(history.length + queue.length).toBeGreaterThan(0);
   });
 
