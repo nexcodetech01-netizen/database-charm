@@ -25,11 +25,12 @@ describe("PrintManager Enterprise", () => {
     expect(result.success).toBe(true);
     expect(result.jobId).toBeDefined();
     
-    // Aguarda um ciclo pequeno para garantir que o job entrou na fila
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Aguarda um ciclo pequeno para garantir que o job entrou na fila e começou o processamento
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const queue = printManager.getQueue();
     const history = printManager.getHistory();
+    console.log('Test Enqueue - Queue length:', queue.length, 'History length:', history.length);
     expect(history.length + queue.length).toBeGreaterThan(0);
   });
 
