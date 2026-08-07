@@ -80,7 +80,8 @@ class PrintQueue {
       }
     } finally {
       this.isProcessing = false;
-      this.process();
+      // Pequeno delay para evitar recursão síncrona infinita e permitir que testes vejam a fila
+      setTimeout(() => this.process(), 10);
     }
   }
 
