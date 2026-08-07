@@ -144,5 +144,16 @@ export const printService = {
     a.download = `etiqueta-${label.id}.zpl`;
     a.click();
     URL.revokeObjectURL(url);
+  },
+
+  async downloadPdf(label: LabelData) {
+    const { labelaryService } = await import("./labelary.service");
+    const blob = await labelaryService.convertToPdf(label);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `etiqueta-${label.id}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 };
