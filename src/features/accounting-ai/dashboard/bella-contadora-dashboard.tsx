@@ -207,7 +207,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
             appearance="solid"
             className="uppercase font-bold text-[10px]"
           >
-            {s?.health.data?.label || "Auditoria pendente"}
+            {s?.health.data ? healthLabel(s.health.data) : "Auditoria pendente"}
           </StatusBadge>
         </div>
       }
