@@ -21,16 +21,16 @@ describe("PrintManager Enterprise", () => {
   });
 
   it("deve enfileirar um trabalho de impressão com sucesso", async () => {
+    // Usamos diretamente o printQueue para garantir que estamos acessando a mesma instância
     const result = await printManager.print(mockLabel, mockOptions);
     expect(result.success).toBe(true);
     expect(result.jobId).toBeDefined();
     
-    // Aguarda um ciclo pequeno para garantir que o job entrou na fila e começou o processamento
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Aguarda um ciclo pequeno para garantir que o job entrou na fila
+    await new Promise(resolve => setTimeout(resolve, 50));
     
-    const queue = printManager.getQueue();
-    const history = printManager.getHistory();
-    console.log('Test Enqueue - Queue length:', queue.length, 'History length:', history.length);
+    const queue = printQueue.getQueue();
+    const history = printQueue.getHistory();
     expect(history.length + queue.length).toBeGreaterThan(0);
   });
 
