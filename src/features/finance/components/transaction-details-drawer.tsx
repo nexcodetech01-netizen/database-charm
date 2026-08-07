@@ -123,8 +123,9 @@ export function TransactionDetailsDrawer({
   const summary = summarize(t, siblings ?? null);
   const history = (siblings ?? []).filter((s) => s.status === "paid");
   const overdueDays = daysOverdue(t);
-  const verb = type === "income" ? "Receber" : "Pagar";
-  const verbPast = type === "income" ? "recebida" : "paga";
+  const isSaleReturn = t.source === "sale_return";
+  const verb = isSaleReturn ? "Estornar" : type === "income" ? "Receber" : "Pagar";
+  const verbPast = isSaleReturn ? "estornada" : type === "income" ? "recebida" : "paga";
   void verbPast;
 
 
@@ -426,7 +427,7 @@ export function TransactionDetailsDrawer({
                   onClick={() => setSettleOpen(true)}
                 >
                   <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                  {type === "income" ? "Receber" : "Pagar"}
+                  {isSaleReturn ? "Comprovante de Reembolso" : verb}
                 </Button>
               ) : null}
               {t.status === "paid" ? (
