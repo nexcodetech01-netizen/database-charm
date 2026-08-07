@@ -57,37 +57,30 @@ function IndexComponent() {
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-blue-600">🖨️ Printing Center - Sprint 1</h2>
-          <div className="space-y-4 text-sm leading-relaxed">
-            <section>
-              <h3 className="font-medium text-primary uppercase">Módulo de Impressão Centralizado</h3>
-              <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
-                Implementada a arquitetura base para o Printing Center, permitindo a gestão de etiquetas ZPL, previews automáticos via Labelary e múltiplos métodos de saída (PDF, ZPL, Navegador).
-              </p>
-            </section>
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <PrinterIcon className="h-5 w-5 text-blue-600" /> Print Manager Enterprise
+          </h2>
+          
+          <PrintManager />
+          
+          <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Print Hub v2.0 Online</span>
+            </div>
             
-            <div className="flex flex-col gap-4 pt-2">
-              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
-                <div className="space-y-1">
-                  <p className="font-medium">Teste de Impressão (ZPL)</p>
-                  <p className="text-xs text-muted-foreground">Etiqueta de Exemplo 4x6" @ 8dpmm</p>
-                </div>
-                <PrintButton 
-                  variant="default"
-                  label={{
-                    id: "test-001",
-                    zpl: "^XA^FO50,50^A0N,50,50^FDNexOS ERP^FS^FO50,120^A0N,30,30^FDPrinting Center Centralizado^FS^FO50,170^A0N,20,20^FDSprint 1 - Arquitetura Strategy^FS^FO50,250^GB700,3,3^FS^XZ",
-                    width: 4,
-                    height: 6,
-                    dpmm: 8
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <PrinterStatus status="ONLINE" />
-                <span>Central de Impressão ativa e pronta para homologação.</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground mr-2">Teste Rápido:</span>
+              <PrintButton 
+                size="sm"
+                label={{
+                  id: "test-ent-001",
+                  zpl: "^XA^FO50,50^A0N,50,50^FDNexOS Enterprise^FS^FO50,120^A0N,30,30^FDPrint Manager v2^FS^XZ",
+                  width: 4,
+                  height: 6,
+                  dpmm: 8
+                }}
+              />
             </div>
           </div>
         </div>
@@ -107,3 +100,5 @@ function IndexComponent() {
 // Lazy imports para os componentes de impressão
 import { PrintButton } from "@/features/printing/components/PrintButton";
 import { PrinterStatus } from "@/features/printing/components/PrinterStatus";
+import { PrintManager } from "@/features/printing/components/enterprise/PrintManager";
+import { Printer as PrinterIcon } from "lucide-react";

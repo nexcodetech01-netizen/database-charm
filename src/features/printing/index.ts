@@ -1,4 +1,6 @@
 export { LabelPrintDialog } from "./components/label-print-dialog";
+export { PrintManager } from "./components/enterprise/PrintManager";
+export { printManager, printService } from "./services/print.service";
 export { DanfePrintButton } from "./components/danfe-print-button";
 export { PrintSettingsSection } from "./components/print-settings-section";
 export { usePrintPreferences } from "./hooks/use-print-preferences";

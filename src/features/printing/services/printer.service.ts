@@ -2,11 +2,10 @@ import { Printer } from "../types/printing.types";
 
 /**
  * Serviço para gestão de impressoras
- * Nesta Sprint 1 apenas define a estrutura para futura detecção automática.
  */
 export const printerService = {
   /**
-   * Lista impressoras disponíveis (Mock para Sprint 1)
+   * Lista impressoras disponíveis
    */
   async listPrinters(): Promise<Printer[]> {
     return [
@@ -15,7 +14,31 @@ export const printerService = {
         name: 'Microsoft Print to PDF',
         type: 'USB',
         status: 'ONLINE',
-        isDefault: true
+        isDefault: true,
+        capabilities: {
+          supportsPdf: true,
+          supportsZpl: false,
+          supportsRaw: false,
+          supportsTspl: false
+        },
+        settings: {}
+      },
+      {
+        id: 'zebra-label-1',
+        name: 'Zebra GK420t (ZPL)',
+        type: 'USB',
+        status: 'ONLINE',
+        capabilities: {
+          supportsPdf: false,
+          supportsZpl: true,
+          supportsRaw: true,
+          supportsTspl: false,
+          maxWidthInches: 4
+        },
+        settings: {
+          darkness: 15,
+          speed: 4
+        }
       }
     ];
   },
