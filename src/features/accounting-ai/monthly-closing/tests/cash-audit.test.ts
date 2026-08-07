@@ -1,13 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { auditCashClosing } from "../queries/cash-audit";
-import { createSummaryFixture } from "../../tests/fixtures";
+import { makeSummary } from "../../tests/fixtures";
 import { AuditCashSessionRow } from "../../services/ports";
 
 describe("auditCashClosing", () => {
-  const summary = createSummaryFixture();
-  const month = "2024-03";
-
-  it("should detect open sessions as an error", () => {
+  it("should detect open sessions as an error", async () => {
+    const summary = await makeSummary();
+    const month = "2024-03";
     const sessions: AuditCashSessionRow[] = [
       { id: "1", status: "open", openedAt: "2024-03-01T08:00:00Z", closedAt: null, expectedCash: 100, countedCash: null, difference: null }
     ];
@@ -20,7 +19,9 @@ describe("auditCashClosing", () => {
     expect(result.healthScore.score).toBeLessThan(100);
   });
 
-  it("should detect significant cash differences", () => {
+  it("should detect significant cash differences", async () => {
+    const summary = await makeSummary();
+    const month = "2024-03";
     const sessions: AuditCashSessionRow[] = [
       { id: "1", status: "closed", openedAt: "2024-03-01T08:00:00Z", closedAt: "2024-03-01T18:00:00Z", expectedCash: 100, countedCash: 80, difference: -20 }
     ];
@@ -32,7 +33,9 @@ describe("auditCashClosing", () => {
     expect(diffCheck?.status).toBe("warning");
   });
 
-  it("should give high score for perfect reconciliation", () => {
+  it("should give high score for perfect reconciliation", async () => {
+    const summary = await makeSummary();
+    const month = "2024-03";
     const sessions: AuditCashSessionRow[] = [
       { id: "1", status: "closed", openedAt: "2024-03-01T08:00:00Z", closedAt: "2024-03-01T18:00:00Z", expectedCash: 100, countedCash: 100, difference: 0 }
     ];
@@ -44,7 +47,9 @@ describe("auditCashClosing", () => {
     expect(result.checklist.length).toBe(0);
   });
 
-  it("should handle empty period gracefully", () => {
+  it("should handle empty period gracefully", async () => {
+    const summary = await makeSummary();
+    const month = "2024-03";
     const result = auditCashClosing(summary, [], month);
     expect(result.healthScore.score).toBe(50);
   });
