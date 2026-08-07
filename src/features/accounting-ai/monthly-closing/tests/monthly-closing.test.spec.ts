@@ -35,6 +35,13 @@ describe("Monthly Closing Module - Executive Consolidation", () => {
     expect(consolidated.healthScore.score).toBe(73);
   });
 
+  it("should determine certification status correctly", () => {
+    const consolidated = consolidateMonthlyAudit(audits, "2026-07");
+    // Sales has score 40 and an error, so it should be "Empresa não apta"
+    expect(consolidated.summary.certificationStatus).toBe("Empresa não apta");
+    expect(consolidated.summary.finalRecommendation).toContain("Empresa não está pronta");
+  });
+
   it("should unify all checklists and timelines", () => {
     const consolidated = consolidateMonthlyAudit(audits, "2026-07");
     expect(consolidated.checklist).toHaveLength(6);
