@@ -190,6 +190,7 @@ function PublicCollectionPage() {
   });
 
   const [q, setQ] = useState(search.q);
+  const [quickViewId, setQuickViewId] = useState<string | null>(null);
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -197,6 +198,24 @@ function PublicCollectionPage() {
       if (p.brand) set.add(p.brand);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of data?.products ?? []) {
+      if (p.category_name) set.add(p.category_name);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const priceRange = useMemo(() => {
+    const list = data?.products ?? [];
+    if (list.length === 0) return { min: 0, max: 0 };
+    const prices = list.map((p) => p.price);
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
   }, [data]);
 
   const filtered = useMemo(() => {
@@ -211,18 +230,23 @@ function PublicCollectionPage() {
           p.sku ?? "",
           ref,
           p.barcode ?? "",
+          p.category_name ?? "",
+          ...(p.tags ?? []),
         ]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       if (search.marca && p.brand !== search.marca) return false;
+      if (search.cat !== "all" && p.category_name !== search.cat) return false;
       if (search.disp === "disponivel" && p.stock <= 0) return false;
       if (search.disp === "esgotado" && p.stock > 0) return false;
+      if (search.min > 0 && p.price < search.min) return false;
+      if (search.max > 0 && p.price > search.max) return false;
       return true;
     });
     return sortProducts(base, search.ord);
-  }, [data, search.q, search.marca, search.disp, search.ord]);
+  }, [data, search.q, search.marca, search.cat, search.disp, search.ord, search.min, search.max]);
 
   const currentPage = Math.max(1, search.page);
   const visibleCount = Math.min(filtered.length, currentPage * PAGE_SIZE);
@@ -252,7 +276,7 @@ function PublicCollectionPage() {
 
   function updateSearch(patch: Record<string, unknown>, resetPage = true) {
     navigate({
-      search: (prev: Record<string, unknown>) => ({
+      search: (prev: any) => ({
         ...prev,
         ...patch,
         ...(resetPage ? { page: 1 } : {}),
