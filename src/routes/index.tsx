@@ -49,24 +49,24 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">⚡ SPRINT 8.0 — PRODUTO 360 & COCKPIT ERP</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600">⚡ SPRINT 8.2 — BELLA CONTABILIDADE ENTERPRISE</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary uppercase">Foco: Experiência de Alto Nível</h3>
-              <p className="text-muted-foreground mt-1">
-                Refatore completamente a experiência do módulo Produtos sem alterar a lógica de negócio. O objetivo é transformar o cadastro atual em um cockpit operacional de nível ERP. O formulário deixa de ser a tela inicial e passa a ser uma ação secundária ("Editar Cadastro").
+              <h3 className="font-medium text-primary uppercase">Módulo: Distribuição de Lucros</h3>
+              <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
+                OBJETIVO: Concluir o módulo de Distribuição de Lucros da Bella. Hoje ela calcula. Agora ela deve explicar, simular, acompanhar e orientar sem criar lançamentos paralelos.
               </p>
             </section>
             <section>
-              <h3 className="font-medium text-primary">OBJETIVOS DA SPRINT</h3>
+              <h3 className="font-medium text-primary">REQUISITOS DA SPRINT</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Cockpit Operacional: Tela principal com indicadores (estoque, custos, preços, vendas).</li>
-                <li>Navegação por Domínios: Geral, Estoque, Fiscal, Compras, Marketplace e Histórico.</li>
-                <li>Componentização Atômica: ProductForm modularizado em blocos menores (&lt;300 linhas).</li>
-                <li>Timeline de Eventos: Rastreabilidade total de alterações e movimentações.</li>
-                <li>Desacoplamento: Marketplace isolado da ficha técnica principal.</li>
-                <li>Preservação: Zero alteração em lógica de banco, estoque ou motores fiscais.</li>
-                <li>Design Premium: Look & feel compatível com grandes players (Tiny/Omie).</li>
+                <li>Dashboard: Lucro líquido, pró-labore, reserva e valor disponível.</li>
+                <li>Simulação: Impacto financeiro e nível de risco em tempo real.</li>
+                <li>Explicação: Detalhamento técnico de como a Bella chegou aos valores.</li>
+                <li>Chat (Skills): Responder sobre disponibilidade e impacto de retiradas.</li>
+                <li>Bella CEO: Recomendações estratégicas e alertas de segurança.</li>
+                <li>Arquitetura: Reuso integral dos motores Financeiro e Contábil V2.</li>
+                <li>Validação: Proibido SQL paralelo ou novas regras de negócio.</li>
               </ul>
             </section>
           </div>

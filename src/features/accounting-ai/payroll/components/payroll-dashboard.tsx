@@ -111,6 +111,10 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 mb-4 flex gap-2">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <p>Esta é uma <strong>simulação segura</strong>. Nenhuma alteração será feita nos seus dados reais do Financeiro ou Contábil.</p>
+            </div>
             <div className="space-y-4">
               <div className="flex justify-between text-sm font-medium">
                 <span>Valor para retirar</span>
@@ -186,8 +190,17 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
                 <li>Política de 30% do lucro para pró-labore.</li>
                 <li>Reserva mínima de 20% do lucro ou saídas de 30 dias.</li>
                 <li>Consideração de impostos a pagar ({formatCurrency(advice?.commitments.taxes || 0)}).</li>
+                <li>Comprometimento imediato: {formatCurrency(advice?.commitments.total || 0)}.</li>
                 <li>Saúde financeira atual: {advice?.risk.score}/100.</li>
               </ul>
+              <div className="mt-4 p-3 rounded-lg border bg-primary/5 text-primary text-xs">
+                <p className="font-semibold mb-1">💡 Recomendação da Bella CEO:</p>
+                <p>
+                  {advice && advice.withdrawal.safeAmount > 0 
+                    ? `Sua empresa possui uma distribuição segura de até ${formatCurrency(advice.withdrawal.safeAmount)}. Mantenha a reserva operacional para garantir fôlego financeiro.`
+                    : "Atenção: O caixa atual está comprometido com reservas e obrigações. Não recomendo retiradas no momento."}
+                </p>
+              </div>
               <p className="mt-4 rounded-lg bg-muted p-3 text-xs italic">
                 "Minha recomendação é conservadora para garantir que sua empresa tenha fôlego para os 
                 próximos ciclos, protegendo sua reserva de emergência."

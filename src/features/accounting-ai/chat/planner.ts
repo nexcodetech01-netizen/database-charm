@@ -109,6 +109,8 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
   explicar_estoque: ["explicar_estoque"],
   explicar_resultado: ["explicar_resultado"],
   explicar_indicadores: ["explicar_indicadores"],
+  consultar_distribuicao: ["consultar_prolabore_recomendado", "consultar_retirada"],
+  simular_distribuicao: ["simular_retirada"],
 };
 
 const REASONS: Partial<Record<AccountingSkillId, string>> = {
