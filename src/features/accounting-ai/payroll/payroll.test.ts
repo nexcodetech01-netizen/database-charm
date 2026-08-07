@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { payrollQueries } from "../queries/payroll-queries";
-import type { FinancialAdvice } from "../../advisor/types";
-import type { AccountingSummary } from "../../types";
+import { payrollQueries } from "./queries/payroll-queries";
+import type { FinancialAdvice } from "../advisor/types";
 
 describe("Payroll Queries (Sprint 8.1)", () => {
   const mockAdvice = {
