@@ -298,43 +298,66 @@ export type NfePayload = {
   reference: string;
   model: "55" | "65";
   environment: NfeEnvironment;
-  company: CompanyFiscalProfile & {
-    crt: number;
-    taxRegime: TaxRegime;
+  issuedAt: string;
+  emitter: {
+    cnpj: string;
+    legalName: string;
+    tradeName: string | null;
+    ie: string;
+    street: string;
+    number: string;
+    district: string;
+    city: string;
+    state: string;
+    zip: string;
+    phone: string | null;
   };
   customer: {
+    id: string;
     name: string;
     document: string;
     email: string | null;
-    address: string;
-    addressNumber: string;
-    complement: string | null;
-    neighborhood: string;
-    city: string;
-    state: string;
-    zipCode: string;
+    address?: {
+      street: string;
+      number: string;
+      district: string;
+      city: string;
+      state: string;
+      zip: string;
+    };
   };
   items: Array<{
-    id: string;
     productId: string | null;
+    sku: string | null;
+    unit: string | null;
     description: string;
+    ncm: string | null;
+    cfop: string | null;
+    cst: string | null;
     quantity: number;
     unitPrice: number;
     total: number;
-    ncm: string | null;
-    taxes: any;
+    taxes?: any;
   }>;
   totals: {
-    items: number;
+    products: number;
     discount: number;
-    shipping: number;
-    other: number;
+    freight: number;
     total: number;
   };
-  settings: {
+  fiscal: {
+    operationNature: string;
+    cfop: string;
+    csosn: string | null;
+    crt: number;
+    origem: number;
     series: number;
-    nextNumber: number;
-    nature: string;
+    number: number | null;
+  };
+  nfce?: {
+    cscId: string;
+    cscToken: string;
+    paymentMethod: string | null;
   };
 };
 
@@ -348,6 +371,9 @@ export type ProviderIssueResult = {
   series?: number;
   xmlUrl?: string;
   danfeUrl?: string;
+  xmlAuthorizedPath?: string;
+  xmlSignedPath?: string;
+  danfePath?: string;
   rejectionCode?: string;
   rejectionReason?: string;
   raw?: any;
@@ -369,4 +395,3 @@ export type ProviderCancelResult = {
   rejectionReason?: string;
   raw?: any;
 };
-
