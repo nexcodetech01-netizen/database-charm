@@ -464,6 +464,25 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     ],
   },
   {
+    intent: "situacao_caixa",
+    priority: 39, // Prioridade alta para auditoria de frente de caixa
+    terms: [
+      [
+        "como esta meu caixa",
+        "como esta o caixa",
+        "meu caixa esta pronto",
+        "existem diferenças",
+        "posso fechar o caixa",
+        "existe caixa aberto",
+        "tem caixa aberto",
+        "quebra de caixa",
+        "resumo de caixa",
+        "auditoria de caixa",
+        "como estao as sessões de caixa",
+      ],
+    ],
+  },
+  {
     intent: "situacao_estoque",
     priority: 37, // Aumentada para suportar fechamento mensal
     terms: [

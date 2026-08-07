@@ -6,6 +6,7 @@ import { auditFiscalClosing } from "../queries/fiscal-audit";
 import { auditInventoryClosing } from "../queries/inventory-audit";
 import { auditPurchasesClosing } from "../queries/purchases-audit";
 import { auditSalesClosing } from "../queries/sales-audit";
+import { auditCashClosing } from "../queries/cash-audit";
 import { currentPeriod } from "../../lib/helpers";
 import { useAuth } from "@/providers/auth-provider";
 import { accountingAiServices } from "../../services/adapters";
@@ -26,15 +27,16 @@ export function useMonthlyClosingAudit(month: string) {
         throw new Error("Summary data not available");
       }
       
-      // Busca dados de auditoria fiscal, produtos, estoque e vendas via adaptadores existentes
-      const [fiscalDocs, products, ledger, purchases, suppliers, sales, customers] = await Promise.all([
+      // Busca dados de auditoria via adaptadores existentes
+      const [fiscalDocs, products, ledger, purchases, suppliers, sales, customers, cashSessions] = await Promise.all([
         accountingAiServices.audit.fiscalDocuments(companyId, 100),
         accountingAiServices.audit.products(companyId, 1000),
         accountingAiServices.inventory.ledgerAudit(companyId),
         accountingAiServices.audit.purchases(companyId, 100),
         accountingAiServices.audit.suppliers(companyId, 200),
         accountingAiServices.audit.sales(companyId, 200),
-        accountingAiServices.audit.customers(companyId, 200)
+        accountingAiServices.audit.customers(companyId, 200),
+        accountingAiServices.audit.cashSessions(companyId, 100)
       ]);
       
       const financialAudit = auditFinancialClosing(summaryQuery.data, month);
@@ -42,6 +44,7 @@ export function useMonthlyClosingAudit(month: string) {
       const inventoryAudit = auditInventoryClosing(summaryQuery.data, products, ledger, month);
       const purchasesAudit = auditPurchasesClosing(summaryQuery.data, purchases, products, suppliers, month);
       const salesAudit = auditSalesClosing(summaryQuery.data, sales, products, customers, month);
+      const cashAudit = auditCashClosing(summaryQuery.data, cashSessions, month);
 
       // Merge results
       const totalScore = 
@@ -49,15 +52,17 @@ export function useMonthlyClosingAudit(month: string) {
         fiscalAudit.healthScore.score + 
         inventoryAudit.healthScore.score + 
         purchasesAudit.healthScore.score +
-        salesAudit.healthScore.score;
+        salesAudit.healthScore.score +
+        cashAudit.healthScore.score;
         
-      const avgScore = Math.round(totalScore / 5);
+      const avgScore = Math.round(totalScore / 6);
       const minScore = Math.min(
         financialAudit.healthScore.score, 
         fiscalAudit.healthScore.score, 
         inventoryAudit.healthScore.score,
         purchasesAudit.healthScore.score,
-        salesAudit.healthScore.score
+        salesAudit.healthScore.score,
+        cashAudit.healthScore.score
       );
       
       return {
@@ -65,41 +70,45 @@ export function useMonthlyClosingAudit(month: string) {
         healthScore: {
           score: avgScore,
           level: minScore < 40 ? "Crítica" : minScore < 70 ? "Atenção" : "Boa",
-          label: `${financialAudit.healthScore.label} ${fiscalAudit.healthScore.label} ${inventoryAudit.healthScore.label} ${purchasesAudit.healthScore.label} ${salesAudit.healthScore.label}`
+          label: `${financialAudit.healthScore.label} ${fiscalAudit.healthScore.label} ${inventoryAudit.healthScore.label} ${purchasesAudit.healthScore.label} ${salesAudit.healthScore.label} ${cashAudit.healthScore.label}`
         },
         checklist: [
           ...financialAudit.checklist, 
           ...fiscalAudit.checklist, 
           ...inventoryAudit.checklist,
           ...purchasesAudit.checklist,
-          ...salesAudit.checklist
+          ...salesAudit.checklist,
+          ...cashAudit.checklist
         ],
         summary: {
-          monthSummary: `${financialAudit.summary.monthSummary} ${fiscalAudit.summary.monthSummary} ${inventoryAudit.summary.monthSummary} ${purchasesAudit.summary.monthSummary} ${salesAudit.summary.monthSummary}`,
+          monthSummary: `${financialAudit.summary.monthSummary} ${fiscalAudit.summary.monthSummary} ${inventoryAudit.summary.monthSummary} ${purchasesAudit.summary.monthSummary} ${salesAudit.summary.monthSummary} ${cashAudit.summary.monthSummary}`,
           achievements: [
             ...financialAudit.summary.achievements, 
             ...fiscalAudit.summary.achievements, 
             ...inventoryAudit.summary.achievements,
             ...purchasesAudit.summary.achievements,
-            ...salesAudit.summary.achievements
+            ...salesAudit.summary.achievements,
+            ...cashAudit.summary.achievements
           ],
           problems: [
             ...financialAudit.summary.problems, 
             ...fiscalAudit.summary.problems, 
             ...inventoryAudit.summary.problems,
             ...purchasesAudit.summary.problems,
-            ...salesAudit.summary.problems
+            ...salesAudit.summary.problems,
+            ...cashAudit.summary.problems
           ],
-          biggestRisk: salesAudit.summary.biggestRisk,
-          biggestOpportunity: salesAudit.summary.biggestOpportunity,
-          finalRecommendation: `${financialAudit.summary.finalRecommendation} ${fiscalAudit.summary.finalRecommendation} ${inventoryAudit.summary.finalRecommendation} ${purchasesAudit.summary.finalRecommendation} ${salesAudit.summary.finalRecommendation}`
+          biggestRisk: cashAudit.healthScore.score < 70 ? cashAudit.summary.biggestRisk : salesAudit.summary.biggestRisk,
+          biggestOpportunity: cashAudit.summary.biggestOpportunity,
+          finalRecommendation: `${financialAudit.summary.finalRecommendation} ${fiscalAudit.summary.finalRecommendation} ${inventoryAudit.summary.finalRecommendation} ${purchasesAudit.summary.finalRecommendation} ${salesAudit.summary.finalRecommendation} ${cashAudit.summary.finalRecommendation}`
         },
         timeline: [
           ...financialAudit.timeline, 
           ...fiscalAudit.timeline, 
           ...inventoryAudit.timeline,
           ...purchasesAudit.timeline,
-          ...salesAudit.timeline
+          ...salesAudit.timeline,
+          ...cashAudit.timeline
         ].sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         )
