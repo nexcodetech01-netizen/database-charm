@@ -150,7 +150,7 @@ export function useFiscalAutofill({
       setSource(nextSource);
       onApply({
         ncm: normalizeNcm(values.ncm),
-        cest: values.cest ? normalizeCest(values.cest) : cest,
+        cest: values.cest !== undefined ? normalizeCest(values.cest) : (cest || null),
       });
       toast.success("Sugestão fiscal aplicada!");
     },
