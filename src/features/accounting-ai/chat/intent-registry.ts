@@ -54,6 +54,22 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     ],
   },
   {
+    intent: "auditar_fechamento",
+    priority: 35,
+    terms: [
+      [
+        "meu financeiro esta pronto",
+        "posso fechar o financeiro",
+        "existem pendencias financeiras",
+        "quais contas exigem atencao",
+        "fechamento mensal",
+        "auditoria de fechamento",
+        "auditar fechamento",
+        "prontidao do fechamento",
+      ],
+    ],
+  },
+  {
     intent: "explicar_caixa",
     priority: 33,
     terms: [

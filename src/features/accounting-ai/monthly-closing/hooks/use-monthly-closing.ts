@@ -1,32 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { MonthlyClosingAudit } from "../types";
+import { useAccountingAiSummary } from "../../hooks/use-accounting-ai";
+import { auditFinancialClosing } from "../queries/financial-audit";
+import { currentPeriod } from "../../lib/helpers";
+import { useAuth } from "@/providers/auth-provider";
 
-// Mock data for initial structure
-const mockAudit: MonthlyClosingAudit = {
-  month: "2026-07",
-  healthScore: {
-    score: 85,
-    level: "Boa",
-    label: "Sua empresa está em um bom caminho, mas há pontos de atenção antes do fechamento."
-  },
-  checklist: [],
-  summary: {
-    monthSummary: "Mês de crescimento estável com foco em vendas diretas.",
-    achievements: ["Batemos a meta de vendas", "Redução de 5% no custo fixo"],
-    problems: ["Atraso em 2 fornecedores críticos"],
-    biggestRisk: "Fluxo de caixa apertado na última semana",
-    biggestOpportunity: "Expansão para novos canais de marketplace",
-    finalRecommendation: "Regularize as pendências fiscais antes de fechar o mês."
-  },
-  timeline: []
-};
 
 export function useMonthlyClosingAudit(month: string) {
+  const { user } = useAuth();
+  const companyId = (user as any)?.company_id;
+  
+  const summaryQuery = useAccountingAiSummary(companyId, currentPeriod());
+
+
   return useQuery({
-    queryKey: ["monthly-closing-audit", month],
+    queryKey: ["monthly-closing-audit", companyId, month],
+    enabled: !!companyId && !!summaryQuery.data,
     queryFn: async (): Promise<MonthlyClosingAudit> => {
-      // Logic will be implemented in the next sprint
-      return mockAudit;
+      if (!summaryQuery.data) {
+        throw new Error("Summary data not available");
+      }
+      
+      // Implementação real reutilizando os motores existentes
+      return auditFinancialClosing(summaryQuery.data, month);
     }
   });
 }
+
