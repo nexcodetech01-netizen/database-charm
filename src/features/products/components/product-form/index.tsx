@@ -266,7 +266,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       }
 
       toast.success(isEdit ? "Atualizado" : "Criado");
-      if (!isEdit && saved?.id) setCreatedProduct({ id: saved.id, name: payload.name });
+      if (!isEdit && saved?.id) setCreatedProduct({ id: saved.id as string, name: payload.name });
       else navigate({ to: "/produtos" });
     } catch (err) { toast.error("Erro ao salvar"); }
   };
