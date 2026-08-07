@@ -59,6 +59,11 @@ export type BellaIntentId =
   | "explicar_indicadores"
   | "consultar_distribuicao"
   | "simular_distribuicao"
+  | "auditar_fechamento"
+  | "consultar_prontidao_fechamento"
+  | "identificar_problemas_fechamento"
+  | "resumo_mensal_executivo"
+  | "como_foi_meu_mes"
   | "desconhecida";
 
 export interface IntentMatch {
