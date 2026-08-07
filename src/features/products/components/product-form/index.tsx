@@ -155,9 +155,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [eanLoading, setEanLoading] = useState(false);
 
   // Draft Logic
-  const draft = useDraft(DRAFT_KEYS.PRODUCT_NEW(companyId), form, { enabled: !isEdit });
+  const draft = useDraft({
+    key: isEdit ? null : DRAFT_KEYS.product(companyId),
+    value: form,
+    enabled: !isEdit,
+  });
   const [recoveryOpen, setRecoveryOpen] = useState(false);
-  const recoveryUpdatedAt = draft.recoveryData?.updatedAt;
+  const recoveryData = draft.load();
+  const recoveryUpdatedAt = recoveryData?.updatedAt;
 
   // Pricing Logic
   const { inputs: pricingInputs } = usePricingInputs(companyId, form.category_id || null);
@@ -290,8 +295,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               categories={categories}
               suppliers={suppliers}
-              onManageCategories={() => setTab("geral")}
-              onNewSupplier={() => setSupplierDialogOpen(true)}
+              onTitleBlur={() => {
+                const formatted = toTitleCasePtBr(form.name);
+                if (formatted !== form.name) setForm(s => ({ ...s, name: formatted }));
+              }}
             />
           </TabsContent>
 
@@ -361,7 +368,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               mainImageFile={mainImageFile}
               setMainImageFile={setMainImageFile}
-              currentMainImageUrl={currentMainImageUrl}
+              currentMainImageUrl={currentMainImageUrl || ""}
               uploadingVideo={uploadingVideo}
               onVideoUpload={handleVideoUpload}
             />
