@@ -1242,47 +1242,38 @@ export const updateFiscalSettings = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: row, error } = await (supabase.from("fiscal_settings" as never) as any)
-      .upsert(
-        {
-          company_id: companyId,
-          tax_regime: data.taxRegime,
-          crt: data.crt ?? null,
-          cnae_principal: data.cnaePrincipal ?? null,
-          emit_uf: data.emitUf,
-          nfe_series: data.nfeSeries,
-          nfe_next_number: data.nfeNextNumber,
-          default_environment: data.defaultEnvironment,
-          operation_nature: data.operationNature,
-          default_cfop: data.defaultCfop,
-          default_csosn: data.defaultCsosn ?? null,
-          default_origem: data.defaultOrigem,
-          email_fiscal: data.emailFiscal || null,
-          phone_fiscal: data.phoneFiscal ?? null,
-          csc_id: data.cscId ?? null,
-          ...(data.issueOnlyAfterPayment === undefined
-            ? {}
-            : { issue_only_after_payment: data.issueOnlyAfterPayment }),
-          ...(data.homologationMode === undefined
-            ? {}
-            : { homologation_mode: data.homologationMode }),
-          ...(data.stockOnHomologation === undefined
-            ? {}
-            : { stock_on_homologation: data.stockOnHomologation }),
-          updated_by: context.userId,
-        },
-        { onConflict: "company_id" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
-    const { data: hasCsc } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "csc_token",
-      _owner_id: null as unknown as string,
+    const taxRepo = new TaxRepository(supabase);
+    const row = await taxRepo.updateSettings(companyId, {
+      tax_regime: data.taxRegime,
+      crt: data.crt ?? null,
+      cnae_principal: data.cnaePrincipal ?? null,
+      emit_uf: data.emitUf,
+      nfe_series: data.nfeSeries,
+      nfe_next_number: data.nfeNextNumber,
+      default_environment: data.defaultEnvironment,
+      operation_nature: data.operationNature,
+      default_cfop: data.defaultCfop,
+      default_csosn: data.defaultCsosn ?? null,
+      default_origem: data.defaultOrigem,
+      email_fiscal: data.emailFiscal || null,
+      phone_fiscal: data.phoneFiscal ?? null,
+      csc_id: data.cscId ?? null,
+      ...(data.issueOnlyAfterPayment === undefined
+        ? {}
+        : { issue_only_after_payment: data.issueOnlyAfterPayment }),
+      ...(data.homologationMode === undefined
+        ? {}
+        : { homologation_mode: data.homologationMode }),
+      ...(data.stockOnHomologation === undefined
+        ? {}
+        : { stock_on_homologation: data.stockOnHomologation }),
+      updated_by: context.userId,
     });
-    return mapSettings(row as FiscalSettingsRow, Boolean(hasCsc));
+
+    const statusRepo = new StatusRepository(supabase);
+    const hasCsc = await statusRepo.hasSecret(companyId, "csc_token");
+    
+    return mapSettings(row as FiscalSettingsRow, hasCsc);
   });
 
 // -------- Secrets vault (AES-256-GCM with FISCAL_SECRETS_KEY) --------
@@ -2324,16 +2315,6 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     // 4) Settings (série, CFOP, natureza)
     const taxRepo = new TaxRepository(supabase);
     const s = await taxRepo.getSettings(companyId);
-    const s = (settingsRow ?? null) as {
-      nfe_series: number | null;
-      nfe_next_number: number | null;
-      default_cfop: string | null;
-      default_csosn: string | null;
-      operation_nature: string | null;
-      tax_regime: string | null;
-      crt: number | null;
-      default_environment: NfeEnvironment | null;
-    } | null;
     if (!s) {
       push({
         id: "settings.missing",
@@ -2345,7 +2326,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         hint: "Abra Fiscal → Configuração → Regras.",
       });
     } else {
-      if (!s.default_cfop)
+      if (!s.defaultCfop)
         push({
           id: "settings.cfop",
           field: "settings.cfop",
@@ -2354,7 +2335,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "CFOP padrão ausente",
           detail: "Defina um CFOP padrão (ex: 5102).",
         });
-      if (!s.operation_nature)
+      if (!s.operationNature)
         push({
           id: "settings.nature",
           field: "settings.nature",
@@ -2363,7 +2344,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "Natureza da operação ausente",
           detail: "Ex: 'Venda de mercadoria adquirida ou recebida de terceiros'.",
         });
-      if (!s.nfe_series || s.nfe_series < 1)
+      if (!s.nfeSeries || s.nfeSeries < 1)
         push({
           id: "settings.series",
           field: "settings.series",
@@ -2372,7 +2353,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "Série da NF-e não configurada",
           detail: "Defina a série (normalmente 1).",
         });
-      if ((s.tax_regime === "simples" || s.tax_regime === "mei") && !s.default_csosn)
+      if ((s.taxRegime === "simples" || s.taxRegime === "mei") && !s.defaultCsosn)
         push({
           id: "settings.csosn",
           field: "settings.csosn",
@@ -2380,7 +2361,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           step: "regras",
           title: "CSOSN padrão obrigatório",
           detail:
-            s.tax_regime === "mei"
+            s.taxRegime === "mei"
               ? "MEI exige CSOSN padrão (ex: 102, 103, 300, 400, 500 ou 900)."
               : "Simples Nacional exige CSOSN padrão (ex: 102).",
         });
@@ -2403,7 +2384,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           severity: "error",
           step: "regras",
           title: "CRT incompatível com o regime tributário",
-          detail: crtCoherenceMessage(s.tax_regime as FiscalTaxRegime),
+          detail: crtCoherenceMessage(s.taxRegime as FiscalTaxRegime),
           hint: "Revise em Fiscal → Configuração → Regras.",
         });
 
@@ -2413,8 +2394,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     itemList.forEach((it, i) => {
       const taxes = resolveItemTaxes(
         s?.crt,
-        { cst: s?.default_csosn ?? null, amount: Number(it.total ?? 0) },
-        s?.default_csosn ?? null,
+        { cst: s?.defaultCsosn ?? null, amount: Number(it.total ?? 0) },
+        s?.defaultCsosn ?? null,
       );
       if (!taxes.icms.situacaoTributaria)
         push({
@@ -2449,19 +2430,9 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
 
 
     // 5) Certificado
-    const { data: certs } = await supabase
-      .from("fiscal_certificates")
-      .select("id, alias, is_active, valid_to")
-      .eq("company_id", companyId);
-    const activeCert =
-      (
-        (certs ?? []) as Array<{
-          id: string;
-          alias: string;
-          is_active: boolean;
-          valid_to: string | null;
-        }>
-      ).find((c) => c.is_active) ?? null;
+    const certRepo = new CertificateRepository(supabase);
+    const certs = await certRepo.list(companyId);
+    const activeCert = certs.find((c) => c.isActive) ?? null;
     let daysLeft: number | null = null;
     if (!activeCert) {
       push({
@@ -2472,8 +2443,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         title: "Nenhum certificado A1 ativo",
         detail: "Envie um certificado digital A1 válido.",
       });
-    } else if (activeCert.valid_to) {
-      daysLeft = Math.round((new Date(activeCert.valid_to).getTime() - Date.now()) / 86_400_000);
+    } else if (activeCert.validTo) {
+      daysLeft = Math.round((new Date(activeCert.validTo).getTime() - Date.now()) / 86_400_000);
       if (daysLeft < 0)
         push({
           id: "cert.expired",
@@ -2575,7 +2546,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     const environment: NfeEnvironment =
-      data.environment ?? s?.default_environment ?? "homologation";
+      data.environment ?? s?.defaultEnvironment ?? "homologation";
 
     return {
       ok: blockers.length === 0,
@@ -2591,16 +2562,16 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         customerAddress,
         itemCount: itemList.length,
         totalAmount: total,
-        cfop: s?.default_cfop ?? null,
+        cfop: s?.defaultCfop ?? null,
         ncm: itemsNcmSummary,
-        csosn: s?.default_csosn ?? null,
+        csosn: s?.defaultCsosn ?? null,
         crt: s?.crt ?? null,
-        natureza: s?.operation_nature ?? null,
-        series: s?.nfe_series ?? null,
-        numberPreview: s?.nfe_next_number ?? null,
+        natureza: s?.operationNature ?? null,
+        series: s?.nfeSeries ?? null,
+        numberPreview: s?.nfeNextNumber ?? null,
         hasCertificate: Boolean(activeCert),
         certificateAlias: activeCert?.alias ?? null,
-        certificateValidTo: activeCert?.valid_to ?? null,
+        certificateValidTo: activeCert?.validTo ?? null,
         hasProviderKey: Boolean(hasApiKey),
         certificateExpiresIn: daysLeft,
         companyName: (co.name as string | null) ?? null,
@@ -2641,12 +2612,9 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: docRow } = await (docFrom(supabase) as any)
-      .select("sale_id")
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .maybeSingle();
+    const docRepo = new DocumentsRepository(supabase);
+    const docRow = await docRepo.findById(companyId, data.documentId);
+    const saleId = docRow?.saleId ?? null;
     const saleId = (docRow as { sale_id: string | null } | null)?.sale_id ?? null;
 
     let customerName: string | null = null;
