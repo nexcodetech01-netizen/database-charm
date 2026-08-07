@@ -499,8 +499,11 @@ function PublicCollectionPage() {
               updateSearch({
                 q: "",
                 marca: "",
+                cat: "all",
                 disp: "todos",
                 ord: "relevancia",
+                min: 0,
+                max: 0,
               });
             }}
             onClearQ={() => {
@@ -508,77 +511,198 @@ function PublicCollectionPage() {
               updateSearch({ q: "" });
             }}
             onClearMarca={() => updateSearch({ marca: "" })}
+            onClearCat={() => updateSearch({ cat: "all" })}
             onClearDisp={() => updateSearch({ disp: "todos" })}
             onClearOrd={() => updateSearch({ ord: "relevancia" })}
+            onClearPrice={() => updateSearch({ min: 0, max: 0 })}
           />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={cn(
+                "grid gap-6",
+                search.view === "grid"
+                  ? "grid-cols-2 lg:grid-cols-4"
+                  : "grid-cols-1"
+              )}
+            >
               {visible.map((p) => {
                 const outOfStock = p.stock <= 0;
                 const plan = getInstallmentPlan(p.price);
                 const availability = resolveAvailability(p.stock, {
-                  presale: isScheduled,
+                  presale: isPreview,
                 });
+
+                if (search.view === "list") {
+                  return (
+                    <Card key={p.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                      <div className="flex flex-row p-0 h-40">
+                        <div
+                          className="relative aspect-square h-full bg-muted cursor-pointer shrink-0"
+                          onClick={() => setQuickViewId(p.id)}
+                        >
+                          {p.cover_url ? (
+                            <img
+                              src={p.cover_url}
+                              alt={p.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          {availability !== "disponivel" && (
+                            <AvailabilityBadge
+                              kind={availability}
+                              size="xs"
+                              className="absolute left-1 top-1"
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 p-4 justify-between min-w-0">
+                          <div>
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="space-y-0.5 min-w-0">
+                                {data.show_brand && p.brand && (
+                                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {p.brand}
+                                  </div>
+                                )}
+                                <h3
+                                  className="line-clamp-1 text-sm font-bold cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => setQuickViewId(p.id)}
+                                >
+                                  {p.name}
+                                </h3>
+                              </div>
+                              {data.show_price && (
+                                <div className="text-right shrink-0">
+                                  <div className="text-base font-bold text-primary">
+                                    {formatCurrency(p.price)}
+                                  </div>
+                                  {data.show_installments && plan && (
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {plan.label}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                              {p.description || "Ver detalhes..."}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs h-8"
+                              onClick={() => setQuickViewId(p.id)}
+                            >
+                              Visualizar
+                            </Button>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="flex-1 text-xs h-8"
+                              disabled={outOfStock}
+                            >
+                              <Link
+                                to="/catalogo/colecao/$slug/produto/$productId"
+                                params={{ slug: data.slug, productId: p.id }}
+                                search={(prev) => prev}
+                              >
+                                {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                }
+
                 return (
-                  <Card key={p.id} className="overflow-hidden">
-                    <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                  <Card key={p.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                    <div
+                      className="relative aspect-square w-full overflow-hidden bg-muted cursor-pointer"
+                      onClick={() => setQuickViewId(p.id)}
+                    >
                       {p.cover_url ? (
                         <img
                           src={p.cover_url}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center">
                           <Package className="h-10 w-10 text-muted-foreground" />
                         </div>
                       )}
-                      {(data.show_stock || availability === "presale") && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                      {(data.show_stock || availability !== "disponivel") && (
                         <AvailabilityBadge
                           kind={availability}
                           size="sm"
                           className="absolute left-2 top-2"
                         />
                       )}
-                    </div>
-                    <CardContent className="space-y-1.5 p-3">
-                      {data.show_brand && p.brand && (
-                        <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {p.brand}
-                        </div>
-                      )}
-                      <div className="line-clamp-2 text-sm font-semibold">
-                        {p.name}
-                      </div>
-                      {data.show_price && (
-                        <div className="text-lg font-bold">
-                          {formatCurrency(p.price)}
-                        </div>
-                      )}
-                      {data.show_installments && data.show_price && plan && (
-                        <Badge
-                          variant="secondary"
-                          className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                      <div className="absolute bottom-2 right-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                        <Button
+                          size="sm"
+                          className="rounded-full shadow-lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickViewId(p.id);
+                          }}
                         >
-                          {plan.label}
-                        </Badge>
-                      )}
-                      <div className="pt-2">
+                          Quick View
+                        </Button>
+                      </div>
+                    </div>
+                    <CardContent className="space-y-2 p-3">
+                      <div className="space-y-0.5">
+                        {data.show_brand && p.brand && (
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {p.brand}
+                          </div>
+                        )}
+                        <div
+                          className="line-clamp-2 text-sm font-bold leading-tight cursor-pointer hover:text-primary transition-colors min-h-[2.5rem]"
+                          onClick={() => setQuickViewId(p.id)}
+                        >
+                          {p.name}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {data.show_price && (
+                          <div className="text-base font-bold text-primary">
+                            {formatCurrency(p.price)}
+                          </div>
+                        )}
+                        {data.show_installments && data.show_price && plan && (
+                          <div className="text-[10px] text-muted-foreground font-medium">
+                            {plan.label}
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-1">
                         <Button
                           asChild
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
-                          className="w-full"
+                          className="w-full h-8 rounded-lg text-xs font-semibold"
                           disabled={outOfStock}
                         >
                           <Link
                             to="/catalogo/colecao/$slug/produto/$productId"
                             params={{ slug: data.slug, productId: p.id }}
-                            search={forwardSearch}
+                            search={(prev) => prev}
                           >
-                            Ver produto
+                            Ver Detalhes
                           </Link>
                         </Button>
                       </div>
@@ -586,13 +710,14 @@ function PublicCollectionPage() {
                   </Card>
                 );
               })}
-
             </div>
 
             {hasMore && (
-              <div className="mt-6 flex justify-center">
+              <div className="mt-12 flex justify-center">
                 <Button
                   variant="outline"
+                  size="lg"
+                  className="rounded-full px-8 shadow-sm"
                   onClick={() =>
                     updateSearch({ page: currentPage + 1 }, false)
                   }
@@ -605,9 +730,20 @@ function PublicCollectionPage() {
         )}
       </main>
 
-      <footer className="border-t py-6 text-center text-xs text-muted-foreground space-y-1.5">
-        <p className="px-4">{PAYMENT_CONDITIONS_LEGEND}</p>
-        <p>Catálogo gerado por NexOS</p>
+      <QuickViewDialog
+        slug={slug}
+        productId={quickViewId}
+        preview={isPreview}
+        onOpenChange={(open) => !open && setQuickViewId(null)}
+      />
+
+      <footer className="border-t bg-card/50 py-10 text-center text-xs text-muted-foreground space-y-3">
+        <p className="px-6 max-w-xl mx-auto leading-relaxed">{PAYMENT_CONDITIONS_LEGEND}</p>
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="h-px w-8 bg-border" />
+          <p className="font-medium tracking-wide uppercase text-[10px]">Catálogo Premium · NexOS</p>
+          <div className="h-px w-8 bg-border" />
+        </div>
       </footer>
     </div>
   );
