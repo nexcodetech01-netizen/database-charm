@@ -152,17 +152,24 @@ export function MercadoLivrePrintDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleDownload} disabled={!pdfBlob}>
+          <Button 
+            variant="outline" 
+            onClick={handleDownload} 
+            disabled={!pdfBlob || isPrinting || loadingPreview}
+          >
             <Download className="mr-2 h-4 w-4" />
             Baixar PDF
           </Button>
-          <Button onClick={handlePrint} disabled={!pdfBlob || isPrinting}>
+          <Button 
+            onClick={handlePrint} 
+            disabled={!pdfBlob || isPrinting || loadingPreview}
+          >
             {isPrinting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Printer className="mr-2 h-4 w-4" />
             )}
-            Imprimir
+            {isPrinting ? "Imprimindo..." : "Imprimir"}
           </Button>
         </DialogFooter>
       </DialogContent>
