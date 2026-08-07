@@ -18,9 +18,9 @@ import {
   FinancialCard, 
   SummaryGrid, 
 } from "../../components";
-import type { FinancialAdvice } from "../../advisor";
+import type { FinancialAdvice } from "../../advisor/types";
 import type { AccountingSummary } from "../../types";
-import { buildFinancialAdvice } from "../../advisor";
+import { buildFinancialAdvice } from "../../advisor/engine";
 
 interface PayrollDashboardProps {
   summary: AccountingSummary | null;
