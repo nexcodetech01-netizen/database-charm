@@ -49,24 +49,24 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600">⚡ SPRINT 8.2 — BELLA CONTABILIDADE ENTERPRISE</h2>
+          <h2 className="text-lg font-semibold mb-4 text-blue-600">⚡ SPRINT 8.3 — BELLA CONTABILIDADE ENTERPRISE</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary uppercase">Módulo: Distribuição de Lucros</h3>
+              <h3 className="font-medium text-primary uppercase">Módulo: Fechamento Mensal Inteligente</h3>
               <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
-                OBJETIVO: Concluir o módulo de Distribuição de Lucros da Bella. Hoje ela calcula. Agora ela deve explicar, simular, acompanhar e orientar sem criar lançamentos paralelos.
+                OBJETIVO: Criar um Assistente Inteligente de Fechamento Mensal. A Bella deve auditar, validar e orientar a empresa antes do encerramento do mês, sem realizar o fechamento formal ou alterar dados.
               </p>
             </section>
             <section>
               <h3 className="font-medium text-primary">REQUISITOS DA SPRINT</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Dashboard: Lucro líquido, pró-labore, reserva e valor disponível.</li>
-                <li>Simulação: Impacto financeiro e nível de risco em tempo real.</li>
-                <li>Explicação: Detalhamento técnico de como a Bella chegou aos valores.</li>
-                <li>Chat (Skills): Responder sobre disponibilidade e impacto de retiradas.</li>
-                <li>Bella CEO: Recomendações estratégicas e alertas de segurança.</li>
-                <li>Arquitetura: Reuso integral dos motores Financeiro e Contábil V2.</li>
-                <li>Validação: Proibido SQL paralelo ou novas regras de negócio.</li>
+                <li>Auditoria 360: Financeiro, Estoque, Compras, Vendas, PDV e Fiscal.</li>
+                <li>Nota de Saúde: Score de 0-100 com níveis de criticidade.</li>
+                <li>Resumo Executivo: Conquistas, problemas, riscos e oportunidades.</li>
+                <li>Timeline Mensal: Histórico visual de todos os domínios no mês.</li>
+                <li>Chat (Skills): Auditoria sob demanda via linguagem natural.</li>
+                <li>Bella CEO: Resumo estratégico direto no Dashboard.</li>
+                <li>Arquitetura: Reuso integral dos motores existentes; proibido SQL paralelo.</li>
               </ul>
             </section>
           </div>
