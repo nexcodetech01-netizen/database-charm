@@ -447,7 +447,7 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
   },
   {
     intent: "situacao_estoque",
-    priority: 13,
+    priority: 37, // Aumentada para suportar fechamento mensal
     terms: [
       [
         "como esta meu estoque",
@@ -470,6 +470,14 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
         "falta estoque",
         "sem estoque",
         "ruptura",
+        "estoque pronto",
+        "meu estoque esta pronto",
+        "posso fechar o estoque",
+        "produtos criticos",
+        "estoque negativo",
+        "tenho estoque negativo",
+        "capital parado",
+        "existe capital parado",
       ],
     ],
   },
