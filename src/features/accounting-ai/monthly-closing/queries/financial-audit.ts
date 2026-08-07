@@ -30,7 +30,7 @@ export function auditFinancialClosing(
     cashFlow: summary.cashFlow.data,
     taxes: summary.taxes.data,
     payroll: summary.payroll.data,
-    health: summary.health.data,
+    health: summary.health.data?.financial,
   });
 
   const cash = summary.cash.data;
