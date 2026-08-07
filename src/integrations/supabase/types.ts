@@ -6672,7 +6672,44 @@ export type Database = {
         }
       }
       create_credit_sale: { Args: { _input: Json }; Returns: Json }
-      create_sale_return: { Args: { _input: Json }; Returns: Json }
+      create_sale_return:
+        | {
+            Args: {
+              _account_id?: string
+              _company_id: string
+              _items: Json
+              _notes?: string
+              _payment_method?: string
+              _restock_items?: boolean
+              _sale_id: string
+              _settle_now?: boolean
+            }
+            Returns: {
+              bella_pay_charge_id: string | null
+              client_request_id: string | null
+              company_id: string
+              created_at: string
+              created_by: string | null
+              finance_ref: string | null
+              id: string
+              notes: string | null
+              number: string
+              reason: string
+              refund_message: string | null
+              refund_status: string
+              sale_id: string
+              status: string
+              total_value: number
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "sale_returns"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | { Args: { _input: Json }; Returns: Json }
       credit_resolve_account: {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
