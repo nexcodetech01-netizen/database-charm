@@ -49,25 +49,27 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-blue-600">⚡ SPRINT 8.3B — MONTHLY AUDIT (FINANCEIRO)</h2>
+          <h2 className="text-lg font-semibold mb-4 text-blue-600">🛠️ CORREÇÃO DE LÓGICA FINANCEIRA EM DEVOLUÇÃO DE VENDAS</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
-              <h3 className="font-medium text-primary uppercase">Módulo: Fechamento Mensal Inteligente</h3>
+              <h3 className="font-medium text-primary uppercase">1. Erro Identificado</h3>
               <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
-                OBJETIVO: Criar um Assistente Inteligente de Fechamento Mensal. A Bella deve auditar, validar e orientar a empresa antes do encerramento do mês, sem realizar o fechamento formal ou alterar dados.
+                Ao registrar uma 'Devolução de Venda', o sistema estava gerando um lançamento do tipo 'Conta a Pagar' pendente, exibindo status 'Vencido' e botão de 'Pagar', mesmo quando o estorno já havia sido processado.
               </p>
             </section>
             <section>
-              <h3 className="font-medium text-primary">REQUISITOS DA SPRINT</h3>
+              <h3 className="font-medium text-primary uppercase">2. Ajuste Implementado</h3>
               <ul className="list-disc list-inside ml-4 space-y-1 text-muted-foreground">
-                <li>Auditoria 360: Financeiro, Estoque, Compras, Vendas, PDV e Fiscal.</li>
-                <li>Nota de Saúde: Score de 0-100 com níveis de criticidade.</li>
-                <li>Resumo Executivo: Conquistas, problemas, riscos e oportunidades.</li>
-                <li>Timeline Mensal: Histórico visual de todos os domínios no mês.</li>
-                <li>Chat (Skills): Auditoria sob demanda via linguagem natural.</li>
-                <li>Bella CEO: Resumo estratégico direto no Dashboard.</li>
-                <li>Arquitetura: Reuso integral dos motores existentes; proibido SQL paralelo.</li>
+                <li>Nova categoria: "Estorno de Venda / Reembolso" para melhor classificação.</li>
+                <li>Liquidação Automática: Devoluções em dinheiro/PIX nascem como 'PAGO' / 'CONCLUÍDO'.</li>
+                <li>UX Dinâmico: Botão "Pagar" substituído por "Comprovante de Reembolso" para devoluções.</li>
               </ul>
+            </section>
+            <section>
+              <h3 className="font-medium text-primary uppercase">3. Limpeza de Dados</h3>
+              <p className="text-muted-foreground mt-1">
+                Lançamentos de devolução antigos que estavam como 'Vencidos' foram saneados para o status 'Estornado', removendo alertas falsos do financeiro.
+              </p>
             </section>
           </div>
         </div>
