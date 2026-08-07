@@ -560,28 +560,28 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     intent: "consultar_retirada",
     priority: 10,
     terms: [
-      ["posso retirar", "quanto posso retirar", "posso tirar", "quanto tirar", "retirada", "retirar do caixa", "posso sacar"],
+      ["posso retirar", "quanto posso retirar", "posso tirar", "quanto tirar", "retirada", "retirar do caixa", "posso sacar", "se eu tirar", "impacto de retirar"],
     ],
   },
   {
     intent: "consultar_risco",
     priority: 9,
-    terms: [["risco", "arriscado", "perigo", "seguranca financeira"]],
+    terms: [["risco", "arriscado", "perigo", "seguranca financeira", "e seguro", "corro risco"]],
   },
   {
     intent: "consultar_disponibilidade",
     priority: 9,
-    terms: [["disponivel", "disponibilidade", "comprometido", "compromissos", "sobra"]],
+    terms: [["disponivel", "disponibilidade", "comprometido", "compromissos", "sobra", "quanto sobra"]],
   },
   {
     intent: "consultar_prolabore",
     priority: 9,
-    terms: [["pro labore", "prolabore", "meu salario", "quanto me pagar"]],
+    terms: [["pro labore", "prolabore", "meu salario", "quanto me pagar", "quanto devo retirar", "pro labore recomendado"]],
   },
   {
     intent: "consultar_reserva",
     priority: 9,
-    terms: [["reserva", "quanto reservar", "quanto guardar", "guardar dinheiro"]],
+    terms: [["reserva", "quanto reservar", "quanto guardar", "guardar dinheiro", "reserva de emergencia", "reserva financeira"]],
   },
   {
     intent: "consultar_fluxo",
