@@ -7,9 +7,10 @@ import { useAuth } from "@/providers/auth-provider";
 
 export function useMonthlyClosingAudit(month: string) {
   const { user } = useAuth();
-  const companyId = user?.company_id;
+  const companyId = (user as any)?.company_id;
   
   const summaryQuery = useAccountingAiSummary(companyId, currentPeriod());
+
 
   return useQuery({
     queryKey: ["monthly-closing-audit", companyId, month],
