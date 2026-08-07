@@ -450,7 +450,7 @@ export const sendOperatorMessage = createServerFn({ method: "POST" })
       let vars = data.variables;
       if (data.templateName === "boas_vindas" || data.templateName === "cobranca_criada") {
         const clienteNome = (conv.contact as any)?.profile_name || "Cliente";
-        vars = vars && vars.length === 1 ? vars : [clienteNome];
+        vars = (vars && vars.length > 0) ? vars : [clienteNome];
       }
       sent = await sendWhatsAppTemplateRaw({ 
         to, 
