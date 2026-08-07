@@ -7,7 +7,6 @@ export { NfeEnvironment };
  * NF-e Status canonico.
  */
 export type NfeStatus =
-
   | "draft"
   | "validating"
   | "signing"
@@ -305,7 +304,7 @@ export type NfePayload = {
   emitter: {
     cnpj: string;
     legalName: string;
-    tradeName: string | null;
+    tradeName?: string | null;
     ie: string;
     street: string;
     number: string;
@@ -313,13 +312,13 @@ export type NfePayload = {
     city: string;
     state: string;
     zip: string;
-    phone: string | null;
+    phone?: string | null;
   };
   customer: {
     id: string;
     name: string;
     document: string;
-    email: string | null;
+    email?: string | null;
     address?: {
       street: string;
       number: string;
@@ -345,7 +344,7 @@ export type NfePayload = {
   totals: {
     products: number;
     discount: number;
-    freight: number;
+    freight?: number;
     total: number;
   };
   fiscal: {
@@ -381,7 +380,6 @@ export type ProviderIssueResult = {
   rejectionReason?: string;
   raw?: any;
 };
-
 
 export type ProviderStatusResult = ProviderIssueResult & {
   cancellationProtocol?: string;

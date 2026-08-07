@@ -663,11 +663,12 @@ export class FiscalProviderFocusNfe implements FiscalProvider {
       );
       return {
         numero_item: index + 1,
-        codigo_produto: resolveCommercialCode(item.sku, item.productId),
+        codigo_produto: resolveCommercialCode(item.sku || null, item.productId || null),
         descricao: item.description,
         codigo_ncm: (item.ncm ?? "").padStart(8, "0"),
         cfop: item.cfop ?? fiscal?.cfop ?? "5102",
         unidade_comercial: resolveCommercialUnit(item.unit),
+
         quantidade_comercial: item.quantity,
         valor_unitario_comercial: item.unitPrice,
         unidade_tributavel: resolveCommercialUnit(item.unit),
