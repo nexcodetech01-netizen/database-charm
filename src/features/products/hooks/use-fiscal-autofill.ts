@@ -29,10 +29,10 @@ interface Params {
   categoryId: string;
   material?: string | null;
   categories: CategoryLike[];
-  ncm: string;
+  ncm: string | null;
   cest: string | null;
   /** Aplica os valores no formulário. */
-  onApply: (values: { ncm: string; cest: string | null }) => void;
+  onApply: (values: { ncm: string | null; cest: string | null }) => void;
 }
 
 export interface FiscalAutofillState {
@@ -42,7 +42,7 @@ export interface FiscalAutofillState {
   masterSuggestions: NcmMasterEntry[];
   historyLoading: boolean;
   masterLoading: boolean;
-  applySuggestion: (values: { ncm: string; cest?: string | null }, source: FiscalSource) => void;
+  applySuggestion: (values: { ncm: string | null; cest?: string | null }, source: FiscalSource) => void;
   markManual: () => void;
 }
 

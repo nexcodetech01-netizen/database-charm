@@ -72,7 +72,7 @@ export function CategoryFormDialog({
     setIcon(category?.icon ?? "Tag");
     setStatus((category?.status as CategoryStatus) ?? "active");
     setParentId(category?.parent_id ?? NO_PARENT);
-    setDefaultNcm(normalizeNcm(category?.default_ncm));
+    setDefaultNcm(normalizeNcm(category?.default_ncm) ?? "");
     setDefaultCest(normalizeCest(category?.default_cest) ?? "");
   }, [open, category]);
 
