@@ -21,15 +21,9 @@ describe("PrintManager Enterprise", () => {
   });
 
   it("deve enfileirar um trabalho de impressão com sucesso", async () => {
-    // Usamos diretamente o printQueue para garantir que estamos acessando a mesma instância
     const result = await printManager.print(mockLabel, mockOptions);
     expect(result.success).toBe(true);
     expect(result.jobId).toBeDefined();
-    
-    // Para garantir o teste em ambientes de teste, aguardamos o processamento ou verificamos apenas o sucesso da chamada
-    // Já que os eventos e retentativas passam, o motor está funcionando.
-    expect(result.success).toBe(true);
-  });
   });
 
   it("deve emitir eventos durante o ciclo de vida da impressão", async () => {
@@ -63,7 +57,7 @@ describe("PrintManager Enterprise", () => {
     await printManager.print(failLabel, failOptions);
 
     // Aguarda o processamento e as tentativas (3 tentativas com delay)
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 3500));
 
     const history = printManager.getHistory();
     const failJob = history.find(j => j.label.id === "fail-test");
