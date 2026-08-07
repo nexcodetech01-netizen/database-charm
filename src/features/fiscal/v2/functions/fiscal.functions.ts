@@ -2298,8 +2298,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     const companyRepo = new CompanyRepository(supabase);
-    const companyRow = await companyRepo.getProfile(companyId);
-    const co = companyRow ?? {};
+    const co = (await companyRepo.getProfile(companyId)) || ({} as any);
     if (!co.cnpj || !co.ie || !co.address || !co.city || !co.state || !co.zipcode) {
       push({
         id: "company.profile",
@@ -2468,7 +2467,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     // 6) Senha do certificado
     if (activeCert) {
       const statusRepo = new StatusRepository(supabase);
-      const hasCertPwd = await statusRepo.hasSecret(companyId, "cert_password", null, activeCert.id);
+      const hasCertPwd = await statusRepo.hasSecret(companyId, "cert_password", undefined, activeCert.id);
       if (!hasCertPwd) {
         push({
           id: "cert.password",
@@ -2574,8 +2573,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         certificateValidTo: activeCert?.validTo ?? null,
         hasProviderKey: Boolean(hasApiKey),
         certificateExpiresIn: daysLeft,
-        companyName: (co.name as string | null) ?? null,
-        companyCnpj: (co.cnpj as string | null) ?? null,
+        companyName: co.legalName ?? null,
+        companyCnpj: co.cnpj ?? null,
         saleNumber: sale.number ?? null,
         items: itemList.map((it) => ({
           description:
@@ -2615,7 +2614,6 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
     const docRepo = new DocumentsRepository(supabase);
     const docRow = await docRepo.findById(companyId, data.documentId);
     const saleId = docRow?.saleId ?? null;
-    const saleId = (docRow as { sale_id: string | null } | null)?.sale_id ?? null;
 
     let customerName: string | null = null;
     let customerDocument: string | null = null;
