@@ -111,6 +111,11 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
   explicar_indicadores: ["explicar_indicadores"],
   consultar_distribuicao: ["consultar_prolabore_recomendado", "consultar_retirada"],
   simular_distribuicao: ["simular_retirada"],
+  auditar_fechamento: ["auditar_empresa", "consultar_alertas", "consultar_insights"],
+  consultar_prontidao_fechamento: ["auditar_empresa", "consultar_saude"],
+  identificar_problemas_fechamento: ["consultar_alertas", "consultar_inconsistencias"],
+  resumo_mensal_executivo: ["consultar_saude", "consultar_insights", "consultar_alertas"],
+  como_foi_meu_mes: ["consultar_saude", "consultar_receita", "consultar_insights"],
 };
 
 const REASONS: Partial<Record<AccountingSkillId, string>> = {
