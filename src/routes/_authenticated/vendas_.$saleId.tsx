@@ -95,6 +95,9 @@ import { useCustomer } from "@/features/customers/hooks/use-customers";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { CreditAccountPanel } from "@/features/credit";
 import { SaleFiscalCard } from "@/features/fiscal/v2/components/sale-fiscal-card";
+import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
+import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
+
 
 
 export const Route = createFileRoute("/_authenticated/vendas_/$saleId")({
