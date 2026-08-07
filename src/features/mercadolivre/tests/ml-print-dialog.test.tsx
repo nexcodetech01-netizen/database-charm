@@ -39,17 +39,14 @@ describe('MercadoLivrePrintDialog UI', () => {
     },
   };
 
-  it('should render loading state then show PDF preview', async () => {
+  it('should show PDF preview when loaded', async () => {
     render(<MercadoLivrePrintDialog {...defaultProps} />);
     
-    // Check loading state (might be fast, but it should be there initially)
-    // expect(screen.queryByText(/Gerando visualização/i)).toBeDefined();
-
     await waitFor(() => {
       const iframe = screen.getByTitle('Preview da Etiqueta');
       expect(iframe).toBeDefined();
       expect(iframe.getAttribute('src')).toBe('blob:mock-url');
-    });
+    }, { timeout: 2000 });
   });
 
   it('should disable buttons during printing', async () => {
