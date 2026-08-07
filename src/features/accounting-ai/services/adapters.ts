@@ -226,6 +226,54 @@ export const auditAdapter: AuditPort = {
       stock: Number(p.stock ?? 0),
     }));
   },
+  async purchases(companyId, limit = 100) {
+    const { rows } = await purchasesService.list(companyId, {
+      search: "",
+      status: "",
+      supplierId: "",
+      sortBy: "purchase_date",
+      sortDir: "desc",
+      page: 1,
+      pageSize: limit,
+    });
+    
+    // Para auditar se tem financeiro/documento, precisamos buscar meta adicional se não estiver no list
+    // O list do purchaseService já traz supplier_name e items_count.
+    // Vamos verificar se tem faturas vinculadas (financial_transactions com reference_id = purchase_id)
+    const purchaseIds = rows.map(r => r.id);
+    const { data: transactions } = await supabase
+      .from("financial_transactions")
+      .select("reference_id")
+      .in("reference_id", purchaseIds);
+    
+    const transMap = new Set(transactions?.map(t => t.reference_id) || []);
+
+    return rows.map((r) => ({
+      id: r.id,
+      number: r.number == null ? null : String(r.number),
+      status: String(r.status ?? ""),
+      grandTotal: Number(r.grand_total ?? 0),
+      purchaseDate: r.purchase_date ?? null,
+      supplierId: r.supplier_id ?? null,
+      supplierName: r.supplier_name ?? null,
+      itemsCount: r.items_count ?? 0,
+      hasFinance: transMap.has(r.id),
+      hasDocument: !!r.notes || false, // Fallback: se tiver notas talvez tenha anexo ou XML. No NexOS XML fica no bucket.
+    }));
+  },
+  async suppliers(companyId, limit = 500) {
+    const { data, error } = await supabase
+      .from("product_suppliers")
+      .select("id, name, status")
+      .eq("company_id", companyId)
+      .limit(limit);
+    if (error) throw error;
+    return (data || []).map(s => ({
+      id: s.id,
+      name: s.name,
+      status: s.status
+    }));
+  },
 };
 
 /**
