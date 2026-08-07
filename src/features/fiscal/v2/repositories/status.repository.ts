@@ -1,16 +1,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { NfeEnvironment } from "../types";
 
 /**
- * Repository para persistência de status e configurações do provedor.
+ * Repository para persistência de status de documentos fiscais (leitura/escrita).
  */
 export class StatusRepository {
   constructor(private supabase: SupabaseClient) {}
 
+  async getProviderConfig(companyId: string): Promise<any | null> {
+    const { data, error } = await this.supabase
+      .from("fiscal_provider_config")
+      .select("provider_id, api_url, environment, last_health_status")
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
   async hasSecret(
     companyId: string,
     kind: string,
-    environment?: NfeEnvironment,
+    environment?: any,
     ownerId: string | null = null,
   ): Promise<boolean> {
     const { data, error } = await this.supabase.rpc("fiscal_has_secret", {
@@ -21,45 +30,5 @@ export class StatusRepository {
     } as never);
     if (error) return false;
     return Boolean(data);
-  }
-
-  async getProviderConfig(companyId: string): Promise<any | null> {
-    const { data, error } = await this.supabase
-      .from("fiscal_provider_config")
-      .select("*")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (error) throw error;
-    return data;
-  }
-
-  async getProviderEnvironments(companyId: string): Promise<any[]> {
-    const { data, error } = await this.supabase
-      .from("fiscal_provider_environments")
-      .select("*")
-      .eq("company_id", companyId);
-    if (error) throw error;
-    return data ?? [];
-  }
-
-  async updateProviderConfig(companyId: string, payload: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from("fiscal_provider_config")
-      .update(payload)
-      .eq("company_id", companyId)
-      .select("*")
-      .maybeSingle();
-    if (error) throw error;
-    return data;
-  }
-
-  async insertProviderConfig(payload: any): Promise<any> {
-    const { data, error } = await this.supabase
-      .from("fiscal_provider_config")
-      .insert(payload)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return data;
   }
 }
