@@ -123,8 +123,8 @@ export function TransactionDetailsDrawer({
   const summary = summarize(t, siblings ?? null);
   const history = (siblings ?? []).filter((s) => s.status === "paid");
   const overdueDays = daysOverdue(t);
-  const isSaleReturn = t.source === "sale_return";
-  const verb = isSaleReturn ? "Estornar" : type === "income" ? "Receber" : "Pagar";
+  const isSaleReturn = t.source === "sale_return" || t.category_name?.toLowerCase().includes("estorno") || t.category_name?.toLowerCase().includes("reembolso");
+  const verb = isSaleReturn ? "Reembolsar" : type === "income" ? "Receber" : "Pagar";
   const verbPast = isSaleReturn ? "estornada" : type === "income" ? "recebida" : "paga";
   void verbPast;
 
@@ -431,15 +431,27 @@ export function TransactionDetailsDrawer({
                 </Button>
               ) : null}
               {t.status === "paid" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={reverseMut.isPending}
-                  onClick={handleReverse}
-                >
-                  <ArrowLeftRight className="mr-1.5 h-4 w-4" />
-                  Estornar
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={reverseMut.isPending}
+                    onClick={handleReverse}
+                  >
+                    <ArrowLeftRight className="mr-1.5 h-4 w-4" />
+                    Estornar
+                  </Button>
+                  {isSaleReturn && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.print()}
+                    >
+                      <Printer className="mr-1.5 h-4 w-4" />
+                      Comprovante de Reembolso
+                    </Button>
+                  )}
+                </>
               ) : null}
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                 <Pencil className="mr-1.5 h-4 w-4" />
