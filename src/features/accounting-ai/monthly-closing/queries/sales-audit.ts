@@ -98,7 +98,7 @@ export function auditSalesClosing(
   if (unconciliatedSales.length > 0) score -= 25;
   if (unpaidSales.length > 0) score -= 20;
   if (negativeStockProducts.length > 0) score -= 20;
-  if (cancelledSales.length > 5) score -= 15;
+  if (cancelledSales.length > 0) score -= 10; // Redução mesmo para 1 cancelamento
   if (noCustomerSales.length > 10) score -= 10;
   score = Math.max(0, score);
 
