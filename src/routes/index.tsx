@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isPreviewHostname } from "@/hooks/version-check.utils";
 import { useEffect } from "react";
@@ -29,7 +30,12 @@ export const Route = createFileRoute("/")({
 function IndexComponent() {
   const navigate = useNavigate();
   
+  const queryClient = useQueryClient();
+  
   useEffect(() => {
+    // Invalida caches financeiros após o saneamento via migration
+    queryClient.invalidateQueries({ queryKey: ["finance"] });
+    
     if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
       const checkSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -41,7 +47,7 @@ function IndexComponent() {
       };
       void checkSession();
     }
-  }, [navigate]);
+  }, [navigate, queryClient]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
