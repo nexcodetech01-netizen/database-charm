@@ -1,13 +1,5 @@
 /**
  * Sprint 007.2 — Server functions do módulo Fiscal.
- *
- * Auto-contido: mapeia diretamente o schema real do Supabase
- * (`fiscal_documents` / `fiscal_events` / `fiscal_certificates` /
- * `fiscal_provider_config`), sem depender de repositórios que ainda
- * não refletem esse schema. Toda escrita é feita pelo cliente
- * autenticado (RLS + `has_permission`), exceto o upload do certificado
- * A1, que usa `supabaseAdmin` para gravar no bucket privado a que o
- * usuário não tem acesso direto.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -21,6 +13,7 @@ import {
   fetchFiscalDashboard,
   fetchFiscalDocument,
   fetchFiscalDocumentEvents,
+  mapDocument as mapDocFromQuery,
 } from "../queries/documents.query";
 import {
   fetchFiscalCertificates,
@@ -31,9 +24,13 @@ import {
   fetchProviderEnvironments,
 } from "../queries/status.query";
 import { fetchFiscalSettings } from "../queries/tax.query";
+import {
+  type FiscalArtifactKind,
+  normalizePendingKinds,
+} from "../lib/artifacts";
+import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 
 type SB = SupabaseClient<Database>;
-
 
 // -------------------------------------------------------------------- types
 
@@ -44,7 +41,6 @@ export type NfeStatus =
   | "sending"
   | "authorized"
   | "rejected"
-  /** Cancelamento solicitado — aguardando confirmação oficial da SEFAZ. */
   | "cancelling"
   | "cancelled"
   | "error"
@@ -67,7 +63,6 @@ import {
   type FiscalTaxRegime,
 } from "../lib/crt";
 
-
 import {
   blocksNewFiscalDocument,
   resolveActiveFiscalDocument,
@@ -89,8 +84,6 @@ function toDocLikes(rows: unknown): FiscalDocumentLike[] {
     createdAt: d.created_at ?? null,
   }));
 }
-
-
 
 export type FiscalDocumentDto = {
   id: string;
@@ -118,7 +111,6 @@ export type FiscalDocumentDto = {
   discardedAt: string | null;
   discardedBy: string | null;
   discardReason: string | null;
-  /** Artefatos que falharam ao ser baixados/gravados e aguardam reprocessamento. */
   artifactsPending: FiscalArtifactKind[];
   artifactsLastError: string | null;
   artifactsCheckedAt: string | null;
@@ -136,8 +128,6 @@ export type FiscalEventDto = {
 
 // ------------------------------------------------------------------ helpers
 
-
-
 async function ensurePermission(
   supabase: SB,
   userId: string,
@@ -150,6 +140,7 @@ async function ensurePermission(
     | "fiscal.export"
     | "fiscal.manage",
 ): Promise<void> {
+
   const { data, error } = await supabase.rpc("has_permission", {
     _user_id: userId,
     _company_id: companyId,
@@ -226,6 +217,9 @@ function mapDocument(row: FiscalDocumentRow): FiscalDocumentDto {
     updatedAt: row.updated_at,
   };
 }
+
+const mapDocument = (row: FiscalDocumentRow): FiscalDocumentDto => mapDocFromQuery(row as any);
+
 
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
 
