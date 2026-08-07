@@ -37,7 +37,7 @@ interface Params {
 
 export interface FiscalAutofillState {
   source: FiscalSource;
-  categorySuggestion: { ncm: string; cest: string; categoryName: string } | null;
+  categorySuggestion: { ncm: string; cest: string | null; categoryName: string } | null;
   historySuggestions: FiscalHistorySuggestion[];
   masterSuggestions: NcmMasterEntry[];
   historyLoading: boolean;
