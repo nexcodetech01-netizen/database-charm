@@ -553,10 +553,10 @@ function PublicCollectionPage() {
                               <Package className="h-8 w-8 text-muted-foreground" />
                             </div>
                           )}
-                          {availability !== "disponivel" && (
+                          {availability !== "available" && (
                             <AvailabilityBadge
                               kind={availability}
-                              size="xs"
+                              size="sm"
                               className="absolute left-1 top-1"
                             />
                           )}
@@ -643,7 +643,7 @@ function PublicCollectionPage() {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-                      {(data.show_stock || availability !== "disponivel") && (
+                      {(data.show_stock || availability !== "available") && (
                         <AvailabilityBadge
                           kind={availability}
                           size="sm"
