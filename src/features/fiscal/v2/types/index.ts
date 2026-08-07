@@ -1,6 +1,37 @@
-import { NfeStatus } from "../functions/fiscal.functions";
 import { FiscalArtifactKind } from "../lib/artifacts";
 import { NfeEnvironment } from "./environment";
+
+/**
+ * NF-e Status canonico.
+ */
+export type NfeStatus =
+  | "draft"
+  | "validating"
+  | "signing"
+  | "sending"
+  | "authorized"
+  | "rejected"
+  | "cancelling"
+  | "cancelled"
+  | "error"
+  | "discarded";
+
+/**
+ * Eventos fiscais suportados.
+ */
+export type NfeEventType =
+  | "draft"
+  | "validating"
+  | "signing"
+  | "sending"
+  | "authorized"
+  | "rejected"
+  | "cancelling"
+  | "cancelled"
+  | "error"
+  | "discarded"
+  | "artifacts_reprocessed"
+  | "provider_health_check";
 
 export type FiscalDocumentDto = {
   id: string;
@@ -28,7 +59,6 @@ export type FiscalDocumentDto = {
   discardedAt: string | null;
   discardedBy: string | null;
   discardReason: string | null;
-  /** Artefatos que falharam ao ser baixados/gravados e aguardam reprocessamento. */
   artifactsPending: FiscalArtifactKind[];
   artifactsLastError: string | null;
   artifactsCheckedAt: string | null;
@@ -36,11 +66,24 @@ export type FiscalDocumentDto = {
   updatedAt: string;
 };
 
+/** Alias para compatibilidade com repositorios legados */
+export type FiscalDocument = FiscalDocumentDto;
+
 export type FiscalEventDto = {
   id: string;
   documentId: string;
   eventType: string;
   payloadJson: string | null;
+  createdAt: string;
+};
+
+/** Alias para compatibilidade com repositorios legados */
+export type FiscalEvent = {
+  id: string;
+  companyId: string;
+  documentId: string;
+  eventType: NfeEventType;
+  payload: Record<string, unknown> | null;
   createdAt: string;
 };
 
@@ -59,13 +102,10 @@ export type ReprocessArtifactsResult = {
   message: string;
 };
 
-/** Configuração de UM ambiente (Produção ou Homologação), 100% independente. */
 export type FiscalProviderEnvironmentConfig = {
   environment: NfeEnvironment;
   apiUrl: string | null;
-  /** Token da EMPRESA (emissão de NF-e) cadastrado neste ambiente. */
   hasApiKey: boolean;
-  /** Token PRINCIPAL/Admin (endpoints `/v2/empresas`) cadastrado neste ambiente. */
   hasAdminKey: boolean;
   provisionedAt: string | null;
   provisionedEnvironment: NfeEnvironment | null;
@@ -87,12 +127,10 @@ export type FiscalProviderConfig = {
   lastHealthStatus: "ok" | "warning" | "error" | null;
   lastHealthMessage: string | null;
   updatedAt: string | null;
-  /** Empresa já cadastrada no provedor (POST /v2/empresas não roda na emissão). */
   provisionedAt: string | null;
   provisionedEnvironment: NfeEnvironment | null;
   provisionedCertificateId: string | null;
   provisionedNote: string | null;
-  /** Credenciais/URLs independentes por ambiente. */
   environments: Record<NfeEnvironment, FiscalProviderEnvironmentConfig>;
 };
 
@@ -129,18 +167,12 @@ export type FiscalSettings = {
   phoneFiscal: string | null;
   cscId: string | null;
   hasCscToken: boolean;
-  /** Quando true, só vendas pagas ficam elegíveis para emissão de NF-e. */
   issueOnlyAfterPayment: boolean;
-  /** Modo de homologação: badges TESTE e filtros automáticos ligados. */
   homologationMode: boolean;
-  /** Baixar estoque nas vendas emitidas em homologação (padrão: sim). */
   stockOnHomologation: boolean;
   updatedAt: string | null;
 };
 
-/**
- * Status fiscal da venda (independente do status financeiro).
- */
 export type FiscalSaleStatus =
   | "ready"
   | "incomplete"
@@ -165,11 +197,8 @@ export type FiscalSaleOption = {
   hasActiveNfe: boolean;
   productName: string | null;
   productSku: string | null;
-  /** Status fiscal exibido no card do assistente. */
   fiscalStatus: FiscalSaleStatus;
-  /** Pendências que impedem a emissão (quando `incomplete`). */
   fiscalIssues: string[];
-  /** Pode ser selecionada para emissão (inclui reemissão após erro). */
   canIssue: boolean;
 };
 
@@ -237,8 +266,7 @@ export type ProviderHealthResult = {
   status: "ok" | "warning" | "error";
   message: string;
   checkedAt: string;
-  /** Veredito item a item: qual exatamente falhou. */
-  items: any[]; // Avoid circular dependency with provider-health if possible
+  items: any[];
 };
 
 export type ProviderHealthByEnvironment = {
@@ -263,3 +291,82 @@ export type CompanyFiscalProfile = {
   state: string | null;
   zipcode: string | null;
 };
+
+/** Payload para emissão no provedor */
+export type NfePayload = {
+  saleId: string;
+  reference: string;
+  model: "55" | "65";
+  environment: NfeEnvironment;
+  company: CompanyFiscalProfile & {
+    crt: number;
+    taxRegime: TaxRegime;
+  };
+  customer: {
+    name: string;
+    document: string;
+    email: string | null;
+    address: string;
+    addressNumber: string;
+    complement: string | null;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  items: Array<{
+    id: string;
+    productId: string | null;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+    ncm: string | null;
+    taxes: any;
+  }>;
+  totals: {
+    items: number;
+    discount: number;
+    shipping: number;
+    other: number;
+    total: number;
+  };
+  settings: {
+    series: number;
+    nextNumber: number;
+    nature: string;
+  };
+};
+
+export type ProviderIssueResult = {
+  ok: boolean;
+  status: NfeStatus;
+  providerRef: string;
+  accessKey?: string;
+  protocol?: string;
+  number?: number;
+  series?: number;
+  xmlUrl?: string;
+  danfeUrl?: string;
+  rejectionCode?: string;
+  rejectionReason?: string;
+  raw?: any;
+};
+
+export type ProviderStatusResult = ProviderIssueResult & {
+  cancellationProtocol?: string;
+  cancellationXmlUrl?: string;
+  cancelledAt?: string;
+};
+
+export type ProviderCancelResult = {
+  ok: boolean;
+  status: NfeStatus;
+  protocol?: string;
+  cancelledAt?: string;
+  cancellationXmlUrl?: string;
+  rejectionCode?: string;
+  rejectionReason?: string;
+  raw?: any;
+};
+
