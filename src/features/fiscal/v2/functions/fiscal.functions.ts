@@ -1037,11 +1037,31 @@ export const uploadFiscalCertificate = createServerFn({ method: "POST" })
     if (upErr) throw upErr;
 
     const repo = new CertificateRepository(supabase);
-    await repo.update(companyId, "any", { is_active: false }); // Needs attention if it was updating ALL certificates for company
+    await repo.update(companyId, "all", { is_active: false });
 
-    // Need to fix CertificateRepository update to handle company-wide or specific
-    // For now I'll just use raw supabase here or fix the repo.
-    // The requirement is to use Repositories. I'll add a batch update to repo.
+    const cert = await repo.insert({
+      company_id: companyId,
+      alias: data.alias,
+      subject_name: data.subjectName,
+      subject_cnpj: data.subjectCnpj,
+      issuer_name: data.issuerName ?? null,
+      valid_from: data.validFrom,
+      valid_to: data.validTo,
+      serial_number: data.serialNumber ?? null,
+      thumbprint: data.thumbprint ?? null,
+      storage_path: objectPath,
+      content_type: data.contentType,
+      is_active: true,
+      created_by: context.userId,
+    });
+
+    // Troca do A1 invalida o provisionamento: a próxima emissão volta a
+    // cadastrar a empresa/certificado no provedor uma única vez.
+    const { clearProviderProvisioning } = await import("./nfe-engine.server");
+    await clearProviderProvisioning(supabase, companyId);
+
+    return cert;
+  });
 
 
     // Troca do A1 invalida o provisionamento: a próxima emissão volta a
@@ -1061,12 +1081,8 @@ export const deactivateFiscalCertificate = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
-    const { error } = await supabase
-      .from("fiscal_certificates")
-      .update({ is_active: false })
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId);
-    if (error) throw error;
+    const repo = new CertificateRepository(supabase);
+    await repo.update(companyId, data.certificateId, { is_active: false });
     return { ok: true };
   });
 
@@ -1445,12 +1461,8 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
     // Locate storage path for cleanup
-    const { data: cert } = await supabase
-      .from("fiscal_certificates")
-      .select("id, storage_path, is_active")
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId)
-      .maybeSingle();
+    const repo = new CertificateRepository(supabase);
+    const cert = await repo.findById(companyId, data.certificateId);
     if (!cert) throw new Error("Certificado não encontrado.");
     if ((cert as { is_active: boolean }).is_active) {
       throw new Error("Desative o certificado antes de removê-lo.");

@@ -40,13 +40,21 @@ export class CertificateRepository {
     return data ? mapCertificate(data) : null;
   }
 
-  async update(companyId: string, id: string, payload: any): Promise<void> {
-    const { error } = await this.supabase
-      .from("fiscal_certificates")
-      .update(payload)
-      .eq("company_id", companyId)
-      .eq("id", id);
+  async update(companyId: string, id: string | "all", payload: any): Promise<void> {
+    let q = this.supabase.from("fiscal_certificates").update(payload).eq("company_id", companyId);
+    if (id !== "all") q = q.eq("id", id);
+    const { error } = await q;
     if (error) throw error;
+  }
+
+  async insert(payload: any): Promise<FiscalCertificateSummary> {
+    const { data, error } = await this.supabase
+      .from("fiscal_certificates")
+      .insert(payload)
+      .select(CERT_COLS)
+      .single();
+    if (error) throw error;
+    return mapCertificate(data);
   }
 
   async delete(companyId: string, id: string): Promise<void> {
