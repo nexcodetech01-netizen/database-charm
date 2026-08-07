@@ -20,8 +20,10 @@ describe("PrintManager Enterprise", () => {
     expect(result.success).toBe(true);
     expect(result.jobId).toBeDefined();
     
+    // Aguarda um ciclo pequeno para garantir que o job entrou na fila
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     const queue = printManager.getQueue();
-    // Como o processamento é imediato e assíncrono, o job pode já ter saído da fila ou estar nela
     const history = printManager.getHistory();
     expect(history.length + queue.length).toBeGreaterThan(0);
   });
