@@ -2,7 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Video, X, Upload, Smartphone, Globe } from "lucide-react";
+import { Video, X, Upload, Smartphone, Globe, Loader2 } from "lucide-react";
 import { ProductImageUploader } from "../../product-image-uploader";
 import { ProductMainImagePicker } from "../../product-main-image-picker";
 import { SALES_CHANNEL_OPTIONS } from "../../../types";
@@ -14,6 +14,7 @@ interface MultimediaFormProps {
   setForm: (val: any) => void;
   mainImageFile: File | null;
   setMainImageFile: (file: File | null) => void;
+  uploadingMainImage?: boolean;
   currentMainImageUrl: string | null;
   uploadingVideo: boolean;
   onVideoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -26,6 +27,7 @@ export function MultimediaForm({
   setForm,
   mainImageFile,
   setMainImageFile,
+  uploadingMainImage,
   currentMainImageUrl,
   uploadingVideo,
   onVideoUpload,
@@ -36,7 +38,12 @@ export function MultimediaForm({
         <div className="space-y-4">
           <Label className="text-base font-semibold">Imagem Principal</Label>
           <div className="aspect-square max-w-[300px] relative rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/30 flex flex-col items-center justify-center overflow-hidden">
-            {mainImageFile || currentMainImageUrl ? (
+            {uploadingMainImage ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                <p className="text-xs font-medium text-muted-foreground">Enviando imagem...</p>
+              </div>
+            ) : mainImageFile || currentMainImageUrl ? (
               <>
                 <img
                   src={mainImageFile ? URL.createObjectURL(mainImageFile) : currentMainImageUrl!}
