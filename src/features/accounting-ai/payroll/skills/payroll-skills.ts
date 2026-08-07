@@ -1,14 +1,12 @@
 /**
  * Bella Contadora — Skills de Pró-Labore (Sprint 8.1).
- *
- * Implementações somente-leitura integradas ao ciclo de vida da Bella.
  */
 import { formatCurrency } from "@/lib/format";
-import type { AccountingSkill, AccountingSkillId, AccountingSkillResult } from "../skills";
-import { buildAccountingSummary } from "../providers/summary";
-import { buildFinancialAdvice } from "../advisor";
+import type { AccountingSkill, AccountingSkillResult } from "../../skills";
+import { buildAccountingSummary } from "../../providers/summary";
+import { buildFinancialAdvice } from "../../advisor";
 import { payrollQueries } from "../queries/payroll-queries";
-import type { ProviderDeps } from "../providers";
+import type { ProviderDeps } from "../../providers";
 
 const empty = (what: string): AccountingSkillResult => ({
   ok: false,
@@ -44,7 +42,7 @@ export const simularRetiradaSkill: AccountingSkill = {
   description: "Simula o impacto de uma retirada específica no caixa e reserva.",
   readOnly: true,
   async run(companyId, deps) {
-    const amount = deps?.simulation?.targetRevenue ?? 0; // Reutilizando canal de simulação
+    const amount = deps?.simulation?.targetRevenue ?? 0;
     const summary = deps?.summary ?? (await buildAccountingSummary(companyId, deps));
     const advice = buildFinancialAdvice({ summary, requestedAmount: amount });
     

@@ -1,7 +1,5 @@
 /**
  * Bella Contadora — Consultas de Pró-Labore (Sprint 8.1).
- *
- * Leituras puras sobre os dados já apurados pelo `AccountingSummary` e `FinancialAdvice`.
  */
 import { formatCurrency } from "@/lib/format";
 import type { AccountingSummary } from "../types";
