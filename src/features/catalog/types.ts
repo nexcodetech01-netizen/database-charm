@@ -43,6 +43,8 @@ export interface PublicCollectionProduct {
   sku: string | null;
   barcode: string | null;
   brand: string | null;
+  category_name: string | null;
+  tags: string[];
   description: string | null;
   price: number;
   stock: number;

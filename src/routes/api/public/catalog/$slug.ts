@@ -136,7 +136,7 @@ export const Route = createFileRoute("/api/public/catalog/$slug")({
             supabaseAdmin
               .from("product_collection_items")
               .select(
-                "position, product:products(id, name, sku, barcode, brand, description, price, stock, unit, status, cover_image_path)",
+                "position, product:products(id, name, sku, barcode, brand, description, price, stock, unit, status, cover_image_path, tags, category:product_categories(name))",
               )
               .eq("collection_id", col.id)
               .order("position"),
@@ -193,12 +193,14 @@ export const Route = createFileRoute("/api/public/catalog/$slug")({
           show_installments: col.show_installments ?? true,
           show_stock: col.show_stock ?? true,
           show_brand: col.show_brand ?? true,
-          products: products.map((p) => ({
+          products: products.map((p: any) => ({
             id: p.id,
             name: p.name,
             sku: p.sku ?? null,
             barcode: p.barcode ?? null,
             brand: p.brand,
+            category_name: p.category?.name ?? null,
+            tags: p.tags ?? [],
             description: p.description,
             price: Number(p.price),
             stock: Number(p.stock),

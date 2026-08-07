@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import {
   Eye,
   AlertCircle,
   Loader2,
+  Grid,
+  List,
+  Filter,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, getInstallmentPlan, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
@@ -37,6 +41,10 @@ import {
   AvailabilityBadge,
   resolveAvailability,
 } from "@/features/catalog/components/availability-badge";
+import { QuickViewDialog } from "@/features/catalog/components/quick-view-dialog";
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 
 const PAGE_SIZE = 24;
 
@@ -51,8 +59,12 @@ const searchSchema = z.object({
   preview: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
   marca: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
   disp: fallback(z.string(), "todos").default("todos"),
   ord: fallback(z.string(), "relevancia").default("relevancia"),
+  min: fallback(z.number(), 0).default(0),
+  max: fallback(z.number(), 0).default(0),
+  view: fallback(z.enum(["grid", "list"]), "grid").default("grid"),
   page: fallback(z.number().int(), 1).default(1),
 });
 
@@ -178,6 +190,8 @@ function PublicCollectionPage() {
   });
 
   const [q, setQ] = useState(search.q);
+  const [quickViewId, setQuickViewId] = useState<string | null>(null);
+  const [showPriceFilter, setShowPriceFilter] = useState(search.min > 0 || search.max > 0);
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -185,6 +199,24 @@ function PublicCollectionPage() {
       if (p.brand) set.add(p.brand);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of data?.products ?? []) {
+      if (p.category_name) set.add(p.category_name);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const priceRange = useMemo(() => {
+    const list = data?.products ?? [];
+    if (list.length === 0) return { min: 0, max: 0 };
+    const prices = list.map((p) => p.price);
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
   }, [data]);
 
   const filtered = useMemo(() => {
@@ -199,18 +231,23 @@ function PublicCollectionPage() {
           p.sku ?? "",
           ref,
           p.barcode ?? "",
+          p.category_name ?? "",
+          ...(p.tags ?? []),
         ]
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       if (search.marca && p.brand !== search.marca) return false;
+      if (search.cat !== "all" && p.category_name !== search.cat) return false;
       if (search.disp === "disponivel" && p.stock <= 0) return false;
       if (search.disp === "esgotado" && p.stock > 0) return false;
+      if (search.min > 0 && p.price < search.min) return false;
+      if (search.max > 0 && p.price > search.max) return false;
       return true;
     });
     return sortProducts(base, search.ord);
-  }, [data, search.q, search.marca, search.disp, search.ord]);
+  }, [data, search.q, search.marca, search.cat, search.disp, search.ord, search.min, search.max]);
 
   const currentPage = Math.max(1, search.page);
   const visibleCount = Math.min(filtered.length, currentPage * PAGE_SIZE);
@@ -240,7 +277,7 @@ function PublicCollectionPage() {
 
   function updateSearch(patch: Record<string, unknown>, resetPage = true) {
     navigate({
-      search: (prev: Record<string, unknown>) => ({
+      search: (prev: any) => ({
         ...prev,
         ...patch,
         ...(resetPage ? { page: 1 } : {}),
@@ -319,79 +356,156 @@ function PublicCollectionPage() {
       )}
 
       {data.products.length > 0 && (
-        <div className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="mx-auto max-w-5xl px-4 py-3">
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="relative lg:col-span-2">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setQ(v);
-                    updateSearch({ q: v });
-                  }}
-                  placeholder="Buscar produto..."
-                  className="pl-8"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative lg:col-span-2">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={q}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setQ(v);
+                      updateSearch({ q: v });
+                    }}
+                    placeholder="Buscar por nome ou código..."
+                    className="pl-8 h-10 rounded-xl"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={search.marca || "all"}
+                    onValueChange={(v) =>
+                      updateSearch({ marca: v === "all" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue placeholder="Marca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as marcas</SelectItem>
+                      {brands.map((b) => (
+                        <SelectItem key={b} value={b}>
+                          {b}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={search.disp}
+                    onValueChange={(v) => updateSearch({ disp: v })}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="disponivel">Disponíveis</SelectItem>
+                      <SelectItem value="esgotado">Esgotados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                   <Button
+                    variant={showPriceFilter ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-10 rounded-xl px-3"
+                    onClick={() => setShowPriceFilter(!showPriceFilter)}
+                  >
+                    <Filter className="h-4 w-4 mr-1.5" /> Preço
+                  </Button>
+                   <div className="flex bg-muted p-1 rounded-xl flex-1">
+                    <Button
+                      variant={search.view === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="flex-1 h-8 rounded-lg shadow-none"
+                      onClick={() => updateSearch({ view: "grid" })}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={search.view === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="flex-1 h-8 rounded-lg shadow-none"
+                      onClick={() => updateSearch({ view: "list" })}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <Select
-                value={search.marca || "all"}
-                onValueChange={(v) =>
-                  updateSearch({ marca: v === "all" ? "" : v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as marcas</SelectItem>
-                  {brands.map((b) => (
-                    <SelectItem key={b} value={b}>
-                      {b}
-                    </SelectItem>
+
+              {showPriceFilter && priceRange.max > priceRange.min && (
+                <div className="bg-muted/50 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex justify-between items-center text-sm font-medium">
+                    <span>Faixa de preço</span>
+                    <span className="text-primary font-bold">
+                      {formatCurrency(search.min || priceRange.min)} - {formatCurrency(search.max || priceRange.max)}
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[search.min || priceRange.min, search.max || priceRange.max]}
+                    min={priceRange.min}
+                    max={priceRange.max}
+                    step={1}
+                    onValueCommit={([min, max]) => updateSearch({ min, max })}
+                    className="py-2"
+                  />
+                </div>
+              )}
+
+              {categories.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  <Button
+                    variant={search.cat === "all" ? "secondary" : "outline"}
+                    size="sm"
+                    className="rounded-full h-8 whitespace-nowrap"
+                    onClick={() => updateSearch({ cat: "all" })}
+                  >
+                    Todas
+                  </Button>
+                  {categories.map((c) => (
+                    <Button
+                      key={c}
+                      variant={search.cat === c ? "secondary" : "outline"}
+                      size="sm"
+                      className="rounded-full h-8 whitespace-nowrap"
+                      onClick={() => updateSearch({ cat: c })}
+                    >
+                      {c}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={search.disp}
-                onValueChange={(v) => updateSearch({ disp: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="disponivel">Disponíveis</SelectItem>
-                  <SelectItem value="esgotado">Esgotados</SelectItem>
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
-                {filtered.length} produto{filtered.length === 1 ? "" : "s"}
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+              <div className="text-xs text-muted-foreground font-medium">
+                {filtered.length} produto{filtered.length === 1 ? "" : "s"} encontrados
                 {isFetching && (
-                  <span className="ml-2 inline-flex items-center gap-1">
+                  <span className="ml-2 inline-flex items-center gap-1 text-primary">
                     <Loader2 className="h-3 w-3 animate-spin" /> atualizando…
                   </span>
                 )}
               </div>
-              <Select
-                value={search.ord}
-                onValueChange={(v) => updateSearch({ ord: v })}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-[180px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      Ordenar: {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-3">
+                <Select
+                  value={search.ord}
+                  onValueChange={(v) => updateSearch({ ord: v })}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -413,8 +527,11 @@ function PublicCollectionPage() {
               updateSearch({
                 q: "",
                 marca: "",
+                cat: "all",
                 disp: "todos",
                 ord: "relevancia",
+                min: 0,
+                max: 0,
               });
             }}
             onClearQ={() => {
@@ -422,77 +539,198 @@ function PublicCollectionPage() {
               updateSearch({ q: "" });
             }}
             onClearMarca={() => updateSearch({ marca: "" })}
+            onClearCat={() => updateSearch({ cat: "all" })}
             onClearDisp={() => updateSearch({ disp: "todos" })}
             onClearOrd={() => updateSearch({ ord: "relevancia" })}
+            onClearPrice={() => updateSearch({ min: 0, max: 0 })}
           />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={cn(
+                "grid gap-6",
+                search.view === "grid"
+                  ? "grid-cols-2 lg:grid-cols-4"
+                  : "grid-cols-1"
+              )}
+            >
               {visible.map((p) => {
                 const outOfStock = p.stock <= 0;
                 const plan = getInstallmentPlan(p.price);
                 const availability = resolveAvailability(p.stock, {
-                  presale: isScheduled,
+                  presale: isPreview,
                 });
+
+                if (search.view === "list") {
+                  return (
+                    <Card key={p.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                      <div className="flex flex-row p-0 h-40">
+                        <div
+                          className="relative aspect-square h-full bg-muted cursor-pointer shrink-0"
+                          onClick={() => setQuickViewId(p.id)}
+                        >
+                          {p.cover_url ? (
+                            <img
+                              src={p.cover_url}
+                              alt={p.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          {availability !== "available" && (
+                            <AvailabilityBadge
+                              kind={availability}
+                              size="sm"
+                              className="absolute left-1 top-1"
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-col flex-1 p-4 justify-between min-w-0">
+                          <div>
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="space-y-0.5 min-w-0">
+                                {data.show_brand && p.brand && (
+                                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {p.brand}
+                                  </div>
+                                )}
+                                <h3
+                                  className="line-clamp-1 text-sm font-bold cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => setQuickViewId(p.id)}
+                                >
+                                  {p.name}
+                                </h3>
+                              </div>
+                              {data.show_price && (
+                                <div className="text-right shrink-0">
+                                  <div className="text-base font-bold text-primary">
+                                    {formatCurrency(p.price)}
+                                  </div>
+                                  {data.show_installments && plan && (
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {plan.label}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                              {p.description || "Ver detalhes..."}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs h-8"
+                              onClick={() => setQuickViewId(p.id)}
+                            >
+                              Visualizar
+                            </Button>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="flex-1 text-xs h-8"
+                              disabled={outOfStock}
+                            >
+                              <Link
+                                to="/catalogo/colecao/$slug/produto/$productId"
+                                params={{ slug: data.slug, productId: p.id }}
+                              search={(prev: any) => prev}
+                              >
+                                {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                }
+
                 return (
-                  <Card key={p.id} className="overflow-hidden">
-                    <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                  <Card key={p.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                    <div
+                      className="relative aspect-square w-full overflow-hidden bg-muted cursor-pointer"
+                      onClick={() => setQuickViewId(p.id)}
+                    >
                       {p.cover_url ? (
                         <img
                           src={p.cover_url}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center">
                           <Package className="h-10 w-10 text-muted-foreground" />
                         </div>
                       )}
-                      {(data.show_stock || availability === "presale") && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                      {(data.show_stock || availability !== "available") && (
                         <AvailabilityBadge
                           kind={availability}
                           size="sm"
                           className="absolute left-2 top-2"
                         />
                       )}
-                    </div>
-                    <CardContent className="space-y-1.5 p-3">
-                      {data.show_brand && p.brand && (
-                        <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {p.brand}
-                        </div>
-                      )}
-                      <div className="line-clamp-2 text-sm font-semibold">
-                        {p.name}
-                      </div>
-                      {data.show_price && (
-                        <div className="text-lg font-bold">
-                          {formatCurrency(p.price)}
-                        </div>
-                      )}
-                      {data.show_installments && data.show_price && plan && (
-                        <Badge
-                          variant="secondary"
-                          className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                      <div className="absolute bottom-2 right-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                        <Button
+                          size="sm"
+                          className="rounded-full shadow-lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickViewId(p.id);
+                          }}
                         >
-                          {plan.label}
-                        </Badge>
-                      )}
-                      <div className="pt-2">
+                          Quick View
+                        </Button>
+                      </div>
+                    </div>
+                    <CardContent className="space-y-2 p-3">
+                      <div className="space-y-0.5">
+                        {data.show_brand && p.brand && (
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {p.brand}
+                          </div>
+                        )}
+                        <div
+                          className="line-clamp-2 text-sm font-bold leading-tight cursor-pointer hover:text-primary transition-colors min-h-[2.5rem]"
+                          onClick={() => setQuickViewId(p.id)}
+                        >
+                          {p.name}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {data.show_price && (
+                          <div className="text-base font-bold text-primary">
+                            {formatCurrency(p.price)}
+                          </div>
+                        )}
+                        {data.show_installments && data.show_price && plan && (
+                          <div className="text-[10px] text-muted-foreground font-medium">
+                            {plan.label}
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-1">
                         <Button
                           asChild
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
-                          className="w-full"
+                          className="w-full h-8 rounded-lg text-xs font-semibold"
                           disabled={outOfStock}
                         >
                           <Link
                             to="/catalogo/colecao/$slug/produto/$productId"
                             params={{ slug: data.slug, productId: p.id }}
-                            search={forwardSearch}
+                            search={(prev: any) => prev}
                           >
-                            Ver produto
+                            Ver Detalhes
                           </Link>
                         </Button>
                       </div>
@@ -500,13 +738,14 @@ function PublicCollectionPage() {
                   </Card>
                 );
               })}
-
             </div>
 
             {hasMore && (
-              <div className="mt-6 flex justify-center">
+              <div className="mt-12 flex justify-center">
                 <Button
                   variant="outline"
+                  size="lg"
+                  className="rounded-full px-8 shadow-sm"
                   onClick={() =>
                     updateSearch({ page: currentPage + 1 }, false)
                   }
@@ -519,9 +758,20 @@ function PublicCollectionPage() {
         )}
       </main>
 
-      <footer className="border-t py-6 text-center text-xs text-muted-foreground space-y-1.5">
-        <p className="px-4">{PAYMENT_CONDITIONS_LEGEND}</p>
-        <p>Catálogo gerado por NexOS</p>
+      <QuickViewDialog
+        slug={slug}
+        productId={quickViewId}
+        preview={isPreview}
+        onOpenChange={(open) => !open && setQuickViewId(null)}
+      />
+
+      <footer className="border-t bg-card/50 py-10 text-center text-xs text-muted-foreground space-y-3">
+        <p className="px-6 max-w-xl mx-auto leading-relaxed">{PAYMENT_CONDITIONS_LEGEND}</p>
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="h-px w-8 bg-border" />
+          <p className="font-medium tracking-wide uppercase text-[10px]">Catálogo Premium · NexOS</p>
+          <div className="h-px w-8 bg-border" />
+        </div>
       </footer>
     </div>
   );
@@ -531,14 +781,19 @@ interface EmptyResultsProps {
   search: {
     q: string;
     marca: string;
+    cat: string;
     disp: string;
     ord: string;
+    min: number;
+    max: number;
   };
   onReset: () => void;
   onClearQ: () => void;
   onClearMarca: () => void;
+  onClearCat: () => void;
   onClearDisp: () => void;
   onClearOrd: () => void;
+  onClearPrice: () => void;
 }
 
 function EmptyResults({
@@ -546,13 +801,19 @@ function EmptyResults({
   onReset,
   onClearQ,
   onClearMarca,
+  onClearCat,
   onClearDisp,
   onClearOrd,
+  onClearPrice,
 }: EmptyResultsProps) {
   const chips: { label: string; onClear: () => void }[] = [];
   if (search.q) chips.push({ label: `Busca: "${search.q}"`, onClear: onClearQ });
+  if (search.cat && search.cat !== "all")
+    chips.push({ label: `Categoria: ${search.cat}`, onClear: onClearCat });
   if (search.marca)
     chips.push({ label: `Marca: ${search.marca}`, onClear: onClearMarca });
+  if (search.min > 0 || search.max > 0)
+    chips.push({ label: `Preço: ${formatCurrency(search.min)} - ${formatCurrency(search.max)}`, onClear: onClearPrice });
   if (search.disp && search.disp !== "todos") {
     chips.push({
       label:
