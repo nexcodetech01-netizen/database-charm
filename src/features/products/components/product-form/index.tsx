@@ -151,7 +151,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [skuTaken, setSkuTaken] = useState(false);
 
   // Fiscal Suggestion Logic
-  const fiscal = useFiscalAutofill(companyId, form.name);
+  const fiscal = useFiscalAutofill({
+    companyId,
+    name: form.name,
+    categoryId: form.category_id,
+    categories,
+    ncm: form.ncm,
+    cest: form.cest,
+    onApply: (v) => setForm((s: any) => ({ ...s, ...v })),
+  });
   const [eanLoading, setEanLoading] = useState(false);
 
   // Draft Logic
@@ -258,7 +266,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       }
 
       toast.success(isEdit ? "Atualizado" : "Criado");
-      if (!isEdit) setCreatedProduct({ id: savedId, name: payload.name });
+      if (!isEdit && saved?.id) setCreatedProduct({ id: saved.id, name: payload.name });
       else navigate({ to: "/produtos" });
     } catch (err) { toast.error("Erro ao salvar"); }
   };
