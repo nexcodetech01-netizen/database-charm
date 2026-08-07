@@ -1,4 +1,4 @@
-import { FiscalArtifactKind } from "../lib/artifacts";
+import { type FiscalArtifactKind } from "../lib/artifacts";
 import { NfeEnvironment, fiscalEnvironmentSchema } from "./environment";
 
 export { NfeEnvironment, fiscalEnvironmentSchema, FiscalArtifactKind };
