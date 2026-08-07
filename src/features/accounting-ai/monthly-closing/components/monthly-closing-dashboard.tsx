@@ -45,22 +45,26 @@ export function MonthlyClosingDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Monthly Audit Executive</h2>
-          <p className="text-muted-foreground">Cockpit inteligente de auditoria e fechamento mensal.</p>
+          <h2 className="text-3xl font-bold tracking-tight">Bella Certification</h2>
+          <p className="text-muted-foreground">Relatório oficial de prontidão para fechamento gerencial.</p>
         </div>
         <div className="text-right">
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{format(new Date(), "MMMM yyyy", { locale: ptBR })}</p>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 justify-end">
             <span className={cn(
-              "px-2.5 py-0.5 rounded-full text-xs font-semibold",
-              audit.healthScore.level === "Excelente" ? "bg-green-100 text-green-700" :
-              audit.healthScore.level === "Boa" ? "bg-blue-100 text-blue-700" :
-              audit.healthScore.level === "Atenção" ? "bg-yellow-100 text-yellow-700" :
-              "bg-red-100 text-red-700"
+              "px-3 py-1 rounded-full text-xs font-bold uppercase border-2",
+              audit.summary.certificationStatus === "Empresa apta" ? "bg-green-50 text-green-700 border-green-200" :
+              audit.summary.certificationStatus === "Empresa apta com ressalvas" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+              "bg-red-50 text-red-700 border-red-200"
             )}>
-              {audit.healthScore.level}
+              {audit.summary.certificationStatus || "Auditoria em progresso"}
             </span>
           </div>
+          {audit.summary.certifiedAt && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Certificado em: {format(new Date(audit.summary.certifiedAt), "dd/MM/yyyy HH:mm")}
+            </p>
+          )}
         </div>
       </div>
 

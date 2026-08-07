@@ -24,7 +24,11 @@ export const MonthlyClosingAuditSchema = z.object({
     problems: z.array(z.string()),
     biggestRisk: z.string(),
     biggestOpportunity: z.string(),
-    finalRecommendation: z.string()
+    finalRecommendation: z.string(),
+    // Sprint 8.3I - Certification metadata
+    certificationStatus: z.enum(["Empresa apta", "Empresa apta com ressalvas", "Empresa não apta"]).optional(),
+    certifiedAt: z.string().optional(),
+    certifiedBy: z.string().optional()
   }),
   timeline: z.array(z.object({
     date: z.string(),

@@ -48,6 +48,17 @@ export function consolidateMonthlyAudit(audits: {
   const biggestRisk = weakest.summary.biggestRisk;
   const biggestOpportunity = strongest.summary.biggestOpportunity;
 
+  // Lógica de Certificação (Sprint 8.3I)
+  const criticalIssues = checklist.filter(c => c.status === 'error').length;
+  const warningIssues = checklist.filter(c => c.status === 'warning').length;
+  
+  let certificationStatus: "Empresa apta" | "Empresa apta com ressalvas" | "Empresa não apta" = "Empresa apta";
+  if (criticalIssues > 0 || avgScore < 40) {
+    certificationStatus = "Empresa não apta";
+  } else if (warningIssues > 0 || avgScore < 70) {
+    certificationStatus = "Empresa apta com ressalvas";
+  }
+
   return {
     month,
     healthScore: {
@@ -62,7 +73,13 @@ export function consolidateMonthlyAudit(audits: {
       problems,
       biggestRisk,
       biggestOpportunity,
-      finalRecommendation: `Prioridade imediata: ${weakest.summary.finalRecommendation} Em seguida, capitalize sobre ${strongest.summary.biggestOpportunity}`
+      finalRecommendation: certificationStatus === "Empresa não apta" 
+        ? `Empresa não está pronta. Resolver primeiro as ${criticalIssues} pendências críticas.`
+        : certificationStatus === "Empresa apta com ressalvas"
+        ? `Empresa pronta para iniciar o fechamento mensal com ressalvas. Atenção aos pontos médios.`
+        : `Empresa pronta para iniciar o fechamento mensal. Todos os domínios em conformidade.`,
+      certificationStatus,
+      certifiedAt: new Date().toISOString()
     },
     timeline
   };
