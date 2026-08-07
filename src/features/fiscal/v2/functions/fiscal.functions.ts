@@ -16,13 +16,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
 import { toCustomerReference } from "@/lib/customer-reference";
-import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 import {
-  normalizePendingKinds,
-  type FiscalArtifactKind,
-} from "../lib/artifacts";
+  fetchFiscalDocuments,
+  fetchFiscalDashboard,
+  fetchFiscalDocument,
+  fetchFiscalDocumentEvents,
+} from "../queries/documents.query";
+import {
+  fetchFiscalCertificates,
+  fetchActiveCertificate,
+} from "../queries/certificate.query";
+import {
+  fetchProviderConfig,
+  fetchProviderEnvironments,
+} from "../queries/status.query";
+import { fetchFiscalSettings } from "../queries/tax.query";
 
 type SB = SupabaseClient<Database>;
+
 
 // -------------------------------------------------------------------- types
 
@@ -239,31 +250,13 @@ const listSchema = z
 export const listFiscalDocuments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof listSchema>) => listSchema.parse(input ?? {}))
-  .handler(async ({ data, context }): Promise<FiscalDocumentDto[]> => {
+  .handler(async ({ data, context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = docFrom(supabase)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .limit(data.limit ?? 100);
-
-    if (data.status && data.status !== "all") q = q.eq("status", data.status);
-    if (data.saleId) q = q.eq("sale_id", data.saleId);
-    if (data.from) q = q.gte("created_at", data.from);
-    if (data.to) q = q.lte("created_at", data.to);
-    if (data.search) {
-      const term = data.search.replace(/[%,]/g, "");
-      q = q.or(`access_key.ilike.%${term}%,protocol.ilike.%${term}%`);
-    }
-
-    const { data: rows, error } = await q;
-    if (error) throw error;
-    return ((rows ?? []) as FiscalDocumentRow[]).map(mapDocument);
+    return fetchFiscalDocuments(supabase, companyId, data);
   });
+
 
 // --------------------------------------------------------------- DASHBOARD
 
@@ -276,61 +269,13 @@ export type FiscalDashboard = {
 
 export const getFiscalDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FiscalDashboard> => {
+  .handler(async ({ context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rows, error } = await (docFrom(supabase) as any)
-      .select("status, total_amount, protocol_at")
-      .eq("company_id", companyId);
-    if (error) throw error;
-
-    const totals: Record<NfeStatus, number> = {
-      draft: 0,
-      validating: 0,
-      signing: 0,
-      sending: 0,
-      authorized: 0,
-      rejected: 0,
-      cancelling: 0,
-      cancelled: 0,
-      error: 0,
-      discarded: 0,
-    };
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    let monthAuthorized = 0;
-    let monthValue = 0;
-    const list = (rows ?? []) as Array<{
-      status: NfeStatus;
-      total_amount: number | null;
-      protocol_at: string | null;
-    }>;
-    list.forEach((r) => {
-      totals[r.status] = (totals[r.status] ?? 0) + 1;
-      if (r.status === "authorized" && r.protocol_at && r.protocol_at >= monthStart) {
-        monthAuthorized += 1;
-        monthValue += Number(r.total_amount ?? 0);
-      }
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: lastRow } = await (docFrom(supabase) as any)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    return {
-      totals,
-      monthAuthorized,
-      monthValue,
-      lastDocument: lastRow ? mapDocument(lastRow as FiscalDocumentRow) : null,
-    };
+    return fetchFiscalDashboard(supabase, companyId);
   });
+
 
 // -------------------------------------------------------------- DOC + HIST
 
@@ -339,51 +284,20 @@ export const getFiscalDocument = createServerFn({ method: "POST" })
   .inputValidator((input: { documentId: string }) =>
     z.object({ documentId: z.string().uuid() }).strict().parse(input),
   )
-  .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ document: FiscalDocumentDto; events: FiscalEventDto[] }> => {
-      const supabase = context.supabase as SB;
-      const companyId = await resolveCompanyId(supabase, context.userId);
-      await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as SB;
+    const companyId = await resolveCompanyId(supabase, context.userId);
+    await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: docRow, error } = await (docFrom(supabase) as any)
-        .select(DOC_COLS)
-        .eq("company_id", companyId)
-        .eq("id", data.documentId)
-        .maybeSingle();
-      if (error) throw error;
-      if (!docRow) throw new Error("Documento fiscal não encontrado.");
+    const [document, events] = await Promise.all([
+      fetchFiscalDocument(supabase, companyId, data.documentId),
+      fetchFiscalDocumentEvents(supabase, companyId, data.documentId),
+    ]);
 
-      const { data: evRows, error: evErr } = await supabase
-        .from("fiscal_events")
-        .select("id, document_id, event_type, payload, created_at")
-        .eq("company_id", companyId)
-        .eq("document_id", data.documentId)
-        .order("created_at", { ascending: true });
-      if (evErr) throw evErr;
+    if (!document) throw new Error("Documento fiscal não encontrado.");
+    return { document, events };
+  });
 
-      const events: FiscalEventDto[] = (
-        (evRows ?? []) as Array<{
-          id: string;
-          document_id: string;
-          event_type: string;
-          payload: unknown;
-          created_at: string;
-        }>
-      ).map((r) => ({
-        id: r.id,
-        documentId: r.document_id,
-        eventType: r.event_type,
-        payloadJson: r.payload == null ? null : JSON.stringify(r.payload),
-        createdAt: r.created_at,
-      }));
-
-      return { document: mapDocument(docRow as FiscalDocumentRow), events };
-    },
-  );
 
 // ------------------------------------------------------------------ ISSUE
 // Cria um documento em rascunho para a venda informada e registra o
@@ -1345,26 +1259,14 @@ function mapSettings(row: FiscalSettingsRow, hasCscToken: boolean): FiscalSettin
 
 export const getFiscalSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FiscalSettings> => {
+  .handler(async ({ context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("*")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return defaultSettings(companyId);
-
-    const { data: hasCsc } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "csc_token",
-      _owner_id: null as unknown as string,
-    });
-    return mapSettings(data as FiscalSettingsRow, Boolean(hasCsc));
+    const settings = await fetchFiscalSettings(supabase, companyId);
+    return settings ?? defaultSettings(companyId);
   });
+
 
 const settingsSchema = z
   .object({
