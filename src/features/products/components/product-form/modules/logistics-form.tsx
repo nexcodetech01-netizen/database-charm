@@ -92,7 +92,7 @@ export function LogisticsForm({
             id="height"
             type="number"
             value={form.height}
-            onChange={(s: any) => setForm((s: any) => ({ ...s, height: s.target.value }))}
+            onChange={(e: any) => setForm((s: any) => ({ ...s, height: e.target.value }))}
           />
         </div>
         <div className="space-y-2">
