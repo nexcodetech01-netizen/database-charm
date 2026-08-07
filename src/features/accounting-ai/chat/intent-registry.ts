@@ -675,6 +675,64 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
       ],
     ],
   },
+  {
+    intent: "auditar_fechamento",
+    priority: 30,
+    terms: [
+      [
+        "faca uma auditoria do mes",
+        "faça uma auditoria do mês",
+        "auditoria do mês",
+        "auditoria do mes",
+        "audite meu mês",
+        "audite meu mes",
+        "auditar fechamento",
+        "auditoria de fechamento",
+      ],
+    ],
+  },
+  {
+    intent: "consultar_prontidao_fechamento",
+    priority: 29,
+    terms: [
+      [
+        "posso fechar o mes",
+        "posso fechar o mês",
+        "minha empresa esta pronta",
+        "minha empresa está pronta",
+        "estou pronto para fechar",
+        "pronto para o fechamento",
+      ],
+    ],
+  },
+  {
+    intent: "identificar_problemas_fechamento",
+    priority: 28,
+    terms: [
+      [
+        "o que falta",
+        "o que falta para fechar",
+        "quais as pendencias",
+        "qual o maior problema",
+        "quais os problemas",
+        "o que impede o fechamento",
+      ],
+    ],
+  },
+  {
+    intent: "como_foi_meu_mes",
+    priority: 27,
+    terms: [
+      [
+        "como foi meu mes",
+        "como foi meu mês",
+        "resumo do mes",
+        "resumo do mês",
+        "panorama do mes",
+        "panorama do mês",
+      ],
+    ],
+  },
 ];
 
 /**

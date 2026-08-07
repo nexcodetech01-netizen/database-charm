@@ -77,6 +77,7 @@ import { Route as AuthenticatedComercialInboxWhatsappRouteImport } from './route
 import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authenticated/clientes_.novo'
 import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
 import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
+import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from './routes/_authenticated/bella-contadora.fechamento-mensal'
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
@@ -479,6 +480,12 @@ const AuthenticatedBellaPayTestRoute =
     path: '/test',
     getParentRoute: () => AuthenticatedBellaPayRoute,
   } as any)
+const AuthenticatedBellaContadoraFechamentoMensalRoute =
+  AuthenticatedBellaContadoraFechamentoMensalRouteImport.update({
+    id: '/fechamento-mensal',
+    path: '/fechamento-mensal',
+    getParentRoute: () => AuthenticatedBellaContadoraRoute,
+  } as any)
 const AuthenticatedProdutosProductIdIndexRoute =
   AuthenticatedProdutosProductIdIndexRouteImport.update({
     id: '/produtos_/$productId/',
@@ -641,7 +648,7 @@ export interface FileRoutesByFullPath {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByFullPath {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
@@ -735,7 +743,7 @@ export interface FileRoutesByTo {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -761,6 +769,7 @@ export interface FileRoutesByTo {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
@@ -830,7 +839,7 @@ export interface FileRoutesById {
   '/_authenticated/bella': typeof AuthenticatedBellaRoute
   '/_authenticated/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/_authenticated/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/_authenticated/bella-contadora': typeof AuthenticatedBellaContadoraRoute
+  '/_authenticated/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
   '/_authenticated/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/_authenticated/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
@@ -856,6 +865,7 @@ export interface FileRoutesById {
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/_authenticated/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/_authenticated/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/_authenticated/clientes_/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/_authenticated/clientes_/novo': typeof AuthenticatedClientesNovoRoute
@@ -952,6 +962,7 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
+    | '/bella-contadora/fechamento-mensal'
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
@@ -1046,6 +1057,7 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
+    | '/bella-contadora/fechamento-mensal'
     | '/bella-pay/test'
     | '/clientes/$customerId'
     | '/clientes/novo'
@@ -1140,6 +1152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
     | '/invite/$token'
+    | '/_authenticated/bella-contadora/fechamento-mensal'
     | '/_authenticated/bella-pay/test'
     | '/_authenticated/clientes_/$customerId'
     | '/_authenticated/clientes_/novo'
@@ -1699,6 +1712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBellaPayTestRouteImport
       parentRoute: typeof AuthenticatedBellaPayRoute
     }
+    '/_authenticated/bella-contadora/fechamento-mensal': {
+      id: '/_authenticated/bella-contadora/fechamento-mensal'
+      path: '/fechamento-mensal'
+      fullPath: '/bella-contadora/fechamento-mensal'
+      preLoaderRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRouteImport
+      parentRoute: typeof AuthenticatedBellaContadoraRoute
+    }
     '/_authenticated/produtos_/$productId/': {
       id: '/_authenticated/produtos_/$productId/'
       path: '/produtos/$productId'
@@ -1877,6 +1897,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedBellaContadoraRouteChildren {
+  AuthenticatedBellaContadoraFechamentoMensalRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRoute
+}
+
+const AuthenticatedBellaContadoraRouteChildren: AuthenticatedBellaContadoraRouteChildren =
+  {
+    AuthenticatedBellaContadoraFechamentoMensalRoute:
+      AuthenticatedBellaContadoraFechamentoMensalRoute,
+  }
+
+const AuthenticatedBellaContadoraRouteWithChildren =
+  AuthenticatedBellaContadoraRoute._addFileChildren(
+    AuthenticatedBellaContadoraRouteChildren,
+  )
+
 interface AuthenticatedBellaPayRouteChildren {
   AuthenticatedBellaPayTestRoute: typeof AuthenticatedBellaPayTestRoute
 }
@@ -2019,7 +2054,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBellaRoute: typeof AuthenticatedBellaRoute
   AuthenticatedBellaAgentDebugRoute: typeof AuthenticatedBellaAgentDebugRoute
   AuthenticatedBellaConhecimentoRoute: typeof AuthenticatedBellaConhecimentoRoute
-  AuthenticatedBellaContadoraRoute: typeof AuthenticatedBellaContadoraRoute
+  AuthenticatedBellaContadoraRoute: typeof AuthenticatedBellaContadoraRouteWithChildren
   AuthenticatedBellaPayRoute: typeof AuthenticatedBellaPayRouteWithChildren
   AuthenticatedBellaProcessosRoute: typeof AuthenticatedBellaProcessosRoute
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
@@ -2079,7 +2114,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBellaRoute: AuthenticatedBellaRoute,
   AuthenticatedBellaAgentDebugRoute: AuthenticatedBellaAgentDebugRoute,
   AuthenticatedBellaConhecimentoRoute: AuthenticatedBellaConhecimentoRoute,
-  AuthenticatedBellaContadoraRoute: AuthenticatedBellaContadoraRoute,
+  AuthenticatedBellaContadoraRoute:
+    AuthenticatedBellaContadoraRouteWithChildren,
   AuthenticatedBellaPayRoute: AuthenticatedBellaPayRouteWithChildren,
   AuthenticatedBellaProcessosRoute: AuthenticatedBellaProcessosRoute,
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
@@ -2205,13 +2241,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
