@@ -135,6 +135,7 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
         belowMin: [{ id: "p2", name: "Produto B", sku: "B", stock: 1, min_stock: 5 }],
         stagnant: [{ id: "p3", name: "Produto C", sku: "C", stock: 7 }],
       }),
+      ledgerAudit: async () => [],
     },
     fiscal: makeTestFiscalPort(),
     cash: {
