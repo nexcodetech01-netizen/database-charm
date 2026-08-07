@@ -149,6 +149,11 @@ function SaleWorkspace({
   const updateSaleMut = useUpdateSale();
   const qc = useQueryClient();
 
+  const [mlPrintOpen, setMlPrintOpen] = useState(false);
+  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl"; content: string; id: string } | null>(null);
+  const [isFetchingLabel, setIsFetchingLabel] = useState(false);
+
+
 
   // PDV-009 — Ciclo de vida da venda determina quais ações estão disponíveis.
   const isDraft = sale.status === "draft";
@@ -197,6 +202,27 @@ function SaleWorkspace({
     // Duplicação = abrir nova venda. Mantém rastreabilidade pela venda original.
     navigate({ to: "/vendas/novo" });
   }
+
+  async function handlePrintMlLabel() {
+    const mlOrderId = sale.metadata?.ml_order_id;
+    if (!mlOrderId) {
+      toast.error("Esta venda não possui um ID de pedido do Mercado Livre associado.");
+      return;
+    }
+
+    setIsFetchingLabel(true);
+    try {
+      const label = await getMercadoLivreOrderLabel({ data: { mlOrderId } });
+      setMlLabelData({ ...label, id: sale.id });
+      setMlPrintOpen(true);
+    } catch (error) {
+      console.error("Erro ao buscar etiqueta ML:", error);
+      toast.error("Falha ao buscar etiqueta: " + (error instanceof Error ? error.message : "Indisponível"));
+    } finally {
+      setIsFetchingLabel(false);
+    }
+  }
+
 
 
   const paymentLabel = useMemo(() => {
@@ -309,11 +335,29 @@ function SaleWorkspace({
         </Link>
       </Button>
 
+      {sale.metadata?.ml_order_id && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePrintMlLabel}
+          disabled={isFetchingLabel}
+          className="border-yellow-500/50 bg-yellow-500/5 text-yellow-700 hover:bg-yellow-500/10 dark:text-yellow-400"
+        >
+          {isFetchingLabel ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Printer className="mr-1.5 h-4 w-4" />
+          )}
+          Etiqueta ML
+        </Button>
+      )}
+
       {isPaid ? (
         <Button variant="outline" size="sm" onClick={() => setReceiptOpen(true)}>
           <Printer className="mr-1.5 h-4 w-4" /> Imprimir cupom
         </Button>
       ) : null}
+
 
       {canReturn ? (
         <Button variant="outline" size="sm" onClick={() => setReturnOpen(true)}>
@@ -929,6 +973,13 @@ function SaleWorkspace({
         paymentMethod={sale.payment_method}
         onViewSale={() => setReceiptOpen(false)}
       />
+
+      <MercadoLivrePrintDialog
+        open={mlPrintOpen}
+        onOpenChange={setMlPrintOpen}
+        labelData={mlLabelData}
+      />
+
 
       <AlertDialog
         open={cancelOpen}
