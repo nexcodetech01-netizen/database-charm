@@ -146,7 +146,7 @@ export function useFiscalAutofill({
   });
 
   const applySuggestion = useCallback(
-    (values: { ncm: string; cest?: string | null }, nextSource: FiscalSource) => {
+    (values: { ncm: string | null; cest?: string | null }, nextSource: FiscalSource) => {
       setSource(nextSource);
       onApply({
         ncm: normalizeNcm(values.ncm),

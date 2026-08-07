@@ -35,7 +35,7 @@ export interface BulkNcmCandidate {
   id: string;
   name: string;
   sku: string | null;
-  ncm: string;
+  ncm: string | null;
   cest: string | null;
   source: "category" | "history" | "master_keyword" | "fallback";
   reference: string;
