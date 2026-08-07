@@ -422,7 +422,7 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
   },
   {
     intent: "situacao_fiscal",
-    priority: 14,
+    priority: 36, // Aumentada prioridade para o fechamento fiscal
     terms: [
       [
         "como esta meu fiscal",
@@ -437,6 +437,11 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
         "nfc e",
         "nota rejeitada",
         "notas rejeitadas",
+        "meu fiscal esta pronto",
+        "posso fechar o fiscal",
+        "existem notas rejeitadas",
+        "tenho pendencias fiscais",
+        "meu mes esta regular",
       ],
     ],
   },
