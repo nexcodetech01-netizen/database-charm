@@ -109,7 +109,7 @@ export function auditFinancialClosing(
   
   const healthScore: MonthlyClosingHealthScore = {
     score: baseScore,
-    level: baseScore >= 90 ? "Exelente" : baseScore >= 70 ? "Boa" : baseScore >= 40 ? "Atenção" : "Crítica",
+    level: baseScore >= 90 ? "Excelente" : baseScore >= 70 ? "Boa" : baseScore >= 40 ? "Atenção" : "Crítica",
     label: advice.message
   };
 
