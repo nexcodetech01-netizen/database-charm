@@ -446,6 +446,24 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     ],
   },
   {
+    intent: "situacao_vendas",
+    priority: 38, // Prioridade alta para auditoria comercial
+    terms: [
+      [
+        "como esta meu comercial",
+        "como estao as vendas",
+        "meu setor de vendas esta pronto",
+        "posso fechar o comercial",
+        "minha margem esta saudavel",
+        "existem descontos acima da politica",
+        "existem vendas pendentes",
+        "resumo comercial",
+        "comercial pronto",
+        "auditoria de vendas",
+      ],
+    ],
+  },
+  {
     intent: "situacao_estoque",
     priority: 37, // Aumentada para suportar fechamento mensal
     terms: [
