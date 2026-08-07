@@ -168,16 +168,17 @@ export async function sendWhatsAppTemplateRaw(
         text: String(v ?? " "),
       })),
     });
-  } else {
-    // Se não houver variáveis mas o template esperar parâmetros, 
-    // a Meta retornará #132000. O chamador deve prover variáveis se o template as exigir.
-    // O 'components' deve ser omitido se for estritamente zero parâmetros em templates sem vars.
-    // Mas para templates com vars opcionais ou placeholders, enviamos array vazio.
+  } else if (templateName === "boas_vindas") {
+    // Requisito 1: Se for Boas-vindas e não vieram variáveis, garante o parâmetro padrão "Cliente"
     componentsList.push({
       type: "body",
-      parameters: [],
+      parameters: [
+        { type: "text", text: "Cliente" }
+      ],
     });
   }
+  // Se não houver variáveis e NÃO for um template conhecido por exigi-las, 
+  // omitimos o objeto 'components' do payload para evitar o erro #132001 (Parâmetros extras).
 
 
   const body = {

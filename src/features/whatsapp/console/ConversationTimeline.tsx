@@ -124,7 +124,17 @@ export function ConversationTimeline({
               <p className="whitespace-pre-wrap break-words">{m.text || <em>(vazio)</em>}</p>
               <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-80">
                 <span>{time}</span>
-                {m.status && !inbound ? <span>· {m.status}</span> : null}
+                {m.status && !inbound ? (
+                  <span className={cn(m.status === "failed" && "font-bold text-red-400 flex items-center gap-0.5")}>
+                    · {m.status === "failed" ? (
+                      <>
+                        <AlertTriangle className="h-2 w-2" /> Falha no envio
+                      </>
+                    ) : (
+                      m.status
+                    )}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
