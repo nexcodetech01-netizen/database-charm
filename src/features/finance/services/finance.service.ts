@@ -498,7 +498,7 @@ export const financeService = {
         .eq("company_id", companyId),
       supabase
         .from("financial_transactions")
-        .select("id,type,status,amount,transaction_date,due_date,description,paid_at")
+        .select("id,type,status,amount,transaction_date,due_date,description,paid_at,category_id")
         .eq("company_id", companyId)
         .neq("status", "cancelled"),
       // P2.4 — "hoje" no fuso horário da empresa (fonte da verdade no servidor)
