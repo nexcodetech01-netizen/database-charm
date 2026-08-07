@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getOrderLabel } from '@/lib/mercadolivre.server';
-import { labelaryService } from '@/features/printing/services/labelary.service';
+
+// Mocking decryptToken to return the input as is for tests
+vi.mock('@/lib/meta-crypto.server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/meta-crypto.server')>();
+  return {
+    ...actual,
+    decryptToken: vi.fn((val) => val),
+  };
+});
 
 // Mocking integrationFetch to simulate ML API
 vi.mock('@/lib/http-client.server', () => ({
