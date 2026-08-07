@@ -4,7 +4,7 @@
 import { formatCurrency } from "@/lib/format";
 import type { AccountingSkill, AccountingSkillResult } from "../../skills";
 import { buildAccountingSummary } from "../../providers/summary";
-import { buildFinancialAdvice } from "../../advisor";
+import { buildFinancialAdvice } from "../../advisor/engine";
 import { payrollQueries } from "../queries/payroll-queries";
 import type { ProviderDeps } from "../../providers";
 
@@ -18,6 +18,7 @@ async function resolveAdvice(companyId: string, deps?: ProviderDeps) {
   const summary = deps?.summary ?? (await buildAccountingSummary(companyId, deps));
   return buildFinancialAdvice({ summary });
 }
+
 
 export const consultarProlaboreRecomendadoSkill: AccountingSkill = {
   id: "consultar_prolabore_recomendado",
