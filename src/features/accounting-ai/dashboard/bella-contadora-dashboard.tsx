@@ -192,15 +192,24 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
 
   return (
     <PageLayout
-      title="Bella Contadora"
+      title="Bella Certification Dashboard"
       icon={Calculator}
-      description="Leitura contábil e financeira consolidada — somente leitura, a partir dos motores já existentes do NexOS."
+      description="Cockpit executivo de prontidão operacional e saúde gerencial da empresa."
       meta={
-        s?.period ? (
-          <StatusBadge status="neutral" appearance="outline" className="font-normal">
-            {s.period.label ?? `${s.period.start} → ${s.period.end}`}
+        <div className="flex gap-2 items-center">
+          {s?.period && (
+            <StatusBadge status="neutral" appearance="outline" className="font-normal">
+              {s.period.label ?? `${s.period.start} → ${s.period.end}`}
+            </StatusBadge>
+          )}
+          <StatusBadge 
+            status={audit?.summary.certificationStatus === "Empresa apta" ? "success" : audit?.summary.certificationStatus === "Empresa apta com ressalvas" ? "warning" : "error"}
+            appearance="solid"
+            className="uppercase font-bold text-[10px]"
+          >
+            {audit?.summary.certificationStatus || "Auditoria pendente"}
           </StatusBadge>
-        ) : null
+        </div>
       }
       kpis={
         <SummaryGrid columns={4}>
