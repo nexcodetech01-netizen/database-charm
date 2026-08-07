@@ -44,6 +44,13 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
     "consultar_recomendacoes",
     "consultar_notificacoes",
   ],
+  /** Sprint 8.3G — "como está meu caixa?": auditoria de POS. */
+  situacao_caixa: [
+    "consultar_caixa",
+    "consultar_alertas",
+    "consultar_recomendacoes",
+    "consultar_notificacoes",
+  ],
   /** Sprint 6.6 — "como estão meus clientes?": só skills já existentes. */
   situacao_crm: [
     "consultar_clientes",
