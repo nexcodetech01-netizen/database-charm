@@ -355,79 +355,129 @@ function PublicCollectionPage() {
       )}
 
       {data.products.length > 0 && (
-        <div className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
           <div className="mx-auto max-w-5xl px-4 py-3">
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="relative lg:col-span-2">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={q}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setQ(v);
-                    updateSearch({ q: v });
-                  }}
-                  placeholder="Buscar produto..."
-                  className="pl-8"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative lg:col-span-2">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={q}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setQ(v);
+                      updateSearch({ q: v });
+                    }}
+                    placeholder="Buscar por nome ou código..."
+                    className="pl-8 h-10 rounded-xl"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={search.marca || "all"}
+                    onValueChange={(v) =>
+                      updateSearch({ marca: v === "all" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue placeholder="Marca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as marcas</SelectItem>
+                      {brands.map((b) => (
+                        <SelectItem key={b} value={b}>
+                          {b}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={search.disp}
+                    onValueChange={(v) => updateSearch({ disp: v })}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="disponivel">Disponíveis</SelectItem>
+                      <SelectItem value="esgotado">Esgotados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="flex bg-muted p-1 rounded-xl w-full">
+                    <Button
+                      variant={search.view === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="flex-1 h-8 rounded-lg shadow-none"
+                      onClick={() => updateSearch({ view: "grid" })}
+                    >
+                      <Grid className="h-4 w-4 mr-1.5" /> Grade
+                    </Button>
+                    <Button
+                      variant={search.view === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="flex-1 h-8 rounded-lg shadow-none"
+                      onClick={() => updateSearch({ view: "list" })}
+                    >
+                      <List className="h-4 w-4 mr-1.5" /> Lista
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <Select
-                value={search.marca || "all"}
-                onValueChange={(v) =>
-                  updateSearch({ marca: v === "all" ? "" : v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as marcas</SelectItem>
-                  {brands.map((b) => (
-                    <SelectItem key={b} value={b}>
-                      {b}
-                    </SelectItem>
+
+              {categories.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  <Button
+                    variant={search.cat === "all" ? "secondary" : "outline"}
+                    size="sm"
+                    className="rounded-full h-8 whitespace-nowrap"
+                    onClick={() => updateSearch({ cat: "all" })}
+                  >
+                    Todas
+                  </Button>
+                  {categories.map((c) => (
+                    <Button
+                      key={c}
+                      variant={search.cat === c ? "secondary" : "outline"}
+                      size="sm"
+                      className="rounded-full h-8 whitespace-nowrap"
+                      onClick={() => updateSearch({ cat: c })}
+                    >
+                      {c}
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={search.disp}
-                onValueChange={(v) => updateSearch({ disp: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="disponivel">Disponíveis</SelectItem>
-                  <SelectItem value="esgotado">Esgotados</SelectItem>
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
-                {filtered.length} produto{filtered.length === 1 ? "" : "s"}
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+              <div className="text-xs text-muted-foreground font-medium">
+                {filtered.length} produto{filtered.length === 1 ? "" : "s"} encontrados
                 {isFetching && (
-                  <span className="ml-2 inline-flex items-center gap-1">
+                  <span className="ml-2 inline-flex items-center gap-1 text-primary">
                     <Loader2 className="h-3 w-3 animate-spin" /> atualizando…
                   </span>
                 )}
               </div>
-              <Select
-                value={search.ord}
-                onValueChange={(v) => updateSearch({ ord: v })}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-[180px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      Ordenar: {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-3">
+                <Select
+                  value={search.ord}
+                  onValueChange={(v) => updateSearch({ ord: v })}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
