@@ -3,7 +3,7 @@ import { MonthlyClosingAudit } from "../types";
 import { useAccountingAiSummary } from "../../hooks/use-accounting-ai";
 import { auditFinancialClosing } from "../queries/financial-audit";
 import { currentPeriod } from "../../lib/helpers";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
 
 export function useMonthlyClosingAudit(month: string) {
   const { user } = useAuth();
