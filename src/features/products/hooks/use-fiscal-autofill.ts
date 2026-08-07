@@ -30,14 +30,14 @@ interface Params {
   material?: string | null;
   categories: CategoryLike[];
   ncm: string;
-  cest: string;
+  cest: string | null;
   /** Aplica os valores no formulário. */
-  onApply: (values: { ncm: string; cest: string }) => void;
+  onApply: (values: { ncm: string; cest: string | null }) => void;
 }
 
 export interface FiscalAutofillState {
   source: FiscalSource;
-  categorySuggestion: { ncm: string; cest: string; categoryName: string } | null;
+  categorySuggestion: { ncm: string; cest: string | null; categoryName: string } | null;
   historySuggestions: FiscalHistorySuggestion[];
   masterSuggestions: NcmMasterEntry[];
   historyLoading: boolean;
@@ -150,7 +150,7 @@ export function useFiscalAutofill({
       setSource(nextSource);
       onApply({
         ncm: normalizeNcm(values.ncm),
-        cest: values.cest ? normalizeCest(values.cest) : cest,
+        cest: values.cest !== undefined ? normalizeCest(values.cest) : (cest || null),
       });
       toast.success("Sugestão fiscal aplicada!");
     },

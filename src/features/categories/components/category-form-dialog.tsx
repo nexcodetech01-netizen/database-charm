@@ -73,7 +73,7 @@ export function CategoryFormDialog({
     setStatus((category?.status as CategoryStatus) ?? "active");
     setParentId(category?.parent_id ?? NO_PARENT);
     setDefaultNcm(normalizeNcm(category?.default_ncm));
-    setDefaultCest(normalizeCest(category?.default_cest));
+    setDefaultCest(normalizeCest(category?.default_cest) ?? "");
   }, [open, category]);
 
   const parentOptions = categories.filter(
@@ -218,7 +218,7 @@ export function CategoryFormDialog({
                 inputMode="numeric"
                 maxLength={11}
                 placeholder="00.000.00 ou 0000000"
-                onChange={(e) => setDefaultCest(normalizeCest(e.target.value))}
+                onChange={(e) => setDefaultCest(normalizeCest(e.target.value) ?? "")}
               />
               <p className="text-[11px] text-muted-foreground">
                 Opcional — 7 dígitos, usado em substituição tributária.

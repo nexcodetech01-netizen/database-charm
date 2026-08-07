@@ -22,8 +22,9 @@ export function normalizeNcm(value: string | null | undefined): string {
   return (value ?? "").replace(/\D/g, "").slice(0, 8);
 }
 
-export function normalizeCest(value: string | null | undefined): string {
-  return (value ?? "").replace(/\D/g, "").slice(0, 7);
+export function normalizeCest(value: string | null | undefined): string | null {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return digits.length > 0 ? digits.slice(0, 7) : null;
 }
 
 export function isValidNcm(value: string | null | undefined): boolean {
@@ -44,7 +45,7 @@ export function formatNcm(value: string | null | undefined): string {
 /** Formata CEST para leitura: 28.038.00 */
 export function formatCest(value: string | null | undefined): string {
   const digits = normalizeCest(value);
-  if (digits.length !== 7) return digits;
+  if (!digits || digits.length !== 7) return digits ?? "";
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 7)}`;
 }
 
