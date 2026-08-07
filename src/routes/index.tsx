@@ -100,3 +100,5 @@ function IndexComponent() {
 // Lazy imports para os componentes de impressão
 import { PrintButton } from "@/features/printing/components/PrintButton";
 import { PrinterStatus } from "@/features/printing/components/PrinterStatus";
+import { PrintManager } from "@/features/printing/components/enterprise/PrintManager";
+import { Printer as PrinterIcon } from "lucide-react";
