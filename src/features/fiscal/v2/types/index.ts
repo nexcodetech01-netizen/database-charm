@@ -1,7 +1,8 @@
 import { FiscalArtifactKind } from "../lib/artifacts";
-import { NfeEnvironment, fiscalEnvironmentSchema, normalizeFiscalEnvironment } from "./environment";
+import { type NfeEnvironment, fiscalEnvironmentSchema, normalizeFiscalEnvironment } from "./environment";
 
-export { NfeEnvironment, fiscalEnvironmentSchema, normalizeFiscalEnvironment };
+export { fiscalEnvironmentSchema, normalizeFiscalEnvironment };
+export type { NfeEnvironment };
 export type { FiscalArtifactKind };
 
 
