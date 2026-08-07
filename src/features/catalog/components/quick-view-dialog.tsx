@@ -52,7 +52,7 @@ export function QuickViewDialog({
 
   const share = async () => {
     if (typeof navigator !== "undefined" && "share" in navigator) {
-      await navigator.share({ title: product?.product.name ?? "Produto", url }).catch(() => {});
+      await navigator.share({ title: product?.product?.name ?? "Produto", url }).catch(() => {});
     } else {
       copyLink();
     }
@@ -97,7 +97,8 @@ export function QuickViewDialog({
                 src={product.product.images[activeImage]?.url ?? product.product.images[0]?.url}
                 alt={product.product.name}
                 aspect="square"
-                className="w-full h-full object-cover"
+                containerClassName="w-full h-full"
+                imgClassName="w-full h-full object-cover"
                 fallback={<Package className="h-12 w-12 text-muted-foreground" />}
               />
               {product.product.images.length > 1 && (
