@@ -1,13 +1,5 @@
 /**
  * Sprint 007.2 — Server functions do módulo Fiscal.
- *
- * Auto-contido: mapeia diretamente o schema real do Supabase
- * (`fiscal_documents` / `fiscal_events` / `fiscal_certificates` /
- * `fiscal_provider_config`), sem depender de repositórios que ainda
- * não refletem esse schema. Toda escrita é feita pelo cliente
- * autenticado (RLS + `has_permission`), exceto o upload do certificado
- * A1, que usa `supabaseAdmin` para gravar no bucket privado a que o
- * usuário não tem acesso direto.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -16,11 +8,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
 import { toCustomerReference } from "@/lib/customer-reference";
-import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 import {
-  normalizePendingKinds,
+  fetchFiscalDocuments,
+  fetchFiscalDashboard,
+  fetchFiscalDocument,
+  fetchFiscalDocumentEvents,
+  mapDocument as mapDocFromQuery,
+} from "../queries/documents.query";
+import {
+  fetchFiscalCertificates,
+  fetchActiveCertificate,
+} from "../queries/certificate.query";
+import {
+  fetchProviderConfig,
+  fetchProviderEnvironments,
+} from "../queries/status.query";
+import { fetchFiscalSettings } from "../queries/tax.query";
+import {
   type FiscalArtifactKind,
+  normalizePendingKinds,
 } from "../lib/artifacts";
+import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 
 type SB = SupabaseClient<Database>;
 
@@ -33,7 +41,6 @@ export type NfeStatus =
   | "sending"
   | "authorized"
   | "rejected"
-  /** Cancelamento solicitado — aguardando confirmação oficial da SEFAZ. */
   | "cancelling"
   | "cancelled"
   | "error"
@@ -56,7 +63,6 @@ import {
   type FiscalTaxRegime,
 } from "../lib/crt";
 
-
 import {
   blocksNewFiscalDocument,
   resolveActiveFiscalDocument,
@@ -78,8 +84,6 @@ function toDocLikes(rows: unknown): FiscalDocumentLike[] {
     createdAt: d.created_at ?? null,
   }));
 }
-
-
 
 export type FiscalDocumentDto = {
   id: string;
@@ -107,7 +111,6 @@ export type FiscalDocumentDto = {
   discardedAt: string | null;
   discardedBy: string | null;
   discardReason: string | null;
-  /** Artefatos que falharam ao ser baixados/gravados e aguardam reprocessamento. */
   artifactsPending: FiscalArtifactKind[];
   artifactsLastError: string | null;
   artifactsCheckedAt: string | null;
@@ -125,8 +128,6 @@ export type FiscalEventDto = {
 
 // ------------------------------------------------------------------ helpers
 
-
-
 async function ensurePermission(
   supabase: SB,
   userId: string,
@@ -139,6 +140,7 @@ async function ensurePermission(
     | "fiscal.export"
     | "fiscal.manage",
 ): Promise<void> {
+
   const { data, error } = await supabase.rpc("has_permission", {
     _user_id: userId,
     _company_id: companyId,
@@ -181,40 +183,9 @@ type FiscalDocumentRow = {
   updated_at: string;
 };
 
-function mapDocument(row: FiscalDocumentRow): FiscalDocumentDto {
-  return {
-    id: row.id,
-    companyId: row.company_id,
-    saleId: row.sale_id,
-    number: row.number,
-    series: row.series,
-    accessKey: row.access_key,
-    status: row.status,
-    environment: row.environment,
-    totalAmount: Number(row.total_amount ?? 0),
-    xmlSignedPath: row.xml_signed_path,
-    xmlAuthorizedPath: row.xml_authorized_path,
-    danfePath: row.danfe_path,
-    protocol: row.protocol,
-    protocolAt: row.protocol_at,
-    cancelledAt: row.cancelled_at,
-    cancellationReason: row.cancellation_reason,
-    cancellationProtocol: row.cancellation_protocol ?? null,
-    cancelledBy: row.cancelled_by ?? null,
-    xmlCancellationPath: row.xml_cancellation_path ?? null,
-    rejectionCode: row.rejection_code,
-    rejectionReason: row.rejection_reason,
-    provider: row.provider,
-    discardedAt: row.discarded_at ?? null,
-    discardedBy: row.discarded_by ?? null,
-    discardReason: row.discard_reason ?? null,
-    artifactsPending: normalizePendingKinds(row.artifacts_pending),
-    artifactsLastError: row.artifacts_last_error ?? null,
-    artifactsCheckedAt: row.artifacts_checked_at ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
+const mapDocument = (row: FiscalDocumentRow): FiscalDocumentDto => mapDocFromQuery(row as any);
+
+
 
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
 
@@ -239,31 +210,13 @@ const listSchema = z
 export const listFiscalDocuments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.input<typeof listSchema>) => listSchema.parse(input ?? {}))
-  .handler(async ({ data, context }): Promise<FiscalDocumentDto[]> => {
+  .handler(async ({ data, context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = docFrom(supabase)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .limit(data.limit ?? 100);
-
-    if (data.status && data.status !== "all") q = q.eq("status", data.status);
-    if (data.saleId) q = q.eq("sale_id", data.saleId);
-    if (data.from) q = q.gte("created_at", data.from);
-    if (data.to) q = q.lte("created_at", data.to);
-    if (data.search) {
-      const term = data.search.replace(/[%,]/g, "");
-      q = q.or(`access_key.ilike.%${term}%,protocol.ilike.%${term}%`);
-    }
-
-    const { data: rows, error } = await q;
-    if (error) throw error;
-    return ((rows ?? []) as FiscalDocumentRow[]).map(mapDocument);
+    return fetchFiscalDocuments(supabase, companyId, data);
   });
+
 
 // --------------------------------------------------------------- DASHBOARD
 
@@ -276,61 +229,13 @@ export type FiscalDashboard = {
 
 export const getFiscalDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FiscalDashboard> => {
+  .handler(async ({ context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rows, error } = await (docFrom(supabase) as any)
-      .select("status, total_amount, protocol_at")
-      .eq("company_id", companyId);
-    if (error) throw error;
-
-    const totals: Record<NfeStatus, number> = {
-      draft: 0,
-      validating: 0,
-      signing: 0,
-      sending: 0,
-      authorized: 0,
-      rejected: 0,
-      cancelling: 0,
-      cancelled: 0,
-      error: 0,
-      discarded: 0,
-    };
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    let monthAuthorized = 0;
-    let monthValue = 0;
-    const list = (rows ?? []) as Array<{
-      status: NfeStatus;
-      total_amount: number | null;
-      protocol_at: string | null;
-    }>;
-    list.forEach((r) => {
-      totals[r.status] = (totals[r.status] ?? 0) + 1;
-      if (r.status === "authorized" && r.protocol_at && r.protocol_at >= monthStart) {
-        monthAuthorized += 1;
-        monthValue += Number(r.total_amount ?? 0);
-      }
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: lastRow } = await (docFrom(supabase) as any)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    return {
-      totals,
-      monthAuthorized,
-      monthValue,
-      lastDocument: lastRow ? mapDocument(lastRow as FiscalDocumentRow) : null,
-    };
+    return fetchFiscalDashboard(supabase, companyId);
   });
+
 
 // -------------------------------------------------------------- DOC + HIST
 
@@ -339,51 +244,20 @@ export const getFiscalDocument = createServerFn({ method: "POST" })
   .inputValidator((input: { documentId: string }) =>
     z.object({ documentId: z.string().uuid() }).strict().parse(input),
   )
-  .handler(
-    async ({
-      data,
-      context,
-    }): Promise<{ document: FiscalDocumentDto; events: FiscalEventDto[] }> => {
-      const supabase = context.supabase as SB;
-      const companyId = await resolveCompanyId(supabase, context.userId);
-      await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase as SB;
+    const companyId = await resolveCompanyId(supabase, context.userId);
+    await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: docRow, error } = await (docFrom(supabase) as any)
-        .select(DOC_COLS)
-        .eq("company_id", companyId)
-        .eq("id", data.documentId)
-        .maybeSingle();
-      if (error) throw error;
-      if (!docRow) throw new Error("Documento fiscal não encontrado.");
+    const [document, events] = await Promise.all([
+      fetchFiscalDocument(supabase, companyId, data.documentId),
+      fetchFiscalDocumentEvents(supabase, companyId, data.documentId),
+    ]);
 
-      const { data: evRows, error: evErr } = await supabase
-        .from("fiscal_events")
-        .select("id, document_id, event_type, payload, created_at")
-        .eq("company_id", companyId)
-        .eq("document_id", data.documentId)
-        .order("created_at", { ascending: true });
-      if (evErr) throw evErr;
+    if (!document) throw new Error("Documento fiscal não encontrado.");
+    return { document, events };
+  });
 
-      const events: FiscalEventDto[] = (
-        (evRows ?? []) as Array<{
-          id: string;
-          document_id: string;
-          event_type: string;
-          payload: unknown;
-          created_at: string;
-        }>
-      ).map((r) => ({
-        id: r.id,
-        documentId: r.document_id,
-        eventType: r.event_type,
-        payloadJson: r.payload == null ? null : JSON.stringify(r.payload),
-        createdAt: r.created_at,
-      }));
-
-      return { document: mapDocument(docRow as FiscalDocumentRow), events };
-    },
-  );
 
 // ------------------------------------------------------------------ ISSUE
 // Cria um documento em rascunho para a venda informada e registra o
@@ -1345,26 +1219,14 @@ function mapSettings(row: FiscalSettingsRow, hasCscToken: boolean): FiscalSettin
 
 export const getFiscalSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<FiscalSettings> => {
+  .handler(async ({ context }) => {
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("*")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return defaultSettings(companyId);
-
-    const { data: hasCsc } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "csc_token",
-      _owner_id: null as unknown as string,
-    });
-    return mapSettings(data as FiscalSettingsRow, Boolean(hasCsc));
+    const settings = await fetchFiscalSettings(supabase, companyId);
+    return settings ?? defaultSettings(companyId);
   });
+
 
 const settingsSchema = z
   .object({
