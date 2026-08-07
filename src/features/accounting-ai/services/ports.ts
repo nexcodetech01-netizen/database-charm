@@ -60,6 +60,7 @@ export interface InventoryPort {
     belowMin: { id: string; name: string; sku: string | null; stock: number; min_stock: number }[];
     stagnant: { id: string; name: string; sku: string | null; stock: number }[];
   }>;
+  ledgerAudit(companyId: string): Promise<any[]>;
 }
 
 export interface FiscalPort {
