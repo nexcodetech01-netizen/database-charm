@@ -53,6 +53,7 @@ import {
   describeFindings,
   describeOperationalHealth,
 } from "../audit/selectors";
+import { payrollSkills } from "./payroll-skills";
 
 export type AccountingSkillId =
   | "consultar_lucro"
@@ -92,7 +93,9 @@ export type AccountingSkillId =
   | "explicar_ticket"
   | "explicar_estoque"
   | "explicar_resultado"
-  | "explicar_indicadores";
+  | "explicar_indicadores"
+  | "consultar_prolabore_recomendado"
+  | "simular_retirada";
 
 export interface AccountingSkillResult {
   ok: boolean;
@@ -759,6 +762,7 @@ export const accountingAiSkills: AccountingSkill[] = [
   explicarEstoqueSkill,
   explicarResultadoSkill,
   explicarIndicadoresSkill,
+  ...payrollSkills,
 ];
 
 
