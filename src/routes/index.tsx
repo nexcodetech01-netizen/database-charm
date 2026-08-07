@@ -49,7 +49,7 @@ function IndexComponent() {
         <h1 className="text-2xl font-bold">NexOS Enterprise</h1>
         <p className="text-muted-foreground">Sistema de gestão profissional integrado ao Mercado Livre.</p>
         <div className="mt-8 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-blue-600">⚡ SPRINT 8.3 — BELLA CONTABILIDADE ENTERPRISE</h2>
+          <h2 className="text-lg font-semibold mb-4 text-blue-600">⚡ SPRINT 8.3B — MONTHLY AUDIT (FINANCEIRO)</h2>
           <div className="space-y-4 text-sm leading-relaxed">
             <section>
               <h3 className="font-medium text-primary uppercase">Módulo: Fechamento Mensal Inteligente</h3>
