@@ -1455,10 +1455,10 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     const repo = new CertificateRepository(supabase);
     const cert = await repo.findById(companyId, data.certificateId);
     if (!cert) throw new Error("Certificado não encontrado.");
-    if ((cert as { is_active: boolean }).is_active) {
+    if (cert.isActive) {
       throw new Error("Desative o certificado antes de removê-lo.");
     }
-    const storagePath = (cert as { storage_path: string | null }).storage_path;
+    const storagePath = cert.storagePath;
 
     const { error } = await supabase.rpc("fiscal_delete_certificate", {
       _certificate_id: data.certificateId,

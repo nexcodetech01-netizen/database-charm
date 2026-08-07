@@ -150,6 +150,8 @@ export type FiscalCertificateSummary = {
   serialNumber: string | null;
   thumbprint: string | null;
   isActive: boolean;
+  storagePath?: string | null;
+  contentType?: string | null;
   createdAt: string;
 };
 

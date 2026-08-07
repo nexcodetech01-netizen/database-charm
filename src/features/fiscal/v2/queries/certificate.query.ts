@@ -3,7 +3,7 @@ import type { FiscalCertificateSummary } from "../types";
 
 export const CERT_COLS =
   "id, alias, subject_name, subject_cnpj, issuer_name, valid_from, valid_to," +
-  " serial_number, thumbprint, is_active, created_at";
+  " serial_number, thumbprint, is_active, storage_path, content_type, created_at";
 
 export function mapCertificate(row: any): FiscalCertificateSummary {
   return {
@@ -17,6 +17,8 @@ export function mapCertificate(row: any): FiscalCertificateSummary {
     serialNumber: row.serial_number ?? null,
     thumbprint: row.thumbprint ?? null,
     isActive: Boolean(row.is_active),
+    storagePath: row.storage_path ?? null,
+    contentType: row.content_type ?? null,
     createdAt: row.created_at,
   };
 }
