@@ -1,17 +1,3 @@
-/**
- * Fiscal v2 — ENUM CANÔNICO DE AMBIENTE (fonte única de verdade).
- *
- * ⚠ Um único vocabulário em todo o sistema (banco, tipos, Zod, provider, UI):
- *
- *    "homologation" | "production"
- *
- * NUNCA usar variações: homolog, homologacao, sandbox, test, HOMOLOGATION.
- *
- * Constraints do banco alinhadas a esta lista:
- *  - fiscal_documents.environment
- *  - fiscal_provider_config.environment
- *  - fiscal_settings.default_environment
- */
 import { z } from "zod";
 
 export const FISCAL_ENVIRONMENTS = ["homologation", "production"] as const;
