@@ -34,22 +34,14 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId")({
 
 function PurchaseDetailPage() {
   const { purchaseId } = Route.useParams();
-  console.log("[route] matched: /compras/$purchaseId", { purchaseId });
-  console.log("[route] pathname:", window.location.pathname);
+  
+  // A rota de edição é registrada como uma sub-rota filha no routeTree.
+  // Se houver um componente para renderizar via Outlet, significa que estamos em uma sub-rota.
+  return <Outlet />;
+}
 
-  // Se a rota atual é EXATAMENTE /compras/$purchaseId/editar,
-  // ou se estamos em uma sub-rota de edição, renderizamos o Outlet.
-  const isEditing = window.location.pathname.includes("/editar");
-  console.log("[route] isEditing:", isEditing);
-
-  if (isEditing) {
-    console.log("[route] rendering Outlet (EditPurchasePage)");
-    return <Outlet />;
-  }
-
-  console.log("[route] rendering PurchaseDetails");
-
-
+function PurchaseDetails() {
+  const { purchaseId } = Route.useParams();
   const { data: purchase, isLoading } = usePurchase(purchaseId);
   const setStatus = useSetPurchaseStatus();
   const reprocess = useReprocessPurchaseReceipt();
@@ -302,6 +294,8 @@ function PurchaseDetailPage() {
     </div>
   );
 }
+
+export { PurchaseDetails };
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (

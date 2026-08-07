@@ -11,7 +11,6 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/edita
 function EditPurchasePage() {
   const { company } = Route.useRouteContext();
   const { purchaseId } = Route.useParams();
-  console.log("[route] component rendered: EditPurchasePage", { purchaseId });
   const { data: purchase, isLoading } = usePurchase(purchaseId);
 
   if (isLoading) {
@@ -24,6 +23,5 @@ function EditPurchasePage() {
   }
   if (!purchase) throw notFound();
 
-  console.log("[edit] rendering form", { status: purchase.status });
   return <PurchaseForm companyId={company.id} purchase={purchase} />;
 }
