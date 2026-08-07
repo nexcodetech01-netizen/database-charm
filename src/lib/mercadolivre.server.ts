@@ -627,7 +627,18 @@ export async function getOrderLabel(
   const row = await readSummaryRow(supabase, companyId);
   if (!row?.access_token_encrypted) throw new Error("Mercado Livre não conectado.");
 
-  const token = decryptToken(row.access_token_encrypted);
+  // Test-friendly decryption wrapper or fallback
+  let token: string | null = null;
+  try {
+    const { decryptToken } = await import("./meta-crypto.server");
+    token = decryptToken(row.access_token_encrypted);
+  } catch (err) {
+    // If it's a test environment and we mocked it, it might still throw if the mock wasn't picked up
+    // but here we are in the server file. We'll stick to standard behavior but catch errors.
+    console.error("[mercadolivre] Decryption failed:", err);
+    throw err;
+  }
+  
   if (!token) throw new Error("Falha ao decifrar token.");
 
   // 1. Descobrir o ID da remessa (shipment_id) da venda
