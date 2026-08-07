@@ -44,7 +44,7 @@ export function useMonthlyClosingAudit(month: string) {
       const salesAudit = auditSalesClosing(summaryQuery.data, sales, products, customers, month);
       const cash = auditCashClosing(summaryQuery.data, cashSessions, month);
 
-      return consolidateMonthlyAudit({
+      const consolidated = consolidateMonthlyAudit({
         finance,
         fiscal,
         inventory,
@@ -52,6 +52,9 @@ export function useMonthlyClosingAudit(month: string) {
         sales: salesAudit,
         cash
       }, month);
+
+      // Sprint 8.3I - Passthrough certification to result
+      return consolidated;
     }
   });
 }
