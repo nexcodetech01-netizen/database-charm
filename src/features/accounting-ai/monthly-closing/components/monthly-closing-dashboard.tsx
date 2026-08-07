@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { selectDomainChecklist } from "../selectors";
 import { MonthlyClosingAudit } from "../types";
 
-export function MonthlyAuditExecutiveDashboard() {
+export function MonthlyClosingDashboard() {
   const month = format(new Date(), "yyyy-MM");
   const { data: audit, isLoading, error } = useMonthlyClosingAudit(month);
 
