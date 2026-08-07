@@ -4,7 +4,7 @@ import { useAccountingAiSummary } from "../../hooks/use-accounting-ai";
 import { auditFinancialClosing } from "../queries/financial-audit";
 import { currentPeriod } from "../../lib/helpers";
 import { useAuth } from "@/providers/auth-provider";
-import { useAccountingSummary } from "../../hooks/use-accounting-summary";
+import { useAccountingAiSummary } from "../../hooks/use-accounting-ai";
 
 
 export function useMonthlyClosingAudit(month: string) {
