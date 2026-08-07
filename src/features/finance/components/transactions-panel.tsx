@@ -365,7 +365,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                                 }}
                               >
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                                {type === "income" ? "Receber" : "Pagar"}
+                                {t.source === "sale_return" ? "Reembolsar" : type === "income" ? "Receber" : "Pagar"}
                               </DropdownMenuItem>
                             ) : null}
                             {t.status !== "cancelled" ? (
