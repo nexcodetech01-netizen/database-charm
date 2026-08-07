@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import {
   Eye,
   AlertCircle,
   Loader2,
+  Grid,
+  List,
+  Filter,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, getInstallmentPlan, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
@@ -37,6 +41,10 @@ import {
   AvailabilityBadge,
   resolveAvailability,
 } from "@/features/catalog/components/availability-badge";
+import { QuickViewDialog } from "@/features/catalog/components/quick-view-dialog";
+import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 
 const PAGE_SIZE = 24;
 
@@ -51,8 +59,12 @@ const searchSchema = z.object({
   preview: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
   marca: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
   disp: fallback(z.string(), "todos").default("todos"),
   ord: fallback(z.string(), "relevancia").default("relevancia"),
+  min: fallback(z.number(), 0).default(0),
+  max: fallback(z.number(), 0).default(0),
+  view: fallback(z.enum(["grid", "list"]), "grid").default("grid"),
   page: fallback(z.number().int(), 1).default(1),
 });
 
