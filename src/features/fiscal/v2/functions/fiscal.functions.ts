@@ -183,42 +183,8 @@ type FiscalDocumentRow = {
   updated_at: string;
 };
 
-function mapDocument(row: FiscalDocumentRow): FiscalDocumentDto {
-  return {
-    id: row.id,
-    companyId: row.company_id,
-    saleId: row.sale_id,
-    number: row.number,
-    series: row.series,
-    accessKey: row.access_key,
-    status: row.status,
-    environment: row.environment,
-    totalAmount: Number(row.total_amount ?? 0),
-    xmlSignedPath: row.xml_signed_path,
-    xmlAuthorizedPath: row.xml_authorized_path,
-    danfePath: row.danfe_path,
-    protocol: row.protocol,
-    protocolAt: row.protocol_at,
-    cancelledAt: row.cancelled_at,
-    cancellationReason: row.cancellation_reason,
-    cancellationProtocol: row.cancellation_protocol ?? null,
-    cancelledBy: row.cancelled_by ?? null,
-    xmlCancellationPath: row.xml_cancellation_path ?? null,
-    rejectionCode: row.rejection_code,
-    rejectionReason: row.rejection_reason,
-    provider: row.provider,
-    discardedAt: row.discarded_at ?? null,
-    discardedBy: row.discarded_by ?? null,
-    discardReason: row.discard_reason ?? null,
-    artifactsPending: normalizePendingKinds(row.artifacts_pending),
-    artifactsLastError: row.artifacts_last_error ?? null,
-    artifactsCheckedAt: row.artifacts_checked_at ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
 const mapDocument = (row: FiscalDocumentRow): FiscalDocumentDto => mapDocFromQuery(row as any);
+
 
 
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
