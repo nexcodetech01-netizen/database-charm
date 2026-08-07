@@ -235,8 +235,8 @@ export const bulkNcmService = {
     let done = 0;
 
     await mapWithConcurrency(candidates, CONCURRENCY, async (candidate) => {
-      const patch: { ncm: string; cest?: string } = { ncm: candidate.ncm };
-      if (candidate.cest) patch.cest = candidate.cest;
+      const patch: { ncm: string | null; cest?: string | null } = { ncm: candidate.ncm };
+      if (candidate.cest !== undefined) patch.cest = candidate.cest;
 
       const { error } = await supabase
         .from("products")
