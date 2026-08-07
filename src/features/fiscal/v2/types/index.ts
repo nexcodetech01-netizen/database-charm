@@ -1,7 +1,8 @@
 import { FiscalArtifactKind } from "../lib/artifacts";
 import { NfeEnvironment, fiscalEnvironmentSchema } from "./environment";
 
-export { NfeEnvironment, fiscalEnvironmentSchema };
+export { NfeEnvironment, fiscalEnvironmentSchema, FiscalArtifactKind };
+
 
 /**
  * NF-e Status canonico.

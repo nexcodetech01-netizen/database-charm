@@ -13,41 +13,39 @@ import { normalizePendingKinds } from "../lib/artifacts";
 
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
 
-type Row = Record<string, unknown>;
-
 /** Normaliza linhas de `fiscal_documents` para o formato DTO. */
-export function mapDocument(row: Row): FiscalDocumentDto {
+export function mapDocument(row: any): FiscalDocumentDto {
   return {
-    id: row.id as string,
-    companyId: row.company_id as string,
-    saleId: (row.sale_id as string) ?? null,
-    number: (row.number as number) ?? null,
-    series: (row.series as number) ?? null,
-    accessKey: (row.access_key as string) ?? null,
+    id: row.id,
+    companyId: row.company_id,
+    saleId: row.sale_id ?? null,
+    number: row.number ?? null,
+    series: row.series ?? null,
+    accessKey: row.access_key ?? null,
     status: row.status as NfeStatus,
     environment: row.environment as NfeEnvironment,
     totalAmount: Number(row.total_amount ?? 0),
-    xmlSignedPath: (row.xml_signed_path as string) ?? null,
-    xmlAuthorizedPath: (row.xml_authorized_path as string) ?? null,
-    danfePath: (row.danfe_path as string) ?? null,
-    protocol: (row.protocol as string) ?? null,
-    protocolAt: (row.protocol_at as string) ?? null,
-    cancelledAt: (row.cancelled_at as string) ?? null,
-    cancellationReason: (row.cancellation_reason as string) ?? null,
-    cancellationProtocol: (row.cancellation_protocol as string) ?? null,
-    cancelledBy: (row.cancelled_by as string) ?? null,
-    xmlCancellationPath: (row.xml_cancellation_path as string) ?? null,
-    rejectionCode: (row.rejection_code as string) ?? null,
-    rejectionReason: (row.rejection_reason as string) ?? null,
-    provider: (row.provider as string) ?? null,
-    discardedAt: (row.discarded_at as string) ?? null,
-    discardedBy: (row.discarded_by as string) ?? null,
-    discardReason: (row.discard_reason as string) ?? null,
+    xmlSignedPath: row.xml_signed_path ?? null,
+    xmlAuthorizedPath: row.xml_authorized_path ?? null,
+    danfePath: row.danfe_path ?? null,
+    protocol: row.protocol ?? null,
+    protocolAt: row.protocol_at ?? null,
+    cancelledAt: row.cancelled_at ?? null,
+    cancellationReason: row.cancellation_reason ?? null,
+    cancellationProtocol: row.cancellation_protocol ?? null,
+    cancelledBy: row.cancelled_by ?? null,
+    xmlCancellationPath: row.xml_cancellation_path ?? null,
+    rejectionCode: row.rejection_code ?? null,
+    rejectionReason: row.rejection_reason ?? null,
+    provider: row.provider ?? null,
+    discardedAt: row.discarded_at ?? null,
+    discardedBy: row.discarded_by ?? null,
+    discardReason: row.discard_reason ?? null,
     artifactsPending: normalizePendingKinds(row.artifacts_pending),
-    artifactsLastError: (row.artifacts_last_error as string) ?? null,
-    artifactsCheckedAt: (row.artifacts_checked_at as string) ?? null,
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
+    artifactsLastError: row.artifacts_last_error ?? null,
+    artifactsCheckedAt: row.artifacts_checked_at ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -83,7 +81,7 @@ export async function fetchFiscalDocuments(
 
   const { data, error } = await q;
   if (error) throw error;
-  return ((data ?? []) as Row[]).map(mapDocument);
+  return (data ?? []).map(mapDocument);
 }
 
 export async function fetchFiscalDashboard(
@@ -131,7 +129,7 @@ export async function fetchFiscalDashboard(
     totals,
     monthAuthorized,
     monthValue,
-    lastDocument: lastRow ? mapDocument(lastRow as Row) : null,
+    lastDocument: lastRow ? mapDocument(lastRow) : null,
   };
 }
 
@@ -147,7 +145,7 @@ export async function fetchFiscalDocument(
     .eq("id", documentId)
     .maybeSingle();
   if (error) throw error;
-  return data ? mapDocument(data as Row) : null;
+  return data ? mapDocument(data) : null;
 }
 
 export async function fetchFiscalDocumentEvents(
