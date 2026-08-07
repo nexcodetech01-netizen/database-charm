@@ -3,7 +3,7 @@
  */
 import { formatCurrency } from "@/lib/format";
 import type { AccountingSummary } from "../../types";
-import type { FinancialAdvice } from "../../advisor";
+import type { FinancialAdvice } from "../../advisor/types";
 
 export type PayrollQueryId =
   | "prolabore_sugerido"
