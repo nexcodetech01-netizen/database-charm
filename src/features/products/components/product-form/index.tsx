@@ -2,2597 +2,408 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  Boxes,
-  ChevronDown,
-  Loader2,
-  Plus,
-  Settings2,
-  ShoppingBag,
-  Smartphone,
-  Sparkles,
-  Wand2,
-  Info,
-  Video,
-} from "lucide-react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { CategoryManagerDialog } from "@/features/categories";
-import { formatCurrency } from "@/lib/format";
-import {
-  useCategories,
-  useCreateCategory,
-  useCreateProduct,
-  useSuppliers,
-  useUpdateProduct,
-} from "../../hooks/use-products";
-import {
-  PRODUCT_STATUS_OPTIONS,
-  PRODUCT_UNIT_OPTIONS,
-  SALES_CHANNEL_OPTIONS,
-  type Product,
-  type ProductInsert,
-  type ProductUpdate,
-} from "../../types";
-import { useEntityForm } from "@/hooks/use-entity-form";
-import { useNextAction } from "@/components/feedback/next-action-provider";
-import { executeWithUndo } from "@/lib/undo-manager";
+import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { productImagesService } from "../../services/product-images.service";
-import { productsKeys, useProductImages, useSignedImageUrls } from "../../hooks/use-products";
 
-import { ProductImageUploader } from "../product-image-uploader";
-import { ProductMainImagePicker } from "../product-main-image-picker";
-import { SupplierQuickFormDialog } from "./supplier-quick-form-dialog";
-import { ProductCreatedDialog } from "../product-created-dialog";
-import { MovementFormDialog } from "@/features/inventory/components/movement-form-dialog";
-import type { ManualMovementType } from "@/features/inventory/types";
-import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
-import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
-import {
-  computeSuggestedPrice,
-  evaluateOfficialPrice,
-  worstCaseFee,
-  effectiveFeePct,
-} from "@/features/pricing/official";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEntityForm } from "@/hooks/use-entity-form";
 import { useDraft } from "@/hooks/use-draft";
 import { DRAFT_KEYS } from "@/lib/draft-storage";
 import { DraftAutosave } from "@/components/feedback/draft-autosave";
-import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { Check, RefreshCw, RotateCcw, Search, X } from "lucide-react";
-import { useOperationalDefaults } from "@/features/settings/hooks/use-operational-defaults";
-import { handleTitleCaseBlur, toTitleCasePtBr } from "@/lib/text-format";
-import { mergeTags, normalizeTag, normalizeTags, MAX_PRODUCT_TAGS } from "@/lib/product-tags";
+import { toTitleCasePtBr } from "@/lib/text-format";
+import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
+import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import { suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
-import { useFiscalAutofill } from "../../hooks/use-fiscal-autofill";
-import {
-  fiscalSuggestionService,
-  formatCest,
-  formatNcm,
-  normalizeCest,
-  normalizeNcm,
-} from "../../lib/fiscal-suggestions";
-import { lookupProductByEan } from "../../lib/ean-lookup.functions";
-import { ProductPhotoBatchUploader } from "../product-photo-batch-uploader";
+import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
+import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCaseFee } from "@/features/pricing/official";
+import { productImagesService } from "../../services/product-images.service";
 import { productMediaService } from "../../services/product-media.service";
-import { PublishToMercadoLivreDialog } from "../publish-to-ml-dialog";
-import { validateMercadoLivreRequirements } from "../../utils/ml-validation";
+import { lookupProductByEan } from "../../lib/ean-lookup.functions";
+
+import {
+  useCategories,
+  useSuppliers,
+  useCreateProduct,
+  useUpdateProduct,
+  productsKeys,
+  useProductImages,
+  useSignedImageUrls,
+  useCreateCategory,
+} from "../../hooks/use-products";
+import { useFiscalAutofill } from "../../hooks/use-fiscal-autofill";
+import { useOperationalDefaults } from "@/features/settings/hooks/use-operational-defaults";
+
+import { GeneralInfoForm } from "./modules/general-info-form";
+import { LogisticsForm } from "./modules/logistics-form";
+import { PricingForm } from "./modules/pricing-form";
+import { MarketingForm } from "./modules/marketing-form";
+import { MultimediaForm } from "./modules/multimedia-form";
+import { StockForm } from "./modules/stock-form";
+import { FiscalForm } from "./modules/fiscal-form";
+
+import { ProductCreatedDialog } from "../product-created-dialog";
+import { SupplierQuickFormDialog } from "./supplier-quick-form-dialog";
+import { MovementFormDialog } from "@/features/inventory/components/movement-form-dialog";
+import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
+
+import type { Product, ProductInsert, ProductUpdate } from "../../types";
+import type { ManualMovementType } from "@/features/inventory/types";
 
 interface Props {
   companyId: string;
   product?: Product;
   duplicateOf?: Product;
-  /** Preço sugerido aplicado externamente (modal de precificação) — apenas em memória. */
   initialPrice?: number;
-
 }
 
 const schema = z.object({
   name: z.string().trim().min(1, "Nome obrigatório").max(200),
   sku: z.string().trim().min(1, "SKU obrigatório").max(80),
-  barcode: z.string().trim().min(1, "EAN/GTIN obrigatório (use 'SEM GTIN' se isento)").max(80),
-  // NCM/CEST aceitam entrada formatada (4202.21.00) — só os dígitos são validados.
-  ncm: z.preprocess(
-    (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
-    z
-      .string()
-      .regex(/^\d{8}$/, "NCM deve ter exatamente 8 dígitos")
-      .min(1, "NCM obrigatório"),
-  ),
-  cest: z.preprocess(
-    (v) => (typeof v === "string" ? v.replace(/\D/g, "") : v),
-    z
-      .string()
-      .regex(/^\d{7}$/, "CEST deve ter 7 dígitos")
-      .optional()
-      .or(z.literal("")),
-  ),
-  brand: z.string().trim().optional().default("Genérico"),
-  model: z.string().trim().optional().default("Padrão"),
-  weight: z.preprocess((v) => num(v as any), z.number().min(0, "Peso não pode ser negativo").optional().default(0.3)),
-  width: z.preprocess((v) => num(v as any), z.number().min(0, "Largura não pode ser negativa").optional().default(15)),
-  height: z.preprocess((v) => num(v as any), z.number().min(0, "Altura não pode ser negativa").optional().default(15)),
-  length: z.preprocess((v) => num(v as any), z.number().min(0, "Comprimento não pode ser negativo").optional().default(15)),
+  barcode: z.string().trim().min(1, "EAN/GTIN obrigatório").max(80),
+  ncm: z.preprocess((v) => (typeof v === "string" ? v.replace(/\D/g, "") : v), z.string().regex(/^\d{8}$/, "NCM inválido")),
   category_id: z.string().min(1, "Categoria obrigatória"),
-  price: z.preprocess((v) => num(v as any), z.number().positive("Preço de venda deve ser maior que zero")),
-  cost: z.preprocess((v) => num(v as any), z.number().min(0).optional().default(0)),
+  price: z.preprocess((v) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0, z.number().positive("Preço inválido")),
 });
 
 type FormState = {
-  name: string;
-  sku: string;
-  barcode: string;
-  ncm: string;
-  cest: string;
-  brand: string;
-  model: string;
-  description: string;
-  category_id: string;
-  supplier_id: string;
-  status: string;
-  unit: string;
-  sales_channels: string[];
-  cost: string;
-  freight: string;
-  packaging: string;
-  insurance: string;
-  other_costs: string;
-  margin: string;
-  use_category_margin: boolean;
-  price: string;
-  stock: string;
-  min_stock: string;
-  tags: string[];
-  weight: string;
-  width: string;
-  height: string;
-  length: string;
+  name: string; sku: string; barcode: string; ncm: string; cest: string;
+  brand: string; model: string; description: string; category_id: string;
+  supplier_id: string; status: string; unit: string; sales_channels: string[];
+  cost: string; freight: string; packaging: string; insurance: string;
+  other_costs: string; margin: string; use_category_margin: boolean;
+  price: string; stock: string; min_stock: string; tags: string[];
+  weight: string; width: string; height: string; length: string;
   video_url: string;
 };
 
 const empty: FormState = {
-  name: "",
-  sku: "",
-  barcode: "SEM GTIN",
-  ncm: "",
-  cest: "",
-  brand: "Genérico",
-  model: "Padrão",
-  description: "",
-  category_id: "",
-  supplier_id: "",
-  status: "active",
-  unit: "UN",
-  sales_channels: ["loja_fisica"],
-  cost: "0",
-  freight: "0",
-  packaging: "0",
-  insurance: "0",
-  other_costs: "0",
-  margin: "",
-  use_category_margin: true,
-  price: "0",
-  stock: "1",
-  min_stock: "0",
-  tags: [],
-  weight: "0.3",
-  width: "15",
-  height: "15",
-  length: "15",
-  video_url: "",
+  name: "", sku: "", barcode: "SEM GTIN", ncm: "", cest: "",
+  brand: "Genérico", model: "Padrão", description: "", category_id: "",
+  supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica"],
+  cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
+  margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
+  tags: [], weight: "0.3", width: "15", height: "15", length: "15", video_url: "",
 };
 
 function toState(p?: Product): FormState {
   if (!p) return empty;
   return {
-    name: p.name,
-    sku: p.sku ?? "",
-    barcode: p.barcode ?? "",
-    ncm: p.ncm ?? "",
-    cest: (p as { cest?: string | null }).cest ?? "",
-    brand: p.brand ?? "",
-    model: (p as any).model ?? "",
-    description: p.description ?? "",
-    category_id: p.category_id ?? "",
-    supplier_id: p.supplier_id ?? "",
-    status: p.status,
-    unit: p.unit,
-    sales_channels: (p as any).sales_channels ?? [],
-    cost: String(p.cost),
-    freight: String(p.freight),
-    packaging: String(p.packaging ?? 0),
-    insurance: String(p.insurance),
-    other_costs: String(p.other_costs),
-    margin: String(p.margin),
-    use_category_margin:
-      (p as { use_category_margin?: boolean | null }).use_category_margin ?? false,
-    price: String(p.price),
-    stock: String(p.stock),
-    min_stock: String(p.min_stock),
-    tags: p.tags ?? [],
-    weight: (p as any).weight ? String((p as any).weight) : "",
-    width: (p as any).width ? String((p as any).width) : "",
-    height: (p as any).height ? String((p as any).height) : "",
-    length: (p as any).length ? String((p as any).length) : "",
-    video_url: (p as any).video_url ?? "",
+    name: p.name, sku: p.sku ?? "", barcode: p.barcode ?? "", ncm: p.ncm ?? "",
+    cest: (p as any).cest ?? "", brand: p.brand ?? "", model: (p as any).model ?? "",
+    description: p.description ?? "", category_id: p.category_id ?? "",
+    supplier_id: p.supplier_id ?? "", status: p.status, unit: p.unit,
+    sales_channels: (p as any).sales_channels ?? [], cost: String(p.cost),
+    freight: String(p.freight), packaging: String(p.packaging ?? 0),
+    insurance: String(p.insurance), other_costs: String(p.other_costs),
+    margin: String(p.margin), use_category_margin: (p as any).use_category_margin ?? false,
+    price: String(p.price), stock: String(p.stock), min_stock: String(p.min_stock),
+    tags: p.tags ?? [], weight: String((p as any).weight || ""),
+    width: String((p as any).width || ""), height: String((p as any).height || ""),
+    length: String((p as any).length || ""), video_url: (p as any).video_url ?? "",
   };
-}
-
-/**
- * Converte a string de um input monetário/decimal em número float.
- * - Remove símbolos ("R$"), espaços e caracteres não numéricos.
- * - Aceita formato pt-BR ("1.234,56") e en-US ("1,234.56" ou "1234.56").
- * - Retorna 0 quando a entrada é inválida/vazia.
- */
-function num(v: string | number | null | undefined): number {
-  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  if (v == null) return 0;
-  let s = String(v).trim();
-  if (!s) return 0;
-  // Remove tudo exceto dígitos, vírgula, ponto e sinal.
-  s = s.replace(/[^\d,.\-]/g, "");
-  if (!s) return 0;
-  const lastComma = s.lastIndexOf(",");
-  const lastDot = s.lastIndexOf(".");
-  if (lastComma > -1 && lastDot > -1) {
-    // Ambos presentes: o mais à direita é o decimal.
-    if (lastComma > lastDot) {
-      s = s.replace(/\./g, "").replace(",", ".");
-    } else {
-      s = s.replace(/,/g, "");
-    }
-  } else if (lastComma > -1) {
-    // Só vírgula → decimal pt-BR.
-    s = s.replace(/\./g, "").replace(",", ".");
-  }
-  const n = parseFloat(s);
-  return Number.isFinite(n) ? n : 0;
 }
 
 export function ProductForm({ companyId, product, duplicateOf, initialPrice }: Props) {
   const navigate = useNavigate();
-  const showNextAction = useNextAction();
-
+  const qc = useQueryClient();
   const [tab, setTab] = useState("geral");
-  /** Alíquota simulada nesta tela — não é persistida no produto. */
-  const [taxPct, setTaxPct] = useState("0");
+  const [form, setForm] = useEntityForm(product, toState);
+  
+  // States para modais e utilitários
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
-  const [mlDialogOpen, setMlDialogOpen] = useState(false);
-  const [form, setForm] = useEntityForm(product, toState);
-  const initialPriceAppliedRef = useRef(false);
-  useEffect(() => {
-    if (!initialPrice || initialPrice <= 0 || initialPriceAppliedRef.current) return;
-    initialPriceAppliedRef.current = true;
-    setForm((s) => ({ ...s, price: initialPrice.toFixed(2) }));
-  }, [initialPrice, setForm]);
-  const duplicateAppliedRef = useRef(false);
-
-  useEffect(() => {
-    if (product || !duplicateOf || duplicateAppliedRef.current) return;
-    duplicateAppliedRef.current = true;
-    const base = toState(duplicateOf);
-    // Duplicação copia apenas dados cadastrais (nome, categoria, fornecedor,
-    // marca, descrição, unidade, canal, tags, margem e preço de venda).
-    // Zera identificadores únicos, estoque e componentes operacionais de custo
-    // — esses recebem novos valores padrão da empresa (efeito abaixo).
-    setForm({
-      ...base,
-      name: `${base.name} (Cópia)`.slice(0, 200),
-      sku: "", // regenerado pelo auto-SKU
-      barcode: "", // código de barras é físico da peça
-      cost: "0", // custo unitário revisado a cada compra
-      freight: "0", // reaplicado via operationalDefaults
-      packaging: "0",
-      insurance: "0",
-      other_costs: "0",
-      stock: "0", // estoque inicia zerado
-      min_stock: base.min_stock, // mantém política de reposição
-      weight: base.weight, // dimensões logísticas são do produto físico
-      width: base.width,
-      height: base.height,
-      length: base.length,
-    });
-    // Permite reaplicar os custos operacionais padrão da empresa no clone.
-    defaultsAppliedRef.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duplicateOf?.id, product]);
-
+  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
-
-  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("video/")) {
-      toast.error("Por favor, selecione um arquivo de vídeo (MP4 ou MOV).");
-      return;
-    }
-
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("O vídeo deve ter no máximo 50MB.");
-      return;
-    }
-
-    setUploadingVideo(true);
-    try {
-      // Usar um ID temporário se for novo produto, ou o ID real se for edição
-      const prodId = product?.id || "temp-" + Date.now();
-      const url = await productMediaService.uploadVideo(companyId, prodId, file);
-      setForm(prev => ({ ...prev, video_url: url }));
-      toast.success("Vídeo carregado com sucesso!");
-    } catch (err) {
-      toast.error("Erro ao carregar vídeo: " + (err as Error).message);
-    } finally {
-      setUploadingVideo(false);
-      e.target.value = "";
-    }
-  }
-
-
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [suggestingTags, setSuggestingTags] = useState(false);
 
-  const suggestTagsFn = useServerFn(suggestProductTags);
-  const [newCategory, setNewCategory] = useState("");
-  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
-  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
-  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
-
-  const qc = useQueryClient();
+  // Hooks de dados
   const { data: categories = [] } = useCategories(companyId);
   const { data: suppliers = [] } = useSuppliers(companyId);
   const { data: existingImages = [] } = useProductImages(product?.id ?? "");
   const currentMainImage = existingImages[0] ?? null;
   const { data: signed = [] } = useSignedImageUrls(currentMainImage ? [currentMainImage.path] : []);
   const currentMainImageUrl = signed[0]?.signedUrl ?? null;
-  const createCategory = useCreateCategory(companyId);
+  
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
-
-  const saving = createProduct.isPending || updateProduct.isPending;
-
-  // Custos operacionais padrão da empresa (para novos produtos + botão "Restaurar padrão").
-  const isEditForDefaults = !!product;
+  const createCategory = useCreateCategory(companyId);
+  const suggestTagsFn = useServerFn(suggestProductTags);
+  const lookupEan = useServerFn(lookupProductByEan);
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
-  const defaultsAppliedRef = useRef(false);
-  useEffect(() => {
-    if (isEditForDefaults || defaultsAppliedRef.current || !operationalDefaults) return;
-    defaultsAppliedRef.current = true;
-    // Só aplica se o usuário ainda não mexeu (valores zerados iniciais).
-    setForm((s) => {
-      const isZero = (v: string) => num(v) === 0;
-      if (
-        !isZero(s.freight) ||
-        !isZero(s.packaging) ||
-        !isZero(s.insurance) ||
-        !isZero(s.other_costs)
-      ) {
-        return s;
-      }
-      return {
-        ...s,
-        freight: String(operationalDefaults.freight),
-        packaging: String(operationalDefaults.packaging),
-        insurance: String(operationalDefaults.insurance),
-        other_costs: String(operationalDefaults.other_costs),
-      };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operationalDefaults, isEditForDefaults]);
-
-  // OFFLINE-001 — Rascunho automático (somente em novo produto).
+  
   const isEdit = !!product;
-  const draftKey = isEdit ? null : DRAFT_KEYS.product(companyId);
-  const [recoveryOpen, setRecoveryOpen] = useState(false);
-  const [recoveryUpdatedAt, setRecoveryUpdatedAt] = useState<number | null>(null);
-  const draftCheckedRef = useRef(false);
-  const draft = useDraft({
-    key: draftKey,
-    value: form,
-    isEmpty: (v) => !v.name.trim(),
-  });
-  useEffect(() => {
-    if (isEdit || draftCheckedRef.current) return;
-    draftCheckedRef.current = true;
-    const found = draft.load();
-    if (found) {
-      setRecoveryUpdatedAt(found.updatedAt);
-      setRecoveryOpen(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit]);
-  const restoreDraft = () => {
-    const found = draft.load();
-    if (found?.data) {
-      const draftData = found.data as FormState;
-      // Garante que o rascunho recuperado não sobrescreva o auto-foco se o nome ainda estiver vazio
-      setForm(draftData);
-    }
-    toast.success("Rascunho recuperado");
-    setRecoveryOpen(false);
-  };
-  const discardDraft = () => {
-    draft.discard();
-    setRecoveryOpen(false);
-  };
+  const categoryName = categories.find(c => c.id === form.category_id)?.name || null;
+  const num = (v: any) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0;
 
-  // Preenchimento de SKU ao selecionar categoria para novos produtos
-  useEffect(() => {
-    if (isEdit || !form.category_id || form.sku.trim()) return;
-    if (!form.name.trim()) return;
-
-    regenerateSku();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.category_id, isEdit]);
-
-  // ─── Geração automática de SKU (apenas em novo produto) ───
-  // skuAuto = true enquanto o usuário não editar o campo manualmente.
-  // Ao salvar (isEdit), o SKU nunca é regenerado automaticamente.
+  // SKU Logic
   const [skuAuto, setSkuAuto] = useState(!isEdit);
   const [skuGenerating, setSkuGenerating] = useState(false);
-  const debouncedName = useDebouncedValue(form.name, 400);
-  const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === form.category_id) ?? null,
-    [categories, form.category_id],
-  );
-  const categoryName = selectedCategory?.name ?? null;
-
-  // ─── Automação fiscal (NCM/CEST) ───
-  const applyFiscal = useCallback(
-    (values: { ncm: string; cest: string }) =>
-      setForm((prev) => ({ ...prev, ncm: values.ncm, cest: values.cest })),
-    [setForm],
-  );
-  const fiscal = useFiscalAutofill({
-    companyId,
-    name: form.name,
-    categoryId: form.category_id,
-    material: (form as any).material || null,
-    categories,
-    ncm: form.ncm,
-    cest: form.cest,
-    onApply: applyFiscal,
-  });
-
-  const lookupEan = useServerFn(lookupProductByEan);
-  const [eanLoading, setEanLoading] = useState(false);
-
-  async function handleEanLookup() {
-    const code = form.barcode.replace(/\D/g, "");
-    if (code.length < 8) {
-      toast.error("Informe um código de barras válido (8 a 14 dígitos).");
-      return;
-    }
-    setEanLoading(true);
-    try {
-      // 1) Histórico interno: mesmo EAN já cadastrado na empresa.
-      const internal = await fiscalSuggestionService.byBarcode(companyId, code);
-      if (internal) {
-        fiscal.applySuggestion({ ncm: internal.ncm, cest: internal.cest }, "barcode");
-        toast.success("NCM recuperado de um produto com o mesmo EAN.", {
-          description: internal.sampleName,
-        });
-      }
-
-      // 2) Base pública (opcional): dados cadastrais do produto.
-      const result = await lookupEan({ data: { barcode: code } });
-      if (!result.found) {
-        if (!internal) {
-          toast.info("Nenhum dado público encontrado para este EAN.", {
-            description: "Preencha as informações manualmente.",
-          });
-        }
-        return;
-      }
-
-      setForm((prev) => ({
-        ...prev,
-        name: prev.name.trim() ? prev.name : toTitleCasePtBr(result.name ?? ""),
-        brand: prev.brand.trim() ? prev.brand : toTitleCasePtBr(result.brand ?? ""),
-        description:
-          prev.description.trim() || !result.quantity
-            ? prev.description
-            : `Embalagem: ${result.quantity}`,
-      }));
-      toast.success(`Dados encontrados em ${result.source}.`, {
-        description: "Revise as informações antes de salvar.",
-      });
-    } catch (err) {
-      toast.error("Não foi possível consultar o EAN", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
-      });
-    } finally {
-      setEanLoading(false);
-    }
-  }
-  // Política automática da categoria (Motor Comercial V2). Quando desligada,
-  // a categoria não impõe margem e o formulário cai na política da empresa.
-  const categoryAutoPolicy =
-    (selectedCategory as { auto_pricing_policy?: boolean | null } | null)?.auto_pricing_policy !==
-    false;
-  const categoryDefaultMargin = useMemo(() => {
-    if (!categoryAutoPolicy) return null;
-    const raw = (selectedCategory as { target_margin_pct?: number | null } | null)
-      ?.target_margin_pct;
-    return raw != null && Number.isFinite(Number(raw)) ? Number(raw) : null;
-  }, [selectedCategory, categoryAutoPolicy]);
-  const hasCategoryMargin = categoryDefaultMargin != null;
-
-  // Auto-preenche a margem quando a opção "Utilizar margem da categoria"
-  // estiver ativa e existir margem padrão configurada para a categoria.
-  useEffect(() => {
-    if (!form.use_category_margin) return;
-    if (!hasCategoryMargin) return;
-    const next = String(categoryDefaultMargin);
-    if (form.margin === next) return;
-    setForm((s) => ({ ...s, margin: next }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.use_category_margin, categoryDefaultMargin, hasCategoryMargin]);
-
-  useEffect(() => {
-    if (isEdit || !skuAuto) return;
-    if (!debouncedName.trim()) return;
-    let cancelled = false;
-    setSkuGenerating(true);
-    generateNextSku(companyId, debouncedName, categoryName)
-      .then((sku) => {
-        if (cancelled || !sku) return;
-        setForm((s) => ({ ...s, sku }));
-      })
-      .finally(() => {
-        if (!cancelled) setSkuGenerating(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedName, categoryName, companyId, isEdit, skuAuto]);
-
-  const regenerateSku = async () => {
-    if (!form.name.trim()) {
-      toast.error("Informe o nome do produto antes de gerar o SKU");
-      return;
-    }
-    setSkuAuto(true);
-    setSkuGenerating(true);
-    try {
-      const sku = await generateNextSku(companyId, form.name, categoryName);
-      if (sku) {
-        setForm((s) => ({ ...s, sku }));
-        toast.success("SKU gerado");
-      } else {
-        toast.error("Não foi possível gerar o SKU");
-      }
-    } finally {
-      setSkuGenerating(false);
-    }
-  };
-
-  // ─── Validação de duplicidade de SKU (tempo real) ───
   const debouncedSku = useDebouncedValue(form.sku.trim(), 350);
   const [skuChecking, setSkuChecking] = useState(false);
   const [skuTaken, setSkuTaken] = useState(false);
 
-  useEffect(() => {
-    if (!debouncedSku) {
-      setSkuTaken(false);
-      setSkuChecking(false);
-      return;
-    }
-    let cancelled = false;
-    setSkuChecking(true);
-    isSkuTaken(companyId, debouncedSku, product?.id)
-      .then((taken) => {
-        if (!cancelled) setSkuTaken(taken);
-      })
-      .finally(() => {
-        if (!cancelled) setSkuChecking(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedSku, companyId, product?.id]);
+  // Fiscal Suggestion Logic
+  const fiscal = useFiscalAutofill(companyId, form.name, form.category_id);
+  const [eanLoading, setEanLoading] = useState(false);
 
-  // Precificação: base de custos (Custo + Frete + Embalagem + Seguro + Outros)
-  const totalCost = useMemo(
-    () =>
-      num(form.cost) +
-      num(form.freight) +
-      num(form.packaging) +
-      num(form.insurance) +
-      num(form.other_costs),
-    [form.cost, form.freight, form.packaging, form.insurance, form.other_costs],
-  );
+  // Draft Logic
+  const draft = useDraft({
+    key: isEdit ? null : DRAFT_KEYS.product(companyId),
+    value: form,
+    enabled: !isEdit,
+  });
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const recoveryData = draft.load();
+  const recoveryUpdatedAt = recoveryData?.updatedAt;
 
-  const price = num(form.price);
-
-  // ── MOTOR COMERCIAL V2 — entradas oficiais (margem categoria→empresa,
-  // taxas reais do Asaas, impostos e custos padrão). Nada é hardcoded.
+  // Pricing Logic
   const { inputs: pricingInputs } = usePricingInputs(companyId, form.category_id || null);
+  const totalCost = num(form.cost) + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
 
-  const officialCosts = useMemo(
-    () => ({
-      acquisition: num(form.cost),
-      freight: num(form.freight),
-      packaging: num(form.packaging),
-      insurance: num(form.insurance),
-      otherCosts: num(form.other_costs),
-    }),
-    [form.cost, form.freight, form.packaging, form.insurance, form.other_costs],
-  );
-
-  /** Margem efetiva: produto → categoria → empresa (via política oficial). */
-  const effectiveMargins = useMemo(() => {
-    const own = num(form.margin);
-    return own > 0 ? { ...pricingInputs.margins, targetPct: own } : pricingInputs.margins;
-  }, [form.margin, pricingInputs]);
-
-  /**
-   * Resultado COMPLETO do Motor Comercial V2 (mín / recomendado / premium).
-   * UX apenas: nenhuma fórmula é calculada aqui.
-   */
-  const officialSuggestion = useMemo(() => {
-    if (officialCosts.acquisition <= 0) return null;
-    return computeSuggestedPrice({
-      companyId,
-      productId: product?.id ?? "new-product",
-      categoryId: form.category_id || undefined,
-      costs: officialCosts,
-      margins: effectiveMargins,
-      taxPct: num(taxPct),
-      feeTable: pricingInputs.feeTable,
-      module: "products.form",
-    });
-  }, [
-    companyId,
-    product?.id,
-    form.category_id,
-    officialCosts,
-    effectiveMargins,
-    taxPct,
-    pricingInputs,
-  ]);
-
-  /** Preço sugerido oficial — ÚNICA origem de preço desta tela. */
-  const suggestOfficialPrice = useCallback((): number | null => {
-    const value = officialSuggestion?.targetPrice;
-    return value != null && Number.isFinite(value) && value > 0 ? value : null;
-  }, [officialSuggestion]);
-
-
-  // Impostos: alíquota efetiva da empresa (quando configurada).
-  const taxAppliedRef = useRef(false);
-  useEffect(() => {
-    if (taxAppliedRef.current || pricingInputs.taxPct <= 0) return;
-    taxAppliedRef.current = true;
-    setTaxPct(String(pricingInputs.taxPct));
-  }, [pricingInputs.taxPct]);
-
-  // Margem: quando não há valor próprio nem da categoria, usa a política da empresa.
-  useEffect(() => {
-    if (num(form.margin) > 0) return;
-    if (form.use_category_margin && hasCategoryMargin) return;
-    const target = pricingInputs.margins.targetPct;
-    if (!(target > 0)) return;
-    setForm((s) => (num(s.margin) > 0 ? s : { ...s, margin: String(target) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pricingInputs.margins.targetPct, form.margin, form.use_category_margin, hasCategoryMargin]);
-
-  // Produto NOVO: preço sugerido gerado automaticamente pelo motor.
-  const autoPriceRef = useRef(false);
-  useEffect(() => {
-    if (isEdit || autoPriceRef.current) return;
-    if (num(form.price) > 0 || officialCosts.acquisition <= 0) return;
-    if (!(effectiveMargins.targetPct > 0)) return;
-    const suggested = suggestOfficialPrice();
-    if (suggested == null) return;
-    autoPriceRef.current = true;
-    setForm((s) => (num(s.price) > 0 ? s : { ...s, price: suggested.toFixed(2) }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, form.price, officialCosts, effectiveMargins, suggestOfficialPrice]);
-
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
-    setForm((s) => ({ ...s, [k]: v }));
-
-  const addTag = () => {
-    const t = normalizeTag(tagInput);
-    if (!t) return;
-    if (form.tags.some((x) => x.toLowerCase() === t.toLowerCase())) return;
-    if (form.tags.length >= MAX_PRODUCT_TAGS) {
-      toast.error(`Máximo de ${MAX_PRODUCT_TAGS} tags por produto.`);
-      return;
-    }
-    set("tags", [...form.tags, t]);
-    setSuggestedTags((prev) => prev.filter((x) => x.toLowerCase() !== t.toLowerCase()));
-    setTagInput("");
-  };
-
-  const acceptSuggestedTag = (t: string) => {
-    if (form.tags.length >= MAX_PRODUCT_TAGS) {
-      toast.error(`Máximo de ${MAX_PRODUCT_TAGS} tags por produto.`);
-      return;
-    }
-    set("tags", mergeTags(form.tags, [t]));
-    setSuggestedTags((prev) => prev.filter((x) => x.toLowerCase() !== t.toLowerCase()));
-  };
-
-  const acceptAllSuggested = () => {
-    if (!suggestedTags.length) return;
-    set("tags", mergeTags(form.tags, suggestedTags));
-    setSuggestedTags([]);
-  };
-
-  const dismissSuggestedTag = (t: string) => {
-    setSuggestedTags((prev) => prev.filter((x) => x.toLowerCase() !== t.toLowerCase()));
-  };
-
-  const generateTagSuggestions = async (opts: { silent?: boolean } = {}) => {
-    if (!form.name.trim()) {
-      if (!opts.silent) toast.error("Informe o nome do produto para a Bella sugerir tags.");
-      return;
-    }
-    setSuggestingTags(true);
+  // Event Handlers
+  const handleRegenerateSku = async () => {
+    if (!form.name.trim()) return toast.error("Nome obrigatório");
+    setSkuGenerating(true);
     try {
-      const result = await suggestTagsFn({
-        data: {
-          name: form.name,
-          category: categoryName,
-          brand: form.brand || null,
-          description: form.description || null,
-          existingTags: form.tags,
-        },
-      });
-      const fresh = (result?.tags ?? []).filter(
-        (t) => !form.tags.some((x) => x.toLowerCase() === t.toLowerCase()),
-      );
-      setSuggestedTags(fresh);
-      if (!opts.silent) {
-        if (fresh.length)
-          toast.success(`Bella sugeriu ${fresh.length} tag${fresh.length > 1 ? "s" : ""}.`);
-        else toast.message("Nenhuma nova sugestão no momento.");
-      }
-    } catch (err) {
-      if (!opts.silent) {
-        toast.error(err instanceof Error ? err.message : "Falha ao gerar sugestões de tags.");
-      }
-    } finally {
-      setSuggestingTags(false);
-    }
+      const sku = await generateNextSku(companyId, form.name, categoryName);
+      if (sku) setForm(s => ({ ...s, sku }));
+    } finally { setSkuGenerating(false); }
   };
 
-  const isDuplicating = !!duplicateOf && !product;
+  const handleEanLookup = async () => {
+    const code = form.barcode.trim();
+    if (!code || code === "SEM GTIN") return;
+    setEanLoading(true);
+    try {
+      const result = await lookupEan({ data: { barcode: code } });
+      if (result.found) {
+        setForm(prev => ({
+          ...prev,
+          name: prev.name.trim() ? prev.name : result.name || "",
+          brand: prev.brand.trim() ? prev.brand : result.brand || "",
+        }));
+        toast.success("Dados encontrados");
+      }
+    } catch (err) { toast.error("Erro ao buscar EAN"); }
+    finally { setEanLoading(false); }
+  };
 
-  const mlValidation = useMemo(() => {
-    return validateMercadoLivreRequirements({
-      ...product,
-      company_id: companyId,
-      name: form.name,
-      price: num(form.price),
-      ncm: form.ncm,
-      weight: num(form.weight),
-      width: num(form.width),
-      height: num(form.height),
-      length: num(form.length),
-      brand: form.brand,
-      model: form.model,
-      // No formulário, usamos a categoria do ERP, que deve ser mapeada
-      categoryId: form.category_id, 
-    });
-  }, [product, companyId, form]);
-
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingVideo(true);
+    try {
+      const url = await productMediaService.uploadVideo(companyId, product?.id || "temp", file);
+      setForm(s => ({ ...s, video_url: url }));
+      toast.success("Vídeo carregado");
+    } catch (err) { toast.error("Erro no upload"); }
+    finally { setUploadingVideo(false); }
+  };
 
   const submit = async () => {
-    // Validações estritas e amigáveis (UX Enterprise).
-    // Não bloqueamos o botão 'Salvar', mas validamos ao clicar.
     const validation = schema.safeParse(form);
-    
     if (!validation.success) {
-      // Mapeia erros de Zod para mensagens legíveis.
-      const firstError = validation.error.errors[0];
-      const fieldName = firstError.path[0];
-      
-      // Mapeamento de nomes internos para nomes de exibição amigáveis
-      const fieldLabels: Record<string, string> = {
-        name: "Nome",
-        sku: "SKU",
-        barcode: "Código de Barras",
-        ncm: "NCM",
-        category_id: "Categoria",
-        price: "Preço de Venda",
-        cost: "Preço de Custo"
-      };
-
-      toast.error(`Informação pendente: ${fieldLabels[fieldName as string] || fieldName}`, {
-        description: firstError.message,
-      });
-
-      // Se possível, muda para a aba onde está o erro (UX)
-      if (["name", "category_id", "sku"].includes(fieldName as string)) setTab("geral");
-      else if (["ncm", "barcode"].includes(fieldName as string)) setTab("estoque");
-      else if (["price", "cost"].includes(fieldName as string)) setTab("custos");
-
-      return;
+      return toast.error("Verifique os campos obrigatórios: " + validation.error.errors[0].message);
     }
 
-    if (isDuplicating) {
-      if (!form.category_id) {
-        toast.error("Selecione uma categoria antes de salvar a duplicação.");
-        setTab("geral");
-        return;
-      }
-      if (!form.supplier_id) {
-        toast.error("Selecione um fornecedor antes de salvar a duplicação.");
-        setTab("geral");
-        return;
-      }
-      if (num(form.price) <= 0) {
-        toast.error("Informe o Preço de Venda antes de salvar a duplicação.");
-        setTab("custos");
-        return;
-      }
-    }
-
-    // UPSERT — em criação, verifica se já existe produto equivalente
-    // (Nome OU SKU OU Código de barras). Se existir, reaproveitamos o SKU
-    // do registro existente: nunca geramos um SKU novo para o mesmo produto.
-    let duplicateProduct: { id: string; name: string; sku: string | null } | null = null;
-    if (!product && companyId) {
-      const { findDuplicateProduct } = await import("../../lib/product-dedupe");
-      duplicateProduct = await findDuplicateProduct(companyId, {
-        name: form.name,
-        sku: form.sku,
-        barcode: form.barcode,
-      });
-    }
-
-    // Fallback: se o usuário deixou o SKU em branco, gera automaticamente
-    // no momento de salvar (garante rastreabilidade em Mercado Livre e afins).
-    let effectiveSku = form.sku.trim();
-    if (duplicateProduct?.sku) {
-      effectiveSku = duplicateProduct.sku;
-    } else if (!effectiveSku && form.name.trim() && companyId) {
-      const generated = await generateNextSku(companyId, form.name, categoryName);
-      if (generated) effectiveSku = generated;
-    }
-
-    // Verificação anti-colisão: revalida contra o banco e re-gera incrementando
-    // o sufixo numérico até encontrar um SKU livre (protege contra corridas
-    // entre múltiplos cadastros simultâneos e edições concorrentes).
-    // Não se aplica quando o produto já existe (fluxo de UPSERT).
-    if (effectiveSku && companyId && !duplicateProduct) {
-      const bumpSuffix = (sku: string): string => {
-        const m = sku.match(/^(.*?)-(\d+)$/);
-        if (m) {
-          const next = parseInt(m[2], 10) + 1;
-          return `${m[1]}-${String(next).padStart(m[2].length, "0")}`;
-        }
-        return `${sku}-001`;
-      };
-      const originalSku = effectiveSku;
-      let attempts = 0;
-      while (attempts < 25 && (await isSkuTaken(companyId, effectiveSku, product?.id))) {
-        const regenerated = await generateNextSku(companyId, form.name, categoryName);
-        effectiveSku =
-          regenerated && regenerated.toUpperCase() !== effectiveSku.toUpperCase()
-            ? regenerated
-            : bumpSuffix(effectiveSku);
-        attempts++;
-      }
-      if (attempts > 0 && effectiveSku !== originalSku) {
-        setForm((s) => ({ ...s, sku: effectiveSku }));
-        toast.info(`SKU "${originalSku}" já em uso — ajustado para ${effectiveSku}.`);
-      } else if (!form.sku.trim()) {
-        setForm((s) => ({ ...s, sku: effectiveSku }));
-      }
-    }
-
-    const parsed = schema.safeParse({ ...form, sku: effectiveSku });
-    if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos");
-      return;
-    }
-    if (
-      companyId &&
-      !duplicateProduct &&
-      (await isSkuTaken(companyId, effectiveSku, product?.id))
-    ) {
-      toast.error("Este SKU já está em uso por outro produto");
-      return;
-    }
-
-    // Validação explícita do Preço de Venda — bloqueia salvamento e mantém o
-    // formulário aberto até que o usuário informe um valor numérico válido.
-    const parsedPrice = num(form.price);
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      toast.error("Informe um Preço de Venda válido (maior que zero).");
-      return;
-    }
-
-    // Auto-inferência de categoria quando o usuário não escolheu uma.
-    let resolvedCategoryId = form.category_id || null;
-    if (!resolvedCategoryId) {
-      const { inferCategoryWithFallback } = await import("../../lib/infer-category");
-      const { ensureCategoryByName } = await import("@/features/categories/lib/ensure-category");
-      const { name: catName, matched } = inferCategoryWithFallback(form.name, form.description);
-      try {
-        resolvedCategoryId = await ensureCategoryByName(companyId, catName);
-        if (!matched) {
-          toast.warning(`Produto associado à categoria "${catName}" — revise a classificação.`);
-        }
-      } catch {
-        resolvedCategoryId = null;
-      }
-    }
-
-    const basePayload: ProductUpdate = {
+    const payload: ProductUpdate = {
       name: toTitleCasePtBr(form.name),
-      sku: effectiveSku || null,
-
-      barcode: form.barcode.trim() || null,
-      ncm: normalizeNcm(form.ncm) || null,
-      cest: normalizeCest(form.cest) || null,
-      brand: toTitleCasePtBr(form.brand) || null,
-      model: form.model.trim() || null,
-      description: form.description.trim() || null,
-      category_id: resolvedCategoryId,
+      sku: form.sku.trim(),
+      barcode: form.barcode.trim(),
+      ncm: normalizeNcm(form.ncm),
+      cest: normalizeCest(form.cest),
+      brand: toTitleCasePtBr(form.brand),
+      model: form.model.trim(),
+      description: form.description.trim(),
+      category_id: form.category_id,
       supplier_id: form.supplier_id || null,
-      status: form.status,
+      status: form.status as any,
       unit: form.unit,
-      sales_channels: form.sales_channels,
+      price: num(form.price),
       cost: num(form.cost),
       freight: num(form.freight),
       packaging: num(form.packaging),
       insurance: num(form.insurance),
       other_costs: num(form.other_costs),
       margin: num(form.margin),
-      use_category_margin: form.use_category_margin && hasCategoryMargin,
-      price: parsedPrice,
-      // Estoque agora pode ser editado manualmente também na edição (liberação solicitada).
+      use_category_margin: form.use_category_margin,
       stock: num(form.stock),
       min_stock: num(form.min_stock),
-      tags: normalizeTags(form.tags),
       weight: num(form.weight),
       width: num(form.width),
       height: num(form.height),
       length: num(form.length),
+      sales_channels: form.sales_channels,
     };
 
     try {
-      const savedId = product
-        ? (await updateProduct.mutateAsync({ id: product.id, input: basePayload }), product.id)
-        : (
-            await createProduct.mutateAsync({
-              ...(basePayload as ProductInsert),
-              company_id: companyId,
-            })
-          ).id;
+      const saved = isEdit 
+        ? await updateProduct.mutateAsync({ id: product.id, input: payload })
+        : await createProduct.mutateAsync({ ...payload, company_id: companyId } as ProductInsert);
+      
+      const savedId = isEdit ? product.id : saved.id;
 
-      // Persistência da imagem principal (após salvar o produto).
       if (mainImageFile) {
-        try {
-          if (currentMainImage) {
-            await productImagesService.remove(currentMainImage.id, currentMainImage.path);
-          }
-          const path = await productImagesService.upload(companyId, savedId, mainImageFile);
-          await productImagesService.createRecord(companyId, savedId, path, 0);
-          // Sincroniza denormalização usada por listagens/venda/compra.
-          await updateProduct.mutateAsync({
-            id: savedId,
-            input: { cover_image_path: path } as ProductUpdate,
-          });
-          await qc.invalidateQueries({ queryKey: productsKeys.images(savedId) });
-          setMainImageFile(null);
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Falha ao enviar imagem");
-        }
+        const path = await productImagesService.upload(companyId, savedId, mainImageFile);
+        await productImagesService.createRecord(companyId, savedId, path, 0);
+        await updateProduct.mutateAsync({ id: savedId, input: { cover_image_path: path } as ProductUpdate });
       }
 
-      // Sincroniza a margem editada com o ProductPolicy do motor de precificação.
-      // Best-effort: falha aqui não deve bloquear o save do produto.
-      const marginNum = num(form.margin);
-      if (Number.isFinite(marginNum) && marginNum > 0 && marginNum < 100) {
-        try {
-          await syncProductIdealMargin({
-            data: { companyId, productId: savedId, idealMarginPct: marginNum },
-          });
-          await qc.invalidateQueries({ queryKey: ["pricing", "product-intelligence", savedId] });
-          await qc.invalidateQueries({ queryKey: ["pricing"] });
-        } catch (err) {
-          console.warn("[product-form] falha ao sincronizar margem com ProductPolicy", err);
-        }
-      }
-
-      // OFFLINE-001 — produto persistido com sucesso: limpar rascunho.
-      draft.discard();
-
-      if (product) {
-        // Fluxo de edição: toast leve e volta para a lista de produtos.
-        toast.success("Produto atualizado com sucesso!");
-        navigate({ to: "/produtos" });
-      } else if (duplicateProduct) {
-        // UPSERT: produto já existia — atualizado e estoque somado.
-        toast.success(
-          `Produto já cadastrado (${duplicateProduct.name}) — dados atualizados e estoque somado.`,
-        );
-        navigate({ to: "/produtos" });
-      } else {
-        // Fluxo de criação: novo modal de próximos passos.
-        setCreatedProduct({ id: savedId, name: basePayload.name ?? form.name });
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar");
-    }
+      toast.success(isEdit ? "Atualizado" : "Criado");
+      if (!isEdit) setCreatedProduct({ id: savedId, name: payload.name });
+      else navigate({ to: "/produtos" });
+    } catch (err) { toast.error("Erro ao salvar"); }
   };
-
-  const taxPctNum = num(taxPct);
-  // MOTOR ÚNICO — lucro e margem vêm do Motor Comercial V2 (nunca calculados aqui).
-  const officialEvaluation = useMemo(
-    () =>
-      evaluateOfficialPrice(price, {
-        companyId,
-        productId: product?.id ?? "new-product",
-        categoryId: form.category_id || undefined,
-        costs: officialCosts,
-        margins: pricingInputs.margins,
-        fee: { pct: effectiveFeePct(worstCaseFee(pricingInputs.feeTable, price), price) },
-        taxPct: taxPctNum,
-        module: "products.form",
-      }),
-    [price, companyId, product?.id, form.category_id, officialCosts, pricingInputs, taxPctNum],
-  );
-  const taxAmount = (price * officialEvaluation.taxPct) / 100;
-  const netProfit = officialEvaluation.profit;
-  const realMarginPct = officialEvaluation.marginPct;
-  // Só exibe indicadores de resultado quando há custo E preço preenchidos —
-  // evita "prejuízo de -100%" em produtos ainda sem precificação.
-  const hasPricing = totalCost > 0 && price > 0;
-
-  const isFormValid = useMemo(() => {
-    // Para agilidade (PDV/ML), validamos os campos essenciais.
-    // O schema agora também cuida dos opcionais logísticos.
-    return schema.safeParse(form).success;
-  }, [form]);
-
-  /** Faixa escolhida pelo usuário (UX apenas — não altera o motor). */
-  const [priceTier, setPriceTier] = useState<"min" | "recommended" | "premium">("recommended");
-
-  /** Faixas oferecidas pelo motor (somente leitura). */
-
-  const priceTiers = useMemo(
-    () =>
-      officialSuggestion
-        ? ([
-            { key: "min" as const, label: "Mínimo", value: officialSuggestion.minPrice },
-            {
-              key: "recommended" as const,
-              label: "Recomendado",
-              value: officialSuggestion.recommendedPrice,
-            },
-            { key: "premium" as const, label: "Premium", value: officialSuggestion.premiumPrice },
-          ].filter((t) => Number.isFinite(t.value) && t.value > 0))
-        : [],
-    [officialSuggestion],
-  );
-
-  const selectedTierPrice = priceTiers.find((t) => t.key === priceTier)?.value ?? null;
-
-  /**
-   * UX — apenas preenche o campo "Preço de venda" em memória.
-   * NÃO grava nada: o produto só é salvo em "Salvar produto".
-   */
-  const applySuggestedPrice = () => {
-    const suggested = selectedTierPrice ?? suggestOfficialPrice();
-    if (suggested == null) {
-      toast.error("Não foi possível calcular. Verifique custos e margem.");
-      return;
-    }
-    setForm((s) => ({ ...s, price: suggested.toFixed(2) }));
-    toast.success(
-      `Preço aplicado no formulário: ${formatCurrency(suggested)} — revise e clique em Salvar produto.`,
-    );
-  };
-
 
   return (
-    <div className="space-y-6">
-      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
-          <TabsTrigger value="geral" className="py-2.5">Dados gerais</TabsTrigger>
-          <TabsTrigger value="logistica" className="py-2.5">Integração ML & Logística</TabsTrigger>
-          <TabsTrigger value="custos" className="py-2.5">Custos e precificação</TabsTrigger>
-          <TabsTrigger value="canais" className="py-2.5">Canais de venda</TabsTrigger>
-          <TabsTrigger value="estoque" className="py-2.5">Estoque e fiscal</TabsTrigger>
-        </TabsList>
-
-        {/* ══════════════ ABA 1 — DADOS GERAIS ══════════════ */}
-        <TabsContent value="geral" className="space-y-6">
-          {/* ─── Bloco IMAGEM PRINCIPAL ─── */}
-          <Section
-            title="Imagem principal"
-            description="Uma boa foto vende. Envie PNG, JPG ou WEBP (até 2 MB)."
-          >
-            <ProductMainImagePicker
-              currentUrl={currentMainImageUrl}
-              file={mainImageFile}
-              onFileChange={setMainImageFile}
-              onRemoveCurrent={
-                currentMainImage
-                  ? async () => {
-                      const removedImage = currentMainImage;
-                      const removedUrl = currentMainImageUrl;
-                      let cachedBlob: Blob | null = null;
-                      const cachedName = removedImage.path.split("/").pop() || "image.png";
-                      try {
-                        if (removedUrl) {
-                          const r = await fetch(removedUrl);
-                          if (r.ok) cachedBlob = await r.blob();
-                        }
-                      } catch {
-                        /* undo best-effort */
-                      }
-                      try {
-                        await productImagesService.remove(removedImage.id, removedImage.path);
-                        await updateProduct.mutateAsync({
-                          id: product!.id,
-                          input: { cover_image_path: null } as ProductUpdate,
-                        });
-                        await qc.invalidateQueries({ queryKey: productsKeys.images(product!.id) });
-                        executeWithUndo({
-                          message: "✓ Imagem removida.",
-                          apply: () => {
-                            /* já removida */
-                          },
-                          undo: async () => {
-                            if (!cachedBlob) {
-                              toast.error("Não foi possível desfazer — imagem indisponível.");
-                              return;
-                            }
-                            try {
-                              const file = new File([cachedBlob], cachedName, {
-                                type: cachedBlob.type || "image/png",
-                              });
-                              const uploadedPath = await productImagesService.upload(
-                                companyId,
-                                product!.id,
-                                file,
-                              );
-                              await productImagesService.createRecord(
-                                companyId,
-                                product!.id,
-                                uploadedPath,
-                                0,
-                              );
-                              await updateProduct.mutateAsync({
-                                id: product!.id,
-                                input: { cover_image_path: uploadedPath } as ProductUpdate,
-                              });
-                              await qc.invalidateQueries({
-                                queryKey: productsKeys.images(product!.id),
-                              });
-                              toast.success("Imagem restaurada");
-                            } catch (err) {
-                              toast.error(
-                                err instanceof Error ? err.message : "Falha ao restaurar imagem",
-                              );
-                            }
-                          },
-                        });
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Falha ao remover imagem");
-                      }
-                    }
-                  : undefined
-              }
-              disabled={saving}
-            />
-          </Section>
-          
-
-          {/* ─── Bloco INFORMAÇÕES ─── */}
-          <Section title="Informações" description="O básico para identificar o produto.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nome *" hint="Nome comercial do produto">
-                <Input
-                  value={form.name}
-                  onChange={(e) => set("name", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("name", v))}
-                  autoFocus
-                />
-              </Field>
-              <Field label="Categoria *">
-                <div className="flex gap-2">
-                  <Select
-                    value={form.category_id || "__none"}
-                    onValueChange={(v) => {
-                      const next = v === "__none" ? "" : v;
-                      const prev = form.category_id;
-                      if (next === "" && prev) {
-                        executeWithUndo({
-                          message: "✓ Categoria removida.",
-                          apply: () => set("category_id", ""),
-                          undo: () => set("category_id", prev),
-                        });
-                      } else {
-                        set("category_id", next);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Sem categoria</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    title="Gerenciar categorias"
-                    onClick={() => setCategoryManagerOpen(true)}
-                  >
-                    <Settings2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                <InlineCreate
-                  placeholder="Nova categoria"
-                  value={newCategory}
-                  onChange={setNewCategory}
-                  onCreate={async () => {
-                    if (!newCategory.trim()) return;
-                    const c = await createCategory.mutateAsync(newCategory.trim());
-                    set("category_id", c.id);
-                    setNewCategory("");
-                  }}
-                />
-                <CategoryManagerDialog
-                  open={categoryManagerOpen}
-                  onOpenChange={setCategoryManagerOpen}
-                  companyId={companyId}
-                  onCreated={(id) => set("category_id", id)}
-                />
-              </Field>
-              <Field label="Fornecedor">
-                <div className="flex gap-2">
-                  <Select
-                    value={form.supplier_id || "__none"}
-                    onValueChange={(v) => set("supplier_id", v === "__none" ? "" : v)}
-                  >
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">Sem fornecedor</SelectItem>
-                      {suppliers.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSupplierDialogOpen(true)}
-                    title="Novo fornecedor"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Field>
-              <Field
-                label="SKU *"
-                hint="Obrigatório — gerado automaticamente, editável se necessário"
-              >
-                <div className="flex gap-2">
-                  <Input
-                    value={form.sku}
-                    onChange={(e) => {
-                      setSkuAuto(false);
-                      set("sku", e.target.value);
-                    }}
-                    placeholder={skuGenerating ? "Gerando..." : "Ex.: BOL-MIL-PRE-001"}
-                    aria-invalid={skuTaken || undefined}
-                    className={
-                      skuTaken
-                        ? "border-danger focus-visible:ring-danger"
-                        : form.sku.trim() && !skuChecking
-                          ? "border-success/60 focus-visible:ring-success"
-                          : undefined
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={regenerateSku}
-                    disabled={skuGenerating || !form.name.trim()}
-                    title="Gera um SKU a partir do nome e categoria"
-                    className="shrink-0 gap-1.5"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${skuGenerating ? "animate-spin" : ""}`} />
-                    Gerar SKU
-                  </Button>
-                </div>
-                {form.sku.trim() ? (
-                  skuChecking ? (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Verificando disponibilidade…
-                    </p>
-                  ) : skuTaken ? (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-danger">
-                      <X className="h-3 w-3" /> SKU já existe
-                    </p>
-                  ) : (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-success">
-                      <Check className="h-3 w-3" /> SKU disponível
-                    </p>
-                  )
-                ) : null}
-              </Field>
-              <Field label="Status">
-                <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Unidade">
-                <Select value={form.unit} onValueChange={(v) => set("unit", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_UNIT_OPTIONS.map((u) => (
-                      <SelectItem key={u.value} value={u.value}>
-                        {u.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Section
-                title="Canais de Venda"
-                description="Onde este produto pode ser vendido."
-              >
-                <div className="flex flex-col gap-3">
-                  {SALES_CHANNEL_OPTIONS.map((c) => {
-                    const checked = form.sales_channels.includes(c.value);
-                    return (
-                      <label key={c.value} className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-                          checked={checked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              set("sales_channels", [...form.sales_channels, c.value]);
-                            } else {
-                              set(
-                                "sales_channels",
-                                form.sales_channels.filter((v) => v !== c.value),
-                              );
-                            }
-                          }}
-                        />
-                        <span className="text-sm font-medium">{c.label}</span>
-                      </label>
-                    );
-                  })}
-                  {!form.sales_channels.length && (
-                    <p className="text-[11px] text-danger">Selecione pelo menos um canal.</p>
-                  )}
-                </div>
-              </Section>
-            </div>
-            <Field label="Descrição">
-              <Textarea
-                rows={3}
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-              />
-            </Field>
-          </Section>
-
-          {/* Fotos adicionais */}
-          {product ? (
-            <Section title="Fotos do produto" description="Fotos e mídias adicionais.">
-              <ProductImageUploader companyId={companyId} productId={product.id} />
-            </Section>
-          ) : null}
-
-          {/* Tags */}
-          <Section
-            title="Tags"
-            description="A Bella sugere tags automaticamente. Aceite, remova ou adicione as suas."
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">
-                {form.tags.length} / {MAX_PRODUCT_TAGS} tags
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => generateTagSuggestions()}
-                disabled={
-                  suggestingTags || !form.name.trim() || form.tags.length >= MAX_PRODUCT_TAGS
-                }
-              >
-                {suggestingTags ? (
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2 h-3.5 w-3.5" />
-                )}
-                Sugerir com Bella
-              </Button>
-            </div>
-
-            {suggestedTags.length > 0 ? (
-              <div className="mt-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-primary">
-                    Sugestões da Bella — clique para aceitar
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setSuggestedTags([])}
-                    >
-                      Descartar
-                    </Button>
-                    <Button type="button" size="sm" onClick={acceptAllSuggested}>
-                      Aceitar todas
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {suggestedTags.map((t) => (
-                    <Badge
-                      key={t}
-                      variant="outline"
-                      className="cursor-pointer border-primary/40 bg-background hover:bg-primary/10"
-                      onClick={() => acceptSuggestedTag(t)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        dismissSuggestedTag(t);
-                      }}
-                      title="Clique para aceitar · botão direito para descartar"
-                    >
-                      + {t}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <Field label="Adicionar tag manualmente">
-              <div className="flex gap-2">
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Digite e pressione Enter"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                />
-                <Button type="button" variant="outline" onClick={addTag}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {form.tags.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {form.tags.map((t) => (
-                    <Badge
-                      key={t}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const prev = form.tags;
-                        executeWithUndo({
-                          message: `✓ Tag "${t}" removida.`,
-                          apply: () =>
-                            set(
-                              "tags",
-                              prev.filter((x) => x !== t),
-                            ),
-                          undo: () => set("tags", prev),
-                        });
-                      }}
-                    >
-                      {t} ✕
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
-            </Field>
-          </Section>
-        </TabsContent>
-
-        {/* ══════════════ ABA 2 — INTEGRAÇÃO ML & LOGÍSTICA ══════════════ */}
-        <TabsContent value="logistica" className="space-y-6">
-          <Section
-            title="Publicação & Fotos"
-            description="Valide os requisitos e publique no Mercado Livre com tratamento de IA."
-          >
-            <div className="flex flex-col gap-6">
-              {product?.id && (
-                <div className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20">
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold flex items-center gap-2">
-                      <ShoppingBag className="h-4 w-4 text-primary" />
-                      Pronto para Publicar
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      Título, Preço, NCM e Imagens validados para o Mercado Livre.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="gap-2 shadow-sm"
-                    onClick={() => setMlDialogOpen(true)}
-                  >
-                    <Smartphone className="h-4 w-4" />
-                    Publicar no Mercado Livre
-                  </Button>
-                </div>
-              )}
-              <ProductPhotoBatchUploader 
-                companyId={companyId} 
-                productId={product?.id}
-                existingImages={existingImages.map(img => ({
-                  path: img.path,
-                  signedUrl: signed.find(s => s.path === img.path)?.signedUrl || ""
-                }))}
-              />
-            </div>
-          </Section>
-
-          <Section
-            title="Vídeo e Clip do Produto"
-            description="Adicione um vídeo curto (MP4/MOV) para aumentar as vendas no Mercado Livre e canais digitais."
-          >
-            <div className="space-y-4">
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor="video_url">URL do Vídeo</Label>
-                    <Input
-                      id="video_url"
-                      placeholder="https://..."
-                      value={form.video_url}
-                      readOnly
-                      className="bg-muted cursor-default h-10"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 px-6 border-dashed"
-                      onClick={() => document.getElementById("video-upload")?.click()}
-                      disabled={uploadingVideo}
-                    >
-                      {uploadingVideo ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Video className="mr-2 h-4 w-4" />
-                      )}
-                      Upload Vídeo
-                    </Button>
-                    <input
-                      id="video-upload"
-                      type="file"
-                      accept="video/mp4,video/quicktime"
-                      className="hidden"
-                      onChange={handleVideoUpload}
-                    />
-                  </div>
-                </div>
-
-                {form.video_url && (
-                  <div className="relative rounded-xl overflow-hidden border bg-black aspect-video max-w-lg mx-auto shadow-lg group">
-                    <video
-                      src={form.video_url}
-                      controls
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => setForm(prev => ({ ...prev, video_url: "" }))}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Section>
-
-
-          <Section
-            title="Checklist Mercado Livre"
-            description="Status dos requisitos obrigatórios e recomendados para publicação."
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {mlValidation.requirements.map((req) => (
-                <div 
-                  key={req.id} 
-                  className={`p-3 rounded-lg border flex flex-col gap-1.5 transition-colors ${
-                    req.isValid 
-                      ? 'bg-success/5 border-success/20' 
-                      : req.critical 
-                        ? 'bg-destructive/5 border-destructive/20' 
-                        : 'bg-muted/50 border-border'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-xs font-semibold ${req.isValid ? 'text-success' : req.critical ? 'text-destructive' : 'text-foreground'}`}>
-                      {req.label}
-                    </span>
-                    {req.isValid ? (
-                      <Check className="h-3.5 w-3.5 text-success" />
-                    ) : req.critical ? (
-                      <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                    ) : (
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-tight">
-                    {req.message}
-                  </p>
-                </div>
-              ))}
-            </div>
-            {mlValidation.isReady && (
-              <div className="mt-4 p-3 bg-success/10 border border-success/30 rounded-lg flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-success" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-success">Excelente! Produto pronto para o Mercado Livre.</p>
-                  <p className="text-[10px] text-success/80">Todos os requisitos críticos foram atendidos. Qualidade atual: {mlValidation.score}%.</p>
-                </div>
-                {product?.id && (
-                  <Button size="sm" className="bg-success hover:bg-success/90 text-white border-none h-8" onClick={() => setMlDialogOpen(true)}>
-                    Publicar Agora
-                  </Button>
-                )}
-              </div>
-            )}
-          </Section>
-
-
-          <Section
-            title="Identificação & Marca"
-            description="Informações obrigatórias para sincronização com o Mercado Livre."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="EAN / GTIN *"
-                hint="Código de barras global de 8 a 14 dígitos. Use 'SEM GTIN' se o produto for artesanal ou isento."
-              >
-                <div className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    value={form.barcode}
-                    onChange={(e) => set("barcode", e.target.value.toUpperCase().slice(0, 20))}
-                    onFocus={(e) => {
-                      if (form.barcode === "SEM GTIN") {
-                        set("barcode", "");
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (!form.barcode.trim()) {
-                        set("barcode", "SEM GTIN");
-                      }
-                    }}
-                    placeholder="Ex: 7891234567890 ou SEM GTIN"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1.5"
-                    onClick={() => set("barcode", "SEM GTIN")}
-                    title="Marca o produto como isento de código de barras"
-                  >
-                    Isento
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 gap-1.5"
-                    onClick={handleEanLookup}
-                    disabled={eanLoading || form.barcode.replace(/\D/g, "").length < 8}
-                    title="Consulta bases públicas e o histórico interno pelo EAN"
-                  >
-                    {eanLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    Buscar
-                  </Button>
-                </div>
-              </Field>
-
-              <Field label="Marca" hint="Fabricante ou marca do produto (Opcional)">
-                <Input
-                  value={form.brand}
-                  onChange={(e) => set("brand", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("brand", v))}
-                  placeholder="Ex: Nike, Samsung, Artesanal..."
-                />
-              </Field>
-
-              <Field label="Modelo" hint="Modelo específico do produto (Opcional)">
-                <Input
-                  value={form.model}
-                  onChange={(e) => set("model", e.target.value)}
-                  onBlur={handleTitleCaseBlur((v) => set("model", v))}
-                  placeholder="Ex: Air Max, Galaxy S21, V1..."
-                />
-              </Field>
-
-              <Field label="NCM *" hint="8 dígitos — essencial para cálculo de impostos e frete.">
-                <div className="relative">
-                  <Input
-                    value={form.ncm}
-                    inputMode="numeric"
-                    maxLength={12}
-                    placeholder="0000.00.00 ou 00000000"
-                    onChange={(e) => {
-                      fiscal.markManual();
-                      set("ncm", normalizeNcm(e.target.value));
-                    }}
-                    className={fiscal.masterLoading || fiscal.historyLoading ? "pr-10" : ""}
-                  />
-                  {(fiscal.masterLoading || (fiscal.historyLoading && !form.ncm)) && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-                      <span className="text-[10px] text-muted-foreground animate-pulse hidden sm:inline">Buscando...</span>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                    </div>
-                  )}
-                </div>
-
-                {form.ncm && fiscal.source !== "manual" ? (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-primary animate-in fade-in slide-in-from-left-1">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {fiscal.source === "category"
-                      ? `Sugerido pela categoria ${fiscal.categorySuggestion?.categoryName ?? ""} — edite se precisar.`
-                      : fiscal.source === "barcode"
-                        ? "Sugerido pelo EAN cadastrado — edite se precisar."
-                        : "Sugerido pelo histórico — edite se precisar."}
-                  </p>
-                ) : null}
-
-                {fiscal.historyLoading && !form.ncm && !fiscal.masterLoading ? (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Buscando no histórico…
-                  </p>
-                ) : null}
-
-                {fiscal.historySuggestions.length ? (
-                  <div className="mt-2 space-y-1.5">
-                    <p className="text-[11px] font-medium text-muted-foreground">
-                      Sugestões do histórico e tabela mestre:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {/* Sugestões do Histórico */}
-                      {fiscal.historySuggestions.map((s) => (
-                        <Button
-                          key={`hist-${s.ncm}`}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 gap-1.5 px-2 text-[11px]"
-                          onClick={() =>
-                            fiscal.applySuggestion({ ncm: s.ncm, cest: s.cest }, "history")
-                          }
-                          title={`${s.sampleName} — ${s.usageCount} produto(s)`}
-                        >
-                          <Wand2 className="h-3 w-3" />
-                          {formatNcm(s.ncm)}
-                          {s.cest ? ` · CEST ${formatCest(s.cest)}` : ""}
-                          <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[10px]">
-                            {s.usageCount}
-                          </Badge>
-                        </Button>
-                      ))}
-
-                      {/* Sugestões da Tabela Mestre / BrasilAPI */}
-                      {fiscal.masterSuggestions.map((s) => (
-                        <Button
-                          key={`master-${s.ncm}`}
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="h-7 gap-1.5 px-2 text-[11px] bg-primary/5 hover:bg-primary/10 border-primary/20"
-                          onClick={() =>
-                            fiscal.applySuggestion({ ncm: s.ncm }, "history")
-                          }
-                          title={s.description || ""}
-                        >
-                          <Sparkles className="h-3 w-3 text-primary" />
-                          {formatNcm(s.ncm)}
-                          {s.category ? <span className="opacity-60">({s.category})</span> : null}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {fiscal?.historySuggestions?.length === 0 && 
-                 fiscal?.masterSuggestions?.length === 0 && 
-                 !fiscal.masterLoading && form.name.length >= 3 ? (
-                  <p className="mt-2 text-[10px] text-muted-foreground italic animate-in fade-in duration-500">
-                    Nenhuma sugestão encontrada para "{form.name}". Tente selecionar uma categoria ou digite o NCM manualmente.
-                  </p>
-                ) : null}
-              </Field>
-
-              <Field label="CEST" hint="7 dígitos — apenas para produtos com substituição tributária (ST).">
-                <Input
-                  value={form.cest}
-                  inputMode="numeric"
-                  maxLength={11}
-                  placeholder="00.000.00 ou 0000000"
-                  onChange={(e) => {
-                    fiscal.markManual();
-                    set("cest", normalizeCest(e.target.value));
-                  }}
-                />
-              </Field>
-            </div>
-          </Section>
-
-          {product && (
-            <PublishToMercadoLivreDialog
-              product={product}
-              open={mlDialogOpen}
-              onOpenChange={setMlDialogOpen}
-            />
-          )}
-
-          <Section
-            title="Dimensões & Peso"
-            description="Medidas da embalagem para cálculo exato de frete (Mercado Livre e transportadoras)."
-          >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Peso (kg)" hint="Opcional. Padrão: 0.3kg">
-                <div className="relative">
-                  <NumInput
-                    value={form.weight}
-                    onChange={(v) => set("weight", v)}
-                    placeholder="Ex: 0.300"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">kg</span>
-                </div>
-              </Field>
-              <Field label="Comprimento (cm)" hint="Opcional. Padrão: 15cm">
-                <div className="relative">
-                  <NumInput
-                    value={form.length}
-                    onChange={(v) => set("length", v)}
-                    placeholder="Ex: 15"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
-                </div>
-              </Field>
-              <Field label="Largura (cm)" hint="Opcional. Padrão: 15cm">
-                <div className="relative">
-                  <NumInput
-                    value={form.width}
-                    onChange={(v) => set("width", v)}
-                    placeholder="Ex: 15"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
-                </div>
-              </Field>
-              <Field label="Altura (cm)" hint="Opcional. Padrão: 15cm">
-                <div className="relative">
-                  <NumInput
-                    value={form.height}
-                    onChange={(v) => set("height", v)}
-                    placeholder="Ex: 15"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">cm</span>
-                </div>
-              </Field>
-            </div>
-          </Section>
-        </TabsContent>
-
-        {/* ══════════════ ABA 2 — CUSTOS E PRECIFICAÇÃO ══════════════ */}
-        <TabsContent value="custos" className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-6">
-            <div className="mb-5">
-              <h3 className="text-sm font-semibold">Custos e precificação</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Preencha os passos abaixo — o preço de venda base é calculado a partir deles.
-              </p>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-              {/* Passos */}
-              <div className="space-y-5">
-                <StepRow
-                  step={1}
-                  title="Custo de aquisição"
-                  hint="Valor pago ao fornecedor por unidade"
-                >
-                  <NumInput value={form.cost} onChange={(v) => set("cost", v)} />
-                </StepRow>
-
-                <StepRow
-                  step={2}
-                  title="Frete de compra e embalagem"
-                  hint="Custos logísticos por unidade"
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <OperationalCostField
-                      label="Frete (R$)"
-                      value={form.freight}
-                      onChange={(v) => set("freight", v)}
-                      defaultValue={operationalDefaults?.freight}
-                    />
-                    <OperationalCostField
-                      label="Embalagem (R$)"
-                      value={form.packaging}
-                      onChange={(v) => set("packaging", v)}
-                      defaultValue={operationalDefaults?.packaging}
-                    />
-                    <OperationalCostField
-                      label="Seguro (R$)"
-                      value={form.insurance}
-                      onChange={(v) => set("insurance", v)}
-                      defaultValue={operationalDefaults?.insurance}
-                    />
-                    <OperationalCostField
-                      label="Outros custos (R$)"
-                      value={form.other_costs}
-                      onChange={(v) => set("other_costs", v)}
-                      defaultValue={operationalDefaults?.other_costs}
-                    />
-                  </div>
-                </StepRow>
-
-                <StepRow
-                  step={3}
-                  title="Impostos / alíquota base (%)"
-                  hint="Percentual sobre o preço de venda — usado apenas no cálculo desta tela"
-                >
-                  <div className="flex items-center gap-2">
-                    <Input
-                      inputMode="decimal"
-                      value={taxPct}
-                      onChange={(e) => setTaxPct(e.target.value)}
-                      className="max-w-[160px] tabular-nums"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                  </div>
-                </StepRow>
-
-                <StepRow
-                  step={4}
-                  title="Margem desejada / markup (%)"
-                  hint="Definida por produto — ou herdada da categoria"
-                >
-                  <MarginSourceField
-                    useCategory={form.use_category_margin}
-                    onChangeMode={(useCat) => set("use_category_margin", useCat)}
-                    margin={form.margin}
-                    onChangeMargin={(v) => set("margin", v)}
-                    categoryName={categoryName}
-                    categoryDefaultMargin={categoryDefaultMargin}
-                  />
-                </StepRow>
-              </div>
-
-              {/* Resultado em destaque */}
-              <aside className="space-y-4 rounded-xl border border-primary/25 bg-primary/5 p-5">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Custo total
-                  </p>
-                  <p className="text-base font-semibold tabular-nums">
-                    {formatCurrency(totalCost)}
-                  </p>
-                </div>
-
-                <div>
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    Preço de venda base (R$) *
-                  </Label>
-                  <div className="mt-1.5">
-                    <NumInput 
-                      value={form.price} 
-                      onChange={(v) => {
-                        // Digitação manual sobrepõe qualquer sugestão
-                        set("price", v);
-                      }} 
-                    />
-                  </div>
-
-                  {num(form.price) <= 0 ? (
-                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <span className="text-[11px] font-semibold uppercase tracking-tight">
-                        Definir Preço
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {priceTiers.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        Preço sugerido pelo Motor Comercial V2
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {priceTiers.map((tier) => {
-                          const active = tier.key === priceTier;
-                          return (
-                            <button
-                              key={tier.key}
-                              type="button"
-                              aria-pressed={active}
-                              onClick={() => setPriceTier(tier.key)}
-                              className={`rounded-lg border p-2 text-center transition-colors ${
-                                active
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border/60 hover:border-primary/40"
-                              }`}
-                            >
-                              <span
-                                className={`block text-[10px] uppercase ${
-                                  active ? "text-primary" : "text-muted-foreground"
-                                }`}
-                              >
-                                {tier.label}
-                              </span>
-                              <span className="mt-0.5 block text-sm font-semibold tabular-nums">
-                                {formatCurrency(tier.value)}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <Button
-                    type="button"
-                    className="mt-2 w-full"
-                    onClick={applySuggestedPrice}
-                    disabled={totalCost <= 0}
-                  >
-                    <Wand2 className="mr-1.5 h-4 w-4" /> Aplicar preço sugerido
-                  </Button>
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    Preenche apenas o campo acima. Nada é salvo até você clicar em{" "}
-                    <strong>Salvar produto</strong>.
-                  </p>
-                </div>
-
-
-                <div className="grid grid-cols-2 gap-3 border-t border-primary/20 pt-4">
-                  <Metric
-                    label="Lucro líquido"
-                    value={hasPricing ? formatCurrency(netProfit) : "—"}
-                    tone={hasPricing ? (netProfit < 0 ? "danger" : "success") : undefined}
-                  />
-                  <Metric
-                    label="Margem real"
-                    value={hasPricing ? `${realMarginPct.toFixed(2)}%` : "—"}
-                    tone={hasPricing ? (realMarginPct < 0 ? "danger" : "success") : undefined}
-                  />
-                </div>
-                {!hasPricing ? (
-                  <p className="text-[11px] text-muted-foreground">
-                    Informe custo e preço para ver lucro e margem.
-                  </p>
-                ) : null}
-              </aside>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ══════════════ ABA 3 — PRECIFICAÇÃO POR CANAL ══════════════ */}
-        <TabsContent value="canais" className="space-y-6">
-          <SuggestedPricesByChannelCard
-            mode="local"
-            costTotalCents={Math.round(totalCost * 100)}
-            targetMarginPct={num(form.margin)}
-            currentStorePriceCents={Math.round(num(form.price) * 100)}
-            productId={product?.id}
-            onApplySuggested={(recommended) => {
-              setForm((s) => ({ ...s, price: recommended.toFixed(2) }));
-              toast.success("Preços sugeridos aplicados");
-            }}
-          />
-        </TabsContent>
-
-        {/* ══════════════ ABA 4 — ESTOQUE E FISCAL ══════════════ */}
-        <TabsContent value="estoque" className="space-y-6">
-          <Section title="Estoque" description="Saldo, mínimo e movimentações.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {product ? (
-                <Field label="Saldo em estoque" hint="Editável manualmente ou via movimentação">
-                  <div className="space-y-2">
-                    <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setMovementType("in");
-                          setMovementOpen(true);
-                        }}
-                      >
-                        <ArrowUpRight className="mr-1.5 h-4 w-4" /> Entrada de estoque
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setMovementType("adjustment");
-                          setMovementOpen(true);
-                        }}
-                      >
-                        <Boxes className="mr-1.5 h-4 w-4" /> Ajustar estoque
-                      </Button>
-                    </div>
-                    {num(form.stock) <= 0 ? (
-                      <p className="text-sm font-medium text-destructive">⚠️ Produto sem estoque</p>
-                    ) : null}
-                  </div>
-                </Field>
-              ) : (
-                <Field label="Estoque inicial" hint="Quantidade disponível hoje">
-                  <NumInput value={form.stock} onChange={(v) => set("stock", v)} />
-                </Field>
-              )}
-              <Field label="Estoque mínimo" hint="Dispara alerta de reposição">
-                <NumInput value={form.min_stock} onChange={(v) => set("min_stock", v)} />
-              </Field>
-            </div>
-            {product ? (
-              <MovementFormDialog
-                open={movementOpen}
-                onOpenChange={setMovementOpen}
-                companyId={companyId}
-                defaultProductId={product.id}
-                defaultType={movementType}
-                lockProduct
-                lockedProductLabel={product.name}
-                onCompleted={() => {
-                  qc.invalidateQueries({ queryKey: productsKeys.all });
-                }}
-              />
-            ) : null}
-          </Section>
-
-
-        </TabsContent>
-      </Tabs>
-
-      <div className="flex items-center justify-between gap-4 py-4 border-t border-border mt-6">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Qualidade ML</span>
-            <div className={`h-2 w-24 rounded-full bg-muted overflow-hidden`}>
-              <div 
-                className={`h-full transition-all ${mlValidation.score >= 80 ? 'bg-success' : mlValidation.score >= 50 ? 'bg-warning' : 'bg-destructive'}`} 
-                style={{ width: `${mlValidation.score}%` }} 
-              />
-            </div>
-            <span className={`text-xs font-bold tabular-nums ${mlValidation.score >= 80 ? 'text-success' : mlValidation.score >= 50 ? 'text-warning' : 'text-destructive'}`}>
-              {mlValidation.score}%
-            </span>
-          </div>
-          
-          <div className="h-4 w-px bg-border" />
-          
-          <div className="flex items-center gap-2">
-            {mlValidation.isReady ? (
-              <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1 py-0 px-2 h-6">
-                <Check className="h-3 w-3" />
-                Pronto para ML
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 gap-1 py-0 px-2 h-6">
-                <AlertTriangle className="h-3 w-3" />
-                Pendente ML
-              </Badge>
-            )}
-          </div>
+    <div className="space-y-8 max-w-5xl mx-auto pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-2xl border shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{isEdit ? "Editar Produto" : "Novo Produto"}</h1>
+          <p className="text-muted-foreground text-sm">Cockpit operacional de cadastro e inteligência.</p>
         </div>
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate({ to: "/produtos" })}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={submit} disabled={saving || skuChecking}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {product ? "Salvar alterações" : "Salvar Produto"}
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate({ to: "/produtos" })}>Cancelar</Button>
+          <Button onClick={submit} disabled={updateProduct.isPending || createProduct.isPending}>
+            {(updateProduct.isPending || createProduct.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Salvar Alterações" : "Concluir Cadastro"}
           </Button>
         </div>
       </div>
 
+      <Tabs value={tab} onValueChange={setTab} className="space-y-8">
+        <TabsList className="w-full justify-start h-auto p-1 bg-muted/50 rounded-xl">
+          <TabsTrigger value="geral" className="px-6 py-2.5 rounded-lg">Geral</TabsTrigger>
+          <TabsTrigger value="estoque" className="px-6 py-2.5 rounded-lg">Estoque & Fiscal</TabsTrigger>
+          <TabsTrigger value="custos" className="px-6 py-2.5 rounded-lg">Custos & Preço</TabsTrigger>
+          <TabsTrigger value="marketing" className="px-6 py-2.5 rounded-lg">Marketing & Tags</TabsTrigger>
+          <TabsTrigger value="multimidia" className="px-6 py-2.5 rounded-lg">Fotos & Canais</TabsTrigger>
+        </TabsList>
+
+        <div className="bg-card rounded-2xl border shadow-sm p-8 min-h-[500px]">
+          <TabsContent value="geral" className="mt-0 space-y-8">
+            <GeneralInfoForm
+              form={form}
+              setForm={setForm}
+              categories={categories}
+              suppliers={suppliers}
+              onTitleBlur={() => {
+                const formatted = toTitleCasePtBr(form.name);
+                if (formatted !== form.name) setForm(s => ({ ...s, name: formatted }));
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="estoque" className="mt-0 space-y-8">
+            <div className="grid gap-12">
+              <LogisticsForm
+                form={form}
+                setForm={setForm}
+                skuGenerating={skuGenerating}
+                onRegenerateSku={handleRegenerateSku}
+                eanLoading={eanLoading}
+                onEanLookup={handleEanLookup}
+              />
+              <div className="h-px bg-border" />
+              <StockForm
+                form={form}
+                setForm={setForm}
+                isEdit={isEdit}
+                onOpenMovement={(t) => { setMovementType(t); setMovementOpen(true); }}
+              />
+              <div className="h-px bg-border" />
+              <FiscalForm
+                form={form}
+                setForm={setForm}
+                onFiscalAutofill={() => {}}
+                fiscalLoading={false}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="custos" className="mt-0 space-y-8">
+            <PricingForm
+              form={form}
+              setForm={setForm}
+              categoryName={categoryName}
+              onApplyCategoryMargin={() => {}}
+            />
+            <SuggestedPricesByChannelCard
+              mode="local"
+              costTotalCents={Math.round(totalCost * 100)}
+              targetMarginPct={num(form.margin)}
+              currentStorePriceCents={Math.round(num(form.price) * 100)}
+              productId={product?.id}
+              onApplySuggested={(p) => setForm(s => ({ ...s, price: p.toFixed(2) }))}
+            />
+          </TabsContent>
+
+          <TabsContent value="marketing" className="mt-0 space-y-8">
+            <MarketingForm
+              form={form}
+              setForm={setForm}
+              tagInput={tagInput}
+              setTagInput={setTagInput}
+              onAddTag={() => {}}
+              onRemoveTag={() => {}}
+              suggestedTags={suggestedTags}
+              suggestingTags={suggestingTags}
+              onSuggestTags={() => {}}
+            />
+          </TabsContent>
+
+          <TabsContent value="multimidia" className="mt-0 space-y-8">
+            <MultimediaForm
+              companyId={companyId}
+              productId={product?.id}
+              form={form}
+              setForm={setForm}
+              mainImageFile={mainImageFile}
+              setMainImageFile={setMainImageFile}
+              currentMainImageUrl={currentMainImageUrl || ""}
+              uploadingVideo={uploadingVideo}
+              onVideoUpload={handleVideoUpload}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      <MovementFormDialog
+        open={movementOpen}
+        onOpenChange={setMovementOpen}
+        companyId={companyId}
+        defaultProductId={product?.id || ""}
+        defaultType={movementType}
+        onCompleted={() => qc.invalidateQueries({ queryKey: productsKeys.all })}
+      />
       <SupplierQuickFormDialog
         companyId={companyId}
         open={supplierDialogOpen}
         onOpenChange={setSupplierDialogOpen}
-        onCreated={(s) => set("supplier_id", s.id)}
+        onCreated={(s) => setForm(prev => ({ ...prev, supplier_id: s.id }))}
       />
-      <DraftAutosave
-        savedAt={draft.savedAt}
-        recovery={
-          !isEdit
-            ? {
-                open: recoveryOpen,
-                onOpenChange: setRecoveryOpen,
-                title: "Cadastro em andamento",
-                description:
-                  "Foi encontrado um cadastro de produto em andamento. Deseja continuar?",
-                updatedAt: recoveryUpdatedAt,
-                onRestore: restoreDraft,
-                onDiscard: discardDraft,
-              }
-            : undefined
-        }
-      />
-      {createdProduct ? (
+      {createdProduct && (
         <ProductCreatedDialog
           open={!!createdProduct}
-          onOpenChange={(v: boolean) => {
-            if (!v) setCreatedProduct(null);
-          }}
+          onOpenChange={v => !v && setCreatedProduct(null)}
           productId={createdProduct.id}
           productName={createdProduct.name}
           onCreateAnother={() => {
-            // Reset completo: novo formulário em branco, sem reutilizar dados
-            // do produto recém-criado e sem passar pelo detalhe.
             setCreatedProduct(null);
             setForm(empty);
-            setMainImageFile(null);
-            setSuggestedTags([]);
-            setTagInput("");
-            setNewCategory("");
-            setSkuAuto(true);
-            setSkuTaken(false);
-            defaultsAppliedRef.current = false;
-            draft.discard();
+            setTab("geral");
             navigate({ to: "/produtos/novo" });
           }}
         />
-      ) : null}
-    </div>
-  );
-}
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-      <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? <p className="text-xs text-muted-foreground mt-0.5">{description}</p> : null}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "success" | "danger";
-}) {
-  const color =
-    tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : "text-foreground";
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className={`text-lg font-semibold tabular-nums ${color}`}>{value}</p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-      {children}
-      {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
-    </div>
-  );
-}
-
-function NumInput({
-  value,
-  onChange,
-  disabled,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-  placeholder?: string;
-}) {
-  return (
-    <Input
-      inputMode="decimal"
-      value={value}
-      disabled={disabled}
-      placeholder={placeholder}
-      onChange={(e) => {
-        const val = e.target.value;
-        // Permite números, vírgula, ponto e sinal de menos
-        if (val === "" || /^[0-9,.\-]*$/.test(val)) {
-          onChange(val);
-        }
-      }}
-      className="tabular-nums"
-    />
-  );
-}
-
-function OperationalCostField({
-  label,
-  value,
-  onChange,
-  defaultValue,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  defaultValue: number | undefined;
-}) {
-  const hasDefault = typeof defaultValue === "number";
-  const current = Number(value.replace(",", "."));
-  const currentValid = Number.isFinite(current) ? current : 0;
-  const isDifferent = hasDefault && Math.abs(currentValid - (defaultValue ?? 0)) > 1e-6;
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-        {hasDefault && isDifferent ? (
-          <button
-            type="button"
-            onClick={() => onChange(String(defaultValue))}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-            title={`Restaurar padrão da empresa (R$ ${(defaultValue ?? 0).toFixed(2)})`}
-          >
-            <RotateCcw className="h-3 w-3" /> Restaurar padrão
-          </button>
-        ) : null}
-      </div>
-      <NumInput value={value} onChange={onChange} />
-      {hasDefault ? (
-        <p className="text-[11px] text-muted-foreground">
-          Padrão da empresa: R$ {(defaultValue ?? 0).toFixed(2)}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function MarginSourceField({
-  useCategory,
-  onChangeMode,
-  margin,
-  onChangeMargin,
-  categoryName,
-  categoryDefaultMargin,
-}: {
-  useCategory: boolean;
-  onChangeMode: (useCategory: boolean) => void;
-  margin: string;
-  onChangeMargin: (v: string) => void;
-  categoryName: string | null;
-  categoryDefaultMargin: number | null;
-}) {
-  const hasCategoryMargin = categoryDefaultMargin != null;
-  const effectiveUseCategory = useCategory && hasCategoryMargin;
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs font-medium text-muted-foreground">Margem</Label>
-        {!hasCategoryMargin && categoryName ? (
-          <span className="text-[11px] text-muted-foreground">
-            Nenhuma margem padrão em <strong>{categoryName}</strong> — usando personalizada.
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => hasCategoryMargin && onChangeMode(true)}
-          disabled={!hasCategoryMargin}
-          className={`flex items-start gap-2 rounded-md border p-3 text-left transition ${
-            effectiveUseCategory
-              ? "border-primary/60 bg-primary/5"
-              : "border-border hover:bg-accent"
-          } ${!hasCategoryMargin ? "cursor-not-allowed opacity-60" : ""}`}
-        >
-          <span
-            className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-              effectiveUseCategory ? "border-primary" : "border-muted-foreground/40"
-            }`}
-          >
-            {effectiveUseCategory ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
-          </span>
-          <span className="min-w-0 text-sm">
-            <span className="block font-medium">Utilizar margem da categoria</span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              {hasCategoryMargin
-                ? `${categoryName ?? "Categoria"} • ${categoryDefaultMargin}%`
-                : categoryName
-                  ? "Categoria sem margem padrão configurada."
-                  : "Selecione uma categoria para usar sua margem padrão."}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChangeMode(false)}
-          className={`flex items-start gap-2 rounded-md border p-3 text-left transition ${
-            !effectiveUseCategory
-              ? "border-primary/60 bg-primary/5"
-              : "border-border hover:bg-accent"
-          }`}
-        >
-          <span
-            className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-              !effectiveUseCategory ? "border-primary" : "border-muted-foreground/40"
-            }`}
-          >
-            {!effectiveUseCategory ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
-          </span>
-          <span className="min-w-0 flex-1 text-sm">
-            <span className="block font-medium">
-              Margem personalizada
-              {(() => {
-                const parsed = Number(String(margin).replace(",", "."));
-                return Number.isFinite(parsed) && String(margin).trim() !== ""
-                  ? ` (${parsed}%)`
-                  : "";
-              })()}
-            </span>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Input
-                inputMode="decimal"
-                value={margin}
-                onChange={(e) => onChangeMargin(e.target.value)}
-                onFocus={() => onChangeMode(false)}
-                disabled={effectiveUseCategory}
-                className="h-8 tabular-nums"
-              />
-              <span className="text-xs text-muted-foreground">%</span>
-            </div>
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function InlineCreate({
-  placeholder,
-  value,
-  onChange,
-  onCreate,
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  onCreate: () => void;
-}) {
-  return (
-    <div className="mt-1.5 flex gap-1.5">
-      <Input
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-8 text-xs"
-      />
-      <Button type="button" size="sm" variant="ghost" onClick={onCreate}>
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
-    </div>
-  );
-}
-
-function StepRow({
-  step,
-  title,
-  hint,
-  children,
-}: {
-  step: number;
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
-      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-        {step}
-      </span>
-      <div className="min-w-0 space-y-2">
-        <div>
-          <p className="text-sm font-medium">{title}</p>
-          {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
-        </div>
-        {children}
-      </div>
+      )}
     </div>
   );
 }
