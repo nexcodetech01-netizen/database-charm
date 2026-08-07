@@ -191,6 +191,7 @@ function PublicCollectionPage() {
 
   const [q, setQ] = useState(search.q);
   const [quickViewId, setQuickViewId] = useState<string | null>(null);
+  const [showPriceFilter, setShowPriceFilter] = useState(search.min > 0 || search.max > 0);
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -406,14 +407,22 @@ function PublicCollectionPage() {
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                   <div className="flex bg-muted p-1 rounded-xl w-full">
+                   <Button
+                    variant={showPriceFilter ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-10 rounded-xl px-3"
+                    onClick={() => setShowPriceFilter(!showPriceFilter)}
+                  >
+                    <Filter className="h-4 w-4 mr-1.5" /> Preço
+                  </Button>
+                   <div className="flex bg-muted p-1 rounded-xl flex-1">
                     <Button
                       variant={search.view === "grid" ? "secondary" : "ghost"}
                       size="sm"
                       className="flex-1 h-8 rounded-lg shadow-none"
                       onClick={() => updateSearch({ view: "grid" })}
                     >
-                      <Grid className="h-4 w-4 mr-1.5" /> Grade
+                      <Grid className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={search.view === "list" ? "secondary" : "ghost"}
@@ -421,11 +430,30 @@ function PublicCollectionPage() {
                       className="flex-1 h-8 rounded-lg shadow-none"
                       onClick={() => updateSearch({ view: "list" })}
                     >
-                      <List className="h-4 w-4 mr-1.5" /> Lista
+                      <List className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </div>
+
+              {showPriceFilter && priceRange.max > priceRange.min && (
+                <div className="bg-muted/50 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex justify-between items-center text-sm font-medium">
+                    <span>Faixa de preço</span>
+                    <span className="text-primary font-bold">
+                      {formatCurrency(search.min || priceRange.min)} - {formatCurrency(search.max || priceRange.max)}
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[search.min || priceRange.min, search.max || priceRange.max]}
+                    min={priceRange.min}
+                    max={priceRange.max}
+                    step={1}
+                    onValueCommit={([min, max]) => updateSearch({ min, max })}
+                    className="py-2"
+                  />
+                </div>
+              )}
 
               {categories.length > 0 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
