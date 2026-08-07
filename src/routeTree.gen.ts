@@ -78,6 +78,7 @@ import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authent
 import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
 import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
+import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
 import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
 import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
@@ -484,6 +485,12 @@ const AuthenticatedProdutosProductIdIndexRoute =
     path: '/produtos/$productId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedComprasPurchaseIdIndexRoute =
+  AuthenticatedComprasPurchaseIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedComprasPurchaseIdRoute,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -705,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/compras/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
   '/api/public/bella-pay/qr/$chargeId': typeof ApiPublicBellaPayQrChargeIdRoute
   '/api/public/bella-pay/webhook/$token': typeof ApiPublicBellaPayWebhookTokenRoute
@@ -758,7 +766,6 @@ export interface FileRoutesByTo {
   '/clientes/novo': typeof AuthenticatedClientesNovoRoute
   '/comercial/inbox-whatsapp': typeof AuthenticatedComercialInboxWhatsappRoute
   '/comercial/lista-interesse': typeof AuthenticatedComercialListaInteresseRoute
-  '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
@@ -798,6 +805,7 @@ export interface FileRoutesByTo {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId': typeof AuthenticatedProdutosProductIdIndexRoute
   '/api/public/bella-pay/qr/$chargeId': typeof ApiPublicBellaPayQrChargeIdRoute
   '/api/public/bella-pay/webhook/$token': typeof ApiPublicBellaPayWebhookTokenRoute
@@ -893,6 +901,7 @@ export interface FileRoutesById {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/_authenticated/compras_/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/_authenticated/produtos_/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
   '/api/public/bella-pay/qr/$chargeId': typeof ApiPublicBellaPayQrChargeIdRoute
   '/api/public/bella-pay/webhook/$token': typeof ApiPublicBellaPayWebhookTokenRoute
@@ -988,6 +997,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/compras/$purchaseId/'
     | '/produtos/$productId/'
     | '/api/public/bella-pay/qr/$chargeId'
     | '/api/public/bella-pay/webhook/$token'
@@ -1041,7 +1051,6 @@ export interface FileRouteTypes {
     | '/clientes/novo'
     | '/comercial/inbox-whatsapp'
     | '/comercial/lista-interesse'
-    | '/compras/$purchaseId'
     | '/compras/novo'
     | '/configuracoes/precificacao'
     | '/estoque/reconciliacao'
@@ -1081,6 +1090,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/compras/$purchaseId'
     | '/produtos/$productId'
     | '/api/public/bella-pay/qr/$chargeId'
     | '/api/public/bella-pay/webhook/$token'
@@ -1175,6 +1185,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/whatsapp/webhook'
+    | '/_authenticated/compras_/$purchaseId/'
     | '/_authenticated/produtos_/$productId/'
     | '/api/public/bella-pay/qr/$chargeId'
     | '/api/public/bella-pay/webhook/$token'
@@ -1695,6 +1706,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProdutosProductIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/compras_/$purchaseId/': {
+      id: '/_authenticated/compras_/$purchaseId/'
+      path: '/'
+      fullPath: '/compras/$purchaseId/'
+      preLoaderRoute: typeof AuthenticatedComprasPurchaseIdIndexRouteImport
+      parentRoute: typeof AuthenticatedComprasPurchaseIdRoute
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -1934,12 +1952,15 @@ const AuthenticatedClientesCustomerIdRouteWithChildren =
 
 interface AuthenticatedComprasPurchaseIdRouteChildren {
   AuthenticatedComprasPurchaseIdEditarRoute: typeof AuthenticatedComprasPurchaseIdEditarRoute
+  AuthenticatedComprasPurchaseIdIndexRoute: typeof AuthenticatedComprasPurchaseIdIndexRoute
 }
 
 const AuthenticatedComprasPurchaseIdRouteChildren: AuthenticatedComprasPurchaseIdRouteChildren =
   {
     AuthenticatedComprasPurchaseIdEditarRoute:
       AuthenticatedComprasPurchaseIdEditarRoute,
+    AuthenticatedComprasPurchaseIdIndexRoute:
+      AuthenticatedComprasPurchaseIdIndexRoute,
   }
 
 const AuthenticatedComprasPurchaseIdRouteWithChildren =
