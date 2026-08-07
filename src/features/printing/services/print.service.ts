@@ -86,11 +86,9 @@ class PrintQueue {
   }
 
   getQueue() { 
-    console.log('Accessing queue, length:', this.queue.length);
     return [...this.queue]; 
   }
   getHistory() { 
-    console.log('Accessing history, length:', this.history.length);
     return [...this.history]; 
   }
   
