@@ -179,6 +179,25 @@ export interface AuditStagnantProductRow {
   stock: number;
 }
 
+export interface AuditPurchaseRow {
+  id: string;
+  number: string | null;
+  status: string;
+  grandTotal: number;
+  purchaseDate: string | null;
+  supplierId: string | null;
+  supplierName: string | null;
+  itemsCount: number;
+  hasFinance: boolean;
+  hasDocument: boolean;
+}
+
+export interface AuditSupplierRow {
+  id: string;
+  name: string;
+  status: string | null;
+}
+
 /**
  * Porta de auditoria — LEITURA pura sobre serviços já existentes.
  * Nenhum método pode gravar, corrigir ou recalcular qualquer dado.
@@ -195,6 +214,8 @@ export interface AuditPort {
   ): Promise<AuditFiscalDocumentRow[]>;
   fiscalDefaults(companyId: string): Promise<AuditFiscalDefaults | null>;
   stagnantProducts(companyId: string): Promise<AuditStagnantProductRow[]>;
+  purchases(companyId: string, limit?: number): Promise<AuditPurchaseRow[]>;
+  suppliers(companyId: string, limit?: number): Promise<AuditSupplierRow[]>;
 }
 
 /** Bundle único injetado nos providers (facilita testes com fakes). */

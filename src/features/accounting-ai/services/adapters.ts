@@ -4,6 +4,7 @@
  * Cada método é um *delegate* fino. É proibido adicionar cálculo de negócio
  * aqui: se o número não existe em um serviço, ele não existe para a Bella.
  */
+import { supabase } from "@/integrations/supabase/client";
 import { accountingService, lastNMonths } from "@/features/accounting";
 import { financeQueryService } from "@/features/finance";
 import { salesService } from "@/features/sales/services/sales.service";
@@ -15,6 +16,7 @@ import type { AccountingPeriod } from "../types";
 import { productsService } from "@/features/products/services/products.service";
 import { customersService } from "@/features/customers/services/customers.service";
 import { financeService } from "@/features/finance/services/finance.service";
+import { purchasesService } from "@/features/purchases/services/purchases.service";
 import { listFiscalDocuments } from "@/features/fiscal/v2";
 import { getFiscalSettings } from "@/features/fiscal/v2/functions/fiscal.functions";
 import type {
@@ -224,6 +226,51 @@ export const auditAdapter: AuditPort = {
       name: p.name,
       sku: p.sku ?? null,
       stock: Number(p.stock ?? 0),
+    }));
+  },
+  async purchases(companyId, limit = 100) {
+    const { rows } = await purchasesService.list(companyId, {
+      search: "",
+      status: "",
+      supplierId: "",
+      sortBy: "purchase_date",
+      sortDir: "desc",
+      page: 1,
+      pageSize: limit,
+    });
+    
+    const purchaseIds = rows.map(r => r.id);
+    const { data: transactions } = await supabase
+      .from("financial_transactions")
+      .select("reference_id")
+      .in("reference_id", purchaseIds);
+    
+    const transMap = new Set(transactions?.map((t: any) => t.reference_id) || []);
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      number: r.number == null ? null : String(r.number),
+      status: String(r.status ?? ""),
+      grandTotal: Number(r.grand_total ?? 0),
+      purchaseDate: r.purchase_date ?? null,
+      supplierId: r.supplier_id ?? null,
+      supplierName: r.supplier_name ?? null,
+      itemsCount: r.items_count ?? 0,
+      hasFinance: transMap.has(r.id),
+      hasDocument: !!r.notes || false,
+    }));
+  },
+  async suppliers(companyId, limit = 500) {
+    const { data, error } = await supabase
+      .from("product_suppliers")
+      .select("id, name, status")
+      .eq("company_id", companyId)
+      .limit(limit);
+    if (error) throw error;
+    return (data || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status
     }));
   },
 };

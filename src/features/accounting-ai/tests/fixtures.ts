@@ -195,6 +195,8 @@ export function makeTestAuditPort(options: AuditPortOptions = {}): AuditPort {
       fiscalDocuments: boom,
       fiscalDefaults: boom,
       stagnantProducts: boom,
+      purchases: boom,
+      suppliers: boom,
     } as unknown as AuditPort;
   }
   return {
@@ -219,6 +221,8 @@ export function makeTestAuditPort(options: AuditPortOptions = {}): AuditPort {
         ? { defaultCst: "102" }
         : options.fiscalDefaults,
     stagnantProducts: async () => options.stagnant ?? [],
+    purchases: async () => [],
+    suppliers: async () => [],
   };
 }
 
