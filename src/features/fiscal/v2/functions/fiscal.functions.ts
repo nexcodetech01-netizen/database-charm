@@ -2627,18 +2627,18 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
         .eq("company_id", companyId)
         .eq("id", saleId)
         .maybeSingle();
-      const s = sale as unknown as { number: number | null; customer_id: string | null } | null;
-      saleNumber = s?.number ?? null;
-      if (s?.customer_id) {
+      const s_local = sale as unknown as { number: number | null; customer_id: string | null } | null;
+      saleNumber = s_local?.number ?? null;
+      if (s_local?.customer_id) {
         const { data: cust } = await supabase
           .from("customers")
           .select("name, document")
           .eq("company_id", companyId)
-          .eq("id", s.customer_id)
+          .eq("id", s_local.customer_id)
           .maybeSingle();
-        const c = cust as { name: string | null; document: string | null } | null;
-        customerName = c?.name ?? customerName;
-        customerDocument = c?.document ?? null;
+        const c_local = cust as { name: string | null; document: string | null } | null;
+        customerName = c_local?.name ?? customerName;
+        customerDocument = c_local?.document ?? null;
       }
       const { count } = await supabase
         .from("sale_items")
