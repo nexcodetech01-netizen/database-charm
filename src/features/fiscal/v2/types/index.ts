@@ -1,61 +1,8 @@
-/**
- * Fiscal v2 — Tipos primitivos (Sprint 007.3).
- *
- * Mapeamento estável entre a camada de aplicação e as tabelas
- * `fiscal_documents` / `fiscal_events` (schema Supabase real).
- *
- * ⚠ Constraint DB:
- *  - fiscal_documents.status ∈ (draft, validating, signing, sending,
- *    authorized, rejected, cancelled, error)
- *  - fiscal_documents.environment ∈ (homologation, production) — mesmo
- *    enum de `fiscal_provider_config.environment` e
- *    `fiscal_settings.default_environment`.
- *  - fiscal_events.event_type: livre (append-only)
- *
- * O enum canônico vive em `./environment` — não redeclarar literais.
- */
+import { NfeStatus } from "../functions/fiscal.functions";
+import { FiscalArtifactKind } from "../lib/artifacts";
+import { NfeEnvironment } from "./environment";
 
-import type { NfeEnvironment } from "./environment";
-
-export {
-  FISCAL_ENVIRONMENTS,
-  FISCAL_ENVIRONMENT_CONSTRAINTS,
-  fiscalEnvironmentSchema,
-  normalizeFiscalEnvironment,
-} from "./environment";
-export type { NfeEnvironment } from "./environment";
-
-
-/** Modelo do documento fiscal: 55 = NF-e, 65 = NFC-e. */
-export type NfeModel = "55" | "65";
-
-export type NfeStatus =
-
-  | "draft"
-  | "validating"
-  | "signing"
-  | "sending"
-  | "authorized"
-  | "rejected"
-  /** Cancelamento solicitado — aguardando confirmação oficial da SEFAZ. */
-  | "cancelling"
-  | "cancelled"
-  | "error"
-  | "discarded";
-
-
-export type NfeEventType =
-  | "created"
-  | "validated"
-  | "signed"
-  | "sent"
-  | "authorized"
-  | "rejected"
-  | "cancelled"
-  | "error"
-  | "discarded";
-
-export interface FiscalDocument {
+export type FiscalDocumentDto = {
   id: string;
   companyId: string;
   saleId: string | null;
@@ -73,165 +20,246 @@ export interface FiscalDocument {
   cancelledAt: string | null;
   cancellationReason: string | null;
   cancellationProtocol: string | null;
+  cancelledBy: string | null;
+  xmlCancellationPath: string | null;
   rejectionCode: string | null;
   rejectionReason: string | null;
   provider: string | null;
+  discardedAt: string | null;
+  discardedBy: string | null;
+  discardReason: string | null;
+  /** Artefatos que falharam ao ser baixados/gravados e aguardam reprocessamento. */
+  artifactsPending: FiscalArtifactKind[];
+  artifactsLastError: string | null;
+  artifactsCheckedAt: string | null;
   createdAt: string;
   updatedAt: string;
-}
+};
 
-export interface FiscalEvent {
+export type FiscalEventDto = {
   id: string;
-  companyId: string;
   documentId: string;
-  eventType: NfeEventType;
-  payload: Record<string, unknown> | null;
+  eventType: string;
+  payloadJson: string | null;
   createdAt: string;
-}
+};
+
+export type FiscalDashboard = {
+  totals: Record<NfeStatus, number>;
+  monthAuthorized: number;
+  monthValue: number;
+  lastDocument: FiscalDocumentDto | null;
+};
+
+export type ReprocessArtifactsResult = {
+  document: FiscalDocumentDto;
+  recovered: FiscalArtifactKind[];
+  stillPending: FiscalArtifactKind[];
+  noop: boolean;
+  message: string;
+};
+
+/** Configuração de UM ambiente (Produção ou Homologação), 100% independente. */
+export type FiscalProviderEnvironmentConfig = {
+  environment: NfeEnvironment;
+  apiUrl: string | null;
+  /** Token da EMPRESA (emissão de NF-e) cadastrado neste ambiente. */
+  hasApiKey: boolean;
+  /** Token PRINCIPAL/Admin (endpoints `/v2/empresas`) cadastrado neste ambiente. */
+  hasAdminKey: boolean;
+  provisionedAt: string | null;
+  provisionedEnvironment: NfeEnvironment | null;
+  provisionedCertificateId: string | null;
+  provisionedNote: string | null;
+  lastHealthCheckAt: string | null;
+  lastHealthStatus: "ok" | "warning" | "error" | null;
+  lastHealthMessage: string | null;
+};
+
+export type FiscalProviderConfig = {
+  providerId: string;
+  environment: NfeEnvironment;
+  apiUrl: string | null;
+  notes: string | null;
+  webhookUrl: string | null;
+  hasApiKey: boolean;
+  lastHealthCheckAt: string | null;
+  lastHealthStatus: "ok" | "warning" | "error" | null;
+  lastHealthMessage: string | null;
+  updatedAt: string | null;
+  /** Empresa já cadastrada no provedor (POST /v2/empresas não roda na emissão). */
+  provisionedAt: string | null;
+  provisionedEnvironment: NfeEnvironment | null;
+  provisionedCertificateId: string | null;
+  provisionedNote: string | null;
+  /** Credenciais/URLs independentes por ambiente. */
+  environments: Record<NfeEnvironment, FiscalProviderEnvironmentConfig>;
+};
+
+export type FiscalCertificateSummary = {
+  id: string;
+  alias: string;
+  subjectName: string | null;
+  subjectCnpj: string | null;
+  issuerName: string | null;
+  validFrom: string | null;
+  validTo: string | null;
+  serialNumber: string | null;
+  thumbprint: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type TaxRegime = "simples" | "presumido" | "real" | "mei";
+
+export type FiscalSettings = {
+  companyId: string;
+  taxRegime: TaxRegime;
+  crt: number | null;
+  cnaePrincipal: string | null;
+  emitUf: string;
+  nfeSeries: number;
+  nfeNextNumber: number;
+  defaultEnvironment: NfeEnvironment;
+  operationNature: string;
+  defaultCfop: string;
+  defaultCsosn: string | null;
+  defaultOrigem: number;
+  emailFiscal: string | null;
+  phoneFiscal: string | null;
+  cscId: string | null;
+  hasCscToken: boolean;
+  /** Quando true, só vendas pagas ficam elegíveis para emissão de NF-e. */
+  issueOnlyAfterPayment: boolean;
+  /** Modo de homologação: badges TESTE e filtros automáticos ligados. */
+  homologationMode: boolean;
+  /** Baixar estoque nas vendas emitidas em homologação (padrão: sim). */
+  stockOnHomologation: boolean;
+  updatedAt: string | null;
+};
 
 /**
- * Payload lógico da NF-e (independente do XML).
- * A serialização/assinatura fica a cargo do provider.
+ * Status fiscal da venda (independente do status financeiro).
  */
-export interface NfePayload {
+export type FiscalSaleStatus =
+  | "ready"
+  | "incomplete"
+  | "processing"
+  | "issued"
+  | "error"
+  | "rejected"
+  | "discarded"
+  | "cancelled";
+
+export type FiscalSaleOption = {
+  id: string;
+  number: string | null;
+  saleDate: string | null;
+  paidAt: string | null;
+  status: string;
+  customerName: string | null;
+  customerDocument: string | null;
+  itemsSummary: string | null;
+  itemCount: number;
+  totalAmount: number;
+  hasActiveNfe: boolean;
+  productName: string | null;
+  productSku: string | null;
+  /** Status fiscal exibido no card do assistente. */
+  fiscalStatus: FiscalSaleStatus;
+  /** Pendências que impedem a emissão (quando `incomplete`). */
+  fiscalIssues: string[];
+  /** Pode ser selecionada para emissão (inclui reemissão após erro). */
+  canIssue: boolean;
+};
+
+export type SimulationSeverity = "error" | "warning";
+
+export interface SimulationIssue {
+  id: string;
+  field: string;
+  severity: SimulationSeverity;
+  title: string;
+  detail: string;
+  hint?: string;
+  step?: "empresa" | "certificado" | "provedor" | "regras" | "cliente" | "venda";
+}
+
+export interface FiscalSimulationResult {
+  ok: boolean;
   saleId: string;
-  environment?: NfeEnvironment;
-  /**
-   * Modelo do documento: `55` = NF-e, `65` = NFC-e (Sprint 2.7).
-   * Ausente = `55` (compatibilidade com o fluxo original).
-   */
-  model?: NfeModel;
-  /** Dados exclusivos da NFC-e (modelo 65). */
-  nfce?: {
-    /** Identificador do CSC (idCSC/CSCid) cadastrado na SEFAZ. */
-    cscId: string;
-    /** Token CSC em claro — lido do cofre fiscal, NUNCA persistido. */
-    cscToken: string;
-    /** Forma de pagamento da venda (motor de vendas). */
-    paymentMethod?: string | null;
-  };
-
-  customer: {
-    id: string;
-    name: string;
-    document: string;
-    email?: string | null;
-    address?: {
-      street: string;
-      number: string;
-      district: string;
-      city: string;
-      state: string;
-      zip: string;
-    };
-  };
-  items: Array<{
-    productId: string;
-    /** Código comercial (SKU) do produto, quando cadastrado. */
-    sku?: string | null;
-    /** Unidade comercial cadastrada no produto (UN, CX, KG...). */
-    unit?: string | null;
-    description: string;
-    ncm: string | null;
+  environment: NfeEnvironment;
+  provider: string;
+  blockers: SimulationIssue[];
+  warnings: SimulationIssue[];
+  summary: {
+    customerName: string | null;
+    customerDocument: string | null;
+    customerEmail: string | null;
+    customerAddress: string | null;
+    itemCount: number;
+    totalAmount: number;
     cfop: string | null;
-    cst: string | null;
-    quantity: number;
-    unitPrice: number;
-    total: number;
-  }>;
-  totals: {
-    products: number;
-    discount: number;
-    /** Frete do documento (vFrete). */
-    freight?: number;
-    total: number;
-  };
-
-  /** Referência idempotente enviada ao provedor (default: saleId). */
-  reference?: string;
-  /** Data/hora de emissão ISO-8601 com offset. */
-  issuedAt?: string;
-  /** Dados do emitente (preenchidos pelo motor a partir de `companies`). */
-  emitter?: {
-    cnpj: string;
-    legalName: string;
-    tradeName?: string | null;
-    ie: string;
-    street: string;
-    number: string;
-    district: string;
-    city: string;
-    state: string;
-    zip: string;
-    phone?: string | null;
-  };
-  /** Parâmetros fiscais resolvidos a partir de `fiscal_settings`. */
-  fiscal?: {
-    operationNature: string;
-    cfop: string;
+    ncm: string | null;
     csosn: string | null;
     crt: number | null;
-    origem: number;
-    series: number;
-    number: number | null;
+    natureza: string | null;
+    series: number | null;
+    numberPreview: number | null;
+    hasCertificate: boolean;
+    certificateAlias: string | null;
+    certificateValidTo: string | null;
+    hasProviderKey: boolean;
+    certificateExpiresIn: number | null;
+    companyName: string | null;
+    companyCnpj: string | null;
+    saleNumber: number | null;
+    items: Array<{
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+      ncm: string | null;
+    }>;
   };
 }
 
-export interface ProviderIssueResult {
-  ok: boolean;
-  status: NfeStatus;
-  accessKey?: string;
-  protocol?: string;
-  number?: number;
-  series?: number;
-  xmlSignedPath?: string;
-  xmlAuthorizedPath?: string;
-  danfePath?: string;
-  /** URL/caminho remoto do XML autorizado no provedor (para download). */
-  xmlUrl?: string;
-  /** URL/caminho remoto do DANFE no provedor (para download). */
-  danfeUrl?: string;
-  providerRef?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  raw?: unknown;
+export interface FiscalDocumentContext {
+  customerName: string | null;
+  customerDocument: string | null;
+  itemCount: number;
+  cfop: string | null;
+  natureza: string | null;
+  saleNumber: number | null;
 }
 
-export interface ProviderCancelResult {
-  ok: boolean;
-  /**
-   * `cancelled` SOMENTE com confirmação oficial da SEFAZ (com protocolo do
-   * evento). Enquanto o evento está em processamento use `cancelling`.
-   */
-  status: NfeStatus;
-  /** Protocolo do EVENTO de cancelamento homologado. */
-  protocol?: string;
-  cancelledAt?: string;
-  /** URL do XML do evento de cancelamento, quando o provedor a devolve. */
-  cancellationXmlUrl?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  raw?: unknown;
-}
+export type ProviderHealthResult = {
+  status: "ok" | "warning" | "error";
+  message: string;
+  checkedAt: string;
+  /** Veredito item a item: qual exatamente falhou. */
+  items: any[]; // Avoid circular dependency with provider-health if possible
+};
 
-export interface ProviderStatusResult {
-  ok: boolean;
-  status: NfeStatus;
-  protocol?: string;
-  accessKey?: string;
-  number?: number;
-  series?: number;
-  xmlUrl?: string;
-  danfeUrl?: string;
-  providerRef?: string;
-  /** Protocolo do EVENTO de cancelamento homologado pela SEFAZ. */
-  cancellationProtocol?: string;
-  /** URL do XML do evento de cancelamento, quando disponível. */
-  cancellationXmlUrl?: string;
-  /** Data/hora do cancelamento informada pelo provedor. */
-  cancelledAt?: string;
-  rejectionCode?: string;
-  rejectionReason?: string;
-  raw?: unknown;
-}
+export type ProviderHealthByEnvironment = {
+  production: ProviderHealthResult;
+  homologation: ProviderHealthResult;
+};
 
+export type CompanyFiscalProfile = {
+  id: string;
+  legalName: string | null;
+  tradeName: string | null;
+  cnpj: string | null;
+  ie: string | null;
+  im: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  addressNumber: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  zipcode: string | null;
+};
