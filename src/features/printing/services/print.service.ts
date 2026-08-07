@@ -86,6 +86,13 @@ class PrintQueue {
 
   getQueue() { return [...this.queue]; }
   getHistory() { return [...this.history]; }
+  
+  // Apenas para testes
+  __clear() {
+    this.queue = [];
+    this.history = [];
+    this.isProcessing = false;
+  }
 }
 
 export const printQueue = new PrintQueue();
