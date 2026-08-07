@@ -7,6 +7,8 @@ import {
   Zap,
   MessageCircle,
   History,
+  Calendar,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,8 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   const meta = KIND_META[kind];
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabValue>("all");
+  const [period, setPeriod] = useState<"all" | "today" | "week" | "month">("all");
+  const [origin, setOrigin] = useState<TransactionSource | "all">("all");
   const [page, setPage] = useState(1);
   const debounced = useDebouncedValue(search, 300);
 
@@ -131,24 +135,58 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   );
 
   const filtered = useMemo(() => {
+    let result = enriched;
+
+    // Filtro por Tab (Status)
     switch (tab) {
       case "pending":
-        return enriched.filter(
+        result = result.filter(
           (e) =>
             e.display === "pending" ||
             e.display === "scheduled" ||
             e.display === "partial",
         );
+        break;
       case "overdue":
-        return enriched.filter((e) => e.display === "overdue");
+        result = result.filter((e) => e.display === "overdue");
+        break;
       case "partial":
-        return enriched.filter((e) => e.display === "partial");
+        result = result.filter((e) => e.display === "partial");
+        break;
       case "paid":
-        return enriched.filter((e) => e.display === "paid");
-      default:
-        return enriched;
+        result = result.filter((e) => e.display === "paid");
+        break;
     }
-  }, [enriched, tab]);
+
+    // Filtro por Origem
+    if (origin !== "all") {
+      result = result.filter((e) => e.row.source === origin);
+    }
+
+    // Filtro por Período
+    if (period !== "all") {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const startOfToday = now.getTime();
+      
+      const oneWeekAgo = new Date(now);
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      result = result.filter((e) => {
+        const dateStr = e.row.due_date ?? e.row.transaction_date;
+        const date = new Date(dateStr + "T00:00:00").getTime();
+        
+        if (period === "today") return date === startOfToday;
+        if (period === "week") return date >= oneWeekAgo.getTime() && date <= startOfToday;
+        if (period === "month") return date >= startOfMonth.getTime() && date <= startOfToday;
+        return true;
+      });
+    }
+
+    return result;
+  }, [enriched, tab, origin, period]);
 
   // Bella — 1 sugestão contextual acima da tabela (não intrusiva).
   const suggestion = useMemo(() => pickSuggestion(enriched, kind), [enriched, kind]);
@@ -190,7 +228,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
       ) : null}
 
       <div className="rounded-xl border border-border bg-card p-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-[220px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -203,15 +241,47 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
               }}
             />
           </div>
-          <Tabs value={tab} onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}>
-            <TabsList>
-              {TABS.map((t) => (
-                <TabsTrigger key={t.value} value={t.value}>
-                  {t.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <select 
+                className="bg-transparent text-sm outline-none"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value as any)}
+              >
+                <option value="all">Todo período</option>
+                <option value="today">Hoje</option>
+                <option value="week">Últimos 7 dias</option>
+                <option value="month">Este mês</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <select 
+                className="bg-transparent text-sm outline-none"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value as any)}
+              >
+                <option value="all">Todas origens</option>
+                <option value="manual">Manual</option>
+                <option value="sale">Vendas</option>
+                <option value="purchase">Compras</option>
+                <option value="bella_pay">Bella Pay</option>
+              </select>
+            </div>
+
+            <Tabs value={tab} onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}>
+              <TabsList>
+                {TABS.map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} className="text-xs">
+                    {t.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -301,6 +371,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       >
                         {meta.prefix}
                         {formatCurrency(Number(t.amount ?? 0))}
+                        {t.status === "paid" && meta.type === "income" ? " (+)" : t.status === "paid" && meta.type === "expense" ? " (-)" : ""}
                       </TableCell>
                       <TableCell className="hidden text-sm lg:table-cell">
                         {t.payment_method
