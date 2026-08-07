@@ -9,7 +9,7 @@ export const labelaryService = {
    * Gera uma URL de imagem do preview da etiqueta
    */
   getPreviewUrl(label: LabelData): string {
-    const { zpl, width = 4, height = 6, dpmm = 8 } = label;
+    const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
     // O Labelary usa dpmm (8 ou 12)
     // Formato: http://api.labelary.com/v1/printers/{dpmm}dpmm/labels/{width}x{height}/0/
     return `http://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/${encodeURIComponent(zpl)}`;
@@ -19,7 +19,7 @@ export const labelaryService = {
    * Converte ZPL para PDF usando o Labelary
    */
   async convertToPdf(label: LabelData): Promise<Blob> {
-    const { zpl, width = 4, height = 6, dpmm = 8 } = label;
+    const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
     const url = `http://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
     
     const response = await fetch(url, {
