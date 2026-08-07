@@ -155,3 +155,17 @@ export const getMercadoLivreCategoryAttributes = createServerFn({ method: "GET" 
 
     return await res.json();
   });
+
+export const getMercadoLivreOrderLabel = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { mlOrderId: string }) => {
+    const mlOrderId = String(input?.mlOrderId ?? "").trim();
+    if (!mlOrderId) throw new Error("mlOrderId obrigatório.");
+    return { mlOrderId };
+  })
+  .handler(async ({ data, context }) => {
+    const { getOrderLabel } = await import("./mercadolivre.server");
+    const companyId = await resolveCompanyId(context.supabase, context.userId);
+    return await getOrderLabel(context.supabase, companyId, data.mlOrderId);
+  });
+

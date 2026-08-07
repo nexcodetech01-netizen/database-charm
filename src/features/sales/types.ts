@@ -79,7 +79,9 @@ export interface SaleWithMeta extends Sale {
 export interface SaleWithItems extends Sale {
   customer_name: string | null;
   items: SaleItem[];
+  metadata?: Record<string, any> | null;
 }
+
 
 export type SaleSortKey =
   | "sale_date"

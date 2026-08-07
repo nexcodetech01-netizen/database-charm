@@ -618,3 +618,57 @@ export async function ensureMLProduct(
     return null;
   }
 }
+
+export async function getOrderLabel(
+  supabase: AnySupabase,
+  companyId: string,
+  mlOrderId: string,
+): Promise<{ type: "pdf" | "zpl"; content: string }> {
+  const row = await readSummaryRow(supabase, companyId);
+  if (!row?.access_token_encrypted) throw new Error("Mercado Livre não conectado.");
+
+  const token = decryptToken(row.access_token_encrypted);
+  if (!token) throw new Error("Falha ao decifrar token.");
+
+  // 1. Descobrir o ID da remessa (shipment_id) da venda
+  const orderRes = await integrationFetch(
+    `${API}/orders/${mlOrderId}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    { integration: "mercadolivre:get-order", timeoutMs: 10_000 }
+  );
+  if (!orderRes.ok) throw new Error(`Falha ao buscar pedido ML: ${orderRes.status}`);
+  const order = await orderRes.json();
+  const shipmentId = order.shipping?.id;
+  if (!shipmentId) throw new Error("O pedido não possui remessa associada.");
+
+  // 2. Tentar buscar a etiqueta
+  // Formatos comuns: pdf, zpl2
+  const formats = ["pdf", "zpl2"];
+  for (const format of formats) {
+    const labelUrl = `${API}/shipments/${shipmentId}/labels?response_type=${format}`;
+    const labelRes = await integrationFetch(
+      labelUrl,
+      { headers: { Authorization: `Bearer ${token}` } },
+      { integration: "mercadolivre:get-label", timeoutMs: 15_000 }
+    );
+    
+    if (labelRes.ok) {
+      if (format === "pdf") {
+        const buffer = await labelRes.arrayBuffer();
+        return {
+          type: "pdf",
+          content: Buffer.from(buffer).toString("base64"),
+        };
+      } else {
+        const text = await labelRes.text();
+        return {
+          type: "zpl",
+          content: text,
+        };
+      }
+    }
+  }
+
+  throw new Error("Não foi possível obter a etiqueta nos formatos suportados (PDF/ZPL).");
+}
+
