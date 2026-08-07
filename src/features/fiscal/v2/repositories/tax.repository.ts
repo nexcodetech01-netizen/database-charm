@@ -16,11 +16,13 @@ export class TaxRepository {
     return data;
   }
 
-  async updateSettings(companyId: string, payload: any): Promise<void> {
-    const { error } = await this.supabase
+  async updateSettings(companyId: string, payload: any): Promise<any> {
+    const { data, error } = await this.supabase
       .from("fiscal_settings")
-      .update(payload)
-      .eq("company_id", companyId);
+      .upsert({ ...payload, company_id: companyId }, { onConflict: "company_id" })
+      .select("*")
+      .single();
     if (error) throw error;
+    return data;
   }
 }
