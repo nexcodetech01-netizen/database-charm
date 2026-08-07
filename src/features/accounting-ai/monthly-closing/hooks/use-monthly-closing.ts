@@ -70,41 +70,45 @@ export function useMonthlyClosingAudit(month: string) {
         healthScore: {
           score: avgScore,
           level: minScore < 40 ? "Crítica" : minScore < 70 ? "Atenção" : "Boa",
-          label: `${financialAudit.healthScore.label} ${fiscalAudit.healthScore.label} ${inventoryAudit.healthScore.label} ${purchasesAudit.healthScore.label} ${salesAudit.healthScore.label}`
+          label: `${financialAudit.healthScore.label} ${fiscalAudit.healthScore.label} ${inventoryAudit.healthScore.label} ${purchasesAudit.healthScore.label} ${salesAudit.healthScore.label} ${cashAudit.healthScore.label}`
         },
         checklist: [
           ...financialAudit.checklist, 
           ...fiscalAudit.checklist, 
           ...inventoryAudit.checklist,
           ...purchasesAudit.checklist,
-          ...salesAudit.checklist
+          ...salesAudit.checklist,
+          ...cashAudit.checklist
         ],
         summary: {
-          monthSummary: `${financialAudit.summary.monthSummary} ${fiscalAudit.summary.monthSummary} ${inventoryAudit.summary.monthSummary} ${purchasesAudit.summary.monthSummary} ${salesAudit.summary.monthSummary}`,
+          monthSummary: `${financialAudit.summary.monthSummary} ${fiscalAudit.summary.monthSummary} ${inventoryAudit.summary.monthSummary} ${purchasesAudit.summary.monthSummary} ${salesAudit.summary.monthSummary} ${cashAudit.summary.monthSummary}`,
           achievements: [
             ...financialAudit.summary.achievements, 
             ...fiscalAudit.summary.achievements, 
             ...inventoryAudit.summary.achievements,
             ...purchasesAudit.summary.achievements,
-            ...salesAudit.summary.achievements
+            ...salesAudit.summary.achievements,
+            ...cashAudit.summary.achievements
           ],
           problems: [
             ...financialAudit.summary.problems, 
             ...fiscalAudit.summary.problems, 
             ...inventoryAudit.summary.problems,
             ...purchasesAudit.summary.problems,
-            ...salesAudit.summary.problems
+            ...salesAudit.summary.problems,
+            ...cashAudit.summary.problems
           ],
-          biggestRisk: salesAudit.summary.biggestRisk,
-          biggestOpportunity: salesAudit.summary.biggestOpportunity,
-          finalRecommendation: `${financialAudit.summary.finalRecommendation} ${fiscalAudit.summary.finalRecommendation} ${inventoryAudit.summary.finalRecommendation} ${purchasesAudit.summary.finalRecommendation} ${salesAudit.summary.finalRecommendation}`
+          biggestRisk: cashAudit.healthScore.score < 70 ? cashAudit.summary.biggestRisk : salesAudit.summary.biggestRisk,
+          biggestOpportunity: cashAudit.summary.biggestOpportunity,
+          finalRecommendation: `${financialAudit.summary.finalRecommendation} ${fiscalAudit.summary.finalRecommendation} ${inventoryAudit.summary.finalRecommendation} ${purchasesAudit.summary.finalRecommendation} ${salesAudit.summary.finalRecommendation} ${cashAudit.summary.finalRecommendation}`
         },
         timeline: [
           ...financialAudit.timeline, 
           ...fiscalAudit.timeline, 
           ...inventoryAudit.timeline,
           ...purchasesAudit.timeline,
-          ...salesAudit.timeline
+          ...salesAudit.timeline,
+          ...cashAudit.timeline
         ].sort((a, b) => 
           new Date(b.date).getTime() - new Date(a.date).getTime()
         )
