@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { NfeEnvironment } from "../types";
 
 /**
  * Repository para persistência de status de documentos fiscais (leitura/escrita).
@@ -16,10 +17,19 @@ export class StatusRepository {
     return data;
   }
 
+  async getProviderEnvironments(companyId: string): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from("fiscal_provider_environments")
+      .select("*")
+      .eq("company_id", companyId);
+    if (error) throw error;
+    return data ?? [];
+  }
+
   async hasSecret(
     companyId: string,
     kind: string,
-    environment?: any,
+    environment?: NfeEnvironment,
     ownerId: string | null = null,
   ): Promise<boolean> {
     const { data, error } = await this.supabase.rpc("fiscal_has_secret", {
@@ -32,3 +42,4 @@ export class StatusRepository {
     return Boolean(data);
   }
 }
+

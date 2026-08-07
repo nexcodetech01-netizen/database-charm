@@ -317,7 +317,7 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
       environment: data.environment,
       model: data.model,
     });
-    return mapDocument(doc as unknown as FiscalDocumentRow);
+    return doc as unknown as FiscalDocumentDto;
   });
 
 // ----------------------------------------------------------------- CANCEL
@@ -346,7 +346,7 @@ export const cancelFiscalDocument = createServerFn({ method: "POST" })
       documentId: data.documentId,
       reason: data.reason,
     });
-    return mapDocument(updated as unknown as FiscalDocumentRow);
+    return updated as unknown as FiscalDocumentDto;
   });
 
 // ------------------------------------------------------------- DISCARD
@@ -421,7 +421,7 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
 
     return updated;
 
-    return mapDocument(updated as FiscalDocumentRow);
+    return updated;
   });
 
 // --------------------------------------------------------- STATUS refresh
@@ -443,7 +443,7 @@ export const refreshFiscalStatus = createServerFn({ method: "POST" })
       userId: context.userId,
       documentId: data.documentId,
     });
-    return mapDocument(row as unknown as FiscalDocumentRow);
+    return row as unknown as FiscalDocumentDto;
   });
 
 // ------------------------------------------------- ARTIFACT reprocessamento
@@ -479,7 +479,7 @@ export const reprocessFiscalArtifacts = createServerFn({ method: "POST" })
       documentId: data.documentId,
     });
     return {
-      document: mapDocument(outcome.document as unknown as FiscalDocumentRow),
+      document: outcome.document as unknown as FiscalDocumentDto,
       recovered: outcome.recovered,
       stillPending: outcome.stillPending,
       noop: outcome.noop,
@@ -646,7 +646,7 @@ async function fetchEnvironments(
     homologation: emptyEnvConfig("homologation"),
   } as Record<NfeEnvironment, FiscalProviderEnvironmentConfig>;
   for (const env of ["production", "homologation"] as const) {
-    const row = rows.find((r) => r.environment === env) ?? null;
+    const row = rows.find((r: any) => r.environment === env) ?? null;
     out[env] = {
       environment: env,
       apiUrl: row?.api_url ?? null,
