@@ -30,9 +30,9 @@ interface Params {
   material?: string | null;
   categories: CategoryLike[];
   ncm: string;
-  cest: string;
+  cest: string | null;
   /** Aplica os valores no formulário. */
-  onApply: (values: { ncm: string; cest: string }) => void;
+  onApply: (values: { ncm: string; cest: string | null }) => void;
 }
 
 export interface FiscalAutofillState {
