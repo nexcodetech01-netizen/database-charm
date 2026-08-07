@@ -2,8 +2,8 @@
  * Bella Contadora — Consultas de Pró-Labore (Sprint 8.1).
  */
 import { formatCurrency } from "@/lib/format";
-import type { AccountingSummary } from "../types";
-import type { FinancialAdvice } from "../advisor";
+import type { AccountingSummary } from "../../types";
+import type { FinancialAdvice } from "../../advisor";
 
 export type PayrollQueryId =
   | "prolabore_sugerido"

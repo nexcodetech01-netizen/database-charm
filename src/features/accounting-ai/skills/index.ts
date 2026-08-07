@@ -53,7 +53,7 @@ import {
   describeFindings,
   describeOperationalHealth,
 } from "../audit/selectors";
-import { payrollSkills } from "./payroll-skills";
+import { payrollSkills } from "../payroll/skills/payroll-skills";
 
 export type AccountingSkillId =
   | "consultar_lucro"
