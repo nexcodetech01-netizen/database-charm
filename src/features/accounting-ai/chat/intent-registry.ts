@@ -446,6 +446,45 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     ],
   },
   {
+    intent: "situacao_vendas",
+    priority: 38, // Prioridade alta para auditoria comercial
+    terms: [
+      [
+        "como esta meu comercial",
+        "como estao as vendas",
+        "meu setor de vendas esta pronto",
+        "posso fechar o comercial",
+        "minha margem esta saudavel",
+        "existem descontos acima da politica",
+        "existem vendas pendentes",
+        "resumo comercial",
+        "comercial pronto",
+        "auditoria de vendas",
+      ],
+    ],
+  },
+      [
+        "como esta meu fiscal",
+        "como esta o fiscal",
+        "situacao fiscal",
+        "minha situacao fiscal",
+        "como estao minhas notas",
+        "como estao as notas",
+        "minhas notas fiscais",
+        "notas fiscais",
+        "nfe",
+        "nfc e",
+        "nota rejeitada",
+        "notas rejeitadas",
+        "meu fiscal esta pronto",
+        "posso fechar o fiscal",
+        "existem notas rejeitadas",
+        "tenho pendencias fiscais",
+        "meu mes esta regular",
+      ],
+    ],
+  },
+  {
     intent: "situacao_estoque",
     priority: 37, // Aumentada para suportar fechamento mensal
     terms: [
