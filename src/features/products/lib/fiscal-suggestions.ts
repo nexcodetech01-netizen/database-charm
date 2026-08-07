@@ -10,7 +10,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface FiscalHistorySuggestion {
-  ncm: string;
+  ncm: string | null;
   cest: string | null;
   usageCount: number;
   similarity: number;
