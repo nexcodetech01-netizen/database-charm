@@ -463,12 +463,6 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
       ],
     ],
   },
-        "existem notas rejeitadas",
-        "tenho pendencias fiscais",
-        "meu mes esta regular",
-      ],
-    ],
-  },
   {
     intent: "situacao_estoque",
     priority: 37, // Aumentada para suportar fechamento mensal
