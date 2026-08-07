@@ -203,11 +203,11 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
             </StatusBadge>
           )}
           <StatusBadge 
-            status={audit?.summary.certificationStatus === "Empresa apta" ? "success" : audit?.summary.certificationStatus === "Empresa apta com ressalvas" ? "warning" : "error"}
+            status={s?.health.data?.level === "healthy" ? "success" : s?.health.data?.level === "attention" ? "warning" : "error"}
             appearance="solid"
             className="uppercase font-bold text-[10px]"
           >
-            {audit?.summary.certificationStatus || "Auditoria pendente"}
+            {s?.health.data?.label || "Auditoria pendente"}
           </StatusBadge>
         </div>
       }
