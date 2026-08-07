@@ -35,6 +35,7 @@ function IndexComponent() {
   useEffect(() => {
     // Invalida caches financeiros após o saneamento via migration
     queryClient.invalidateQueries({ queryKey: ["finance"] });
+    queryClient.invalidateQueries({ queryKey: ["finance-overview"] });
     
     if (typeof window !== "undefined" && isPreviewHostname(window.location.hostname)) {
       const checkSession = async () => {
