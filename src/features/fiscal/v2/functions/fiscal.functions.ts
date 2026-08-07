@@ -30,6 +30,14 @@ import {
 } from "../lib/artifacts";
 import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 
+import { DocumentsRepository } from "../repositories/documents.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { ProductsRepository } from "../repositories/products.repository";
+import { CustomersRepository } from "../repositories/customers.repository";
+import { StatusRepository } from "../repositories/status.repository";
+import { TaxRepository } from "../repositories/tax.repository";
+
 type SB = SupabaseClient<Database>;
 
 // -------------------------------------------------------------------- types
@@ -140,14 +148,9 @@ async function ensurePermission(
     | "fiscal.export"
     | "fiscal.manage",
 ): Promise<void> {
-
-  const { data, error } = await supabase.rpc("has_permission", {
-    _user_id: userId,
-    _company_id: companyId,
-    _permission_code: code,
-  });
-  if (error) throw error;
-  if (!data) throw new Error(`Acesso negado: ${code}`);
+  const repo = new CompanyRepository(supabase);
+  const hasPermission = await repo.hasPermission(userId, companyId, code);
+  if (!hasPermission) throw new Error(`Acesso negado: ${code}`);
 }
 
 type FiscalDocumentRow = {
@@ -293,13 +296,9 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
     if (saleErr) throw saleErr;
     if (!sale) throw new Error("Venda não encontrada.");
 
-    // Impede duplicidade usando EXATAMENTE o mesmo helper da listagem/detalhe.
-    // Erro, rejeitada e descartada não bloqueiam reemissão.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingDocs } = await (docFrom(supabase) as any)
-      .select("id, status, access_key, protocol, created_at")
-      .eq("company_id", companyId)
-      .eq("sale_id", data.saleId);
+    // Impede duplicidade usando Repository.
+    const repo = new DocumentsRepository(supabase);
+    const existingDocs = await repo.findBySaleId(companyId, data.saleId);
     if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
       throw new Error(
         data.model === "65"
@@ -378,25 +377,21 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: current, error: readErr } = await (docFrom(supabase) as any)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .maybeSingle();
-    if (readErr) throw readErr;
+    const repo = new DocumentsRepository(supabase);
+    const current = await repo.findById(companyId, data.documentId);
     if (!current) throw new Error("Documento fiscal não encontrado.");
 
-    const row = current as FiscalDocumentRow;
+    const row = current;
+
     if (row.status === "authorized")
       throw new Error("NF-e autorizada não pode ser descartada — utilize o cancelamento.");
     if (row.status === "cancelled")
       throw new Error("NF-e cancelada não pode ser descartada.");
-    if ((row.status as string) === "denied" || (row.status as string) === "denegada")
+    if (row.status === "rejected" && row.rejectionCode === "denied")
       throw new Error("NF-e denegada não pode ser descartada.");
-    if ((row.status as string) === "discarded")
+    if (row.status === "discarded")
       throw new Error("Esta tentativa já foi descartada.");
-    if (row.access_key || row.protocol)
+    if (row.accessKey || row.protocol)
       throw new Error(
         "Documento já possui chave/protocolo na SEFAZ — descarte indisponível.",
       );
@@ -408,28 +403,23 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
     const reason = data.reason?.trim() || "Reemissão";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updated, error } = await (docFrom(supabase) as any)
-      .update({
-        status: "discarded",
-        discarded_at: new Date().toISOString(),
-        discarded_by: context.userId,
-        discard_reason: reason,
-      })
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .select(DOC_COLS)
-      .single();
-    if (error) throw error;
+    const updated = await repo.update(companyId, data.documentId, {
+      status: "discarded",
+      discarded_at: new Date().toISOString(),
+      discarded_by: context.userId,
+      discard_reason: reason,
+    });
 
     // Evento append-only na linha do tempo do documento.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("fiscal_events" as never) as any).insert({
+    await repo.insertEvent({
       company_id: companyId,
       document_id: data.documentId,
       event_type: "discarded",
       actor_id: context.userId,
       payload: { message: `Tentativa descartada — ${reason}.`, reason },
     });
+
+    return updated;
 
     return mapDocument(updated as FiscalDocumentRow);
   });
@@ -586,17 +576,11 @@ type ProviderRow = {
 async function fetchHasSecretKind(
   supabase: SB,
   companyId: string,
-  kind: "provider_api_key" | "provider_admin_key",
+  kind: "provider_api_key" | "provider_admin_key" | "cert_password" | "csc_token",
   environment?: NfeEnvironment,
 ): Promise<boolean> {
-  const { data, error } = await supabase.rpc("fiscal_has_secret", {
-    _company_id: companyId,
-    _kind: kind,
-    _owner_id: null as unknown as string,
-    ...(environment ? { _environment: environment } : {}),
-  } as never);
-  if (error) return false;
-  return Boolean(data);
+  const repo = new StatusRepository(supabase);
+  return repo.hasSecret(companyId, kind, environment);
 }
 
 /** Token de EMPRESA (emissão). Mantido por compatibilidade de nome. */
@@ -655,11 +639,8 @@ async function fetchEnvironments(
   supabase: SB,
   companyId: string,
 ): Promise<Record<NfeEnvironment, FiscalProviderEnvironmentConfig>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("fiscal_provider_environments" as never) as any)
-    .select(PROVIDER_ENV_COLS)
-    .eq("company_id", companyId);
-  const rows = (data ?? []) as ProviderEnvRow[];
+  const repo = new StatusRepository(supabase);
+  const rows = await repo.getProviderEnvironments(companyId);
   const out = {
     production: emptyEnvConfig("production"),
     homologation: emptyEnvConfig("homologation"),
