@@ -6,6 +6,7 @@ import { auditFiscalClosing } from "../queries/fiscal-audit";
 import { auditInventoryClosing } from "../queries/inventory-audit";
 import { auditPurchasesClosing } from "../queries/purchases-audit";
 import { auditSalesClosing } from "../queries/sales-audit";
+import { auditCashClosing } from "../queries/cash-audit";
 import { currentPeriod } from "../../lib/helpers";
 import { useAuth } from "@/providers/auth-provider";
 import { accountingAiServices } from "../../services/adapters";
