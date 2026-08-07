@@ -10,7 +10,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface FiscalHistorySuggestion {
-  ncm: string;
+  ncm: string | null;
   cest: string | null;
   usageCount: number;
   similarity: number;
@@ -18,8 +18,9 @@ export interface FiscalHistorySuggestion {
 }
 
 /** Mantém apenas dígitos e corta no tamanho do código fiscal. */
-export function normalizeNcm(value: string | null | undefined): string {
-  return (value ?? "").replace(/\D/g, "").slice(0, 8);
+export function normalizeNcm(value: string | null | undefined): string | null {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return digits.length > 0 ? digits.slice(0, 8) : null;
 }
 
 export function normalizeCest(value: string | null | undefined): string | null {
@@ -38,7 +39,7 @@ export function isValidCest(value: string | null | undefined): boolean {
 /** Formata NCM para leitura: 6109.10.00 */
 export function formatNcm(value: string | null | undefined): string {
   const digits = normalizeNcm(value);
-  if (digits.length !== 8) return digits;
+  if (!digits || digits.length !== 8) return digits ?? "";
   return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
 }
 

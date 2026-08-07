@@ -72,7 +72,7 @@ export function CategoryFormDialog({
     setIcon(category?.icon ?? "Tag");
     setStatus((category?.status as CategoryStatus) ?? "active");
     setParentId(category?.parent_id ?? NO_PARENT);
-    setDefaultNcm(normalizeNcm(category?.default_ncm));
+    setDefaultNcm(normalizeNcm(category?.default_ncm) ?? "");
     setDefaultCest(normalizeCest(category?.default_cest) ?? "");
   }, [open, category]);
 
@@ -204,7 +204,7 @@ export function CategoryFormDialog({
                 inputMode="numeric"
                 maxLength={12}
                 placeholder="0000.00.00 ou 00000000"
-                onChange={(e) => setDefaultNcm(normalizeNcm(e.target.value))}
+                onChange={(e) => setDefaultNcm(normalizeNcm(e.target.value) ?? "")}
               />
               <p className="text-[11px] text-muted-foreground">
                 Sugerido automaticamente ao escolher esta categoria no produto.
