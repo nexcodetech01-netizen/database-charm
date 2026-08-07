@@ -99,7 +99,7 @@ export function auditFiscalClosing(
 
   const healthScore: MonthlyClosingHealthScore = {
     score,
-    level: score >= 90 ? "Exelente" : score >= 70 ? "Boa" : score >= 40 ? "Atenção" : "Crítica",
+    level: score >= 90 ? "Excelente" : score >= 70 ? "Boa" : score >= 40 ? "Atenção" : "Crítica",
     label: score >= 90 
       ? "Sua conformidade fiscal está excelente." 
       : score >= 70 

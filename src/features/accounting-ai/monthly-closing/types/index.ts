@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const MonthlyClosingHealthScoreSchema = z.object({
   score: z.number().min(0).max(100),
-  level: z.enum(["Exelente", "Boa", "Atenção", "Crítica"]),
+  level: z.enum(["Excelente", "Boa", "Atenção", "Crítica"]),
   label: z.string()
 });
 

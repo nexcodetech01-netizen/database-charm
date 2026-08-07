@@ -388,7 +388,7 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
   },
   {
     intent: "situacao_geral",
-    priority: 12,
+    priority: 45, // Prioridade máxima para cockpit executivo
     terms: [
       [
         "como esta minha empresa",
@@ -401,6 +401,12 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
         "panorama",
         "visao geral",
         "como vai a empresa",
+        "auditoria geral",
+        "faca uma auditoria geral",
+        "como foi meu mes",
+        "minha empresa esta pronta",
+        "quais sao meus maiores riscos",
+        "quais sao minhas oportunidades",
       ],
     ],
   },

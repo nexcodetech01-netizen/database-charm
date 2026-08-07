@@ -10,14 +10,13 @@ import { auditCashClosing } from "../queries/cash-audit";
 import { currentPeriod } from "../../lib/helpers";
 import { useAuth } from "@/providers/auth-provider";
 import { accountingAiServices } from "../../services/adapters";
-
+import { consolidateMonthlyAudit } from "../queries/executive-consolidation";
 
 export function useMonthlyClosingAudit(month: string) {
   const { user } = useAuth();
   const companyId = (user as any)?.company_id;
   
   const summaryQuery = useAccountingAiSummary(companyId, currentPeriod());
-
 
   return useQuery({
     queryKey: ["monthly-closing-audit", companyId, month],
@@ -27,7 +26,6 @@ export function useMonthlyClosingAudit(month: string) {
         throw new Error("Summary data not available");
       }
       
-      // Busca dados de auditoria via adaptadores existentes
       const [fiscalDocs, products, ledger, purchases, suppliers, sales, customers, cashSessions] = await Promise.all([
         accountingAiServices.audit.fiscalDocuments(companyId, 100),
         accountingAiServices.audit.products(companyId, 1000),
@@ -39,80 +37,22 @@ export function useMonthlyClosingAudit(month: string) {
         accountingAiServices.audit.cashSessions(companyId, 100)
       ]);
       
-      const financialAudit = auditFinancialClosing(summaryQuery.data, month);
-      const fiscalAudit = auditFiscalClosing(summaryQuery.data, fiscalDocs, products, month);
-      const inventoryAudit = auditInventoryClosing(summaryQuery.data, products, ledger, month);
+      const finance = auditFinancialClosing(summaryQuery.data, month);
+      const fiscal = auditFiscalClosing(summaryQuery.data, fiscalDocs, products, month);
+      const inventory = auditInventoryClosing(summaryQuery.data, products, ledger, month);
       const purchasesAudit = auditPurchasesClosing(summaryQuery.data, purchases, products, suppliers, month);
       const salesAudit = auditSalesClosing(summaryQuery.data, sales, products, customers, month);
-      const cashAudit = auditCashClosing(summaryQuery.data, cashSessions, month);
+      const cash = auditCashClosing(summaryQuery.data, cashSessions, month);
 
-      // Merge results
-      const totalScore = 
-        financialAudit.healthScore.score + 
-        fiscalAudit.healthScore.score + 
-        inventoryAudit.healthScore.score + 
-        purchasesAudit.healthScore.score +
-        salesAudit.healthScore.score +
-        cashAudit.healthScore.score;
-        
-      const avgScore = Math.round(totalScore / 6);
-      const minScore = Math.min(
-        financialAudit.healthScore.score, 
-        fiscalAudit.healthScore.score, 
-        inventoryAudit.healthScore.score,
-        purchasesAudit.healthScore.score,
-        salesAudit.healthScore.score,
-        cashAudit.healthScore.score
-      );
-      
-      return {
-        month,
-        healthScore: {
-          score: avgScore,
-          level: minScore < 40 ? "Crítica" : minScore < 70 ? "Atenção" : "Boa",
-          label: `${financialAudit.healthScore.label} ${fiscalAudit.healthScore.label} ${inventoryAudit.healthScore.label} ${purchasesAudit.healthScore.label} ${salesAudit.healthScore.label} ${cashAudit.healthScore.label}`
-        },
-        checklist: [
-          ...financialAudit.checklist, 
-          ...fiscalAudit.checklist, 
-          ...inventoryAudit.checklist,
-          ...purchasesAudit.checklist,
-          ...salesAudit.checklist,
-          ...cashAudit.checklist
-        ],
-        summary: {
-          monthSummary: `${financialAudit.summary.monthSummary} ${fiscalAudit.summary.monthSummary} ${inventoryAudit.summary.monthSummary} ${purchasesAudit.summary.monthSummary} ${salesAudit.summary.monthSummary} ${cashAudit.summary.monthSummary}`,
-          achievements: [
-            ...financialAudit.summary.achievements, 
-            ...fiscalAudit.summary.achievements, 
-            ...inventoryAudit.summary.achievements,
-            ...purchasesAudit.summary.achievements,
-            ...salesAudit.summary.achievements,
-            ...cashAudit.summary.achievements
-          ],
-          problems: [
-            ...financialAudit.summary.problems, 
-            ...fiscalAudit.summary.problems, 
-            ...inventoryAudit.summary.problems,
-            ...purchasesAudit.summary.problems,
-            ...salesAudit.summary.problems,
-            ...cashAudit.summary.problems
-          ],
-          biggestRisk: cashAudit.healthScore.score < 70 ? cashAudit.summary.biggestRisk : salesAudit.summary.biggestRisk,
-          biggestOpportunity: cashAudit.summary.biggestOpportunity,
-          finalRecommendation: `${financialAudit.summary.finalRecommendation} ${fiscalAudit.summary.finalRecommendation} ${inventoryAudit.summary.finalRecommendation} ${purchasesAudit.summary.finalRecommendation} ${salesAudit.summary.finalRecommendation} ${cashAudit.summary.finalRecommendation}`
-        },
-        timeline: [
-          ...financialAudit.timeline, 
-          ...fiscalAudit.timeline, 
-          ...inventoryAudit.timeline,
-          ...purchasesAudit.timeline,
-          ...salesAudit.timeline,
-          ...cashAudit.timeline
-        ].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      };
+      return consolidateMonthlyAudit({
+        finance,
+        fiscal,
+        inventory,
+        purchases: purchasesAudit,
+        sales: salesAudit,
+        cash
+      }, month);
     }
   });
 }
+

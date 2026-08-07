@@ -8,11 +8,13 @@ import type { BellaIntentId, ChatPlan, IntentMatch } from "./types";
 
 const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]> = {
   situacao_geral: [
+    "auditar_empresa",
     "consultar_saude",
     "consultar_caixa",
     "consultar_receita",
     "consultar_insights",
     "consultar_alertas",
+    "consultar_recomendacoes",
   ],
   pontos_atencao: ["consultar_alertas", "consultar_insights"],
   /** Sprint 6.2 — "como está meu fiscal?": só skills já existentes. */
