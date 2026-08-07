@@ -612,7 +612,7 @@ function PublicCollectionPage() {
                               <Link
                                 to="/catalogo/colecao/$slug/produto/$productId"
                                 params={{ slug: data.slug, productId: p.id }}
-                                search={(prev) => prev}
+                              search={(prev: any) => prev}
                               >
                                 {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
                               </Link>
@@ -700,7 +700,7 @@ function PublicCollectionPage() {
                           <Link
                             to="/catalogo/colecao/$slug/produto/$productId"
                             params={{ slug: data.slug, productId: p.id }}
-                            search={(prev) => prev}
+                            search={(prev: any) => prev}
                           >
                             Ver Detalhes
                           </Link>
@@ -753,14 +753,19 @@ interface EmptyResultsProps {
   search: {
     q: string;
     marca: string;
+    cat: string;
     disp: string;
     ord: string;
+    min: number;
+    max: number;
   };
   onReset: () => void;
   onClearQ: () => void;
   onClearMarca: () => void;
+  onClearCat: () => void;
   onClearDisp: () => void;
   onClearOrd: () => void;
+  onClearPrice: () => void;
 }
 
 function EmptyResults({
@@ -768,13 +773,19 @@ function EmptyResults({
   onReset,
   onClearQ,
   onClearMarca,
+  onClearCat,
   onClearDisp,
   onClearOrd,
+  onClearPrice,
 }: EmptyResultsProps) {
   const chips: { label: string; onClear: () => void }[] = [];
   if (search.q) chips.push({ label: `Busca: "${search.q}"`, onClear: onClearQ });
+  if (search.cat && search.cat !== "all")
+    chips.push({ label: `Categoria: ${search.cat}`, onClear: onClearCat });
   if (search.marca)
     chips.push({ label: `Marca: ${search.marca}`, onClear: onClearMarca });
+  if (search.min > 0 || search.max > 0)
+    chips.push({ label: `Preço: ${formatCurrency(search.min)} - ${formatCurrency(search.max)}`, onClear: onClearPrice });
   if (search.disp && search.disp !== "todos") {
     chips.push({
       label:
