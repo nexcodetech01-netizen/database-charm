@@ -7,7 +7,7 @@ import { PrintQueue } from "./PrintQueue";
 import { useQuery } from "@tanstack/react-query";
 import { printManager } from "../../services/print.service";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Printer as PrinterIcon, History, ListQueue, Settings } from "lucide-react";
+import { Printer as PrinterIcon, History, LayoutList, Settings } from "lucide-react";
 
 export function PrintManager() {
   const { data: printers = [] } = useQuery({
