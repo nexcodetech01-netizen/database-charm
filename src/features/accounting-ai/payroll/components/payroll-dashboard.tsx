@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { 
   History, 
-  Simulation, 
   TrendingUp, 
   TrendingDown, 
   PiggyBank, 
@@ -15,17 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { formatCurrency } from "@/lib/format";
-import { StatusBadge } from "@/components/design";
 import { 
   FinancialCard, 
-  IndicatorCard, 
-  TrendBadge, 
   SummaryGrid, 
-  AdvisorCard 
-} from "../components";
-import type { FinancialAdvice } from "../advisor";
-import type { AccountingSummary } from "../types";
-import { buildFinancialAdvice } from "../advisor";
+} from "../../components";
+import type { FinancialAdvice } from "../../advisor";
+import type { AccountingSummary } from "../../types";
+import { buildFinancialAdvice } from "../../advisor";
 
 interface PayrollDashboardProps {
   summary: AccountingSummary | null;
@@ -107,8 +102,8 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
         {/* Simulação */}
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calculator className="h-4 w-4 text-primary" />
               Simulação de Retirada
             </CardTitle>
             <CardDescription>
@@ -173,8 +168,8 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
         {/* Explicação da Bella */}
         <Card className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Info className="h-4 w-4 text-primary" />
               Explicação da Bella
             </CardTitle>
             <CardDescription>
@@ -202,11 +197,11 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
         </Card>
       </div>
 
-      {/* Histórico e Calendário (Placeholder / Mock de acordo com a regra de não criar tabelas se não existirem) */}
+      {/* Histórico e Calendário */}
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-4 w-4 text-primary" />
             Histórico e Próximos Passos
           </CardTitle>
           <CardDescription>
