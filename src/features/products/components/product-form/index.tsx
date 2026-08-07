@@ -151,7 +151,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [skuTaken, setSkuTaken] = useState(false);
 
   // Fiscal Suggestion Logic
-  const fiscal = useFiscalAutofill(companyId, form.name, form.category_id);
+  const fiscal = useFiscalAutofill(companyId, form.name);
   const [eanLoading, setEanLoading] = useState(false);
 
   // Draft Logic
