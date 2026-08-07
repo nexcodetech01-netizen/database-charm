@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MercadoLivrePrintDialog } from '../mercadolivre-print-dialog';
+import { MercadoLivrePrintDialog } from '../components/mercadolivre-print-dialog';
 import React from 'react';
 
 // Mock dependencies
