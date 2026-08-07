@@ -1497,11 +1497,8 @@ async function runProviderHealth(
   companyId: string,
   environment: NfeEnvironment,
 ): Promise<ProviderHealthResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-    .select(PROVIDER_COLS)
-    .eq("company_id", companyId)
-    .maybeSingle();
+  const statusRepo = new StatusRepository(supabase);
+  const cfg = await statusRepo.getProviderConfig(companyId);
   const providerId = (cfg as ProviderRow | null)?.provider_id ?? "mock";
 
   const { readProviderEnvironment, probeProviderHealthEngine, probeProviderAdminHealthEngine } =
@@ -1511,11 +1508,9 @@ async function runProviderHealth(
   const hasCompanyToken = await fetchHasApiKey(supabase, companyId, environment);
   const hasAdminToken = await fetchHasAdminKey(supabase, companyId, environment);
 
-  const { data: certs } = await supabase
-    .from("fiscal_certificates")
-    .select("id, is_active")
-    .eq("company_id", companyId);
-  const activeCert = ((certs ?? []) as Array<{ is_active: boolean }>).find((c) => c.is_active);
+  const certRepo = new CertificateRepository(supabase);
+  const certs = await certRepo.list(companyId);
+  const activeCert = certs.find((c) => c.isActive);
 
   // Probes só fazem sentido quando há URL e a credencial correspondente.
   const canProbe = providerId !== "mock" && Boolean(apiUrl);
@@ -2311,14 +2306,10 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       });
     }
 
-    // 3) Empresa
-    const { data: companyRow } = await supabase
-      .from("companies")
-      .select("cnpj, ie, address, city, state, zip_code, name")
-      .eq("id", companyId)
-      .maybeSingle();
-    const co = (companyRow ?? {}) as Record<string, string | null>;
-    if (!co.cnpj || !co.ie || !co.address || !co.city || !co.state || !co.zip_code) {
+    const companyRepo = new CompanyRepository(supabase);
+    const companyRow = await companyRepo.getProfile(companyId);
+    const co = companyRow ?? {};
+    if (!co.cnpj || !co.ie || !co.address || !co.city || !co.state || !co.zipcode) {
       push({
         id: "company.profile",
         field: "company",
@@ -2331,13 +2322,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 4) Settings (série, CFOP, natureza)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsRow } = await (supabase.from("fiscal_settings" as never) as any)
-      .select(
-        "nfe_series, nfe_next_number, default_cfop, default_csosn, operation_nature, tax_regime, crt, default_environment",
-      )
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const taxRepo = new TaxRepository(supabase);
+    const s = await taxRepo.getSettings(companyId);
     const s = (settingsRow ?? null) as {
       nfe_series: number | null;
       nfe_next_number: number | null;
@@ -2510,11 +2496,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
 
     // 6) Senha do certificado
     if (activeCert) {
-      const { data: hasCertPwd } = await supabase.rpc("fiscal_has_secret", {
-        _company_id: companyId,
-        _kind: "cert_password",
-        _owner_id: activeCert.id as unknown as string,
-      });
+      const statusRepo = new StatusRepository(supabase);
+      const hasCertPwd = await statusRepo.hasSecret(companyId, "cert_password", null, activeCert.id);
       if (!hasCertPwd) {
         push({
           id: "cert.password",
@@ -2528,21 +2511,14 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 7) Provedor
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: providerRow } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select("provider_id, api_url, environment, last_health_status")
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const statusRepo = new StatusRepository(supabase);
+    const providerRow = await statusRepo.getProviderConfig(companyId);
     const providerId = (providerRow as { provider_id?: string } | null)?.provider_id ?? "mock";
     const apiUrl = (providerRow as { api_url?: string | null } | null)?.api_url ?? null;
     const lastHealth =
       (providerRow as { last_health_status?: string | null } | null)?.last_health_status ?? null;
 
-    const { data: hasApiKey } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "provider_api_key",
-      _owner_id: null as unknown as string,
-    });
+    const hasApiKey = await statusRepo.hasSecret(companyId, "provider_api_key");
 
     if (providerId === "mock") {
       push({
@@ -2585,11 +2561,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 8) Duplicidade — mesma regra da listagem/detalhe (documento ATIVO).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingDocs } = await (docFrom(supabase) as any)
-      .select("id, status, access_key, protocol, created_at")
-      .eq("company_id", companyId)
-      .eq("sale_id", sale.id);
+    const docRepo = new DocumentsRepository(supabase);
+    const existingDocs = await docRepo.findBySaleId(companyId, sale.id);
     if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
       push({
         id: "duplicate",
