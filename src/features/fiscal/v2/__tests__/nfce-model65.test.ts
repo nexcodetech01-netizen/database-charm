@@ -34,8 +34,10 @@ function makePayload(over: Partial<NfePayload> = {}): NfePayload {
     reference: "ref-1",
     model: "65",
     environment: "production",
+    issuedAt: new Date().toISOString(),
     nfce: { cscId: "000001", cscToken: "SECRET-CSC", paymentMethod: "cash" },
     customer: { id: "", name: "", document: "" },
+
     items: [
       {
         productId: "p1",

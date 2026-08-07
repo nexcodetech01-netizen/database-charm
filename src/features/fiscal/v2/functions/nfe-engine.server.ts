@@ -432,12 +432,14 @@ async function buildContext(
     saleId: saleRow.id,
     environment,
     reference,
+    model,
     issuedAt: new Date().toISOString(),
     customer: {
       id: customer?.id ?? "",
       name: customer?.name ?? "",
       document: customer?.document ?? "",
       email: customer?.email ?? null,
+
       address: customer?.address,
     },
     items: items.map((it) => ({
@@ -488,11 +490,12 @@ async function buildContext(
 
   // NFC-e (modelo 65): CSC vem do MESMO cofre fiscal usado pelas demais
   // credenciais (`fiscal_secrets`), isolado por ambiente.
+  payload.model = model;
   if (model === "65") {
     const cscToken = await readSecret(companyId, "csc_token", null, environment);
-    payload.model = "65";
     payload.nfce = {
       cscId: st?.csc_id ?? "",
+
       cscToken: cscToken ?? "",
       paymentMethod: saleRow.payment_method ?? null,
     };
