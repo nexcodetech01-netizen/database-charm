@@ -367,7 +367,7 @@ export type NfePayload = {
 export type ProviderIssueResult = {
   ok: boolean;
   status: NfeStatus;
-  providerRef: string;
+  providerRef?: string;
   accessKey?: string;
   protocol?: string;
   number?: number;
@@ -381,6 +381,7 @@ export type ProviderIssueResult = {
   rejectionReason?: string;
   raw?: any;
 };
+
 
 export type ProviderStatusResult = ProviderIssueResult & {
   cancellationProtocol?: string;
