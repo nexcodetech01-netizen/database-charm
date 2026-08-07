@@ -1,7 +1,7 @@
 import { FiscalArtifactKind } from "../lib/artifacts";
-import { NfeEnvironment, fiscalEnvironmentSchema } from "./environment";
+import { NfeEnvironment, fiscalEnvironmentSchema, normalizeFiscalEnvironment } from "./environment";
 
-export { NfeEnvironment, fiscalEnvironmentSchema };
+export { NfeEnvironment, fiscalEnvironmentSchema, normalizeFiscalEnvironment };
 export type { FiscalArtifactKind };
 
 
@@ -150,6 +150,8 @@ export type FiscalCertificateSummary = {
   serialNumber: string | null;
   thumbprint: string | null;
   isActive: boolean;
+  storagePath?: string | null;
+  contentType?: string | null;
   createdAt: string;
 };
 

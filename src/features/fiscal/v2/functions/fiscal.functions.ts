@@ -30,6 +30,14 @@ import {
 } from "../lib/artifacts";
 import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 
+import { DocumentsRepository } from "../repositories/documents.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { ProductsRepository } from "../repositories/products.repository";
+import { CustomersRepository } from "../repositories/customers.repository";
+import { StatusRepository } from "../repositories/status.repository";
+import { TaxRepository } from "../repositories/tax.repository";
+
 type SB = SupabaseClient<Database>;
 
 // -------------------------------------------------------------------- types
@@ -140,14 +148,9 @@ async function ensurePermission(
     | "fiscal.export"
     | "fiscal.manage",
 ): Promise<void> {
-
-  const { data, error } = await supabase.rpc("has_permission", {
-    _user_id: userId,
-    _company_id: companyId,
-    _permission_code: code,
-  });
-  if (error) throw error;
-  if (!data) throw new Error(`Acesso negado: ${code}`);
+  const repo = new CompanyRepository(supabase);
+  const hasPermission = await repo.hasPermission(userId, companyId, code);
+  if (!hasPermission) throw new Error(`Acesso negado: ${code}`);
 }
 
 type FiscalDocumentRow = {
@@ -293,13 +296,9 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
     if (saleErr) throw saleErr;
     if (!sale) throw new Error("Venda não encontrada.");
 
-    // Impede duplicidade usando EXATAMENTE o mesmo helper da listagem/detalhe.
-    // Erro, rejeitada e descartada não bloqueiam reemissão.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingDocs } = await (docFrom(supabase) as any)
-      .select("id, status, access_key, protocol, created_at")
-      .eq("company_id", companyId)
-      .eq("sale_id", data.saleId);
+    // Impede duplicidade usando Repository.
+    const repo = new DocumentsRepository(supabase);
+    const existingDocs = await repo.findBySaleId(companyId, data.saleId);
     if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
       throw new Error(
         data.model === "65"
@@ -318,7 +317,7 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
       environment: data.environment,
       model: data.model,
     });
-    return mapDocument(doc as unknown as FiscalDocumentRow);
+    return doc as unknown as FiscalDocumentDto;
   });
 
 // ----------------------------------------------------------------- CANCEL
@@ -347,7 +346,7 @@ export const cancelFiscalDocument = createServerFn({ method: "POST" })
       documentId: data.documentId,
       reason: data.reason,
     });
-    return mapDocument(updated as unknown as FiscalDocumentRow);
+    return updated as unknown as FiscalDocumentDto;
   });
 
 // ------------------------------------------------------------- DISCARD
@@ -378,25 +377,21 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: current, error: readErr } = await (docFrom(supabase) as any)
-      .select(DOC_COLS)
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .maybeSingle();
-    if (readErr) throw readErr;
+    const repo = new DocumentsRepository(supabase);
+    const current = await repo.findById(companyId, data.documentId);
     if (!current) throw new Error("Documento fiscal não encontrado.");
 
-    const row = current as FiscalDocumentRow;
+    const row = current;
+
     if (row.status === "authorized")
       throw new Error("NF-e autorizada não pode ser descartada — utilize o cancelamento.");
     if (row.status === "cancelled")
       throw new Error("NF-e cancelada não pode ser descartada.");
-    if ((row.status as string) === "denied" || (row.status as string) === "denegada")
+    if (row.status === "rejected" && row.rejectionCode === "denied")
       throw new Error("NF-e denegada não pode ser descartada.");
-    if ((row.status as string) === "discarded")
+    if (row.status === "discarded")
       throw new Error("Esta tentativa já foi descartada.");
-    if (row.access_key || row.protocol)
+    if (row.accessKey || row.protocol)
       throw new Error(
         "Documento já possui chave/protocolo na SEFAZ — descarte indisponível.",
       );
@@ -408,22 +403,15 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
     const reason = data.reason?.trim() || "Reemissão";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updated, error } = await (docFrom(supabase) as any)
-      .update({
-        status: "discarded",
-        discarded_at: new Date().toISOString(),
-        discarded_by: context.userId,
-        discard_reason: reason,
-      })
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .select(DOC_COLS)
-      .single();
-    if (error) throw error;
+    const updated = await repo.update(companyId, data.documentId, {
+      status: "discarded",
+      discarded_at: new Date().toISOString(),
+      discarded_by: context.userId,
+      discard_reason: reason,
+    });
 
     // Evento append-only na linha do tempo do documento.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("fiscal_events" as never) as any).insert({
+    await repo.insertEvent({
       company_id: companyId,
       document_id: data.documentId,
       event_type: "discarded",
@@ -431,7 +419,9 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
       payload: { message: `Tentativa descartada — ${reason}.`, reason },
     });
 
-    return mapDocument(updated as FiscalDocumentRow);
+    return updated;
+
+    return updated;
   });
 
 // --------------------------------------------------------- STATUS refresh
@@ -453,7 +443,7 @@ export const refreshFiscalStatus = createServerFn({ method: "POST" })
       userId: context.userId,
       documentId: data.documentId,
     });
-    return mapDocument(row as unknown as FiscalDocumentRow);
+    return row as unknown as FiscalDocumentDto;
   });
 
 // ------------------------------------------------- ARTIFACT reprocessamento
@@ -489,7 +479,7 @@ export const reprocessFiscalArtifacts = createServerFn({ method: "POST" })
       documentId: data.documentId,
     });
     return {
-      document: mapDocument(outcome.document as unknown as FiscalDocumentRow),
+      document: outcome.document as unknown as FiscalDocumentDto,
       recovered: outcome.recovered,
       stillPending: outcome.stillPending,
       noop: outcome.noop,
@@ -586,17 +576,11 @@ type ProviderRow = {
 async function fetchHasSecretKind(
   supabase: SB,
   companyId: string,
-  kind: "provider_api_key" | "provider_admin_key",
+  kind: "provider_api_key" | "provider_admin_key" | "cert_password" | "csc_token",
   environment?: NfeEnvironment,
 ): Promise<boolean> {
-  const { data, error } = await supabase.rpc("fiscal_has_secret", {
-    _company_id: companyId,
-    _kind: kind,
-    _owner_id: null as unknown as string,
-    ...(environment ? { _environment: environment } : {}),
-  } as never);
-  if (error) return false;
-  return Boolean(data);
+  const repo = new StatusRepository(supabase);
+  return repo.hasSecret(companyId, kind, environment);
 }
 
 /** Token de EMPRESA (emissão). Mantido por compatibilidade de nome. */
@@ -655,17 +639,14 @@ async function fetchEnvironments(
   supabase: SB,
   companyId: string,
 ): Promise<Record<NfeEnvironment, FiscalProviderEnvironmentConfig>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase.from("fiscal_provider_environments" as never) as any)
-    .select(PROVIDER_ENV_COLS)
-    .eq("company_id", companyId);
-  const rows = (data ?? []) as ProviderEnvRow[];
+  const repo = new StatusRepository(supabase);
+  const rows = await repo.getProviderEnvironments(companyId);
   const out = {
     production: emptyEnvConfig("production"),
     homologation: emptyEnvConfig("homologation"),
   } as Record<NfeEnvironment, FiscalProviderEnvironmentConfig>;
   for (const env of ["production", "homologation"] as const) {
-    const row = rows.find((r) => r.environment === env) ?? null;
+    const row = rows.find((r: any) => r.environment === env) ?? null;
     out[env] = {
       environment: env,
       apiUrl: row?.api_url ?? null,
@@ -1014,13 +995,9 @@ export const listFiscalCertificates = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    const { data, error } = await supabase
-      .from("fiscal_certificates")
-      .select(CERT_COLS)
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return ((data ?? []) as unknown as Record<string, unknown>[]).map(mapCert);
+    const repo = new CertificateRepository(supabase);
+    const data = await repo.list(companyId);
+    return data;
   });
 
 const certUploadSchema = z
@@ -1059,38 +1036,31 @@ export const uploadFiscalCertificate = createServerFn({ method: "POST" })
       .upload(objectPath, bytes, { contentType: data.contentType, upsert: false });
     if (upErr) throw upErr;
 
-    await supabase
-      .from("fiscal_certificates")
-      .update({ is_active: false })
-      .eq("company_id", companyId);
+    const repo = new CertificateRepository(supabase);
+    await repo.update(companyId, "all", { is_active: false });
 
-    const { data: row, error } = await supabase
-      .from("fiscal_certificates")
-      .insert({
-        company_id: companyId,
-        alias: data.alias,
-        subject_name: data.subjectName,
-        subject_cnpj: data.subjectCnpj,
-        issuer_name: data.issuerName ?? null,
-        valid_from: data.validFrom,
-        valid_to: data.validTo,
-        serial_number: data.serialNumber ?? null,
-        thumbprint: data.thumbprint ?? null,
-        storage_path: objectPath,
-        content_type: data.contentType,
-        is_active: true,
-        created_by: context.userId,
-      })
-      .select(CERT_COLS)
-      .single();
-    if (error) throw error;
+    const cert = await repo.insert({
+      company_id: companyId,
+      alias: data.alias,
+      subject_name: data.subjectName,
+      subject_cnpj: data.subjectCnpj,
+      issuer_name: data.issuerName ?? null,
+      valid_from: data.validFrom,
+      valid_to: data.validTo,
+      serial_number: data.serialNumber ?? null,
+      thumbprint: data.thumbprint ?? null,
+      storage_path: objectPath,
+      content_type: data.contentType,
+      is_active: true,
+      created_by: context.userId,
+    });
 
     // Troca do A1 invalida o provisionamento: a próxima emissão volta a
     // cadastrar a empresa/certificado no provedor uma única vez.
     const { clearProviderProvisioning } = await import("./nfe-engine.server");
     await clearProviderProvisioning(supabase, companyId);
 
-    return mapCert(row as unknown as Record<string, unknown>);
+    return cert;
   });
 
 export const deactivateFiscalCertificate = createServerFn({ method: "POST" })
@@ -1102,12 +1072,8 @@ export const deactivateFiscalCertificate = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
-    const { error } = await supabase
-      .from("fiscal_certificates")
-      .update({ is_active: false })
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId);
-    if (error) throw error;
+    const repo = new CertificateRepository(supabase);
+    await repo.update(companyId, data.certificateId, { is_active: false });
     return { ok: true };
   });
 
@@ -1276,47 +1242,38 @@ export const updateFiscalSettings = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: row, error } = await (supabase.from("fiscal_settings" as never) as any)
-      .upsert(
-        {
-          company_id: companyId,
-          tax_regime: data.taxRegime,
-          crt: data.crt ?? null,
-          cnae_principal: data.cnaePrincipal ?? null,
-          emit_uf: data.emitUf,
-          nfe_series: data.nfeSeries,
-          nfe_next_number: data.nfeNextNumber,
-          default_environment: data.defaultEnvironment,
-          operation_nature: data.operationNature,
-          default_cfop: data.defaultCfop,
-          default_csosn: data.defaultCsosn ?? null,
-          default_origem: data.defaultOrigem,
-          email_fiscal: data.emailFiscal || null,
-          phone_fiscal: data.phoneFiscal ?? null,
-          csc_id: data.cscId ?? null,
-          ...(data.issueOnlyAfterPayment === undefined
-            ? {}
-            : { issue_only_after_payment: data.issueOnlyAfterPayment }),
-          ...(data.homologationMode === undefined
-            ? {}
-            : { homologation_mode: data.homologationMode }),
-          ...(data.stockOnHomologation === undefined
-            ? {}
-            : { stock_on_homologation: data.stockOnHomologation }),
-          updated_by: context.userId,
-        },
-        { onConflict: "company_id" },
-      )
-      .select("*")
-      .single();
-    if (error) throw error;
-    const { data: hasCsc } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "csc_token",
-      _owner_id: null as unknown as string,
+    const taxRepo = new TaxRepository(supabase);
+    const row = await taxRepo.updateSettings(companyId, {
+      tax_regime: data.taxRegime,
+      crt: data.crt ?? null,
+      cnae_principal: data.cnaePrincipal ?? null,
+      emit_uf: data.emitUf,
+      nfe_series: data.nfeSeries,
+      nfe_next_number: data.nfeNextNumber,
+      default_environment: data.defaultEnvironment,
+      operation_nature: data.operationNature,
+      default_cfop: data.defaultCfop,
+      default_csosn: data.defaultCsosn ?? null,
+      default_origem: data.defaultOrigem,
+      email_fiscal: data.emailFiscal || null,
+      phone_fiscal: data.phoneFiscal ?? null,
+      csc_id: data.cscId ?? null,
+      ...(data.issueOnlyAfterPayment === undefined
+        ? {}
+        : { issue_only_after_payment: data.issueOnlyAfterPayment }),
+      ...(data.homologationMode === undefined
+        ? {}
+        : { homologation_mode: data.homologationMode }),
+      ...(data.stockOnHomologation === undefined
+        ? {}
+        : { stock_on_homologation: data.stockOnHomologation }),
+      updated_by: context.userId,
     });
-    return mapSettings(row as FiscalSettingsRow, Boolean(hasCsc));
+
+    const statusRepo = new StatusRepository(supabase);
+    const hasCsc = await statusRepo.hasSecret(companyId, "csc_token");
+    
+    return mapSettings(row as FiscalSettingsRow, hasCsc);
   });
 
 // -------- Secrets vault (AES-256-GCM with FISCAL_SECRETS_KEY) --------
@@ -1486,17 +1443,13 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
     // Locate storage path for cleanup
-    const { data: cert } = await supabase
-      .from("fiscal_certificates")
-      .select("id, storage_path, is_active")
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId)
-      .maybeSingle();
+    const repo = new CertificateRepository(supabase);
+    const cert = await repo.findById(companyId, data.certificateId);
     if (!cert) throw new Error("Certificado não encontrado.");
-    if ((cert as { is_active: boolean }).is_active) {
+    if (cert.isActive) {
       throw new Error("Desative o certificado antes de removê-lo.");
     }
-    const storagePath = (cert as { storage_path: string | null }).storage_path;
+    const storagePath = cert.storagePath;
 
     const { error } = await supabase.rpc("fiscal_delete_certificate", {
       _certificate_id: data.certificateId,
@@ -1535,11 +1488,8 @@ async function runProviderHealth(
   companyId: string,
   environment: NfeEnvironment,
 ): Promise<ProviderHealthResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-    .select(PROVIDER_COLS)
-    .eq("company_id", companyId)
-    .maybeSingle();
+  const statusRepo = new StatusRepository(supabase);
+  const cfg = await statusRepo.getProviderConfig(companyId);
   const providerId = (cfg as ProviderRow | null)?.provider_id ?? "mock";
 
   const { readProviderEnvironment, probeProviderHealthEngine, probeProviderAdminHealthEngine } =
@@ -1549,11 +1499,9 @@ async function runProviderHealth(
   const hasCompanyToken = await fetchHasApiKey(supabase, companyId, environment);
   const hasAdminToken = await fetchHasAdminKey(supabase, companyId, environment);
 
-  const { data: certs } = await supabase
-    .from("fiscal_certificates")
-    .select("id, is_active")
-    .eq("company_id", companyId);
-  const activeCert = ((certs ?? []) as Array<{ is_active: boolean }>).find((c) => c.is_active);
+  const certRepo = new CertificateRepository(supabase);
+  const certs = await certRepo.list(companyId);
+  const activeCert = certs.find((c) => c.isActive);
 
   // Probes só fazem sentido quando há URL e a credencial correspondente.
   const canProbe = providerId !== "mock" && Boolean(apiUrl);
@@ -2349,14 +2297,9 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       });
     }
 
-    // 3) Empresa
-    const { data: companyRow } = await supabase
-      .from("companies")
-      .select("cnpj, ie, address, city, state, zip_code, name")
-      .eq("id", companyId)
-      .maybeSingle();
-    const co = (companyRow ?? {}) as Record<string, string | null>;
-    if (!co.cnpj || !co.ie || !co.address || !co.city || !co.state || !co.zip_code) {
+    const companyRepo = new CompanyRepository(supabase);
+    const co = (await companyRepo.getProfile(companyId)) || ({} as any);
+    if (!co.cnpj || !co.ie || !co.address || !co.city || !co.state || !co.zipcode) {
       push({
         id: "company.profile",
         field: "company",
@@ -2369,23 +2312,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 4) Settings (série, CFOP, natureza)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsRow } = await (supabase.from("fiscal_settings" as never) as any)
-      .select(
-        "nfe_series, nfe_next_number, default_cfop, default_csosn, operation_nature, tax_regime, crt, default_environment",
-      )
-      .eq("company_id", companyId)
-      .maybeSingle();
-    const s = (settingsRow ?? null) as {
-      nfe_series: number | null;
-      nfe_next_number: number | null;
-      default_cfop: string | null;
-      default_csosn: string | null;
-      operation_nature: string | null;
-      tax_regime: string | null;
-      crt: number | null;
-      default_environment: NfeEnvironment | null;
-    } | null;
+    const taxRepo = new TaxRepository(supabase);
+    const s = await taxRepo.getSettings(companyId);
     if (!s) {
       push({
         id: "settings.missing",
@@ -2397,7 +2325,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         hint: "Abra Fiscal → Configuração → Regras.",
       });
     } else {
-      if (!s.default_cfop)
+      if (!s.defaultCfop)
         push({
           id: "settings.cfop",
           field: "settings.cfop",
@@ -2406,7 +2334,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "CFOP padrão ausente",
           detail: "Defina um CFOP padrão (ex: 5102).",
         });
-      if (!s.operation_nature)
+      if (!s.operationNature)
         push({
           id: "settings.nature",
           field: "settings.nature",
@@ -2415,7 +2343,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "Natureza da operação ausente",
           detail: "Ex: 'Venda de mercadoria adquirida ou recebida de terceiros'.",
         });
-      if (!s.nfe_series || s.nfe_series < 1)
+      if (!s.nfeSeries || s.nfeSeries < 1)
         push({
           id: "settings.series",
           field: "settings.series",
@@ -2424,7 +2352,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           title: "Série da NF-e não configurada",
           detail: "Defina a série (normalmente 1).",
         });
-      if ((s.tax_regime === "simples" || s.tax_regime === "mei") && !s.default_csosn)
+      if ((s.taxRegime === "simples" || s.taxRegime === "mei") && !s.defaultCsosn)
         push({
           id: "settings.csosn",
           field: "settings.csosn",
@@ -2432,7 +2360,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           step: "regras",
           title: "CSOSN padrão obrigatório",
           detail:
-            s.tax_regime === "mei"
+            s.taxRegime === "mei"
               ? "MEI exige CSOSN padrão (ex: 102, 103, 300, 400, 500 ou 900)."
               : "Simples Nacional exige CSOSN padrão (ex: 102).",
         });
@@ -2455,7 +2383,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
           severity: "error",
           step: "regras",
           title: "CRT incompatível com o regime tributário",
-          detail: crtCoherenceMessage(s.tax_regime as FiscalTaxRegime),
+          detail: crtCoherenceMessage(s.taxRegime as FiscalTaxRegime),
           hint: "Revise em Fiscal → Configuração → Regras.",
         });
 
@@ -2465,8 +2393,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     itemList.forEach((it, i) => {
       const taxes = resolveItemTaxes(
         s?.crt,
-        { cst: s?.default_csosn ?? null, amount: Number(it.total ?? 0) },
-        s?.default_csosn ?? null,
+        { cst: s?.defaultCsosn ?? null, amount: Number(it.total ?? 0) },
+        s?.defaultCsosn ?? null,
       );
       if (!taxes.icms.situacaoTributaria)
         push({
@@ -2501,19 +2429,9 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
 
 
     // 5) Certificado
-    const { data: certs } = await supabase
-      .from("fiscal_certificates")
-      .select("id, alias, is_active, valid_to")
-      .eq("company_id", companyId);
-    const activeCert =
-      (
-        (certs ?? []) as Array<{
-          id: string;
-          alias: string;
-          is_active: boolean;
-          valid_to: string | null;
-        }>
-      ).find((c) => c.is_active) ?? null;
+    const certRepo = new CertificateRepository(supabase);
+    const certs = await certRepo.list(companyId);
+    const activeCert = certs.find((c) => c.isActive) ?? null;
     let daysLeft: number | null = null;
     if (!activeCert) {
       push({
@@ -2524,8 +2442,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         title: "Nenhum certificado A1 ativo",
         detail: "Envie um certificado digital A1 válido.",
       });
-    } else if (activeCert.valid_to) {
-      daysLeft = Math.round((new Date(activeCert.valid_to).getTime() - Date.now()) / 86_400_000);
+    } else if (activeCert.validTo) {
+      daysLeft = Math.round((new Date(activeCert.validTo).getTime() - Date.now()) / 86_400_000);
       if (daysLeft < 0)
         push({
           id: "cert.expired",
@@ -2548,11 +2466,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
 
     // 6) Senha do certificado
     if (activeCert) {
-      const { data: hasCertPwd } = await supabase.rpc("fiscal_has_secret", {
-        _company_id: companyId,
-        _kind: "cert_password",
-        _owner_id: activeCert.id as unknown as string,
-      });
+      const statusRepo = new StatusRepository(supabase);
+      const hasCertPwd = await statusRepo.hasSecret(companyId, "cert_password", undefined, activeCert.id);
       if (!hasCertPwd) {
         push({
           id: "cert.password",
@@ -2566,21 +2481,14 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 7) Provedor
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: providerRow } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select("provider_id, api_url, environment, last_health_status")
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const statusRepo = new StatusRepository(supabase);
+    const providerRow = await statusRepo.getProviderConfig(companyId);
     const providerId = (providerRow as { provider_id?: string } | null)?.provider_id ?? "mock";
     const apiUrl = (providerRow as { api_url?: string | null } | null)?.api_url ?? null;
     const lastHealth =
       (providerRow as { last_health_status?: string | null } | null)?.last_health_status ?? null;
 
-    const { data: hasApiKey } = await supabase.rpc("fiscal_has_secret", {
-      _company_id: companyId,
-      _kind: "provider_api_key",
-      _owner_id: null as unknown as string,
-    });
+    const hasApiKey = await statusRepo.hasSecret(companyId, "provider_api_key");
 
     if (providerId === "mock") {
       push({
@@ -2623,11 +2531,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 8) Duplicidade — mesma regra da listagem/detalhe (documento ATIVO).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingDocs } = await (docFrom(supabase) as any)
-      .select("id, status, access_key, protocol, created_at")
-      .eq("company_id", companyId)
-      .eq("sale_id", sale.id);
+    const docRepo = new DocumentsRepository(supabase);
+    const existingDocs = await docRepo.findBySaleId(companyId, sale.id);
     if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
       push({
         id: "duplicate",
@@ -2640,7 +2545,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     const environment: NfeEnvironment =
-      data.environment ?? s?.default_environment ?? "homologation";
+      data.environment ?? s?.defaultEnvironment ?? "homologation";
 
     return {
       ok: blockers.length === 0,
@@ -2656,20 +2561,20 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
         customerAddress,
         itemCount: itemList.length,
         totalAmount: total,
-        cfop: s?.default_cfop ?? null,
+        cfop: s?.defaultCfop ?? null,
         ncm: itemsNcmSummary,
-        csosn: s?.default_csosn ?? null,
+        csosn: s?.defaultCsosn ?? null,
         crt: s?.crt ?? null,
-        natureza: s?.operation_nature ?? null,
-        series: s?.nfe_series ?? null,
-        numberPreview: s?.nfe_next_number ?? null,
+        natureza: s?.operationNature ?? null,
+        series: s?.nfeSeries ?? null,
+        numberPreview: s?.nfeNextNumber ?? null,
         hasCertificate: Boolean(activeCert),
         certificateAlias: activeCert?.alias ?? null,
-        certificateValidTo: activeCert?.valid_to ?? null,
+        certificateValidTo: activeCert?.validTo ?? null,
         hasProviderKey: Boolean(hasApiKey),
         certificateExpiresIn: daysLeft,
-        companyName: (co.name as string | null) ?? null,
-        companyCnpj: (co.cnpj as string | null) ?? null,
+        companyName: co.legalName ?? null,
+        companyCnpj: co.cnpj ?? null,
         saleNumber: sale.number ?? null,
         items: itemList.map((it) => ({
           description:
@@ -2706,13 +2611,9 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: docRow } = await (docFrom(supabase) as any)
-      .select("sale_id")
-      .eq("company_id", companyId)
-      .eq("id", data.documentId)
-      .maybeSingle();
-    const saleId = (docRow as { sale_id: string | null } | null)?.sale_id ?? null;
+    const docRepo = new DocumentsRepository(supabase);
+    const docRow = await docRepo.findById(companyId, data.documentId);
+    const saleId = docRow?.saleId ?? null;
 
     let customerName: string | null = null;
     let customerDocument: string | null = null;
@@ -2726,18 +2627,18 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
         .eq("company_id", companyId)
         .eq("id", saleId)
         .maybeSingle();
-      const s = sale as unknown as { number: number | null; customer_id: string | null } | null;
-      saleNumber = s?.number ?? null;
-      if (s?.customer_id) {
+      const s_local = sale as unknown as { number: number | null; customer_id: string | null } | null;
+      saleNumber = s_local?.number ?? null;
+      if (s_local?.customer_id) {
         const { data: cust } = await supabase
           .from("customers")
           .select("name, document")
           .eq("company_id", companyId)
-          .eq("id", s.customer_id)
+          .eq("id", s_local.customer_id)
           .maybeSingle();
-        const c = cust as { name: string | null; document: string | null } | null;
-        customerName = c?.name ?? customerName;
-        customerDocument = c?.document ?? null;
+        const c_local = cust as { name: string | null; document: string | null } | null;
+        customerName = c_local?.name ?? customerName;
+        customerDocument = c_local?.document ?? null;
       }
       const { count } = await supabase
         .from("sale_items")
