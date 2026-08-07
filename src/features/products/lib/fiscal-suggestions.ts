@@ -22,8 +22,9 @@ export function normalizeNcm(value: string | null | undefined): string {
   return (value ?? "").replace(/\D/g, "").slice(0, 8);
 }
 
-export function normalizeCest(value: string | null | undefined): string {
-  return (value ?? "").replace(/\D/g, "").slice(0, 7);
+export function normalizeCest(value: string | null | undefined): string | null {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return digits.length > 0 ? digits.slice(0, 7) : null;
 }
 
 export function isValidNcm(value: string | null | undefined): boolean {
