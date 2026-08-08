@@ -207,3 +207,11 @@ export function useDeleteSale() {
     onSuccess: () => invalidateSalesSummaries(qc),
   });
 }
+
+export function useRestoreSale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => salesService.restore(id),
+    onSuccess: () => invalidateSalesSummaries(qc),
+  });
+}
