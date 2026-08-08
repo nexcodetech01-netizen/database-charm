@@ -77,6 +77,7 @@ export function MercadoLivrePrintDialog({
       
       if (labelData.type === "zpl") {
         // Detectar blocos ^XA ... ^XZ
+        // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
         const regex = /\^XA[\s\S]*?\^XZ/g;
         zplBlocks = labelData.content.match(regex) || [];
         console.log("[ML_PRINT_PROCESS_DEBUG]: Blocks found (^XA...^XZ):", zplBlocks.length);
@@ -89,16 +90,30 @@ export function MercadoLivrePrintDialog({
 
       // Se não detectou blocos ou for PDF, trata como bloco único
       if (zplBlocks.length === 0) {
-        const block: ZPLBlock = {
-          id: "block-0",
-          zpl: labelData.type === "zpl" ? labelData.content : "",
-          type: "label",
-          title: "📦 Etiqueta de envio",
-        };
-        
-        const prepared = await prepareBlock(block, labelData);
-        setBlocks([prepared]);
-        setActiveTab("block-0");
+        // Se for ZPL e não achamos blocos, mas a string não é vazia, vamos tentar usar ela toda
+        const content = labelData.content.trim();
+        if (labelData.type === "zpl" && content.length > 0) {
+           console.log("[ML_PRINT_PROCESS_DEBUG]: Using full content as single block");
+           const block: ZPLBlock = {
+             id: "block-0",
+             zpl: content,
+             type: "label",
+             title: "📦 Etiqueta de envio",
+           };
+           const prepared = await prepareBlock(block, labelData);
+           setBlocks([prepared]);
+           setActiveTab("block-0");
+        } else if (labelData.type === "pdf") {
+           const block: ZPLBlock = {
+             id: "block-0",
+             zpl: "",
+             type: "label",
+             title: "📦 Etiqueta de envio",
+           };
+           const prepared = await prepareBlock(block, labelData);
+           setBlocks([prepared]);
+           setActiveTab("block-0");
+        }
       } else {
         // Múltiplos blocos ZPL
         const preparedBlocks = await Promise.all(
