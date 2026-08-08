@@ -155,6 +155,7 @@ function DashboardPage() {
   const dayTotal = salesMetrics.data?.dayTotal ?? 0;
   const dayCount = salesMetrics.data?.dayCount ?? 0;
   const receiptsTotal = salesMetrics.data?.dayReceived ?? 0;
+  const breakdown = salesMetrics.data?.breakdown ?? [];
   
   // Label dinâmica para o período (RC - Sprint 8.2)
   const periodLabel = useMemo(() => {
@@ -163,6 +164,8 @@ function DashboardPage() {
     return "no Período";
   }, [period]);
 
+  // Caixa disponível — fonte oficial: soma de financial_accounts ativas.
+  const cash = finance.data?.currentBalance ?? 0;
 
   // Dinheiro para entrar — financial_transactions de receita com status='pending'.
   const receivable = finance.data?.pendingReceivable ?? 0;
@@ -472,11 +475,11 @@ function DashboardPage() {
       {/* 6 — Atividade recente */}
       <Section
         title="Atividade recente"
-        description="Movimentações registradas no dia de hoje."
+        description={`Movimentações registradas ${periodLabel.toLowerCase()}.`}
         density="comfortable"
         actions={
-          <StatusBadge status={dayCount + receiptsTodayCount > 0 ? "success" : "neutral"} withDot>
-            {dayCount + receiptsTodayCount > 0 ? "Com movimento" : "Sem movimento"}
+          <StatusBadge status={dayCount + receiptsTotal > 0 ? "success" : "neutral"} withDot>
+            {dayCount + receiptsTotal > 0 ? "Com movimento" : "Sem movimento"}
           </StatusBadge>
         }
       >
@@ -494,10 +497,10 @@ function DashboardPage() {
             },
             {
               label: "Baixas financeiras",
-              value: String(receiptsTodayCount),
-              hint: formatCurrency(receiptsToday),
+              value: dayCount > 0 ? "Confirmadas" : "Sem baixas",
+              hint: formatCurrency(receiptsTotal),
               icon: Wallet,
-              status: receiptsTodayCount > 0 ? "success" : "neutral",
+              status: receiptsTotal > 0 ? "success" : "neutral",
             },
             {
               label: "Títulos em aberto",
