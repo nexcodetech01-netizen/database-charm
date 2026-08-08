@@ -40,6 +40,15 @@ export const TRANSACTION_STATUS_OPTIONS: { value: TransactionStatus; label: stri
   { value: "cancelled", label: "Cancelado" },
 ];
 
+export const STATIC_FINANCIAL_CATEGORIES = [
+  "Equipamentos e Tecnologia",
+  "Compra de Mercadorias / Estoque",
+  "Embalagens e Material de Uso",
+  "Despesas Operacionais / Mão de Obra",
+  "Outras Despesas Gerais",
+] as const;
+
+
 /**
  * Forma de recebimento/pagamento da baixa financeira.
  * Mesmo domínio adotado em `credit_payments` e `sales`.
