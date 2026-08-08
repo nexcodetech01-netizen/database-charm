@@ -174,7 +174,7 @@ export function PDVSearch({
           {options.map((product, index) => (
             <Button
               key={product.id}
-              ref={(el) => (itemRefs.current[index] = el)}
+              ref={(el) => { itemRefs.current[index] = el; }}
               type="button"
               variant="ghost"
               className={cn(
