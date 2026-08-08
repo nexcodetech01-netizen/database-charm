@@ -964,7 +964,6 @@ export function CheckoutDialog({
       setOpeningSettle(false);
     }
   }
-  }
 
 
   const showAsaasFlow =
