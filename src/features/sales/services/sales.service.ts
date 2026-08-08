@@ -841,6 +841,68 @@ export const salesService = {
     const { error } = await supabase.rpc("delete_sale", { _sale_id: id });
     if (error) throw new Error(getSupabaseErrorMessage(error), { cause: error });
   },
+
+  /**
+   * Conclui a baixa financeira de uma venda automaticamente.
+   * Busca a conta padrão configurada para a empresa (normalmente a do caixa aberto)
+   * e liquida o recebível pendente da venda.
+   */
+  async autoSettleSale(saleId: string, options: { paymentMethod: string; companyId: string }) {
+    // 1. Garante que o recebível exista
+    const tx = await this.openReceivableForSale(saleId);
+    if (!tx) throw new Error("Título financeiro da venda não encontrado ou já baixado.");
+
+    // 2. Busca conta financeira padrão da empresa (tipo 'bank' ou 'cash' que esteja ativa)
+    // No PDV, o ideal é usar a conta associada à sessão de caixa da venda.
+    const { data: saleData } = await supabase
+      .from("sales")
+      .select("cash_session_id")
+      .eq("id", saleId)
+      .maybeSingle();
+
+    let accountId = tx.account_id;
+
+    if (!accountId && saleData?.cash_session_id) {
+      // A sessão de caixa está vinculada ao operador, mas não tem account_id direto
+      // Buscamos a conta padrão do Bella Pay ou a primeira conta de caixa ativa
+      const { data: bellaConfig } = await supabase
+        .from("bella_pay_config")
+        .select("default_account_id")
+        .eq("company_id", options.companyId)
+        .maybeSingle();
+      
+      if (bellaConfig?.default_account_id) {
+        accountId = bellaConfig.default_account_id;
+      }
+    }
+
+    if (!accountId) {
+      const { data: accounts } = await supabase
+        .from("financial_accounts")
+        .select("id")
+        .eq("company_id", options.companyId)
+        .eq("status", "active")
+        .order("type", { ascending: false }) // Prioriza 'cash' e 'bank' sobre 'credit_card'
+        .limit(1);
+      if (accounts && accounts.length > 0) accountId = accounts[0].id;
+    }
+
+    if (!accountId) {
+      throw new Error("Nenhuma conta financeira ativa configurada para receber o pagamento.");
+    }
+
+    // 3. Executa a baixa pelo motor financeiro
+    const { financeService } = await import("@/features/finance/services/finance.service");
+    await financeService.settleTransaction(tx.id, {
+      paymentMethod: options.paymentMethod as any,
+      accountId,
+      paidAt: new Date().toISOString().slice(0, 10),
+      notes: "Baixa automática PDV",
+      settledAmount: Number(tx.amount),
+    });
+
+    return true;
+  },
 };
 
 /** Registra a tentativa bloqueada. Best-effort: nunca derruba o fluxo. */
