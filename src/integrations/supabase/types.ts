@@ -6502,6 +6502,7 @@ export type Database = {
           cash_sales: number | null
           company_id: string | null
           expected_cash: number | null
+          opened_at_local: string | null
           opening_balance: number | null
           sales_count: number | null
           sales_total: number | null

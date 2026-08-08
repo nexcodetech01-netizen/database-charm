@@ -86,11 +86,11 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4">🛠️ ESTABILIZAÇÃO ARQUITETURAL</h2>
+          <h2 className="text-lg font-semibold mb-4 text-destructive">🚨 CORREÇÃO DE EMERGÊNCIA APLICADA</h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• Fonte Única da Verdade (Single Source of Truth) para Caixa e Receita</p>
-             <p>• Transações ACID: Venda, Estoque e Financeiro unificados</p>
-             <p>• RPCs e Views centralizadas para cálculos financeiros</p>
+             <p>• Restaurada a consulta de métricas do Dashboard (SSOT)</p>
+             <p>• Ajustado Timezone (UTC ➔ America/Sao_Paulo) em todas as Queries</p>
+             <p>• Corrigida visualização de R$ 0,00 nos cards financeiros</p>
           </div>
         </div>
       </div>
