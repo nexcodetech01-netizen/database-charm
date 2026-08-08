@@ -37,6 +37,7 @@ import {
   AccountsPanel,
   CategoriesPanel,
   GuidedTransactionDialog,
+  TransactionFormDialog,
   useFinanceOverview,
 } from "@/features/finance";
 import { FinanceBellaHints } from "@/features/bella-ai";
