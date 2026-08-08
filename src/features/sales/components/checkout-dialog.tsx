@@ -288,9 +288,10 @@ export function CheckoutDialog({
     absorbOverride ?? Boolean(bellaConfig?.credit_card_absorb_fee);
 
   // Entrada parseada — nunca maior que o total, saldo nunca negativo.
-  const entradaRaw = Math.max(0, Number(entradaStr.replace(",", ".")) || 0);
-  const entradaValue = Math.min(entradaRaw, amount);
+  const entradaRaw = Number(entradaStr.replace(",", ".")) || 0;
+  const entradaNegativa = entradaRaw < 0;
   const entradaExcedeu = entradaRaw > amount;
+  const entradaValue = Math.min(Math.max(0, entradaRaw), amount);
   const saldoValue = Math.max(0, amount - entradaValue);
   const chargeableAmount = entradaValue > 0 ? saldoValue : amount;
 
@@ -1579,11 +1580,16 @@ export function CheckoutDialog({
                   placeholder="0,00"
                   value={entradaStr}
                   onChange={(e) => setEntradaStr(e.target.value)}
-                  className={cn(entradaExcedeu && "border-destructive focus-visible:ring-destructive")}
+                  className={cn((entradaExcedeu || entradaNegativa) && "border-destructive focus-visible:ring-destructive")}
                 />
                 {entradaExcedeu && (
                   <p className="text-[10px] text-destructive font-medium">
-                    A entrada não pode exceder o total.
+                    A entrada não pode ser maior que o total ({formatCurrency(amount)}).
+                  </p>
+                )}
+                {entradaNegativa && (
+                  <p className="text-[10px] text-destructive font-medium">
+                    O valor da entrada não pode ser negativo.
                   </p>
                 )}
               </div>
@@ -1672,7 +1678,10 @@ export function CheckoutDialog({
             <Button variant="ghost" onClick={() => setShowCreditConfig(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirmCredit} disabled={openingSettle}>
+            <Button 
+              onClick={handleConfirmCredit} 
+              disabled={openingSettle || entradaExcedeu || entradaNegativa}
+            >
               {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmar Crediário (F5)
             </Button>
