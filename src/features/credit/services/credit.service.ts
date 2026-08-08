@@ -123,6 +123,7 @@ export const creditService = {
         down_payment_method: input.downPaymentMethod ?? null,
         due_date: input.dueDate ?? null,
         notes: input.notes ?? null,
+        installments: input.installments ?? 1,
         client_request_id: input.clientRequestId ?? null,
       },
     });
