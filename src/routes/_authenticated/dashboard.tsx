@@ -103,8 +103,9 @@ function DashboardPage() {
   // Caixa disponível — fonte oficial: soma de financial_accounts ativas.
   const cash = finance.data?.currentBalance ?? 0;
   // Recebimentos ≠ faturamento: baixas efetivadas hoje (paid_at no dia da empresa).
-  const receiptsToday = finance.data?.receiptsToday ?? 0;
-  const receiptsTodayCount = finance.data?.receiptsTodayCount ?? 0;
+  const receiptsToday = salesMetrics.data?.dayReceived ?? 0;
+  const receiptsTodayCount = salesMetrics.data?.dayCount ?? 0;
+
 
   // Dinheiro para entrar — financial_transactions de receita com status='pending'.
   const receivable = finance.data?.pendingReceivable ?? 0;
