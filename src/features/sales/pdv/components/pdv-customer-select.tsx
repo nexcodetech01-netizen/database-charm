@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, UserRound, RefreshCcw } from "lucide-react";
+import { UserPlus, UserRound, RefreshCcw, User } from "lucide-react";
 import { salesService } from "../../services/sales.service";
 import {
   Select,
@@ -12,6 +12,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PDVCustomerQuickCreate } from "@/features/customers/components/customer-quick-create";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   companyId: string;
@@ -38,56 +44,60 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
 
   return (
     <div className={cn(
-      "rounded-xl border p-4 shadow-sm transition-all duration-200",
-      isFinalConsumer 
-        ? "bg-muted/30 border-border" 
-        : "bg-primary/5 border-primary/30 ring-1 ring-primary/10"
+      "rounded-xl border p-4 shadow-xl transition-all duration-200",
+      "bg-indigo-950/40 border-indigo-500/50 backdrop-blur-sm"
     )}>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-sm",
-              isFinalConsumer ? "bg-background text-muted-foreground" : "bg-primary text-primary-foreground border-primary"
-            )}>
-              <UserRound className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Cliente da Venda
-              </span>
-              <h3 className={cn(
-                "truncate text-lg leading-tight tabular-nums",
-                isFinalConsumer ? "font-medium text-foreground/80" : "font-bold text-foreground"
-              )}>
-                {selected?.name ?? "Consumidor Final"}
-              </h3>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              id="pdv-customer"
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 shadow-sm bg-background hover:bg-primary/5 hover:text-primary hover:border-primary/30"
-              onClick={() => setOpen(true)}
-            >
-              <RefreshCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              Trocar (F2)
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 shadow-sm bg-background hover:bg-primary/5 hover:text-primary hover:border-primary/30"
-              onClick={() => setQuickCreateOpen(true)}
-            >
-              <UserPlus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              Cadastrar
-            </Button>
-          </div>
+      <div className="flex flex-col gap-4">
+        {/* Linha 1: Topo do Card */}
+        <div className="flex items-center gap-2">
+          <User className="h-3.5 w-3.5 text-indigo-400" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300/70">
+            Cliente Selecionado
+          </span>
+        </div>
+
+        {/* Linha 2: Nome Completo em Destaque */}
+        <div className="min-w-0">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className={cn(
+                  "truncate text-lg font-bold leading-tight tabular-nums text-white",
+                  isFinalConsumer ? "opacity-90" : "text-indigo-50"
+                )}>
+                  {selected?.name ?? "Consumidor Final"}
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{selected?.name ?? "Consumidor Final"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Linha 3: Botões de Ação */}
+        <div className="flex items-center gap-2 w-full">
+          <Button
+            id="pdv-customer"
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 h-9 shadow-sm bg-indigo-900/40 border-indigo-500/30 text-indigo-100 hover:bg-indigo-500 hover:text-white transition-colors"
+            onClick={() => setOpen(true)}
+          >
+            <RefreshCcw className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+            Trocar (F2)
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 h-9 shadow-sm bg-indigo-900/40 border-indigo-500/30 text-indigo-100 hover:bg-indigo-500 hover:text-white transition-colors"
+            onClick={() => setQuickCreateOpen(true)}
+          >
+            <UserPlus className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+            + Cadastrar
+          </Button>
         </div>
 
         <Select
@@ -108,17 +118,6 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
             ))}
           </SelectContent>
         </Select>
-
-        {!isFinalConsumer && (
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-7 w-fit px-2 text-[10px] font-bold uppercase text-muted-foreground hover:text-destructive"
-            onClick={() => onChange("")}
-          >
-            Remover cliente / Consumidor Final
-          </Button>
-        )}
       </div>
 
       <PDVCustomerQuickCreate
