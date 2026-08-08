@@ -20,6 +20,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
   FINANCE_PAYMENT_METHOD_OPTIONS,
   TRANSACTION_STATUS_OPTIONS,
   TRANSACTION_TYPE_OPTIONS,
@@ -74,6 +89,8 @@ export function TransactionFormDialog({
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">("");
   const [installments, setInstallments] = useState(1);
   const [paidWith, setPaidWith] = useState<"company" | "personal">("company");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const [form, setForm] = useState({
     type: (defaultType ?? "income") as TransactionType,
@@ -162,6 +179,15 @@ export function TransactionFormDialog({
       return;
     }
 
+    // Sprint 8.4: Fallback para "Despesas Gerais" se for despesa e categoria estiver vazia
+    let finalCategoryId = form.type === "transfer" ? null : form.category_id || null;
+    if (!finalCategoryId && form.type === "expense") {
+      const generalCategory = categories?.find(c => c.name.toLowerCase().includes("gerais") || c.name.toLowerCase().includes("geral"));
+      if (generalCategory) {
+        finalCategoryId = generalCategory.id;
+      }
+    }
+
     const payload = {
       company_id: companyId,
       type: form.type,
@@ -169,7 +195,7 @@ export function TransactionFormDialog({
       amount: form.amount,
       account_id: form.account_id || null,
       transfer_to_account_id: form.type === "transfer" ? form.transfer_to_account_id || null : null,
-      category_id: form.type === "transfer" ? null : form.category_id || null,
+      category_id: finalCategoryId,
       transaction_date: form.transaction_date,
       due_date: form.due_date || todayISO(),
       status: form.status === "paid" ? "pending" : form.status,
@@ -416,22 +442,73 @@ export function TransactionFormDialog({
             ) : (
               <div className="sm:col-span-2">
                 <Label>Categoria</Label>
-                <Select
-                  value={form.category_id || "__none__"}
-                  onValueChange={(v) =>
-                    setForm({ ...form, category_id: v === "__none__" ? "" : v })
-                  }
-                >
-                  <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__" textValue="Sem categoria">Sem categoria</SelectItem>
-                    {filteredCategories.map((c) => (
-                      <SelectItem key={c.id} value={c.id} textValue={c.name}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={categoryOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {form.category_id
+                        ? filteredCategories.find((c) => c.id === form.category_id)?.name
+                        : "Selecionar categoria..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Procurar categoria..." 
+                        value={categorySearch}
+                        onValueChange={setCategorySearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty className="py-2 px-4 text-sm">
+                          Nenhuma categoria encontrada.
+                        </CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="__none__"
+                            onSelect={() => {
+                              setForm({ ...form, category_id: "" });
+                              setCategoryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                !form.category_id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Sem categoria
+                          </CommandItem>
+                          {filteredCategories.map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={c.name}
+                              onSelect={() => {
+                                setForm({ ...form, category_id: c.id });
+                                setCategoryOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.category_id === c.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {c.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Se não selecionada, será classificada como "Despesas Gerais" automaticamente.
+                </p>
               </div>
             )}
 
