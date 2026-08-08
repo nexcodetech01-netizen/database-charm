@@ -1061,50 +1061,48 @@ export function CheckoutDialog({
           </div>
         )}
 
-        </div>
-
-        {/* Métodos */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {METHODS.map((m) => {
-            const Icon = m.icon;
-            const active = method === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                disabled={!!charge && !confirmed}
-                onClick={() => {
-                  setMethod(m.id);
-                  setCharge(null);
-                  setCashReceivedStr("");
-                }}
-                className={cn(
-                  "flex items-start gap-3 rounded-lg border p-3 text-left transition",
-                  active
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border hover:border-primary/50 hover:bg-muted/40",
-                  charge && !confirmed ? "opacity-60" : "",
-                )}
-              >
-                <div
+          {/* Métodos */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {METHODS.map((m) => {
+              const Icon = m.icon;
+              const active = method === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  disabled={!!charge && !confirmed}
+                  onClick={() => {
+                    setMethod(m.id);
+                    setCharge(null);
+                    setCashReceivedStr("");
+                  }}
                   className={cn(
-                    "grid h-9 w-9 shrink-0 place-items-center rounded-md",
-                    active ? "bg-primary text-primary-foreground" : "bg-muted",
+                    "flex items-start gap-3 rounded-lg border p-3 text-left transition",
+                    active
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border hover:border-primary/50 hover:bg-muted/40",
+                    charge && !confirmed ? "opacity-60" : "",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">{m.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{m.hint}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div
+                    className={cn(
+                      "grid h-9 w-9 shrink-0 place-items-center rounded-md",
+                      active ? "bg-primary text-primary-foreground" : "bg-muted",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">{m.label}</div>
+                    <div className="text-[11px] text-muted-foreground">{m.hint}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Painel dinâmico por método */}
-        <div className="rounded-xl border border-border p-4">
+          {/* Painel dinâmico por método */}
+          <div className="rounded-xl border border-border p-4 mb-6">
           {confirmed ? (
             <div className="flex items-center gap-3 text-emerald-600">
               <CheckCircle2 className="h-6 w-6" />
