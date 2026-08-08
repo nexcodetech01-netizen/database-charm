@@ -138,7 +138,18 @@ export function resolveSaleStatus(
   ctx: Pick<SalePersistenceContext, "finalize" | "isEdit" | "persistedStatus">,
 ): string {
   if (!ctx.finalize) return state.status;
+  
+  // Vendas "A Receber" (sem checkout) gravam como draft para promoção posterior
   if (isReceivablePaymentMethod(state.paymentMethod)) return "draft";
+  
+  // Vendas em Crediário (com checkout/entrada)
+  if (state.paymentMethod === "credit") {
+    const totals = computeSaleTotals(state);
+    // Se não há entrada, status é pendente (A Receber)
+    // Nota: no PDV/Checkout, a entrada é tratada, mas aqui definimos o status inicial da persistência
+    return "pending";
+  }
+
   if (ctx.isEdit && ctx.persistedStatus === "paid") return "paid";
   return "pending";
 }

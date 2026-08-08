@@ -957,6 +957,18 @@ export function CheckoutDialog({
         // eslint-disable-next-line no-console
         console.info("[checkout-dialog] create_credit_sale payload", payload);
         const res = await createCredit.mutateAsync(payload);
+        
+        // CORREÇÃO DE STATUS: Se valor pago (entrada) é 0, status deve ser 'pending'
+        // Se > 0 e < total, status 'partially_paid'. Se >= total, 'paid'.
+        let finalStatus: string = "pending";
+        if (entradaValue >= amount) {
+          finalStatus = "paid";
+        } else if (entradaValue > 0) {
+          finalStatus = "partially_paid";
+        }
+
+        await setStatus.mutateAsync({ id: saleId, status: finalStatus });
+
         // eslint-disable-next-line no-console
         console.info("[checkout-dialog] create_credit_sale response", res);
         toast.success("Crediário aberto", {
