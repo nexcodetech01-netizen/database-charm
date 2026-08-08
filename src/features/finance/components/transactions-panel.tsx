@@ -335,46 +335,73 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                         {formatCurrency(Number(t.amount ?? 0))}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openDetails(t)}>
-                              Ver detalhes
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(t)}>
-                              <Pencil className="mr-2 h-4 w-4" /> Editar
-                            </DropdownMenuItem>
-                            {t.status !== "paid" && t.status !== "cancelled" ? (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSettling(t);
-                                  setSettleOpen(true);
-                                }}
-                              >
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                {t.source === "sale_return" ? "Reembolsar" : type === "income" ? "Receber" : "Pagar"}
-                              </DropdownMenuItem>
-                            ) : null}
-                            {t.status !== "cancelled" ? (
-                              <DropdownMenuItem
-                                onClick={() => handleStatus(t, "cancelled", "cancelada")}
-                              >
-                                <Ban className="mr-2 h-4 w-4" /> Cancelar
-                              </DropdownMenuItem>
-                            ) : null}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(t)}
+                        <div className="flex items-center justify-end gap-1">
+                          {t.status !== "paid" && t.status !== "cancelled" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-success hover:bg-success/10 hover:text-success"
+                              onClick={() => {
+                                setSettling(t);
+                                setSettleOpen(true);
+                              }}
+                              title={t.source === "sale_return" ? "Reembolsar" : type === "income" ? "Receber" : "Pagar"}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => handleDelete(t)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openDetails(t)}>
+                                Ver detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(t)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                              </DropdownMenuItem>
+                              {t.status !== "paid" && t.status !== "cancelled" ? (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSettling(t);
+                                    setSettleOpen(true);
+                                  }}
+                                >
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  {t.source === "sale_return" ? "Reembolsar" : type === "income" ? "Receber" : "Pagar"}
+                                </DropdownMenuItem>
+                              ) : null}
+                              {t.status !== "cancelled" ? (
+                                <DropdownMenuItem
+                                  onClick={() => handleStatus(t, "cancelled", "cancelada")}
+                                >
+                                  <Ban className="mr-2 h-4 w-4" /> Cancelar
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleDelete(t)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
