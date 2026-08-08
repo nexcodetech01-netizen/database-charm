@@ -195,12 +195,12 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                           <p className="font-semibold text-sm leading-tight">
                             {opt.name}
                           </p>
-                          {opt.id !== "none" && (customers.find(c => c.id === opt.id)?.document || customers.find(c => c.id === opt.id)?.phone) && (
+                          {opt.id !== "none" && (opt.document || opt.phone) && (
                             <p className={cn(
                               "text-[10px] mt-0.5 opacity-60",
                               isActive ? "text-white" : "text-indigo-300"
                             )}>
-                              {customers.find(c => c.id === opt.id)?.document} {customers.find(c => c.id === opt.id)?.phone && `• ${customers.find(c => c.id === opt.id)?.phone}`}
+                              {opt.document} {opt.phone && `• ${opt.phone}`}
                             </p>
                           )}
                         </div>
