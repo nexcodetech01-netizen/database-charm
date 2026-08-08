@@ -359,7 +359,6 @@ function DashboardPage() {
         icon={DollarSign}
         status={salesMetrics.isError ? "danger" : (dayTotal > 0 ? "success" : "neutral")}
         loading={salesMetrics.isLoading || salesMetrics.isFetching}
-        error={salesMetrics.isError ? "Falha ao carregar métricas" : undefined}
         side={
           <StatStack
             orientation="vertical"
@@ -381,8 +380,7 @@ function DashboardPage() {
           icon={DollarSign}
           status={salesMetrics.isError ? "danger" : "success"}
           loading={salesMetrics.isLoading || salesMetrics.isFetching}
-          error={salesMetrics.isError ? "Erro" : undefined}
-          footer={salesMetrics.isError ? "Tente novamente" : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)}
+          footer={salesMetrics.isError ? "Falha ao carregar" : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)}
         />
         <MetricCard
           title="Dinheiro para entrar"
