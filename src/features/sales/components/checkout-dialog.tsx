@@ -874,139 +874,6 @@ export function CheckoutDialog({
       setShowCreditConfig(true);
       return;
     }
-      if (entradaValue > 0 && !creditDownMethod) {
-        toast.error("Selecione a forma de pagamento da entrada.");
-        return;
-      }
-      if (entradaValue >= amount) {
-        toast.error("Entrada deve ser menor que o total da venda.");
-        return;
-      }
-      const payload = {
-        companyId,
-        saleId,
-        customerId,
-        downPayment: entradaValue,
-        downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
-        dueDate: saldoDueDate || null,
-        notes: creditNotes.trim() || null,
-      };
-
-      // Pré-flight: valida presença/consistência dos campos antes de bater na RPC.
-      const invalid: string[] = [];
-      if (!payload.companyId) invalid.push("companyId");
-      if (!payload.saleId) invalid.push("saleId");
-      if (!payload.customerId) invalid.push("customerId");
-      if (payload.downPayment == null || Number.isNaN(payload.downPayment))
-        invalid.push("downPayment");
-      if (payload.downPayment > 0 && !payload.downPaymentMethod)
-        invalid.push("downPaymentMethod");
-      if (invalid.length) {
-        // eslint-disable-next-line no-console
-        console.error("[checkout-dialog] credit payload inválido", { payload, invalid });
-        toast.error("Não foi possível abrir o crediário", {
-          description: `Campos inválidos: ${invalid.join(", ")}`,
-        });
-        return;
-      }
-
-      try {
-        confirmedRef.current = true;
-        setConfirmed(true);
-
-        // Confirma no banco que a venda existe, pertence à empresa e ainda é draft.
-        const { data: saleRow, error: saleErr } = await supabase
-          .from("sales")
-          .select("id, company_id, customer_id, status, payment_method, grand_total")
-          .eq("id", saleId)
-          .maybeSingle();
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] credit pré-check venda", {
-          payload,
-          saleRow,
-          saleErr,
-        });
-        if (saleErr) throw saleErr;
-        if (!saleRow) {
-          throw new Error(
-            `Venda ${saleId} não encontrada ou fora da empresa autenticada.`,
-          );
-        }
-        if (saleRow.company_id !== companyId) {
-          throw new Error(
-            `company_id divergente (venda=${saleRow.company_id}, checkout=${companyId}).`,
-          );
-        }
-        if (saleRow.status !== "draft" && saleRow.status !== "pending") {
-          throw new Error(
-            `Venda em status "${saleRow.status}" não pode abrir crediário.`,
-          );
-        }
-
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] create_credit_sale payload", payload);
-        const res = await createCredit.mutateAsync(payload);
-        
-        // CORREÇÃO DE STATUS: Aplicar validação matemática estrita
-        // Se total_pago == 0 -> status = 'pending'
-        // Se 0 < total_pago < total_venda -> status = 'partially_paid'
-        // Se total_pago >= total_venda -> status = 'paid'
-        let finalStatus: string = "pending";
-        if (entradaValue >= amount) {
-          finalStatus = "paid";
-        } else if (entradaValue > 0) {
-          finalStatus = "partially_paid";
-        }
-
-        await setStatus.mutateAsync({ id: saleId, status: finalStatus });
-
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] create_credit_sale response", res);
-        toast.success("Venda no Crediário Registrada com Sucesso!", {
-          description: `Saldo em aberto: ${formatCurrency(res.balance)}`,
-        });
-        onPaid?.({ method });
-        openCompletedDialog();
-      } catch (e) {
-        confirmedRef.current = false;
-        setConfirmed(false);
-        // Propaga a mensagem real do backend (PostgrestError não é instanceof Error).
-        const err = e as {
-          message?: string;
-          details?: string;
-          hint?: string;
-          code?: string;
-        } | null;
-        const parts = [
-          err?.message,
-          err?.details,
-          err?.hint,
-          err?.code ? `código ${err.code}` : null,
-        ].filter(Boolean);
-        const description =
-          parts.length > 0
-            ? parts.join(" • ")
-            : typeof e === "string"
-              ? e
-              : "Erro desconhecido ao abrir crediário.";
-        // eslint-disable-next-line no-console
-        console.error("[checkout-dialog] create_credit_sale failed", {
-          payload,
-          error: e,
-          errorJSON: (() => {
-            try {
-              return JSON.stringify(e, Object.getOwnPropertyNames(e ?? {}));
-            } catch {
-              return String(e);
-            }
-          })(),
-        });
-        toast.error("Falha ao abrir crediário", { description });
-      }
-
-
-      return;
-    }
 
 
     // PIX/Cartão/Link: se cobrança ainda não gerada, gerar.
@@ -1024,6 +891,79 @@ export function CheckoutDialog({
           "A confirmação é feita pelo servidor via webhook. Você pode fechar esta janela com segurança — a venda será marcada como paga automaticamente.",
       });
     }
+  }
+
+  async function handleConfirmCredit() {
+    const payload = {
+      companyId,
+      saleId,
+      customerId: customerId!,
+      downPayment: entradaValue,
+      downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
+      dueDate: saldoDueDate || null,
+      notes: creditNotes.trim() || null,
+    };
+
+    // Pré-flight: valida presença/consistência dos campos antes de bater na RPC.
+    const invalid: string[] = [];
+    if (!payload.companyId) invalid.push("companyId");
+    if (!payload.saleId) invalid.push("saleId");
+    if (!payload.customerId) invalid.push("customerId");
+    if (payload.downPayment == null || Number.isNaN(payload.downPayment))
+      invalid.push("downPayment");
+    if (payload.downPayment > 0 && !payload.downPaymentMethod)
+      invalid.push("downPaymentMethod");
+    if (invalid.length) {
+      toast.error("Não foi possível abrir o crediário", {
+        description: `Campos inválidos: ${invalid.join(", ")}`,
+      });
+      return;
+    }
+
+    try {
+      setOpeningSettle(true);
+      setShowCreditConfig(false);
+      
+      // Confirma no banco que a venda existe, pertence à empresa e ainda é draft.
+      const { data: saleRow, error: saleErr } = await supabase
+        .from("sales")
+        .select("id, company_id, customer_id, status, payment_method, grand_total")
+        .eq("id", saleId)
+        .maybeSingle();
+
+      if (saleErr) throw saleErr;
+      if (!saleRow) throw new Error(`Venda ${saleId} não encontrada.`);
+      if (saleRow.company_id !== companyId) throw new Error(`company_id divergente.`);
+      if (saleRow.status !== "draft" && saleRow.status !== "pending") {
+        throw new Error(`Venda em status "${saleRow.status}" não pode abrir crediário.`);
+      }
+
+      const res = await createCredit.mutateAsync(payload);
+      
+      let finalStatus: string = "pending";
+      if (entradaValue >= amount) {
+        finalStatus = "paid";
+      } else if (entradaValue > 0) {
+        finalStatus = "partially_paid";
+      }
+
+      await setStatus.mutateAsync({ id: saleId, status: finalStatus });
+
+      confirmedRef.current = true;
+      setConfirmed(true);
+      toast.success("Venda no Crediário Registrada com Sucesso!", {
+        description: `Saldo em aberto: ${formatCurrency(res.balance)}`,
+      });
+      onPaid?.({ method });
+      openCompletedDialog();
+    } catch (e) {
+      setConfirmed(false);
+      const err = e as { message?: string } | null;
+      toast.error("Falha ao abrir crediário", { description: err?.message || "Erro desconhecido." });
+    } finally {
+      setOpeningSettle(false);
+    }
+  }
   }
 
 
