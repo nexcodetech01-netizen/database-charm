@@ -1632,7 +1632,7 @@ export function CheckoutDialog({
             </Button>
             <Button onClick={handleConfirmCredit} disabled={openingSettle}>
               {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar Crediário
+              Confirmar Crediário (F5)
             </Button>
           </DialogFooter>
         </DialogContent>
