@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -62,19 +62,20 @@ export function MercadoLivrePrintDialog({
       });
       setBlocks([]);
     }
-  }, [open, labelData]);
+  }, [open, labelData, processLabelData]);
 
-  const processLabelData = async () => {
+  const processLabelData = useCallback(async () => {
     if (!labelData) {
       console.log("[ML_PRINT_DEBUG] processLabelData: labelData is null, skipping.");
       return;
     }
     
+    const content = labelData.content || "";
     console.log("[ML_PRINT_DEBUG] processLabelData started:", {
       id: labelData.id,
       type: labelData.type,
-      contentLength: labelData.content?.length,
-      contentStart: labelData.content?.substring(0, 100)
+      contentLength: content.length,
+      contentStart: content.substring(0, 100).replace(/\n/g, "\\n")
     });
 
     setIsLoading(true);
@@ -84,50 +85,46 @@ export function MercadoLivrePrintDialog({
       
       if (labelData.type === "zpl") {
         // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
-        // Usamos uma versão que garante capturar o máximo possível
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        const content = labelData.content || "";
         zplBlocks = content.match(regex) || [];
-        
-        console.log(`[ML_PRINT_DEBUG] Regex found ${zplBlocks.length} blocks. Content starts with: "${content.substring(0, 20)}"`);
+        console.log(`[ML_PRINT_DEBUG] Regex result: ${zplBlocks.length} blocks found.`);
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
       if (zplBlocks.length === 0) {
-        console.log("[ML_PRINT_DEBUG] No blocks found via regex, treating as single block.");
-        const content = labelData.content?.trim() || "";
-        if (content.length > 0 || labelData.type === "pdf") {
+        console.log("[ML_PRINT_DEBUG] No blocks found via regex, evaluating fallback.");
+        const trimmedContent = content.trim();
+        if (trimmedContent.length > 0 || labelData.type === "pdf") {
+          console.log("[ML_PRINT_DEBUG] Fallback: treating as single block.");
           const block: ZPLBlock = {
             id: "block-0",
-            zpl: labelData.type === "zpl" ? labelData.content : "",
+            zpl: labelData.type === "zpl" ? content : "",
             type: "label",
             title: "📦 Etiqueta de envio",
           };
           
-          console.log("[ML_PRINT_DEBUG] Preparing single block-0");
           const prepared = await prepareBlock(block, labelData);
           setBlocks([prepared]);
           setActiveTab("block-0");
         } else {
-          console.log("[ML_PRINT_DEBUG] Content is empty and not PDF. Nothing to display.");
+          console.log("[ML_PRINT_DEBUG] Fallback failed: content is empty.");
         }
       } else {
         // Múltiplos blocos ZPL
-        console.log(`[ML_PRINT_DEBUG] Preparing ${zplBlocks.length} blocks...`);
+        console.log(`[ML_PRINT_DEBUG] Processing ${zplBlocks.length} multiple blocks.`);
         const preparedBlocks = await Promise.all(
           zplBlocks.map(async (zpl, index) => {
             const block: ZPLBlock = {
               id: `block-${index}`,
               zpl,
-              // Heurística simples: o primeiro é a etiqueta, o segundo é o DANFE
               type: index === 0 ? "label" : "danfe",
               title: index === 0 ? "📦 Etiqueta de envio" : "🧾 DANFE Simplificado",
             };
-            console.log(`[ML_PRINT_DEBUG] Preparing block-${index} (${block.type})`);
+            console.log(`[ML_PRINT_DEBUG] Preparing block-${index}`);
             return await prepareBlock(block, labelData);
           })
         );
-        console.log("[ML_PRINT_DEBUG] All blocks prepared successfully:", preparedBlocks.map(b => b.id));
+        console.log("[ML_PRINT_DEBUG] Multi-block preparation complete.");
         setBlocks(preparedBlocks);
         setActiveTab("block-0");
       }
@@ -140,7 +137,7 @@ export function MercadoLivrePrintDialog({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [labelData]);
 
   const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
     let blob: Blob;
@@ -218,7 +215,8 @@ export function MercadoLivrePrintDialog({
 
   if (!open) return null;
   
-  console.log("[ML_PRINT_DEBUG] Rendering Dialog, open:", open, "blocks count:", blocks.length, "labelData:", labelData ? "present" : "absent");
+  console.log("[ML_PRINT_DEBUG] Rendering UI. Open:", open, "Blocks:", blocks.length, "ActiveTab:", activeTab);
+
 
 
   return (
