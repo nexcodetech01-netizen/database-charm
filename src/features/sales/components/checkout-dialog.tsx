@@ -1042,46 +1042,6 @@ export function CheckoutDialog({
           ) : null}
         </div>
 
-        {/* FIN-001 — Entrada + vencimento do saldo */}
-        <div className="rounded-xl border border-border p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                Entrada (R$) — opcional
-              </Label>
-              <Input
-                inputMode="decimal"
-                placeholder="0,00"
-                value={entradaStr}
-                onChange={(e) => setEntradaStr(e.target.value)}
-                className="tabular-nums"
-              />
-              {entradaExcedeu ? (
-                <p className="mt-1 text-[11px] text-destructive">
-                  Entrada limitada ao total da venda ({formatCurrency(amount)}).
-                </p>
-              ) : (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Se informada, a cobrança usará apenas o saldo restante.
-                </p>
-              )}
-            </div>
-            <div>
-              <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                Vencimento do saldo
-              </Label>
-              <Input
-                type="date"
-                value={saldoDueDate}
-                disabled={entradaValue <= 0}
-                onChange={(e) => setSaldoDueDate(e.target.value)}
-                className="tabular-nums"
-              />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Usado apenas quando há entrada.
-              </p>
-          </div>
-        </div>
 
         {method === "credit" && !customerId && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5">
