@@ -1,13 +1,15 @@
 import { MonitorSmartphone, Wallet } from "lucide-react";
 import { formatOpenedAt } from "@/features/cash";
+import { PDVSettingsDialog } from "./pdv-settings-dialog";
 
 type Props = {
   /** Momento de abertura da sessão de caixa vigente, quando houver. */
   openedAt?: string | null;
+  companyId?: string;
 };
 
 /** Cabeçalho do PDV — exibe a sessão de caixa vigente (Sprint 2.3). */
-export function PDVHeader({ openedAt }: Props = {}) {
+export function PDVHeader({ openedAt, companyId }: Props = {}) {
   return (
     <header className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
       <div className="flex items-center gap-2">
