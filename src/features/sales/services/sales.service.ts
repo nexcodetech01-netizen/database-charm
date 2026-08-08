@@ -575,7 +575,10 @@ export const salesService = {
 
     const { data: created, error } = await supabase
       .from("sales")
-      .insert(headerPayload)
+      .insert({
+        ...headerPayload,
+        customer_id: headerPayload.customer_id || null
+      })
       .select()
       .single();
     if (error || !created) {
