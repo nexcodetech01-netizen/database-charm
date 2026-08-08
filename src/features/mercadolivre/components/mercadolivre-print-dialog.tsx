@@ -214,10 +214,12 @@ export function MercadoLivrePrintDialog({
   };
 
   if (!open) return null;
+  
+  console.log("[ML_PRINT_DEBUG] Rendering Dialog, open:", open, "blocks count:", blocks.length, "labelData:", labelData ? "present" : "absent");
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {console.log("[ML_PRINT_DEBUG] Rendering Dialog, open:", open, "blocks count:", blocks.length)}
       <DialogContent className="max-w-4xl min-h-[600px] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
