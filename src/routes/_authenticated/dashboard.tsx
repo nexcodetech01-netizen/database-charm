@@ -350,9 +350,11 @@ function DashboardPage() {
             </button>
           </div>
         }
-        value={formatCurrency(dayTotal)}
+        value={salesMetrics.isError ? "Erro" : formatCurrency(dayTotal)}
         caption={
-          dayCount > 0
+          salesMetrics.isError
+            ? "Ocorreu um problema ao carregar os dados financeiros."
+            : dayCount > 0
             ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no período selecionado.`
             : "Nenhuma venda faturada no período selecionado."
         }
@@ -376,7 +378,7 @@ function DashboardPage() {
       <MetricGrid columns={4} label="Indicadores principais">
         <MetricCard
           title={`RECEITA ${periodLabel.toUpperCase()}`}
-          value={formatCurrency(dayTotal)}
+          value={salesMetrics.isError ? "Erro" : formatCurrency(dayTotal)}
           icon={DollarSign}
           status={salesMetrics.isError ? "danger" : "success"}
           loading={salesMetrics.isLoading || salesMetrics.isFetching}
