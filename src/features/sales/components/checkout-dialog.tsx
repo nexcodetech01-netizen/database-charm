@@ -232,6 +232,13 @@ export function CheckoutDialog({
   onReturnToItemsStateChange,
 }: Props) {
   const [method, setMethod] = useState<UiCheckoutMethod>("pix_manual");
+  
+  // Efeito para preencher automaticamente o valor recebido em Dinheiro
+  useEffect(() => {
+    if (method === "cash" && !confirmed && !showCompleted) {
+      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [method, amount, confirmed, showCompleted]);
   const [charge, setCharge] = useState<ChargeRow | null>(null);
   const [generating, setGenerating] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
