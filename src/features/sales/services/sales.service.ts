@@ -441,12 +441,13 @@ export const salesService = {
       }
     };
 
-    // Receita do dia = fonte única via RPC (Single Source of Truth).
+    // Receita do dia = fonte única via RPC (Single Source of Truth) com ajuste de Timezone.
     // Considera: vendas totalmente pagas + entradas de vendas parciais + recebimentos de crediário.
     const { data: revenueData, error: revenueErr } = await supabase.rpc("get_daily_revenue", {
       _company_id: companyId,
-      _date: todayISO
+      _date: null // O backend assume o dia de hoje em Brasília (America/Sao_Paulo)
     });
+
     if (revenueErr) throw revenueErr;
 
     const dayTotal = Number(revenueData?.[0]?.total_revenue ?? 0);
