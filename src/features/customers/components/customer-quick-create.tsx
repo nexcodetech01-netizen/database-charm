@@ -7,14 +7,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CustomerForm } from "../customer-form";
+import { CustomerForm } from "./customer-form";
+import type { Customer } from "../types";
+
 import { UserPlus } from "lucide-react";
 
 type Props = {
   companyId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: (customer: any) => void;
+  onSaved: (customer: Customer) => void;
 };
 
 export function PDVCustomerQuickCreate({
