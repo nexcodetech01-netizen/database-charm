@@ -1,14 +1,53 @@
-import { ArrowDownRight, ArrowUpRight, CalendarClock } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarClock, Landmark, Wallet, Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFinanceOverview } from "../hooks/use-finance";
+import { Button } from "@/components/ui/button";
+import { useFinanceOverview, useAccounts } from "../hooks/use-finance";
 import { MonthlyIncomeExpenseChart } from "./finance-charts";
+import { useState } from "react";
+import { AccountFormDialog } from "./account-form-dialog";
 
 export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
   const { data, isLoading } = useFinanceOverview(companyId);
+  const { data: accounts, isLoading: isLoadingAccounts } = useAccounts(companyId);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustingAccount, setAdjustingAccount] = useState<any>(null);
+
+  const bankAccount = accounts?.find(a => a.type === 'bank') || accounts?.find(a => a.type === 'digital_wallet');
+  const cashAccount = accounts?.find(a => a.type === 'cash');
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <CardBalance 
+          label="Banco PJ" 
+          value={bankAccount?.current_balance ?? 0}
+          icon={Landmark}
+          loading={isLoadingAccounts}
+          onAdjust={() => {
+            setAdjustingAccount(bankAccount);
+            setAdjustOpen(true);
+          }}
+        />
+        <CardBalance 
+          label="Caixa Físico (Dinheiro)" 
+          value={cashAccount?.current_balance ?? 0}
+          icon={Wallet}
+          loading={isLoadingAccounts}
+          onAdjust={() => {
+            setAdjustingAccount(cashAccount);
+            setAdjustOpen(true);
+          }}
+        />
+      </div>
+
+      <AccountFormDialog
+        open={adjustOpen}
+        onOpenChange={setAdjustOpen}
+        companyId={companyId}
+        account={adjustingAccount}
+      />
+
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center gap-2">
           <CalendarClock className="h-4 w-4 text-success" />
@@ -151,6 +190,49 @@ function Section({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function CardBalance({ 
+  label, 
+  value, 
+  icon: Icon, 
+  loading,
+  onAdjust
+}: { 
+  label: string; 
+  value: number; 
+  icon: any; 
+  loading: boolean;
+  onAdjust: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon className="h-4 w-4" />
+          <span className="text-sm font-medium">{label}</span>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
+          onClick={onAdjust}
+        >
+          <Pencil className="mr-1 h-3 w-3" />
+          Ajustar Saldo Real
+        </Button>
+      </div>
+      <div className="mt-2">
+        {loading ? (
+          <Skeleton className="h-8 w-32" />
+        ) : (
+          <p className="text-2xl font-bold tabular-nums">
+            {formatCurrency(value)}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
