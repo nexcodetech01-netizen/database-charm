@@ -85,15 +85,37 @@ function IndexComponent() {
           </div>
         </div>
 
-        <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
+        <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-blue-600 flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            AJUSTE FINANCEIRO: CATEGORIA 'APORTE DE SÓCIO' E EDIÇÃO DE LANÇAMENTOS
+            PADRONIZAÇÃO DEFINITIVA E REGRAS RÍGIDAS DE CHECKOUT NO PDV
           </h2>
-          <div className="space-y-2 text-sm leading-relaxed">
-             <p>• <b>Funcionalidade:</b> Injeção de capital (Aporte de Sócio) agora separada da Receita de Vendas.</p>
-             <p>• <b>Edição:</b> Permitida alteração de categoria e descrição em lançamentos já liquidados.</p>
-             <p>• <b>Inteligência:</b> Métricas do Dashboard ignoram automaticamente aportes no faturamento bruto.</p>
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p className="text-muted-foreground">Para evitar comportamentos inconsistentes em diferentes formas de pagamento, refatore o fluxo de finalização do checkout (<code>src/features/sales/pdv</code>) aplicando rigorosamente a matriz abaixo:</p>
+            
+            <div className="pt-2">
+              <h3 className="font-bold text-foreground">GROUP 1: PAGAMENTOS À VISTA (BAIXA E CONCLUSÃO IMEDIATA)</h3>
+              <p className="text-xs text-muted-foreground mb-2">Métodos: [ "PIX Próprio", "Dinheiro", "Débito", "Crédito" ]</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>NÃO abrir o modal financeiro de "Registrar baixa de receber".</li>
+                <li>Usar a 'Conta de Destino Padrão' do PDV em segundo plano.</li>
+                <li>Marcar o status da venda e do recebimento diretamente como "PAGO" / "CONCLUÍDO".</li>
+                <li>Redirecionar imediatamente para a tela final de sucesso ("Imprimir cupom / Nova venda").</li>
+              </ul>
+            </div>
+
+            <div className="pt-2">
+              <h3 className="font-bold text-foreground">GROUP 2: PAGAMENTOS A PRAZO OU PENDENTES</h3>
+              <p className="text-xs text-muted-foreground mb-2">Métodos: [ "Crediário", "Boleto", "Link de Pagamento", "Pagamento Pendente" ]</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>VALIDAÇÃO DE CLIENTE:</b> Bloquear a venda se o cliente for "Consumidor Final".</li>
+                <li><b>TELA DE CONDIÇÕES:</b> Exibir a tela/modal de parcelamento, prazos e datas de vencimento.</li>
+                <li><b>REGISTRO NO FINANCEIRO:</b> Marcar status como "PENDENTE" e criar parcelas no Contas a Receber.</li>
+                <li><b>TELA FINAL:</b> Redirecionar com a mensagem "Venda a prazo registrada com sucesso!".</li>
+              </ul>
+            </div>
+
+            <p className="pt-4 border-t italic text-xs text-muted-foreground">Garanta que NENHUMA alteração em um método de pagamento afete ou desconfigure a lógica descrita nos outros métodos.</p>
           </div>
         </div>
       </div>
