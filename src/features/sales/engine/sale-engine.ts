@@ -188,7 +188,7 @@ export function buildSalePayload(
   return {
     company_id: ctx.companyId,
     number: state.number.trim(),
-    customer_id: state.customerId,
+    customer_id: state.customerId || null,
     sale_date: "",
     payment_method: state.paymentMethod || null,
     status: resolveSaleStatus(state, ctx, inputPaidAmount),

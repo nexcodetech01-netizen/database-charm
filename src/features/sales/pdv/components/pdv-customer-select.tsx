@@ -71,7 +71,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
       <div className="flex min-w-0 items-center gap-2">
         <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <span className="min-w-0 truncate text-sm font-semibold">
-          {selected?.name ?? "Selecione o cliente"}
+          {selected?.name ?? "Consumidor Final"}
         </span>
       </div>
 
@@ -84,7 +84,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
         >
           <SelectTrigger id="pdv-customer" className="h-9" aria-label="Cliente">
             <SelectValue
-              placeholder={isLoading ? "Carregando..." : "Selecione o cliente"}
+              placeholder={isLoading ? "Carregando..." : "Consumidor Final"}
             />
           </SelectTrigger>
           <SelectContent>

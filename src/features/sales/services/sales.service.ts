@@ -519,11 +519,18 @@ export const salesService = {
   ) {
     const origin = options?.origin ?? DEFAULT_SALE_ORIGIN;
     // ================= BUG-VENDA-PERSIST — trilha de auditoria =================
-    // Logs temporários por etapa: ENTRADA → PAYLOAD → RESULTADO → ERRO → COMMIT.
     const trace = `sale-create:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
     const log = (step: string, payload: unknown) =>
       // eslint-disable-next-line no-console
       console.info(`[${trace}] ${step}`, payload);
+
+    // Normalização preventiva: se não houver cliente e for PDV, permite null.
+    // Se não for PDV, o schema buildSaleCreateSchema(origin) aplicará a regra de obrigatoriedade.
+    const effectiveCustomerId = (typeof input.customer_id === "string" && !input.customer_id.trim()) 
+      ? null 
+      : (input.customer_id || null);
+
+    input = { ...input, customer_id: effectiveCustomerId };
 
     log("ENTRADA", {
       company_id: input.company_id,
@@ -535,12 +542,6 @@ export const salesService = {
       cash_session_id: input.cash_session_id,
       items: input.items?.length ?? 0,
     });
-
-    // Cliente ausente chega como "" em alguns formulários: normaliza para
-    // null antes de validar (o banco já aceita customer_id nulo).
-    if (typeof input.customer_id === "string" && !input.customer_id.trim()) {
-      input = { ...input, customer_id: null };
-    }
 
     // Validação Zod antes de qualquer INSERT.
     const parsed = buildSaleCreateSchema(origin).safeParse(input);
