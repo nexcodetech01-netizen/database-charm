@@ -147,10 +147,20 @@ export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
                       {formatCurrency(remaining)}
                     </strong>
                   </div>
-                  <div className="text-right">
+                  <div className="flex justify-end gap-2">
                     <Badge variant="outline" className="text-[10px]">
-                      {i.status}
+                      {i.status === 'open' ? 'Aguardando' : i.status === 'partially_paid' ? 'Parcial' : 'Pago'}
                     </Badge>
+                    {(i.status === 'open' || i.status === 'partially_paid') && (
+                      <Button 
+                        size="xs" 
+                        variant="ghost" 
+                        className="h-7 px-2 text-[10px]"
+                        onClick={() => setReceiveOpen(true)}
+                      >
+                        Baixar
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
