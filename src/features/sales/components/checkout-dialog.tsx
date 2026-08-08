@@ -880,7 +880,7 @@ export function CheckoutDialog({
 
     // Crediário — abre conta no cliente e registra entrada (opcional).
     if (method === "credit") {
-      if (!customerId) {
+      if (!customerId && (amount - entradaValue > 0)) {
         toast.error("Venda no crediário exige cliente vinculado.");
         return;
       }
