@@ -84,9 +84,12 @@ export function MercadoLivrePrintDialog({
       
       if (labelData.type === "zpl") {
         // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
+        // Usamos uma versão que garante capturar o máximo possível
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        zplBlocks = labelData.content.match(regex) || [];
-        console.log(`[ML_PRINT_DEBUG] Regex found ${zplBlocks.length} blocks.`);
+        const content = labelData.content || "";
+        zplBlocks = content.match(regex) || [];
+        
+        console.log(`[ML_PRINT_DEBUG] Regex found ${zplBlocks.length} blocks. Content starts with: "${content.substring(0, 20)}"`);
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
