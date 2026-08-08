@@ -5696,6 +5696,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string | null
+          deleted_at: string | null
           discount: number
           due_date: string | null
           finance_ref: string | null
@@ -5723,6 +5724,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          deleted_at?: string | null
           discount?: number
           due_date?: string | null
           finance_ref?: string | null
@@ -5750,6 +5752,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          deleted_at?: string | null
           discount?: number
           due_date?: string | null
           finance_ref?: string | null
@@ -5797,6 +5800,44 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_audit_logs: {
+        Row: {
+          action: string
+          company_id: string | null
+          created_at: string | null
+          id: string
+          sale_data: Json | null
+          sale_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          sale_data?: Json | null
+          sale_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          sale_data?: Json | null
+          sale_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -6611,6 +6652,7 @@ export type Database = {
               created_at: string
               created_by: string | null
               customer_id: string | null
+              deleted_at: string | null
               discount: number
               due_date: string | null
               finance_ref: string | null
@@ -6647,6 +6689,7 @@ export type Database = {
               created_at: string
               created_by: string | null
               customer_id: string | null
+              deleted_at: string | null
               discount: number
               due_date: string | null
               finance_ref: string | null

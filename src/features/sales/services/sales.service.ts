@@ -236,6 +236,7 @@ export const salesService = {
     const applyFilters = <T,>(builder: T): T => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = builder as any;
+      q = q.is("deleted_at", null); // Soft delete: exclude deleted sales
       if (rawSearch) {
         const s = `%${rawSearch}%`;
         const orParts = [`number.ilike.${s}`, `notes.ilike.${s}`];
@@ -819,9 +820,11 @@ export const salesService = {
   async remove(id: string) {
     const { data: sale } = await supabase
       .from("sales")
-      .select("id, company_id")
+      .select("*")
       .eq("id", id)
       .maybeSingle();
+
+    if (!sale) return;
 
     const { data: docs, error: docsError } = await supabase
       .from("fiscal_documents")
@@ -844,8 +847,48 @@ export const salesService = {
       throw new FiscalDeleteBlockedError(blocking.id, status);
     }
 
-    const { error } = await supabase.rpc("delete_sale", { _sale_id: id });
+    // Soft delete instead of hard delete for undo support
+    const { error } = await supabase
+      .from("sales")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
+
     if (error) throw new Error(getSupabaseErrorMessage(error), { cause: error });
+
+    // Log the audit event
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("sales_audit_logs").insert({
+      company_id: sale.company_id,
+      sale_id: id,
+      action: "delete",
+      user_id: userData.user?.id,
+      sale_data: sale,
+    });
+  },
+
+  async restore(id: string) {
+    const { error } = await supabase
+      .from("sales")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) throw new Error(getSupabaseErrorMessage(error), { cause: error });
+
+    const { data: sale } = await supabase
+      .from("sales")
+      .select("company_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (sale) {
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("sales_audit_logs").insert({
+        company_id: sale.company_id,
+        sale_id: id,
+        action: "restore",
+        user_id: userData.user?.id,
+      });
+    }
   },
 
   /**
