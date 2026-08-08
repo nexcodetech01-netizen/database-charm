@@ -357,7 +357,7 @@ function DashboardPage() {
             : "Nenhuma venda faturada no período selecionado."
         }
         icon={DollarSign}
-        status={salesMetrics.isError ? "destructive" : (dayTotal > 0 ? "success" : "neutral")}
+        status={salesMetrics.isError ? "danger" : (dayTotal > 0 ? "success" : "neutral")}
         loading={salesMetrics.isLoading || salesMetrics.isFetching}
         error={salesMetrics.isError ? "Falha ao carregar métricas" : undefined}
         side={
@@ -366,8 +366,8 @@ function DashboardPage() {
             density="normal"
             loading={finance.isLoading || salesMetrics.isLoading || salesMetrics.isFetching}
             items={[
-              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: salesMetrics.isError ? "destructive" : "success" },
-              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: finance.isError ? "destructive" : "info" },
+              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: salesMetrics.isError ? "danger" : "success" },
+              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: finance.isError ? "danger" : "info" },
             ]}
           />
         }
@@ -379,7 +379,7 @@ function DashboardPage() {
           title={`RECEITA ${periodLabel.toUpperCase()}`}
           value={formatCurrency(dayTotal)}
           icon={DollarSign}
-          status={salesMetrics.isError ? "destructive" : "success"}
+          status={salesMetrics.isError ? "danger" : "success"}
           loading={salesMetrics.isLoading || salesMetrics.isFetching}
           error={salesMetrics.isError ? "Erro" : undefined}
           footer={salesMetrics.isError ? "Tente novamente" : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)}
