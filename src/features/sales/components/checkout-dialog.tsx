@@ -1261,6 +1261,20 @@ export function CheckoutDialog({
                       <span className="font-bold text-primary">{formatCurrency(amount)}</span>
                     </div>
                   </div>
+                  <div className="pt-2">
+                    <Button 
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
+                      onClick={handleConfirm}
+                      disabled={setStatus.isPending || createCredit.isPending || openingSettle}
+                    >
+                      {setStatus.isPending || createCredit.isPending || openingSettle ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                      )}
+                      Avançar para Crediário (F5)
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
@@ -1531,7 +1545,10 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-              className="min-w-[180px]"
+              className={cn(
+                "min-w-[180px]",
+                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+              )}
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -1547,7 +1564,7 @@ export function CheckoutDialog({
                     : method === "debit_card"
                       ? "Confirmar Débito"
                       : method === "credit"
-                        ? "Abrir Crediário"
+                        ? "Avançar para Crediário"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar"}
