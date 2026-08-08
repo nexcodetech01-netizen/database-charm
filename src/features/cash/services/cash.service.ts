@@ -218,10 +218,10 @@ export const cashService = {
       supabase
         .from("sales")
         .select(
-          "id,number,payment_method,grand_total,paid_at,status,cash_session_id,is_test",
+          "id,number,payment_method,grand_total,paid_amount,paid_at,status,cash_session_id,is_test",
         )
         .eq("cash_session_id", session.id)
-        .eq("status", "paid"),
+        .in("status", ["paid", "partially_paid"]),
       supabase
         .from("cash_movements")
         .select("*")
@@ -299,7 +299,9 @@ export const cashService = {
 
     for (const sale of visibleSales) {
       const key = normalizeMethod(sale.payment_method);
-      const amount = Number(sale.grand_total ?? 0);
+      const amount = sale.status === 'paid' 
+        ? Number(sale.grand_total ?? 0) 
+        : Number(sale.paid_amount ?? 0);
       byMethod[key].count += 1;
       byMethod[key].total += amount;
       salesTotal += amount;
@@ -404,7 +406,12 @@ export const cashService = {
         (sale) =>
           isPhysicalCash(sale.payment_method) && !settledSessionSaleIds.has(sale.id),
       )
-      .reduce((s, sale) => s + Number(sale.grand_total ?? 0), 0);
+      .reduce((s, sale) => {
+        const amount = sale.status === 'paid' 
+          ? Number(sale.grand_total ?? 0) 
+          : Number(sale.paid_amount ?? 0);
+        return s + amount;
+      }, 0);
     const cashReceipts = Array.from(mergedReceipts.values())
       .filter((tx) => includeTest || !testTransactionIds.has(tx.id))
       .filter((tx) => isPhysicalCash(tx.payment_method))
