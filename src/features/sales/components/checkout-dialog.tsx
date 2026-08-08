@@ -1793,64 +1793,6 @@ function ChargeView({
         ) : null}
       </div>
 
-      {method === "pix" && charge.pix_qr_code ? (
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-          <img
-            src={`data:image/png;base64,${charge.pix_qr_code}`}
-            alt="QR Code PIX"
-            className="h-48 w-48 rounded-md border border-border bg-white p-2"
-          />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="text-xs text-muted-foreground">
-              Escaneie o QR Code ou copie o código PIX (copia e cola).
-            </div>
-            {charge.pix_payload ? (
-              <>
-                <div className="max-h-24 overflow-hidden break-all rounded-md border border-border bg-muted/40 p-2 font-mono text-[10px]">
-                  {charge.pix_payload}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      copyToClipboard(charge.pix_payload!, "PIX copiado")
-                    }
-                  >
-                    <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar PIX
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!whatsappNumber || !pixMessage}
-                    title={!whatsappNumber ? noPhoneTooltip : undefined}
-                    onClick={() => {
-                      if (whatsappNumber && pixMessage) {
-                        openWhatsApp(whatsappNumber, pixMessage);
-                      }
-                    }}
-                  >
-                    <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Compartilhar WhatsApp
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!pixMessage}
-                    onClick={() => {
-                      if (pixMessage) copyToClipboard(pixMessage, "Mensagem copiada");
-                    }}
-                  >
-                    <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar Mensagem
-                  </Button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {method === "payment_link" || method === "credit_card" ? (
         link ? (
