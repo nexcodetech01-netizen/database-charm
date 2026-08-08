@@ -255,7 +255,14 @@ function DashboardPage() {
       <HeroMetric
         label={
           <div className="flex items-center gap-2">
-            <span>Receita do período · hoje</span>
+            <span>
+              Receita do período · {
+                period === "today" ? "hoje" : 
+                period === "yesterday" ? "ontem" : 
+                period === "7d" ? "últimos 7 dias" : 
+                period === "month" ? "este mês" : "personalizado"
+              }
+            </span>
             <button 
               onClick={() => setIsAuditOpen(true)}
               className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-help"
