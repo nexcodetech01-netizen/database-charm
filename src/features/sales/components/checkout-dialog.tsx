@@ -1545,7 +1545,10 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-              className="min-w-[180px]"
+              className={cn(
+                "min-w-[180px]",
+                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+              )}
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -1561,7 +1564,7 @@ export function CheckoutDialog({
                     : method === "debit_card"
                       ? "Confirmar Débito"
                       : method === "credit"
-                        ? "Abrir Crediário"
+                        ? "Avançar para Crediário"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar"}
