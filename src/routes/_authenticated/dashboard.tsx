@@ -296,7 +296,7 @@ function DashboardPage() {
         label={
           <div className="flex items-center gap-2">
             <span>
-              Receita do período · {
+              RECEITA DO PERÍODO · {
                 period === "today" ? "hoje" : 
                 period === "yesterday" ? "ontem" : 
                 period === "7d" ? "últimos 7 dias" : 
@@ -327,7 +327,7 @@ function DashboardPage() {
             density="normal"
             loading={finance.isLoading || salesMetrics.isLoading}
             items={[
-              { label: `Recebido ${periodLabel.toLowerCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
+              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
               { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: "info" },
             ]}
           />
