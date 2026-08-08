@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   AlertTriangle,
   BarChart3,
+  Calendar as CalendarIcon,
   DollarSign,
   HelpCircle,
   LineChart,
@@ -50,6 +51,11 @@ import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh"
 import { requirePermission } from "@/features/rbac";
 import { InterestDashboardCard } from "@/features/interests";
 import { RevenueAuditDialog } from "@/features/sales/components/revenue-audit-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+import { DateRange } from "react-day-picker";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: requirePermission("dashboard.view"),
