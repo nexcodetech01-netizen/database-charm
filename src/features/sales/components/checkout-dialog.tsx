@@ -891,7 +891,6 @@ export function CheckoutDialog({
       toast.info("Aguardando confirmação do pagamento…");
     }
   }
-  }
 
   async function handleConfirmCredit() {
     const payload = {
