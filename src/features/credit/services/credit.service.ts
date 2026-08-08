@@ -15,6 +15,7 @@ export interface CreateCreditSaleInput {
   downPaymentMethod?: string | null;
   dueDate?: string | null;
   notes?: string | null;
+  installments?: number;
   clientRequestId?: string;
 }
 
