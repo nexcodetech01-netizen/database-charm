@@ -1098,11 +1098,11 @@ export function CheckoutDialog({
               {shipping != null && shipping > 0 ? (
                 <SummaryLine label="Frete" value={`+${formatCurrency(shipping)}`} />
               ) : null}
-              <SummaryLine label="Valor final" value={formatCurrency(amount)} strong />
+              <SummaryLine label="Total da Venda" value={formatCurrency(amount)} strong />
               {entradaValue > 0 ? (
                 <>
-                  <SummaryLine label="Entrada recebida" value={`-${formatCurrency(entradaValue)}`} />
-                  <SummaryLine label="Saldo a receber" value={formatCurrency(saldoValue)} strong />
+                  <SummaryLine label="Valor Pago (Entrada)" value={`-${formatCurrency(entradaValue)}`} className="text-success" />
+                  <SummaryLine label="Saldo Devedor / Restante" value={formatCurrency(saldoValue)} strong className="text-destructive" />
                   <div className="flex justify-between text-[11px] text-muted-foreground">
                     <span>Vencimento do saldo</span>
                     <span>{new Date(saldoDueDate + "T00:00:00").toLocaleDateString("pt-BR")}</span>
@@ -1911,19 +1911,23 @@ function SummaryLine({
   label,
   value,
   strong,
+  className,
 }: {
   label: string;
   value: string;
   strong?: boolean;
+  className?: string;
 }) {
   return (
     <div
-      className={`flex justify-between ${
-        strong ? "border-t pt-1 font-medium text-foreground" : "text-muted-foreground"
-      }`}
+      className={cn(
+        "flex justify-between",
+        strong ? "border-t pt-1 font-medium text-foreground" : "text-muted-foreground",
+        className
+      )}
     >
       <span>{label}</span>
-      <span className={strong ? "text-foreground" : ""}>{value}</span>
+      <span className={cn(strong ? "text-foreground" : "", strong && "text-lg")}>{value}</span>
     </div>
   );
 }
