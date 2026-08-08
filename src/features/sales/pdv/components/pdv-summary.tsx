@@ -92,22 +92,22 @@ export function PDVSummary({
       {/* Enterprise Metrics */}
       <div className="grid grid-cols-2 gap-2">
         <div className={cn(
-          "rounded-lg border p-2.5 flex flex-col gap-0.5",
+          "rounded-lg border p-2.5 flex flex-col gap-0.5 min-h-[58px] justify-center",
           isNegative ? "bg-destructive/5 border-destructive/20" : "bg-primary/5 border-primary/20"
         )}>
           <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
             <DollarSign className="h-2.5 w-2.5" /> Lucro Est.
           </span>
-          <span className={cn("text-base font-bold tabular-nums", isNegative ? "text-destructive" : "text-primary")}>
+          <span className={cn("text-base font-bold tabular-nums leading-tight", isNegative ? "text-destructive" : "text-primary")}>
             {formatCurrency(profit)}
           </span>
         </div>
-        <div className="rounded-lg border bg-muted/30 p-2.5 flex flex-col gap-0.5">
+        <div className="rounded-lg border bg-muted/30 p-2.5 flex flex-col gap-0.5 min-h-[58px] justify-center">
           <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
             <TrendingUp className="h-2.5 w-2.5" /> Margem
           </span>
           <div className="flex items-center gap-1.5">
-            <span className="text-base font-bold tabular-nums">
+            <span className="text-base font-bold tabular-nums leading-tight">
               {margin.toFixed(1)}%
             </span>
             {hasCost && (
@@ -118,6 +118,7 @@ export function PDVSummary({
           </div>
         </div>
       </div>
+
 
       <div className="rounded-xl border bg-card p-3 shadow-sm">
         <div className="space-y-0.5 text-[13px]">
