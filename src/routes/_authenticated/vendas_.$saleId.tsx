@@ -93,7 +93,7 @@ import { ReceiptDialog } from "@/features/sales/components/receipt-dialog";
 import { ReturnDialog, ReturnsList } from "@/features/returns";
 import { useCustomer } from "@/features/customers/hooks/use-customers";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
-import { CreditAccountPanel } from "@/features/credit";
+import { CreditAccountPanel, useCreditDetailBySale } from "@/features/credit";
 import { SaleFiscalCard } from "@/features/fiscal/v2/components/sale-fiscal-card";
 import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
 import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
@@ -133,7 +133,32 @@ function SaleDetailPage() {
   );
 }
 
-function SaleWorkspace({
+
+function CreditSummaryItems({ saleId }: { saleId: string }) {
+  const { data: creditDetail } = useCreditDetailBySale(saleId);
+  
+  const downPayment = Number(creditDetail?.account?.down_payment ?? 0);
+  const balance = Number(creditDetail?.account?.balance ?? 0);
+
+  return (
+    <>
+      <SummaryRow
+        label="Valor Pago (Entrada)"
+        value={formatCurrency(downPayment)}
+        mono
+        className="text-success"
+      />
+      <SummaryRow
+        label="Saldo Devedor / Restante"
+        value={formatCurrency(balance)}
+        mono
+        className="font-bold text-destructive"
+      />
+    </>
+  );
+}
+
+
   sale,
   customer,
   companyId,
