@@ -101,7 +101,7 @@ const PDVCartRow = memo(function PDVCartRow({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="line-clamp-2 text-sm font-semibold leading-tight cursor-help">
+                  <p className="text-sm font-semibold leading-tight cursor-help">
                     {item.description}
                   </p>
                 </TooltipTrigger>

@@ -60,9 +60,15 @@ export function validateSaleIdentity(state: SaleDraftState): SaleCheck {
   return { ok: true };
 }
 
-/** Cliente é obrigatório para qualquer persistência (rascunho inclusive). */
-export function validateSaleCustomer(state: SaleDraftState): SaleCheck {
+/** 
+ * Cliente é obrigatório para qualquer persistência (rascunho inclusive). 
+ * RC2/P0.2: No PDV (balcão), aceita-se sem cliente identificado.
+ */
+export function validateSaleCustomer(state: SaleDraftState, origin?: string): SaleCheck {
   if (!state.customerId) {
+    // Venda de balcão ou consumidor final (sem cliente)
+    if (origin === "pdv") return { ok: true };
+
     return {
       ok: false,
       code: "customer_required",
@@ -159,7 +165,10 @@ export function resolveSaleStatus(
   }
 
   if (ctx.isEdit && ctx.persistedStatus === "paid") return "paid";
-  return "pending";
+  
+  // No checkout (PDV), o status é determinado pelo valor pago.
+  // Se chegamos aqui sem valor pago informado, o status inicial de uma venda ativa é pending.
+  return ctx.finalize ? "pending" : state.status;
 }
 
 /** `true` quando a venda precisa ser promovida a `pending` após o INSERT. */
@@ -179,7 +188,7 @@ export function buildSalePayload(
   return {
     company_id: ctx.companyId,
     number: state.number.trim(),
-    customer_id: state.customerId,
+    customer_id: state.customerId || null,
     sale_date: "",
     payment_method: state.paymentMethod || null,
     status: resolveSaleStatus(state, ctx, inputPaidAmount),

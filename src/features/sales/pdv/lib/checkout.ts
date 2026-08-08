@@ -26,6 +26,11 @@ export function nextPdvSaleNumber(now: Date = new Date()): string {
 export function validatePdvSale(state: SaleDraftState): SaleCheck {
   const identity = SaleEngine.validateIdentity(state);
   if (!identity.ok) return identity;
+  
+  // PDV aceita sem cliente identificado por padrão.
+  const customer = SaleEngine.validateCustomer(state, "pdv");
+  if (!customer.ok) return customer;
+
   return SaleEngine.validateItems(state.items);
 }
 

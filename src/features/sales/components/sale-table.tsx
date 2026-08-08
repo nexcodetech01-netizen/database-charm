@@ -173,7 +173,8 @@ export function SaleTable({
                         ) : null}
                         {s.status !== "paid" && s.status !== "cancelled" ? (
                           <DropdownMenuItem onClick={() => onMarkPaid(s)}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar paga
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            {s.status === "partially_paid" ? "Receber saldo" : "Dar baixa"}
                           </DropdownMenuItem>
                         ) : null}
                         {s.status !== "cancelled" ? (

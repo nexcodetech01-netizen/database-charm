@@ -60,7 +60,7 @@ export interface SalePersistenceContext {
 export interface SalePersistencePayload {
   company_id: string;
   number: string;
-  customer_id: string;
+  customer_id: string | null;
   /** TZ-002 — sempre vazio: o banco resolve via `company_today()`. */
   sale_date: string;
   payment_method: string | null;
