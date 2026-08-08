@@ -609,25 +609,35 @@ export function CheckoutDialog({
     setOpeningSettle(true);
     try {
       await persistPaymentSelection();
-      // Garante que o recebível exista (criado pelo trigger ao sair de draft).
+      
       const { data: saleRow } = await supabase
         .from("sales")
-        .select("status")
+        .select("status, cash_session_id")
         .eq("id", saleId)
         .maybeSingle();
+      
       if (saleRow?.status === "draft") {
         await setStatus.mutateAsync({ id: saleId, status: "pending" });
       }
-      const tx = await salesService.openReceivableForSale(saleId);
-      if (!tx) {
-        toast.error("Não foi possível localizar o título financeiro", {
-          description: "O lançamento pode ter sido removido ou já estar baixado.",
+
+      // Vendas do tipo 'crediário' ou 'pagamento pendente' abrem o modal de baixa manual
+      if (method === "credit" || method === "pending_payment") {
+        const tx = await salesService.openReceivableForSale(saleId);
+        if (!tx) {
+          toast.error("Não foi possível localizar o título financeiro");
+          return;
+        }
+        setSettleTx(tx as FinancialTransaction);
+      } else {
+        // Para Pix Próprio, Dinheiro e Débito: baixa automática usando motor financeiro
+        await salesService.autoSettleSale(saleId, {
+          paymentMethod: method === "pix_manual" ? "pix" : (method as any),
+          companyId
         });
-        return;
+        await handleSettled();
       }
-      setSettleTx(tx as FinancialTransaction);
     } catch (e) {
-      toast.error("Não foi possível abrir a baixa financeira", {
+      toast.error("Não foi possível processar a venda", {
         description: e instanceof Error ? e.message : undefined,
       });
     } finally {
