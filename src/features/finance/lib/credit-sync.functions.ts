@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
+const inputSchema = z.object({ transactionId: z.string() });
+
 export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" })
-  .input(z.object({ transactionId: z.string() }))
+  .validator((input: unknown) => inputSchema.parse(input))
   .handler(async ({ data: { transactionId } }) => {
     // Busca se existe um lançamento de crediário (installment) vinculado a esta transação financeira.
     const { data: tx, error: txError } = await supabase
@@ -29,4 +31,5 @@ export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" 
 
     return null;
   });
+
 
