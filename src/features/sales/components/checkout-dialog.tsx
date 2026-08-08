@@ -1261,6 +1261,20 @@ export function CheckoutDialog({
                       <span className="font-bold text-primary">{formatCurrency(amount)}</span>
                     </div>
                   </div>
+                  <div className="pt-2">
+                    <Button 
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
+                      onClick={handleConfirm}
+                      disabled={setStatus.isPending || createCredit.isPending || openingSettle}
+                    >
+                      {setStatus.isPending || createCredit.isPending || openingSettle ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                      )}
+                      Confirmar Crediário (F5)
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
