@@ -100,6 +100,9 @@ function DashboardPage() {
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
 
   const handleTestMLPrint = () => {
+    console.log("[ML_PRINT_DEBUG] handleTestMLPrint clicked");
+    console.log("[ML_PRINT_DEBUG] ML_TEST_ZPL imported:", !!ML_TEST_ZPL);
+    
     setMlLabelData({
       id: "TEST-ZPL-ML",
       type: "zpl",

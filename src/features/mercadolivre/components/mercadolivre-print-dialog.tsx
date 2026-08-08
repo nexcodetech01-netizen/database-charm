@@ -65,7 +65,18 @@ export function MercadoLivrePrintDialog({
   }, [open, labelData]);
 
   const processLabelData = async () => {
-    if (!labelData) return;
+    if (!labelData) {
+      console.log("[ML_PRINT_DEBUG] processLabelData: labelData is null, skipping.");
+      return;
+    }
+    
+    console.log("[ML_PRINT_DEBUG] processLabelData started:", {
+      id: labelData.id,
+      type: labelData.type,
+      contentLength: labelData.content?.length,
+      contentStart: labelData.content?.substring(0, 100)
+    });
+
     setIsLoading(true);
 
     try {
@@ -75,11 +86,13 @@ export function MercadoLivrePrintDialog({
         // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
         const regex = /\^XA[\s\S]*?\^XZ/g;
         zplBlocks = labelData.content.match(regex) || [];
+        console.log(`[ML_PRINT_DEBUG] Regex found ${zplBlocks.length} blocks.`);
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
       if (zplBlocks.length === 0) {
-        const content = labelData.content.trim();
+        console.log("[ML_PRINT_DEBUG] No blocks found via regex, treating as single block.");
+        const content = labelData.content?.trim() || "";
         if (content.length > 0 || labelData.type === "pdf") {
           const block: ZPLBlock = {
             id: "block-0",
@@ -88,12 +101,16 @@ export function MercadoLivrePrintDialog({
             title: "📦 Etiqueta de envio",
           };
           
+          console.log("[ML_PRINT_DEBUG] Preparing single block-0");
           const prepared = await prepareBlock(block, labelData);
           setBlocks([prepared]);
           setActiveTab("block-0");
+        } else {
+          console.log("[ML_PRINT_DEBUG] Content is empty and not PDF. Nothing to display.");
         }
       } else {
         // Múltiplos blocos ZPL
+        console.log(`[ML_PRINT_DEBUG] Preparing ${zplBlocks.length} blocks...`);
         const preparedBlocks = await Promise.all(
           zplBlocks.map(async (zpl, index) => {
             const block: ZPLBlock = {
@@ -103,14 +120,19 @@ export function MercadoLivrePrintDialog({
               type: index === 0 ? "label" : "danfe",
               title: index === 0 ? "📦 Etiqueta de envio" : "🧾 DANFE Simplificado",
             };
+            console.log(`[ML_PRINT_DEBUG] Preparing block-${index} (${block.type})`);
             return await prepareBlock(block, labelData);
           })
         );
+        console.log("[ML_PRINT_DEBUG] All blocks prepared successfully:", preparedBlocks.map(b => b.id));
         setBlocks(preparedBlocks);
         setActiveTab("block-0");
       }
     } catch (error) {
       console.error("[ML_PRINT_PROCESS_ERROR]:", error);
+      if (error instanceof Error) {
+        console.error("[ML_PRINT_DEBUG] Stack trace:", error.stack);
+      }
       toast.error("Erro ao processar documentos de impressão.");
     } finally {
       setIsLoading(false);
@@ -195,6 +217,7 @@ export function MercadoLivrePrintDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {console.log("[ML_PRINT_DEBUG] Rendering Dialog, open:", open, "blocks count:", blocks.length)}
       <DialogContent className="max-w-4xl min-h-[600px] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
