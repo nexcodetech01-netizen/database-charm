@@ -86,11 +86,11 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4 text-destructive">✅ CORREÇÃO DEFINITIVA APLICADA</h2>
+          <h2 className="text-lg font-semibold mb-4 text-destructive">✅ CORREÇÃO DE BUG VISUAL APLICADA</h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• RPC `get_daily_revenue` recalibrada: Faturamento Bruto vs Fluxo de Caixa Real</p>
-             <p>• Saneamento de Timezone: Transações noturnas movidas para o dia local correto</p>
-             <p>• Dashboard unificado: 'Receita Hoje' e 'Recebido Hoje' agora refletem a realidade</p>
+             <p>• <b>Receita do Período:</b> Agora soma o valor bruto de todas as vendas (Paid, Partially Paid, Pending)</p>
+             <p>• <b>Recebido Hoje:</b> Mantém o fluxo de caixa real (entradas efetivas)</p>
+             <p>• <b>Sincronização:</b> RPC <code>get_daily_revenue</code> atualizada para refletir os 3 pilares harmonizados</p>
           </div>
         </div>
       </div>
