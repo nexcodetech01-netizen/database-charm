@@ -12,8 +12,8 @@ export const salesKeys = {
   all: ["sales"] as const,
   list: (companyId: string, filters: SaleListFilters) =>
     ["sales", "list", companyId, filters] as const,
-  metrics: (companyId: string, range?: { from: string; to: string }) =>
-    ["sales", "metrics", companyId, range ?? null] as const,
+  metrics: (companyId: string, range?: { from: string; to: string }, period?: string) =>
+    ["sales", "metrics", companyId, range ?? null, period ?? null] as const,
   statusBreakdown: (companyId: string, range?: { from: string; to: string }) =>
     ["sales", "status-breakdown", companyId, range ?? null] as const,
   detail: (id: string) => ["sales", "detail", id] as const,
