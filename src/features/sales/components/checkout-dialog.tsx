@@ -1709,6 +1709,15 @@ export function CheckoutDialog({
         transaction={settleTx}
         verb="Receber"
         onSettled={() => void handleSettled()}
+        defaultPaymentMethod={
+          method === "pix_manual"
+            ? "pix"
+            : method === "cash"
+              ? "cash"
+              : method === "debit_card"
+                ? "debit_card"
+                : ""
+        }
       />
     </Dialog>
   );
