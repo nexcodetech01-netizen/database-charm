@@ -17,7 +17,8 @@ export type DisplayStatus =
   | "scheduled"
   | "pending"
   | "overdue"
-  | "cancelled";
+  | "cancelled"
+  | "reimbursement";
 
 export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
   paid: "Pago",
@@ -26,6 +27,7 @@ export const DISPLAY_STATUS_LABEL: Record<DisplayStatus, string> = {
   pending: "Pendente",
   overdue: "Vencido",
   cancelled: "Cancelado",
+  reimbursement: "Reembolso",
 };
 
 export const DISPLAY_STATUS_TONE: Record<DisplayStatus, string> = {
@@ -35,6 +37,7 @@ export const DISPLAY_STATUS_TONE: Record<DisplayStatus, string> = {
   pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
   overdue: "bg-destructive/10 text-destructive border-destructive/20",
   cancelled: "bg-muted text-muted-foreground border-border line-through",
+  reimbursement: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
 };
 
 function startOfToday(): number {
@@ -47,6 +50,7 @@ function startOfToday(): number {
  * Estado individual, sem contexto de grupo.
  */
 export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
+  if ((t as any).metadata && (t as any).metadata.reimbursement) return "reimbursement";
   if (t.status === "paid") return "paid";
   if (t.status === "cancelled") return "cancelled";
   const today = startOfToday();

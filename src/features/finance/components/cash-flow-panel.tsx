@@ -21,13 +21,13 @@ export function CashFlowPanel({ companyId }: { companyId: string }) {
           tone="text-primary"
         />
         <Stat
-          label="Entradas do mês"
+          label="Recebimento de Vendas"
           value={formatCurrency(data?.monthIncome ?? 0)}
           loading={isLoading}
           tone="text-success"
         />
         <Stat
-          label="Saídas do mês"
+          label="Compra de Mercadoria / Estoque"
           value={formatCurrency(data?.monthExpense ?? 0)}
           loading={isLoading}
           tone="text-destructive"

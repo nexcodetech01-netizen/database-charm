@@ -58,14 +58,14 @@ export function CategoriesPanel({ companyId }: { companyId: string }) {
     <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Group
-          title="Receitas"
+          title="Entradas de Dinheiro"
           categories={grouped.income}
           onNew={() => handleNew("income")}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
         <Group
-          title="Despesas"
+          title="Saídas / Contas Pagas"
           categories={grouped.expense}
           onNew={() => handleNew("expense")}
           onEdit={handleEdit}

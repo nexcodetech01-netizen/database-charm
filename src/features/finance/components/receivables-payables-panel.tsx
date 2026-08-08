@@ -60,8 +60,8 @@ type TabValue = "all" | "pending" | "overdue" | "partial" | "paid";
 const KIND_META = {
   receivable: {
     type: "income" as TransactionType,
-    title: "Contas a receber",
-    subtitle: "Recebimentos pendentes, atrasados e programados.",
+    title: "Vendas a Receber",
+    subtitle: "Dinheiro que entrará de clientes.",
     empty: "Nenhuma conta a receber.",
     tone: "text-success",
     prefix: "+",
@@ -70,9 +70,9 @@ const KIND_META = {
   },
   payable: {
     type: "expense" as TransactionType,
-    title: "Contas a pagar",
-    subtitle: "Pagamentos pendentes, atrasados e programados.",
-    empty: "Nenhuma conta a pagar.",
+    title: "Contas / Despesas do Mês",
+    subtitle: "Contas que a empresa precisa pagar.",
+    empty: "Nenhuma conta a pagar encontrada.",
     tone: "text-destructive",
     prefix: "-",
     verb: "Pagar",
@@ -294,7 +294,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                 <TableHead className="hidden md:table-cell">Vencimento</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="hidden lg:table-cell">
-                  {kind === "receivable" ? "Forma de recebimento" : "Forma de pagamento"}
+                  {kind === "receivable" ? "Como será recebido" : "Como será pago"}
                 </TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="w-[160px] text-right">Ação</TableHead>
