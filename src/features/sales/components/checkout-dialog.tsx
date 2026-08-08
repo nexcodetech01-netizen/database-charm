@@ -1652,7 +1652,7 @@ export function CheckoutDialog({
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
               )}
               {confirmed
-                ? "Concluir venda"
+                ? "Ver Cupom"
                 : method === "pix_manual"
                   ? "Confirmar pagamento"
                   : method === "credit"
