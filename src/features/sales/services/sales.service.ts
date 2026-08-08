@@ -906,7 +906,7 @@ export const salesService = {
     // 3. Executa a baixa pelo motor financeiro
     const { financeService } = await import("@/features/finance/services/finance.service");
     await financeService.settleTransaction(tx.id, {
-      paymentMethod: options.paymentMethod as any,
+      paymentMethod: (options.paymentMethod === "pix_manual" ? "pix" : options.paymentMethod) as any,
       accountId,
       paidAt: new Date().toISOString().slice(0, 10),
       notes: "Baixa automática PDV",
