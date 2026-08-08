@@ -56,6 +56,7 @@ export function SaleTable({
   onMarkPaid,
   onCancel,
   onDelete,
+  onSort,
 }: Props) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return (
