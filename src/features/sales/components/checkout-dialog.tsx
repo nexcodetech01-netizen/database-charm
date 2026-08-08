@@ -1718,7 +1718,7 @@ export function CheckoutDialog({
               : method === "debit_card"
                 ? "debit_card"
                 : method === "credit"
-                  ? "credit"
+                  ? "other"
                   : ""
         }
       />
