@@ -28,8 +28,8 @@ export const ACCOUNT_TYPE_OPTIONS: { value: AccountType; label: string }[] = [
 ];
 
 export const TRANSACTION_TYPE_OPTIONS: { value: TransactionType; label: string }[] = [
-  { value: "income", label: "Receita" },
-  { value: "expense", label: "Despesa" },
+  { value: "income", label: "Dinheiro Entrou" },
+  { value: "expense", label: "Dinheiro Saiu" },
   { value: "transfer", label: "Transferência" },
 ];
 

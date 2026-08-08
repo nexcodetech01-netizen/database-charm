@@ -53,6 +53,7 @@ import {
   useSetTransactionStatus,
   useTransactions,
 } from "../hooks/use-finance";
+import { GuidedTransactionDialog } from "./guided-transaction-dialog";
 import {
   TRANSACTION_STATUS_OPTIONS,
   TRANSACTION_TYPE_OPTIONS,
@@ -175,7 +176,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">Movimentações</h2>
+          <h2 className="text-base font-semibold">Entradas e Saídas Manuais</h2>
           <p className="text-sm text-muted-foreground">
             Receitas, despesas e transferências entre contas.
           </p>
@@ -426,12 +427,10 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
         </div>
       </div>
 
-      <TransactionFormDialog
+      <GuidedTransactionDialog
         open={open}
         onOpenChange={setOpen}
         companyId={companyId}
-        transaction={editing}
-        defaultType={defaultType}
       />
 
       <SettleTransactionDialog
