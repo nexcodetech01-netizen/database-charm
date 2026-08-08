@@ -76,6 +76,7 @@ export function useSaleMetrics(
     queryKey: [...salesKeys.metrics(companyId, range, period), scope],
     queryFn: () => salesService.metrics(companyId, range, scope, period),
     enabled: !!companyId,
+    refetchOnWindowFocus: false,
   });
 }
 

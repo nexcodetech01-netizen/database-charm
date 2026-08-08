@@ -179,7 +179,7 @@ function DashboardPage() {
   const insights: InsightCardItem[] = [
     {
       id: "sales-period",
-      label: `Vendas ${periodLabel.toLowerCase()}`,
+      label: `RECEITA ${periodLabel.toUpperCase()}`,
       value: dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Nenhuma venda",
       hint: dayCount > 0 ? formatCurrency(dayTotal) : "Abra o PDV para começar",
       icon: ShoppingCart,
@@ -187,7 +187,7 @@ function DashboardPage() {
     },
     {
       id: "receipts",
-      label: `Recebido ${periodLabel.toLowerCase()}`,
+      label: `RECEBIDO ${periodLabel.toUpperCase()}`,
       value: formatCurrency(receiptsTotal),
       hint:
         receiptsTotal > 0
@@ -264,7 +264,7 @@ function DashboardPage() {
           <span className={cn("font-medium", TEXT_TOKENS.sm)}>Período:</span>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 flex-1">
-          <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
+          <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Selecione o período" />
             </SelectTrigger>
@@ -296,7 +296,7 @@ function DashboardPage() {
         label={
           <div className="flex items-center gap-2">
             <span>
-              Receita do período · {
+              RECEITA DO PERÍODO · {
                 period === "today" ? "hoje" : 
                 period === "yesterday" ? "ontem" : 
                 period === "7d" ? "últimos 7 dias" : 
@@ -327,7 +327,7 @@ function DashboardPage() {
             density="normal"
             loading={finance.isLoading || salesMetrics.isLoading}
             items={[
-              { label: `Recebido ${periodLabel.toLowerCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
+              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
               { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: "info" },
             ]}
           />
@@ -337,7 +337,7 @@ function DashboardPage() {
       {/* 3 — MetricGrid: Receita, Resultado a receber, Caixa, Alertas */}
       <MetricGrid columns={4} label="Indicadores principais">
         <MetricCard
-          title={`Receita ${periodLabel.toLowerCase()}`}
+          title={`RECEITA ${periodLabel.toUpperCase()}`}
           value={formatCurrency(dayTotal)}
           icon={DollarSign}
           status="success"
