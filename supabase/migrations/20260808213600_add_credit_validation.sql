@@ -45,7 +45,7 @@ BEGIN
   END IF;
 
   IF v_down_payment > COALESCE(v_sale.grand_total, 0) THEN
-    RAISE EXCEPTION 'A entrada não pode ser maior que o total da venda (%).', public.format_currency(v_sale.grand_total);
+    RAISE EXCEPTION 'A entrada não pode ser maior que o total da venda.';
   END IF;
 
   v_balance := GREATEST(COALESCE(v_sale.grand_total,0) - v_down_payment, 0);
