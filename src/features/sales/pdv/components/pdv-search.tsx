@@ -123,8 +123,8 @@ export function PDVSearch({
   return (
     <div
       className={cn(
-        "relative rounded-lg border bg-background transition-colors",
-        focused && !disabled ? "border-blue-600/60 ring-1 ring-blue-600/30" : "border-border",
+        "relative rounded-lg border bg-slate-950 transition-colors",
+        focused && !disabled ? "border-blue-600/60 ring-1 ring-blue-600/30" : "border-slate-700/50",
       )}
     >
       <div className="relative">
@@ -161,7 +161,7 @@ export function PDVSearch({
       {value.trim().length >= 2 && (
         <div 
           ref={listRef}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-slate-900 p-1 shadow-lg"
         >
           {(isSearching || isAdding) && (
             <p className="p-2 text-sm text-slate-500 animate-pulse">Buscando…</p>
