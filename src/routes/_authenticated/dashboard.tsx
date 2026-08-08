@@ -247,7 +247,42 @@ function DashboardPage() {
               { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
               { label: "Novo cliente", icon: UserPlus, onSelect: () => navigate({ to: ROUTES.customers }) },
             ]}
-          />
+      />
+
+      {/* Filtro de Período */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex items-center gap-2">
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <span className={cn("font-medium", TEXT_TOKENS.sm)}>Período:</span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 flex-1">
+          <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Selecione o período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="yesterday">Ontem</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="month">Este Mês</SelectItem>
+              <SelectItem value="custom">Intervalo Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {period === "custom" && (
+            <DateRangePicker 
+              value={customRange}
+              onChange={setCustomRange}
+              className="w-full sm:w-auto"
+            />
+          )}
+        </div>
+        
+        <div className="hidden sm:block text-xs text-muted-foreground italic">
+          Fuso horário: America/Sao_Paulo
+        </div>
+      </div>
+
         }
       />
 
