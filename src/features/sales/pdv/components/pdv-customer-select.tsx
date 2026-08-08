@@ -82,13 +82,13 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
   return (
     <div className={cn(
       "rounded-xl border p-4 shadow-xl transition-all duration-200",
-      "bg-indigo-950/40 border-indigo-500/50 backdrop-blur-sm"
+      "bg-slate-900/40 border-slate-700/30 backdrop-blur-sm"
     )}>
       <div className="flex flex-col gap-4">
         {/* Linha 1: Topo do Card */}
         <div className="flex items-center gap-2">
-          <User className="h-3.5 w-3.5 text-indigo-400" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300/70">
+          <User className="h-3.5 w-3.5 text-slate-400" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400/70">
             Cliente Selecionado
           </span>
         </div>
@@ -100,7 +100,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
               <TooltipTrigger asChild>
                 <h3 className={cn(
                   "truncate text-lg font-bold leading-tight tabular-nums text-white",
-                  isFinalConsumer ? "opacity-90" : "text-indigo-50"
+                  isFinalConsumer ? "opacity-90" : "text-gray-100"
                 )}>
                   {selected?.name ?? "Consumidor Final"}
                 </h3>
@@ -119,7 +119,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
             type="button"
             variant="outline"
             size="sm"
-            className="flex-1 h-9 shadow-sm bg-indigo-900/40 border-indigo-500/30 text-indigo-100 hover:bg-indigo-500 hover:text-white transition-colors"
+            className="flex-1 h-9 shadow-sm bg-slate-800/40 border-slate-700/30 text-gray-100 hover:bg-blue-600 hover:text-white transition-colors"
             onClick={() => setOpen(true)}
           >
             <UserRound className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
@@ -129,7 +129,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
             type="button"
             variant="outline"
             size="sm"
-            className="flex-1 h-9 shadow-sm bg-indigo-900/40 border-indigo-500/30 text-indigo-100 hover:bg-indigo-500 hover:text-white transition-colors"
+            className="flex-1 h-9 shadow-sm bg-slate-800/40 border-slate-700/30 text-gray-100 hover:bg-blue-600 hover:text-white transition-colors"
             onClick={() => setQuickCreateOpen(true)}
           >
             <UserPlus className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
@@ -138,15 +138,15 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden bg-indigo-950 border-indigo-500/50 text-white">
-            <DialogHeader className="p-4 border-b border-indigo-500/30">
-              <DialogTitle className="text-xl font-bold text-indigo-50">
+          <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden bg-slate-900 border-slate-700/50 text-white">
+            <DialogHeader className="p-4 border-b border-slate-700/30">
+              <DialogTitle className="text-xl font-bold text-gray-100">
                 Selecionar Cliente para a Venda
               </DialogTitle>
             </DialogHeader>
-            <div className="p-4 bg-indigo-900/20">
+            <div className="p-4 bg-slate-800/20">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   ref={searchInputRef}
                   placeholder="Digite o nome, CPF ou telefone..."
@@ -156,7 +156,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                     setActiveIndex(0);
                   }}
                   onKeyDown={handleKeyDown}
-                  className="pl-10 h-12 bg-indigo-950/50 border-indigo-500/30 focus-visible:ring-indigo-500 text-white placeholder:text-indigo-400/50"
+                  className="pl-10 h-12 bg-slate-900/50 border-slate-700/30 focus-visible:ring-blue-600 text-white placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -176,14 +176,14 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                       onMouseEnter={() => setActiveIndex(index)}
                       className={cn(
                         "w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all duration-200",
-                        isActive ? "bg-indigo-600 text-white shadow-lg scale-[1.02]" : "hover:bg-indigo-800/50 text-indigo-100",
-                        isSelected && !isActive && "text-indigo-400"
+                        isActive ? "bg-blue-600 text-white shadow-lg scale-[1.02]" : "hover:bg-slate-800/50 text-gray-100",
+                        isSelected && !isActive && "text-blue-400"
                       )}
                     >
                       <div className="flex items-center gap-3">
                         <div className={cn(
                           "flex h-8 w-8 items-center justify-center rounded-full",
-                          isActive ? "bg-white/20" : "bg-indigo-900/50"
+                          isActive ? "bg-white/20" : "bg-slate-800/50"
                         )}>
                           {opt.id === "none" ? (
                             <UserRound className="h-4 w-4" />
@@ -198,7 +198,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                           {opt.id !== "none" && (opt.document || opt.phone) && (
                             <p className={cn(
                               "text-[10px] mt-0.5 opacity-60",
-                              isActive ? "text-white" : "text-indigo-300"
+                              isActive ? "text-white" : "text-slate-400"
                             )}>
                               {opt.document} {opt.phone && `• ${opt.phone}`}
                             </p>
@@ -206,7 +206,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                         </div>
                       </div>
                       {isSelected && (
-                        <Check className={cn("h-4 w-4", isActive ? "text-white" : "text-indigo-400")} />
+                        <Check className={cn("h-4 w-4", isActive ? "text-white" : "text-blue-400")} />
                       )}
                     </button>
                   );
@@ -218,12 +218,12 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                 )}
               </div>
             </ScrollArea>
-            <div className="p-3 bg-indigo-950 border-t border-indigo-500/30 flex justify-between items-center text-[10px] text-indigo-400/70 font-medium">
+            <div className="p-3 bg-slate-900 border-t border-slate-700/30 flex justify-between items-center text-[10px] text-slate-500 font-medium">
               <div className="flex gap-3">
-                <span><kbd className="bg-indigo-900 px-1.5 py-0.5 rounded border border-indigo-500/30 text-indigo-200">↑↓</kbd> Navegar</span>
-                <span><kbd className="bg-indigo-900 px-1.5 py-0.5 rounded border border-indigo-500/30 text-indigo-200">ENTER</kbd> Selecionar</span>
+                <span><kbd className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/30 text-slate-300">↑↓</kbd> Navegar</span>
+                <span><kbd className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/30 text-slate-300">ENTER</kbd> Selecionar</span>
               </div>
-              <span><kbd className="bg-indigo-900 px-1.5 py-0.5 rounded border border-indigo-500/30 text-indigo-200">ESC</kbd> Fechar</span>
+              <span><kbd className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/30 text-slate-300">ESC</kbd> Fechar</span>
             </div>
           </DialogContent>
         </Dialog>

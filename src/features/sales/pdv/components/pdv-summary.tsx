@@ -52,12 +52,12 @@ function Row({
 }) {
   return (
     <div className="flex h-7 items-center justify-between gap-3">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="text-slate-500">{label}</span>
       <span
         className={
           strong
             ? "font-semibold tabular-nums"
-            : "font-medium tabular-nums text-foreground/90"
+            : "font-medium tabular-nums text-gray-100"
         }
       >
         {value}
@@ -93,17 +93,17 @@ export function PDVSummary({
       <div className="grid grid-cols-2 gap-2">
         <div className={cn(
           "rounded-lg border p-2.5 flex flex-col gap-0.5 min-h-[58px] justify-center",
-          isNegative ? "bg-destructive/5 border-destructive/20" : "bg-primary/5 border-primary/20"
+          isNegative ? "bg-destructive/5 border-destructive/20" : "bg-slate-800/20 border-slate-700/30"
         )}>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
             <DollarSign className="h-2.5 w-2.5" /> Lucro Est.
           </span>
-          <span className={cn("text-base font-bold tabular-nums leading-tight", isNegative ? "text-destructive" : "text-primary")}>
+          <span className={cn("text-base font-bold tabular-nums leading-tight", isNegative ? "text-destructive" : "text-gray-100")}>
             {formatCurrency(profit)}
           </span>
         </div>
         <div className="rounded-lg border bg-muted/30 p-2.5 flex flex-col gap-0.5 min-h-[58px] justify-center">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
             <TrendingUp className="h-2.5 w-2.5" /> Margem
           </span>
           <div className="flex items-center gap-1.5">
@@ -120,7 +120,7 @@ export function PDVSummary({
       </div>
 
 
-      <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="rounded-xl border bg-slate-900 p-3 shadow-sm">
         <div className="space-y-0.5 text-[13px]">
           <Row
             label="Itens"
@@ -129,7 +129,7 @@ export function PDVSummary({
           <Row label="Subtotal" value={formatCurrency(totals.items_total)} strong />
 
           <div className="flex h-8 items-center justify-between gap-3">
-            <label htmlFor="pdv-discount" className="text-muted-foreground">
+            <label htmlFor="pdv-discount" className="text-slate-500">
               Desconto
             </label>
             <Input
@@ -149,7 +149,7 @@ export function PDVSummary({
               className={
                 discount.kind === "exceeds"
                   ? "pb-1 text-xs font-medium text-destructive"
-                  : "pb-1 text-xs text-muted-foreground"
+                  : "pb-1 text-xs text-slate-500"
               }
             >
               {hint}
@@ -161,13 +161,13 @@ export function PDVSummary({
           )}
         </div>
 
-        <div className="mt-2 flex items-baseline justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mt-2 flex items-baseline justify-between gap-3 rounded-lg border border-slate-700/50 bg-slate-800/20 px-3 py-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             Total
           </p>
           <p
             data-testid="pdv-grand-total"
-            className="truncate text-2xl font-bold leading-none tracking-tight tabular-nums text-primary"
+            className="truncate text-2xl font-bold leading-none tracking-tight tabular-nums text-gray-100"
           >
             {formatCurrency(totals.grand_total)}
           </p>
@@ -179,14 +179,14 @@ export function PDVSummary({
             size="sm"
             onClick={onOpenNotes}
             className={cn(
-              "h-7 px-2 text-[9px] uppercase font-bold gap-1.5 text-muted-foreground hover:text-primary",
-              hasNotes && "text-primary bg-primary/5"
+              "h-7 px-2 text-[9px] uppercase font-bold gap-1.5 text-slate-500 hover:text-gray-100",
+              hasNotes && "text-gray-100 bg-slate-800/20"
             )}
           >
             <MessageSquare className="h-3 w-3" />
             Observações
           </Button>
-          <div className="flex items-center gap-1 text-[9px] text-muted-foreground uppercase font-bold italic">
+          <div className="flex items-center gap-1 text-[9px] text-slate-500 uppercase font-bold italic">
             <Info className="h-2.5 w-2.5" />
             Cálculo Automático
           </div>

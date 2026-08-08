@@ -1010,7 +1010,7 @@ export function CheckoutDialog({
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Total a receber
           </div>
-          <div className="mt-1 text-4xl font-bold tabular-nums text-primary">
+          <div className="mt-1 text-4xl font-bold tabular-nums text-gray-100">
             {formatCurrency(amount)}
           </div>
 
@@ -1079,7 +1079,7 @@ export function CheckoutDialog({
                   className={cn(
                     "flex items-start gap-3 rounded-lg border p-3 text-left transition",
                     active
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      ? "border-primary bg-blue-600/5 ring-1 ring-primary"
                       : "border-border hover:border-primary/50 hover:bg-muted/40",
                     charge && !confirmed ? "opacity-60" : "",
                   )}
@@ -1087,7 +1087,7 @@ export function CheckoutDialog({
                   <div
                     className={cn(
                       "grid h-9 w-9 shrink-0 place-items-center rounded-md",
-                      active ? "bg-primary text-primary-foreground" : "bg-muted",
+                      active ? "bg-blue-600 text-gray-100-foreground" : "bg-muted",
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -1242,8 +1242,8 @@ export function CheckoutDialog({
                 </div>
               ) : (
                 <>
-                  <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
-                    <p className="text-sm text-primary font-medium mb-1">Fluxo de Crediário</p>
+                  <div className="rounded-lg bg-blue-600/5 p-4 border border-primary/20">
+                    <p className="text-sm text-gray-100 font-medium mb-1">Fluxo de Crediário</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Ao clicar em <strong>Abrir Crediário</strong>, você poderá definir o parcelamento, data de vencimento e registrar entradas parciais.
                     </p>
@@ -1256,12 +1256,12 @@ export function CheckoutDialog({
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Valor a parcelar:</span>
-                      <span className="font-bold text-primary">{formatCurrency(amount)}</span>
+                      <span className="font-bold text-gray-100">{formatCurrency(amount)}</span>
                     </div>
                   </div>
                   <div className="pt-2">
                     <Button 
-                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 bg-primary/90 hover:bg-primary"
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 bg-blue-600/90 hover:bg-blue-600"
                       onClick={handleConfirm}
                       disabled={setStatus.isPending || createCredit.isPending || openingSettle}
                     >
@@ -1340,7 +1340,7 @@ export function CheckoutDialog({
                             onClick={() => setInstallments(n)}
                             className={`flex-1 rounded-md border px-3 py-2 text-left text-sm transition ${
                               selected
-                                ? "border-primary bg-primary/5"
+                                ? "border-primary bg-blue-600/5"
                                 : "border-border hover:bg-muted/50"
                             }`}
                           >
@@ -1403,9 +1403,9 @@ export function CheckoutDialog({
 
                   {/* Bella — sugestão contextual */}
                   {creditCardPreview.processorFee >= 5 ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-primary/30 bg-blue-600/5 p-3 text-xs">
                       <div>
-                        <div className="font-medium text-primary">Bella sugere</div>
+                        <div className="font-medium text-gray-100">Bella sugere</div>
                         <p className="mt-0.5 text-muted-foreground">
                           Esta venda perde{" "}
                           <strong className="text-foreground">
@@ -1537,7 +1537,7 @@ export function CheckoutDialog({
               type="button"
               className={cn(
                 "flex-[2] min-w-[180px]",
-                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+                method === "credit" && !confirmed && customerId && "bg-blue-600 hover:bg-blue-600/90 text-gray-100-foreground font-bold shadow-md"
               )}
               onClick={handleConfirm}
               disabled={

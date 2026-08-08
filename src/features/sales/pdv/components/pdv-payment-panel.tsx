@@ -23,7 +23,7 @@ export function PDVPaymentPanel({
   cancelDisabled,
 }: Props = {}) {
   return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
+    <div className="rounded-xl border bg-slate-900 p-3 shadow-sm">
       <Button
         id="pdv-finalize"
         className="h-12 w-full text-base font-semibold"
@@ -45,7 +45,7 @@ export function PDVPaymentPanel({
       <Button
         type="button"
         variant="ghost"
-        className="mt-1.5 h-8 w-full text-xs text-muted-foreground hover:text-destructive"
+        className="mt-1.5 h-8 w-full text-xs text-slate-500 hover:text-destructive"
         onClick={onCancelSale}
         disabled={cancelDisabled || !onCancelSale}
       >

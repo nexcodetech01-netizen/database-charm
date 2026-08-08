@@ -44,19 +44,19 @@ export function PDVCompletedPanel({
 
       <dl className="space-y-0.5 text-[13px]">
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Venda</dt>
+          <dt className="text-slate-500">Venda</dt>
           <dd className="font-mono">{sale.number}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Total</dt>
+          <dt className="text-slate-500">Total</dt>
           <dd className="font-medium">{formatCurrency(sale.total)}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Forma de pagamento</dt>
+          <dt className="text-slate-500">Forma de pagamento</dt>
           <dd>{paymentMethodLabel(sale.paymentMethod)}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-muted-foreground">Data/Hora</dt>
+          <dt className="text-slate-500">Data/Hora</dt>
           <dd>{formatDateTime(sale.receivedAt)}</dd>
         </div>
       </dl>
