@@ -444,7 +444,7 @@ export const salesService = {
 
     // Receita do dia — fonte única via RPC (Single Source of Truth) com ajuste de Timezone Brasília.
     // Harmoniza Faturamento Bruto (Sales) e Fluxo de Caixa Real (Transactions).
-    const rpcPeriod = period === "today" ? "hoje" : period === "yesterday" ? "ontem" : null;
+    const rpcPeriod = period === "today" ? "hoje" : period === "yesterday" ? "ontem" : period === "month" ? "mes" : null;
     
     const { data: revenueData, error: revenueErr } = rpcPeriod 
       ? await supabase.rpc("get_dashboard_metrics", { p_period: rpcPeriod })

@@ -288,7 +288,10 @@ function DashboardPage() {
           <Button 
             variant={period === "month" ? "default" : "outline"} 
             size="sm"
-            onClick={() => setPeriod("month")}
+            onClick={() => {
+              setPeriod("month");
+              void supabase.rpc("get_dashboard_metrics", { p_period: "mes" });
+            }}
             className="flex-1 sm:flex-none"
           >
             Este Mês
