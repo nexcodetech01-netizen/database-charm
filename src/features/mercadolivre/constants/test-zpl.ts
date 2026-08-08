@@ -45,5 +45,4 @@ export const ML_TEST_ZPL = `^XA
 ^FO50,520^BY2
 ^BCN,60,Y,N,N
 ^FDCHAVEACESSONFTESTE^FS
-^XZ
-`;
+^XZ`;

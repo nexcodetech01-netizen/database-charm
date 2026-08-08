@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -52,71 +52,6 @@ export function MercadoLivrePrintDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  useEffect(() => {
-    if (open && labelData) {
-      processLabelData();
-    } else {
-      // Cleanup
-      blocks.forEach(b => {
-        if (b.previewUrl) URL.revokeObjectURL(b.previewUrl);
-      });
-      setBlocks([]);
-    }
-  }, [open, labelData]);
-
-  const processLabelData = async () => {
-    if (!labelData) return;
-    setIsLoading(true);
-
-    try {
-      let zplBlocks: string[] = [];
-      
-      if (labelData.type === "zpl") {
-        // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
-        const regex = /\^XA[\s\S]*?\^XZ/g;
-        zplBlocks = labelData.content.match(regex) || [];
-      }
-
-      // Se não detectou blocos ou for PDF, trata como bloco único
-      if (zplBlocks.length === 0) {
-        const content = labelData.content.trim();
-        if (content.length > 0 || labelData.type === "pdf") {
-          const block: ZPLBlock = {
-            id: "block-0",
-            zpl: labelData.type === "zpl" ? labelData.content : "",
-            type: "label",
-            title: "📦 Etiqueta de envio",
-          };
-          
-          const prepared = await prepareBlock(block, labelData);
-          setBlocks([prepared]);
-          setActiveTab("block-0");
-        }
-      } else {
-        // Múltiplos blocos ZPL
-        const preparedBlocks = await Promise.all(
-          zplBlocks.map(async (zpl, index) => {
-            const block: ZPLBlock = {
-              id: `block-${index}`,
-              zpl,
-              // Heurística simples: o primeiro é a etiqueta, o segundo é o DANFE
-              type: index === 0 ? "label" : "danfe",
-              title: index === 0 ? "📦 Etiqueta de envio" : "🧾 DANFE Simplificado",
-            };
-            return await prepareBlock(block, labelData);
-          })
-        );
-        setBlocks(preparedBlocks);
-        setActiveTab("block-0");
-      }
-    } catch (error) {
-      console.error("[ML_PRINT_PROCESS_ERROR]:", error);
-      toast.error("Erro ao processar documentos de impressão.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
     let blob: Blob;
     
@@ -142,6 +77,93 @@ export function MercadoLivrePrintDialog({
       previewUrl: URL.createObjectURL(blob)
     };
   };
+
+  const processLabelData = useCallback(async () => {
+    if (!labelData) {
+      console.log("[ML_PRINT_DEBUG] processLabelData: labelData is null, skipping.");
+      return;
+    }
+    
+    const content = labelData.content || "";
+    console.log("[ML_PRINT_DEBUG] processLabelData started:", {
+      id: labelData.id,
+      type: labelData.type,
+      contentLength: content.length,
+      contentStart: content.substring(0, 100).replace(/\n/g, "\\n")
+    });
+
+    setIsLoading(true);
+
+    try {
+      let zplBlocks: string[] = [];
+      
+      if (labelData.type === "zpl") {
+        // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
+        const regex = /\^XA[\s\S]*?\^XZ/g;
+        zplBlocks = content.match(regex) || [];
+        console.log(`[ML_PRINT_DEBUG] Regex result: ${zplBlocks.length} blocks found.`);
+      }
+
+      // Se não detectou blocos ou for PDF, trata como bloco único
+      if (zplBlocks.length === 0) {
+        console.log("[ML_PRINT_DEBUG] No blocks found via regex, evaluating fallback.");
+        const trimmedContent = content.trim();
+        if (trimmedContent.length > 0 || labelData.type === "pdf") {
+          console.log("[ML_PRINT_DEBUG] Fallback: treating as single block.");
+          const block: ZPLBlock = {
+            id: "block-0",
+            zpl: labelData.type === "zpl" ? content : "",
+            type: "label",
+            title: "📦 Etiqueta de envio",
+          };
+          
+          const prepared = await prepareBlock(block, labelData);
+          setBlocks([prepared]);
+          setActiveTab("block-0");
+        } else {
+          console.log("[ML_PRINT_DEBUG] Fallback failed: content is empty.");
+        }
+      } else {
+        // Múltiplos blocos ZPL
+        console.log(`[ML_PRINT_DEBUG] Processing ${zplBlocks.length} multiple blocks.`);
+        const preparedBlocks = await Promise.all(
+          zplBlocks.map(async (zpl, index) => {
+            const block: ZPLBlock = {
+              id: `block-${index}`,
+              zpl,
+              type: index === 0 ? "label" : "danfe",
+              title: index === 0 ? "📦 Etiqueta de envio" : "🧾 DANFE Simplificado",
+            };
+            console.log(`[ML_PRINT_DEBUG] Preparing block-${index}`);
+            return await prepareBlock(block, labelData);
+          })
+        );
+        console.log("[ML_PRINT_DEBUG] Multi-block preparation complete.");
+        setBlocks(preparedBlocks);
+        setActiveTab("block-0");
+      }
+    } catch (error) {
+      console.error("[ML_PRINT_PROCESS_ERROR]:", error);
+      if (error instanceof Error) {
+        console.error("[ML_PRINT_DEBUG] Stack trace:", error.stack);
+      }
+      toast.error("Erro ao processar documentos de impressão.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [labelData]);
+
+  useEffect(() => {
+    if (open && labelData) {
+      processLabelData();
+    } else {
+      // Cleanup
+      blocks.forEach(b => {
+        if (b.previewUrl) URL.revokeObjectURL(b.previewUrl);
+      });
+      setBlocks([]);
+    }
+  }, [open, labelData, processLabelData]);
 
   const handlePrintBlock = async (block: ZPLBlock) => {
     if (!block.blob) return;
@@ -192,6 +214,8 @@ export function MercadoLivrePrintDialog({
   };
 
   if (!open) return null;
+  
+  console.log("[ML_PRINT_DEBUG] Rendering UI. Open:", open, "Blocks:", blocks.length, "ActiveTab:", activeTab);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
