@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { Edit2, ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2, Percent, PlusCircle, MessageSquare } from "lucide-react";
+import { Edit2, ImageIcon, Minus, Package, Plus, ShoppingCart, Trash2, Percent, PlusCircle, MessageSquare, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/format";
@@ -8,6 +8,8 @@ import { pdvQuantityInputId } from "../lib/focus";
 import { computeItemTotal, type SaleItemDraft } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type Props = {
   items: SaleItemDraft[];
@@ -75,7 +77,7 @@ const PDVCartRow = memo(function PDVCartRow({
       onFocus={activate}
       onMouseDown={activate}
       onDoubleClick={() => onQuantityChange(uiKey, item.quantity)}
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
+      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
         {item.image_url ? (
@@ -93,108 +95,111 @@ const PDVCartRow = memo(function PDVCartRow({
         )}
       </div>
 
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold leading-tight">
-            {item.description}
-          </p>
-          {hasPriceChange && (
-            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-amber-500/10 text-amber-600 border-amber-500/20">
-              Preço alterado
-            </Badge>
-          )}
-          {hasDiscount && (
-            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-green-500/10 text-green-600 border-green-500/20">
-              Desconto
-            </Badge>
-          )}
-          {hasAddition && (
-            <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-blue-500/10 text-blue-600 border-blue-500/20">
-              Acréscimo
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-x-1.5 truncate text-[11px] leading-tight text-muted-foreground mt-0.5">
-          <span className="font-mono">{item.sku ?? "sem SKU"}</span>
-          <span aria-hidden="true">·</span>
-          <span className={lowStock ? "font-medium text-destructive" : ""}>
-            {stockLabel(stock)}
-          </span>
-          <span aria-hidden="true">·</span>
-          <div className="flex items-center gap-1 tabular-nums">
-            {hasPriceChange && (
-              <>
-                <span className="line-through text-muted-foreground/60">{formatCurrency(item.original_unit_price!)}</span>
-                <span className="text-amber-600">↓</span>
-              </>
-            )}
-            <span className={hasPriceChange ? "font-bold text-amber-700" : ""}>
-              {formatCurrency(item.unit_price)}
-            </span>
+      <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="line-clamp-2 text-sm font-semibold leading-tight cursor-help">
+                    {item.description}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[300px]">
+                  <p className="text-xs">{item.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <div className="flex flex-wrap gap-1">
+              {hasPriceChange && (
+                <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-amber-500/10 text-amber-600 border-amber-500/20">
+                  Preço
+                </Badge>
+              )}
+              {hasDiscount && (
+                <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-green-500/10 text-green-600 border-green-500/20">
+                  Desc
+                </Badge>
+              )}
+              {hasAddition && (
+                <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase tracking-tighter bg-blue-500/10 text-blue-600 border-blue-500/20">
+                  Acrés
+                </Badge>
+              )}
+            </div>
           </div>
+          
+          <div className="flex flex-wrap items-center gap-x-1.5 text-[11px] leading-tight text-muted-foreground">
+            <span className="font-mono">{item.sku ?? "sem SKU"}</span>
+            <span aria-hidden="true">·</span>
+            <span className={cn(lowStock ? "font-medium text-destructive" : "")}>
+              {stockLabel(stock)}
+            </span>
+            <span aria-hidden="true">·</span>
+            <div className="flex items-center gap-1 tabular-nums">
+              {hasPriceChange && (
+                <span className="line-through text-muted-foreground/60">{formatCurrency(item.original_unit_price!)}</span>
+              )}
+              <span className={cn(hasPriceChange ? "font-bold text-amber-700" : "")}>
+                {formatCurrency(item.unit_price)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Linha de ações secundária */}
+        <div className="flex items-center gap-1 mt-1.5">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-primary"
+                disabled={readOnly}
+              >
+                <MoreHorizontal className="h-3 w-3" />
+                Ações
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => onEditPrice?.(item)} className="text-xs gap-2">
+                <Edit2 className="h-3 w-3" /> Alterar Preço
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditDiscount?.(item)} className="text-xs gap-2">
+                <Percent className="h-3 w-3" /> Aplicar Desconto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditAddition?.(item)} className="text-xs gap-2">
+                <PlusCircle className="h-3 w-3" /> Aplicar Acréscimo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditNotes?.(item)} className="text-xs gap-2">
+                <MessageSquare className="h-3 w-3" /> 
+                {hasNotes ? "Editar Observações" : "Adicionar Observação"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {hasNotes && (
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] gap-1 bg-primary/5 text-primary border-primary/10">
+              <MessageSquare className="h-2.5 w-2.5 fill-primary/10" />
+              Obs
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
-        <div className="flex items-center gap-1 mr-1">
+      <div className="flex shrink-0 items-center gap-3 ml-2">
+        <div className="flex items-center rounded-lg border bg-background overflow-hidden">
           <Button
             type="button"
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-muted-foreground/70 hover:text-primary hover:bg-primary/10"
-            disabled={readOnly}
-            onClick={() => onEditPrice?.(item)}
-            title="Alterar preço"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-muted-foreground/70 hover:text-green-600 hover:bg-green-600/10"
-            disabled={readOnly}
-            onClick={() => onEditDiscount?.(item)}
-            title="Desconto"
-          >
-            <Percent className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-muted-foreground/70 hover:text-blue-600 hover:bg-blue-600/10"
-            disabled={readOnly}
-            onClick={() => onEditAddition?.(item)}
-            title="Acréscimo"
-          >
-            <PlusCircle className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-muted-foreground/70 hover:text-primary hover:bg-primary/10"
-            disabled={readOnly}
-            onClick={() => onEditNotes?.(item)}
-            title="Observações do item"
-          >
-            <MessageSquare className={cn("h-3.5 w-3.5", hasNotes && "text-primary fill-primary/10")} />
-          </Button>
-        </div>
-
-        <div className="flex items-center rounded-lg border bg-background">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
+            className="h-7 w-7 rounded-none hover:bg-muted"
             disabled={readOnly}
             aria-label={`Diminuir quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity - 1)}
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3.5 w-3.5" />
           </Button>
           <Input
             id={pdvQuantityInputId(uiKey)}
@@ -206,30 +211,32 @@ const PDVCartRow = memo(function PDVCartRow({
             aria-label={`Quantidade de ${item.description}`}
             value={item.quantity}
             onChange={(e) => onQuantityChange(uiKey, Number(e.target.value))}
-            className="h-7 w-12 border-0 px-0 text-center text-sm font-semibold tabular-nums shadow-none focus-visible:ring-1"
+            className="h-7 w-10 border-0 px-0 text-center text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
           />
           <Button
             type="button"
             size="icon"
             variant="ghost"
-            className="h-7 w-7"
+            className="h-7 w-7 rounded-none hover:bg-muted"
             disabled={readOnly}
             aria-label={`Aumentar quantidade de ${item.description}`}
             onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <p className="w-24 text-right text-sm font-semibold tabular-nums">
-          {formatCurrency(computeItemTotal(item))}
-        </p>
+        <div className="w-20 text-right">
+          <p className="text-sm font-bold tabular-nums">
+            {formatCurrency(computeItemTotal(item))}
+          </p>
+        </div>
 
         <Button
           type="button"
           size="icon"
           variant="ghost"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           disabled={readOnly}
           aria-label={`Remover ${item.description}`}
           onClick={() => onRemove(uiKey)}
