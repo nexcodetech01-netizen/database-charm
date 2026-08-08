@@ -554,7 +554,7 @@ function SaleWorkspace({
           mono
         />
         {(sale.status === "partially_paid" || (sale.status === "pending" && sale.payment_method === 'credit')) && (
-          <CreditSummaryItems saleId={sale.id} grandTotal={Number(sale.grand_total ?? 0)} />
+          <CreditSummaryItems saleId={sale.id} />
         )}
       </div>
       <div className="space-y-2 border-t border-border pt-3">
