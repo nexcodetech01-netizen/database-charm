@@ -457,8 +457,8 @@ export const salesService = {
     if (revenueErr) throw revenueErr;
 
     const stats = (revenueData as any)?.[0] || (revenueData as any);
-    const dayTotal = Number(stats?.total_revenue ?? 0);
-    const dayReceived = Number(stats?.total_received ?? 0);
+    const dayTotal = Number(stats?.gross_revenue ?? stats?.total_revenue ?? 0);
+    const dayReceived = Number(stats?.net_received ?? stats?.total_received ?? 0);
     const dayCount = Number(stats?.transaction_count ?? 0);
 
 
