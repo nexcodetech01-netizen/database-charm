@@ -38,6 +38,7 @@ interface Props {
   /** "Receber" | "Pagar" */
   verb?: string;
   onSettled?: () => void;
+  defaultPaymentMethod?: FinancePaymentMethod | "";
 }
 
 type DiscountType = "value" | "percent";
@@ -66,12 +67,13 @@ export function SettleTransactionDialog({
   transaction,
   verb = "Receber",
   onSettled,
+  defaultPaymentMethod = "",
 }: Props) {
   const { data: accounts } = useAccounts(companyId);
   const settleMut = useSettleTransaction();
   const { data: creditInfo, isLoading: isCheckingCredit } = useCreditSync(transaction?.id);
 
-  const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">("");
+  const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">(defaultPaymentMethod);
   const [accountId, setAccountId] = useState("");
   const [paidAt, setPaidAt] = useState(today());
   const [notes, setNotes] = useState("");
@@ -82,7 +84,7 @@ export function SettleTransactionDialog({
 
   useEffect(() => {
     if (!open) return;
-    setPaymentMethod("");
+    setPaymentMethod(defaultPaymentMethod);
     setPaidAt(today());
     setNotes("");
     setAccountId(transaction?.account_id ?? "");
