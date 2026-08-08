@@ -264,6 +264,7 @@ export function CheckoutDialog({
   // FIN-001 — Entrada opcional (parcial): quando > 0, a cobrança é gerada
   // apenas pelo saldo restante, com vencimento configurável.
   const [entradaStr, setEntradaStr] = useState<string>("");
+  const [installmentsCount, setInstallmentsCount] = useState<number>(1);
   const [saldoDueDate, setSaldoDueDate] = useState<string>(
     () => new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10),
   );
