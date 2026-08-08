@@ -902,6 +902,7 @@ export function CheckoutDialog({
       downPayment: entradaValue,
       downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
       dueDate: saldoDueDate || null,
+      installments: installmentsCount,
       notes: creditNotes.trim() || null,
     };
 
