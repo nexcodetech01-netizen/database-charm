@@ -1235,61 +1235,32 @@ export function CheckoutDialog({
             </div>
 
           ) : method === "credit" ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {!customerId ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                  Selecione um cliente antes de abrir crediário.
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-center">
+                  <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                  <p className="text-sm font-medium text-destructive">
+                    Selecione um cliente para habilitar o crediário.
+                  </p>
                 </div>
               ) : (
                 <>
-                  <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-                    Ao confirmar, será aberta uma <strong className="text-foreground">conta de crediário</strong> vinculada
-                    a este cliente. A entrada informada acima cai no financeiro imediatamente e o saldo restante fica em aberto até a quitação.
+                  <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
+                    <p className="text-sm text-primary font-medium mb-1">Fluxo de Crediário</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Ao clicar em <strong>Abrir Crediário</strong>, você poderá definir o parcelamento, data de vencimento e registrar entradas parciais.
+                    </p>
                   </div>
-                  <div className="space-y-1 rounded-md border p-3 text-xs">
-                    <SummaryLine label="Total da venda" value={formatCurrency(amount)} />
-                    <SummaryLine
-                      label="Entrada"
-                      value={entradaValue > 0 ? `-${formatCurrency(entradaValue)}` : "—"}
-                    />
-                    <SummaryLine
-                      label="Saldo no crediário"
-                      value={formatCurrency(Math.max(0, amount - entradaValue))}
-                      strong
-                    />
-                    <div className="flex justify-between pt-1 text-[11px] text-muted-foreground">
-                      <span>Vencimento do saldo</span>
-                      <span>{new Date(saldoDueDate + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                  
+                  <div className="rounded-lg border border-border p-4 space-y-2 bg-muted/20">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Cliente:</span>
+                      <span className="font-semibold">{customerName || "Não identificado"}</span>
                     </div>
-                  </div>
-                  {entradaValue > 0 ? (
-                    <div>
-                      <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                        Forma de pagamento da entrada
-                      </Label>
-                      <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Valor a parcelar:</span>
+                      <span className="font-bold text-primary">{formatCurrency(amount)}</span>
                     </div>
-                  ) : null}
-                  <div>
-                    <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                      Observações (opcional)
-                    </Label>
-                    <Input
-                      value={creditNotes}
-                      onChange={(e) => setCreditNotes(e.target.value)}
-                      placeholder="Ex.: cliente prometeu quitar em 30 dias"
-                    />
                   </div>
                 </>
               )}
