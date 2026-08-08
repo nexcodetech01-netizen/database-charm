@@ -6,6 +6,8 @@ import { useCompanyBranding } from "@/features/settings/hooks/use-company-brandi
 import { useReceiptPreferences } from "@/features/settings/hooks/use-receipt-preferences";
 import { salesService } from "../services/sales.service";
 import { paymentMethodLabel } from "../lib/whatsapp-receipt";
+import { useCreditDetailBySale } from "@/features/credit/hooks/use-credit";
+
 
 const DEFAULT_FAREWELL = ["Obrigado pela preferência!", "Volte sempre!"];
 
@@ -91,8 +93,12 @@ export function SaleReceipt({
   const branding = brandingQ.data?.company ?? null;
   const logoUrl = brandingQ.data?.logoUrl ?? null;
 
+  const creditQ = useCreditDetailBySale(saleId);
+  const isCredit = sale?.payment_method === "credit" || !!creditQ.data;
+
   const method = paymentMethod ?? sale?.payment_method ?? null;
-  const methodLabel = paymentMethodLabel(method);
+  const methodLabel = isCredit ? "CREDIÁRIO" : paymentMethodLabel(method);
+
 
   const farewell = useMemo(() => {
     const custom = prefs.farewell?.trim();
@@ -210,7 +216,38 @@ export function SaleReceipt({
         />
       </dl>
 
+      {isCredit && creditQ.data ? (
+        <div className="receipt-credit-details py-2 border-t border-dashed border-border/60">
+          <Row k="Valor Total" v={formatCurrency(Number(sale.grand_total ?? 0))} />
+          {Number(creditQ.data.account.down_payment ?? 0) > 0 && (
+            <Row 
+              k={`Entrada (${paymentMethodLabel(creditQ.data.payments.find(p => p.kind === 'down_payment')?.payment_method)})`} 
+              v={formatCurrency(Number(creditQ.data.account.down_payment))} 
+            />
+          )}
+          <Row k="Saldo a Pagar" v={formatCurrency(Number(creditQ.data.account.balance ?? 0))} strong />
+          
+          <div className="mt-2 space-y-1">
+            <div className="text-[10px] font-bold uppercase text-muted-foreground">Parcelas / Vencimentos:</div>
+            {creditQ.data.installments.map((inst, idx) => (
+              <div key={inst.id} className="flex justify-between text-[11px] tabular-nums">
+                <span>{inst.sequence || idx + 1}x de {formatCurrency(Number(inst.amount))}</span>
+                <span>{fmtDate(inst.due_date)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <Divider />
+
+      {isCredit && (
+        <div className="text-center text-[10px] italic py-1 text-muted-foreground border-b border-dashed border-border/60 mb-2">
+          Comprovante de débito / Venda a Prazo
+        </div>
+      )}
+
+
 
       {/* Pagamento */}
       <div className="receipt-section-title">FORMA DE PAGAMENTO</div>
@@ -245,8 +282,16 @@ export function SaleReceipt({
 
       <Divider />
 
+      {isCredit && (
+        <div className="text-center text-[10px] italic py-1 text-muted-foreground mt-2 border-t border-dashed border-border/60">
+          Comprovante de débito / Venda a Prazo
+        </div>
+      )}
+
       {/* Mensagem final */}
       <footer className="receipt-footer">
+
+
         {farewell.map((line) => (
           <div key={line}>{line}</div>
         ))}
