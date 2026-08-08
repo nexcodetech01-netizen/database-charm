@@ -174,6 +174,7 @@ export function needsReceivablePromotion(
 export function buildSalePayload(
   state: SaleDraftState,
   ctx: SalePersistenceContext,
+  inputPaidAmount?: number,
 ): SalePersistencePayload {
   return {
     company_id: ctx.companyId,
@@ -181,7 +182,7 @@ export function buildSalePayload(
     customer_id: state.customerId,
     sale_date: "",
     payment_method: state.paymentMethod || null,
-    status: resolveSaleStatus(state, ctx),
+    status: resolveSaleStatus(state, ctx, inputPaidAmount),
     discount: state.discount || 0,
     shipping: state.shipping || 0,
     notes: state.notes.trim() || null,
@@ -202,7 +203,7 @@ export const SaleEngine = {
   evaluateDiscount: evaluateSaleDiscount,
   resolveStatus: resolveSaleStatus,
   needsReceivablePromotion,
-  buildPayload: buildSalePayload,
+  buildPayload: (state: SaleDraftState, ctx: SalePersistenceContext, paid?: number) => buildSalePayload(state, ctx, paid),
   requiresCheckout,
   isReceivable: isReceivablePaymentMethod,
 } as const;
