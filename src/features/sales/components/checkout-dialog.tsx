@@ -1037,7 +1037,7 @@ export function CheckoutDialog({
 
 
   const showAsaasFlow =
-    method === "pix" || method === "credit_card" || method === "payment_link" || method === "boleto";
+    method === "credit_card" || method === "payment_link" || method === "boleto";
 
   // Método efetivo repassado a componentes que só conhecem CheckoutMethod.
   const effectiveMethod: CheckoutMethod =
