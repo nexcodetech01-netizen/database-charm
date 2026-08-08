@@ -1559,7 +1559,7 @@ export function CheckoutDialog({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setMethod("pix");
+                          setMethod("pix_manual");
                           setCharge(null);
                         }}
                       >
