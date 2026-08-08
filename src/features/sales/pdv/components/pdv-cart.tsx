@@ -72,7 +72,6 @@ const PDVCartRow = memo(function PDVCartRow({
   const hasNotes = !!item.notes;
 
   return (
-  return (
     <li
       data-active={active || undefined}
       onFocus={activate}
@@ -246,7 +245,6 @@ const PDVCartRow = memo(function PDVCartRow({
         </Button>
       </div>
     </li>
-  );
   );
 });
 
