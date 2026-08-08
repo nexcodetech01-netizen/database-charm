@@ -78,6 +78,7 @@ function FinancePage() {
   const { tab: initialTab } = Route.useSearch();
   const { data, isLoading } = useFinanceOverview(company.id);
   const [txOpen, setTxOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
