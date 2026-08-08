@@ -60,9 +60,15 @@ export function validateSaleIdentity(state: SaleDraftState): SaleCheck {
   return { ok: true };
 }
 
-/** Cliente é obrigatório para qualquer persistência (rascunho inclusive). */
-export function validateSaleCustomer(state: SaleDraftState): SaleCheck {
+/** 
+ * Cliente é obrigatório para qualquer persistência (rascunho inclusive). 
+ * RC2/P0.2: No PDV (balcão), aceita-se sem cliente identificado.
+ */
+export function validateSaleCustomer(state: SaleDraftState, origin?: string): SaleCheck {
   if (!state.customerId) {
+    // Venda de balcão ou consumidor final (sem cliente)
+    if (origin === "pdv") return { ok: true };
+
     return {
       ok: false,
       code: "customer_required",
