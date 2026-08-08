@@ -52,6 +52,7 @@ import {
   useFinancialCategories,
   useSetTransactionStatus,
   useTransactions,
+  useReverseTransaction,
 } from "../hooks/use-finance";
 import { GuidedTransactionDialog } from "./guided-transaction-dialog";
 import {
@@ -123,6 +124,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
   const { data: categories } = useFinancialCategories(companyId);
   const setStatusMut = useSetTransactionStatus();
   const deleteMut = useDeleteTransaction();
+  const reverseMut = useReverseTransaction();
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FinancialTransaction | null>(null);
@@ -147,6 +149,25 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
     setDrawerOpen(true);
   }
   async function handleStatus(t: FinancialTransaction, status: string, label: string) {
+    // Se estiver liquidado, avisa que o cancelamento envolve estorno
+    if (t.status === "paid" && status === "cancelled") {
+      if (!confirm(`Este lançamento já está PAGO. Ao cancelar, o sistema fará o estorno automático do valor. Confirmar cancelamento?`)) return;
+      
+      try {
+        await reverseMut.mutateAsync({ 
+          id: t.id, 
+          notes: `Cancelamento manual via Extrato: ${t.description}` 
+        });
+        await setStatusMut.mutateAsync({ id: t.id, status });
+        toast.success(`Movimentação ${label} e valor estornado.`);
+      } catch (err) {
+        toast.error("Não foi possível cancelar", {
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      return;
+    }
+
     try {
       await setStatusMut.mutateAsync({ id: t.id, status });
       toast.success(`Movimentação ${label}`);
