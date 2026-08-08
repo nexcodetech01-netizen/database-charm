@@ -1717,7 +1717,9 @@ export function CheckoutDialog({
               ? "cash"
               : method === "debit_card"
                 ? "debit_card"
-                : ""
+                : method === "credit"
+                  ? "credit"
+                  : ""
         }
       />
     </Dialog>
