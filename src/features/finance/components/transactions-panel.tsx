@@ -243,11 +243,10 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[120px]">Data</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead className="hidden md:table-cell">Vencimento</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Origem</TableHead>
                 <TableHead className="w-[52px]" />
               </TableRow>
             </TableHeader>
@@ -294,49 +293,25 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                       className="cursor-pointer hover:bg-muted/40"
                       onClick={() => openDetails(t)}
                     >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "grid h-8 w-8 shrink-0 place-items-center rounded-md bg-accent",
-                              tone,
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{t.description}</p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {[t.category_name, t.account_name]
-                                .filter(Boolean)
-                                .join(" · ") || "—"}
-                            </p>
-                          </div>
-                        </div>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(t.transaction_date)}
                       </TableCell>
-                      <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
-                        {t.due_date ? formatDate(t.due_date) : formatDate(t.transaction_date)}
+                      <TableCell>
+                        <p className="truncate font-medium">{t.description}</p>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {t.category_name || "—"}
+                        </span>
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "text-right font-medium tabular-nums",
-                          tone,
+                          "text-right font-semibold tabular-nums",
+                          tone === "text-success" ? "text-success" : "text-destructive",
                         )}
                       >
                         {type === "expense" ? "-" : type === "income" ? "+" : ""}
                         {formatCurrency(Number(t.amount ?? 0))}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <TransactionStatusBadge status={t.status} />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <SourceIcon className="h-3.5 w-3.5" />
-                          {SOURCE_OPTIONS.find((s) => s.value === source)?.label ?? "Manual"}
-                          {reconciled ? (
-                            <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                          ) : null}
-                        </span>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>

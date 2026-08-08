@@ -174,54 +174,24 @@ function FinancePage() {
         onValueChange={(v) => setTab(v as FinanceTab)}
         className="space-y-8 pt-2"
       >
-        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-6 overflow-x-auto no-scrollbar">
+        <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8 overflow-x-auto no-scrollbar">
           <TabsTrigger 
             value="summary" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            Visão Geral
+            📊 Resumo
           </TabsTrigger>
           <TabsTrigger 
             value="receivables" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            Vendas a Receber
-          </TabsTrigger>
-          <TabsTrigger 
-            value="payables" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Contas a Pagar
+            📋 Contas a Pagar e Receber
           </TabsTrigger>
           <TabsTrigger 
             value="cashflow" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            Extrato de Movimentações
-          </TabsTrigger>
-          <TabsTrigger 
-            value="insights" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Análise Bella IA
-          </TabsTrigger>
-          <TabsTrigger 
-            value="reconciliation" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Conciliação
-          </TabsTrigger>
-          <TabsTrigger 
-            value="accounts" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            Contas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="reports" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
-          >
-            DRE Simplificado
+            📄 Extrato de Movimentações
           </TabsTrigger>
         </TabsList>
 
@@ -236,39 +206,15 @@ function FinancePage() {
           <BellaFinancePanel companyId={company.id} />
         </TabsContent>
 
-        <TabsContent value="receivables" className="space-y-6">
+        <TabsContent value="receivables" className="space-y-8">
           <ReceivablesPayablesPanel companyId={company.id} kind="receivable" />
+          <Separator />
+          <ReceivablesPayablesPanel companyId={company.id} kind="payable" />
           <BellaPayCard />
         </TabsContent>
 
-        <TabsContent value="payables">
-          <ReceivablesPayablesPanel companyId={company.id} kind="payable" />
-        </TabsContent>
-
-        <TabsContent value="reconciliation">
-          <ReconciliationPanel companyId={company.id} />
-        </TabsContent>
-
-
         <TabsContent value="cashflow" className="space-y-6">
-          <CashFlowPanel companyId={company.id} />
           <TransactionsPanel companyId={company.id} />
-        </TabsContent>
-
-        <TabsContent value="categories">
-          <CategoriesPanel companyId={company.id} />
-        </TabsContent>
-
-        <TabsContent value="accounts">
-          <AccountsPanel companyId={company.id} />
-        </TabsContent>
-
-        <TabsContent value="cleanup">
-          <SettlementCleanupPanel companyId={company.id} />
-        </TabsContent>
-
-        <TabsContent value="reports">
-          <ReportsComingSoon />
         </TabsContent>
       </Tabs>
 
