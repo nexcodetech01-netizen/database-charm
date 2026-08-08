@@ -151,16 +151,21 @@ function DashboardPage() {
     financeKeys.overview(company.id),
   ]);
 
-  // Faturamento hoje — vendas status='paid' com sale_date = company_today().
+  // Faturamento e Recebimento — fonte única via RPC consolidada.
   const dayTotal = salesMetrics.data?.dayTotal ?? 0;
   const dayCount = salesMetrics.data?.dayCount ?? 0;
+  const receiptsTotal = salesMetrics.data?.dayReceived ?? 0;
   const breakdown = salesMetrics.data?.breakdown ?? [];
+  
+  // Label dinâmica para o período (RC - Sprint 8.2)
+  const periodLabel = useMemo(() => {
+    if (period === "today") return "Hoje";
+    if (period === "yesterday") return "Ontem";
+    return "no Período";
+  }, [period]);
+
   // Caixa disponível — fonte oficial: soma de financial_accounts ativas.
   const cash = finance.data?.currentBalance ?? 0;
-  // Recebimentos ≠ faturamento: baixas efetivadas hoje (paid_at no dia da empresa).
-  const receiptsToday = salesMetrics.data?.dayReceived ?? 0;
-  const receiptsTodayCount = salesMetrics.data?.dayCount ?? 0;
-
 
   // Dinheiro para entrar — financial_transactions de receita com status='pending'.
   const receivable = finance.data?.pendingReceivable ?? 0;
@@ -172,23 +177,23 @@ function DashboardPage() {
 
   const insights: InsightCardItem[] = [
     {
-      id: "sales-today",
-      label: "Vendas de hoje",
+      id: "sales-period",
+      label: `Vendas ${periodLabel.toLowerCase()}`,
       value: dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Nenhuma venda",
-      hint: dayCount > 0 ? formatCurrency(dayTotal) : "Abra o PDV para começar o dia",
+      hint: dayCount > 0 ? formatCurrency(dayTotal) : "Abra o PDV para começar",
       icon: ShoppingCart,
       status: dayCount > 0 ? "success" : "neutral",
     },
     {
       id: "receipts",
-      label: "Recebimentos de hoje",
-      value: formatCurrency(receiptsToday),
+      label: `Recebido ${periodLabel.toLowerCase()}`,
+      value: formatCurrency(receiptsTotal),
       hint:
-        receiptsTodayCount > 0
-          ? `${receiptsTodayCount} baixa${receiptsTodayCount > 1 ? "s" : ""} confirmada${receiptsTodayCount > 1 ? "s" : ""}`
-          : "Nenhuma baixa registrada",
+        receiptsTotal > 0
+          ? `Entradas confirmadas ${periodLabel.toLowerCase()}`
+          : "Nenhum recebimento",
       icon: Wallet,
-      status: receiptsToday > 0 ? "success" : "neutral",
+      status: receiptsTotal > 0 ? "success" : "neutral",
     },
     {
       id: "below-min",
@@ -319,9 +324,9 @@ function DashboardPage() {
           <StatStack
             orientation="vertical"
             density="normal"
-            loading={finance.isLoading}
+            loading={finance.isLoading || salesMetrics.isLoading}
             items={[
-              { label: "Recebido hoje", value: formatCurrency(receiptsToday), icon: Wallet, status: "success" },
+              { label: `Recebido ${periodLabel.toLowerCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
               { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: "info" },
             ]}
           />
@@ -331,12 +336,12 @@ function DashboardPage() {
       {/* 3 — MetricGrid: Receita, Resultado a receber, Caixa, Alertas */}
       <MetricGrid columns={4} label="Indicadores principais">
         <MetricCard
-          title="Receita hoje"
+          title={`Receita ${periodLabel.toLowerCase()}`}
           value={formatCurrency(dayTotal)}
           icon={DollarSign}
           status="success"
           loading={salesMetrics.isLoading}
-          footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Sem vendas hoje"}
+          footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`}
         />
         <MetricCard
           title="Dinheiro para entrar"
@@ -470,11 +475,11 @@ function DashboardPage() {
       {/* 6 — Atividade recente */}
       <Section
         title="Atividade recente"
-        description="Movimentações registradas no dia de hoje."
+        description={`Movimentações registradas ${periodLabel.toLowerCase()}.`}
         density="comfortable"
         actions={
-          <StatusBadge status={dayCount + receiptsTodayCount > 0 ? "success" : "neutral"} withDot>
-            {dayCount + receiptsTodayCount > 0 ? "Com movimento" : "Sem movimento"}
+          <StatusBadge status={dayCount + receiptsTotal > 0 ? "success" : "neutral"} withDot>
+            {dayCount + receiptsTotal > 0 ? "Com movimento" : "Sem movimento"}
           </StatusBadge>
         }
       >
@@ -492,10 +497,10 @@ function DashboardPage() {
             },
             {
               label: "Baixas financeiras",
-              value: String(receiptsTodayCount),
-              hint: formatCurrency(receiptsToday),
+              value: dayCount > 0 ? "Confirmadas" : "Sem baixas",
+              hint: formatCurrency(receiptsTotal),
               icon: Wallet,
-              status: receiptsTodayCount > 0 ? "success" : "neutral",
+              status: receiptsTotal > 0 ? "success" : "neutral",
             },
             {
               label: "Títulos em aberto",

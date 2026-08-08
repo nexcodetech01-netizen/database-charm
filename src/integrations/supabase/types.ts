@@ -6870,27 +6870,14 @@ export type Database = {
         Returns: Json
       }
       get_company_invite_by_token: { Args: { _token: string }; Returns: Json }
-      get_daily_revenue:
-        | {
-            Args: { _company_id: string; _date?: string }
-            Returns: {
-              total_received: number
-              total_revenue: number
-              transaction_count: number
-            }[]
-          }
-        | {
-            Args: {
-              _company_id: string
-              _end_date?: string
-              _start_date?: string
-            }
-            Returns: {
-              total_received: number
-              total_revenue: number
-              transaction_count: number
-            }[]
-          }
+      get_daily_revenue: {
+        Args: { _company_id: string; _end_date?: string; _start_date?: string }
+        Returns: {
+          total_received: number
+          total_revenue: number
+          transaction_count: number
+        }[]
+      }
       has_permission: {
         Args: {
           _company_id: string
