@@ -153,7 +153,7 @@ export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
                     </Badge>
                     {(i.status === 'open' || i.status === 'partially_paid') && (
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="ghost" 
                         className="h-7 px-2 text-[10px]"
                         onClick={() => setReceiveOpen(true)}
