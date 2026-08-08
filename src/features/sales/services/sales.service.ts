@@ -863,12 +863,17 @@ export const salesService = {
     let accountId = tx.account_id;
 
     if (!accountId && saleData?.cash_session_id) {
-      const { data: session } = await supabase
-        .from("cash_sessions")
-        .select("account_id")
-        .eq("id", saleData.cash_session_id)
+      // A sessão de caixa está vinculada ao operador, mas não tem account_id direto
+      // Buscamos a conta padrão do Bella Pay ou a primeira conta de caixa ativa
+      const { data: bellaConfig } = await supabase
+        .from("bella_pay_config")
+        .select("default_account_id")
+        .eq("company_id", options.companyId)
         .maybeSingle();
-      if (session?.account_id) accountId = session.account_id;
+      
+      if (bellaConfig?.default_account_id) {
+        accountId = bellaConfig.default_account_id;
+      }
     }
 
     if (!accountId) {
