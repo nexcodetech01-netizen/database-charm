@@ -22,6 +22,8 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { useCashGuard } from "@/features/cash";
 import { useAccounts, useSettleTransaction } from "../hooks/use-finance";
+import { useCreditSync } from "../hooks/use-credit-sync";
+import { creditService } from "@/features/credit/services/credit.service";
 import {
   FINANCE_PAYMENT_METHOD_OPTIONS,
   type FinancePaymentMethod,
@@ -67,6 +69,7 @@ export function SettleTransactionDialog({
 }: Props) {
   const { data: accounts } = useAccounts(companyId);
   const settleMut = useSettleTransaction();
+  const { data: creditInfo, isLoading: isCheckingCredit } = useCreditSync(transaction?.id);
 
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">("");
   const [accountId, setAccountId] = useState("");
@@ -143,8 +146,25 @@ export function SettleTransactionDialog({
           input: { paymentMethod, accountId, paidAt, notes, settledAmount },
         }),
       );
-      // Sem caixa aberto: o fluxo de abertura assume e a baixa é refeita
-      // automaticamente em seguida.
+      
+      // Se houver vínculo com crediário, liquida a parcela correspondente
+      if (result && creditInfo?.creditAccountId) {
+        try {
+          await creditService.receivePayment({
+            companyId,
+            creditAccountId: creditInfo.creditAccountId,
+            amount: settledAmount,
+            paymentMethod,
+            paidAt: new Date(paidAt).toISOString(),
+            accountId,
+            notes: `Baixa automática via Financeiro: ${notes}`.trim(),
+          });
+        } catch (creditErr) {
+          console.error("[SettleTransactionDialog] Erro ao sincronizar baixa com crediário:", creditErr);
+          // Não falha a baixa principal se a sincronização falhar, apenas loga.
+        }
+      }
+
       if (result === undefined) return;
       toast.success(
         difference > 0
@@ -344,9 +364,9 @@ export function SettleTransactionDialog({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={settleMut.isPending || activeAccounts.length === 0 || !amountValid}
+              disabled={settleMut.isPending || isCheckingCredit || activeAccounts.length === 0 || !amountValid}
             >
-              {settleMut.isPending ? "Registrando..." : `Confirmar ${verb.toLowerCase()}`}
+              {settleMut.isPending || isCheckingCredit ? "Registrando..." : `Confirmar ${verb.toLowerCase()}`}
             </Button>
           </DialogFooter>
         </DialogContent>
