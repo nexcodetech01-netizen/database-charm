@@ -266,10 +266,11 @@ export const financeService = {
 
   /**
    * Edição cadastral do lançamento (descrição, valor, contas, categoria,
-   * datas, notas). `status` e `paid_at` são SEMPRE descartados: a mudança de
-   * situação financeira pertence exclusivamente ao motor
-   * (`settle_financial_transaction` / `reverse_financial_transaction`) e,
-   * no caso de cancelamento, a `setTransactionStatus`.
+   * datas, notas).
+   * 
+   * REGRA ENTERPRISE (Sprint 8.3): Permite edição de qualquer lançamento,
+   * incluindo os já pagos (paid), para correções de categoria (ex: Aporte de Sócio),
+   * descrição ou valor. O status e paid_at continuam protegidos e só mudam via motor.
    */
   async updateTransaction(id: string, input: FinancialTransactionUpdate) {
     const {
