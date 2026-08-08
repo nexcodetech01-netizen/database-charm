@@ -123,8 +123,6 @@ function SalesPage() {
       }
       setSettleSale(s);
       setSettleTx(tx);
-      setSettleSale(s);
-      setSettleTx(tx);
     } catch (e) {
       toast.error("Não foi possível abrir a baixa financeira", {
         description: e instanceof Error ? e.message : undefined,
