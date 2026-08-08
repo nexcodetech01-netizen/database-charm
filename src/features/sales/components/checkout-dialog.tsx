@@ -661,8 +661,8 @@ export function CheckoutDialog({
     setConfirmed(true);
     try {
       await setStatus.mutateAsync({ id: saleId, status: "paid" });
-      toast.success("Venda finalizada", {
-        description: saleNumber ? `Venda ${saleNumber} paga com sucesso.` : undefined,
+      toast.success("Pagamento registrado com sucesso", {
+        description: saleNumber ? `Venda ${saleNumber} concluída.` : undefined,
       });
       onPaid?.({ method });
       openCompletedDialog();
@@ -834,12 +834,16 @@ export function CheckoutDialog({
       }
 
       if (method === "pending_payment") {
+        if (!customerId) {
+          toast.error("Venda pendente exige cliente vinculado.");
+          return;
+        }
         confirmedRef.current = true;
         setConfirmed(true);
         try {
           await persistPaymentSelection();
           await setStatus.mutateAsync({ id: saleId, status: "pending" });
-          toast.success("Venda finalizada", {
+          toast.success("Venda Registrada", {
             description: "Pagamento pendente registrado com sucesso.",
           });
           onPaid?.({ method });
@@ -1133,18 +1137,17 @@ export function CheckoutDialog({
         </div>
 
         {method === "credit" && !customerId && (
-          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
-            <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500 mb-2">
-              <HandCoins className="h-6 w-6" />
-              <h3 className="font-bold">Crediário</h3>
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5">
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertCircle className="h-6 w-6" />
+              <h3 className="font-bold">Crediário Bloqueado</h3>
             </div>
-            <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium mb-3">
-              Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+            <p className="text-sm text-destructive font-medium mb-3">
+              Para vender no crediário, selecione um cliente cadastrado.
             </p>
             <Button 
-              variant="outline" 
+              variant="destructive" 
               size="sm" 
-              className="border-yellow-500/50 hover:bg-yellow-500/20"
               onClick={handleContinueEditing}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
