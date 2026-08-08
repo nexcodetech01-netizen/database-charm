@@ -1,0 +1,50 @@
+/**
+ * Arquivo ZPL de exemplo validado para teste do Printing Center.
+ * Contém dois blocos ZPL distintos:
+ * 1. Etiqueta de Envio (📦)
+ * 2. DANFE Simplificado (🧾)
+ */
+export const ML_TEST_ZPL = `
+^XA
+^FX Etiqueta de Envio
+^CF0,60
+^FO50,50^GB100,100,3^FS
+^FO170,50^FDETIQUETA DE ENVIO^FS
+^FO50,160^GB700,3,3^FS
+^CF0,30
+^FO50,200^FDPedido: #ML-TEST-2026^FS
+^FO50,240^FDRemetente: NexOS Enterprise ERP^FS
+^FO50,280^FDBairro: Centro^FS
+^FO50,320^FDCidade: Sao Paulo - SP^FS
+^FO450,200^FDDestinatario: Bella Contadora^FS
+^FO450,240^FDEndereco: Av. da Inteligencia, 1000^FS
+^FO450,280^FDCidade: Curitiba - PR^FS
+^FO50,400^BY3
+^BCN,100,Y,N,N
+^FD123456789012^FS
+^XZ
+
+^XA
+^FX DANFE Simplificado
+^CF0,40
+^FO50,50^FDMODO TESTE - DANFE SIMPLIFICADO^FS
+^FO50,100^GB700,3,3^FS
+^CF0,25
+^FO50,140^FDChave de Acesso: 1234 5678 9012 3456 7890 1234 5678 9012 3456 7890 1234^FS
+^FO50,180^FDProtocolo: 135260001234567^FS
+^FO50,220^GB700,3,3^FS
+^CF0,30
+^FO50,260^FDPRODUTOS:^FS
+^FO50,300^FD1. Licenca NexOS ERP Enterprise v1.0^FS
+^FO600,300^FDR$ 1.200,00^FS
+^FO50,340^FD2. Modulo Fiscal NFC-e/NF-e^FS
+^FO600,340^FDR$ 450,00^FS
+^FO50,400^GB700,3,3^FS
+^CF0,35
+^FO50,450^FDTOTAL DA NOTA:^FS
+^FO550,450^FDR$ 1.650,00^FS
+^FO50,520^BY2
+^BCN,60,Y,N,N
+^FDCHAVEACESSONFTESTE^FS
+^XZ
+`;
