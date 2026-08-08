@@ -86,14 +86,14 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4 text-emerald-600 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            ADICIONAR SELETOR DE PERÍODO (FILTRO DE DATA) NO DASHBOARD
+          <h2 className="text-lg font-semibold mb-4 text-blue-600 flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            AJUSTE FINANCEIRO: CATEGORIA 'APORTE DE SÓCIO' E EDIÇÃO DE LANÇAMENTOS
           </h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• <b>Funcionalidade:</b> Seletor de período integrado (Hoje, Ontem, 7 dias, Mês, Custom).</p>
-             <p>• <b>Integração:</b> RPC <code>get_daily_revenue</code> atualizada para aceitar <code>_start_date</code> e <code>_end_date</code>.</p>
-             <p>• <b>Timezone:</b> Filtros processados nativamente em <code>America/Sao_Paulo</code> no Postgres.</p>
+             <p>• <b>Funcionalidade:</b> Injeção de capital (Aporte de Sócio) agora separada da Receita de Vendas.</p>
+             <p>• <b>Edição:</b> Permitida alteração de categoria e descrição em lançamentos já liquidados.</p>
+             <p>• <b>Inteligência:</b> Métricas do Dashboard ignoram automaticamente aportes no faturamento bruto.</p>
           </div>
         </div>
       </div>
