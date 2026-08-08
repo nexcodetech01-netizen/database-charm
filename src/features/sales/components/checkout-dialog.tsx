@@ -251,6 +251,14 @@ export function CheckoutDialog({
 
   // FIN-001 — Dinheiro: valor recebido para cálculo de troco.
   const [cashReceivedStr, setCashReceivedStr] = useState<string>("");
+  
+  // Efeito para preencher automaticamente o valor recebido em Dinheiro
+  useEffect(() => {
+    if (method === "cash" && !confirmed && !showCompleted) {
+      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [method, amount, confirmed, showCompleted, setCashReceivedStr]);
+
   // FIN-001 — Entrada opcional (parcial): quando > 0, a cobrança é gerada
   // apenas pelo saldo restante, com vencimento configurável.
   const [entradaStr, setEntradaStr] = useState<string>("");
