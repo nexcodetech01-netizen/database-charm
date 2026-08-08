@@ -41,8 +41,7 @@ export const SALE_PAYMENT_METHODS: {
   disabled?: boolean;
   description?: string;
 }[] = [
-  { value: "pix", label: "PIX (Bella Pay)" },
-  { value: "pix_manual", label: "PIX Próprio" },
+  { value: "pix_manual", label: "Pix" },
   { value: "credit_card", label: "Cartão de crédito" },
   { value: "debit_card", label: "Cartão de débito" },
   { value: "cash", label: "Dinheiro" },

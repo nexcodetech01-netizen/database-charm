@@ -155,8 +155,7 @@ const METHODS: {
   icon: typeof QrCode;
   hint: string;
 }[] = [
-  { id: "pix_manual", label: "PIX Próprio", icon: Wallet, hint: "Recebido direto na sua conta" },
-  { id: "pix", label: "PIX (Bella Pay)", icon: QrCode, hint: "QR Code + confirmação automática" },
+  { id: "pix_manual", label: "Pix", icon: Wallet, hint: "Recebido direto na sua conta" },
   { id: "credit_card", label: "Crédito", icon: CreditCard, hint: "Parcelado (Asaas)" },
   { id: "payment_link", label: "Link", icon: LinkIcon, hint: "PIX + cartão + boleto" },
   { id: "boleto", label: "Boleto", icon: Barcode, hint: "Boleto bancário (Asaas)" },
@@ -232,7 +231,7 @@ export function CheckoutDialog({
   onContinueEditing,
   onReturnToItemsStateChange,
 }: Props) {
-  const [method, setMethod] = useState<UiCheckoutMethod>("pix");
+  const [method, setMethod] = useState<UiCheckoutMethod>("pix_manual");
   const [charge, setCharge] = useState<ChargeRow | null>(null);
   const [generating, setGenerating] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -392,7 +391,7 @@ export function CheckoutDialog({
       setConfirmed(false);
       confirmedRef.current = false;
       setGenerating(false);
-      setMethod("pix");
+      setMethod("pix_manual");
       setShowCompleted(false);
       setInstallments(1);
       setCashReceivedStr("");
@@ -528,44 +527,6 @@ export function CheckoutDialog({
   // `/payments/:id/pixQrCode` até persistir o QR na cobrança. O polling
   // principal (acima) já lê `pix_qr_code` do banco e re-renderiza sozinho.
   const refreshPixQrFn = useServerFn(refreshPixQrCode);
-  useEffect(() => {
-    if (!open || confirmed) return;
-    if (method !== "pix") return;
-    if (!charge?.id) return;
-    if (charge.pix_qr_code) return;
-    let cancelled = false;
-    let attempts = 0;
-    const tick = async () => {
-      if (cancelled) return;
-      attempts += 1;
-      try {
-        const res = await refreshPixQrFn({ data: { chargeId: charge.id } });
-        if (cancelled) return;
-        if (res?.pix_qr_code) {
-          setCharge((prev) =>
-            prev && prev.id === charge.id
-              ? {
-                  ...prev,
-                  pix_qr_code: res.pix_qr_code ?? prev.pix_qr_code,
-                  pix_payload: res.pix_payload ?? prev.pix_payload,
-                }
-              : prev,
-          );
-          return; // sucesso — o polling do DB continuará observando o status
-        }
-      } catch (err) {
-        console.warn("[checkout] refreshPixQrCode falhou", err);
-      }
-      if (attempts < 15 && !cancelled) {
-        setTimeout(tick, 2000);
-      }
-    };
-    tick();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, confirmed, method, charge?.id, charge?.pix_qr_code]);
 
 
   /**
@@ -585,9 +546,7 @@ export function CheckoutDialog({
               ? "debit_card"
               : method === "credit_card"
                 ? "credit_card"
-                : method === "pix"
-                  ? "pix"
-                  : method;
+                : method;
       const inst = method === "credit_card" ? Math.max(1, Math.trunc(installments || 1)) : 1;
       await supabase
         .from("sales")
@@ -1038,7 +997,7 @@ export function CheckoutDialog({
 
 
   const showAsaasFlow =
-    method === "pix" || method === "credit_card" || method === "payment_link" || method === "boleto";
+    method === "credit_card" || method === "payment_link" || method === "boleto";
 
   // Método efetivo repassado a componentes que só conhecem CheckoutMethod.
   const effectiveMethod: CheckoutMethod =
@@ -1410,9 +1369,7 @@ export function CheckoutDialog({
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
 
-                {method === "pix"
-                  ? "Ao gerar, será exibido o QR Code. O status é atualizado automaticamente."
-                  : method === "credit_card"
+                {method === "credit_card"
                     ? "Escolha o parcelamento e gere a cobrança. O cliente pagará em ambiente seguro."
                     : method === "boleto"
                       ? "Gera boleto bancário via Asaas. Compensação em até 2 dias úteis após pagamento."
@@ -1551,7 +1508,7 @@ export function CheckoutDialog({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setMethod("pix");
+                          setMethod("pix_manual");
                           setCharge(null);
                         }}
                       >
@@ -1743,6 +1700,15 @@ export function CheckoutDialog({
         transaction={settleTx}
         verb="Receber"
         onSettled={() => void handleSettled()}
+        defaultPaymentMethod={
+          method === "pix_manual"
+            ? "pix"
+            : method === "cash"
+              ? "cash"
+              : method === "debit_card"
+                ? "debit_card"
+                : ""
+        }
       />
     </Dialog>
   );
@@ -1767,15 +1733,7 @@ function ChargeView({
   const link = charge.invoice_url ?? charge.payment_link ?? null;
   const received = RECEIVED.has(String(charge.status));
 
-  const pixMessage =
-    method === "pix" && charge.pix_payload
-      ? buildPixMessage({
-          customerName,
-          companyName,
-          amount,
-          pixPayload: charge.pix_payload,
-        })
-      : null;
+  const pixMessage = null;
 
   const linkMessage =
     (method === "payment_link" || method === "credit_card") && link
@@ -1795,64 +1753,6 @@ function ChargeView({
         ) : null}
       </div>
 
-      {method === "pix" && charge.pix_qr_code ? (
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-          <img
-            src={`data:image/png;base64,${charge.pix_qr_code}`}
-            alt="QR Code PIX"
-            className="h-48 w-48 rounded-md border border-border bg-white p-2"
-          />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="text-xs text-muted-foreground">
-              Escaneie o QR Code ou copie o código PIX (copia e cola).
-            </div>
-            {charge.pix_payload ? (
-              <>
-                <div className="max-h-24 overflow-hidden break-all rounded-md border border-border bg-muted/40 p-2 font-mono text-[10px]">
-                  {charge.pix_payload}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      copyToClipboard(charge.pix_payload!, "PIX copiado")
-                    }
-                  >
-                    <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar PIX
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!whatsappNumber || !pixMessage}
-                    title={!whatsappNumber ? noPhoneTooltip : undefined}
-                    onClick={() => {
-                      if (whatsappNumber && pixMessage) {
-                        openWhatsApp(whatsappNumber, pixMessage);
-                      }
-                    }}
-                  >
-                    <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                    Compartilhar WhatsApp
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={!pixMessage}
-                    onClick={() => {
-                      if (pixMessage) copyToClipboard(pixMessage, "Mensagem copiada");
-                    }}
-                  >
-                    <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar Mensagem
-                  </Button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {method === "payment_link" || method === "credit_card" ? (
         link ? (
