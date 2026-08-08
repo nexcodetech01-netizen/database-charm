@@ -275,8 +275,8 @@ function DashboardPage() {
         value={formatCurrency(dayTotal)}
         caption={
           dayCount > 0
-            ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no dia de hoje.`
-            : "Nenhuma venda faturada hoje até agora."
+            ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no período selecionado.`
+            : "Nenhuma venda faturada no período selecionado."
         }
         icon={DollarSign}
         status={dayTotal > 0 ? "success" : "neutral"}
