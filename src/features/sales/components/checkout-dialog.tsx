@@ -1259,20 +1259,6 @@ export function CheckoutDialog({
                       <span className="font-bold text-gray-100">{formatCurrency(amount)}</span>
                     </div>
                   </div>
-                  <div className="pt-2">
-                    <Button 
-                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 bg-blue-600/90 hover:bg-blue-600"
-                      onClick={handleConfirm}
-                      disabled={setStatus.isPending || createCredit.isPending || openingSettle}
-                    >
-                      {setStatus.isPending || createCredit.isPending || openingSettle ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="mr-2 h-5 w-5" />
-                      )}
-                      Confirmar Crediário (F5)
-                    </Button>
-                  </div>
                 </>
               )}
             </div>
@@ -1564,7 +1550,7 @@ export function CheckoutDialog({
                     : method === "debit_card"
                       ? "Confirmar Débito"
                       : method === "credit"
-                        ? "Avançar para Crediário"
+                        ? "Avançar para Crediário (F5)"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar Pagamento (F5)"}
@@ -1646,7 +1632,7 @@ export function CheckoutDialog({
             </Button>
             <Button onClick={handleConfirmCredit} disabled={openingSettle}>
               {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar Crediário
+              Confirmar Crediário (F5)
             </Button>
           </DialogFooter>
         </DialogContent>
