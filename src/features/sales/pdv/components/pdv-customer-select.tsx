@@ -122,8 +122,8 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
             className="flex-1 h-9 shadow-sm bg-indigo-900/40 border-indigo-500/30 text-indigo-100 hover:bg-indigo-500 hover:text-white transition-colors"
             onClick={() => setOpen(true)}
           >
-            <RefreshCcw className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
-            Trocar (F2)
+            <UserRound className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+            Selecionar (F2)
           </Button>
           <Button
             type="button"
@@ -133,7 +133,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
             onClick={() => setQuickCreateOpen(true)}
           >
             <UserPlus className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
-            + Cadastrar
+            ➕ Novo
           </Button>
         </div>
 
