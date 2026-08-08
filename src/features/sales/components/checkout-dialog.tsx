@@ -1418,9 +1418,7 @@ export function CheckoutDialog({
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
 
-                {method === "pix"
-                  ? "Ao gerar, será exibido o QR Code. O status é atualizado automaticamente."
-                  : method === "credit_card"
+                {method === "credit_card"
                     ? "Escolha o parcelamento e gere a cobrança. O cliente pagará em ambiente seguro."
                     : method === "boleto"
                       ? "Gera boleto bancário via Asaas. Compensação em até 2 dias úteis após pagamento."
