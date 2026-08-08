@@ -499,34 +499,40 @@ export function TransactionFormDialog({
                           <CommandItem
                             value="__none__"
                             onSelect={() => {
-                              setForm({ ...form, category_id: "" });
+                              setForm({ ...form, category_id: "", category: "" });
                               setCategoryOpen(false);
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                !form.category_id ? "opacity-100" : "opacity-0"
+                                (!form.category_id && !form.category) ? "opacity-100" : "opacity-0"
                               )}
                             />
                             Sem categoria
                           </CommandItem>
-                          {filteredCategories.map((c) => (
+                          {filteredCategories.map((cat) => (
                             <CommandItem
-                              key={c.id}
-                              value={c.name}
+                              key={cat.id}
+                              value={cat.name}
                               onSelect={() => {
-                                setForm({ ...form, category_id: c.id });
+                                if (form.type === "expense") {
+                                  setForm({ ...form, category: cat.name, category_id: "" });
+                                } else {
+                                  setForm({ ...form, category_id: cat.id, category: "" });
+                                }
                                 setCategoryOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  form.category_id === c.id ? "opacity-100" : "opacity-0"
+                                  (form.type === "expense" ? form.category === cat.name : form.category_id === cat.id)
+                                    ? "opacity-100"
+                                    : "opacity-0"
                                 )}
                               />
-                              {c.name}
+                              {cat.name}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -535,9 +541,12 @@ export function TransactionFormDialog({
                   </PopoverContent>
                 </Popover>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Se não selecionada, será classificada como "Despesas Gerais" automaticamente.
+                  {form.type === "expense" 
+                    ? "* Categorias de despesa são fixas e gravadas como texto."
+                    : "* Classificação automática para 'Receitas Gerais' caso não informada."}
                 </p>
               </div>
+
             )}
 
             <div>
