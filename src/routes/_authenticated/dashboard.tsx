@@ -16,6 +16,7 @@ import {
   UserPlus,
   Wallet,
   RefreshCw,
+  Printer,
 } from "lucide-react";
 import {
   ActionToolbar,
@@ -57,6 +58,9 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
+import { ML_TEST_ZPL } from "@/features/mercadolivre/constants/test-zpl";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: requirePermission("dashboard.view"),
@@ -90,8 +94,20 @@ function DashboardPage() {
   // Isolamento de homologação: por padrão os indicadores ignoram vendas de teste.
   const [includeHomologation, setIncludeHomologation] = useState(false);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
+  const [mlPrintOpen, setMlPrintOpen] = useState(false);
+  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl"; content: string; id: string } | null>(null);
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "month" | "custom">("today");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
+  const handleTestMLPrint = () => {
+    setMlLabelData({
+      id: "TEST-ZPL-ML",
+      type: "zpl",
+      content: ML_TEST_ZPL
+    });
+    setMlPrintOpen(true);
+  };
+
 
   const timeZone = "America/Sao_Paulo";
   
@@ -251,10 +267,12 @@ function DashboardPage() {
             createLabel="Nova venda"
             onCreate={() => navigate({ to: ROUTES.sales })}
             moreActions={[
+              { label: "Testar Etiqueta ML", icon: Printer, onSelect: handleTestMLPrint },
               { label: "Nova compra", icon: ShoppingBag, onSelect: () => navigate({ to: ROUTES.purchases }) },
               { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
               { label: "Novo cliente", icon: UserPlus, onSelect: () => navigate({ to: ROUTES.customers }) },
             ]}
+
           />
         }
       />
@@ -624,7 +642,14 @@ function DashboardPage() {
         breakdown={breakdown}
         dayTotal={dayTotal}
       />
+
+      <MercadoLivrePrintDialog
+        open={mlPrintOpen}
+        onOpenChange={setMlPrintOpen}
+        labelData={mlLabelData}
+      />
       </div>
+
     </ErrorBoundary>
   );
 }
