@@ -238,12 +238,6 @@ export function CheckoutDialog({
   const [showReceipt, setShowReceipt] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
-  // Efeito para preencher automaticamente o valor recebido em Dinheiro
-  useEffect(() => {
-    if (method === "cash" && !confirmed && !showCompleted) {
-      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    }
-  }, [method, amount, confirmed, showCompleted]);
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
   // BUG-001 — guarda por ref evita re-entrada por stale closure no polling.
