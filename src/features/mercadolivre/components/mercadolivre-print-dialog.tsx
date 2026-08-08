@@ -68,6 +68,10 @@ export function MercadoLivrePrintDialog({
     if (!labelData) return;
     setIsLoading(true);
     
+    // DEBUG LOGS
+    console.log("[ML_PRINT_PROCESS_DEBUG]: Received content size:", labelData.content?.length || 0);
+    console.log("[ML_PRINT_PROCESS_DEBUG]: First 100 chars:", JSON.stringify(labelData.content?.substring(0, 100)));
+
     try {
       let zplBlocks: string[] = [];
       
@@ -75,6 +79,12 @@ export function MercadoLivrePrintDialog({
         // Detectar blocos ^XA ... ^XZ
         const regex = /\^XA[\s\S]*?\^XZ/g;
         zplBlocks = labelData.content.match(regex) || [];
+        console.log("[ML_PRINT_PROCESS_DEBUG]: Blocks found (^XA...^XZ):", zplBlocks.length);
+        
+        if (zplBlocks.length === 0) {
+          console.warn("[ML_PRINT_PROCESS_DEBUG]: Zero ZPL blocks detected. Checking for ^XA presence:", labelData.content.includes("^XA"));
+          console.warn("[ML_PRINT_PROCESS_DEBUG]: Raw content trim:", labelData.content.trim().substring(0, 50));
+        }
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
