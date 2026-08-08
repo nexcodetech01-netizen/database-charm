@@ -6878,6 +6878,7 @@ export type Database = {
           transaction_count: number
         }[]
       }
+      get_dashboard_metrics: { Args: { p_period?: string }; Returns: Json }
       has_permission: {
         Args: {
           _company_id: string

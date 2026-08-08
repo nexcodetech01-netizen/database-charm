@@ -99,7 +99,7 @@ function SalesPage() {
   );
   
   const { data, isLoading } = useSalesList(company.id, effective);
-  const metrics = useSaleMetrics(company.id, range);
+  const metrics = useSaleMetrics(company.id, range, undefined, rangeKey === "today" ? "today" : undefined);
   const { view, isLoading: bellaLoading } = useBellaSales(company.id);
 
 

@@ -393,6 +393,7 @@ export const salesService = {
     companyId: string,
     range?: { from: string; to: string },
     scope?: DataScope,
+    period?: string,
   ) {
     // 1) KPIs por período (apenas vendas pagas)
     let kpiQuery = applyDataScope(
@@ -443,17 +444,22 @@ export const salesService = {
 
     // Receita do dia — fonte única via RPC (Single Source of Truth) com ajuste de Timezone Brasília.
     // Harmoniza Faturamento Bruto (Sales) e Fluxo de Caixa Real (Transactions).
-    const { data: revenueData, error: revenueErr } = await supabase.rpc("get_daily_revenue", {
-      _company_id: companyId,
-      _start_date: range?.from || undefined,
-      _end_date: range?.to || undefined,
-    });
+    const rpcPeriod = period === "today" ? "hoje" : period === "yesterday" ? "ontem" : null;
+    
+    const { data: revenueData, error: revenueErr } = rpcPeriod 
+      ? await supabase.rpc("get_dashboard_metrics", { p_period: rpcPeriod })
+      : await supabase.rpc("get_daily_revenue", {
+          _company_id: companyId,
+          _start_date: range?.from || undefined,
+          _end_date: range?.to || undefined,
+        });
 
     if (revenueErr) throw revenueErr;
 
-    const dayTotal = Number(revenueData?.[0]?.total_revenue ?? 0);
-    const dayReceived = Number(revenueData?.[0]?.total_received ?? 0);
-    const dayCount = Number(revenueData?.[0]?.transaction_count ?? 0);
+    const stats = (revenueData as any)?.[0] || (revenueData as any);
+    const dayTotal = Number(stats?.total_revenue ?? 0);
+    const dayReceived = Number(stats?.total_received ?? 0);
+    const dayCount = Number(stats?.transaction_count ?? 0);
 
 
 

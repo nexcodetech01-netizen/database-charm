@@ -139,6 +139,7 @@ function DashboardPage() {
     company.id,
     range,
     includeHomologation ? "all" : "production",
+    period,
   );
   const inventory = useInventoryMetrics(company.id);
   const finance = useFinanceOverview(company.id);

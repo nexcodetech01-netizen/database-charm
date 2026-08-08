@@ -12,8 +12,8 @@ export const salesKeys = {
   all: ["sales"] as const,
   list: (companyId: string, filters: SaleListFilters) =>
     ["sales", "list", companyId, filters] as const,
-  metrics: (companyId: string, range?: { from: string; to: string }) =>
-    ["sales", "metrics", companyId, range ?? null] as const,
+  metrics: (companyId: string, range?: { from: string; to: string }, period?: string) =>
+    ["sales", "metrics", companyId, range ?? null, period ?? null] as const,
   statusBreakdown: (companyId: string, range?: { from: string; to: string }) =>
     ["sales", "status-breakdown", companyId, range ?? null] as const,
   detail: (id: string) => ["sales", "detail", id] as const,
@@ -68,12 +68,13 @@ export function useSaleMetrics(
   companyId: string,
   range?: { from: string; to: string },
   scopeOverride?: DataScope,
+  period?: string,
 ) {
   const globalScope = useDataScope();
   const scope = scopeOverride ?? globalScope;
   return useQuery({
-    queryKey: [...salesKeys.metrics(companyId, range), scope],
-    queryFn: () => salesService.metrics(companyId, range, scope),
+    queryKey: [...salesKeys.metrics(companyId, range, period), scope],
+    queryFn: () => salesService.metrics(companyId, range, scope, period),
     enabled: !!companyId,
   });
 }
