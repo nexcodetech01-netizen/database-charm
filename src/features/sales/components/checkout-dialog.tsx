@@ -858,8 +858,8 @@ export function CheckoutDialog({
 
     // Crediário — abre conta no cliente e registra entrada (opcional).
     if (method === "credit") {
-      if (!customerId && (amount - entradaValue > 0)) {
-        toast.error("Venda no crediário exige cliente vinculado.");
+      if (!customerId) {
+        toast.error("Para vender no crediário, selecione um cliente cadastrado.");
         return;
       }
       if (entradaValue > 0 && !creditDownMethod) {
@@ -950,7 +950,7 @@ export function CheckoutDialog({
 
         // eslint-disable-next-line no-console
         console.info("[checkout-dialog] create_credit_sale response", res);
-        toast.success("Crediário aberto", {
+        toast.success("Venda no Crediário Registrada com Sucesso!", {
           description: `Saldo em aberto: ${formatCurrency(res.balance)}`,
         });
         onPaid?.({ method });

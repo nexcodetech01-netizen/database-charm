@@ -48,7 +48,7 @@ export function SaleCompletedDialog({
           </div>
           <DialogTitle className="text-center">Venda concluída</DialogTitle>
           <DialogDescription className="text-center">
-            Pagamento registrado com sucesso.
+            Venda registrada com sucesso.
           </DialogDescription>
         </DialogHeader>
 
