@@ -245,7 +245,13 @@ export const salesService = {
         q = q.or(orParts.join(","));
       }
       q = applyDataScope(q, scope);
-      if (filters.status) q = q.eq("status", filters.status);
+      if (filters.status) {
+        if (filters.status === "!cancelled") {
+          q = q.neq("status", "cancelled");
+        } else {
+          q = q.eq("status", filters.status);
+        }
+      }
       if (filters.customerId) q = q.eq("customer_id", filters.customerId);
       if (filters.paymentMethod)
         q = q.eq("payment_method", filters.paymentMethod);
@@ -501,9 +507,9 @@ export const salesService = {
 
 
 
-    const paid = kpiRows.filter((r) => r.status === "paid");
+    const paid = kpiRows.filter((r) => r.status === "paid" || r.status === "completed");
     const month = paid.filter(
-      (r) => !!r.sale_date && r.sale_date >= monthStartISO,
+      (r) => !!r.sale_date && r.sale_date >= monthStartISO && r.sale_date <= todayISO,
     );
 
     const monthTotal = month.reduce((s, r) => s + Number(r.grand_total ?? 0), 0);

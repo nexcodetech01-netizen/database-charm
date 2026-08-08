@@ -205,17 +205,9 @@ function SalesPage() {
   }
 
   async function handleDelete(s: SaleWithMeta) {
-    if (s.status === "paid" || s.status === "cancelled") {
-      toast.error("Não é possível excluir esta venda", {
-        description:
-          "Vendas finalizadas não podem ser excluídas. Utilize a opção 'Cancelar venda' para reverter estoque e manter o histórico.",
-      });
-      return;
-    }
-    if (!confirm(`Excluir permanentemente a venda "${s.number}"?`)) return;
     try {
       await deleteMut.mutateAsync(s.id);
-      toast.success("Venda excluída");
+      toast.success("Venda excluída permanentemente");
     } catch (e) {
       if (isFiscalDeleteBlockedError(e)) {
         toast.error(FISCAL_DELETE_BLOCKED_MESSAGE, {

@@ -4,24 +4,23 @@ import type { SaleStatus } from "../types";
 const MAP: Record<SaleStatus, { label: string; className: string }> = {
   draft: {
     label: "Rascunho",
-    className: "bg-muted text-muted-foreground border-border",
+    className: "bg-slate-700/50 text-slate-400 border-slate-700/50",
   },
   pending: {
     label: "Pendente",
-    className: "bg-warning/10 text-warning border-warning/20",
+    className: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   },
   partially_paid: {
     label: "Parcialmente paga",
-    className:
-      "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    className: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   },
   paid: {
     label: "Paga",
-    className: "bg-success/10 text-success border-success/20",
+    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   },
   cancelled: {
     label: "Cancelada",
-    className: "bg-destructive/10 text-destructive border-destructive/20",
+    className: "bg-slate-700/50 text-slate-400 border-slate-700/50",
   },
 };
 
