@@ -1773,15 +1773,7 @@ function ChargeView({
   const link = charge.invoice_url ?? charge.payment_link ?? null;
   const received = RECEIVED.has(String(charge.status));
 
-  const pixMessage =
-    method === "pix" && charge.pix_payload
-      ? buildPixMessage({
-          customerName,
-          companyName,
-          amount,
-          pixPayload: charge.pix_payload,
-        })
-      : null;
+  const pixMessage = null;
 
   const linkMessage =
     (method === "payment_link" || method === "credit_card") && link
