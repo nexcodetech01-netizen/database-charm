@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   BarChart3,
   DollarSign,
+  HelpCircle,
   LineChart,
   Package,
   PackageMinus,
@@ -48,6 +49,7 @@ import { CashClosingReminder } from "@/features/cash";
 import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh";
 import { requirePermission } from "@/features/rbac";
 import { InterestDashboardCard } from "@/features/interests";
+import { RevenueAuditDialog } from "@/features/sales/components/revenue-audit-dialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   beforeLoad: requirePermission("dashboard.view"),
@@ -80,6 +82,7 @@ function DashboardPage() {
 
   // Isolamento de homologação: por padrão os indicadores ignoram vendas de teste.
   const [includeHomologation, setIncludeHomologation] = useState(false);
+  const [isAuditOpen, setIsAuditOpen] = useState(false);
 
   const salesMetrics = useSaleMetrics(
     company.id,
@@ -100,6 +103,7 @@ function DashboardPage() {
   // Faturamento hoje — vendas status='paid' com sale_date = company_today().
   const dayTotal = salesMetrics.data?.dayTotal ?? 0;
   const dayCount = salesMetrics.data?.dayCount ?? 0;
+  const breakdown = salesMetrics.data?.breakdown ?? [];
   // Caixa disponível — fonte oficial: soma de financial_accounts ativas.
   const cash = finance.data?.currentBalance ?? 0;
   // Recebimentos ≠ faturamento: baixas efetivadas hoje (paid_at no dia da empresa).
@@ -198,7 +202,18 @@ function DashboardPage() {
 
       {/* 2 — Hero KPI: receita do período domina a tela */}
       <HeroMetric
-        label="Receita do período · hoje"
+        label={
+          <div className="flex items-center gap-2">
+            <span>Receita do período · hoje</span>
+            <button 
+              onClick={() => setIsAuditOpen(true)}
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-help"
+              title="Ver detalhes do cálculo"
+            >
+              <HelpCircle className="h-3 w-3" />
+            </button>
+          </div>
+        }
         value={formatCurrency(dayTotal)}
         caption={
           dayCount > 0
