@@ -165,7 +165,10 @@ export function resolveSaleStatus(
   }
 
   if (ctx.isEdit && ctx.persistedStatus === "paid") return "paid";
-  return "pending";
+  
+  // No checkout (PDV), o status é determinado pelo valor pago.
+  // Se chegamos aqui sem valor pago informado, o status inicial de uma venda ativa é pending.
+  return ctx.finalize ? "pending" : state.status;
 }
 
 /** `true` quando a venda precisa ser promovida a `pending` após o INSERT. */
