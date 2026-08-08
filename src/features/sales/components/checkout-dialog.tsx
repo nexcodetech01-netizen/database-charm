@@ -1561,8 +1561,6 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-
-
               className="min-w-[180px]"
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
@@ -1583,13 +1581,90 @@ export function CheckoutDialog({
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar"}
-
             </Button>
           ) : null}
-
-
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showCreditConfig} onOpenChange={setShowCreditConfig}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configuração do Crediário</DialogTitle>
+            <DialogDescription>
+              Defina os termos de pagamento para esta venda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg bg-muted/50 p-3 text-sm">
+              <div className="flex justify-between font-medium">
+                <span>Total da Venda:</span>
+                <span>{formatCurrency(amount)}</span>
+              </div>
+              {entradaValue > 0 && (
+                <>
+                  <div className="mt-1 flex justify-between text-success">
+                    <span>Entrada (a pagar agora):</span>
+                    <span>{formatCurrency(entradaValue)}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between border-t border-border/50 pt-1 font-bold text-destructive">
+                    <span>Saldo no Crediário:</span>
+                    <span>{formatCurrency(saldoValue)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {entradaValue > 0 && (
+              <div className="space-y-2">
+                <Label>Forma de pagamento da entrada</Label>
+                <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Data de Vencimento do Saldo</Label>
+              <Input
+                type="date"
+                value={saldoDueDate}
+                onChange={(e) => setSaldoDueDate(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Data em que o título será gerado no Contas a Receber.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações do Título</Label>
+              <Input
+                value={creditNotes}
+                onChange={(e) => setCreditNotes(e.target.value)}
+                placeholder="Ex: Pagamento em 30 dias"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCreditConfig(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmCredit} disabled={openingSettle}>
+              {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Crediário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ReceiptDialog
         open={showReceipt}
         onOpenChange={setShowReceipt}
@@ -1613,6 +1688,8 @@ export function CheckoutDialog({
       <SaleCompletedDialog
         open={showCompleted}
         onOpenChange={setShowCompleted}
+        title={method === "credit" ? "Venda no Crediário Registrada com Sucesso!" : undefined}
+        description={method === "credit" ? "O título foi gerado no Contas a Receber do cliente." : undefined}
         onPrintReceipt={() => setShowReceipt(true)}
         onViewSale={goToSaleDetails}
         onNewSale={
