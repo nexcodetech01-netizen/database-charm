@@ -337,7 +337,7 @@ function DashboardPage() {
       {/* 3 — MetricGrid: Receita, Resultado a receber, Caixa, Alertas */}
       <MetricGrid columns={4} label="Indicadores principais">
         <MetricCard
-          title={`Receita ${periodLabel.toLowerCase()}`}
+          title={`RECEITA ${periodLabel.toUpperCase()}`}
           value={formatCurrency(dayTotal)}
           icon={DollarSign}
           status="success"
