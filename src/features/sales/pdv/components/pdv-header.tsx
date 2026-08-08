@@ -19,10 +19,13 @@ export function PDVHeader({ openedAt, companyId }: Props = {}) {
           <p className="text-xs text-muted-foreground">Atendimento de balcão</p>
         </div>
       </div>
-      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Wallet className="h-3.5 w-3.5" />
-        {openedAt ? `Caixa aberto em ${formatOpenedAt(openedAt)}` : "Caixa fechado"}
-      </span>
+      <div className="flex items-center gap-4">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Wallet className="h-3.5 w-3.5" />
+          {openedAt ? `Caixa aberto em ${formatOpenedAt(openedAt)}` : "Caixa fechado"}
+        </span>
+        {companyId && <PDVSettingsDialog companyId={companyId} />}
+      </div>
     </header>
   );
 }
