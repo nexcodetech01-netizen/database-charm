@@ -77,7 +77,7 @@ const PDVCartRow = memo(function PDVCartRow({
       onFocus={activate}
       onMouseDown={activate}
       onDoubleClick={() => onQuantityChange(uiKey, item.quantity)}
-      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
+      className="grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/40 data-[active]:bg-muted/50 data-[active]:ring-1 data-[active]:ring-inset data-[active]:ring-primary/30"
     >
       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted/40">
         {item.image_url ? (
@@ -188,48 +188,50 @@ const PDVCartRow = memo(function PDVCartRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3 ml-2">
-        <div className="flex items-center rounded-lg border bg-background overflow-hidden">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 rounded-none hover:bg-muted"
-            disabled={readOnly}
-            aria-label={`Diminuir quantidade de ${item.description}`}
-            onClick={() => onQuantityChange(uiKey, item.quantity - 1)}
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </Button>
-          <Input
-            id={pdvQuantityInputId(uiKey)}
-            type="number"
-            min={1}
-            step="1"
-            inputMode="numeric"
-            disabled={readOnly}
-            aria-label={`Quantidade de ${item.description}`}
-            value={item.quantity}
-            onChange={(e) => onQuantityChange(uiKey, Number(e.target.value))}
-            className="h-7 w-10 border-0 px-0 text-center text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-          />
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 rounded-none hover:bg-muted"
-            disabled={readOnly}
-            aria-label={`Aumentar quantidade de ${item.description}`}
-            onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      <div className="flex shrink-0 items-center justify-between md:justify-end gap-3 md:ml-2 col-span-2 md:col-span-1 mt-2 md:mt-0 pt-2 md:pt-0 border-t md:border-0 border-muted/50">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-lg border bg-background overflow-hidden h-8">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-full w-8 rounded-none hover:bg-muted"
+              disabled={readOnly}
+              aria-label={`Diminuir quantidade de ${item.description}`}
+              onClick={() => onQuantityChange(uiKey, item.quantity - 1)}
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <Input
+              id={pdvQuantityInputId(uiKey)}
+              type="number"
+              min={1}
+              step="1"
+              inputMode="numeric"
+              disabled={readOnly}
+              aria-label={`Quantidade de ${item.description}`}
+              value={item.quantity}
+              onChange={(e) => onQuantityChange(uiKey, Number(e.target.value))}
+              className="h-full w-10 border-0 px-0 text-center text-sm font-semibold tabular-nums shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-full w-8 rounded-none hover:bg-muted"
+              disabled={readOnly}
+              aria-label={`Aumentar quantidade de ${item.description}`}
+              onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
 
-        <div className="w-20 text-right">
-          <p className="text-sm font-bold tabular-nums">
-            {formatCurrency(computeItemTotal(item))}
-          </p>
+          <div className="min-w-[80px] text-right">
+            <p className="text-sm font-bold tabular-nums">
+              {formatCurrency(computeItemTotal(item))}
+            </p>
+          </div>
         </div>
 
         <Button
