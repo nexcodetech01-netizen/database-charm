@@ -15,6 +15,7 @@ import {
   TrendingUp,
   UserPlus,
   Wallet,
+  RefreshCw,
 } from "lucide-react";
 import {
   ActionToolbar,
@@ -353,7 +354,19 @@ function DashboardPage() {
         value={salesMetrics.isError ? "Erro" : formatCurrency(dayTotal)}
         caption={
           salesMetrics.isError
-            ? "Ocorreu um problema ao carregar os dados financeiros."
+            ? (
+              <div className="flex items-center gap-2">
+                <span>Ocorreu um problema ao carregar os dados financeiros.</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 px-2 text-xs" 
+                  onClick={() => salesMetrics.refetch()}
+                >
+                  <RefreshCw className="mr-1 h-3 w-3" /> Atualizar
+                </Button>
+              </div>
+            )
             : dayCount > 0
             ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no período selecionado.`
             : "Nenhuma venda faturada no período selecionado."
@@ -367,8 +380,18 @@ function DashboardPage() {
             density="normal"
             loading={finance.isLoading || salesMetrics.isLoading || salesMetrics.isFetching}
             items={[
-              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: salesMetrics.isError ? "danger" : "success" },
-              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: finance.isError ? "danger" : "info" },
+              { 
+                label: `RECEBIDO ${periodLabel.toUpperCase()}`, 
+                value: salesMetrics.isError ? "Erro" : formatCurrency(receiptsTotal), 
+                icon: Wallet, 
+                status: salesMetrics.isError ? "danger" : "success" 
+              },
+              { 
+                label: "Caixa disponível", 
+                value: finance.isError ? "Erro" : formatCurrency(cash), 
+                icon: Wallet, 
+                status: finance.isError ? "danger" : "info" 
+              },
             ]}
           />
         }
@@ -382,35 +405,77 @@ function DashboardPage() {
           icon={DollarSign}
           status={salesMetrics.isError ? "danger" : "success"}
           loading={salesMetrics.isLoading || salesMetrics.isFetching}
-          footer={salesMetrics.isError ? "Falha ao carregar" : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)}
+          footer={
+            salesMetrics.isError ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-full px-2 text-[10px] justify-start" 
+                onClick={() => salesMetrics.refetch()}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente
+              </Button>
+            ) : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)
+          }
         />
         <MetricCard
           title="Dinheiro para entrar"
-          value={formatCurrency(receivable)}
+          value={finance.isError ? "Erro" : formatCurrency(receivable)}
           icon={TrendingUp}
-          status="info"
+          status={finance.isError ? "danger" : "info"}
           loading={finance.isLoading}
           footer={
-            receivableCount > 0
+            finance.isError ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-full px-2 text-[10px] justify-start" 
+                onClick={() => finance.refetch()}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente
+              </Button>
+            ) : receivableCount > 0
               ? `${receivableCount} título${receivableCount > 1 ? "s" : ""} em aberto`
               : "Nenhuma cobrança em aberto"
           }
         />
         <MetricCard
           title="Caixa disponível"
-          value={formatCurrency(cash)}
+          value={finance.isError ? "Erro" : formatCurrency(cash)}
           icon={Wallet}
-          status="neutral"
+          status={finance.isError ? "danger" : "neutral"}
           loading={finance.isLoading}
-          footer="Saldo consolidado"
+          footer={
+            finance.isError ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-full px-2 text-[10px] justify-start" 
+                onClick={() => finance.refetch()}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente
+              </Button>
+            ) : "Saldo consolidado"
+          }
         />
         <MetricCard
           title="Alertas de estoque"
-          value={String(belowMin.length)}
+          value={inventory.isError ? "Erro" : String(belowMin.length)}
           icon={AlertTriangle}
-          status={belowMin.length > 0 ? "warning" : "success"}
+          status={inventory.isError ? "danger" : (belowMin.length > 0 ? "warning" : "success")}
           loading={inventory.isLoading}
-          footer={belowMin.length > 0 ? "Produtos abaixo do mínimo" : "Nenhum alerta de estoque"}
+          footer={
+            inventory.isError ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-full px-2 text-[10px] justify-start" 
+                onClick={() => inventory.refetch()}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" /> Tentar novamente
+              </Button>
+            ) : (belowMin.length > 0 ? "Produtos abaixo do mínimo" : "Nenhum alerta de estoque")
+          }
         />
       </MetricGrid>
 
