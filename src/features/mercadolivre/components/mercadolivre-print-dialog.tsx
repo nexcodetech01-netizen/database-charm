@@ -67,28 +67,31 @@ export function MercadoLivrePrintDialog({
   const processLabelData = async () => {
     if (!labelData) return;
     setIsLoading(true);
-    
+
     try {
       let zplBlocks: string[] = [];
       
       if (labelData.type === "zpl") {
-        // Detectar blocos ^XA ... ^XZ
+        // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
         const regex = /\^XA[\s\S]*?\^XZ/g;
         zplBlocks = labelData.content.match(regex) || [];
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
       if (zplBlocks.length === 0) {
-        const block: ZPLBlock = {
-          id: "block-0",
-          zpl: labelData.type === "zpl" ? labelData.content : "",
-          type: "label",
-          title: "📦 Etiqueta de envio",
-        };
-        
-        const prepared = await prepareBlock(block, labelData);
-        setBlocks([prepared]);
-        setActiveTab("block-0");
+        const content = labelData.content.trim();
+        if (content.length > 0 || labelData.type === "pdf") {
+          const block: ZPLBlock = {
+            id: "block-0",
+            zpl: labelData.type === "zpl" ? labelData.content : "",
+            type: "label",
+            title: "📦 Etiqueta de envio",
+          };
+          
+          const prepared = await prepareBlock(block, labelData);
+          setBlocks([prepared]);
+          setActiveTab("block-0");
+        }
       } else {
         // Múltiplos blocos ZPL
         const preparedBlocks = await Promise.all(
