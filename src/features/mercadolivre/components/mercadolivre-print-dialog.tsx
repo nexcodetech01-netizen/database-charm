@@ -52,17 +52,31 @@ export function MercadoLivrePrintDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  useEffect(() => {
-    if (open && labelData) {
-      processLabelData();
+  const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
+    let blob: Blob;
+    
+    if (source.type === "pdf") {
+      const byteCharacters = atob(source.content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      blob = new Blob([byteArray], { type: "application/pdf" });
     } else {
-      // Cleanup
-      blocks.forEach(b => {
-        if (b.previewUrl) URL.revokeObjectURL(b.previewUrl);
+      // Converter ZPL para PDF via Labelary
+      blob = await labelaryService.convertToPdf({
+        id: source.id + "_" + block.id,
+        zpl: block.zpl,
       });
-      setBlocks([]);
     }
-  }, [open, labelData, processLabelData]);
+
+    return {
+      ...block,
+      blob,
+      previewUrl: URL.createObjectURL(blob)
+    };
+  };
 
   const processLabelData = useCallback(async () => {
     if (!labelData) {
@@ -139,31 +153,17 @@ export function MercadoLivrePrintDialog({
     }
   }, [labelData]);
 
-  const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
-    let blob: Blob;
-    
-    if (source.type === "pdf") {
-      const byteCharacters = atob(source.content);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      blob = new Blob([byteArray], { type: "application/pdf" });
+  useEffect(() => {
+    if (open && labelData) {
+      processLabelData();
     } else {
-      // Converter ZPL para PDF via Labelary
-      blob = await labelaryService.convertToPdf({
-        id: source.id + "_" + block.id,
-        zpl: block.zpl,
+      // Cleanup
+      blocks.forEach(b => {
+        if (b.previewUrl) URL.revokeObjectURL(b.previewUrl);
       });
+      setBlocks([]);
     }
-
-    return {
-      ...block,
-      blob,
-      previewUrl: URL.createObjectURL(blob)
-    };
-  };
+  }, [open, labelData, processLabelData]);
 
   const handlePrintBlock = async (block: ZPLBlock) => {
     if (!block.blob) return;
@@ -216,8 +216,6 @@ export function MercadoLivrePrintDialog({
   if (!open) return null;
   
   console.log("[ML_PRINT_DEBUG] Rendering UI. Open:", open, "Blocks:", blocks.length, "ActiveTab:", activeTab);
-
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
