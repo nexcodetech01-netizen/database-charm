@@ -14,6 +14,7 @@ import {
   useSalesList,
   useSetSaleStatus,
   useSaleMetrics,
+  useRestoreSale,
 } from "@/features/sales";
 import { SalesBellaHints } from "@/features/bella-ai";
 import { BellaSalesPanel } from "@/features/accounting-ai/sales";
@@ -105,6 +106,7 @@ function SalesPage() {
 
   const setStatusMut = useSetSaleStatus();
   const deleteMut = useDeleteSale();
+  const restoreMut = useRestoreSale();
   const showNextAction = useNextAction();
 
   const [settleSale, setSettleSale] = useState<SaleWithMeta | null>(null);
@@ -207,7 +209,20 @@ function SalesPage() {
   async function handleDelete(s: SaleWithMeta) {
     try {
       await deleteMut.mutateAsync(s.id);
-      toast.success("Venda excluída permanentemente");
+      toast.success("Venda excluída", {
+        description: "O registro foi movido para a lixeira.",
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await restoreMut.mutateAsync(s.id);
+              toast.success("Venda restaurada com sucesso!");
+            } catch (err) {
+              toast.error("Erro ao restaurar venda.");
+            }
+          },
+        },
+      });
     } catch (e) {
       if (isFiscalDeleteBlockedError(e)) {
         toast.error(FISCAL_DELETE_BLOCKED_MESSAGE, {
@@ -220,6 +235,15 @@ function SalesPage() {
         description: e instanceof Error ? e.message : undefined,
       });
     }
+  }
+
+  function handleSort(key: any) {
+    setFilters(prev => ({
+      ...prev,
+      sortBy: key,
+      sortDir: prev.sortBy === key && prev.sortDir === "desc" ? "asc" : "desc",
+      page: 1
+    }));
   }
 
   return (
@@ -294,6 +318,7 @@ function SalesPage() {
             onMarkPaid={handleMarkPaid}
             onCancel={(s) => handleStatus(s, "cancelled", "cancelada")}
             onDelete={handleDelete}
+            onSort={handleSort}
           />
         </TabsContent>
 

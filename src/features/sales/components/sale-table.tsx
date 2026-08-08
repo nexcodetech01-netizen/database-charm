@@ -42,6 +42,7 @@ interface Props {
   onMarkPaid: (s: SaleWithMeta) => void;
   onCancel: (s: SaleWithMeta) => void;
   onDelete: (s: SaleWithMeta) => void;
+  onSort?: (key: any) => void;
 }
 
 export function SaleTable({
@@ -63,12 +64,20 @@ export function SaleTable({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="py-4">Número</TableHead>
+              <TableHead className="py-4 cursor-pointer hover:text-primary transition-colors" onClick={() => onSort?.("number")}>
+                Número
+              </TableHead>
               <TableHead className="py-4">Cliente</TableHead>
-              <TableHead className="py-4">Data da venda</TableHead>
-              <TableHead className="py-4">Data do pagamento</TableHead>
+              <TableHead className="py-4 cursor-pointer hover:text-primary transition-colors" onClick={() => onSort?.("sale_date")}>
+                Data da venda
+              </TableHead>
+              <TableHead className="py-4 cursor-pointer hover:text-primary transition-colors" onClick={() => onSort?.("paid_at")}>
+                Data do pagamento
+              </TableHead>
               <TableHead className="py-4 text-right">Itens</TableHead>
-              <TableHead className="py-4 text-right">Total</TableHead>
+              <TableHead className="py-4 text-right cursor-pointer hover:text-primary transition-colors" onClick={() => onSort?.("grand_total")}>
+                Total
+              </TableHead>
               <TableHead className="py-4">Status</TableHead>
               <TableHead className="py-4 w-[52px]" />
             </TableRow>
