@@ -209,6 +209,7 @@ export const cashService = {
         .or(`settlement_session_id.eq.${session.id},and(paid_at.gte.${session.opened_at},paid_at.lte.${session.closed_at || new Date().toISOString()})`)
     ]);
 
+
     if (salesRes.error) throw salesRes.error;
     if (movementsRes.error) throw movementsRes.error;
     if (receiptsRes.error) throw receiptsRes.error;
