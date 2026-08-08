@@ -642,7 +642,14 @@ function DashboardPage() {
         breakdown={breakdown}
         dayTotal={dayTotal}
       />
+
+      <MercadoLivrePrintDialog
+        open={mlPrintOpen}
+        onOpenChange={setMlPrintOpen}
+        labelData={mlLabelData}
+      />
       </div>
+
     </ErrorBoundary>
   );
 }
