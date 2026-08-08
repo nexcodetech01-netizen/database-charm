@@ -1263,7 +1263,7 @@ export function CheckoutDialog({
                   </div>
                   <div className="pt-2">
                     <Button 
-                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 bg-primary/90 hover:bg-primary"
                       onClick={handleConfirm}
                       disabled={setStatus.isPending || createCredit.isPending || openingSettle}
                     >
@@ -1272,7 +1272,7 @@ export function CheckoutDialog({
                       ) : (
                         <CheckCircle2 className="mr-2 h-5 w-5" />
                       )}
-                      Avançar para Crediário (F5)
+                      Confirmar Crediário (F5)
                     </Button>
                   </div>
                 </>
