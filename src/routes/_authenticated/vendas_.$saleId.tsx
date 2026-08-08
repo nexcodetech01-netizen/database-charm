@@ -553,8 +553,15 @@ function SaleWorkspace({
           emphasis
           mono
         />
-        {(sale.status === "partially_paid" || (sale.status === "pending" && sale.payment_method === 'credit')) && (
+        {sale.payment_method === 'credit' ? (
           <CreditSummaryItems saleId={sale.id} />
+        ) : (
+          <SummaryRow
+            label="Valor Pago"
+            value={formatCurrency(sale.status === 'paid' ? financials.grand : 0)}
+            mono
+            className={sale.status === 'paid' ? "text-success" : ""}
+          />
         )}
       </div>
       <div className="space-y-2 border-t border-border pt-3">
