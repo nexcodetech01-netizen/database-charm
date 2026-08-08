@@ -185,19 +185,19 @@ function FinancePage() {
             value="receivables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
-            A Receber
+            Vendas a Receber
           </TabsTrigger>
           <TabsTrigger 
             value="payables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
-            A Pagar
+            Contas a Pagar
           </TabsTrigger>
           <TabsTrigger 
             value="cashflow" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-medium whitespace-nowrap"
           >
-            Extrato
+            Extrato de Movimentações
           </TabsTrigger>
           <TabsTrigger 
             value="insights" 

@@ -178,18 +178,12 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
         <div>
           <h2 className="text-base font-semibold">Entradas e Saídas Manuais</h2>
           <p className="text-sm text-muted-foreground">
-            Receitas, despesas e transferências entre contas.
+            Vendas, investimentos, compras e despesas manuais.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleNew("transfer")}>
-            <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleNew("expense")}>
-            <ArrowUpRight className="mr-1.5 h-4 w-4" /> Despesa
-          </Button>
-          <Button size="sm" onClick={() => handleNew("income")}>
-            <Plus className="mr-1.5 h-4 w-4" /> Receita
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" /> Nova Movimentação
           </Button>
         </div>
       </div>
