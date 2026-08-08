@@ -457,34 +457,48 @@ export const financeService = {
   },
 
   /**
-   * Exclusão restrita a lançamentos manuais ainda não liquidados.
-   * Títulos gerados por processos de negócio (venda, crediário, devolução,
-   * compra, Bella Pay, transferência) ou já pagos nunca podem ser apagados —
-   * isso deixaria saldo e caixa inconsistentes. Para desfazer uma baixa use
-   * `reverseTransaction` (motor único de estorno).
+   * Exclusão de lançamentos.
+   *
+   * Sprint 8.5: Se o lançamento estiver 'paid' (liquidado), executa o estorno
+   * automático via motor ('reverse_financial_transaction') antes da deleção.
+   * Lançamentos originados por processos de negócio (venda, compra, etc) continuam
+   * protegidos contra exclusão direta para manter a integridade, mas o erro de 
+   * "liquidado" foi removido em favor do estorno automático para itens manuais.
    */
   async removeTransaction(id: string) {
     const { data: tx, error: readErr } = await supabase
       .from("financial_transactions")
-      .select("id,status,source")
+      .select("id,status,source,description")
       .eq("id", id)
       .maybeSingle();
     if (readErr) throw readErr;
     if (!tx) throw new Error("Lançamento financeiro não encontrado.");
 
-    if (tx.status === "paid") {
-      throw new Error(
-        "Lançamento já liquidado não pode ser excluído. Faça o estorno antes (motor financeiro).",
-      );
-    }
-
     const source = (tx.source ?? "manual").toLowerCase();
-    if (source !== "manual") {
+    
+    // 1. Proteção de integridade: Processos automáticos do ERP não podem ser excluídos pelo Financeiro
+    if (source !== "manual" && source !== "transfer") {
       throw new Error(
-        "Lançamentos originados por processos de negócio (venda, crediário, devolução, compra, Bella Pay, transferência) não podem ser excluídos pelo Financeiro.",
+        `Lançamentos originados por '${tx.source}' não podem ser excluídos. Cancele ou estorne o processo de origem (venda/compra).`,
       );
     }
 
+    // 2. Se liquidado, estorna primeiro (Motor Financeiro V2)
+    if (tx.status === "paid") {
+      const { error: revErr } = await supabase.rpc("reverse_financial_transaction", {
+        _transaction_id: id,
+        _notes: `Estorno automático para exclusão do lançamento: ${tx.description}`,
+      });
+      
+      if (revErr) {
+        if (revErr.message?.includes("CAIXA_FECHADO")) {
+          throw new Error("Não é possível excluir: o lançamento está liquidado e o caixa está fechado. Abra o caixa para permitir o estorno automático.");
+        }
+        throw revErr;
+      }
+    }
+
+    // 3. Deleta o registro (ou marca como deletado se preferir, aqui usamos delete real conforme solicitado)
     const { error } = await supabase.from("financial_transactions").delete().eq("id", id);
     if (error) throw error;
   },
