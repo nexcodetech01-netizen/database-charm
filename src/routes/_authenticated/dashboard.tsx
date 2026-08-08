@@ -350,23 +350,25 @@ function DashboardPage() {
             </button>
           </div>
         }
-        value={formatCurrency(dayTotal)}
+        value={salesMetrics.isError ? "Erro" : formatCurrency(dayTotal)}
         caption={
-          dayCount > 0
+          salesMetrics.isError
+            ? "Ocorreu um problema ao carregar os dados financeiros."
+            : dayCount > 0
             ? `${dayCount} venda${dayCount > 1 ? "s" : ""} faturada${dayCount > 1 ? "s" : ""} no período selecionado.`
             : "Nenhuma venda faturada no período selecionado."
         }
         icon={DollarSign}
-        status={dayTotal > 0 ? "success" : "neutral"}
-        loading={salesMetrics.isLoading}
+        status={salesMetrics.isError ? "danger" : (dayTotal > 0 ? "success" : "neutral")}
+        loading={salesMetrics.isLoading || salesMetrics.isFetching}
         side={
           <StatStack
             orientation="vertical"
             density="normal"
-            loading={finance.isLoading || salesMetrics.isLoading}
+            loading={finance.isLoading || salesMetrics.isLoading || salesMetrics.isFetching}
             items={[
-              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: "success" },
-              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: "info" },
+              { label: `RECEBIDO ${periodLabel.toUpperCase()}`, value: formatCurrency(receiptsTotal), icon: Wallet, status: salesMetrics.isError ? "danger" : "success" },
+              { label: "Caixa disponível", value: formatCurrency(cash), icon: Wallet, status: finance.isError ? "danger" : "info" },
             ]}
           />
         }
@@ -376,11 +378,11 @@ function DashboardPage() {
       <MetricGrid columns={4} label="Indicadores principais">
         <MetricCard
           title={`RECEITA ${periodLabel.toUpperCase()}`}
-          value={formatCurrency(dayTotal)}
+          value={salesMetrics.isError ? "Erro" : formatCurrency(dayTotal)}
           icon={DollarSign}
-          status="success"
-          loading={salesMetrics.isLoading}
-          footer={dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`}
+          status={salesMetrics.isError ? "danger" : "success"}
+          loading={salesMetrics.isLoading || salesMetrics.isFetching}
+          footer={salesMetrics.isError ? "Falha ao carregar" : (dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : `Sem vendas ${periodLabel.toLowerCase()}`)}
         />
         <MetricCard
           title="Dinheiro para entrar"
