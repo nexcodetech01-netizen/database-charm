@@ -16,6 +16,9 @@ interface Props {
   onViewSale: () => void;
   /** Fecha diálogos e limpa carrinho/cliente para uma nova venda. */
   onNewSale?: () => void;
+  /** Mensagem personalizada de sucesso. */
+  title?: string;
+  description?: string;
 }
 
 /**
@@ -29,6 +32,8 @@ export function SaleCompletedDialog({
   onPrintReceipt,
   onViewSale,
   onNewSale,
+  title = "Venda concluída",
+  description = "Venda registrada com sucesso.",
 }: Props) {
   const printRef = useRef<HTMLButtonElement>(null);
 
@@ -46,9 +51,9 @@ export function SaleCompletedDialog({
           <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-emerald-500/10 text-emerald-600">
             <CheckCircle2 className="h-7 w-7" />
           </div>
-          <DialogTitle className="text-center">Venda concluída</DialogTitle>
+          <DialogTitle className="text-center">{title}</DialogTitle>
           <DialogDescription className="text-center">
-            Venda registrada com sucesso.
+            {description}
           </DialogDescription>
         </DialogHeader>
 
