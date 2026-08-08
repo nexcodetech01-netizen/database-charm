@@ -159,7 +159,7 @@ export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
         )}
       </div>
 
-      <div className="rounded-lg border border-border">
+      <div className="rounded-lg border border-border bg-card shadow-sm">
         <div className="border-b border-border bg-muted/40 px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Recebimentos ({payments.length})
         </div>
@@ -169,6 +169,9 @@ export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
           </div>
         ) : (
           <div className="divide-y divide-border">
+            <div className="bg-muted/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Entradas e Recebimentos
+            </div>
             {payments.map((p) => (
               <div
                 key={p.id}

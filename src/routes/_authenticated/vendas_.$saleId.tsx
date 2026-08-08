@@ -523,11 +523,27 @@ function SaleWorkspace({
       </div>
       <div className="border-t border-border pt-3">
         <SummaryRow
-          label="Total"
+          label="Total da Venda"
           value={formatCurrency(financials.grand)}
           emphasis
           mono
         />
+        {(sale.status === "partially_paid" || sale.status === "pending") && (
+          <>
+            <SummaryRow
+              label="Valor Pago (Entrada)"
+              value={formatCurrency(Number(sale.grand_total ?? 0) - (sale.payment_method === 'credit' ? Number(sale.metadata?.credit_balance ?? 0) : 0))}
+              mono
+              className="text-success"
+            />
+            <SummaryRow
+              label="Saldo Devedor / Restante"
+              value={formatCurrency(sale.payment_method === 'credit' ? Number(sale.metadata?.credit_balance ?? 0) : Number(sale.grand_total ?? 0))}
+              mono
+              className="font-bold text-destructive"
+            />
+          </>
+        )}
       </div>
       <div className="space-y-2 border-t border-border pt-3">
         <SummaryRow
@@ -918,8 +934,8 @@ function SaleWorkspace({
 
           </Card>
 
-          {(sale.payment_method === "credit" || sale.status === "partially_paid") ? (
-            <CreditAccountPanel saleId={sale.id} companyId={companyId} />
+          {(sale.payment_method === "credit" || sale.status === "partially_paid" || sale.status === "pending") ? (
+            <CreditAccountPanel saleId={sale.id} companyId={companyId} customerId={sale.customer_id} />
           ) : null}
         </TabsContent>
 
