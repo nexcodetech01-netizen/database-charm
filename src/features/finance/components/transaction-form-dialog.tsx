@@ -244,7 +244,7 @@ export function TransactionFormDialog({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar movimentação" : "Nova movimentação"}
+            {isEdit ? "Editar movimentação" : form.type === "transfer" ? "Nova Transferência" : "Nova movimentação"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
