@@ -241,6 +241,13 @@ export function SaleReceipt({
 
       <Divider />
 
+      {isCredit && (
+        <div className="text-center text-[10px] italic py-1 text-muted-foreground border-b border-dashed border-border/60 mb-2">
+          Comprovante de débito / Venda a Prazo
+        </div>
+      )}
+
+
 
       {/* Pagamento */}
       <div className="receipt-section-title">FORMA DE PAGAMENTO</div>
@@ -276,13 +283,14 @@ export function SaleReceipt({
       <Divider />
 
       {isCredit && (
-        <div className="text-center text-[10px] italic py-1 text-muted-foreground">
+        <div className="text-center text-[10px] italic py-1 text-muted-foreground mt-2 border-t border-dashed border-border/60">
           Comprovante de débito / Venda a Prazo
         </div>
       )}
 
       {/* Mensagem final */}
       <footer className="receipt-footer">
+
 
         {farewell.map((line) => (
           <div key={line}>{line}</div>
