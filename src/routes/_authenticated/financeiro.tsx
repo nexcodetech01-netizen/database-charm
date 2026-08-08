@@ -37,6 +37,7 @@ import {
   AccountsPanel,
   CategoriesPanel,
   GuidedTransactionDialog,
+  TransactionFormDialog,
   useFinanceOverview,
 } from "@/features/finance";
 import { FinanceBellaHints } from "@/features/bella-ai";
@@ -78,6 +79,7 @@ function FinancePage() {
   const { tab: initialTab } = Route.useSearch();
   const { data, isLoading } = useFinanceOverview(company.id);
   const [txOpen, setTxOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
@@ -99,15 +101,8 @@ function FinancePage() {
       </div>
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="ghost" disabled title="Em breve">
+        <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setTab("reconciliation")}
-        >
-          <CheckCircle2 className="mr-1.5 h-4 w-4" /> Conciliação
         </Button>
         <Button size="sm" variant="ghost" disabled title="Em breve">
           <Download className="mr-1.5 h-4 w-4" /> Exportar
@@ -222,6 +217,13 @@ function FinancePage() {
         open={txOpen}
         onOpenChange={setTxOpen}
         companyId={company.id}
+      />
+
+      <TransactionFormDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        companyId={company.id}
+        defaultType="transfer"
       />
     </PageLayout>
   );
