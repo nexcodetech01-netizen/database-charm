@@ -68,12 +68,13 @@ export function useSaleMetrics(
   companyId: string,
   range?: { from: string; to: string },
   scopeOverride?: DataScope,
+  period?: string,
 ) {
   const globalScope = useDataScope();
   const scope = scopeOverride ?? globalScope;
   return useQuery({
-    queryKey: [...salesKeys.metrics(companyId, range), scope],
-    queryFn: () => salesService.metrics(companyId, range, scope),
+    queryKey: [...salesKeys.metrics(companyId, range, period), scope],
+    queryFn: () => salesService.metrics(companyId, range, scope, period),
     enabled: !!companyId,
   });
 }
