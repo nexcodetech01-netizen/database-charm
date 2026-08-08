@@ -6873,6 +6873,7 @@ export type Database = {
       get_daily_revenue: {
         Args: { _company_id: string; _date?: string }
         Returns: {
+          total_received: number
           total_revenue: number
           transaction_count: number
         }[]
