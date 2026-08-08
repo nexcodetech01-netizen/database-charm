@@ -407,6 +407,7 @@ export function CheckoutDialog({
       setShowCompleted(false);
       setShowCreditConfig(false);
       setInstallments(1);
+      setInstallmentsCount(1);
       setCashReceivedStr("");
       setEntradaStr("");
       setAbsorbOverride(null);
