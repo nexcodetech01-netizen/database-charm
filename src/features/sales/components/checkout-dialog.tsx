@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import QRCode from "qrcode";
 import { refreshPixQrCode } from "@/features/bella-pay/lib/bella-pay.functions";
 import {
+  AlertCircle,
   Banknote,
   Barcode,
   CheckCircle2,
