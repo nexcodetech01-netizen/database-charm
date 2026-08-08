@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { KeyboardEvent } from "react";
 import { ScanLine, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +43,25 @@ export function PDVSearch({
   const { options, isSearching, lookup } = usePdvProductSearch(companyId, value);
   const [isAdding, setAdding] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const addingRef = useRef(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Reset active index when options change
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [options]);
+
+  // Handle scroll into view
+  useEffect(() => {
+    if (activeIndex >= 0 && itemRefs.current[activeIndex]) {
+      itemRefs.current[activeIndex]?.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [activeIndex]);
 
   const commit = useCallback(
     async (raw: string) => {
@@ -71,16 +89,35 @@ export function PDVSearch({
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Enter") {
         event.preventDefault();
+        // If an item is active in the list, select it
+        if (activeIndex >= 0 && options[activeIndex]) {
+          onSelect(options[activeIndex]);
+          onChange("");
+          setActiveIndex(-1);
+          return;
+        }
+        // Otherwise, attempt a direct code lookup (barcode/sku)
         void commit(event.currentTarget.value);
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveIndex((prev) => (prev < options.length - 1 ? prev + 1 : prev));
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
         return;
       }
       if (event.key === "Escape") {
         event.preventDefault();
         onChange("");
         onClear?.();
+        setActiveIndex(-1);
       }
     },
-    [commit, onChange, onClear],
+    [commit, onChange, onClear, activeIndex, options, onSelect],
   );
 
   return (
@@ -122,31 +159,43 @@ export function PDVSearch({
 
 
       {value.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg">
+        <div 
+          ref={listRef}
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
+        >
           {(isSearching || isAdding) && (
-            <p className="text-sm text-muted-foreground">Buscando…</p>
+            <p className="p-2 text-sm text-muted-foreground animate-pulse">Buscando…</p>
           )}
           {!isSearching && !isAdding && options.length === 0 && (
-            <p className="text-sm text-muted-foreground">
+            <p className="p-2 text-sm text-muted-foreground">
               Nenhum produto encontrado
             </p>
           )}
-          {options.map((product) => (
+          {options.map((product, index) => (
             <Button
               key={product.id}
+              ref={(el) => { itemRefs.current[index] = el; }}
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-between px-2 py-1.5 text-left"
+              className={cn(
+                "h-auto w-full justify-between px-2 py-1.5 text-left transition-colors duration-150",
+                index === activeIndex ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-accent hover:text-accent-foreground"
+              )}
               onClick={() => {
                 onSelect(product);
                 onChange("");
+                setActiveIndex(-1);
               }}
+              onMouseEnter={() => setActiveIndex(index)}
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">
                   {product.name}
                 </span>
-                <span className="block text-xs text-muted-foreground">
+                <span className={cn(
+                  "block text-xs",
+                  index === activeIndex ? "text-primary-foreground/70" : "text-muted-foreground"
+                )}>
                   {product.sku ?? "sem SKU"}
                   {product.stock != null ? ` · estoque ${product.stock}` : ""}
                 </span>
