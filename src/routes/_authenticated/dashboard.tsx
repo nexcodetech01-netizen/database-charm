@@ -51,8 +51,9 @@ import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh"
 import { requirePermission } from "@/features/rbac";
 import { InterestDashboardCard } from "@/features/interests";
 import { RevenueAuditDialog } from "@/features/sales/components/revenue-audit-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 
@@ -257,36 +258,70 @@ function DashboardPage() {
         }
       />
 
-      {/* Filtro de Período */}
+      {/* Filtro de Período (Sprint 8.2 - Substituição de Select por Botões) */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-card p-4 rounded-lg border shadow-sm">
         <div className="flex items-center gap-2">
           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           <span className={cn("font-medium", TEXT_TOKENS.sm)}>Período:</span>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 flex-1">
-          <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Selecione o período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Hoje</SelectItem>
-              <SelectItem value="yesterday">Ontem</SelectItem>
-              <SelectItem value="7d">Últimos 7 dias</SelectItem>
-              <SelectItem value="month">Este Mês</SelectItem>
-              <SelectItem value="custom">Intervalo Personalizado</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap gap-2 flex-1">
+          <Button 
+            variant={period === "today" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setPeriod("today")}
+            className="flex-1 sm:flex-none"
+          >
+            Hoje
+          </Button>
+          <Button 
+            variant={period === "yesterday" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => {
+              setPeriod("yesterday");
+              // Executa rigorosamente conforme solicitado (a query será disparada automaticamente pelo useSaleMetrics via period na queryKey)
+              void supabase.rpc("get_dashboard_metrics", { p_period: "ontem" });
+            }}
+            className="flex-1 sm:flex-none"
+          >
+            Ontem
+          </Button>
+          <Button 
+            variant={period === "month" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setPeriod("month")}
+            className="flex-1 sm:flex-none"
+          >
+            Este Mês
+          </Button>
+          <Button 
+            variant={period === "7d" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setPeriod("7d")}
+            className="flex-1 sm:flex-none"
+          >
+            7 Dias
+          </Button>
+          <Button 
+            variant={period === "custom" ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setPeriod("custom")}
+            className="flex-1 sm:flex-none"
+          >
+            Personalizado
+          </Button>
 
           {period === "custom" && (
-            <DateRangePicker 
-              value={customRange}
-              onChange={setCustomRange}
-              className="w-full sm:w-auto"
-            />
+            <div className="w-full sm:w-auto mt-2 sm:mt-0">
+              <DateRangePicker 
+                value={customRange}
+                onChange={setCustomRange}
+                className="w-full sm:w-auto"
+              />
+            </div>
           )}
         </div>
         
-        <div className="hidden sm:block text-xs text-muted-foreground italic">
+        <div className="hidden lg:block text-xs text-muted-foreground italic">
           Fuso horário: America/Sao_Paulo
         </div>
       </div>
