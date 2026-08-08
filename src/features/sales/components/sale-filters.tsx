@@ -55,6 +55,9 @@ export function SaleFilters({ companyId, filters, onChange, onReset }: Props) {
                 {o.label}
               </SelectItem>
             ))}
+            <SelectItem value="!cancelled" className="text-primary font-medium">
+              Ocultar Canceladas
+            </SelectItem>
           </SelectContent>
         </Select>
 

@@ -62,15 +62,15 @@ export function SaleTable({
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Número</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Data da venda</TableHead>
-              <TableHead>Data do pagamento</TableHead>
-              <TableHead className="text-right">Itens</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[52px]" />
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="py-4">Número</TableHead>
+              <TableHead className="py-4">Cliente</TableHead>
+              <TableHead className="py-4">Data da venda</TableHead>
+              <TableHead className="py-4">Data do pagamento</TableHead>
+              <TableHead className="py-4 text-right">Itens</TableHead>
+              <TableHead className="py-4 text-right">Total</TableHead>
+              <TableHead className="py-4">Status</TableHead>
+              <TableHead className="py-4 w-[52px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,8 +101,8 @@ export function SaleTable({
               </TableRow>
             ) : (
               rows.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
+                <TableRow key={s.id} className="group">
+                  <TableCell className="py-4">
                     <Link
                       to="/vendas/$saleId"
                       params={{ saleId: s.id }}
@@ -111,15 +111,15 @@ export function SaleTable({
                       {s.number}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-sm py-4">
                     {s.customer_name ?? (
                       <span className="text-muted-foreground">Sem cliente</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-sm py-4">
                     {formatDate(s.sale_date)}
                   </TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">
+                  <TableCell className="text-sm whitespace-nowrap py-4">
                     {s.settlement_paid_at ? (
                       formatDateTime(s.settlement_paid_at)
                     ) : (
@@ -127,13 +127,13 @@ export function SaleTable({
                     )}
                   </TableCell>
 
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-right tabular-nums py-4">
                     {s.items_count}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">
+                  <TableCell className="text-right tabular-nums font-medium py-4">
                     {formatCurrency(Number(s.grand_total))}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <SaleStatusBadge status={s.status} />
                       {s.is_test ? <TestSaleBadge compact /> : null}
@@ -182,17 +182,17 @@ export function SaleTable({
                             <Ban className="mr-2 h-4 w-4" /> Cancelar
                           </DropdownMenuItem>
                         ) : null}
-                        {s.status !== "paid" && s.status !== "cancelled" ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => onDelete(s)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </DropdownMenuItem>
-                          </>
-                        ) : null}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:bg-destructive/10 focus:text-destructive font-medium"
+                          onClick={() => {
+                            if (confirm(`Deseja excluir permanentemente esta venda/teste "${s.number}"?`)) {
+                              onDelete(s);
+                            }
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Venda
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
