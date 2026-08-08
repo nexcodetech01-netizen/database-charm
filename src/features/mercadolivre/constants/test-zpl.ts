@@ -4,8 +4,7 @@
  * 1. Etiqueta de Envio (📦)
  * 2. DANFE Simplificado (🧾)
  */
-export const ML_TEST_ZPL = `
-^XA
+export const ML_TEST_ZPL = `^XA
 ^FX Etiqueta de Envio
 ^CF0,60
 ^FO50,50^GB100,100,3^FS
