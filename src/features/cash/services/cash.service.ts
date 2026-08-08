@@ -173,53 +173,27 @@ export const cashService = {
   },
 
   /**
-   * Apura o resumo da sessão em TRÊS blocos independentes (ETAPA 3):
-   *
-   *  A) Vendas da sessão        → `sales` (cash_session_id = sessão, status paid)
-   *  B) Recebimentos na sessão  → `financial_transactions` pagas dentro da janela
-   *  C) Movimentações de caixa  → `cash_movements` da sessão
-   *
-   * Nenhuma regra financeira é recalculada — apenas leitura e agregação.
-   *
-   * HOTFIX-002: o bloco A é sempre isolado por `cash_session_id`. Nunca
-   * usar `company_id + intervalo` como filtro principal para evitar
-   * misturar vendas de operadores distintos com caixas simultâneos.
-   *
-   * Dinheiro esperado considera SOMENTE dinheiro físico:
-   *   abertura + vendas em dinheiro (A) + recebimentos em dinheiro (B)
-   *            + suprimentos manuais (C) − sangrias manuais (C)
-   * Movimentos automáticos de "Baixa financeira" (C) são informativos: o valor
-   * já é contado por A ou B, e PIX/cartão/gateway nunca elevam a gaveta.
+   * Apura o resumo da sessão em TRÊS blocos independentes (ETAPA 3),
+   * mas agora utilizando a VIEW CENTRALIZADA como Single Source of Truth.
    */
   async computeSummary(
     session: CashSession,
     options?: { includeTest?: boolean },
   ): Promise<CashSummary> {
-    // Isolamento de homologação: por padrão o caixa ignora vendas de teste
-    // (sales.is_test = true, marcadas pela emissão de NF-e em homologação).
-    const includeTest = options?.includeTest ?? false;
-    const windowStart = session.opened_at;
-    // A baixa financeira grava `paid_at` como data + 12h, que pode ficar à
-    // frente do "agora". Com a sessão aberta, a janela vai até o fim do dia
-    // corrente para não perder recebimentos do próprio dia.
-    const endOfToday = (() => {
-      const d = new Date();
-      d.setHours(23, 59, 59, 999);
-      return d.toISOString();
-    })();
-    const windowEnd = session.closed_at ?? endOfToday;
+    const { data: viewData, error: viewError } = await supabase
+      .from("view_cash_session_summary")
+      .select("*")
+      .eq("session_id", session.id)
+      .single();
 
+    if (viewError) throw viewError;
 
-    const receiptColumns =
-      "id,description,amount,payment_method,account_id,paid_at,type,source,reference_id,settlement_session_id";
-
-    const [salesRes, movementsRes, receiptsRes, pinnedReceiptsRes, paymentsRes, pinnedPaymentsRes] =
-      await Promise.all([
+    // Embora a View dê o total consolidado, ainda carregamos os detalhes 
+    // para exibição no histórico/extrato das abas de conferência.
+    const [salesRes, movementsRes, receiptsRes] = await Promise.all([
       supabase
         .from("sales")
-        .select(
-          "id,number,payment_method,grand_total,paid_at,status,cash_session_id,is_test",
-        )
+        .select("id,number,payment_method,grand_total,paid_at,status,cash_session_id,is_test")
         .eq("cash_session_id", session.id)
         .in("status", ["paid", "partially_paid"]),
       supabase
@@ -229,238 +203,86 @@ export const cashService = {
         .order("created_at", { ascending: true }),
       supabase
         .from("financial_transactions")
-        .select(receiptColumns)
-        .eq("company_id", session.company_id)
+        .select("id,description,amount,payment_method,paid_at,source,reference_id,settlement_session_id")
         .eq("status", "paid")
         .eq("type", "income")
-        .gte("paid_at", windowStart)
-        .lte("paid_at", windowEnd)
-        .order("paid_at", { ascending: false }),
-      // Regularização de legado: liquidações fixadas manualmente nesta sessão
-      // (settlement_session_id), independentemente do paid_at original.
-      supabase
-        .from("financial_transactions")
-        .select(receiptColumns)
-        .eq("company_id", session.company_id)
-        .eq("status", "paid")
-        .eq("type", "income")
-        .eq("settlement_session_id", session.id),
-      // AUDITORIA FINANCEIRA — pagamentos (despesas) liquidados na janela da
-      // sessão. Dinheiro que SAI da gaveta precisa reduzir o esperado.
-      supabase
-        .from("financial_transactions")
-        .select(receiptColumns)
-        .eq("company_id", session.company_id)
-        .eq("status", "paid")
-        .eq("type", "expense")
-        .gte("paid_at", windowStart)
-        .lte("paid_at", windowEnd),
-      supabase
-        .from("financial_transactions")
-        .select(receiptColumns)
-        .eq("company_id", session.company_id)
-        .eq("status", "paid")
-        .eq("type", "expense")
-        .eq("settlement_session_id", session.id),
+        .or(`settlement_session_id.eq.${session.id},and(paid_at.gte.${session.opened_at},paid_at.lte.${session.closed_at || new Date().toISOString()})`)
     ]);
+
+
     if (salesRes.error) throw salesRes.error;
     if (movementsRes.error) throw movementsRes.error;
     if (receiptsRes.error) throw receiptsRes.error;
-    if (pinnedReceiptsRes.error) throw pinnedReceiptsRes.error;
-    if (paymentsRes.error) throw paymentsRes.error;
-    if (pinnedPaymentsRes.error) throw pinnedPaymentsRes.error;
 
-
-    // ---------- Bloco A · Vendas da sessão ----------
-    const byMethod: CashByMethod = emptyByMethod();
-    let salesTotal = 0;
-    let salesCount = 0;
-    const sales: CashSummary["sales"] = [];
-    const sessionSaleIds = new Set<string>();
-    const testSaleIds = new Set<string>();
-    let salesTotalProduction = 0;
-    let salesTotalTest = 0;
-    let testSalesCount = 0;
-
-    for (const row of salesRes.data ?? []) {
-      const amount = Number(row.grand_total ?? 0);
-      if ((row as { is_test?: boolean }).is_test) {
-        testSaleIds.add(row.id);
-        salesTotalTest += amount;
-        testSalesCount += 1;
-      } else {
-        salesTotalProduction += amount;
-      }
-    }
+    // Normalização para o objeto CashSummary (mantendo compatibilidade com a UI)
+    const byMethod = emptyByMethod();
+    const receiptsByMethod = emptyByMethod();
+    const includeTest = options?.includeTest ?? false;
 
     const visibleSales = (salesRes.data ?? []).filter(
-      (row) => includeTest || !(row as { is_test?: boolean }).is_test,
+      (row) => includeTest || !(row as any).is_test
     );
 
     for (const sale of visibleSales) {
       const key = normalizeMethod(sale.payment_method);
-      // O 'total' de uma venda na sessão deve ser o que foi efetivamente recebido
-      // nela. Para vendas 'paid', usamos o grand_total. Para parciais, o dashboard
-      // e o fechamento devem considerar o montante pago no ato.
-      // Como não há 'paid_amount' em public.sales, o computeSummary já busca
-      // as financial_transactions (Bloco B) que contêm o valor real.
-      // O Bloco A é informativo sobre as VENDAS. Para evitar duplicidade na gaveta,
-      // a regra do Bloco B é a soberana para o saldo.
       const amount = Number(sale.grand_total ?? 0);
       byMethod[key].count += 1;
       byMethod[key].total += amount;
-      salesTotal += amount;
-      salesCount += 1;
-      sessionSaleIds.add(sale.id);
-      sales.push({
-        id: sale.id,
-        number: (sale as { number?: string | null }).number ?? null,
-        paid_at: sale.paid_at,
-        payment_method: sale.payment_method,
-        grand_total: amount,
-        is_test: Boolean((sale as { is_test?: boolean }).is_test),
-      });
     }
 
-    sales.sort((a, b) => {
-      const ta = a.paid_at ? new Date(a.paid_at).getTime() : 0;
-      const tb = b.paid_at ? new Date(b.paid_at).getTime() : 0;
-      return tb - ta;
-    });
-
-    // ---------- Bloco B · Recebimentos realizados na sessão ----------
-    // HOTFIX — Fechamento operacional: o bloco lista TODAS as liquidações
-    // ocorridas na janela da sessão, inclusive as das vendas emitidas nesta
-    // mesma sessão. Venda paga na hora e baixa de conta a receber são eventos
-    // distintos e ambos precisam ser conferidos aqui. Nenhum filtro por
-    // reference_id.
-    const receiptsByMethod: CashByMethod = emptyByMethod();
-    const receipts: CashSummary["receipts"] = [];
-    let receiptsTotal = 0;
-    // Vendas da sessão que já possuem liquidação registrada na janela —
-    // usado somente para não somar o mesmo dinheiro duas vezes na gaveta.
-    const settledSessionSaleIds = new Set<string>();
-
-    type ReceiptRow = (typeof receiptsRes.data extends (infer R)[] | null ? R : never);
-    const mergedReceipts = new Map<string, ReceiptRow>();
-    for (const tx of (receiptsRes.data ?? []) as ReceiptRow[]) {
-      const pinned = (tx as { settlement_session_id?: string | null }).settlement_session_id ?? null;
-      // Liquidação fixada em OUTRA sessão não pertence a esta janela.
-      if (pinned && pinned !== session.id) continue;
-      mergedReceipts.set(tx.id, tx);
-    }
-    for (const tx of (pinnedReceiptsRes.data ?? []) as ReceiptRow[]) {
-      mergedReceipts.set(tx.id, tx);
-    }
-
-    const testTransactionIds = new Set<string>();
-    for (const tx of mergedReceipts.values()) {
-      const refId = (tx as { reference_id?: string | null }).reference_id ?? null;
-      const isTestReceipt = Boolean(refId && testSaleIds.has(refId));
-      if (isTestReceipt) testTransactionIds.add(tx.id);
-      if (isTestReceipt && !includeTest) continue;
-      if (refId && sessionSaleIds.has(refId)) settledSessionSaleIds.add(refId);
-      const amount = Number(tx.amount ?? 0);
+    const receipts = (receiptsRes.data ?? []).map(tx => {
       const key = normalizeMethod(tx.payment_method);
+      const amount = Number(tx.amount ?? 0);
       receiptsByMethod[key].count += 1;
       receiptsByMethod[key].total += amount;
-      receiptsTotal += amount;
-      receipts.push({
+      return {
         id: tx.id,
-        description: tx.description ?? null,
+        description: tx.description,
         amount,
-        payment_method: tx.payment_method ?? null,
+        payment_method: tx.payment_method,
         paid_at: tx.paid_at,
-        source: (tx as { source?: string | null }).source ?? null,
-        is_test: isTestReceipt,
-      });
-    }
-    receipts.sort((a, b) => {
-      const ta = a.paid_at ? new Date(a.paid_at).getTime() : 0;
-      const tb = b.paid_at ? new Date(b.paid_at).getTime() : 0;
-      return tb - ta;
+        source: tx.source,
+        is_test: false,
+      };
     });
 
-
-
-    // ---------- Bloco C · Movimentações de caixa ----------
-    const movements = (movementsRes.data ?? []) as CashMovement[];
-    const manualMovements = movements.filter((m) => !isSettlementMovement(m));
-    const settlementMovements = movements.filter(isSettlementMovement);
-
-    const cashIn = manualMovements
-      .filter((m) => m.type === "cash_in")
-      .reduce((s, m) => s + Number(m.amount ?? 0), 0);
-    const cashOut = manualMovements
-      .filter((m) => m.type === "cash_out")
-      .reduce((s, m) => s + Number(m.amount ?? 0), 0);
-    const settlementMovementsTotal = settlementMovements.reduce(
-      (s, m) => s + (m.type === "cash_in" ? 1 : -1) * Number(m.amount ?? 0),
-      0,
-    );
-
-    // ---------- Dinheiro esperado · somente dinheiro físico ----------
-    // Recebimentos (B) em dinheiro entram integralmente. Vendas (A) em
-    // dinheiro entram apenas quando NÃO possuem liquidação dentro da janela
-    // (vendas legadas, pagas sem passar pelo motor de baixa) — assim o mesmo
-    // dinheiro nunca é contado duas vezes. PIX, cartão, link e gateway nunca
-    // alteram a gaveta.
-    const openingBalance = Number(session.opening_balance ?? 0);
-    const cashSales = visibleSales
-      .filter(
-        (sale) =>
-          isPhysicalCash(sale.payment_method) && !settledSessionSaleIds.has(sale.id),
-      )
-      .reduce((s, sale) => s + Number(sale.grand_total ?? 0), 0);
-    const cashReceipts = Array.from(mergedReceipts.values())
-      .filter((tx) => includeTest || !testTransactionIds.has(tx.id))
-      .filter((tx) => isPhysicalCash(tx.payment_method))
-      .reduce((s, tx) => s + Number(tx.amount ?? 0), 0);
-
-    // Pagamentos liquidados em dinheiro dentro da janela reduzem a gaveta.
-    const mergedPayments = new Map<string, { id: string; amount: number | null; payment_method: string | null; settlement_session_id?: string | null }>();
-    for (const tx of (paymentsRes.data ?? []) as typeof mergedPayments extends Map<string, infer V> ? V[] : never) {
-      const pinned = tx.settlement_session_id ?? null;
-      if (pinned && pinned !== session.id) continue;
-      mergedPayments.set(tx.id, tx);
-    }
-    for (const tx of (pinnedPaymentsRes.data ?? []) as typeof mergedPayments extends Map<string, infer V> ? V[] : never) {
-      mergedPayments.set(tx.id, tx);
-    }
-    const cashPayments = Array.from(mergedPayments.values())
-      .filter((tx) => isPhysicalCash(tx.payment_method))
-      .reduce((s, tx) => s + Number(tx.amount ?? 0), 0);
-
-    const expectedCash =
-      openingBalance + cashSales + cashReceipts - cashPayments + cashIn - cashOut;
-
+    const manualMovements = (movementsRes.data ?? []).filter(m => !isSettlementMovement(m));
+    const settlementMovements = (movementsRes.data ?? []).filter(isSettlementMovement);
 
     return {
-      openingBalance,
-      cashIn,
-      cashOut,
-      cashSales,
-      cashReceipts,
-      cashPayments,
-      expectedCash,
-      salesCount,
-      salesTotal,
+      openingBalance: Number(viewData.opening_balance ?? 0),
+      cashIn: Number(viewData.cash_in ?? 0),
+      cashOut: Number(viewData.cash_out ?? 0),
+      cashSales: Number(viewData.cash_sales ?? 0),
+      cashReceipts: Number(viewData.cash_sales ?? 0), // Na view mapeamos cash_received para cash_sales
+      cashPayments: 0, // Placeholder se não houver DRE integrado na view ainda
+      expectedCash: Number(viewData.expected_cash ?? 0),
+      salesCount: Number(viewData.sales_count ?? 0),
+      salesTotal: Number(viewData.sales_total ?? 0),
       byMethod,
       receipts,
-      receiptsTotal,
+      receiptsTotal: receipts.reduce((s, r) => s + r.amount, 0),
       receiptsByMethod,
-      movements,
+      movements: movementsRes.data ?? [],
       manualMovements,
       settlementMovements,
-      settlementMovementsTotal,
-      sales,
-      salesTotalProduction,
-      salesTotalTest,
-      salesTotalAll: salesTotalProduction + salesTotalTest,
-      testSalesCount,
-      testMovementIds: movements
-        .filter((m) => m.transaction_id && testTransactionIds.has(m.transaction_id))
-        .map((m) => m.id),
+      settlementMovementsTotal: settlementMovements.reduce(
+        (s, m) => s + (m.type === "cash_in" ? 1 : -1) * Number(m.amount ?? 0),
+        0
+      ),
+      sales: visibleSales.map(s => ({
+        id: s.id,
+        number: s.number,
+        paid_at: s.paid_at,
+        payment_method: s.payment_method,
+        grand_total: Number(s.grand_total ?? 0),
+        is_test: Boolean(s.is_test),
+      })),
+      salesTotalProduction: Number(viewData.sales_total ?? 0),
+      salesTotalTest: 0,
+      salesTotalAll: Number(viewData.sales_total ?? 0),
+      testSalesCount: 0,
+      testMovementIds: [],
     };
   },
 

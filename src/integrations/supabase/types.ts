@@ -1260,6 +1260,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cash_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "view_cash_session_summary"
+            referencedColumns: ["session_id"]
+          },
+          {
             foreignKeyName: "cash_movements_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
@@ -2457,6 +2464,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cash_sessions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_settlement_session_id_fkey"
+            columns: ["settlement_session_id"]
+            isOneToOne: false
+            referencedRelation: "view_cash_session_summary"
+            referencedColumns: ["session_id"]
           },
           {
             foreignKeyName: "financial_transactions_transfer_to_account_id_fkey"
@@ -5754,6 +5768,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "view_cash_session_summary"
+            referencedColumns: ["session_id"]
+          },
+          {
             foreignKeyName: "sales_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -6474,6 +6495,29 @@ export type Database = {
           },
         ]
       }
+      view_cash_session_summary: {
+        Row: {
+          cash_in: number | null
+          cash_out: number | null
+          cash_sales: number | null
+          company_id: string | null
+          expected_cash: number | null
+          opening_balance: number | null
+          sales_count: number | null
+          sales_total: number | null
+          session_id: string | null
+          session_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _sku_first3: { Args: { t: string }; Returns: string }
@@ -6825,6 +6869,13 @@ export type Database = {
         Returns: Json
       }
       get_company_invite_by_token: { Args: { _token: string }; Returns: Json }
+      get_daily_revenue: {
+        Args: { _company_id: string; _date?: string }
+        Returns: {
+          total_revenue: number
+          transaction_count: number
+        }[]
+      }
       has_permission: {
         Args: {
           _company_id: string

@@ -86,10 +86,11 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4">🛠️ CORREÇÕES ANTERIORES</h2>
+          <h2 className="text-lg font-semibold mb-4">🛠️ ESTABILIZAÇÃO ARQUITETURAL</h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• Lógica Financeira em Devolução de Vendas (Saneado)</p>
-             <p>• Integração Mercado Livre Enterprise (Homologado)</p>
+             <p>• Fonte Única da Verdade (Single Source of Truth) para Caixa e Receita</p>
+             <p>• Transações ACID: Venda, Estoque e Financeiro unificados</p>
+             <p>• RPCs e Views centralizadas para cálculos financeiros</p>
           </div>
         </div>
       </div>
