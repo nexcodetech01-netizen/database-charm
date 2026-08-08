@@ -1507,7 +1507,7 @@ export function CheckoutDialog({
             />
           ) : null}
 
-
+          </div>
         </div>
 
 
