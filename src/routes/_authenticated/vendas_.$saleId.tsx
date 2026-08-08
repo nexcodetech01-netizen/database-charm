@@ -158,7 +158,7 @@ function CreditSummaryItems({ saleId }: { saleId: string }) {
   );
 }
 
-
+function SaleWorkspace({
   sale,
   customer,
   companyId,
