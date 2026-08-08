@@ -467,6 +467,9 @@ export function PDVScreen({
 
   return (
     <>
+      <div className="mb-4">
+        <PDVHeader openedAt={session?.opened_at} companyId={companyId} />
+      </div>
       <PDVWorkspace
         operationBar={
           <PDVOperationBar

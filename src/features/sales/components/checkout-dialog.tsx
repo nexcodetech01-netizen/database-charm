@@ -237,6 +237,7 @@ export function CheckoutDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
   // BUG-001 — guarda por ref evita re-entrada por stale closure no polling.
@@ -250,6 +251,14 @@ export function CheckoutDialog({
 
   // FIN-001 — Dinheiro: valor recebido para cálculo de troco.
   const [cashReceivedStr, setCashReceivedStr] = useState<string>("");
+  
+  // Efeito para preencher automaticamente o valor recebido em Dinheiro
+  useEffect(() => {
+    if (method === "cash" && !confirmed && !showCompleted) {
+      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [method, amount, confirmed, showCompleted, setCashReceivedStr]);
+
   // FIN-001 — Entrada opcional (parcial): quando > 0, a cobrança é gerada
   // apenas pelo saldo restante, com vencimento configurável.
   const [entradaStr, setEntradaStr] = useState<string>("");
@@ -1653,14 +1662,18 @@ export function CheckoutDialog({
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
               )}
               {confirmed
-                ? "Ver Cupom"
+                ? "Concluído"
                 : method === "pix_manual"
-                  ? "Confirmar pagamento"
-                  : method === "credit"
-                    ? "Abrir crediário"
-                    : method === "pending_payment"
-                      ? "Criar Venda Pendente"
-                      : "Confirmar recebimento"}
+                  ? "Confirmar Pagamento (Pix)"
+                  : method === "cash"
+                    ? "Confirmar Recebimento (Dinheiro)"
+                    : method === "debit_card"
+                      ? "Confirmar Débito"
+                      : method === "credit"
+                        ? "Abrir Crediário"
+                        : method === "pending_payment"
+                          ? "Criar Venda Pendente"
+                          : "Confirmar"}
 
             </Button>
           ) : null}

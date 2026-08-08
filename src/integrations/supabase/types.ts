@@ -1421,6 +1421,7 @@ export type Database = {
           pix_key_type: string | null
           pix_recipient_city: string | null
           pix_recipient_name: string | null
+          pos_default_account_id: string | null
           primary_color: string | null
           receipt_footer: string | null
           secondary_color: string | null
@@ -1459,6 +1460,7 @@ export type Database = {
           pix_key_type?: string | null
           pix_recipient_city?: string | null
           pix_recipient_name?: string | null
+          pos_default_account_id?: string | null
           primary_color?: string | null
           receipt_footer?: string | null
           secondary_color?: string | null
@@ -1497,6 +1499,7 @@ export type Database = {
           pix_key_type?: string | null
           pix_recipient_city?: string | null
           pix_recipient_name?: string | null
+          pos_default_account_id?: string | null
           primary_color?: string | null
           receipt_footer?: string | null
           secondary_color?: string | null
@@ -1511,7 +1514,15 @@ export type Database = {
           whatsapp_phone_number_id?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_pos_default_account_id_fkey"
+            columns: ["pos_default_account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_inventory_settings: {
         Row: {

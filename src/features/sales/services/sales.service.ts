@@ -862,9 +862,21 @@ export const salesService = {
 
     let accountId = tx.account_id;
 
+    if (!accountId) {
+      // 2.1 Prioriza a conta configurada na empresa especificamente para o PDV
+      const { data: companyConfig } = await supabase
+        .from("companies")
+        .select("pos_default_account_id")
+        .eq("id", options.companyId)
+        .maybeSingle();
+      
+      if (companyConfig?.pos_default_account_id) {
+        accountId = companyConfig.pos_default_account_id;
+      }
+    }
+
     if (!accountId && saleData?.cash_session_id) {
-      // A sessão de caixa está vinculada ao operador, mas não tem account_id direto
-      // Buscamos a conta padrão do Bella Pay ou a primeira conta de caixa ativa
+      // 2.2 Fallback para Bella Pay ou sessão de caixa
       const { data: bellaConfig } = await supabase
         .from("bella_pay_config")
         .select("default_account_id")
@@ -894,7 +906,7 @@ export const salesService = {
     // 3. Executa a baixa pelo motor financeiro
     const { financeService } = await import("@/features/finance/services/finance.service");
     await financeService.settleTransaction(tx.id, {
-      paymentMethod: options.paymentMethod as any,
+      paymentMethod: (options.paymentMethod === "pix_manual" ? "pix" : options.paymentMethod) as any,
       accountId,
       paidAt: new Date().toISOString().slice(0, 10),
       notes: "Baixa automática PDV",
