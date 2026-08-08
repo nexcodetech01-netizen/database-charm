@@ -10,6 +10,7 @@ export { CategoriesPanel } from "./components/categories-panel";
 export { TransactionsPanel } from "./components/transactions-panel";
 export { TransactionStatusBadge } from "./components/transaction-status-badge";
 export { TransactionFormDialog } from "./components/transaction-form-dialog";
+export { GuidedTransactionDialog } from "./components/guided-transaction-dialog";
 export { TransactionDetailsDrawer } from "./components/transaction-details-drawer";
 export { AccountFormDialog } from "./components/account-form-dialog";
 export { CategoryFormDialog } from "./components/category-form-dialog";

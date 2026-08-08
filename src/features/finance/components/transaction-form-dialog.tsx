@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ interface Props {
   companyId: string;
   transaction?: FinancialTransaction | null;
   defaultType?: TransactionType;
+  initialIsReimbursement?: boolean;
 }
 
 const todayISO = () => {
@@ -60,6 +62,7 @@ export function TransactionFormDialog({
   companyId,
   transaction,
   defaultType,
+  initialIsReimbursement,
 }: Props) {
   const isEdit = !!transaction;
   const createMut = useCreateTransaction();
@@ -69,6 +72,8 @@ export function TransactionFormDialog({
   const { data: categories } = useFinancialCategories(companyId);
   const showNextAction = useNextAction();
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">("");
+  const [installments, setInstallments] = useState(1);
+  const [paidWith, setPaidWith] = useState<"company" | "personal">("company");
 
   const [form, setForm] = useState({
     type: (defaultType ?? "income") as TransactionType,
@@ -93,6 +98,8 @@ export function TransactionFormDialog({
   useEffect(() => {
     if (!open) return;
     setPaymentMethod("");
+    setInstallments(1);
+    setPaidWith("company");
     if (transaction) {
 
       setForm({
@@ -115,14 +122,14 @@ export function TransactionFormDialog({
         amount: 0,
         account_id: "",
         transfer_to_account_id: "",
-        category_id: "",
+        category_id: initialIsReimbursement ? (categories?.find(c => c.kind === "income" && (c.name.includes("Aporte") || c.name.includes("Dono")))?.id ?? "") : "",
         transaction_date: todayISO(),
         due_date: todayISO(),
         status: "pending",
-        notes: "",
+        notes: initialIsReimbursement ? "Investimento do Dono" : "",
       }));
     }
-  }, [open, transaction, defaultType]);
+  }, [open, transaction, defaultType, initialIsReimbursement, categories]);
 
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
@@ -165,10 +172,15 @@ export function TransactionFormDialog({
       category_id: form.type === "transfer" ? null : form.category_id || null,
       transaction_date: form.transaction_date,
       due_date: form.due_date || todayISO(),
-      // O INSERT nasce sempre em aberto; a baixa é feita pelo motor único.
       status: form.status === "paid" ? "pending" : form.status,
       source: form.type === "transfer" ? "transfer" : "manual",
       notes: form.notes || null,
+      metadata: paidWith === "personal" ? {
+        reimbursement: true,
+        installments,
+        original_amount: form.amount,
+        owner: "Tiele"
+      } : undefined
     };
 
     try {
@@ -301,8 +313,48 @@ export function TransactionFormDialog({
                 placeholder="Ex.: Aluguel de setembro"
               />
             </div>
+            {form.type === "expense" && (
+              <div className="sm:col-span-2 space-y-4 rounded-lg border bg-muted/30 p-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label>Pago com:</Label>
+                    <Select
+                      value={paidWith}
+                      onValueChange={(v) => setPaidWith(v as any)}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="company">Conta da Empresa</SelectItem>
+                        <SelectItem value="personal">Cartão Pessoal (Tiele)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {paidWith === "personal" && (
+                    <div>
+                      <Label>Número de parcelas:</Label>
+                      <Select
+                        value={String(installments)}
+                        onValueChange={(v) => setInstallments(Number(v))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 8, 10, 12].map(n => (
+                            <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                {paidWith === "personal" && (
+                  <p className="text-xs text-muted-foreground">
+                    O sistema gerará automaticamente as contas a pagar nos meses futuros marcadas como "Reembolso de Sócio".
+                  </p>
+                )}
+              </div>
+            )}
             <div>
-              <Label>Valor *</Label>
+              <Label>Valor Total *</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -310,6 +362,11 @@ export function TransactionFormDialog({
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
               />
+              {paidWith === "personal" && installments > 1 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {installments}x de {formatCurrency(form.amount / installments)}
+                </p>
+              )}
             </div>
             <div>
               <Label>{form.type === "transfer" ? "Conta de origem" : "Conta"}</Label>

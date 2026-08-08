@@ -36,7 +36,7 @@ import {
   TransactionsPanel,
   AccountsPanel,
   CategoriesPanel,
-  TransactionFormDialog,
+  GuidedTransactionDialog,
   useFinanceOverview,
 } from "@/features/finance";
 import { FinanceBellaHints } from "@/features/bella-ai";
@@ -93,11 +93,8 @@ function FinancePage() {
   const actions = (
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={() => openTx("income")}>
-          <Plus className="mr-1.5 h-4 w-4" /> Nova receita
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => openTx("expense")}>
-          <Minus className="mr-1.5 h-4 w-4" /> Nova despesa
+        <Button size="sm" onClick={() => setTxOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" /> Nova Movimentação
         </Button>
       </div>
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
@@ -275,11 +272,10 @@ function FinancePage() {
         </TabsContent>
       </Tabs>
 
-      <TransactionFormDialog
+      <GuidedTransactionDialog
         open={txOpen}
         onOpenChange={setTxOpen}
         companyId={company.id}
-        defaultType={txType}
       />
     </PageLayout>
   );
