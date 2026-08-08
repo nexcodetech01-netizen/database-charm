@@ -1158,6 +1158,7 @@ export function CheckoutDialog({
                 onClick={() => {
                   setMethod(m.id);
                   setCharge(null);
+                  setCashReceivedStr("");
                 }}
                 className={cn(
                   "flex items-start gap-3 rounded-lg border p-3 text-left transition",
