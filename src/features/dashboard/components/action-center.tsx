@@ -58,7 +58,7 @@ const TONE_LABEL: Record<ActionTone, string> = {
 export function ActionCenter({ companyId }: { companyId: string }) {
   const finance = useFinanceOverview(companyId);
   const inventory = useInventoryMetrics(companyId);
-  const salesMetrics = useSaleMetrics(companyId);
+  const salesMetrics = useSaleMetrics(companyId, undefined, undefined, "today");
   const drafts = useSalesList(companyId, {
     search: "",
     status: "draft",
