@@ -67,52 +67,30 @@ export function MercadoLivrePrintDialog({
   const processLabelData = async () => {
     if (!labelData) return;
     setIsLoading(true);
-    
-    // DEBUG LOGS
-    console.log("[ML_PRINT_PROCESS_DEBUG]: Received content size:", labelData.content?.length || 0);
-    console.log("[ML_PRINT_PROCESS_DEBUG]: First 100 chars:", JSON.stringify(labelData.content?.substring(0, 100)));
 
     try {
       let zplBlocks: string[] = [];
       
       if (labelData.type === "zpl") {
-        // Detectar blocos ^XA ... ^XZ
         // Regex robusta para capturar blocos ignorando espaços/quebras extras antes de ^XA
         const regex = /\^XA[\s\S]*?\^XZ/g;
         zplBlocks = labelData.content.match(regex) || [];
-        console.log("[ML_PRINT_PROCESS_DEBUG]: Blocks found (^XA...^XZ):", zplBlocks.length);
-        
-        if (zplBlocks.length === 0) {
-          console.warn("[ML_PRINT_PROCESS_DEBUG]: Zero ZPL blocks detected. Checking for ^XA presence:", labelData.content.includes("^XA"));
-          console.warn("[ML_PRINT_PROCESS_DEBUG]: Raw content trim:", labelData.content.trim().substring(0, 50));
-        }
       }
 
       // Se não detectou blocos ou for PDF, trata como bloco único
       if (zplBlocks.length === 0) {
-        // Se for ZPL e não achamos blocos, mas a string não é vazia, vamos tentar usar ela toda
         const content = labelData.content.trim();
-        if (labelData.type === "zpl" && content.length > 0) {
-           console.log("[ML_PRINT_PROCESS_DEBUG]: Using full content as single block");
-           const block: ZPLBlock = {
-             id: "block-0",
-             zpl: content,
-             type: "label",
-             title: "📦 Etiqueta de envio",
-           };
-           const prepared = await prepareBlock(block, labelData);
-           setBlocks([prepared]);
-           setActiveTab("block-0");
-        } else if (labelData.type === "pdf") {
-           const block: ZPLBlock = {
-             id: "block-0",
-             zpl: "",
-             type: "label",
-             title: "📦 Etiqueta de envio",
-           };
-           const prepared = await prepareBlock(block, labelData);
-           setBlocks([prepared]);
-           setActiveTab("block-0");
+        if (content.length > 0 || labelData.type === "pdf") {
+          const block: ZPLBlock = {
+            id: "block-0",
+            zpl: labelData.type === "zpl" ? labelData.content : "",
+            type: "label",
+            title: "📦 Etiqueta de envio",
+          };
+          
+          const prepared = await prepareBlock(block, labelData);
+          setBlocks([prepared]);
+          setActiveTab("block-0");
         }
       } else {
         // Múltiplos blocos ZPL
