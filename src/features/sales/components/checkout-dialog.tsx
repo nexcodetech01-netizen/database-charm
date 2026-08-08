@@ -155,8 +155,7 @@ const METHODS: {
   icon: typeof QrCode;
   hint: string;
 }[] = [
-  { id: "pix_manual", label: "PIX Próprio", icon: Wallet, hint: "Recebido direto na sua conta" },
-  { id: "pix", label: "PIX (Bella Pay)", icon: QrCode, hint: "QR Code + confirmação automática" },
+  { id: "pix_manual", label: "Pix", icon: Wallet, hint: "Recebido direto na sua conta" },
   { id: "credit_card", label: "Crédito", icon: CreditCard, hint: "Parcelado (Asaas)" },
   { id: "payment_link", label: "Link", icon: LinkIcon, hint: "PIX + cartão + boleto" },
   { id: "boleto", label: "Boleto", icon: Barcode, hint: "Boleto bancário (Asaas)" },
@@ -232,7 +231,7 @@ export function CheckoutDialog({
   onContinueEditing,
   onReturnToItemsStateChange,
 }: Props) {
-  const [method, setMethod] = useState<UiCheckoutMethod>("pix");
+  const [method, setMethod] = useState<UiCheckoutMethod>("pix_manual");
   const [charge, setCharge] = useState<ChargeRow | null>(null);
   const [generating, setGenerating] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -392,7 +391,7 @@ export function CheckoutDialog({
       setConfirmed(false);
       confirmedRef.current = false;
       setGenerating(false);
-      setMethod("pix");
+      setMethod("pix_manual");
       setShowCompleted(false);
       setInstallments(1);
       setCashReceivedStr("");
@@ -1187,8 +1186,17 @@ export function CheckoutDialog({
                 type="button"
                 disabled={!!charge && !confirmed}
                 onClick={() => {
-                  setMethod(m.id);
-                  setCharge(null);
+                  if (m.id === "pix_manual") {
+                    setMethod(m.id);
+                    setCharge(null);
+                    // Otimização: abrir baixa manual direto se possível
+                    if (!confirmed && ownPixPayload) {
+                      setTimeout(() => beginManualSettlement(), 0);
+                    }
+                  } else {
+                    setMethod(m.id);
+                    setCharge(null);
+                  }
                 }}
                 className={cn(
                   "flex items-start gap-3 rounded-lg border p-3 text-left transition",
