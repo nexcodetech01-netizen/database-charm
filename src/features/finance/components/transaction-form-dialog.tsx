@@ -42,7 +42,9 @@ import {
   type FinancialTransaction,
   type TransactionStatus,
   type TransactionType,
+  STATIC_FINANCIAL_CATEGORIES,
 } from "../types";
+
 import {
   useAccounts,
   useCreateAndSettleTransaction,
@@ -99,11 +101,13 @@ export function TransactionFormDialog({
     account_id: "",
     transfer_to_account_id: "",
     category_id: "",
+    category: "", // Nova propriedade para armazenar o texto da categoria
     transaction_date: todayISO(),
     due_date: todayISO(),
     status: "pending" as TransactionStatus,
     notes: "",
   });
+
 
   const selectedAccountName =
     (accounts ?? []).find((a) => a.id === form.account_id)?.name ?? null;
@@ -126,6 +130,8 @@ export function TransactionFormDialog({
         account_id: transaction.account_id ?? "",
         transfer_to_account_id: transaction.transfer_to_account_id ?? "",
         category_id: transaction.category_id ?? "",
+        category: (transaction as any).category ?? "",
+
         transaction_date: transaction.transaction_date ?? todayISO(),
         due_date: transaction.due_date ?? todayISO(),
         status: (transaction.status as TransactionStatus) ?? "pending",
@@ -139,7 +145,9 @@ export function TransactionFormDialog({
         amount: 0,
         account_id: "",
         transfer_to_account_id: "",
-        category_id: initialIsReimbursement ? (categories?.find(c => c.kind === "income" && (c.name.includes("Aporte") || c.name.includes("Dono") || c.name.includes("Sócio")))?.id ?? "") : "",
+        category_id: "",
+        category: initialIsReimbursement ? "Aporte de Sócio" : "",
+
         transaction_date: todayISO(),
         due_date: todayISO(),
         status: "pending",
@@ -149,11 +157,18 @@ export function TransactionFormDialog({
   }, [open, transaction, defaultType, initialIsReimbursement, categories]);
 
   const filteredCategories = useMemo(() => {
-    if (!categories) return [];
     if (form.type === "transfer") return [];
-    const kind = form.type === "income" ? "income" : "expense";
-    return categories.filter((c) => c.kind === kind);
+    
+    // Sprint 8.4: Se for despesa, usamos a lista estática (hardcoded)
+    if (form.type === "expense") {
+      return STATIC_FINANCIAL_CATEGORIES.map(name => ({ id: name, name, kind: "expense" as const }));
+    }
+
+    // Se for receita, mantemos as categorias do banco por enquanto
+    if (!categories) return [];
+    return categories.filter((c) => c.kind === "income");
   }, [categories, form.type]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -179,14 +194,24 @@ export function TransactionFormDialog({
       return;
     }
 
-    // Sprint 8.4: Fallback para "Despesas Gerais" se for despesa e categoria estiver vazia
+    // Sprint 8.4: Fallback para "Outras Despesas Gerais" se for despesa e categoria estiver vazia
+    let finalCategory = form.type === "transfer" ? null : form.category || null;
     let finalCategoryId = form.type === "transfer" ? null : form.category_id || null;
-    if (!finalCategoryId && form.type === "expense") {
+
+    if (form.type === "expense") {
+      // Para despesas, salvamos apenas no campo de texto 'category'
+      finalCategoryId = null;
+      if (!finalCategory) {
+        finalCategory = "Outras Despesas Gerais";
+      }
+    } else if (form.type === "income" && !finalCategoryId) {
+      // Fallback para receitas (mantido do banco)
       const generalCategory = categories?.find(c => c.name.toLowerCase().includes("gerais") || c.name.toLowerCase().includes("geral"));
       if (generalCategory) {
         finalCategoryId = generalCategory.id;
       }
     }
+
 
     const payload = {
       company_id: companyId,
@@ -196,6 +221,8 @@ export function TransactionFormDialog({
       account_id: form.account_id || null,
       transfer_to_account_id: form.type === "transfer" ? form.transfer_to_account_id || null : null,
       category_id: finalCategoryId,
+      category: finalCategory,
+
       transaction_date: form.transaction_date,
       due_date: form.due_date || todayISO(),
       status: form.status === "paid" ? "pending" : form.status,
@@ -450,9 +477,10 @@ export function TransactionFormDialog({
                       aria-expanded={categoryOpen}
                       className="w-full justify-between font-normal"
                     >
-                      {form.category_id
-                        ? filteredCategories.find((c) => c.id === form.category_id)?.name
-                        : "Selecionar categoria..."}
+                      {form.type === "expense" 
+                        ? (form.category || "Selecionar categoria...")
+                        : (form.category_id ? filteredCategories.find((c) => c.id === form.category_id)?.name : "Selecionar categoria...")}
+
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -471,34 +499,40 @@ export function TransactionFormDialog({
                           <CommandItem
                             value="__none__"
                             onSelect={() => {
-                              setForm({ ...form, category_id: "" });
+                              setForm({ ...form, category_id: "", category: "" });
                               setCategoryOpen(false);
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                !form.category_id ? "opacity-100" : "opacity-0"
+                                (!form.category_id && !form.category) ? "opacity-100" : "opacity-0"
                               )}
                             />
                             Sem categoria
                           </CommandItem>
-                          {filteredCategories.map((c) => (
+                          {filteredCategories.map((cat) => (
                             <CommandItem
-                              key={c.id}
-                              value={c.name}
+                              key={cat.id}
+                              value={cat.name}
                               onSelect={() => {
-                                setForm({ ...form, category_id: c.id });
+                                if (form.type === "expense") {
+                                  setForm({ ...form, category: cat.name, category_id: "" });
+                                } else {
+                                  setForm({ ...form, category_id: cat.id, category: "" });
+                                }
                                 setCategoryOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  form.category_id === c.id ? "opacity-100" : "opacity-0"
+                                  (form.type === "expense" ? form.category === cat.name : form.category_id === cat.id)
+                                    ? "opacity-100"
+                                    : "opacity-0"
                                 )}
                               />
-                              {c.name}
+                              {cat.name}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -507,9 +541,12 @@ export function TransactionFormDialog({
                   </PopoverContent>
                 </Popover>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  Se não selecionada, será classificada como "Despesas Gerais" automaticamente.
+                  {form.type === "expense" 
+                    ? "* Categorias de despesa são fixas e gravadas como texto."
+                    : "* Classificação automática para 'Receitas Gerais' caso não informada."}
                 </p>
               </div>
+
             )}
 
             <div>
