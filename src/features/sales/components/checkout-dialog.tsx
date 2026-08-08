@@ -829,67 +829,66 @@ export function CheckoutDialog({
       return;
     }
 
-    // Dinheiro/Débito/PIX Próprio/Pendente: baixa manual ou fluxo pendente.
-    if (method === "cash" || method === "debit_card" || method === "pix_manual" || method === "pending_payment") {
+    // GROUP 1: À VISTA (BAIXA E CONCLUSÃO IMEDIATA)
+    if (method === "pix_manual" || method === "cash" || method === "debit_card" || method === "credit_card") {
       if (method === "pix_manual" && !ownPixPayload) {
         toast.error("Configure a chave PIX em Configurações → Empresa antes de usar PIX Próprio.");
         return;
       }
+      
+      // Para pagamentos à vista no PDV, realizamos a baixa automática em segundo plano
+      // e redirecionamos imediatamente para a conclusão.
+      await beginManualSettlement();
+      return;
+    }
+
+    // GROUP 2: A PRAZO OU PENDENTES
+    if (method === "credit" || method === "pending_payment" || method === "boleto" || method === "payment_link") {
+      // 1. VALIDAÇÃO DE CLIENTE (Obrigatória para Grupo 2)
+      if (!customerId) {
+        toast.error("Selecione um cliente cadastrado para esta forma de pagamento.");
+        return;
+      }
+
+      // 2. TELA DE CONDIÇÕES (Para Crediário e Pagamento Pendente)
+      if (method === "credit") {
+        setShowCreditConfig(true);
+        return;
+      }
 
       if (method === "pending_payment") {
-        if (!customerId) {
-          toast.error("Venda pendente exige cliente vinculado.");
-          return;
-        }
         confirmedRef.current = true;
         setConfirmed(true);
         try {
           await persistPaymentSelection();
+          // 3. REGISTRO NO FINANCEIRO (Status PENDENTE)
           await setStatus.mutateAsync({ id: saleId, status: "pending" });
-          toast.success("Venda Registrada", {
-            description: "Pagamento pendente registrado com sucesso.",
-          });
+          
+          // 4. TELA FINAL (Sucesso personalizado)
+          toast.success("Venda a prazo registrada com sucesso!");
           onPaid?.({ method });
           openCompletedDialog();
         } catch (e) {
           confirmedRef.current = false;
           setConfirmed(false);
-          toast.error("Erro ao finalizar venda com pagamento pendente");
+          toast.error("Erro ao registrar venda pendente");
         }
         return;
       }
-
-      await beginManualSettlement();
-      return;
     }
 
-    // Crediário — abre conta no cliente e registra entrada (opcional).
-    if (method === "credit") {
-      if (!customerId) {
-        toast.error("Para vender no crediário, selecione um cliente cadastrado.");
-        return;
-      }
-      
-      // Ao invés de confirmar direto, abre o modal de opções de parcelamento/vencimento
-      setShowCreditConfig(true);
-      return;
-    }
-
-
-    // PIX/Cartão/Link: se cobrança ainda não gerada, gerar.
-    if (!charge) {
+    // Fluxo Bella Pay (Cartão, Boleto, Link) se ainda não gerado
+    if (!charge && (method === "payment_link" || method === "boleto")) {
       await handleGenerate();
       return;
     }
-    // Se já confirmado pelo webhook, abrir modal de conclusão.
-    if (RECEIVED.has(String(charge.status))) {
+
+    // Se já confirmado pelo webhook (Bella Pay), abrir conclusão
+    if (charge && RECEIVED.has(String(charge.status))) {
       onWebhookConfirmed();
       openCompletedDialog();
     } else {
-      toast.info("Aguardando confirmação do pagamento…", {
-        description:
-          "A confirmação é feita pelo servidor via webhook. Você pode fechar esta janela com segurança — a venda será marcada como paga automaticamente.",
-      });
+      toast.info("Aguardando confirmação do pagamento…");
     }
   }
 
