@@ -989,7 +989,7 @@ export function CheckoutDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); else onOpenChange(true); }}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b px-5 py-3 text-left">
           <DialogTitle className="flex items-center gap-2">
             Checkout
@@ -1004,7 +1004,7 @@ export function CheckoutDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
+        <div className="flex-1 overflow-y-auto pr-2 px-5 py-4 space-y-4">
         {/* Valor */}
         <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1061,50 +1061,48 @@ export function CheckoutDialog({
           </div>
         )}
 
-        </div>
-
-        {/* Métodos */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {METHODS.map((m) => {
-            const Icon = m.icon;
-            const active = method === m.id;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                disabled={!!charge && !confirmed}
-                onClick={() => {
-                  setMethod(m.id);
-                  setCharge(null);
-                  setCashReceivedStr("");
-                }}
-                className={cn(
-                  "flex items-start gap-3 rounded-lg border p-3 text-left transition",
-                  active
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border hover:border-primary/50 hover:bg-muted/40",
-                  charge && !confirmed ? "opacity-60" : "",
-                )}
-              >
-                <div
+          {/* Métodos */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {METHODS.map((m) => {
+              const Icon = m.icon;
+              const active = method === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  disabled={!!charge && !confirmed}
+                  onClick={() => {
+                    setMethod(m.id);
+                    setCharge(null);
+                    setCashReceivedStr("");
+                  }}
                   className={cn(
-                    "grid h-9 w-9 shrink-0 place-items-center rounded-md",
-                    active ? "bg-primary text-primary-foreground" : "bg-muted",
+                    "flex items-start gap-3 rounded-lg border p-3 text-left transition",
+                    active
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border hover:border-primary/50 hover:bg-muted/40",
+                    charge && !confirmed ? "opacity-60" : "",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">{m.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{m.hint}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div
+                    className={cn(
+                      "grid h-9 w-9 shrink-0 place-items-center rounded-md",
+                      active ? "bg-primary text-primary-foreground" : "bg-muted",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">{m.label}</div>
+                    <div className="text-[11px] text-muted-foreground">{m.hint}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Painel dinâmico por método */}
-        <div className="rounded-xl border border-border p-4">
+          {/* Painel dinâmico por método */}
+          <div className="rounded-xl border border-border p-4 mb-6">
           {confirmed ? (
             <div className="flex items-center gap-3 text-emerald-600">
               <CheckCircle2 className="h-6 w-6" />
@@ -1263,7 +1261,7 @@ export function CheckoutDialog({
                   </div>
                   <div className="pt-2">
                     <Button 
-                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20"
+                      className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 bg-primary/90 hover:bg-primary"
                       onClick={handleConfirm}
                       disabled={setStatus.isPending || createCredit.isPending || openingSettle}
                     >
@@ -1272,7 +1270,7 @@ export function CheckoutDialog({
                       ) : (
                         <CheckCircle2 className="mr-2 h-5 w-5" />
                       )}
-                      Avançar para Crediário (F5)
+                      Confirmar Crediário (F5)
                     </Button>
                   </div>
                 </>
@@ -1509,32 +1507,38 @@ export function CheckoutDialog({
             />
           ) : null}
 
-
+          </div>
         </div>
 
 
-        <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t bg-card px-5 py-3 sm:flex-row">
-          {onContinueEditing && !confirmed ? (
+        <DialogFooter className="sticky bottom-0 z-10 shrink-0 border-t bg-background px-5 py-3 sm:flex-row gap-2">
+          <div className="flex w-full gap-2">
+            {onContinueEditing && !confirmed ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={handleContinueEditing}
+                title="Fecha o pagamento e volta para editar os itens desta venda"
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar
+              </Button>
+            ) : null}
             <Button
               type="button"
-              variant="outline"
-              onClick={handleContinueEditing}
-              title="Fecha o pagamento e volta para editar os itens desta venda"
+              variant="ghost"
+              className="flex-1"
+              onClick={requestClose}
+              disabled={setStatus.isPending}
             >
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar aos itens
+              <XCircle className="mr-1.5 h-4 w-4" /> Fechar
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={requestClose}
-            disabled={setStatus.isPending}
-          >
-            <XCircle className="mr-1.5 h-4 w-4" /> Fechar
-          </Button>
-          {confirmed || method === "cash" || method === "debit_card" || method === "pix_manual" || method === "credit" || method === "pending_payment" ? (
             <Button
               type="button"
+              className={cn(
+                "flex-[2] min-w-[180px]",
+                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+              )}
               onClick={handleConfirm}
               disabled={
                 setStatus.isPending ||
@@ -1545,10 +1549,6 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-              className={cn(
-                "min-w-[180px]",
-                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
-              )}
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -1567,9 +1567,9 @@ export function CheckoutDialog({
                         ? "Avançar para Crediário"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
-                          : "Confirmar"}
+                          : "Confirmar Pagamento (F5)"}
             </Button>
-          ) : null}
+          </div>
         </DialogFooter>
       </DialogContent>
 
