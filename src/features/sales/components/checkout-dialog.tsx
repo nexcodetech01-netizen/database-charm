@@ -527,44 +527,6 @@ export function CheckoutDialog({
   // `/payments/:id/pixQrCode` até persistir o QR na cobrança. O polling
   // principal (acima) já lê `pix_qr_code` do banco e re-renderiza sozinho.
   const refreshPixQrFn = useServerFn(refreshPixQrCode);
-  useEffect(() => {
-    if (!open || confirmed) return;
-    if (method !== "pix") return;
-    if (!charge?.id) return;
-    if (charge.pix_qr_code) return;
-    let cancelled = false;
-    let attempts = 0;
-    const tick = async () => {
-      if (cancelled) return;
-      attempts += 1;
-      try {
-        const res = await refreshPixQrFn({ data: { chargeId: charge.id } });
-        if (cancelled) return;
-        if (res?.pix_qr_code) {
-          setCharge((prev) =>
-            prev && prev.id === charge.id
-              ? {
-                  ...prev,
-                  pix_qr_code: res.pix_qr_code ?? prev.pix_qr_code,
-                  pix_payload: res.pix_payload ?? prev.pix_payload,
-                }
-              : prev,
-          );
-          return; // sucesso — o polling do DB continuará observando o status
-        }
-      } catch (err) {
-        console.warn("[checkout] refreshPixQrCode falhou", err);
-      }
-      if (attempts < 15 && !cancelled) {
-        setTimeout(tick, 2000);
-      }
-    };
-    tick();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, confirmed, method, charge?.id, charge?.pix_qr_code]);
 
 
   /**
@@ -584,9 +546,7 @@ export function CheckoutDialog({
               ? "debit_card"
               : method === "credit_card"
                 ? "credit_card"
-                : method === "pix"
-                  ? "pix"
-                  : method;
+                : method;
       const inst = method === "credit_card" ? Math.max(1, Math.trunc(installments || 1)) : 1;
       await supabase
         .from("sales")
