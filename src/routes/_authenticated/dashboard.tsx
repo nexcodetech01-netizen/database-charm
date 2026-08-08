@@ -88,10 +88,56 @@ function DashboardPage() {
   // Isolamento de homologação: por padrão os indicadores ignoram vendas de teste.
   const [includeHomologation, setIncludeHomologation] = useState(false);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
+  const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "month" | "custom">("today");
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
+  const timeZone = "America/Sao_Paulo";
+  
+  const range = useMemo(() => {
+    const now = new Date();
+    // Em um ambiente real, poderíamos usar date-fns-tz, mas para filtros de UI simples 
+    // a manipulação de datas do JS/date-fns atende ao requisito de passar os parâmetros
+    // de data (YYYY-MM-DD) para a RPC.
+    
+    let from: Date;
+    let to: Date = now;
+
+    switch (period) {
+      case "yesterday":
+        from = subDays(now, 1);
+        to = subDays(now, 1);
+        break;
+      case "7d":
+        from = subDays(now, 6); // Hoje + 6 dias atrás = 7 dias
+        break;
+      case "month":
+        from = startOfMonth(now);
+        to = endOfMonth(now);
+        break;
+      case "custom":
+        if (customRange?.from) {
+          from = customRange.from;
+          to = customRange.to || customRange.from;
+        } else {
+          from = now;
+        }
+        break;
+      case "today":
+      default:
+        from = now;
+        to = now;
+        break;
+    }
+
+    return {
+      from: format(from, "yyyy-MM-dd"),
+      to: format(to, "yyyy-MM-dd"),
+    };
+  }, [period, customRange]);
 
   const salesMetrics = useSaleMetrics(
     company.id,
-    undefined,
+    range,
     includeHomologation ? "all" : "production",
   );
   const inventory = useInventoryMetrics(company.id);
