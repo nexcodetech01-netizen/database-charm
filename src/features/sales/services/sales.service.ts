@@ -441,20 +441,17 @@ export const salesService = {
       }
     };
 
-    // Receita do dia = soma de TODAS as entradas financeiras confirmadas hoje.
-    // Inclui: vendas totalmente pagas + entradas de vendas parciais + recebimentos de crediário.
-    // Buscamos diretamente nas transações financeiras para ter o valor real que entrou.
-    const { data: dayTransactions } = await supabase
-      .from("financial_transactions")
-      .select("amount, type, status, paid_at")
-      .eq("company_id", companyId)
-      .eq("type", "income")
-      .eq("status", "paid")
-      .gte("paid_at", companyDayStartUtc(todayISO, timeZone))
-      .lt("paid_at", companyDayStartUtc(addDaysStr(todayISO, 1), timeZone));
+    // Receita do dia = fonte única via RPC (Single Source of Truth).
+    // Considera: vendas totalmente pagas + entradas de vendas parciais + recebimentos de crediário.
+    const { data: revenueData, error: revenueErr } = await supabase.rpc("get_daily_revenue", {
+      _company_id: companyId,
+      _date: todayISO
+    });
+    if (revenueErr) throw revenueErr;
 
-    const dayTotal = (dayTransactions ?? []).reduce((s, r) => s + Number(r.amount ?? 0), 0);
-    const dayCount = (dayTransactions ?? []).length;
+    const dayTotal = Number(revenueData?.[0]?.total_revenue ?? 0);
+    const dayCount = Number(revenueData?.[0]?.transaction_count ?? 0);
+
 
     const paid = kpiRows.filter((r) => r.status === "paid");
     const month = paid.filter(
