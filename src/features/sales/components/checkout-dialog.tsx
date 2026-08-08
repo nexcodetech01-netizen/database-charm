@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import QRCode from "qrcode";
 import { refreshPixQrCode } from "@/features/bella-pay/lib/bella-pay.functions";
 import {
+  AlertCircle,
   Banknote,
   Barcode,
   CheckCircle2,
@@ -237,6 +238,7 @@ export function CheckoutDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showCreditConfig, setShowCreditConfig] = useState(false);
 
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
@@ -402,6 +404,7 @@ export function CheckoutDialog({
       setGenerating(false);
       setMethod("pix_manual");
       setShowCompleted(false);
+      setShowCreditConfig(false);
       setInstallments(1);
       setCashReceivedStr("");
       setEntradaStr("");
@@ -661,8 +664,8 @@ export function CheckoutDialog({
     setConfirmed(true);
     try {
       await setStatus.mutateAsync({ id: saleId, status: "paid" });
-      toast.success("Venda finalizada", {
-        description: saleNumber ? `Venda ${saleNumber} paga com sucesso.` : undefined,
+      toast.success("Pagamento registrado com sucesso", {
+        description: saleNumber ? `Venda ${saleNumber} concluída.` : undefined,
       });
       onPaid?.({ method });
       openCompletedDialog();
@@ -834,12 +837,16 @@ export function CheckoutDialog({
       }
 
       if (method === "pending_payment") {
+        if (!customerId) {
+          toast.error("Venda pendente exige cliente vinculado.");
+          return;
+        }
         confirmedRef.current = true;
         setConfirmed(true);
         try {
           await persistPaymentSelection();
           await setStatus.mutateAsync({ id: saleId, status: "pending" });
-          toast.success("Venda finalizada", {
+          toast.success("Venda Registrada", {
             description: "Pagamento pendente registrado com sucesso.",
           });
           onPaid?.({ method });
@@ -858,141 +865,13 @@ export function CheckoutDialog({
 
     // Crediário — abre conta no cliente e registra entrada (opcional).
     if (method === "credit") {
-      if (!customerId && (amount - entradaValue > 0)) {
-        toast.error("Venda no crediário exige cliente vinculado.");
+      if (!customerId) {
+        toast.error("Para vender no crediário, selecione um cliente cadastrado.");
         return;
       }
-      if (entradaValue > 0 && !creditDownMethod) {
-        toast.error("Selecione a forma de pagamento da entrada.");
-        return;
-      }
-      if (entradaValue >= amount) {
-        toast.error("Entrada deve ser menor que o total da venda.");
-        return;
-      }
-      const payload = {
-        companyId,
-        saleId,
-        customerId,
-        downPayment: entradaValue,
-        downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
-        dueDate: saldoDueDate || null,
-        notes: creditNotes.trim() || null,
-      };
-
-      // Pré-flight: valida presença/consistência dos campos antes de bater na RPC.
-      const invalid: string[] = [];
-      if (!payload.companyId) invalid.push("companyId");
-      if (!payload.saleId) invalid.push("saleId");
-      if (!payload.customerId) invalid.push("customerId");
-      if (payload.downPayment == null || Number.isNaN(payload.downPayment))
-        invalid.push("downPayment");
-      if (payload.downPayment > 0 && !payload.downPaymentMethod)
-        invalid.push("downPaymentMethod");
-      if (invalid.length) {
-        // eslint-disable-next-line no-console
-        console.error("[checkout-dialog] credit payload inválido", { payload, invalid });
-        toast.error("Não foi possível abrir o crediário", {
-          description: `Campos inválidos: ${invalid.join(", ")}`,
-        });
-        return;
-      }
-
-      try {
-        confirmedRef.current = true;
-        setConfirmed(true);
-
-        // Confirma no banco que a venda existe, pertence à empresa e ainda é draft.
-        const { data: saleRow, error: saleErr } = await supabase
-          .from("sales")
-          .select("id, company_id, customer_id, status, payment_method, grand_total")
-          .eq("id", saleId)
-          .maybeSingle();
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] credit pré-check venda", {
-          payload,
-          saleRow,
-          saleErr,
-        });
-        if (saleErr) throw saleErr;
-        if (!saleRow) {
-          throw new Error(
-            `Venda ${saleId} não encontrada ou fora da empresa autenticada.`,
-          );
-        }
-        if (saleRow.company_id !== companyId) {
-          throw new Error(
-            `company_id divergente (venda=${saleRow.company_id}, checkout=${companyId}).`,
-          );
-        }
-        if (saleRow.status !== "draft" && saleRow.status !== "pending") {
-          throw new Error(
-            `Venda em status "${saleRow.status}" não pode abrir crediário.`,
-          );
-        }
-
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] create_credit_sale payload", payload);
-        const res = await createCredit.mutateAsync(payload);
-        
-        // CORREÇÃO DE STATUS: Aplicar validação matemática estrita
-        // Se total_pago == 0 -> status = 'pending'
-        // Se 0 < total_pago < total_venda -> status = 'partially_paid'
-        // Se total_pago >= total_venda -> status = 'paid'
-        let finalStatus: string = "pending";
-        if (entradaValue >= amount) {
-          finalStatus = "paid";
-        } else if (entradaValue > 0) {
-          finalStatus = "partially_paid";
-        }
-
-        await setStatus.mutateAsync({ id: saleId, status: finalStatus });
-
-        // eslint-disable-next-line no-console
-        console.info("[checkout-dialog] create_credit_sale response", res);
-        toast.success("Crediário aberto", {
-          description: `Saldo em aberto: ${formatCurrency(res.balance)}`,
-        });
-        onPaid?.({ method });
-        openCompletedDialog();
-      } catch (e) {
-        confirmedRef.current = false;
-        setConfirmed(false);
-        // Propaga a mensagem real do backend (PostgrestError não é instanceof Error).
-        const err = e as {
-          message?: string;
-          details?: string;
-          hint?: string;
-          code?: string;
-        } | null;
-        const parts = [
-          err?.message,
-          err?.details,
-          err?.hint,
-          err?.code ? `código ${err.code}` : null,
-        ].filter(Boolean);
-        const description =
-          parts.length > 0
-            ? parts.join(" • ")
-            : typeof e === "string"
-              ? e
-              : "Erro desconhecido ao abrir crediário.";
-        // eslint-disable-next-line no-console
-        console.error("[checkout-dialog] create_credit_sale failed", {
-          payload,
-          error: e,
-          errorJSON: (() => {
-            try {
-              return JSON.stringify(e, Object.getOwnPropertyNames(e ?? {}));
-            } catch {
-              return String(e);
-            }
-          })(),
-        });
-        toast.error("Falha ao abrir crediário", { description });
-      }
-
-
+      
+      // Ao invés de confirmar direto, abre o modal de opções de parcelamento/vencimento
+      setShowCreditConfig(true);
       return;
     }
 
@@ -1011,6 +890,78 @@ export function CheckoutDialog({
         description:
           "A confirmação é feita pelo servidor via webhook. Você pode fechar esta janela com segurança — a venda será marcada como paga automaticamente.",
       });
+    }
+  }
+
+  async function handleConfirmCredit() {
+    const payload = {
+      companyId,
+      saleId,
+      customerId: customerId!,
+      downPayment: entradaValue,
+      downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
+      dueDate: saldoDueDate || null,
+      notes: creditNotes.trim() || null,
+    };
+
+    // Pré-flight: valida presença/consistência dos campos antes de bater na RPC.
+    const invalid: string[] = [];
+    if (!payload.companyId) invalid.push("companyId");
+    if (!payload.saleId) invalid.push("saleId");
+    if (!payload.customerId) invalid.push("customerId");
+    if (payload.downPayment == null || Number.isNaN(payload.downPayment))
+      invalid.push("downPayment");
+    if (payload.downPayment > 0 && !payload.downPaymentMethod)
+      invalid.push("downPaymentMethod");
+    if (invalid.length) {
+      toast.error("Não foi possível abrir o crediário", {
+        description: `Campos inválidos: ${invalid.join(", ")}`,
+      });
+      return;
+    }
+
+    try {
+      setOpeningSettle(true);
+      setShowCreditConfig(false);
+      
+      // Confirma no banco que a venda existe, pertence à empresa e ainda é draft.
+      const { data: saleRow, error: saleErr } = await supabase
+        .from("sales")
+        .select("id, company_id, customer_id, status, payment_method, grand_total")
+        .eq("id", saleId)
+        .maybeSingle();
+
+      if (saleErr) throw saleErr;
+      if (!saleRow) throw new Error(`Venda ${saleId} não encontrada.`);
+      if (saleRow.company_id !== companyId) throw new Error(`company_id divergente.`);
+      if (saleRow.status !== "draft" && saleRow.status !== "pending") {
+        throw new Error(`Venda em status "${saleRow.status}" não pode abrir crediário.`);
+      }
+
+      const res = await createCredit.mutateAsync(payload);
+      
+      let finalStatus: string = "pending";
+      if (entradaValue >= amount) {
+        finalStatus = "paid";
+      } else if (entradaValue > 0) {
+        finalStatus = "partially_paid";
+      }
+
+      await setStatus.mutateAsync({ id: saleId, status: finalStatus });
+
+      confirmedRef.current = true;
+      setConfirmed(true);
+      toast.success("Venda no Crediário Registrada com Sucesso!", {
+        description: `Saldo em aberto: ${formatCurrency(res.balance)}`,
+      });
+      onPaid?.({ method });
+      openCompletedDialog();
+    } catch (e) {
+      setConfirmed(false);
+      const err = e as { message?: string } | null;
+      toast.error("Falha ao abrir crediário", { description: err?.message || "Erro desconhecido." });
+    } finally {
+      setOpeningSettle(false);
     }
   }
 
@@ -1091,60 +1042,19 @@ export function CheckoutDialog({
           ) : null}
         </div>
 
-        {/* FIN-001 — Entrada + vencimento do saldo */}
-        <div className="rounded-xl border border-border p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                Entrada (R$) — opcional
-              </Label>
-              <Input
-                inputMode="decimal"
-                placeholder="0,00"
-                value={entradaStr}
-                onChange={(e) => setEntradaStr(e.target.value)}
-                className="tabular-nums"
-              />
-              {entradaExcedeu ? (
-                <p className="mt-1 text-[11px] text-destructive">
-                  Entrada limitada ao total da venda ({formatCurrency(amount)}).
-                </p>
-              ) : (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Se informada, a cobrança usará apenas o saldo restante.
-                </p>
-              )}
-            </div>
-            <div>
-              <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                Vencimento do saldo
-              </Label>
-              <Input
-                type="date"
-                value={saldoDueDate}
-                disabled={entradaValue <= 0}
-                onChange={(e) => setSaldoDueDate(e.target.value)}
-                className="tabular-nums"
-              />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Usado apenas quando há entrada.
-              </p>
-          </div>
-        </div>
 
         {method === "credit" && !customerId && (
-          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
-            <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500 mb-2">
-              <HandCoins className="h-6 w-6" />
-              <h3 className="font-bold">Crediário</h3>
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5">
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertCircle className="h-6 w-6" />
+              <h3 className="font-bold">Crediário Bloqueado</h3>
             </div>
-            <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium mb-3">
-              Para utilizar esta forma de pagamento é necessário selecionar um cliente.
+            <p className="text-sm text-destructive font-medium mb-3">
+              Para vender no crediário, selecione um cliente cadastrado.
             </p>
             <Button 
-              variant="outline" 
+              variant="destructive" 
               size="sm" 
-              className="border-yellow-500/50 hover:bg-yellow-500/20"
               onClick={handleContinueEditing}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
@@ -1325,61 +1235,32 @@ export function CheckoutDialog({
             </div>
 
           ) : method === "credit" ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {!customerId ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                  Selecione um cliente antes de abrir crediário.
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-center">
+                  <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
+                  <p className="text-sm font-medium text-destructive">
+                    Selecione um cliente para habilitar o crediário.
+                  </p>
                 </div>
               ) : (
                 <>
-                  <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-                    Ao confirmar, será aberta uma <strong className="text-foreground">conta de crediário</strong> vinculada
-                    a este cliente. A entrada informada acima cai no financeiro imediatamente e o saldo restante fica em aberto até a quitação.
+                  <div className="rounded-lg bg-primary/5 p-4 border border-primary/20">
+                    <p className="text-sm text-primary font-medium mb-1">Fluxo de Crediário</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Ao clicar em <strong>Abrir Crediário</strong>, você poderá definir o parcelamento, data de vencimento e registrar entradas parciais.
+                    </p>
                   </div>
-                  <div className="space-y-1 rounded-md border p-3 text-xs">
-                    <SummaryLine label="Total da venda" value={formatCurrency(amount)} />
-                    <SummaryLine
-                      label="Entrada"
-                      value={entradaValue > 0 ? `-${formatCurrency(entradaValue)}` : "—"}
-                    />
-                    <SummaryLine
-                      label="Saldo no crediário"
-                      value={formatCurrency(Math.max(0, amount - entradaValue))}
-                      strong
-                    />
-                    <div className="flex justify-between pt-1 text-[11px] text-muted-foreground">
-                      <span>Vencimento do saldo</span>
-                      <span>{new Date(saldoDueDate + "T00:00:00").toLocaleDateString("pt-BR")}</span>
+                  
+                  <div className="rounded-lg border border-border p-4 space-y-2 bg-muted/20">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Cliente:</span>
+                      <span className="font-semibold">{customerName || "Não identificado"}</span>
                     </div>
-                  </div>
-                  {entradaValue > 0 ? (
-                    <div>
-                      <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                        Forma de pagamento da entrada
-                      </Label>
-                      <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Valor a parcelar:</span>
+                      <span className="font-bold text-primary">{formatCurrency(amount)}</span>
                     </div>
-                  ) : null}
-                  <div>
-                    <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                      Observações (opcional)
-                    </Label>
-                    <Input
-                      value={creditNotes}
-                      onChange={(e) => setCreditNotes(e.target.value)}
-                      placeholder="Ex.: cliente prometeu quitar em 30 dias"
-                    />
                   </div>
                 </>
               )}
@@ -1618,7 +1499,6 @@ export function CheckoutDialog({
 
         </div>
 
-        </div>
 
         <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t bg-card px-5 py-3 sm:flex-row">
           {onContinueEditing && !confirmed ? (
@@ -1652,8 +1532,6 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-
-
               className="min-w-[180px]"
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
@@ -1674,13 +1552,90 @@ export function CheckoutDialog({
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar"}
-
             </Button>
           ) : null}
-
-
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showCreditConfig} onOpenChange={setShowCreditConfig}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configuração do Crediário</DialogTitle>
+            <DialogDescription>
+              Defina os termos de pagamento para esta venda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg bg-muted/50 p-3 text-sm">
+              <div className="flex justify-between font-medium">
+                <span>Total da Venda:</span>
+                <span>{formatCurrency(amount)}</span>
+              </div>
+              {entradaValue > 0 && (
+                <>
+                  <div className="mt-1 flex justify-between text-success">
+                    <span>Entrada (a pagar agora):</span>
+                    <span>{formatCurrency(entradaValue)}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between border-t border-border/50 pt-1 font-bold text-destructive">
+                    <span>Saldo no Crediário:</span>
+                    <span>{formatCurrency(saldoValue)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {entradaValue > 0 && (
+              <div className="space-y-2">
+                <Label>Forma de pagamento da entrada</Label>
+                <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Data de Vencimento do Saldo</Label>
+              <Input
+                type="date"
+                value={saldoDueDate}
+                onChange={(e) => setSaldoDueDate(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Data em que o título será gerado no Contas a Receber.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações do Título</Label>
+              <Input
+                value={creditNotes}
+                onChange={(e) => setCreditNotes(e.target.value)}
+                placeholder="Ex: Pagamento em 30 dias"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCreditConfig(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmCredit} disabled={openingSettle}>
+              {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Crediário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ReceiptDialog
         open={showReceipt}
         onOpenChange={setShowReceipt}
@@ -1704,6 +1659,8 @@ export function CheckoutDialog({
       <SaleCompletedDialog
         open={showCompleted}
         onOpenChange={setShowCompleted}
+        title={method === "credit" ? "Venda no Crediário Registrada com Sucesso!" : undefined}
+        description={method === "credit" ? "O título foi gerado no Contas a Receber do cliente." : undefined}
         onPrintReceipt={() => setShowReceipt(true)}
         onViewSale={goToSaleDetails}
         onNewSale={
