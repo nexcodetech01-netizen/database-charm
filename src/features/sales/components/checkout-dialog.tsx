@@ -1272,7 +1272,7 @@ export function CheckoutDialog({
                       ) : (
                         <CheckCircle2 className="mr-2 h-5 w-5" />
                       )}
-                      Confirmar Crediário (F5)
+                      Avançar para Crediário (F5)
                     </Button>
                   </div>
                 </>
