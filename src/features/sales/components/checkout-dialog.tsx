@@ -1101,8 +1101,8 @@ export function CheckoutDialog({
               <SummaryLine label="Total da Venda" value={formatCurrency(amount)} strong />
               {entradaValue > 0 ? (
                 <>
-                  <SummaryLine label="Valor Pago (Entrada)" value={`-${formatCurrency(entradaValue)}`} className="text-success" />
-                  <SummaryLine label="Saldo Devedor / Restante" value={formatCurrency(saldoValue)} strong className="text-destructive" />
+                  <SummaryLine label="Valor Pago (Entrada)" value={formatCurrency(entradaValue)} className="text-success" />
+                  <SummaryLine label="Saldo Devedor / Restante" value={formatCurrency(saldoValue)} strong className="text-destructive font-bold" />
                   <div className="flex justify-between text-[11px] text-muted-foreground">
                     <span>Vencimento do saldo</span>
                     <span>{new Date(saldoDueDate + "T00:00:00").toLocaleDateString("pt-BR")}</span>

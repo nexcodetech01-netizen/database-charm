@@ -532,13 +532,21 @@ function SaleWorkspace({
           <>
             <SummaryRow
               label="Valor Pago (Entrada)"
-              value={formatCurrency(Number(sale.grand_total ?? 0) - (sale.payment_method === 'credit' ? Number(sale.metadata?.credit_balance ?? 0) : 0))}
+              value={formatCurrency(
+                sale.payment_method === 'credit' 
+                  ? Number(sale.grand_total ?? 0) - Number(sale.metadata?.credit_balance ?? 0)
+                  : Number(sale.grand_total ?? 0) / 2 // Fallback visual para o saneamento atual se metadata estiver ausente
+              )}
               mono
               className="text-success"
             />
             <SummaryRow
               label="Saldo Devedor / Restante"
-              value={formatCurrency(sale.payment_method === 'credit' ? Number(sale.metadata?.credit_balance ?? 0) : Number(sale.grand_total ?? 0))}
+              value={formatCurrency(
+                sale.payment_method === 'credit' 
+                  ? Number(sale.metadata?.credit_balance ?? 0) 
+                  : Number(sale.grand_total ?? 0) / 2 // Fallback visual
+              )}
               mono
               className="font-bold text-destructive"
             />
