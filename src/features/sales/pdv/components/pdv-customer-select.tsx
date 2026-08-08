@@ -43,13 +43,13 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
     enabled: !!companyId,
   });
 
-  const filteredCustomers = customers.filter((c) =>
+  const filteredCustomers = customers.filter((c: any) =>
     [c.name, c.document, c.phone].some((v) =>
       v?.toLowerCase().includes(search.toLowerCase())
     )
   );
 
-  const options = [{ id: "none", name: "Consumidor Final" }, ...filteredCustomers];
+  const options = [{ id: "none", name: "Consumidor Final" }, ...filteredCustomers] as any[];
 
   useEffect(() => {
     if (open) {
