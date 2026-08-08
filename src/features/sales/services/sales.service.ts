@@ -450,8 +450,10 @@ export const salesService = {
 
     if (revenueErr) throw revenueErr;
 
-    const dayTotal = Number(revenueData?.[0]?.total_revenue ?? 0);
+    const dayTotal = Number(revenueData?.[0]?.total_revenue ?? 0); // Faturamento Bruto (Sales)
+    const dayReceived = Number(revenueData?.[0]?.total_received ?? 0); // Fluxo de Caixa Real (Income)
     const dayCount = Number(revenueData?.[0]?.transaction_count ?? 0);
+
 
 
     const paid = kpiRows.filter((r) => r.status === "paid");
