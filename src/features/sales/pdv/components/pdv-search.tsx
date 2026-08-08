@@ -124,12 +124,12 @@ export function PDVSearch({
     <div
       className={cn(
         "relative rounded-lg border bg-background transition-colors",
-        focused && !disabled ? "border-primary/60 ring-1 ring-primary/30" : "border-border",
+        focused && !disabled ? "border-blue-600/60 ring-1 ring-blue-600/30" : "border-border",
       )}
     >
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
           aria-hidden="true"
         />
         <Input
@@ -149,7 +149,7 @@ export function PDVSearch({
           aria-live="polite"
           className={cn(
             "pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1.5 text-[11px] font-medium sm:flex",
-            focused && !disabled ? "text-status-success" : "text-muted-foreground",
+            focused && !disabled ? "text-status-success" : "text-slate-500",
           )}
         >
           <ScanLine className="h-3.5 w-3.5" aria-hidden="true" />
@@ -164,10 +164,10 @@ export function PDVSearch({
           className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 space-y-0.5 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
         >
           {(isSearching || isAdding) && (
-            <p className="p-2 text-sm text-muted-foreground animate-pulse">Buscando…</p>
+            <p className="p-2 text-sm text-slate-500 animate-pulse">Buscando…</p>
           )}
           {!isSearching && !isAdding && options.length === 0 && (
-            <p className="p-2 text-sm text-muted-foreground">
+            <p className="p-2 text-sm text-slate-500">
               Nenhum produto encontrado
             </p>
           )}
@@ -179,7 +179,7 @@ export function PDVSearch({
               variant="ghost"
               className={cn(
                 "h-auto w-full justify-between px-2 py-1.5 text-left transition-colors duration-150",
-                index === activeIndex ? "bg-primary text-primary-foreground hover:bg-primary/90" : "hover:bg-accent hover:text-accent-foreground"
+                index === activeIndex ? "bg-blue-600 text-white hover:bg-blue-600/90" : "hover:bg-accent hover:text-accent-foreground"
               )}
               onClick={() => {
                 onSelect(product);
@@ -194,7 +194,7 @@ export function PDVSearch({
                 </span>
                 <span className={cn(
                   "block text-xs",
-                  index === activeIndex ? "text-primary-foreground/70" : "text-muted-foreground"
+                  index === activeIndex ? "text-white/70" : "text-slate-500"
                 )}>
                   {product.sku ?? "sem SKU"}
                   {product.stock != null ? ` · estoque ${product.stock}` : ""}
