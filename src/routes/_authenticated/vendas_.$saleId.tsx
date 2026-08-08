@@ -93,7 +93,7 @@ import { ReceiptDialog } from "@/features/sales/components/receipt-dialog";
 import { ReturnDialog, ReturnsList } from "@/features/returns";
 import { useCustomer } from "@/features/customers/hooks/use-customers";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
-import { CreditAccountPanel } from "@/features/credit";
+import { CreditAccountPanel, useCreditDetailBySale } from "@/features/credit";
 import { SaleFiscalCard } from "@/features/fiscal/v2/components/sale-fiscal-card";
 import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
 import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
@@ -130,6 +130,31 @@ function SaleDetailPage() {
       customer={customer ?? null}
       companyId={company.id}
     />
+  );
+}
+
+
+function CreditSummaryItems({ saleId }: { saleId: string }) {
+  const { data: creditDetail } = useCreditDetailBySale(saleId);
+  
+  const downPayment = Number(creditDetail?.account?.down_payment ?? 0);
+  const balance = Number(creditDetail?.account?.balance ?? 0);
+
+  return (
+    <>
+      <SummaryRow
+        label="Valor Pago (Entrada)"
+        value={formatCurrency(downPayment)}
+        mono
+        className="text-success"
+      />
+      <SummaryRow
+        label="Saldo Devedor / Restante"
+        value={formatCurrency(balance)}
+        mono
+        className="font-bold text-destructive"
+      />
+    </>
   );
 }
 
@@ -528,29 +553,8 @@ function SaleWorkspace({
           emphasis
           mono
         />
-        {(sale.status === "partially_paid" || sale.status === "pending") && (
-          <>
-            <SummaryRow
-              label="Valor Pago (Entrada)"
-              value={formatCurrency(
-                sale.payment_method === 'credit' 
-                  ? Number(sale.grand_total ?? 0) - Number(sale.metadata?.credit_balance ?? 0)
-                  : Number(sale.grand_total ?? 0) / 2 // Fallback visual para o saneamento atual se metadata estiver ausente
-              )}
-              mono
-              className="text-success"
-            />
-            <SummaryRow
-              label="Saldo Devedor / Restante"
-              value={formatCurrency(
-                sale.payment_method === 'credit' 
-                  ? Number(sale.metadata?.credit_balance ?? 0) 
-                  : Number(sale.grand_total ?? 0) / 2 // Fallback visual
-              )}
-              mono
-              className="font-bold text-destructive"
-            />
-          </>
+        {(sale.status === "partially_paid" || (sale.status === "pending" && sale.payment_method === 'credit')) && (
+          <CreditSummaryItems saleId={sale.id} />
         )}
       </div>
       <div className="space-y-2 border-t border-border pt-3">
