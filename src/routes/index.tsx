@@ -86,11 +86,11 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4 text-destructive">🚨 CORREÇÃO DE EMERGÊNCIA APLICADA</h2>
+          <h2 className="text-lg font-semibold mb-4 text-destructive">✅ CORREÇÃO DEFINITIVA APLICADA</h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• Restaurada a consulta de métricas do Dashboard (SSOT)</p>
-             <p>• Ajustado Timezone (UTC ➔ America/Sao_Paulo) em todas as Queries</p>
-             <p>• Corrigida visualização de R$ 0,00 nos cards financeiros</p>
+             <p>• RPC `get_daily_revenue` recalibrada: Faturamento Bruto vs Fluxo de Caixa Real</p>
+             <p>• Saneamento de Timezone: Transações noturnas movidas para o dia local correto</p>
+             <p>• Dashboard unificado: 'Receita Hoje' e 'Recebido Hoje' agora refletem a realidade</p>
           </div>
         </div>
       </div>
