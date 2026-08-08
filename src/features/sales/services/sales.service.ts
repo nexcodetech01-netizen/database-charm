@@ -24,6 +24,7 @@ import {
   FiscalDeleteBlockedError,
   findBlockingFiscalDocument,
 } from "../lib/fiscal-delete-guard";
+import { companyDayStartUtc, addDaysStr } from "@/lib/time";
 
 function getSupabaseErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
@@ -460,10 +461,20 @@ export const salesService = {
       (r) => !!r.sale_date && r.sale_date >= monthStartISO,
     );
 
+    const monthTotal = month.reduce((s, r) => s + Number(r.grand_total ?? 0), 0);
+    const paidTotal = paid.reduce((s, r) => s + Number(r.grand_total ?? 0), 0);
+
+    // 2) Breakdown por status — RPC (GROUP BY real no banco).
+    // Usa exatamente o mesmo intervalo dos KPIs para evitar divergência de período.
+    const breakdown = await salesService.statusBreakdown(companyId, range);
+
+    return {
+      dayCount,
+      dayTotal,
       monthCount: month.length,
       monthTotal,
       averageTicket: month.length > 0 ? monthTotal / month.length : 0,
-      paidTotal: paidTotal,
+      paidTotal,
       range: range ?? null,
       breakdown,
     };
