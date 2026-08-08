@@ -393,6 +393,7 @@ export const salesService = {
     companyId: string,
     range?: { from: string; to: string },
     scope?: DataScope,
+    period?: string,
   ) {
     // 1) KPIs por período (apenas vendas pagas)
     let kpiQuery = applyDataScope(
