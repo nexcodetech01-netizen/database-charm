@@ -179,7 +179,7 @@ function DashboardPage() {
   const insights: InsightCardItem[] = [
     {
       id: "sales-period",
-      label: `Vendas ${periodLabel.toLowerCase()}`,
+      label: `RECEITA ${periodLabel.toUpperCase()}`,
       value: dayCount > 0 ? `${dayCount} venda${dayCount > 1 ? "s" : ""}` : "Nenhuma venda",
       hint: dayCount > 0 ? formatCurrency(dayTotal) : "Abra o PDV para começar",
       icon: ShoppingCart,
@@ -187,7 +187,7 @@ function DashboardPage() {
     },
     {
       id: "receipts",
-      label: `Recebido ${periodLabel.toLowerCase()}`,
+      label: `RECEBIDO ${periodLabel.toUpperCase()}`,
       value: formatCurrency(receiptsTotal),
       hint:
         receiptsTotal > 0
