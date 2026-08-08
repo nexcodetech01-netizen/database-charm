@@ -217,6 +217,13 @@ function FinancePage() {
         onOpenChange={setTxOpen}
         companyId={company.id}
       />
+
+      <TransactionFormDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        companyId={company.id}
+        defaultType="transfer"
+      />
     </PageLayout>
   );
 }
