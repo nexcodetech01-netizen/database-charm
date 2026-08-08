@@ -264,7 +264,7 @@ function DashboardPage() {
           <span className={cn("font-medium", TEXT_TOKENS.sm)}>Período:</span>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 flex-1">
-          <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
+          <Select value={period} onValueChange={(value: any) => setPeriod(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Selecione o período" />
             </SelectTrigger>
