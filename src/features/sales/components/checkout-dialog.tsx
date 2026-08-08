@@ -646,7 +646,7 @@ export function CheckoutDialog({
       } else {
         // Para Pix Próprio, Dinheiro e Débito: baixa automática usando motor financeiro
         await salesService.autoSettleSale(saleId, {
-          paymentMethod: method === "pix_manual" ? "pix" : (method as any),
+          paymentMethod: method === "pix_manual" ? "pix_manual" : (method as any),
           companyId
         });
         await handleSettled();
@@ -901,7 +901,7 @@ export function CheckoutDialog({
       saleId,
       customerId: customerId!,
       downPayment: entradaValue,
-      downPaymentMethod: entradaValue > 0 ? creditDownMethod : null,
+      downPaymentMethod: entradaValue > 0 ? (creditDownMethod === "pix_manual" ? "pix_manual" : creditDownMethod) : null,
       dueDate: saldoDueDate || null,
       installments: installmentsCount,
       notes: creditNotes.trim() || null,
