@@ -1866,3 +1866,24 @@ function StatusPill({ status }: { status: string }) {
     </Badge>
   );
 }
+
+function SummaryLine({
+  label,
+  value,
+  className,
+  strong = false,
+}: {
+  label: string;
+  value: string | number;
+  className?: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className={cn("flex justify-between text-muted-foreground", className)}>
+      <span>{label}</span>
+      <span className={cn("tabular-nums", strong && "font-bold text-foreground")}>
+        {value}
+      </span>
+    </div>
+  );
+}
