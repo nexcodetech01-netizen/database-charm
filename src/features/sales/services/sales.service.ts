@@ -471,6 +471,8 @@ export const salesService = {
     return {
       dayCount,
       dayTotal,
+      dayReceived,
+
       monthCount: month.length,
       monthTotal,
       averageTicket: month.length > 0 ? monthTotal / month.length : 0,
