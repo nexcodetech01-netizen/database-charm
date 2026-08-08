@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 
 export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" })
-  .handler(async ({ data: { transactionId } }: { data: { transactionId: string } }) => {
+  .input(z.object({ transactionId: z.string() }))
+  .handler(async ({ data: { transactionId } }) => {
     // Busca se existe um lançamento de crediário (installment) vinculado a esta transação financeira.
-    // Lançamentos de crediário costumam ter source = 'credit_payment' ou estarem vinculados via reference_id.
     const { data: tx, error: txError } = await supabase
       .from("financial_transactions")
       .select("source, reference_id, reference_number, company_id")
@@ -22,9 +23,10 @@ export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" 
          .maybeSingle();
        
        if (creditAcc) {
-         return { creditAccountId: creditAcc.id, type: 'account' };
+         return { creditAccountId: creditAcc.id, type: 'account' as const };
        }
     }
 
     return null;
   });
+
