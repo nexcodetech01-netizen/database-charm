@@ -1513,28 +1513,34 @@ export function CheckoutDialog({
         </div>
 
 
-        <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t bg-card px-5 py-3 sm:flex-row">
-          {onContinueEditing && !confirmed ? (
+        <DialogFooter className="sticky bottom-0 z-10 shrink-0 border-t bg-background px-5 py-3 sm:flex-row gap-2">
+          <div className="flex w-full gap-2">
+            {onContinueEditing && !confirmed ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={handleContinueEditing}
+                title="Fecha o pagamento e volta para editar os itens desta venda"
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar
+              </Button>
+            ) : null}
             <Button
               type="button"
-              variant="outline"
-              onClick={handleContinueEditing}
-              title="Fecha o pagamento e volta para editar os itens desta venda"
+              variant="ghost"
+              className="flex-1"
+              onClick={requestClose}
+              disabled={setStatus.isPending}
             >
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar aos itens
+              <XCircle className="mr-1.5 h-4 w-4" /> Fechar
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={requestClose}
-            disabled={setStatus.isPending}
-          >
-            <XCircle className="mr-1.5 h-4 w-4" /> Fechar
-          </Button>
-          {confirmed || method === "cash" || method === "debit_card" || method === "pix_manual" || method === "credit" || method === "pending_payment" ? (
             <Button
               type="button"
+              className={cn(
+                "flex-[2] min-w-[180px]",
+                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
+              )}
               onClick={handleConfirm}
               disabled={
                 setStatus.isPending ||
@@ -1545,10 +1551,6 @@ export function CheckoutDialog({
                 (method === "pix_manual" && !confirmed && !ownPixPayload) ||
                 ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
               }
-              className={cn(
-                "min-w-[180px]",
-                method === "credit" && !confirmed && customerId && "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md"
-              )}
             >
               {setStatus.isPending || createCredit.isPending || openingSettle ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -1567,9 +1569,9 @@ export function CheckoutDialog({
                         ? "Avançar para Crediário"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
-                          : "Confirmar"}
+                          : "Confirmar Pagamento (F5)"}
             </Button>
-          ) : null}
+          </div>
         </DialogFooter>
       </DialogContent>
 
