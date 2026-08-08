@@ -1550,7 +1550,7 @@ export function CheckoutDialog({
                     : method === "debit_card"
                       ? "Confirmar Débito"
                       : method === "credit"
-                        ? "Avançar para Crediário"
+                        ? "Avançar para Crediário (F5)"
                         : method === "pending_payment"
                           ? "Criar Venda Pendente"
                           : "Confirmar Pagamento (F5)"}
