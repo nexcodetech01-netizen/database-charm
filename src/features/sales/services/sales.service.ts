@@ -444,17 +444,55 @@ export const salesService = {
 
     // Receita do dia — fonte única via RPC (Single Source of Truth) com ajuste de Timezone Brasília.
     // Harmoniza Faturamento Bruto (Sales) e Fluxo de Caixa Real (Transactions).
+    // Receita do dia — fonte única via RPC (Single Source of Truth) com ajuste de Timezone Brasília.
+    // Harmoniza Faturamento Bruto (Sales) e Fluxo de Caixa Real (Transactions).
     const rpcPeriod = period === "today" ? "hoje" : period === "yesterday" ? "ontem" : period === "month" ? "mes" : null;
     
-    const { data: revenueData, error: revenueErr } = rpcPeriod 
-      ? await supabase.rpc("get_dashboard_metrics", { p_period: rpcPeriod })
-      : await supabase.rpc("get_daily_revenue", {
+    let revenueData;
+    let revenueErr;
+
+    try {
+      if (rpcPeriod) {
+        const result = await supabase.rpc("get_dashboard_metrics", { p_period: rpcPeriod });
+        revenueData = result.data;
+        revenueErr = result.error;
+      } else {
+        const result = await supabase.rpc("get_daily_revenue", {
           _company_id: companyId,
           _start_date: range?.from || undefined,
           _end_date: range?.to || undefined,
         });
+        revenueData = result.data;
+        revenueErr = result.error;
+      }
+    } catch (e) {
+      console.error("Dashboard metric RPC failed, falling back to direct query:", e);
+      revenueErr = e;
+    }
 
-    if (revenueErr) throw revenueErr;
+    // Fallback resiliente: se a RPC falhar, faz busca direta na tabela de vendas
+    if (revenueErr || !revenueData) {
+      const { data: fallbackData } = await supabase
+        .from("sales")
+        .select("total_amount:grand_total, sale_date, status")
+        .eq("company_id", companyId)
+        .gte("sale_date", range?.from || todayISO)
+        .lte("sale_date", range?.to || todayISO)
+        .in("status", ["completed", "paid"]);
+      
+      const total = (fallbackData ?? []).reduce((acc, curr) => acc + Number(curr.total_amount || 0), 0);
+      
+      return {
+        dayCount: fallbackData?.length || 0,
+        dayTotal: total,
+        dayReceived: total, // Na falta da RPC, assumimos que as pagas foram recebidas no período
+        monthCount: 0,
+        monthTotal: 0,
+        averageTicket: fallbackData?.length ? total / fallbackData.length : 0,
+        paidTotal: total,
+        breakdown: []
+      };
+    }
 
     const stats = (revenueData as any)?.[0] || (revenueData as any);
     const dayTotal = Number(stats?.gross_revenue ?? stats?.total_revenue ?? 0);
