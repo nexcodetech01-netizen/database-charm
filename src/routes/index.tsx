@@ -86,11 +86,14 @@ function IndexComponent() {
         </div>
 
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
-          <h2 className="text-lg font-semibold mb-4 text-destructive">✅ CORREÇÃO DE BUG VISUAL APLICADA</h2>
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600 flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            CORREÇÃO DEFINITIVA DE TIMEZONE E SOMATÓRIO
+          </h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• <b>Receita do Período:</b> Agora soma o valor bruto de todas as vendas (Paid, Partially Paid, Pending)</p>
-             <p>• <b>Recebido Hoje:</b> Mantém o fluxo de caixa real (entradas efetivas)</p>
-             <p>• <b>Sincronização:</b> RPC <code>get_daily_revenue</code> atualizada para refletir os 3 pilares harmonizados</p>
+             <p>• <b>Padronização Timezone:</b> Query RPC forçada para fuso <code>America/Sao_Paulo</code> em todas as comparações.</p>
+             <p>• <b>Receita do Período:</b> Soma o valor bruto (Total) de todas as vendas emitidas hoje.</p>
+             <p>• <b>Recebido Hoje:</b> Total consolidado de entradas confirmadas em caixa hoje (PIX/Dinheiro/Cartão).</p>
           </div>
         </div>
       </div>
