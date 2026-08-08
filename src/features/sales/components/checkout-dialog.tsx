@@ -1146,17 +1146,8 @@ export function CheckoutDialog({
                 type="button"
                 disabled={!!charge && !confirmed}
                 onClick={() => {
-                  if (m.id === "pix_manual") {
-                    setMethod(m.id);
-                    setCharge(null);
-                    // Otimização: abrir baixa manual direto se possível
-                    if (!confirmed && ownPixPayload) {
-                      setTimeout(() => beginManualSettlement(), 0);
-                    }
-                  } else {
-                    setMethod(m.id);
-                    setCharge(null);
-                  }
+                  setMethod(m.id);
+                  setCharge(null);
                 }}
                 className={cn(
                   "flex items-start gap-3 rounded-lg border p-3 text-left transition",
