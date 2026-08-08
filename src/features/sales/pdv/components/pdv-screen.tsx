@@ -7,7 +7,7 @@ import {
   lazy,
   Suspense,
 } from "react";
-import { Wallet, History, MessageSquare, Tag } from "lucide-react";
+import { Wallet, History, MessageSquare, Tag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,47 @@ const PDVSuspendedDialog = lazy(() =>
 const PDVNotesDialog = lazy(() =>
   import("./pdv-notes-dialog").then((m) => ({ default: m.PDVNotesDialog })),
 );
+const AlertDialog = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialog,
+  })),
+);
+const AlertDialogContent = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogContent,
+  })),
+);
+const AlertDialogHeader = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogHeader,
+  })),
+);
+const AlertDialogTitle = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogTitle,
+  })),
+);
+const AlertDialogDescription = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogDescription,
+  })),
+);
+const AlertDialogFooter = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogFooter,
+  })),
+);
+const AlertDialogAction = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogAction,
+  })),
+);
+const AlertDialogCancel = lazy(() =>
+  import("@/components/ui/alert-dialog").then((m) => ({
+    default: m.AlertDialogCancel,
+  })),
+);
+
 
 
 type Props = {
@@ -182,6 +223,8 @@ export function PDVScreen({
   const [editingNotesItem, setEditingNotesItem] = useState<SaleItemDraft | null>(null);
   const [saleNotesOpen, setSaleNotesOpen] = useState(false);
   const [suspendedOpen, setSuspendedOpen] = useState(false);
+  const [checkoutConfirmationOpen, setCheckoutConfirmationOpen] = useState(false);
+
 
   const handleAddProduct = useCallback(
     (product: Parameters<typeof pdv.addProduct>[0]) => {
@@ -273,6 +316,15 @@ export function PDVScreen({
 
   const cartEditable =
     pdv.state.items.length > 0 && !pendingSale && !completed;
+
+  const handleCheckoutIntent = () => {
+    if (!pdv.state.customerId) {
+      setCheckoutConfirmationOpen(true);
+    } else {
+      checkout.finalize(pdv.state);
+    }
+  };
+
 
   // Atalhos de teclado (Sprint 2.8) — apenas disparam as MESMAS ações dos
   // botões já existentes. Nenhuma regra nova.
@@ -497,7 +549,7 @@ export function PDVScreen({
               </Suspense>
             ) : (
               <PDVPaymentPanel
-                onFinalize={() => checkout.finalize(pdv.state)}
+                onFinalize={handleCheckoutIntent}
                 isSaving={checkout.isSaving}
                 disabled={!canFinalize}
                 onCancelSale={handleCancelSale}
@@ -599,7 +651,38 @@ export function PDVScreen({
         />
       )}
 
+      <Suspense fallback={null}>
+        <AlertDialog open={checkoutConfirmationOpen} onOpenChange={setCheckoutConfirmationOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-warning" />
+                Venda sem Cliente Identificado
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta venda será emitida como <strong>Consumidor Final</strong>. Deseja vincular um cliente antes de finalizar ou continuar assim?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => {
+                setCheckoutConfirmationOpen(false);
+                clickPdvElement(PDV_CUSTOMER_TRIGGER_ID);
+              }}>
+                Vincular Cliente
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                setCheckoutConfirmationOpen(false);
+                checkout.finalize(pdv.state);
+              }}>
+                Continuar assim
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Suspense>
+
       {cashDialogs}
+
     </>
   );
 }
