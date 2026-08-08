@@ -444,11 +444,15 @@ export const salesService = {
 
     // Receita do dia — fonte única via RPC (Single Source of Truth) com ajuste de Timezone Brasília.
     // Harmoniza Faturamento Bruto (Sales) e Fluxo de Caixa Real (Transactions).
-    const { data: revenueData, error: revenueErr } = await supabase.rpc("get_daily_revenue", {
-      _company_id: companyId,
-      _start_date: range?.from || undefined,
-      _end_date: range?.to || undefined,
-    });
+    const rpcPeriod = period === "today" ? "hoje" : period === "yesterday" ? "ontem" : null;
+    
+    const { data: revenueData, error: revenueErr } = rpcPeriod 
+      ? await supabase.rpc("get_dashboard_metrics", { p_period: rpcPeriod })
+      : await supabase.rpc("get_daily_revenue", {
+          _company_id: companyId,
+          _start_date: range?.from || undefined,
+          _end_date: range?.to || undefined,
+        });
 
     if (revenueErr) throw revenueErr;
 
