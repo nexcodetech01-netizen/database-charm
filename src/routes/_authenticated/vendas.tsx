@@ -116,12 +116,13 @@ function SalesPage() {
     try {
       const tx = await salesService.openReceivableForSale(s.id);
       if (!tx) {
-        toast.error("Não há lançamento financeiro em aberto para esta venda", {
-          description:
-            "A baixa deve ser registrada pelo módulo Financeiro para esta venda.",
+        toast.error("Não foi possível localizar o título financeiro", {
+          description: "O lançamento pode ter sido removido ou já estar baixado.",
         });
         return;
       }
+      setSettleSale(s);
+      setSettleTx(tx);
       setSettleSale(s);
       setSettleTx(tx);
     } catch (e) {
