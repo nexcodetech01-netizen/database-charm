@@ -1834,13 +1834,13 @@ function SummaryLine({
   return (
     <div
       className={cn(
-        "flex justify-between",
-        strong ? "border-t pt-1 font-medium text-foreground" : "text-muted-foreground",
+        "flex justify-between items-center",
+        strong ? "border-t pt-1 font-semibold text-foreground" : "text-muted-foreground",
         className
       )}
     >
       <span>{label}</span>
-      <span className={cn(strong ? "text-foreground" : "", strong && "text-lg")}>{value}</span>
+      <span className={cn("tabular-nums", strong ? "text-foreground text-base" : "")}>{value}</span>
     </div>
   );
 }
