@@ -146,18 +146,18 @@ const PDVCartRow = memo(function PDVCartRow({
             </Button>
           </div>
 
-          <div className="text-sm font-bold text-primary tabular-nums shrink-0">
+          <div className="text-sm font-bold text-gray-100 tabular-nums shrink-0">
             {formatCurrency(itemTotal)}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
           <span className="truncate">{item.sku ?? "---"}</span>
-          <span className="text-muted-foreground/30">•</span>
+          <span className="text-slate-500/30">•</span>
           <span>Un: {formatCurrency(item.unit_price)}</span>
           {stock != null && (
             <>
-              <span className="text-muted-foreground/30">•</span>
+              <span className="text-slate-500/30">•</span>
               <span className={cn(lowStock ? "text-destructive font-bold" : "")}>
                 Est: {stock}
               </span>
@@ -197,8 +197,8 @@ export function PDVCart({
   const totalItemsCount = items.reduce((acc, it) => acc + (it.quantity || 0), 0);
 
   return (
-    <div className="flex flex-col rounded-xl border bg-card shadow-md overflow-hidden h-full">
-      <div className="flex items-center justify-between border-b bg-muted/20 px-4 py-2.5">
+    <div className="flex flex-col rounded-xl border border-slate-700/50 bg-slate-900 shadow-md overflow-hidden h-full">
+      <div className="flex items-center justify-between border-b border-slate-700/50 bg-slate-800/30 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <div className="relative">
             <ShoppingCart className="h-4 w-4 text-primary" />
@@ -208,7 +208,7 @@ export function PDVCart({
               </span>
             )}
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest text-foreground">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-100">
             Carrinho
           </p>
         </div>
@@ -225,8 +225,8 @@ export function PDVCart({
               <Package className="h-8 w-8 text-muted-foreground/30" />
             </div>
             <div>
-              <p className="text-sm font-bold text-foreground">Carrinho vazio</p>
-              <p className="mt-1 text-xs text-muted-foreground max-w-[200px] leading-relaxed">
+              <p className="text-sm font-bold text-gray-100">Carrinho vazio</p>
+              <p className="mt-1 text-xs text-slate-500 max-w-[200px] leading-relaxed">
                 Passe o código de barras ou pesquise para iniciar a venda.
               </p>
             </div>
