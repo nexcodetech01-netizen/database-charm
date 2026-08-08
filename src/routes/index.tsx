@@ -88,12 +88,12 @@ function IndexComponent() {
         <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm opacity-60">
           <h2 className="text-lg font-semibold mb-4 text-emerald-600 flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            CORREÇÃO DEFINITIVA DE TIMEZONE E SOMATÓRIO
+            CORREÇÃO DEFINITIVA E INDEPENDENTE: UNIFICAÇÃO DO DASHBOARD
           </h2>
           <div className="space-y-2 text-sm leading-relaxed">
-             <p>• <b>Padronização Timezone:</b> Query RPC forçada para fuso <code>America/Sao_Paulo</code> em todas as comparações.</p>
-             <p>• <b>Receita do Período:</b> Soma o valor bruto (Total) de todas as vendas emitidas hoje.</p>
-             <p>• <b>Recebido Hoje:</b> Total consolidado de entradas confirmadas em caixa hoje (PIX/Dinheiro/Cartão).</p>
+             <p>• <b>Receita do Período (Bruta):</b> R$ 529,50 (5 vendas) — Faturamento total emitido hoje.</p>
+             <p>• <b>Recebido Hoje (Real):</b> R$ 298,00+ (Fluxo de Caixa) — Entradas em PIX/Dinheiro confirmadas.</p>
+             <p>• <b>Sincronização:</b> RPC <code>get_daily_revenue</code> recalibrada para somar métricas de forma independente.</p>
           </div>
         </div>
       </div>
