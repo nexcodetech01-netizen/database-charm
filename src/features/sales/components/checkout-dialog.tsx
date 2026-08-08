@@ -238,6 +238,7 @@ export function CheckoutDialog({
   const [confirmed, setConfirmed] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showCreditConfig, setShowCreditConfig] = useState(false);
 
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
@@ -403,6 +404,7 @@ export function CheckoutDialog({
       setGenerating(false);
       setMethod("pix_manual");
       setShowCompleted(false);
+      setShowCreditConfig(false);
       setInstallments(1);
       setCashReceivedStr("");
       setEntradaStr("");
@@ -867,6 +869,11 @@ export function CheckoutDialog({
         toast.error("Para vender no crediário, selecione um cliente cadastrado.");
         return;
       }
+      
+      // Ao invés de confirmar direto, abre o modal de opções de parcelamento/vencimento
+      setShowCreditConfig(true);
+      return;
+    }
       if (entradaValue > 0 && !creditDownMethod) {
         toast.error("Selecione a forma de pagamento da entrada.");
         return;
