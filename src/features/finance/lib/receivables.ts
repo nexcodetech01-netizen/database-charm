@@ -50,7 +50,7 @@ function startOfToday(): number {
  * Estado individual, sem contexto de grupo.
  */
 export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
-  if (t.metadata && (t.metadata as any).reimbursement) return "reimbursement";
+  if ((t as any).metadata && (t as any).metadata.reimbursement) return "reimbursement";
   if (t.status === "paid") return "paid";
   if (t.status === "cancelled") return "cancelled";
   const today = startOfToday();

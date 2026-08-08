@@ -122,7 +122,7 @@ export function TransactionFormDialog({
         amount: 0,
         account_id: "",
         transfer_to_account_id: "",
-        category_id: initialIsReimbursement ? (categories?.find(c => c.kind === "income" && (c.name.includes("Aporte") || c.name.includes("Dono")))?.id ?? "") : "",
+        category_id: initialIsReimbursement ? (categories?.find(c => c.kind === "income" && (c.name.includes("Aporte") || c.name.includes("Dono") || c.name.includes("Sócio")))?.id ?? "") : "",
         transaction_date: todayISO(),
         due_date: todayISO(),
         status: "pending",
