@@ -529,22 +529,7 @@ function SaleWorkspace({
           mono
         />
         {(sale.status === "partially_paid" || (sale.status === "pending" && sale.payment_method === 'credit')) && (
-          <>
-            <SummaryRow
-              label="Valor Pago (Entrada)"
-              value={formatCurrency(Number(sale.metadata?.credit_down_payment ?? 0))}
-              mono
-              className="text-success"
-            />
-            <SummaryRow
-              label="Saldo Devedor / Restante"
-              value={formatCurrency(
-                Math.max(0, Number(sale.grand_total ?? 0) - Number(sale.metadata?.credit_down_payment ?? 0))
-              )}
-              mono
-              className="font-bold text-destructive"
-            />
-          </>
+          <CreditSummaryItems saleId={sale.id} grandTotal={Number(sale.grand_total ?? 0)} />
         )}
       </div>
       <div className="space-y-2 border-t border-border pt-3">
