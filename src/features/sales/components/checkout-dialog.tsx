@@ -989,7 +989,7 @@ export function CheckoutDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) requestClose(); else onOpenChange(true); }}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b px-5 py-3 text-left">
           <DialogTitle className="flex items-center gap-2">
             Checkout
@@ -1004,7 +1004,7 @@ export function CheckoutDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
+        <div className="flex-1 overflow-y-auto pr-2 px-5 py-4 space-y-4">
         {/* Valor */}
         <div className="rounded-xl border border-border bg-muted/30 p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
