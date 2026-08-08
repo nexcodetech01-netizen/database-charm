@@ -51,8 +51,8 @@ import { useMobileDashboardRefresh } from "@/hooks/use-mobile-dashboard-refresh"
 import { requirePermission } from "@/features/rbac";
 import { InterestDashboardCard } from "@/features/interests";
 import { RevenueAuditDialog } from "@/features/sales/components/revenue-audit-dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 
