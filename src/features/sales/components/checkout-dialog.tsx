@@ -1528,7 +1528,6 @@ export function CheckoutDialog({
 
         </div>
 
-        </div>
 
         <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t bg-card px-5 py-3 sm:flex-row">
           {onContinueEditing && !confirmed ? (
