@@ -247,6 +247,8 @@ function DashboardPage() {
               { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
               { label: "Novo cliente", icon: UserPlus, onSelect: () => navigate({ to: ROUTES.customers }) },
             ]}
+          />
+        }
       />
 
       {/* Filtro de Período */}
@@ -282,9 +284,6 @@ function DashboardPage() {
           Fuso horário: America/Sao_Paulo
         </div>
       </div>
-
-        }
-      />
 
       {/* 2 — Hero KPI: receita do período domina a tela */}
       <HeroMetric
