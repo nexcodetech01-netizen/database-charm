@@ -1571,28 +1571,46 @@ export function CheckoutDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="rounded-lg bg-muted/50 p-3 text-sm">
-              <div className="flex justify-between font-medium">
-                <span>Total da Venda:</span>
-                <span>{formatCurrency(amount)}</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor da Entrada (R$)</Label>
+                <Input
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={entradaStr}
+                  onChange={(e) => setEntradaStr(e.target.value)}
+                  className={cn(entradaExcedeu && "border-destructive focus-visible:ring-destructive")}
+                />
+                {entradaExcedeu && (
+                  <p className="text-[10px] text-destructive font-medium">
+                    A entrada não pode exceder o total.
+                  </p>
+                )}
               </div>
-              {entradaValue > 0 && (
-                <>
-                  <div className="mt-1 flex justify-between text-success">
-                    <span>Entrada (a pagar agora):</span>
-                    <span>{formatCurrency(entradaValue)}</span>
-                  </div>
-                  <div className="mt-1 flex justify-between border-t border-border/50 pt-1 font-bold text-destructive">
-                    <span>Saldo no Crediário:</span>
-                    <span>{formatCurrency(saldoValue)}</span>
-                  </div>
-                </>
-              )}
+
+              <div className="space-y-2">
+                <Label>Nº de Parcelas</Label>
+                <Select
+                  value={String(installmentsCount)}
+                  onValueChange={(v) => setInstallmentsCount(Number(v))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}x
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {entradaValue > 0 && (
               <div className="space-y-2">
-                <Label>Forma de pagamento da entrada</Label>
+                <Label>Forma de Pagamento da Entrada</Label>
                 <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
                   <SelectTrigger>
                     <SelectValue />
@@ -1608,25 +1626,46 @@ export function CheckoutDialog({
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Data de Vencimento do Saldo</Label>
-              <Input
-                type="date"
-                value={saldoDueDate}
-                onChange={(e) => setSaldoDueDate(e.target.value)}
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Data em que o título será gerado no Contas a Receber.
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Primeiro Vencimento</Label>
+                <Input
+                  type="date"
+                  value={saldoDueDate}
+                  onChange={(e) => setSaldoDueDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Input
+                  value={creditNotes}
+                  onChange={(e) => setCreditNotes(e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Observações do Título</Label>
-              <Input
-                value={creditNotes}
-                onChange={(e) => setCreditNotes(e.target.value)}
-                placeholder="Ex: Pagamento em 30 dias"
-              />
+            {/* Resumo Visual */}
+            <div className="rounded-lg bg-blue-600/5 p-3 border border-primary/10 text-xs">
+              <div className="flex justify-between mb-1">
+                <span className="text-muted-foreground">Valor total da venda:</span>
+                <span className="font-medium text-gray-100">{formatCurrency(amount)}</span>
+              </div>
+              {entradaValue > 0 && (
+                <div className="flex justify-between mb-1">
+                  <span className="text-muted-foreground">Entrada:</span>
+                  <span className="font-medium text-emerald-500">-{formatCurrency(entradaValue)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold text-gray-100 border-t border-primary/10 pt-1 mt-1">
+                <span>{installmentsCount} parcelas de:</span>
+                <span>{formatCurrency(saldoValue / installmentsCount)}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 italic">
+                Serão geradas {installmentsCount} {installmentsCount === 1 ? 'parcela' : 'parcelas'} de {formatCurrency(saldoValue / installmentsCount)} 
+                {" "}com 1º vencimento em {new Date(saldoDueDate + "T12:00:00").toLocaleDateString('pt-BR')}.
+              </p>
             </div>
           </div>
           <DialogFooter>
