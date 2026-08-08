@@ -957,8 +957,10 @@ export function CheckoutDialog({
         console.info("[checkout-dialog] create_credit_sale payload", payload);
         const res = await createCredit.mutateAsync(payload);
         
-        // CORREÇÃO DE STATUS: Se valor pago (entrada) é 0, status deve ser 'pending'
-        // Se > 0 e < total, status 'partially_paid'. Se >= total, 'paid'.
+        // CORREÇÃO DE STATUS: Aplicar validação matemática estrita
+        // Se total_pago == 0 -> status = 'pending'
+        // Se 0 < total_pago < total_venda -> status = 'partially_paid'
+        // Se total_pago >= total_venda -> status = 'paid'
         let finalStatus: string = "pending";
         if (entradaValue >= amount) {
           finalStatus = "paid";

@@ -136,17 +136,25 @@ export function evaluateSaleDiscount(input: {
 export function resolveSaleStatus(
   state: SaleDraftState,
   ctx: Pick<SalePersistenceContext, "finalize" | "isEdit" | "persistedStatus">,
+  inputPaidAmount?: number,
 ): string {
   if (!ctx.finalize) return state.status;
+
+  // Se o valor pago for informado explicitamente (ex: Checkout PDV), aplicamos a regra estrita.
+  if (inputPaidAmount !== undefined) {
+    const totals = computeSaleTotals(state);
+    const total = totals.grand_total;
+    if (inputPaidAmount >= total) return "paid";
+    if (inputPaidAmount > 0) return "partially_paid";
+    return "pending";
+  }
   
   // Vendas "A Receber" (sem checkout) gravam como draft para promoção posterior
   if (isReceivablePaymentMethod(state.paymentMethod)) return "draft";
   
   // Vendas em Crediário (com checkout/entrada)
   if (state.paymentMethod === "credit") {
-    const totals = computeSaleTotals(state);
-    // Se não há entrada, status é pendente (A Receber)
-    // Nota: no PDV/Checkout, a entrada é tratada, mas aqui definimos o status inicial da persistência
+    // Por padrão, a persistência inicial de um crediário sem checkout é pendente.
     return "pending";
   }
 
@@ -166,6 +174,7 @@ export function needsReceivablePromotion(
 export function buildSalePayload(
   state: SaleDraftState,
   ctx: SalePersistenceContext,
+  inputPaidAmount?: number,
 ): SalePersistencePayload {
   return {
     company_id: ctx.companyId,
@@ -173,7 +182,7 @@ export function buildSalePayload(
     customer_id: state.customerId,
     sale_date: "",
     payment_method: state.paymentMethod || null,
-    status: resolveSaleStatus(state, ctx),
+    status: resolveSaleStatus(state, ctx, inputPaidAmount),
     discount: state.discount || 0,
     shipping: state.shipping || 0,
     notes: state.notes.trim() || null,
@@ -194,7 +203,7 @@ export const SaleEngine = {
   evaluateDiscount: evaluateSaleDiscount,
   resolveStatus: resolveSaleStatus,
   needsReceivablePromotion,
-  buildPayload: buildSalePayload,
+  buildPayload: (state: SaleDraftState, ctx: SalePersistenceContext, paid?: number) => buildSalePayload(state, ctx, paid),
   requiresCheckout,
   isReceivable: isReceivablePaymentMethod,
 } as const;
