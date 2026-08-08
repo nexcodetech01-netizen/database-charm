@@ -112,7 +112,6 @@ export const PDVOperationBar = memo(function PDVOperationBar({
       </div>
 
       <div className="mt-1.5 flex min-w-0 items-center gap-4 overflow-hidden">
-        <MetaChip icon={Wallet} value={cashStatus.label} title="Caixa" />
         <MetaChip
           icon={User}
           value={operatorName || "—"}

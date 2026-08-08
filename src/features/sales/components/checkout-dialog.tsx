@@ -1662,14 +1662,18 @@ export function CheckoutDialog({
                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
               )}
               {confirmed
-                ? "Ver Cupom"
+                ? "Concluído"
                 : method === "pix_manual"
-                  ? "Confirmar pagamento"
-                  : method === "credit"
-                    ? "Abrir crediário"
-                    : method === "pending_payment"
-                      ? "Criar Venda Pendente"
-                      : "Confirmar recebimento"}
+                  ? "Confirmar Pagamento (Pix)"
+                  : method === "cash"
+                    ? "Confirmar Recebimento (Dinheiro)"
+                    : method === "debit_card"
+                      ? "Confirmar Débito"
+                      : method === "credit"
+                        ? "Abrir Crediário"
+                        : method === "pending_payment"
+                          ? "Criar Venda Pendente"
+                          : "Confirmar"}
 
             </Button>
           ) : null}
