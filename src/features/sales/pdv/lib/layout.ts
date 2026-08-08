@@ -31,7 +31,7 @@ export const PDV_LAYOUT = {
    * Sprint PDV.3.1: barra de operação compacta libera ~9rem de altura útil.
    */
   cartScroll:
-    "max-h-[calc(100vh-15rem)] min-h-56 overflow-y-auto scroll-smooth overscroll-contain",
+    "max-h-[calc(100vh-14rem)] min-h-56 overflow-y-auto scroll-smooth overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20",
   /** Painel lateral fixo: acompanha o scroll da página. */
   sidePanel:
     "flex min-w-0 flex-col gap-2 lg:sticky lg:top-2 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain",

@@ -78,90 +78,46 @@ const PDVCartRow = memo(function PDVCartRow({
       onFocus={activate}
       onMouseDown={activate}
       className={cn(
-        "flex gap-4 p-4 transition-all duration-200 rounded-lg border border-transparent mb-2",
+        "flex items-center gap-3 py-1.5 px-3 transition-all duration-200 rounded-md border border-transparent mb-1",
         "bg-muted/30 hover:bg-muted/50",
         "data-[active]:bg-card data-[active]:border-primary/30 data-[active]:shadow-sm data-[active]:ring-1 data-[active]:ring-primary/20"
       )}
     >
-      {/* Imagem do Produto (Quadrado maior) */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border bg-background shadow-sm">
+      {/* Imagem do Produto (Compacta) */}
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded border bg-background shadow-sm">
         {item.image_url ? (
           <img
             src={item.image_url}
             alt={item.description}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform hover:scale-110"
+            className="h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted/20">
-            <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+            <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
           </div>
         )}
         {lowStock && (
-          <div className="absolute inset-x-0 bottom-0 bg-destructive/90 py-0.5 text-center text-[8px] font-bold uppercase text-white">
-            Baixo Estoque
+          <div className="absolute inset-x-0 bottom-0 bg-destructive/90 py-0.5 text-center text-[7px] font-bold uppercase text-white leading-none">
+            !
           </div>
         )}
       </div>
 
-      {/* Descrição e Metadados */}
-      <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h4 className="text-sm font-semibold leading-tight truncate" title={item.description}>
-                {baseName}
-              </h4>
-              {variation && (
-                <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                  {variation}
-                </p>
-              )}
-            </div>
-            
-            <div className="flex flex-wrap gap-1 shrink-0">
-              {(hasPriceChange || hasDiscount || hasAddition) && (
-                <Badge variant="outline" className="h-4 px-1 text-[8px] uppercase font-bold bg-primary/5 text-primary border-primary/20">
-                  <Tag className="h-2 w-2 mr-0.5" />
-                  Ajustado
-                </Badge>
-              )}
-              {hasNotes && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button onClick={() => onEditNotes?.(item)} className="text-primary hover:text-primary/80">
-                        <MessageSquare className="h-3.5 w-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">{item.notes}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[10px] text-muted-foreground font-medium">
-            <span className="bg-muted/50 px-1.5 rounded uppercase tracking-wider">SKU: {item.sku ?? "---"}</span>
-            <span className="text-muted-foreground/30">|</span>
-            <span className={cn(lowStock ? "text-destructive font-bold" : "")}>
-              Estoque: {stock ?? "---"}
-            </span>
-            <span className="text-muted-foreground/30">|</span>
-            <span>Unit: {formatCurrency(item.unit_price)}</span>
-          </div>
-        </div>
-
-        {/* Seletor de Quantidade (Alinhado à esquerda/centro do grupo de descrição) */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className="flex items-center rounded-md border bg-background shadow-sm h-7 overflow-hidden">
+      {/* Nome, Quantidade e Preço (Linha 1 + Metadados Linha 2) */}
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-sm font-medium leading-tight truncate flex-1" title={item.description}>
+            {baseName} {variation && <span className="text-muted-foreground font-normal">({variation})</span>}
+          </h4>
+          
+          {/* Seletor de Quantidade Compacto */}
+          <div className="flex items-center rounded border bg-background h-6 overflow-hidden shrink-0">
             <Button
               type="button"
               size="icon"
               variant="ghost"
-              className="h-full w-7 rounded-none hover:bg-muted"
+              className="h-full w-5 rounded-none hover:bg-muted"
               disabled={readOnly}
               onClick={() => onQuantityChange(uiKey, Math.max(1, item.quantity - 1))}
             >
@@ -176,55 +132,52 @@ const PDVCartRow = memo(function PDVCartRow({
               disabled={readOnly}
               value={item.quantity}
               onChange={(e) => onQuantityChange(uiKey, Number(e.target.value))}
-              className="h-full w-9 border-0 px-0 text-center text-xs font-bold tabular-nums shadow-none focus-visible:ring-0 bg-transparent"
+              className="h-full w-7 border-0 px-0 text-center text-[10px] font-bold tabular-nums shadow-none focus-visible:ring-0 bg-transparent"
             />
             <Button
               type="button"
               size="icon"
               variant="ghost"
-              className="h-full w-7 rounded-none hover:bg-muted"
+              className="h-full w-5 rounded-none hover:bg-muted"
               disabled={readOnly}
               onClick={() => onQuantityChange(uiKey, item.quantity + 1)}
             >
               <Plus className="h-3 w-3" />
             </Button>
           </div>
-          
-          <div className="flex items-center gap-1">
-             <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-primary"
-                disabled={readOnly}
-                onClick={() => onEditPrice?.(item)}
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Button>
+
+          <div className="text-sm font-bold text-primary tabular-nums shrink-0">
+            {formatCurrency(itemTotal)}
           </div>
         </div>
-      </div>
 
-      {/* Preço Total e Ação de Remover */}
-      <div className="flex flex-col items-end justify-between py-0.5 min-w-[100px]">
-        <div className="text-right">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-0.5">Total</p>
-          <p className="text-lg font-black tabular-nums text-primary leading-none">
-            {formatCurrency(itemTotal)}
-          </p>
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+          <span className="truncate">{item.sku ?? "---"}</span>
+          <span className="text-muted-foreground/30">•</span>
+          <span>Un: {formatCurrency(item.unit_price)}</span>
+          {stock != null && (
+            <>
+              <span className="text-muted-foreground/30">•</span>
+              <span className={cn(lowStock ? "text-destructive font-bold" : "")}>
+                Est: {stock}
+              </span>
+            </>
+          )}
+          {hasNotes && <MessageSquare className="h-2.5 w-2.5 text-primary ml-auto" />}
         </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5 px-2 -mr-2"
-          disabled={readOnly}
-          onClick={() => onRemove(uiKey)}
-        >
-          <XCircle className="h-4 w-4" />
-          Remover
-        </Button>
       </div>
+
+      {/* Ação de Remover (Apenas Ícone) */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+        disabled={readOnly}
+        onClick={() => onRemove(uiKey)}
+      >
+        <XCircle className="h-4 w-4" />
+      </Button>
     </li>
   );
 });
