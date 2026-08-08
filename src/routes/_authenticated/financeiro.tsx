@@ -100,15 +100,8 @@ function FinancePage() {
       </div>
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="ghost" disabled title="Em breve">
+        <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setTab("reconciliation")}
-        >
-          <CheckCircle2 className="mr-1.5 h-4 w-4" /> Conciliação
         </Button>
         <Button size="sm" variant="ghost" disabled title="Em breve">
           <Download className="mr-1.5 h-4 w-4" /> Exportar
