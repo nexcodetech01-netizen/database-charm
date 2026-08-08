@@ -16,7 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SALE_STATUS_OPTIONS } from "../../types";
+import { SALE_STATUS_OPTIONS } from "../types";
+
 
 interface RevenueAuditDialogProps {
   isOpen: boolean;
@@ -37,9 +38,10 @@ export function RevenueAuditDialog({
 }: RevenueAuditDialogProps) {
   const getStatusLabel = (status: string) => {
     return (
-      SALE_STATUS_OPTIONS.find((opt) => opt.value === status)?.label || status
+      SALE_STATUS_OPTIONS.find((opt: { value: string; label: string }) => opt.value === status)?.label || status
     );
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

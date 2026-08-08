@@ -415,6 +415,12 @@ function DashboardPage() {
           ]}
         />
       </Section>
+      <RevenueAuditDialog 
+        isOpen={isAuditOpen} 
+        onOpenChange={setIsAuditOpen} 
+        breakdown={breakdown}
+        dayTotal={dayTotal}
+      />
       </div>
     </ErrorBoundary>
   );
