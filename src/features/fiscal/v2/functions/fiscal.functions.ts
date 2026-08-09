@@ -1003,13 +1003,9 @@ export const uploadFiscalCertificate = createServerFn({ method: "POST" })
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const objectPath = `${companyId}/certs/${crypto.randomUUID()}.pfx`;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: upErr } = await supabaseAdmin.storage
-      .from("fiscal-certificates")
-      .upload(objectPath, bytes, { contentType: data.contentType, upsert: false });
-    if (upErr) throw upErr;
-
     const repo = new CertificateRepository(supabase);
+    await repo.uploadFile(objectPath, bytes, data.contentType);
+
     await repo.update(companyId, "all", { is_active: false });
 
     const cert = await repo.insert({
