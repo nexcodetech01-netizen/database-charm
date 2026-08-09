@@ -190,14 +190,7 @@ type FiscalDocumentRow = {
 
 const mapDocument = (row: FiscalDocumentRow): FiscalDocumentDto => mapDocFromQuery(row as any);
 
-
-
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
-
-function docFrom(supabase: SB) {
-  // Small helper to avoid re-typing the column list.
-  return supabase.from("fiscal_documents" as never);
-}
 
 // ------------------------------------------------------------------- LIST
 
