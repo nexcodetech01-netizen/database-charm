@@ -1,10 +1,13 @@
 import { LabelData, LabelaryAudit } from "../types/printing.types";
+import CryptoJS from 'crypto-js';
 
 /**
  * Serviço para interagir com a API do Labelary (https://labelary.com)
+ * Com Cache por Hash ZPL e Auditoria Técnica.
  */
 
 let lastAudit: LabelaryAudit | null = null;
+const cache = new Map<string, Blob>();
 
 export const labelaryService = {
   getLastAudit(): LabelaryAudit | null {
@@ -12,20 +15,24 @@ export const labelaryService = {
   },
 
   /**
-   * Gera uma URL de imagem do preview da etiqueta (LEGACY)
-   */
-  getPreviewUrl(label: LabelData): string {
-    const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
-    return `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/${encodeURIComponent(zpl)}`;
-  },
-
-  /**
-   * Converte ZPL para PDF usando o Labelary
+   * Converte ZPL para PDF usando o Labelary com cache e métricas
    */
   async convertToPdf(label: LabelData): Promise<Blob> {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
+    
+    // 1. Check Cache
+    const cacheKey = CryptoJS.MD5(`${zpl}|${width}|${height}|${dpmm}`).toString();
+    if (cache.has(cacheKey)) {
+      console.log(`[Labelary] Cache hit for ZPL hash: ${cacheKey}`);
+      return cache.get(cacheKey)!;
+    }
+
     const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
     const startTime = Date.now();
+    const parseStart = performance.now();
+    
+    // Simulação de tempo de parse (já que o ZPL é passado direto)
+    const parseTime = performance.now() - parseStart;
     
     const headers = {
       'Accept': 'application/pdf',
@@ -49,17 +56,25 @@ export const labelaryService = {
         zplLength: zpl.length,
         dimensions: `${width}x${height} @ ${dpmm}dpmm`,
         durationMs: duration,
+        parseDurationMs: parseTime,
         status: response.status,
         statusText: response.statusText,
         responseBody,
         timestamp: new Date().toISOString()
       };
       
+      console.log(`[Labelary] Request completed in ${duration}ms. Status: ${response.status}`);
+      
       if (!response.ok) {
         throw new Error(`Labelary error ${response.status}: ${responseBody || 'Unknown error'}`);
       }
 
-      return await response.blob();
+      const blob = await response.blob();
+      
+      // Save to cache
+      cache.set(cacheKey, blob);
+      
+      return blob;
     } catch (error) {
       const duration = Date.now() - startTime;
       
@@ -70,11 +85,14 @@ export const labelaryService = {
         zplLength: zpl.length,
         dimensions: `${width}x${height} @ ${dpmm}dpmm`,
         durationMs: duration,
+        parseDurationMs: parseTime,
         status: 0,
         statusText: 'Failed',
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       };
+      
+      console.error(`[Labelary] Critical failure in ${duration}ms:`, error);
       throw error;
     }
   }
