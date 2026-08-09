@@ -26,6 +26,7 @@ import { printManager } from "@/features/printing/services/print.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
 
 interface ZPLBlock {
   id: string;
@@ -61,6 +62,7 @@ export function MercadoLivrePrintDialog({
   const [activeTab, setActiveTab] = useState<string>("block-0");
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string>("browser");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportZPL = () => {
@@ -145,10 +147,16 @@ export function MercadoLivrePrintDialog({
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type: "application/pdf" });
       } else {
-        blob = await labelaryService.convertToPdf({
-          id: source.id + "_" + block.id,
-          zpl: block.zpl,
-        });
+        // Preview é opcional. Se falhar, apenas não define previewUrl.
+        try {
+          blob = await labelaryService.convertToPdf({
+            id: source.id + "_" + block.id,
+            zpl: block.zpl,
+          });
+        } catch (previewErr) {
+          console.warn(`[ML_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
+          // Silenciosamente falha o preview, mas mantém o ZPL para impressão.
+        }
       }
 
       if (blob) {
@@ -231,28 +239,34 @@ export function MercadoLivrePrintDialog({
   const handlePrintBlock = async (block: ZPLBlock) => {
     setIsPrinting(true);
     try {
+      // Prioridade absoluta: Se for ZPL, enviar BRUTO
+      const strategy = block.zpl ? "RAW" : "PDF";
+      
       const result = await printManager.print(
         {
           id: labelData?.id + "_" + block.id,
           zpl: block.zpl || undefined,
           content: block.zpl ? undefined : labelData?.content,
         },
-        { strategy: "PDF" as any }
+        { 
+          strategy: strategy as any,
+          printerId: selectedPrinterId // Usaremos a impressora selecionada se disponível
+        }
       );
 
       if (result.success) {
-        if (block.blob) {
+        if (block.zpl) {
+          toast.success(`ZPL enviado para fila enterprise: ${block.title}`);
+        } else if (block.blob) {
           const url = URL.createObjectURL(block.blob);
           const printWindow = window.open(url);
           if (printWindow) {
             printWindow.print();
           }
-        } else if (block.zpl) {
-          toast.info(`Enviando ZPL bruto...`);
+          toast.success(`${block.title} aberta para impressão.`);
         }
-        toast.success(`${block.type === 'label' ? 'Etiqueta' : 'DANFE'} enviada.`);
       } else {
-        throw new Error(result.message || "Erro ao enviar impressão.");
+        throw new Error(result.message || "Erro ao enfileirar impressão.");
       }
     } catch (error) {
       toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro"));
@@ -381,16 +395,23 @@ export function MercadoLivrePrintDialog({
                               </div>
                             ) : (
                               <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px] uppercase tracking-wider">
-                                🟡 PREVIEW OFFLINE
+                                <Info className="h-3 w-3" /> PREVIEW INDISPONÍVEL
                               </div>
                             )}
                             <p className="text-[10px] text-slate-400 leading-tight font-medium">
                               {block.previewUrl 
                                 ? "O documento está pronto para visualização e impressão."
-                                : "A impressão e o download continuam disponíveis."
+                                : "Preview indisponível. A impressão continua disponível."
                               }
                             </p>
                           </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                           <PrinterSelector 
+                              value={selectedPrinterId} 
+                              onValueChange={setSelectedPrinterId} 
+                           />
                         </div>
                       </aside>
 

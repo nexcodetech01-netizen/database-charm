@@ -21,13 +21,16 @@ export interface PrintJob {
   createdAt: Date;
   startedAt?: Date;
   finishedAt?: Date;
+  durationMs?: number;
   attempts: number;
   maxAttempts: number;
   error?: string;
+  isRaw?: boolean;
   history: Array<{
     timestamp: Date;
     status: PrintJobStatus;
     message?: string;
+    details?: any;
   }>;
 }
 

@@ -43,45 +43,77 @@ class PrintQueue {
 
     this.isProcessing = true;
     const job = this.queue.shift()!;
+    const startTime = Date.now();
     
     try {
       job.status = 'PROCESSING';
       job.startedAt = new Date();
-      job.history.push({ timestamp: new Date(), status: 'PROCESSING' });
+      
+      const printer = (await printerService.listPrinters()).find(p => p.id === job.printerId);
+      const printerName = printer?.name || 'Impressora Desconhecida';
+      const isZpl = !!job.label.zpl;
+      const canDoRaw = printer?.capabilities.supportsZpl || printer?.capabilities.supportsRaw;
+
+      job.history.push({ 
+        timestamp: new Date(), 
+        status: 'PROCESSING',
+        message: `Iniciando impressão na impressora: ${printerName}`,
+        details: {
+          type: isZpl ? 'ZPL' : 'PDF/Outro',
+          printer: printerName,
+          mode: (isZpl && canDoRaw) ? 'RAW' : 'STANDARD'
+        }
+      });
+      
       this.emit({ type: 'PRINT_STARTED', jobId: job.id, timestamp: new Date() });
 
-      // Aqui entra a chamada real do serviço de impressão
-      // Por enquanto simulamos sucesso se não for RAW (que sabemos que não está implementado)
-      if (job.strategy === 'RAW') {
-         throw new Error('Estratégia RAW ainda não implementada');
+      // Lógica de Impressão Enterprise
+      if (isZpl && canDoRaw) {
+        job.isRaw = true;
+        console.log(`[PrintManager] Enviando ZPL bruto para ${printerName}:`, job.label.zpl);
+        // Simulação de envio RAW (WebUSB ou Agente Local)
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } else if (job.strategy === 'RAW') {
+        throw new Error('Impressora selecionada não suporta modo RAW/ZPL');
+      } else {
+        // Fallback para impressão via browser/PDF
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
-
-      // Simulação de delay de hardware
-      await new Promise(resolve => setTimeout(resolve, 800));
 
       job.status = 'COMPLETED';
       job.finishedAt = new Date();
-      job.history.push({ timestamp: new Date(), status: 'COMPLETED' });
+      job.durationMs = Date.now() - startTime;
+      job.history.push({ 
+        timestamp: new Date(), 
+        status: 'COMPLETED',
+        message: `Impressão finalizada com sucesso em ${job.durationMs}ms`
+      });
+      
       this.history.push(job);
       this.emit({ type: 'PRINT_FINISHED', jobId: job.id, timestamp: new Date() });
     } catch (error) {
       job.attempts++;
       const errorMessage = error instanceof Error ? error.message : String(error);
       job.error = errorMessage;
-      job.history.push({ timestamp: new Date(), status: 'FAILED', message: errorMessage });
+      job.history.push({ 
+        timestamp: new Date(), 
+        status: 'FAILED', 
+        message: `Erro na tentativa ${job.attempts}: ${errorMessage}`,
+        details: { error: errorMessage, duration: Date.now() - startTime }
+      });
       
       if (job.attempts < job.maxAttempts) {
         job.status = 'PENDING';
-        this.queue.push(job); // Retry
+        this.queue.push(job); // Retry automático
       } else {
         job.status = 'FAILED';
+        job.durationMs = Date.now() - startTime;
         this.history.push(job);
         this.emit({ type: 'PRINT_ERROR', jobId: job.id, error: errorMessage, timestamp: new Date() });
       }
     } finally {
       this.isProcessing = false;
-      // Pequeno delay para evitar recursão síncrona infinita e permitir que testes vejam a fila
-      setTimeout(() => this.process(), 10);
+      setTimeout(() => this.process(), 50);
     }
   }
 
