@@ -25,7 +25,6 @@ import { usePrintPreferences } from "../hooks/use-print-preferences";
 import type { PrintPreferences } from "../lib/print-preferences";
 import { describePrinter } from "../lib/printer";
 import { LABEL_LAYOUT_LIST } from "../lib/labels";
-
 import { PrinterSelector } from "./PrinterSelector";
 
 /**
