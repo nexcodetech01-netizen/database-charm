@@ -1326,14 +1326,11 @@ export const setCertificatePassword = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    const { data: cert, error } = await supabase
-      .from("fiscal_certificates")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!cert) throw new Error("Certificado não encontrado.");
+    const certExists = await new CertificateRepository(supabase).exists(
+      companyId,
+      data.certificateId,
+    );
+    if (!certExists) throw new Error("Certificado não encontrado.");
 
     await callSetSecret(supabase, companyId, "cert_password", data.certificateId, data.password);
     return { ok: true };
