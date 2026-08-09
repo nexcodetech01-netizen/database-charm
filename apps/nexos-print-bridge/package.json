@@ -1,0 +1,30 @@
+{
+  "name": "@nexos/print-bridge",
+  "version": "1.0.0",
+  "description": "Serviço local para Windows de ponte entre NexOS ERP e impressoras",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsup src/server.ts --format cjs --clean",
+    "pkg": "pkg . --targets node18-win-x64 --out-path dist"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "fastify": "^5.0.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "pkg": "^5.8.1",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "targets": [
+      "node18-win-x64"
+    ]
+  }
+}
