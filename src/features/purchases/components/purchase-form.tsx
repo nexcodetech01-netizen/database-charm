@@ -321,8 +321,10 @@ export function PurchaseForm({ companyId, purchase }: Props) {
 
       if (receive) {
         // Mesmo caminho do botão "Receber compra" da tela de detalhe.
+        console.log("[PurchaseForm.submit] Disparando recebimento atômico (setStatus: received)");
         await statusMut.mutateAsync({ id: purchaseId, status: "received" });
       }
+
 
       toast.success(
         receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",

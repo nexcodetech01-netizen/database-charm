@@ -338,7 +338,9 @@ export const purchasesService = {
 
     const updated = await updateRow("purchases", id, updatePayload);
 
-    console.log("[PurchasesService.update] Status salvo no banco:", updated.status);
+    console.log("[PurchasesService.update] Status retornado pela API:", updated.status);
+    return updated;
+
 
 
 
