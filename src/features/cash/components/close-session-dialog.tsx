@@ -279,6 +279,17 @@ export function CloseSessionDialog({ open, onOpenChange, session, onClosed }: Pr
             </span>
           </div>
 
+          {/* Alerta de Dinheiro Esperado Negativo */}
+          {summary && summary.expectedCash < 0 && (
+            <Alert variant="destructive" className="border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="text-sm font-bold">Atenção: Dinheiro esperado negativo</AlertTitle>
+              <AlertDescription className="text-xs">
+                As sangrias registradas ({formatCurrency(summary.cashOut)}) superaram o saldo inicial somado às vendas e suprimentos em dinheiro. Verifique os lançamentos.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Bella IA — só quando há divergência */}
           {hasCounted && difference !== 0 && (
             <div className="[&_[data-bella-inline]]:py-2">
