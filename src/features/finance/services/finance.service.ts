@@ -164,7 +164,7 @@ export const financeService = {
   async listTransactions(companyId: string, filters: TransactionListFilters) {
     let q = supabase
       .from("financial_transactions")
-      .select("*, category:financial_categories(name)", { count: "exact" })
+      .select("*, category:financial_categories(name), financial_accounts(name)", { count: "exact" })
       .eq("company_id", companyId);
 
     if (filters.search.trim()) {
