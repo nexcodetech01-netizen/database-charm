@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MercadoLivrePrintDialog } from '../components/mercadolivre-print-dialog';
+import { ShippingLabelPrintDialog } from '../../printing/components/ShippingLabelPrintDialog';
 import React from 'react';
 
 // Mock dependencies
@@ -28,7 +28,7 @@ global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
 global.URL.revokeObjectURL = vi.fn();
 global.atob = vi.fn(() => 'mock-binary');
 
-describe('MercadoLivrePrintDialog UI', () => {
+describe('ShippingLabelPrintDialog UI', () => {
   const defaultProps = {
     open: true,
     onOpenChange: vi.fn(),
@@ -36,14 +36,15 @@ describe('MercadoLivrePrintDialog UI', () => {
       type: 'pdf' as const,
       content: 'bW9jay1jb250ZW50', // base64 for 'mock-content'
       id: 'sale-123',
+      origin: 'Mercado Livre'
     },
   };
 
   it('should show PDF preview when loaded', async () => {
-    render(<MercadoLivrePrintDialog {...defaultProps} />);
+    render(<ShippingLabelPrintDialog {...defaultProps} />);
     
     await waitFor(() => {
-      const iframe = screen.getByTitle('Preview da Etiqueta');
+      const iframe = screen.getByTitle('Visualização');
       expect(iframe).toBeDefined();
       expect(iframe.getAttribute('src')).toBe('blob:mock-url');
     }, { timeout: 2000 });
@@ -54,7 +55,7 @@ describe('MercadoLivrePrintDialog UI', () => {
     // Force a long print delay
     (printManager.print as any).mockImplementationOnce(() => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100)));
 
-    render(<MercadoLivrePrintDialog {...defaultProps} />);
+    render(<ShippingLabelPrintDialog {...defaultProps} />);
     
     await waitFor(() => screen.getByRole('button', { name: /Imprimir/i }));
     
@@ -62,6 +63,6 @@ describe('MercadoLivrePrintDialog UI', () => {
     fireEvent.click(printButton);
     
     expect(printButton.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: /Baixar PDF/i }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: /Baixar/i }).hasAttribute('disabled')).toBe(true);
   });
 });
