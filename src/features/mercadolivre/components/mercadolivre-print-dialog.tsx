@@ -287,7 +287,7 @@ export function MercadoLivrePrintDialog({
                 </TabsList>
               </div>
 
-              {/* 3. LAYOUT (ESQUERDA 28% / DIREITA 72%) */}
+              {/* 3. LAYOUT (ESQUERDA 280px / DIREITA FLEX) */}
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {blocks.map((block) => {
                   const isSelected = activeTab === block.id;
@@ -295,8 +295,8 @@ export function MercadoLivrePrintDialog({
 
                   return (
                     <div key={block.id} className="flex-1 flex overflow-hidden">
-                      {/* 4. COLUNA ESQUERDA (28%) */}
-                      <aside className="w-[28%] border-r bg-white dark:bg-slate-900 p-8 flex flex-col gap-8 shrink-0 overflow-visible h-auto">
+                      {/* 4. COLUNA ESQUERDA (280px) */}
+                      <aside className="w-[280px] border-r bg-white dark:bg-slate-900 p-8 flex flex-col gap-8 shrink-0 overflow-visible h-auto">
                         <div>
                           <h4 className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">Informações</h4>
                           <div className="space-y-4">
@@ -339,8 +339,8 @@ export function MercadoLivrePrintDialog({
                         </div>
                       </aside>
 
-                      {/* 5. COLUNA DIREITA (72%) */}
-                      <main className="w-[72%] bg-slate-50 dark:bg-slate-950 px-8 pt-8 pb-4 flex flex-col min-h-0">
+                      {/* 5. COLUNA DIREITA (FLEX) */}
+                      <main className="flex-1 bg-slate-50 dark:bg-slate-950 px-8 pt-8 pb-4 flex flex-col min-h-0">
                         <div className="flex items-center justify-between mb-4 shrink-0">
                           <h4 className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Preview</h4>
                           
