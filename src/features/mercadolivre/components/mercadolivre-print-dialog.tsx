@@ -403,16 +403,16 @@ export function MercadoLivrePrintDialog({
         </div>
 
         {/* 7. RODAPÉ SIMPLIFICADO */}
-        <DialogFooter className="px-8 py-5 bg-white dark:bg-slate-900 border-t shrink-0 flex items-center justify-between sm:justify-between">
-          <div className="flex-1 flex justify-start">
+        <div className="h-[64px] px-6 py-2 bg-white dark:bg-slate-900 border-t shrink-0 flex items-center justify-between">
+          <div>
             {blocks.length > 1 && (
               <Button 
                 variant="default" 
-                className="bg-slate-900 hover:bg-black text-white px-8 h-12 font-bold text-sm rounded-xl shadow-lg transition-all" 
+                className="bg-slate-900 hover:bg-black text-white px-6 h-10 font-bold text-xs rounded-lg shadow-md transition-all" 
                 onClick={handlePrintAll}
                 disabled={isPrinting || isLoading}
               >
-                <Printer className="mr-3 h-5 w-5" />
+                <Printer className="mr-2 h-4 w-4" />
                 Imprimir Todos
               </Button>
             )}
@@ -420,12 +420,12 @@ export function MercadoLivrePrintDialog({
           
           <Button 
             variant="ghost" 
-            className="h-12 px-8 font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+            className="h-10 px-6 font-bold text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
             onClick={() => onOpenChange(false)}
           >
             Fechar
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
