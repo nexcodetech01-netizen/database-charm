@@ -254,14 +254,55 @@ export const financeService = {
    * executa o motor de liquidação. Não existe caminho de INSERT direto com
    * `status = 'paid'`.
    */
-  async createAndSettleTransaction(
-    input: FinancialTransactionInsert,
+    input: FinancialTransactionInsert & {
+      payment_condition?: "cash" | "installments";
+      installment_count?: number;
+      installment_interval_days?: number;
+      first_installment_date?: string;
+    },
     settle: SettleTransactionInput,
   ) {
+    if (input.payment_condition === "installments" && input.installment_count && input.installment_count > 1) {
+      const count = input.installment_count;
+      const interval = input.installment_interval_days || 30;
+      const amountPerInstallment = Number((input.amount / count).toFixed(2));
+      const firstDateStr = input.first_installment_date || input.transaction_date;
+      
+      const transactions = [];
+      for (let i = 0; i < count; i++) {
+        const dueDate = addDaysStr(firstDateStr, i * interval);
+        const installmentPayload = {
+          ...input,
+          description: `${input.description} (${i + 1}/${count})`,
+          amount: amountPerInstallment,
+          due_date: dueDate,
+          transaction_date: input.transaction_date,
+          status: "pending",
+        };
+        // Remove campos de controle de parcelamento para não salvar no banco
+        delete (installmentPayload as any).payment_condition;
+        delete (installmentPayload as any).installment_count;
+        delete (installmentPayload as any).installment_interval_days;
+        delete (installmentPayload as any).first_installment_date;
+        
+        transactions.push(this.createTransaction(installmentPayload as FinancialTransactionInsert));
+      }
+      
+      const results = await Promise.all(transactions);
+      
+      // Se a primeira parcela for marcada como paga (settleOnCreate na UI)
+      if (settle && results.length > 0) {
+        await this.settleTransaction(results[0].id, settle);
+      }
+      
+      return results[0];
+    }
+
     const created = await this.createTransaction(input);
     await this.settleTransaction(created.id, settle);
     return created;
   },
+
 
 
   /**
