@@ -70,6 +70,7 @@ export function ShippingLabelPrintDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+  const [preloadedBlocks, setPreloadedBlocks] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -247,12 +248,33 @@ export function ShippingLabelPrintDialog({
     if (open && labelData) {
       processLabelData();
     } else {
-      blocks.forEach(b => {
-        if (b.previewUrl) URL.revokeObjectURL(b.previewUrl);
-      });
+      setPreloadedBlocks(new Set());
       setBlocks([]);
     }
   }, [open, labelData, processLabelData]);
+
+  // Pré-carregamento inteligente
+  useEffect(() => {
+    if (!open || blocks.length <= 1) return;
+
+    const currentIndex = blocks.findIndex(b => b.id === activeTab);
+    const nextBlock = blocks[currentIndex + 1] || blocks[0]; // Próximo ou volta pro primeiro se for o último
+
+    if (nextBlock && !preloadedBlocks.has(nextBlock.id) && nextBlock.id !== activeTab) {
+       // O pré-carregamento acontece naturalmente pelo LabelPreview quando a aba for montada
+       // Mas como as abas não ativas não são montadas (devido ao return null no map), 
+       // precisamos garantir que ao menos a próxima aba seja marcada para "background render"
+       // Porém, a estrutura atual do Tabs do shadcn desmonta abas inativas por padrão.
+       // Para fins de Enterprise, vamos apenas marcar que a ativa está pronta e permitir que a lógica
+       // de background seja simplificada: quando a ativa carrega, a gente "autoriza" a renderização oculta da próxima.
+    }
+  }, [activeTab, blocks, open, preloadedBlocks]);
+
+  const handlePreviewLoaded = (blockId: string, success: boolean) => {
+    if (success) {
+      setPreloadedBlocks(prev => new Set(prev).add(blockId));
+    }
+  };
 
   const handlePrintBlock = async (block: DocumentBlock) => {
     setIsPrinting(true);
@@ -383,12 +405,21 @@ export function ShippingLabelPrintDialog({
 
               {/* 3. LAYOUT (ESQUERDA 265px / DIREITA FLEX) */}
               <div className="flex-1 flex min-h-0 overflow-hidden">
-                {blocks.map((block) => {
+                {blocks.map((block, index) => {
                   const isSelected = activeTab === block.id;
-                  if (!isSelected) return null;
+                  const isNext = blocks[blocks.findIndex(b => b.id === activeTab) + 1]?.id === block.id;
+                  
+                  // Renderiza apenas a ativa ou a próxima (oculta) para pré-carregamento
+                  if (!isSelected && !isNext) return null;
 
                   return (
-                    <div key={block.id} className="flex-1 flex overflow-hidden">
+                    <div 
+                      key={block.id} 
+                      className={cn(
+                        "flex-1 flex overflow-hidden",
+                        !isSelected && "hidden" // Mantém no DOM mas oculta se for apenas pré-carregamento
+                      )}
+                    >
                       {/* 4. COLUNA ESQUERDA (265px) */}
                       <aside className="w-[265px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-visible">
                         <div>
@@ -492,6 +523,7 @@ export function ShippingLabelPrintDialog({
                               format: labelData?.type === "image" ? (labelData.format?.toUpperCase() as any) : (labelData?.type.toUpperCase() as any),
                               ...detectZPLDimensions(block.zpl || '')
                             }} 
+                            onPreviewLoaded={(success) => handlePreviewLoaded(block.id, success)}
                             className="flex-1 border-none min-h-full"
                           />
                         </div>
