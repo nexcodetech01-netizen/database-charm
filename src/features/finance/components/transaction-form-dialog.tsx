@@ -666,8 +666,8 @@ export function TransactionFormDialog({
             </Button>
           </DialogFooter>
         </form>
-
       </DialogContent>
+
       </Dialog>
       {cashGuardDialog}
     </>
