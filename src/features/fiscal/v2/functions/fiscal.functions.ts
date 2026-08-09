@@ -1512,11 +1512,7 @@ async function runProviderHealth(
   });
   // Espelho legado quando o ambiente testado é o ativo.
   if (((cfg as ProviderRow | null)?.environment ?? null) === environment) {
-    await supabase.rpc("fiscal_record_provider_health", {
-      _company_id: companyId,
-      _status: status,
-      _message: message,
-    });
+    await new StatusRepository(supabase).recordProviderHealth(companyId, status, message);
   }
 
   return { status, message, checkedAt, items };
