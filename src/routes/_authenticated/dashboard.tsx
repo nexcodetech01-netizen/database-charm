@@ -190,7 +190,7 @@ function DashboardPage() {
 
   // Caixa disponível — fonte oficial: soma de financial_accounts ativas (EPIC UI.2 - Sprint 8.3H).
   const accountsData = useAccounts(company.id).data;
-  const cash = (accountsData || []).filter((a: any) => a.status === 'active').reduce((acc: number, a: any) => acc + Number(a.current_balance || 0), 0);
+  const cash = (accountsData || []).filter((a: any) => a.is_active || a.status === 'active').reduce((acc: number, a: any) => acc + (Number(a.current_balance) || 0), 0);
 
   // Dinheiro para entrar — financial_transactions de receita com status='pending'.
   const receivable = finance.data?.pendingReceivable ?? 0;
