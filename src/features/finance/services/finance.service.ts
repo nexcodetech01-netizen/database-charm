@@ -359,10 +359,19 @@ export const financeService = {
     const {
       status: _status,
       paid_at: _paidAt,
+      payment_condition,
+      installment_count,
+      installment_interval_days,
+      first_installment_date,
       ...safeInput
-    } = input as FinancialTransactionUpdate & { status?: unknown; paid_at?: unknown };
+    } = input as any;
+    
     void _status;
     void _paidAt;
+    void payment_condition;
+    void installment_count;
+    void installment_interval_days;
+    void first_installment_date;
 
     const { data, error } = await supabase
       .from("financial_transactions")
