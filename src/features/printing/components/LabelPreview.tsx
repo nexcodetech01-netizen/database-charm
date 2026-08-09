@@ -134,7 +134,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         </div>
       )}
       
-      <div className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center justify-center">
+      <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center">
         {error ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center max-w-[300px]">
             <AlertTriangle className="h-10 w-10 text-amber-500" />
