@@ -85,10 +85,32 @@ export interface PrintOptions {
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
+export type PrinterCategory = 'Etiquetas' | 'Cupom' | 'PDF' | 'Outras';
+
+export type PrinterSource = 'agent' | 'webusb' | 'fallback';
+
 export interface Printer extends PrinterProfile {
   status: 'ONLINE' | 'OFFLINE' | 'BUSY';
   isDefault?: boolean;
+  driver?: string;
+  port?: string;
+  category?: PrinterCategory;
+  source?: PrinterSource;
 }
+
+/** Payload cru retornado pelo agente local / WebUSB, antes da normalização. */
+export interface RawPrinterInfo {
+  id?: string;
+  name?: string;
+  driver?: string;
+  port?: string;
+  type?: Printer['type'];
+  status?: Printer['status'];
+  isDefault?: boolean;
+  source?: PrinterSource;
+  settings?: Record<string, any>;
+}
+
 
 export interface PrintResult {
   success: boolean;
