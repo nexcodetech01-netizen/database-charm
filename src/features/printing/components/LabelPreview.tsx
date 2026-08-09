@@ -79,7 +79,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   }, []);
 
   return (
-    <div className={`relative flex flex-col items-center border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-auto scrollbar-thin ${className}`}>
+    <div className={`relative flex flex-col border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-hidden ${className}`}>
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] z-10 gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -169,26 +169,28 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
              </Dialog>
           )}
         </div>
-      ) : previewUrl ? (
-        <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
-          <iframe 
-            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&pagemode=none`}
-            title="Preview"
-            className="w-full border shadow-lg bg-white transition-all overflow-auto"
-            style={{ 
-               height: label.height && label.height > 6 ? '1200px' : '850px',
-               transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
-               width: label.orientation === 'landscape' ? '70%' : '100%',
-               maxWidth: '900px'
-            }}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-2 text-muted-foreground p-8 text-center">
-          <FileImage className="h-12 w-12 opacity-20" />
-          <p className="text-xs">Aguardando dados...</p>
-        </div>
-      )}
+      <div className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center">
+        {previewUrl ? (
+          <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
+            <iframe 
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&pagemode=none`}
+              title="Preview"
+              className="w-full border shadow-lg bg-white transition-all overflow-auto"
+              style={{ 
+                 height: label.height && label.height > 6 ? '1200px' : '850px',
+                 transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
+                 width: label.orientation === 'landscape' ? '70%' : '100%',
+                 maxWidth: '900px'
+              }}
+            />
+          </div>
+        ) : !loading && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground p-8 text-center">
+            <FileImage className="h-12 w-12 opacity-20" />
+            <p className="text-xs">Aguardando dados...</p>
+          </div>
+        )}
+      </div>
       
       <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
         {loading && (
