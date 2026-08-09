@@ -245,7 +245,17 @@ export const financeService = {
       .insert(payload)
       .select()
       .single();
-    if (error) throw error;
+
+    if (error) {
+      console.error('Erro Supabase (Insert financial_transactions):', {
+        error,
+        payload,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
     return data;
   },
 
@@ -332,7 +342,18 @@ export const financeService = {
       .eq("id", id)
       .select()
       .single();
-    if (error) throw error;
+
+    if (error) {
+      console.error('Erro Supabase (Update financial_transactions):', {
+        error,
+        inputId: id,
+        safeInput,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw error;
+    }
     return data;
   },
   /**
