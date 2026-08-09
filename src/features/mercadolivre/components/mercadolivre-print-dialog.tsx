@@ -285,29 +285,43 @@ export function MercadoLivrePrintDialog({
               {blocks.map((block) => (
                 <TabsContent key={block.id} value={block.id} className="flex-1 min-h-0 mt-0 focus-visible:ring-0">
                   <div className="h-[450px] w-full border rounded-md overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
-                    {block.previewUrl ? (
-                      <iframe
-                        src={block.previewUrl}
-                        className="h-full w-full"
-                        title={block.title}
-                      />
-                    ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-50 dark:bg-slate-950">
-                        <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
-                          <Eye className="h-10 w-10 text-amber-600 dark:text-amber-500 opacity-50" />
+                    <div className="h-[450px] w-full border rounded-md overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner flex flex-col">
+                      <div className="bg-muted/50 p-3 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {block.type === 'label' ? <Package className="h-4 w-4 text-blue-600" /> : <FileText className="h-4 w-4 text-blue-600" />}
+                          <span className="text-sm font-medium">{block.title}</span>
+                          <Badge variant="outline" className="text-[10px] uppercase">{block.zpl ? 'ZPL' : 'PDF'}</Badge>
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">Visualização Indisponível</h3>
-                        <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                          O serviço de conversão externa (Labelary) não respondeu, mas você ainda pode baixar ou imprimir o arquivo original.
-                        </p>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => handleDownloadBlock(block)}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Baixar ZPL
+                          <Button variant="outline" size="xs" className="h-7 text-[11px]" onClick={() => handleDownloadBlock(block)}>
+                            <Download className="h-3 w-3 mr-1" /> Baixar ZPL
+                          </Button>
+                          <Button variant="outline" size="xs" className="h-7 text-[11px]" onClick={() => handlePrintBlock(block)}>
+                            <Printer className="h-3 w-3 mr-1" /> Imprimir ZPL
                           </Button>
                         </div>
                       </div>
-                    )}
+                      
+                      <div className="flex-1 min-h-0 relative">
+                        {block.previewUrl ? (
+                          <iframe
+                            src={block.previewUrl}
+                            className="h-full w-full"
+                            title={block.title}
+                          />
+                        ) : (
+                          <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-50 dark:bg-slate-950">
+                            <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
+                              <Eye className="h-10 w-10 text-amber-600 dark:text-amber-500 opacity-50" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">Visualização Indisponível</h3>
+                            <p className="text-sm text-muted-foreground max-w-xs mb-6">
+                              O serviço de conversão externa (Labelary) não respondeu, mas você ainda pode baixar ou imprimir o arquivo original usando os botões acima.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
               ))}
