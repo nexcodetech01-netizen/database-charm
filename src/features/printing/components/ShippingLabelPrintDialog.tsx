@@ -28,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
 import { LabelPreview } from "@/features/printing/components/LabelPreview";
+import { detectZPLDimensions, parseZPLBlocks } from "../lib/zpl-parser";
 
 interface DocumentBlock {
   id: string;
@@ -87,23 +88,9 @@ export function ShippingLabelPrintDialog({
 
       setIsLoading(true);
       try {
-        const regex = /\^XA[\s\S]*?\^XZ/g;
-        const matches = content.match(regex) || [];
+        const validBlocks = parseZPLBlocks(content);
         
-        console.log(`[ZPL_IMPORT] Blocos brutos encontrados: ${matches.length}`);
-
-        const validBlocks: string[] = [];
-        matches.forEach((zpl, index) => {
-          const trimmed = zpl.trim();
-          // Critérios de descarte: Muito curto ou sem comandos básicos
-          if (trimmed.length < 20 || !trimmed.includes('^')) {
-            console.log(`[ZPL_IMPORT] Bloco ${index} descartado: conteúdo inválido ou vazio.`);
-            return;
-          }
-          validBlocks.push(zpl);
-        });
-
-        console.log(`[ZPL_IMPORT] Blocos válidos: ${validBlocks.length}`);
+        console.log(`[ZPL_IMPORT] Blocos válidos encontrados: ${validBlocks.length}`);
 
         if (validBlocks.length === 0) {
           const trimmedContent = content.trim();
@@ -120,18 +107,12 @@ export function ShippingLabelPrintDialog({
           }
         } else {
           const preparedBlocks = await Promise.all(
-            validBlocks.map(async (zpl, index) => {
-              // Identificação baseada no conteúdo
-              const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
-              const type = isDanfe ? "danfe" : "label";
-              
-              console.log(`[ZPL_IMPORT] Bloco ${index} identificado como: ${type.toUpperCase()}`);
-
+            validBlocks.map(async (item, index) => {
               const block: DocumentBlock = {
                 id: `block-${index}`,
-                zpl,
-                type,
-                title: type === "label" ? "Etiqueta" : "DANFE",
+                zpl: item.zpl,
+                type: item.type,
+                title: item.type === "label" ? "Etiqueta" : "DANFE",
               };
 
               return await prepareBlock(block, { type: "zpl", content, id: file.name });
@@ -140,6 +121,7 @@ export function ShippingLabelPrintDialog({
           setBlocks(preparedBlocks);
           setActiveTab("block-0");
         }
+        toast.success("ZPL importado com sucesso.");
         toast.success("ZPL importado com sucesso.");
       } catch (error) {
         console.error("[ZPL_IMPORT_ERROR]:", error);
@@ -153,42 +135,8 @@ export function ShippingLabelPrintDialog({
     event.target.value = "";
   };
 
-  const detectZPLDimensions = (zpl: string) => {
-    // Dimensões padrão ML
-    let width = 4;
-    let height = 6;
-    let dpmm: 8 | 12 = 8;
-
-    // Tenta detectar dimensões no ZPL (^PW = Print Width)
-    // ^PW812 -> 812 dots. Em 8dpmm, isso é ~101.5mm (4 polegadas)
-    const pwMatch = zpl.match(/\^PW(\d+)/);
-    if (pwMatch) {
-      const dots = parseInt(pwMatch[1]);
-      if (dots > 1000) width = 6; // Provavelmente A4 ou largura maior
-      else if (dots > 600) width = 4;
-    }
-
-    // ^LL = Label Length
-    const llMatch = zpl.match(/\^LL(\d+)/);
-    if (llMatch) {
-      const dots = parseInt(llMatch[1]);
-      // Se dots > 1500 em 8dpmm, é mais que 7 polegadas (provavelmente A4/DANFE)
-      if (dots > 1800) height = 11;
-      else if (dots > 1000) height = 6;
-    }
-
-    // Identificação por conteúdo para DANFE (A4 geralmente)
-    const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
-    if (isDanfe) {
-      width = 8; // Aproximado para A4 (8.27in)
-      height = 11; // Aproximado para A4 (11.69in)
-    }
-
-    return { width, height, dpmm };
-  };
-
   const extractZPLStats = (zpl: string) => {
-    const { width, height, dpmm } = detectZPLDimensions(zpl);
+    const { width, height } = detectZPLDimensions(zpl);
     return {
       format: "ZPL II",
       size: `${width * 25.4}x${height * 25.4} mm`,
@@ -259,40 +207,11 @@ export function ShippingLabelPrintDialog({
     setIsLoading(true);
 
     try {
-      let validBlocks: { zpl: string; type: "label" | "danfe" }[] = [];
+      let validBlocks = [];
       
       if (labelData.type === "zpl") {
-        const regex = /\^XA[\s\S]*?\^XZ/g;
-        const matches = content.match(regex) || [];
-        
-        console.log(`[ShippingLabelPrintDialog] Blocos brutos encontrados: ${matches.length}`);
-
-        matches.forEach((zpl, index) => {
-          const trimmed = zpl.trim();
-          
-          // 1. Descarte de blocos inválidos/vazios ou puramente de configuração
-          const isUseful = trimmed.includes('^FD') || trimmed.includes('^GF') || trimmed.includes('^B');
-          if (trimmed.length < 50 || !trimmed.includes('^') || !isUseful) {
-            console.log(`[ShippingLabelPrintDialog] Bloco ${index} descartado: conteúdo insuficiente, puramente técnico ou sem dados úteis (^FD/^GF/^B).`);
-            return;
-          }
-
-          // 2. Classificação baseada no conteúdo
-          const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
-          const type = isDanfe ? "danfe" : "label";
-          
-          // 3. Evitar duplicidade exata de conteúdo (preserva blocos diferentes do mesmo tipo)
-          const isDuplicate = validBlocks.some(b => b.zpl === zpl);
-          if (isDuplicate) {
-            console.log(`[ShippingLabelPrintDialog] Bloco ${index} (${type}) descartado: conteúdo idêntico a um bloco já processado.`);
-            return;
-          }
-
-          console.log(`[ShippingLabelPrintDialog] Bloco ${index} aceito como: ${type.toUpperCase()}`);
-          validBlocks.push({ zpl, type });
-        });
-
-        console.log(`[ShippingLabelPrintDialog] Total de blocos válidos após filtragem: ${validBlocks.length}`);
+        validBlocks = parseZPLBlocks(content);
+        console.log(`[ShippingLabelPrintDialog] Total de blocos válidos: ${validBlocks.length}`);
       }
 
       if (validBlocks.length === 0) {
