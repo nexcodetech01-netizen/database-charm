@@ -249,15 +249,6 @@ export function MercadoLivrePrintDialog({
               </p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-md h-8 w-8 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
 
         {/* CONTENT */}
         <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950">
