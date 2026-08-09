@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { LabelData, LabelaryAudit } from '../types/printing.types';
 import { labelaryService } from '../services/labelary.service';
-import { Loader2, FileImage, AlertTriangle, Bug } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Loader2, FileImage, AlertTriangle, Bug, Copy, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface LabelPreviewProps {
   label: LabelData;
@@ -63,10 +65,56 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                  </button>
                </DialogTrigger>
                <DialogContent className="max-w-xl">
-                 <DialogHeader><DialogTitle>Diagnóstico Labelary</DialogTitle></DialogHeader>
-                 <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
-                   {JSON.stringify(auditData, null, 2)}
-                 </pre>
+                 <DialogHeader>
+                   <div className="flex items-center justify-between pr-8">
+                     <DialogTitle>Diagnóstico Labelary</DialogTitle>
+                     <div className="flex gap-2">
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="h-7 text-[10px]"
+                         onClick={() => {
+                           navigator.clipboard.writeText(JSON.stringify(auditData, null, 2));
+                           toast.success("Copiado para a área de transferência");
+                         }}
+                       >
+                         <Copy className="h-3 w-3 mr-1" /> Copiar
+                       </Button>
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="h-7 text-[10px]"
+                         onClick={() => {
+                           const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
+                           const url = URL.createObjectURL(blob);
+                           const a = document.createElement('a');
+                           a.href = url;
+                           a.download = `audit-labelary-${new Date().getTime()}.json`;
+                           a.click();
+                           URL.revokeObjectURL(url);
+                           toast.success("Arquivo de auditoria exportado");
+                         }}
+                       >
+                         <Download className="h-3 w-3 mr-1" /> Exportar
+                       </Button>
+                     </div>
+                   </div>
+                 </DialogHeader>
+                 <div className="space-y-4">
+                   <div className="grid grid-cols-2 gap-2">
+                     <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                       <span className="text-muted-foreground block">Duração Total</span>
+                       <span className="font-bold">{auditData.durationMs}ms</span>
+                     </div>
+                     <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                       <span className="text-muted-foreground block">Duração Parse</span>
+                       <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
+                     </div>
+                   </div>
+                   <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
+                     {JSON.stringify(auditData, null, 2)}
+                   </pre>
+                 </div>
                </DialogContent>
              </Dialog>
           )}
