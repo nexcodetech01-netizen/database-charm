@@ -1,7 +1,7 @@
 import { LabelData } from "../types/printing.types";
 
 /**
- * Serviço para interagir com a API do Labelary (http://labelary.com)
+ * Serviço para interagir com a API do Labelary (https://labelary.com)
  * Permite converter ZPL para imagem ou PDF para fins de visualização e impressão via browser.
  */
 export const labelaryService = {
@@ -11,8 +11,8 @@ export const labelaryService = {
   getPreviewUrl(label: LabelData): string {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
     // O Labelary usa dpmm (8 ou 12)
-    // Formato: http://api.labelary.com/v1/printers/{dpmm}dpmm/labels/{width}x{height}/0/
-    return `http://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/${encodeURIComponent(zpl)}`;
+    // Formato: https://api.labelary.com/v1/printers/{dpmm}dpmm/labels/{width}x{height}/0/
+    return `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/${encodeURIComponent(zpl)}`;
   },
 
   /**
@@ -20,7 +20,7 @@ export const labelaryService = {
    */
   async convertToPdf(label: LabelData): Promise<Blob> {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
-    const url = `http://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
+    const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
     
     const response = await fetch(url, {
       method: 'POST',
