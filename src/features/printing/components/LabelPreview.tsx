@@ -5,6 +5,7 @@ import { Loader2, FileImage, AlertTriangle, Bug, Copy, Download } from 'lucide-r
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface LabelPreviewProps {
   label: LabelData;
