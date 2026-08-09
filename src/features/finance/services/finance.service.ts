@@ -111,9 +111,25 @@ export const financeService = {
     return data;
   },
   async updateAccount(id: string, input: FinancialAccountUpdate) {
+    // Ao atualizar o saldo inicial, precisamos garantir que o current_balance seja refletido
+    // No frontend, passamos o novo initial_balance. O servidor via trigger ou lógica manual
+    // deve atualizar o current_balance. Aqui fazemos um patch manual se initial_balance mudou.
+    const { data: current } = await supabase
+      .from("financial_accounts")
+      .select("initial_balance, current_balance")
+      .eq("id", id)
+      .single();
+
+    let payload = { ...input };
+    
+    if (input.initial_balance !== undefined && current) {
+      const diff = Number(input.initial_balance) - Number(current.initial_balance || 0);
+      payload.current_balance = Number(current.current_balance || 0) + diff;
+    }
+
     const { data, error } = await supabase
       .from("financial_accounts")
-      .update(input)
+      .update(payload)
       .eq("id", id)
       .select()
       .single();

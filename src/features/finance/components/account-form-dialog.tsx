@@ -166,8 +166,11 @@ export function AccountFormDialog({ open, onOpenChange, companyId, account }: Pr
                 step="0.01"
                 value={form.initial_balance}
                 onChange={(e) => setForm({ ...form, initial_balance: Number(e.target.value) })}
-                disabled={isEdit}
+                placeholder="Valor para ajuste de saldo"
               />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                O saldo atual será recalculado com base neste valor + movimentações.
+              </p>
             </div>
             <div>
               <Label>Status</Label>
