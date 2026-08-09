@@ -2059,42 +2059,15 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       (issue.severity === "error" ? blockers : warnings).push(issue);
 
     // 1) Venda + cliente
-    const { data: saleRow, error: saleErr } = await supabase
-      .from("sales")
-      .select("id, number, grand_total, customer_id, status")
-      .eq("company_id", companyId)
-      .eq("id", data.saleId)
-      .maybeSingle();
-    if (saleErr) throw saleErr;
+    const salesRepo = new SalesRepository(supabase);
+    const saleRow = await salesRepo.findSummary(companyId, data.saleId);
     if (!saleRow) throw new Error("Venda não encontrada.");
-    const sale = saleRow as unknown as {
-      id: string;
-      number: number | null;
-      grand_total: number | null;
-      customer_id: string | null;
-      status: string;
-    };
+    const sale = saleRow;
 
-    type CustomerCtx = {
-      name: string | null;
-      document: string | null;
-      email: string | null;
-      address: string | null;
-      city: string | null;
-      state: string | null;
-      zip: string | null;
-      address_number: string | null;
-      neighborhood: string | null;
-    };
-    let customer: CustomerCtx | null = null;
+    let customer: CustomerFiscalRow | null = null;
     if (sale.customer_id) {
-      const { data: cust } = await supabase
-        .from("customers")
-        .select("name, document, email, address, address_number, neighborhood, city, state, zip")
-        .eq("company_id", companyId)
-        .eq("id", sale.customer_id)
-        .maybeSingle();
-      customer = (cust ?? null) as unknown as CustomerCtx | null;
+      const customersRepo = new CustomersRepository(supabase);
+      customer = await customersRepo.findFiscalInfo(companyId, sale.customer_id);
     }
     const customerAddress = customer
       ? [
