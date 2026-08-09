@@ -265,12 +265,17 @@ export const purchasesService = {
       other_costs: Number(header.other_costs ?? 0),
     });
 
+    console.log("[PurchasesService.create] Status enviado:", header.status);
+
     const { data: created, error } = await supabase
       .from("purchases")
       .insert({ ...header, ...totals })
       .select()
       .single();
+    
     if (error) throw error;
+    console.log("[PurchasesService.create] Status salvo no banco:", created.status);
+
 
     if (items.length > 0) {
       const rows = items.map((it, idx) => ({
@@ -296,6 +301,8 @@ export const purchasesService = {
     input: PurchaseUpdate & { items?: PurchaseItemDraft[] },
   ) {
     const { items: rawItems, ...header } = input;
+    
+    console.log("[PurchasesService.update] Status enviado:", header.status);
 
     // Resolve produtos auto-criados apenas quando itens vieram no update.
     let items: PurchaseItemDraft[] | undefined = rawItems;
@@ -327,10 +334,16 @@ export const purchasesService = {
       totalsPatch = totals;
     }
 
-    const updated = await updateRow("purchases", id, {
+    // PRED-001 — Garantimos que o status enviado pelo usuário seja preservado
+    // e não sobrescrito por valores default ou mutações indesejadas.
+    const updatePayload = {
       ...(header as PurchaseUpdate),
       ...totalsPatch,
-    });
+    };
+
+    const updated = await updateRow("purchases", id, updatePayload);
+
+    console.log("[PurchasesService.update] Status retornado pela API:", updated.status);
 
 
     if (items) {
@@ -356,9 +369,9 @@ export const purchasesService = {
       }
     }
 
-
     return updated;
   },
+
 
   async setStatus(id: string, status: string) {
     // Recebimento é atômico: cria produtos faltantes e dispara triggers de

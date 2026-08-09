@@ -280,7 +280,11 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     // status='received'. O trigger trg_apply_purchase_to_inventory só dispara
     // em UPDATE OF status, então o recebimento passa obrigatoriamente pelo
     // serviço oficial (purchasesService.setStatus → RPC receive_purchase).
-    const persistedStatus = receive ? "pending" : form.status;
+    const persistedStatus = receive ? "pending" : (form.status || "draft");
+    
+    console.log("[PurchaseForm.submit] Status enviado:", persistedStatus);
+
+
 
     const payload = {
       company_id: companyId,
@@ -312,10 +316,15 @@ export function PurchaseForm({ companyId, purchase }: Props) {
         purchaseId = created.id;
       }
 
+      console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
+
+
       if (receive) {
         // Mesmo caminho do botão "Receber compra" da tela de detalhe.
+        console.log("[PurchaseForm.submit] Disparando recebimento atômico (setStatus: received)");
         await statusMut.mutateAsync({ id: purchaseId, status: "received" });
       }
+
 
       toast.success(
         receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",
