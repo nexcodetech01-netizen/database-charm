@@ -265,12 +265,17 @@ export const purchasesService = {
       other_costs: Number(header.other_costs ?? 0),
     });
 
+    console.log("[PurchasesService.create] Status enviado:", header.status);
+
     const { data: created, error } = await supabase
       .from("purchases")
       .insert({ ...header, ...totals })
       .select()
       .single();
+    
     if (error) throw error;
+    console.log("[PurchasesService.create] Status salvo no banco:", created.status);
+
 
     if (items.length > 0) {
       const rows = items.map((it, idx) => ({
