@@ -254,6 +254,7 @@ export const financeService = {
    * executa o motor de liquidação. Não existe caminho de INSERT direto com
    * `status = 'paid'`.
    */
+  async createAndSettleTransaction(
     input: FinancialTransactionInsert & {
       payment_condition?: "cash" | "installments";
       installment_count?: number;
@@ -302,6 +303,7 @@ export const financeService = {
     await this.settleTransaction(created.id, settle);
     return created;
   },
+
 
 
 

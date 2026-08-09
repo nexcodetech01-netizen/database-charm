@@ -106,7 +106,12 @@ export function TransactionFormDialog({
     due_date: todayISO(),
     status: "pending" as TransactionStatus,
     notes: "",
+    payment_condition: "cash" as "cash" | "installments",
+    installment_count: 1,
+    installment_interval_days: 30,
+    first_installment_date: todayISO(),
   });
+
 
 
   const selectedAccountName =
@@ -119,7 +124,7 @@ export function TransactionFormDialog({
   useEffect(() => {
     if (!open) return;
     setPaymentMethod("");
-    setInstallments(1);
+
     setPaidWith("company");
     if (transaction) {
 
@@ -228,13 +233,18 @@ export function TransactionFormDialog({
       status: form.status === "paid" ? "pending" : form.status,
       source: form.type === "transfer" ? "transfer" : "manual",
       notes: form.notes || null,
+      payment_condition: form.payment_condition,
+      installment_count: form.installment_count,
+      installment_interval_days: form.installment_interval_days,
+      first_installment_date: form.first_installment_date,
       metadata: paidWith === "personal" ? {
         reimbursement: true,
-        installments,
+        installments: form.installment_count,
         original_amount: form.amount,
         owner: "Tiele"
       } : undefined
     };
+
 
     try {
       if (isEdit && transaction) {
@@ -294,13 +304,15 @@ export function TransactionFormDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>
             {isEdit ? "Editar movimentação" : form.type === "transfer" ? "Nova Transferência" : "Nova movimentação"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Tipo</Label>
@@ -373,7 +385,12 @@ export function TransactionFormDialog({
                     <Label>Pago com:</Label>
                     <Select
                       value={paidWith}
-                      onValueChange={(v) => setPaidWith(v as any)}
+                      onValueChange={(v) => {
+                        setPaidWith(v as any);
+                        if (v === "company") {
+                          setForm(f => ({ ...f, payment_condition: "cash", installment_count: 1 }));
+                        }
+                      }}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -384,10 +401,10 @@ export function TransactionFormDialog({
                   </div>
                   {paidWith === "personal" && (
                     <div>
-                      <Label>Número de parcelas:</Label>
+                      <Label>Número de parcelas (Cartão):</Label>
                       <Select
-                        value={String(installments)}
-                        onValueChange={(v) => setInstallments(Number(v))}
+                        value={String(form.installment_count)}
+                        onValueChange={(v) => setForm(f => ({ ...f, installment_count: Number(v) }))}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -398,6 +415,7 @@ export function TransactionFormDialog({
                       </Select>
                     </div>
                   )}
+
                 </div>
                 {paidWith === "personal" && (
                   <p className="text-xs text-muted-foreground">
@@ -415,11 +433,12 @@ export function TransactionFormDialog({
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
               />
-              {paidWith === "personal" && installments > 1 && (
+              {paidWith === "personal" && form.installment_count > 1 && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {installments}x de {formatCurrency(form.amount / installments)}
+                  {form.installment_count}x de {formatCurrency(form.amount / form.installment_count)}
                 </p>
               )}
+
             </div>
             <div>
               <Label>{form.type === "transfer" ? "Conta de origem" : "Conta"}</Label>
@@ -579,9 +598,64 @@ export function TransactionFormDialog({
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </div>
+            <div className="sm:col-span-2 rounded-lg border bg-muted/20 p-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Condição de Pagamento</Label>
+                  <Select
+                    value={form.payment_condition}
+                    onValueChange={(v) => setForm(f => ({ ...f, payment_condition: v as any }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">À vista</SelectItem>
+                      <SelectItem value="installments">Parcelado (A Prazo)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {form.payment_condition === "installments" && (
+                  <div>
+                    <Label>Nº de Parcelas</Label>
+                    <Select
+                      value={String(form.installment_count)}
+                      onValueChange={(v) => setForm(f => ({ ...f, installment_count: Number(v) }))}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6, 8, 10, 12, 18, 24].map(n => (
+                          <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {form.payment_condition === "installments" && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label>Intervalo (dias)</Label>
+                    <Input
+                      type="number"
+                      value={form.installment_interval_days}
+                      onChange={(e) => setForm(f => ({ ...f, installment_interval_days: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Data da 1ª Parcela</Label>
+                    <Input
+                      type="date"
+                      value={form.first_installment_date}
+                      onChange={(e) => setForm(f => ({ ...f, first_installment_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="p-6 pt-2 border-t bg-muted/5">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
@@ -592,6 +666,7 @@ export function TransactionFormDialog({
             </Button>
           </DialogFooter>
         </form>
+
       </DialogContent>
       </Dialog>
       {cashGuardDialog}
