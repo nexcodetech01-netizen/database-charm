@@ -271,6 +271,16 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         ) : null}
       </div>
 
+      {previewUrl && !error && (
+        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-2 py-1 rounded-full border z-20">
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-xs" onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))}>-</Button>
+          <span className="text-[10px] font-bold text-slate-500 w-9 text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-xs" onClick={() => setZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))}>+</Button>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] font-bold" onClick={() => fitToContainer()}>Ajustar</Button>
+        </div>
+      )}
+
+
       <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 border z-20">
         <Clock className="h-3 w-3 mr-1" /> {auditData?.durationMs || 0}ms | {label.width}" x {label.height}"
       </div>
