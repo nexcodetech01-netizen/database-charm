@@ -8,7 +8,11 @@
 export type ReceiptPaperWidth = "58mm" | "80mm";
 
 export interface PrintPreferences {
-  /** Nome informativo da impressora padrão (o navegador escolhe o device). */
+  /** ID/Nome da impressora de etiquetas. */
+  labelPrinterId: string;
+  /** ID/Nome da impressora de cupom. */
+  receiptPrinterId: string;
+  /** Nome informativo da impressora padrão (legado). */
   printerName: string;
   /** Largura do papel térmico. */
   paperWidth: ReceiptPaperWidth;
