@@ -403,6 +403,20 @@ export function MercadoLivrePrintDialog({
                              {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold tracking-tight">LIVE</span>}
                           </div>
                           <div className="flex gap-2">
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept=".zpl,.txt"
+                              onChange={handleFileChange}
+                            />
+                            <Button 
+                              variant="outline" 
+                              className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
+                              onClick={handleImportZPL}
+                            >
+                              <Upload className="h-3 w-3 mr-2" /> Importar ZPL
+                            </Button>
                             <Button 
                               variant="outline" 
                               className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
