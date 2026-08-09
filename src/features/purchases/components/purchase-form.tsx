@@ -276,10 +276,10 @@ export function PurchaseForm({ companyId, purchase }: Props) {
       return;
     }
 
-    // FLUXO DE PERSISTÊNCIA: A compra é salva com o status atual do formulário.
+    // FLUXO DE PERSISTÊNCIA: A compra é salva com o status selecionado no formulário.
     // Se o usuário clicou em "Finalizar" (receive=true), forçamos 'pending' 
-    // temporariamente para que a chamada subsequente de statusMut.mutateAsync('received')
-    // execute o processamento fiscal/estoque via RPC no banco.
+    // temporariamente no payload de salvamento para que a chamada subsequente 
+    // de statusMut.mutateAsync('received') processe o recebimento fiscal/estoque.
     const persistedStatus = receive ? "pending" : (form.status || "draft");
     
     console.log("[PurchaseForm.submit] Status formulário:", form.status, "Status a persistir:", persistedStatus);
