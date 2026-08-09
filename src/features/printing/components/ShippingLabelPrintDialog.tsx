@@ -212,12 +212,15 @@ export function ShippingLabelPrintDialog({
       if (zplBlocks.length === 0) {
         const trimmedContent = content.trim();
         if (trimmedContent.length > 0 || labelData.type === "pdf") {
-          const block: ZPLBlock = {
+          const block: DocumentBlock = {
             id: "block-0",
             zpl: labelData.type === "zpl" ? content : "",
+            pdf: labelData.type === "pdf" ? content : "",
+            image: labelData.type === "image" ? content : "",
             type: "label",
             title: "Etiqueta",
           };
+
           
           const prepared = await prepareBlock(block, labelData);
           setBlocks([prepared]);
@@ -226,12 +229,13 @@ export function ShippingLabelPrintDialog({
       } else {
         const preparedBlocks = await Promise.all(
           zplBlocks.map(async (zpl, index) => {
-            const block: ZPLBlock = {
+            const block: DocumentBlock = {
               id: `block-${index}`,
               zpl,
               type: index === 0 ? "label" : "danfe",
               title: index === 0 ? "Etiqueta" : "DANFE",
             };
+
             return await prepareBlock(block, labelData);
           })
         );
