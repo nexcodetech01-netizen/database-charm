@@ -1762,39 +1762,21 @@ export const listSalesForFiscal = createServerFn({ method: "POST" })
     const fetchLimit = term ? 400 : limit;
 
     // Regra fiscal da empresa: emitir somente após o pagamento?
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsRow } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("issue_only_after_payment")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    const onlyPaid = Boolean(
-      (settingsRow as { issue_only_after_payment?: boolean } | null)?.issue_only_after_payment,
-    );
+    const taxRepo = new TaxRepository(supabase);
+    const onlyPaid = await taxRepo.getIssueOnlyAfterPayment(companyId);
 
     // O critério de listagem é fiscal, não financeiro: todas as vendas
     // efetivadas entram na lista (exceto rascunhos). O status financeiro
     // só filtra quando a empresa exige pagamento prévio.
     // Em modo depuração (includeAll) nenhum filtro é aplicado — inclusive
     // rascunhos e vendas não elegíveis aparecem, com o motivo do bloqueio.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = supabase
-      .from("sales")
-      .select(
-        "id, number, sale_date, paid_at, status, grand_total, customers(name, document), sale_items(description, products(name, sku, barcode, ncm))",
-      )
-      .eq("company_id", companyId);
-    if (!includeAll) {
-      q = q.neq("status", "draft");
-      if (onlyPaid) q = q.eq("status", "paid");
-    }
+    const salesRepo = new SalesRepository(supabase);
+    const rows = await salesRepo.listForFiscal(companyId, {
+      limit: fetchLimit,
+      excludeDraft: !includeAll,
+      onlyPaid,
+    });
 
-    q = q
-      .order("sale_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(fetchLimit);
-
-    const { data: rows, error } = await q;
-    if (error) throw error;
 
     type Row = {
       id: string;
