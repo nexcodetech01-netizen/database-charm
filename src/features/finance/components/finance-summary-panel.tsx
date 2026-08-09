@@ -13,19 +13,21 @@ export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustingAccount, setAdjustingAccount] = useState<any>(null);
 
-  const bankAccount = accounts?.find(a => a.type === 'bank') || accounts?.find(a => a.type === 'digital_wallet');
-  const cashAccount = accounts?.find(a => a.type === 'cash');
+  const activeAccounts = accounts?.filter(a => a.status === 'active') || [];
+  const bankAccount = activeAccounts.find(a => a.type === 'bank' || a.type === 'digital_wallet');
+  const cashAccount = activeAccounts.find(a => a.type === 'cash');
+  const totalBalance = activeAccounts.reduce((sum, a) => sum + Number(a.current_balance ?? 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <CardBalance 
           label="Caixa Disponível (Total)" 
-          value={(bankAccount?.current_balance ?? 0) + (cashAccount?.current_balance ?? 0)}
+          value={totalBalance}
           icon={Wallet}
           loading={isLoadingAccounts}
           highlight
-          description="Soma exata dos saldos em Dinheiro e Banco"
+          description="Soma de todas as contas ativas"
         />
         <CardBalance 
           label="Banco PJ" 
