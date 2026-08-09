@@ -296,9 +296,10 @@ export function TransactionFormDialog({
           ],
         });
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Erro ao salvar movimentação:', err);
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: err.details || err.message || "Erro desconhecido",
       });
     }
   }
