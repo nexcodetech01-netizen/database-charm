@@ -1589,32 +1589,8 @@ export const getCompanyFiscalProfile = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    const { data, error } = await supabase
-      .from("companies")
-      .select(
-        "id, name, trade_name, cnpj, ie, im, phone, email, address, address_number, complement, neighborhood, city, state, zip_code",
-      )
-      .eq("id", companyId)
-      .maybeSingle();
-    if (error) throw error;
-    const c = (data ?? { id: companyId }) as Record<string, string | null | undefined>;
-    return {
-      id: companyId,
-      legalName: (c.name as string) ?? null,
-      tradeName: (c.trade_name as string) ?? null,
-      cnpj: (c.cnpj as string) ?? null,
-      ie: (c.ie as string) ?? null,
-      im: (c.im as string) ?? null,
-      phone: (c.phone as string) ?? null,
-      email: (c.email as string) ?? null,
-      address: (c.address as string) ?? null,
-      addressNumber: (c.address_number as string) ?? null,
-      complement: (c.complement as string) ?? null,
-      neighborhood: (c.neighborhood as string) ?? null,
-      city: (c.city as string) ?? null,
-      state: (c.state as string) ?? null,
-      zipcode: (c.zip_code as string) ?? null,
-    };
+    const companyRepo = new CompanyRepository(supabase);
+    return companyRepo.getProfile(companyId);
   });
 
 const companyUpdateSchema = z
