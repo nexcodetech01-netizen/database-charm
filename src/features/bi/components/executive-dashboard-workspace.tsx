@@ -44,6 +44,7 @@ import type { DateRange, DateRangePreset } from "@/features/reports/types";
 import { rangeFromPreset } from "@/features/reports/utils/date-range";
 import { ROUTES } from "@/config/routes";
 import { useExecutiveDashboard } from "../hooks/use-executive-dashboard";
+import { useAccounts } from "@/features/finance/hooks/use-finance";
 
 type DashPreset =
   | "today"
@@ -235,7 +236,7 @@ export function ExecutiveDashboardWorkspace({ companyId }: { companyId: string }
           />
           <KpiCard
             label="Saldo atual"
-            value={formatCurrency(116.83)}
+            value={formatCurrency(availableCash)}
             icon={Wallet}
             loading={isLoading}
             onClick={() => go(ROUTES.finance)}
