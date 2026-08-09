@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
+import { LabelPreview } from "@/features/printing/components/LabelPreview";
 
 interface DocumentBlock {
   id: string;
