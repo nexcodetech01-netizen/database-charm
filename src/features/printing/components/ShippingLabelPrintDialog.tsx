@@ -167,19 +167,8 @@ export function ShippingLabelPrintDialog({
         }
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type });
-      } else if (block.zpl) {
-        // ZPL - Preview via Labelary com detecção de dimensões
-        const dimensions = detectZPLDimensions(block.zpl);
-        try {
-          blob = await labelaryService.convertToPdf({
-            id: source.id + "_" + block.id,
-            zpl: block.zpl,
-            ...dimensions
-          });
-        } catch (previewErr) {
-          console.warn(`[PRINT_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
-        }
       }
+      // O ZPL não é convertido aqui agora. A conversão ocorre sob demanda no LabelPreview.
 
       if (blob) {
         previewUrl = URL.createObjectURL(blob);
