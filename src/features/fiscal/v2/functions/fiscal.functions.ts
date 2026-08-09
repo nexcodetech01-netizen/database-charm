@@ -1275,14 +1275,13 @@ async function callSetSecret(
   environment?: NfeEnvironment | null,
 ): Promise<void> {
   const ciphertext = plaintext && plaintext.length > 0 ? await encryptSecret(plaintext) : null;
-  const { error } = await supabase.rpc("fiscal_set_secret", {
-    _company_id: companyId,
-    _kind: kind,
-    _owner_id: (ownerId ?? null) as unknown as string,
-    _ciphertext: ciphertext as unknown as string,
-    ...(environment ? { _environment: environment } : {}),
-  } as never);
-  if (error) throw error;
+  await new StatusRepository(supabase).setSecret({
+    companyId,
+    kind,
+    ownerId,
+    ciphertext,
+    environment,
+  });
 
   // Read-back obrigatório: garante que o segredo gravado é EXATAMENTE o mesmo
   // que o motor de emissão/diagnóstico consegue recuperar e descriptografar.
@@ -1372,13 +1371,8 @@ export const setProviderApiKey = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
     let environment = data.environment ?? null;
     if (!environment) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-        .select("environment")
-        .eq("company_id", companyId)
-        .maybeSingle();
-      environment = ((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment;
+      environment =
+        (await new StatusRepository(supabase).getActiveEnvironment(companyId)) ?? "homologation";
     }
     const kind =
       data.credential === "admin" ? "provider_admin_key" : ("provider_api_key" as const);
@@ -1424,14 +1418,10 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     }
     const storagePath = cert.storagePath;
 
-    const { error } = await supabase.rpc("fiscal_delete_certificate", {
-      _certificate_id: data.certificateId,
-    });
-    if (error) throw error;
+    await repo.deleteViaRpc(data.certificateId);
 
     if (storagePath) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.storage.from("fiscal-certificates").remove([storagePath]);
+      await repo.removeFile(storagePath);
     }
     return { ok: true };
   });
