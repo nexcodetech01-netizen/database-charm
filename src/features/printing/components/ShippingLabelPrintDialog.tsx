@@ -207,7 +207,7 @@ export function ShippingLabelPrintDialog({
     setIsLoading(true);
 
     try {
-      let validBlocks = [];
+      let validBlocks: Array<{ zpl: string; type: "label" | "danfe" }> = [];
       
       if (labelData.type === "zpl") {
         validBlocks = parseZPLBlocks(content);
