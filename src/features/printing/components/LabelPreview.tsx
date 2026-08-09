@@ -24,35 +24,44 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   // Viewport isolado por documento: zoom + scroll nunca são reaproveitados
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [fitWidth, setFitWidth] = useState<number | null>(null);
 
   const isDanfe = Boolean(label.height && label.height > 6);
   const aspect = label.width && label.height ? label.height / label.width : 1.414;
 
+  // Dimensões naturais do documento em px (96dpi)
+  const baseWidth = Math.round((label.width && label.width > 0 ? label.width : 8.27) * 96);
+  const baseHeight = Math.round(baseWidth * (isDanfe ? 1.414 : aspect));
+
   const resetViewport = React.useCallback(() => {
-    setZoom(1);
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      scrollRef.current.scrollLeft = 0;
+    const el = scrollRef.current;
+    if (el) {
+      el.scrollTop = 0;
+      el.scrollLeft = 0;
     }
   }, []);
 
-  // fit-to-container: 85% da largura útil, sem escala fixa
+  // Auto-fit: PDF/DANFE => Fit Width (95%), ZPL => Fit Page (proporcional)
   const fitToContainer = React.useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const available = el.clientWidth;
-    if (!available) return;
-    setFitWidth(Math.max(220, Math.round(available * 0.85)));
-    setZoom(1);
+    const cw = el.clientWidth - 32; // padding lateral
+    const ch = el.clientHeight - 32;
+    if (cw <= 0) return;
+
+    const widthRatio = (cw * 0.95) / baseWidth;
+    const next = isDanfe
+      ? widthRatio
+      : Math.min(widthRatio, ch > 0 ? (ch * 0.95) / baseHeight : widthRatio);
+
+    setZoom(Math.max(0.2, Math.min(3, +next.toFixed(2))));
     el.scrollTop = 0;
     el.scrollLeft = 0;
-  }, []);
+  }, [baseWidth, baseHeight, isDanfe]);
 
   // Reset total ANTES de renderizar um novo documento
   React.useLayoutEffect(() => {
     resetViewport();
-    setFitWidth(null);
+    setZoom(1);
   }, [label, resetViewport]);
 
   React.useEffect(() => {
@@ -66,6 +75,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [fitToContainer]);
+
 
   // Cache em memória local do componente para reaproveitar se o usuário alternar abas
   const previewRef = React.useRef<Record<string, string>>({});
