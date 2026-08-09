@@ -80,7 +80,7 @@ export function MercadoLivrePrintDialog({
     } catch (error) {
       console.error(`[ML_PRINT_BLOCK_ERROR] ${block.id}:`, error);
       // Não lançamos erro aqui para permitir que o fluxo continue mesmo sem preview
-      toast.error(`Falha ao carregar preview de ${block.title}. O download do ZPL continua disponível.`);
+      // Removido toast de erro para preview conforme solicitado
     }
 
     return {
@@ -262,24 +262,21 @@ export function MercadoLivrePrintDialog({
           ) : blocks.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-4 bg-muted/30 p-2 rounded-lg border">
-                <TabsList className="grid grid-cols-2 w-[400px]">
+                <TabsList className="grid grid-cols-2 w-[440px]">
                   {blocks.map((block) => (
                     <TabsTrigger 
                       key={block.id} 
                       value={block.id}
-                      className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                      className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
                     >
-                      {block.type === 'label' ? <Package className="h-4 w-4 mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-                      {block.id === 'block-0' ? 'Etiqueta' : 'DANFE'}
+                      {block.type === 'label' ? (
+                        <>📦 Etiqueta ({blocks.filter(b => b.type === 'label').length})</>
+                      ) : (
+                        <>🧾 DANFE ({blocks.filter(b => b.type === 'danfe').length})</>
+                      )}
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                
-                {blocks.length > 1 && (
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 py-1">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Multi-Documento Detectado
-                  </Badge>
-                )}
               </div>
 
               {blocks.map((block) => (
@@ -294,10 +291,10 @@ export function MercadoLivrePrintDialog({
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handleDownloadBlock(block)}>
-                            <Download className="h-3 w-3 mr-1" /> Baixar ZPL
+                            <Download className="h-3 w-3 mr-1" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                           </Button>
                           <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handlePrintBlock(block)}>
-                            <Printer className="h-3 w-3 mr-1" /> Imprimir ZPL
+                            <Printer className="h-3 w-3 mr-1" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                           </Button>
                         </div>
                       </div>
@@ -311,12 +308,11 @@ export function MercadoLivrePrintDialog({
                           />
                         ) : (
                           <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-50 dark:bg-slate-950">
-                            <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
-                              <Eye className="h-10 w-10 text-amber-600 dark:text-amber-500 opacity-50" />
+                            <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full mb-3">
+                              <Eye className="h-6 w-6 text-amber-600 dark:text-amber-500 opacity-50" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-2">Visualização Indisponível</h3>
-                            <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                              O serviço de conversão externa (Labelary) não respondeu, mas você ainda pode baixar ou imprimir o arquivo original usando os botões acima.
+                            <p className="text-sm text-muted-foreground max-w-xs">
+                              Preview indisponível. Você ainda pode imprimir ou baixar o ZPL.
                             </p>
                           </div>
                         )}
@@ -344,13 +340,15 @@ export function MercadoLivrePrintDialog({
                 disabled={isPrinting || isLoading}
               >
                 <Printer className="mr-2 h-4 w-4" />
-                Imprimir Ambos
+                Imprimir Todos
               </Button>
             )}
             
             {blocks.map((block) => {
               const isSelected = activeTab === block.id;
-              if (!isSelected && blocks.length > 1) return null;
+              if (!isSelected) return null;
+              
+              const typeLabel = block.type === 'label' ? 'Etiqueta' : 'DANFE';
               
               return (
                 <React.Fragment key={block.id}>
@@ -360,7 +358,7 @@ export function MercadoLivrePrintDialog({
                     disabled={isPrinting || isLoading || (!block.blob && !block.zpl)}
                   >
                     <Printer className="mr-2 h-4 w-4" />
-                    {blocks.length > 1 ? `Imprimir ${block.type === 'label' ? 'Etiqueta' : 'DANFE'}` : 'Imprimir Etiqueta'}
+                    Imprimir {typeLabel}
                   </Button>
                   <Button 
                     variant="outline"
@@ -368,7 +366,7 @@ export function MercadoLivrePrintDialog({
                     disabled={isPrinting || isLoading}
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    {blocks.length > 1 ? `Baixar ${block.type === 'label' ? 'Etiqueta' : 'DANFE'}` : 'Baixar PDF'}
+                    Baixar {typeLabel}
                   </Button>
                 </React.Fragment>
               );
