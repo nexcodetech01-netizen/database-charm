@@ -228,6 +228,8 @@ export function TransactionFormDialog({
       account_id: form.account_id || null,
       transfer_to_account_id: form.type === "transfer" ? form.transfer_to_account_id || null : null,
       category_id: finalCategoryId,
+      // O campo 'category' é mantido aqui para lógica de UI ou para o hook useCreateTransaction,
+      // mas o financeService.createTransaction agora o remove antes de enviar ao Supabase.
       category: finalCategory,
 
       transaction_date: form.transaction_date,
