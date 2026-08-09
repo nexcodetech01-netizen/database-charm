@@ -308,12 +308,11 @@ export function MercadoLivrePrintDialog({
                           />
                         ) : (
                           <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-50 dark:bg-slate-950">
-                            <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
-                              <Eye className="h-10 w-10 text-amber-600 dark:text-amber-500 opacity-50" />
+                            <div className="bg-amber-100 dark:bg-amber-900/30 p-3 rounded-full mb-3">
+                              <Eye className="h-6 w-6 text-amber-600 dark:text-amber-500 opacity-50" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-2">Visualização Indisponível</h3>
-                            <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                              O serviço de conversão externa (Labelary) não respondeu, mas você ainda pode baixar ou imprimir o arquivo original usando os botões acima.
+                            <p className="text-sm text-muted-foreground max-w-xs">
+                              Preview indisponível. Você ainda pode imprimir ou baixar o ZPL.
                             </p>
                           </div>
                         )}
