@@ -154,6 +154,19 @@ export const cashService = {
 
   async registerMovement(input: RegisterMovementInput): Promise<CashMovement> {
     if (input.amount <= 0) throw new Error("Valor deve ser maior que zero.");
+    
+    // Trava de segurança para sangria: não permite retirar mais do que existe em dinheiro físico
+    if (input.type === "cash_out") {
+      const session = await this.getSession(input.sessionId);
+      if (session) {
+        const summary = await this.computeSummary(session);
+        const available = summary.expectedCash;
+        if (input.amount > available) {
+          throw new Error(`Valor da sangria é superior ao saldo em dinheiro disponível na gaveta (${(available).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}).`);
+        }
+      }
+    }
+
     if (!input.reason.trim()) throw new Error("Informe o motivo.");
     const { data, error } = await supabase
       .from("cash_movements")
