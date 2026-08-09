@@ -20,9 +20,56 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auditData, setAuditData] = useState<LabelaryAudit | null>(null);
-  
+
+  // Viewport isolado por documento: zoom + scroll nunca são reaproveitados
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [fitWidth, setFitWidth] = useState<number | null>(null);
+
+  const isDanfe = Boolean(label.height && label.height > 6);
+  const aspect = label.width && label.height ? label.height / label.width : 1.414;
+
+  const resetViewport = React.useCallback(() => {
+    setZoom(1);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollLeft = 0;
+    }
+  }, []);
+
+  // fit-to-container: 85% da largura útil, sem escala fixa
+  const fitToContainer = React.useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const available = el.clientWidth;
+    if (!available) return;
+    setFitWidth(Math.max(220, Math.round(available * 0.85)));
+    setZoom(1);
+    el.scrollTop = 0;
+    el.scrollLeft = 0;
+  }, []);
+
+  // Reset total ANTES de renderizar um novo documento
+  React.useLayoutEffect(() => {
+    resetViewport();
+    setFitWidth(null);
+  }, [label, resetViewport]);
+
+  React.useEffect(() => {
+    if (!previewUrl) return;
+    const id = window.requestAnimationFrame(() => fitToContainer());
+    return () => window.cancelAnimationFrame(id);
+  }, [previewUrl, fitToContainer]);
+
+  React.useEffect(() => {
+    const onResize = () => fitToContainer();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [fitToContainer]);
+
   // Cache em memória local do componente para reaproveitar se o usuário alternar abas
   const previewRef = React.useRef<Record<string, string>>({});
+
 
   React.useEffect(() => {
     const loadPreview = async () => {
