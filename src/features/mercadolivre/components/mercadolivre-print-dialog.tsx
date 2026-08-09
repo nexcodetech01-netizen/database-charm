@@ -62,7 +62,7 @@ export function MercadoLivrePrintDialog({
   const [activeTab, setActiveTab] = useState<string>("block-0");
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [selectedPrinterId, setSelectedPrinterId] = useState<string>("browser");
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportZPL = () => {
@@ -250,7 +250,8 @@ export function MercadoLivrePrintDialog({
         },
         { 
           strategy: strategy as any,
-          printerId: selectedPrinterId // Usaremos a impressora selecionada se disponível
+          type: 'LABEL', // Força o tipo para garantir a seleção automática da impressora de etiquetas
+          printerId: selectedPrinterId || undefined
         }
       );
 

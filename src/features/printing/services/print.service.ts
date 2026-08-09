@@ -49,8 +49,30 @@ class PrintQueue {
       job.status = 'PROCESSING';
       job.startedAt = new Date();
       
-      const printer = (await printerService.listPrinters()).find(p => p.id === job.printerId);
-      const printerName = printer?.name || 'Impressora Desconhecida';
+      const printers = await printerService.listPrinters();
+      
+      // Resolução automática de impressora baseada no tipo (Sprint Final Homologação)
+      let resolvedPrinterId = job.printerId;
+      if (!resolvedPrinterId || resolvedPrinterId === "browser") {
+        const companyId = job.label.id.split('_')[0]; // Tentativa de inferir companyId do prefixo do ID
+        const { getPrintPreferences } = await import("../lib/print-preferences");
+        const prefs = getPrintPreferences(companyId);
+        
+        if (job.options.type === 'LABEL' && prefs.labelPrinterId) {
+          resolvedPrinterId = prefs.labelPrinterId;
+        } else if (job.options.type === 'RECEIPT' && prefs.receiptPrinterId) {
+          resolvedPrinterId = prefs.receiptPrinterId;
+        }
+      }
+
+      const printer = printers.find(p => p.id === resolvedPrinterId || p.name === resolvedPrinterId);
+      const printerName = printer?.name || resolvedPrinterId || 'Impressora Desconhecida';
+      
+      // Fallback: Se a impressora não for encontrada, informar erro real
+      if (resolvedPrinterId && resolvedPrinterId !== "browser" && !printer) {
+        throw new Error(`Impressora configurada "${resolvedPrinterId}" não foi encontrada no sistema.`);
+      }
+
       const isZpl = !!job.label.zpl;
       const canDoRaw = printer?.capabilities.supportsZpl || printer?.capabilities.supportsRaw;
 

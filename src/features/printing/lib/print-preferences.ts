@@ -29,6 +29,8 @@ export interface PrintPreferences {
 }
 
 export const DEFAULT_PRINT_PREFERENCES: PrintPreferences = {
+  labelPrinterId: "",
+  receiptPrinterId: "",
   printerName: "",
   paperWidth: "80mm",
   marginMm: 3,
@@ -58,6 +60,8 @@ export function normalizePrintPreferences(
   const merged = { ...DEFAULT_PRINT_PREFERENCES, ...(raw ?? {}) };
   return {
     ...merged,
+    labelPrinterId: String(merged.labelPrinterId ?? ""),
+    receiptPrinterId: String(merged.receiptPrinterId ?? ""),
     printerName: String(merged.printerName ?? "").slice(0, 80),
     paperWidth: merged.paperWidth === "58mm" ? "58mm" : "80mm",
     marginMm: clampMargin(merged.marginMm),
