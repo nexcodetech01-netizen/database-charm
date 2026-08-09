@@ -6,6 +6,14 @@ import { LabelData } from "../types/printing.types";
  */
 export const labelaryService = {
   /**
+   * Gera uma URL de imagem do preview da etiqueta (LEGACY - Utilizar convertToPdf para auditoria completa)
+   */
+  getPreviewUrl(label: LabelData): string {
+    const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
+    return `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/${encodeURIComponent(zpl)}`;
+  },
+
+  /**
    * Converte ZPL para PDF usando o Labelary
    * Auditoria Enterprise: Garantir HTTPS, Content-Type correto e payload bruto.
    */
