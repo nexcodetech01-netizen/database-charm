@@ -26,6 +26,7 @@ import { printManager } from "@/features/printing/services/print.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
 
 interface ZPLBlock {
   id: string;
@@ -61,6 +62,7 @@ export function MercadoLivrePrintDialog({
   const [activeTab, setActiveTab] = useState<string>("block-0");
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string>("browser");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportZPL = () => {
@@ -145,10 +147,16 @@ export function MercadoLivrePrintDialog({
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type: "application/pdf" });
       } else {
-        blob = await labelaryService.convertToPdf({
-          id: source.id + "_" + block.id,
-          zpl: block.zpl,
-        });
+        // Preview é opcional. Se falhar, apenas não define previewUrl.
+        try {
+          blob = await labelaryService.convertToPdf({
+            id: source.id + "_" + block.id,
+            zpl: block.zpl,
+          });
+        } catch (previewErr) {
+          console.warn(`[ML_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
+          // Silenciosamente falha o preview, mas mantém o ZPL para impressão.
+        }
       }
 
       if (blob) {
@@ -231,28 +239,34 @@ export function MercadoLivrePrintDialog({
   const handlePrintBlock = async (block: ZPLBlock) => {
     setIsPrinting(true);
     try {
+      // Prioridade absoluta: Se for ZPL, enviar BRUTO
+      const strategy = block.zpl ? "RAW" : "PDF";
+      
       const result = await printManager.print(
         {
           id: labelData?.id + "_" + block.id,
           zpl: block.zpl || undefined,
           content: block.zpl ? undefined : labelData?.content,
         },
-        { strategy: "PDF" as any }
+        { 
+          strategy: strategy as any,
+          printerId: selectedPrinterId // Usaremos a impressora selecionada se disponível
+        }
       );
 
       if (result.success) {
-        if (block.blob) {
+        if (block.zpl) {
+          toast.success(`ZPL enviado para fila enterprise: ${block.title}`);
+        } else if (block.blob) {
           const url = URL.createObjectURL(block.blob);
           const printWindow = window.open(url);
           if (printWindow) {
             printWindow.print();
           }
-        } else if (block.zpl) {
-          toast.info(`Enviando ZPL bruto...`);
+          toast.success(`${block.title} aberta para impressão.`);
         }
-        toast.success(`${block.type === 'label' ? 'Etiqueta' : 'DANFE'} enviada.`);
       } else {
-        throw new Error(result.message || "Erro ao enviar impressão.");
+        throw new Error(result.message || "Erro ao enfileirar impressão.");
       }
     } catch (error) {
       toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro"));
@@ -381,16 +395,23 @@ export function MercadoLivrePrintDialog({
                               </div>
                             ) : (
                               <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px] uppercase tracking-wider">
-                                🟡 PREVIEW OFFLINE
+                                <Info className="h-3 w-3" /> PREVIEW INDISPONÍVEL
                               </div>
                             )}
                             <p className="text-[10px] text-slate-400 leading-tight font-medium">
                               {block.previewUrl 
                                 ? "O documento está pronto para visualização e impressão."
-                                : "A impressão e o download continuam disponíveis."
+                                : "Preview indisponível. A impressão continua disponível."
                               }
                             </p>
                           </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                           <PrinterSelector 
+                              value={selectedPrinterId} 
+                              onValueChange={setSelectedPrinterId} 
+                           />
                         </div>
                       </aside>
 
@@ -433,34 +454,22 @@ export function MercadoLivrePrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col items-center justify-center">
                           {block.previewUrl ? (
                             <iframe
                               src={block.previewUrl}
-                              className="w-full h-full"
+                              className="w-full h-full border-none"
                               title={block.title}
                             />
                           ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/30 dark:bg-slate-900/30">
-                              <div className="bg-white dark:bg-slate-800 p-3 rounded-full mb-3 text-slate-300 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <Eye className="h-[20px] w-[20px]" />
+                            <div className="flex flex-col items-center gap-4 text-slate-400 p-8 text-center">
+                              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-full">
+                                <Eye className="h-12 w-12 opacity-20" />
                               </div>
-                              <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 mb-1">
-                                Preview indisponível
-                              </h3>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[320px] leading-relaxed font-medium mb-4">
-                                O serviço Labelary está temporariamente offline.
-                              </p>
-                              
-                              <div className="text-left w-full max-w-[200px] border-t border-slate-100 dark:border-slate-800 pt-3">
-                                <ul className="space-y-2">
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
-                                    • Imprimir normalmente
-                                  </li>
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
-                                    • Baixar o arquivo ZPL
-                                  </li>
-                                </ul>
+                              <div>
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-300">Preview indisponível</p>
+                                <p className="text-xs mt-1">O motor de visualização (Labelary) não respondeu.</p>
+                                <p className="text-xs font-bold text-blue-500 mt-2">A impressão via ZPL direto continua disponível.</p>
                               </div>
                             </div>
                           )}
