@@ -37,6 +37,8 @@ import { ProductsRepository } from "../repositories/products.repository";
 import { CustomersRepository } from "../repositories/customers.repository";
 import { StatusRepository } from "../repositories/status.repository";
 import { TaxRepository } from "../repositories/tax.repository";
+import { SalesRepository } from "../repositories/sales.repository";
+import type { CustomerFiscalRow } from "../repositories/customers.repository";
 
 type SB = SupabaseClient<Database>;
 
@@ -188,14 +190,7 @@ type FiscalDocumentRow = {
 
 const mapDocument = (row: FiscalDocumentRow): FiscalDocumentDto => mapDocFromQuery(row as any);
 
-
-
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
-
-function docFrom(supabase: SB) {
-  // Small helper to avoid re-typing the column list.
-  return supabase.from("fiscal_documents" as never);
-}
 
 // ------------------------------------------------------------------- LIST
 
@@ -287,14 +282,9 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.create");
 
     // Valida a venda pertence à empresa.
-    const { data: sale, error: saleErr } = await supabase
-      .from("sales")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("id", data.saleId)
-      .maybeSingle();
-    if (saleErr) throw saleErr;
-    if (!sale) throw new Error("Venda não encontrada.");
+    const salesRepo = new SalesRepository(supabase);
+    const saleExists = await salesRepo.exists(companyId, data.saleId);
+    if (!saleExists) throw new Error("Venda não encontrada.");
 
     // Impede duplicidade usando Repository.
     const repo = new DocumentsRepository(supabase);
@@ -505,11 +495,9 @@ export const getFiscalArtifactUrl = createServerFn({ method: "POST" })
     if (!data.path.startsWith(`${companyId}/`)) {
       throw new Error("Caminho fora do escopo da empresa.");
     }
-    const { data: signed, error } = await supabase.storage
-      .from("fiscal-artifacts")
-      .createSignedUrl(data.path, 60);
-    if (error) throw error;
-    return { url: signed.signedUrl };
+    const docRepo = new DocumentsRepository(supabase);
+    const url = await docRepo.createArtifactSignedUrl(data.path, 60);
+    return { url };
   });
 
 // ------------------------------------------------------- PROVIDER CONFIG
@@ -718,12 +706,8 @@ export const getFiscalProviderConfig = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select(PROVIDER_COLS)
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (error) throw error;
+    const statusRepo = new StatusRepository(supabase);
+    const data = await statusRepo.getProviderRow(companyId, PROVIDER_COLS);
     const hasKey = await fetchHasApiKey(supabase, companyId);
     const environments = await fetchEnvironments(supabase, companyId);
     return mapProvider((data ?? null) as ProviderRow | null, hasKey, environments);
@@ -799,34 +783,22 @@ export const updateFiscalProviderConfig = createServerFn({ method: "POST" })
       updated_by: context.userId,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const table = () => (supabase.from("fiscal_provider_config" as never) as any);
+    const statusRepo = new StatusRepository(supabase);
 
     // UPDATE explícito + INSERT de fallback: o upsert do PostgREST dependia da
     // resolução de conflito e mascarava falhas silenciosas de persistência.
-    const { data: updated, error: updateError } = await table()
-      .update(payload)
-      .eq("company_id", companyId)
-      .select(PROVIDER_COLS)
-      .maybeSingle();
-    if (updateError) throw updateError;
-
-    let row = updated as ProviderRow | null;
+    let row = (await statusRepo.updateProviderConfig(
+      companyId,
+      payload,
+      PROVIDER_COLS,
+    )) as ProviderRow | null;
     if (!row) {
-      const { data: inserted, error: insertError } = await table()
-        .insert(payload)
-        .select(PROVIDER_COLS)
-        .single();
-      if (insertError) throw insertError;
-      row = inserted as ProviderRow;
+      row = (await statusRepo.insertProviderConfig(payload, PROVIDER_COLS)) as ProviderRow;
     }
 
     // Read-back: garante que api_url foi realmente gravada (RLS/trigger podem
     // devolver linha sem persistir o valor esperado).
-    const { data: verify } = await table()
-      .select(PROVIDER_COLS)
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const verify = await statusRepo.getProviderRow(companyId, PROVIDER_COLS);
     const persisted = (verify ?? row) as ProviderRow;
     if ((persisted?.api_url ?? null) !== payload.api_url) {
       throw new Error(
@@ -920,15 +892,9 @@ export const provisionFiscalProvider = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select("environment")
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const statusRepo = new StatusRepository(supabase);
     const environment: NfeEnvironment =
-      data.environment ??
-      (((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment);
+      data.environment ?? (await statusRepo.getActiveEnvironment(companyId)) ?? "homologation";
 
     const { provisionProviderCertificateEngine } = await import("./nfe-engine.server");
     return provisionProviderCertificateEngine({
@@ -1030,13 +996,9 @@ export const uploadFiscalCertificate = createServerFn({ method: "POST" })
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const objectPath = `${companyId}/certs/${crypto.randomUUID()}.pfx`;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: upErr } = await supabaseAdmin.storage
-      .from("fiscal-certificates")
-      .upload(objectPath, bytes, { contentType: data.contentType, upsert: false });
-    if (upErr) throw upErr;
-
     const repo = new CertificateRepository(supabase);
+    await repo.uploadFile(objectPath, bytes, data.contentType);
+
     await repo.update(companyId, "all", { is_active: false });
 
     const cert = await repo.insert({
@@ -1302,14 +1264,13 @@ async function callSetSecret(
   environment?: NfeEnvironment | null,
 ): Promise<void> {
   const ciphertext = plaintext && plaintext.length > 0 ? await encryptSecret(plaintext) : null;
-  const { error } = await supabase.rpc("fiscal_set_secret", {
-    _company_id: companyId,
-    _kind: kind,
-    _owner_id: (ownerId ?? null) as unknown as string,
-    _ciphertext: ciphertext as unknown as string,
-    ...(environment ? { _environment: environment } : {}),
-  } as never);
-  if (error) throw error;
+  await new StatusRepository(supabase).setSecret({
+    companyId,
+    kind,
+    ownerId,
+    ciphertext,
+    environment,
+  });
 
   // Read-back obrigatório: garante que o segredo gravado é EXATAMENTE o mesmo
   // que o motor de emissão/diagnóstico consegue recuperar e descriptografar.
@@ -1358,14 +1319,11 @@ export const setCertificatePassword = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    const { data: cert, error } = await supabase
-      .from("fiscal_certificates")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("id", data.certificateId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!cert) throw new Error("Certificado não encontrado.");
+    const certExists = await new CertificateRepository(supabase).exists(
+      companyId,
+      data.certificateId,
+    );
+    if (!certExists) throw new Error("Certificado não encontrado.");
 
     await callSetSecret(supabase, companyId, "cert_password", data.certificateId, data.password);
     return { ok: true };
@@ -1399,13 +1357,8 @@ export const setProviderApiKey = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
     let environment = data.environment ?? null;
     if (!environment) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-        .select("environment")
-        .eq("company_id", companyId)
-        .maybeSingle();
-      environment = ((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment;
+      environment =
+        (await new StatusRepository(supabase).getActiveEnvironment(companyId)) ?? "homologation";
     }
     const kind =
       data.credential === "admin" ? "provider_admin_key" : ("provider_api_key" as const);
@@ -1451,14 +1404,10 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     }
     const storagePath = cert.storagePath;
 
-    const { error } = await supabase.rpc("fiscal_delete_certificate", {
-      _certificate_id: data.certificateId,
-    });
-    if (error) throw error;
+    await repo.deleteViaRpc(data.certificateId);
 
     if (storagePath) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.storage.from("fiscal-certificates").remove([storagePath]);
+      await repo.removeFile(storagePath);
     }
     return { ok: true };
   });
@@ -1539,11 +1488,7 @@ async function runProviderHealth(
   });
   // Espelho legado quando o ambiente testado é o ativo.
   if (((cfg as ProviderRow | null)?.environment ?? null) === environment) {
-    await supabase.rpc("fiscal_record_provider_health", {
-      _company_id: companyId,
-      _status: status,
-      _message: message,
-    });
+    await new StatusRepository(supabase).recordProviderHealth(companyId, status, message);
   }
 
   return { status, message, checkedAt, items };
@@ -1564,13 +1509,8 @@ export const testProviderConnection = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
     let environment = data.environment ?? null;
     if (!environment) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-        .select("environment")
-        .eq("company_id", companyId)
-        .maybeSingle();
-      environment = ((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment;
+      environment =
+        (await new StatusRepository(supabase).getActiveEnvironment(companyId)) ?? "homologation";
     }
     return runProviderHealth(supabase, companyId, environment);
   });
@@ -1616,32 +1556,8 @@ export const getCompanyFiscalProfile = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    const { data, error } = await supabase
-      .from("companies")
-      .select(
-        "id, name, trade_name, cnpj, ie, im, phone, email, address, address_number, complement, neighborhood, city, state, zip_code",
-      )
-      .eq("id", companyId)
-      .maybeSingle();
-    if (error) throw error;
-    const c = (data ?? { id: companyId }) as Record<string, string | null | undefined>;
-    return {
-      id: companyId,
-      legalName: (c.name as string) ?? null,
-      tradeName: (c.trade_name as string) ?? null,
-      cnpj: (c.cnpj as string) ?? null,
-      ie: (c.ie as string) ?? null,
-      im: (c.im as string) ?? null,
-      phone: (c.phone as string) ?? null,
-      email: (c.email as string) ?? null,
-      address: (c.address as string) ?? null,
-      addressNumber: (c.address_number as string) ?? null,
-      complement: (c.complement as string) ?? null,
-      neighborhood: (c.neighborhood as string) ?? null,
-      city: (c.city as string) ?? null,
-      state: (c.state as string) ?? null,
-      zipcode: (c.zip_code as string) ?? null,
-    };
+    const companyRepo = new CompanyRepository(supabase);
+    return companyRepo.getProfile(companyId);
   });
 
 const companyUpdateSchema = z
@@ -1671,53 +1587,24 @@ export const updateCompanyFiscalProfile = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    const { error } = await supabase
-      .from("companies")
-      .update({
-        name: data.legalName,
-        trade_name: data.tradeName ?? null,
-        cnpj: data.cnpj.replace(/\D/g, ""),
-        ie: data.ie ?? null,
-        im: data.im ?? null,
-        phone: data.phone ?? null,
-        email: data.email || null,
-        address: data.address ?? null,
-        address_number: data.addressNumber ?? null,
-        complement: data.complement ?? null,
-        neighborhood: data.neighborhood ?? null,
-        city: data.city ?? null,
-        state: data.state ? data.state.toUpperCase() : null,
-        zip_code: data.zipcode ?? null,
-      })
-      .eq("id", companyId);
-    if (error) throw error;
-
-    // Read back through the same function to keep shape consistent.
-    const { data: row } = await supabase
-      .from("companies")
-      .select(
-        "id, name, trade_name, cnpj, ie, im, phone, email, address, address_number, complement, neighborhood, city, state, zip_code",
-      )
-      .eq("id", companyId)
-      .maybeSingle();
-    const c = (row ?? { id: companyId }) as Record<string, string | null | undefined>;
-    return {
-      id: companyId,
-      legalName: (c.name as string) ?? null,
-      tradeName: (c.trade_name as string) ?? null,
-      cnpj: (c.cnpj as string) ?? null,
-      ie: (c.ie as string) ?? null,
-      im: (c.im as string) ?? null,
-      phone: (c.phone as string) ?? null,
-      email: (c.email as string) ?? null,
-      address: (c.address as string) ?? null,
-      addressNumber: (c.address_number as string) ?? null,
-      complement: (c.complement as string) ?? null,
-      neighborhood: (c.neighborhood as string) ?? null,
-      city: (c.city as string) ?? null,
-      state: (c.state as string) ?? null,
-      zipcode: (c.zip_code as string) ?? null,
-    };
+    const companyRepo = new CompanyRepository(supabase);
+    // Read-back dentro do repository mantém o mesmo shape de retorno.
+    return companyRepo.updateProfile(companyId, {
+      name: data.legalName,
+      trade_name: data.tradeName ?? null,
+      cnpj: data.cnpj.replace(/\D/g, ""),
+      ie: data.ie ?? null,
+      im: data.im ?? null,
+      phone: data.phone ?? null,
+      email: data.email || null,
+      address: data.address ?? null,
+      address_number: data.addressNumber ?? null,
+      complement: data.complement ?? null,
+      neighborhood: data.neighborhood ?? null,
+      city: data.city ?? null,
+      state: data.state ? data.state.toUpperCase() : null,
+      zip_code: data.zipcode ?? null,
+    });
   });
 
 // -------- Sales picker for NF-e issuance --------
@@ -1789,39 +1676,21 @@ export const listSalesForFiscal = createServerFn({ method: "POST" })
     const fetchLimit = term ? 400 : limit;
 
     // Regra fiscal da empresa: emitir somente após o pagamento?
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsRow } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("issue_only_after_payment")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    const onlyPaid = Boolean(
-      (settingsRow as { issue_only_after_payment?: boolean } | null)?.issue_only_after_payment,
-    );
+    const taxRepo = new TaxRepository(supabase);
+    const onlyPaid = await taxRepo.getIssueOnlyAfterPayment(companyId);
 
     // O critério de listagem é fiscal, não financeiro: todas as vendas
     // efetivadas entram na lista (exceto rascunhos). O status financeiro
     // só filtra quando a empresa exige pagamento prévio.
     // Em modo depuração (includeAll) nenhum filtro é aplicado — inclusive
     // rascunhos e vendas não elegíveis aparecem, com o motivo do bloqueio.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = supabase
-      .from("sales")
-      .select(
-        "id, number, sale_date, paid_at, status, grand_total, customers(name, document), sale_items(description, products(name, sku, barcode, ncm))",
-      )
-      .eq("company_id", companyId);
-    if (!includeAll) {
-      q = q.neq("status", "draft");
-      if (onlyPaid) q = q.eq("status", "paid");
-    }
+    const salesRepo = new SalesRepository(supabase);
+    const rows = await salesRepo.listForFiscal(companyId, {
+      limit: fetchLimit,
+      excludeDraft: !includeAll,
+      onlyPaid,
+    });
 
-    q = q
-      .order("sale_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(fetchLimit);
-
-    const { data: rows, error } = await q;
-    if (error) throw error;
 
     type Row = {
       id: string;
@@ -1886,11 +1755,8 @@ export const listSalesForFiscal = createServerFn({ method: "POST" })
     // pela mesma regra usada no cliente (`resolveActiveFiscalDocument`).
     const activeDocBySale = new Map<string, FiscalDocumentLike>();
     if (ids.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: docs } = await (docFrom(supabase) as any)
-        .select("sale_id, status, access_key, protocol, created_at")
-        .eq("company_id", companyId)
-        .in("sale_id", ids);
+      const docsRepo = new DocumentsRepository(supabase);
+      const docs = await docsRepo.listBySaleIds(companyId, ids);
       const bySale = new Map<string, FiscalDocumentLike[]>();
       for (const d of (docs ?? []) as Array<{
         sale_id: string | null;
@@ -2087,42 +1953,15 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       (issue.severity === "error" ? blockers : warnings).push(issue);
 
     // 1) Venda + cliente
-    const { data: saleRow, error: saleErr } = await supabase
-      .from("sales")
-      .select("id, number, grand_total, customer_id, status")
-      .eq("company_id", companyId)
-      .eq("id", data.saleId)
-      .maybeSingle();
-    if (saleErr) throw saleErr;
+    const salesRepo = new SalesRepository(supabase);
+    const saleRow = await salesRepo.findSummary(companyId, data.saleId);
     if (!saleRow) throw new Error("Venda não encontrada.");
-    const sale = saleRow as unknown as {
-      id: string;
-      number: number | null;
-      grand_total: number | null;
-      customer_id: string | null;
-      status: string;
-    };
+    const sale = saleRow;
 
-    type CustomerCtx = {
-      name: string | null;
-      document: string | null;
-      email: string | null;
-      address: string | null;
-      city: string | null;
-      state: string | null;
-      zip: string | null;
-      address_number: string | null;
-      neighborhood: string | null;
-    };
-    let customer: CustomerCtx | null = null;
+    let customer: CustomerFiscalRow | null = null;
     if (sale.customer_id) {
-      const { data: cust } = await supabase
-        .from("customers")
-        .select("name, document, email, address, address_number, neighborhood, city, state, zip")
-        .eq("company_id", companyId)
-        .eq("id", sale.customer_id)
-        .maybeSingle();
-      customer = (cust ?? null) as unknown as CustomerCtx | null;
+      const customersRepo = new CustomersRepository(supabase);
+      customer = await customersRepo.findFiscalInfo(companyId, sale.customer_id);
     }
     const customerAddress = customer
       ? [
@@ -2188,19 +2027,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 2) Itens
-    const { data: items, error: itemsErr } = await supabase
-      .from("sale_items")
-      .select("id, product_id, description, quantity, unit_price, total")
-      .eq("sale_id", sale.id);
-    if (itemsErr) throw itemsErr;
-    const itemList = (items ?? []) as Array<{
-      id: string;
-      product_id: string | null;
-      description: string | null;
-      quantity: number | null;
-      unit_price: number | null;
-      total: number | null;
-    }>;
+    const itemList = await salesRepo.listItems(sale.id);
     if (itemList.length === 0) {
       push({
         id: "items.empty",
@@ -2249,17 +2076,10 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       new Set(itemList.map((it) => it.product_id).filter((v): v is string => Boolean(v))),
     );
     if (productIds.length) {
-      const { data: prods } = await supabase
-        .from("products")
-        .select("id, name, ncm")
-        .eq("company_id", companyId)
-        .in("id", productIds);
-      const list = (prods ?? []) as unknown as Array<{
-        id: string;
-        name: string | null;
-        ncm: string | null;
-      }>;
+      const productsRepo = new ProductsRepository(supabase);
+      const list = await productsRepo.findNcmInfo(companyId, productIds);
       for (const p of list) byId.set(p.id, p);
+
 
       const missing = itemList
         .map((it) => (it.product_id ? byId.get(it.product_id) : null))
@@ -2621,41 +2441,20 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
     let saleNumber: number | null = null;
 
     if (saleId) {
-      const { data: sale } = await supabase
-        .from("sales")
-        .select("number, customer_id")
-        .eq("company_id", companyId)
-        .eq("id", saleId)
-        .maybeSingle();
-      const s_local = sale as unknown as { number: number | null; customer_id: string | null } | null;
-      saleNumber = s_local?.number ?? null;
-      if (s_local?.customer_id) {
-        const { data: cust } = await supabase
-          .from("customers")
-          .select("name, document")
-          .eq("company_id", companyId)
-          .eq("id", s_local.customer_id)
-          .maybeSingle();
-        const c_local = cust as { name: string | null; document: string | null } | null;
+      const salesRepo = new SalesRepository(supabase);
+      const header = await salesRepo.findHeader(companyId, saleId);
+      saleNumber = header?.number ?? null;
+      if (header?.customer_id) {
+        const customersRepo = new CustomersRepository(supabase);
+        const c_local = await customersRepo.findBasic(companyId, header.customer_id);
         customerName = c_local?.name ?? customerName;
         customerDocument = c_local?.document ?? null;
       }
-      const { count } = await supabase
-        .from("sale_items")
-        .select("id", { count: "exact", head: true })
-        .eq("sale_id", saleId);
-      itemCount = count ?? 0;
+      itemCount = await salesRepo.countItems(saleId);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settings } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("default_cfop, operation_nature")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    const st = (settings ?? null) as {
-      default_cfop: string | null;
-      operation_nature: string | null;
-    } | null;
+    const taxRepo = new TaxRepository(supabase);
+    const st = await taxRepo.getDefaultCfopAndNature(companyId);
 
     return {
       customerName,
@@ -2679,16 +2478,10 @@ export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.export");
 
     // Buscamos apenas notas autorizadas ou canceladas que tenham XML
-    const { data: rows, error } = await supabase
-      .from("fiscal_documents")
-      .select("number, access_key, xml_authorized_path, xml_cancellation_path")
-      .eq("company_id", companyId)
-      .gte("created_at", data.from)
-      .lte("created_at", data.to)
-      .or("status.eq.authorized,status.eq.cancelled");
+    const docRepo = new DocumentsRepository(supabase);
+    const rows = await docRepo.listXmlPaths(companyId, data.from, data.to);
 
-    if (error) throw error;
-    if (!rows || rows.length === 0) {
+    if (rows.length === 0) {
       throw new Error("Nenhum XML encontrado no período selecionado.");
     }
 
@@ -2700,15 +2493,11 @@ export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
       if (!path) continue;
 
       try {
-        const { data: blob, error: downloadErr } = await supabase.storage
-          .from("fiscal_artifacts")
-          .download(path);
+        const buffer = await docRepo.downloadXmlArtifact(path);
+        if (!buffer) continue;
 
-        if (downloadErr || !blob) continue;
-
-        const buffer = await blob.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
-        
+
         const fileName = `${row.access_key || row.number || "nota"}.xml`;
         files.push({ name: fileName, contentBase64: base64 });
       } catch (err) {
