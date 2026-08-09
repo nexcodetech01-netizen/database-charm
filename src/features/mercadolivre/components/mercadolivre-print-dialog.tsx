@@ -178,7 +178,6 @@ export function MercadoLivrePrintDialog({
   }, [open, labelData, processLabelData]);
 
   const handlePrintBlock = async (block: ZPLBlock) => {
-    if (!block.blob) return;
     setIsPrinting(true);
     try {
       const result = await printManager.print(
@@ -191,10 +190,15 @@ export function MercadoLivrePrintDialog({
       );
 
       if (result.success) {
-        const url = URL.createObjectURL(block.blob);
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.print();
+        if (block.blob) {
+          const url = URL.createObjectURL(block.blob);
+          const printWindow = window.open(url);
+          if (printWindow) {
+            printWindow.print();
+          }
+        } else if (block.zpl) {
+          // Se não tem PDF, tenta imprimir via raw ZPL se suportado pelo strategy
+          toast.info(`Enviando ZPL bruto para a impressora...`);
         }
         toast.success(`Impressão de ${block.title} enviada.`);
       } else {
@@ -323,7 +327,7 @@ export function MercadoLivrePrintDialog({
                 variant="default" 
                 className="bg-blue-600 hover:bg-blue-700" 
                 onClick={handlePrintAll}
-                disabled={isPrinting || isLoading}
+                    disabled={isPrinting || isLoading || (!block.blob && !block.zpl)}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Ambos
@@ -339,7 +343,7 @@ export function MercadoLivrePrintDialog({
                   <Button 
                     variant={blocks.length > 1 ? "outline" : "default"}
                     onClick={() => handlePrintBlock(block)}
-                    disabled={isPrinting || isLoading}
+                    disabled={isPrinting || isLoading || (!block.blob && !block.zpl)}
                   >
                     <Printer className="mr-2 h-4 w-4" />
                     {blocks.length > 1 ? `Imprimir ${block.type === 'label' ? 'Etiqueta' : 'DANFE'}` : 'Imprimir Etiqueta'}
