@@ -1859,11 +1859,8 @@ export const listSalesForFiscal = createServerFn({ method: "POST" })
     // pela mesma regra usada no cliente (`resolveActiveFiscalDocument`).
     const activeDocBySale = new Map<string, FiscalDocumentLike>();
     if (ids.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: docs } = await (docFrom(supabase) as any)
-        .select("sale_id, status, access_key, protocol, created_at")
-        .eq("company_id", companyId)
-        .in("sale_id", ids);
+      const docsRepo = new DocumentsRepository(supabase);
+      const docs = await docsRepo.listBySaleIds(companyId, ids);
       const bySale = new Map<string, FiscalDocumentLike[]>();
       for (const d of (docs ?? []) as Array<{
         sale_id: string | null;
