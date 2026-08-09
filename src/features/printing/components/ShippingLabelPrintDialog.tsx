@@ -88,9 +88,24 @@ export function ShippingLabelPrintDialog({
       setIsLoading(true);
       try {
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        const zplBlocks = content.match(regex) || [];
+        const matches = content.match(regex) || [];
+        
+        console.log(`[ZPL_IMPORT] Blocos brutos encontrados: ${matches.length}`);
 
-        if (zplBlocks.length === 0) {
+        const validBlocks: string[] = [];
+        matches.forEach((zpl, index) => {
+          const trimmed = zpl.trim();
+          // Critérios de descarte: Muito curto ou sem comandos básicos
+          if (trimmed.length < 20 || !trimmed.includes('^')) {
+            console.log(`[ZPL_IMPORT] Bloco ${index} descartado: conteúdo inválido ou vazio.`);
+            return;
+          }
+          validBlocks.push(zpl);
+        });
+
+        console.log(`[ZPL_IMPORT] Blocos válidos: ${validBlocks.length}`);
+
+        if (validBlocks.length === 0) {
           const trimmedContent = content.trim();
           if (trimmedContent.length > 0) {
             const block: DocumentBlock = {
@@ -102,21 +117,25 @@ export function ShippingLabelPrintDialog({
             const prepared = await prepareBlock(block, { type: "zpl", content, id: file.name });
             setBlocks([prepared]);
             setActiveTab("block-0");
-
           }
         } else {
           const preparedBlocks = await Promise.all(
-            zplBlocks.map(async (zpl, index) => {
-            const block: DocumentBlock = {
-              id: `block-${index}`,
-              zpl,
-              type: index === 0 ? "label" : "danfe",
-              title: index === 0 ? "Etiqueta" : "DANFE",
-            };
+            validBlocks.map(async (zpl, index) => {
+              // Identificação baseada no conteúdo
+              const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
+              const type = isDanfe ? "danfe" : "label";
+              
+              console.log(`[ZPL_IMPORT] Bloco ${index} identificado como: ${type.toUpperCase()}`);
+
+              const block: DocumentBlock = {
+                id: `block-${index}`,
+                zpl,
+                type,
+                title: type === "label" ? "Etiqueta" : "DANFE",
+              };
 
               return await prepareBlock(block, { type: "zpl", content, id: file.name });
             })
-
           );
           setBlocks(preparedBlocks);
           setActiveTab("block-0");
