@@ -78,12 +78,13 @@ function FinancePage() {
   const { company } = Route.useRouteContext();
   const { tab: initialTab } = Route.useSearch();
   const { data, isLoading } = useFinanceOverview(company.id);
+  const { data: accounts } = useAccounts(company.id);
   const [txOpen, setTxOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
-
+  const realAvailableCash = accounts?.filter(a => a.is_active || a.status === 'active').reduce((acc, curr) => acc + (Number(curr.current_balance) || 0), 0) ?? 0;
   const cashFlow = data ? data.receivable - data.payable : undefined;
   const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
 
@@ -115,7 +116,7 @@ function FinancePage() {
     <KpiSection>
       <KpiCard
         label="Caixa Disponível"
-        value={data ? formatCurrency(data.currentBalance) : "—"}
+        value={formatCurrency(realAvailableCash)}
         icon={Wallet}
         highlight
         hint="Soma dos saldos das contas ativas"
