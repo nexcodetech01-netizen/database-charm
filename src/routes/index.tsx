@@ -61,6 +61,7 @@ function IndexComponent() {
             <PrinterIcon className="h-5 w-5 text-blue-600" /> Print Manager Enterprise
           </h2>
           
+          <PrintConfigSummary />
           <PrintManager />
           
           <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -116,4 +117,5 @@ function IndexComponent() {
 import { PrintButton } from "@/features/printing/components/PrintButton";
 import { PrinterStatus } from "@/features/printing/components/PrinterStatus";
 import { PrintManager } from "@/features/printing/components/enterprise/PrintManager";
+import { PrintConfigSummary } from "@/features/printing/components/enterprise/PrintConfigSummary";
 import { Printer as PrinterIcon } from "lucide-react";
