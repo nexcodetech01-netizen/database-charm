@@ -153,10 +153,45 @@ export function ShippingLabelPrintDialog({
     event.target.value = "";
   };
 
+  const detectZPLDimensions = (zpl: string) => {
+    // Dimensões padrão ML
+    let width = 4;
+    let height = 6;
+    let dpmm: 8 | 12 = 8;
+
+    // Tenta detectar dimensões no ZPL (^PW = Print Width)
+    // ^PW812 -> 812 dots. Em 8dpmm, isso é ~101.5mm (4 polegadas)
+    const pwMatch = zpl.match(/\^PW(\d+)/);
+    if (pwMatch) {
+      const dots = parseInt(pwMatch[1]);
+      if (dots > 1000) width = 6; // Provavelmente A4 ou largura maior
+      else if (dots > 600) width = 4;
+    }
+
+    // ^LL = Label Length
+    const llMatch = zpl.match(/\^LL(\d+)/);
+    if (llMatch) {
+      const dots = parseInt(llMatch[1]);
+      // Se dots > 1500 em 8dpmm, é mais que 7 polegadas (provavelmente A4/DANFE)
+      if (dots > 1800) height = 11;
+      else if (dots > 1000) height = 6;
+    }
+
+    // Identificação por conteúdo para DANFE (A4 geralmente)
+    const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
+    if (isDanfe) {
+      width = 8; // Aproximado para A4 (8.27in)
+      height = 11; // Aproximado para A4 (11.69in)
+    }
+
+    return { width, height, dpmm };
+  };
+
   const extractZPLStats = (zpl: string) => {
+    const { width, height, dpmm } = detectZPLDimensions(zpl);
     return {
       format: "ZPL II",
-      size: "100x150 mm", // Padrão ML
+      size: `${width * 25.4}x${height * 25.4} mm`,
       commands: (zpl.match(/\^/g) || []).length,
       encoding: "UTF-8"
     };
@@ -184,12 +219,14 @@ export function ShippingLabelPrintDialog({
         }
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type });
-      } else {
-        // ZPL - Preview opcional via Labelary
+      } else if (block.zpl) {
+        // ZPL - Preview via Labelary com detecção de dimensões
+        const dimensions = detectZPLDimensions(block.zpl);
         try {
           blob = await labelaryService.convertToPdf({
             id: source.id + "_" + block.id,
             zpl: block.zpl,
+            ...dimensions
           });
         } catch (previewErr) {
           console.warn(`[PRINT_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
@@ -233,9 +270,10 @@ export function ShippingLabelPrintDialog({
         matches.forEach((zpl, index) => {
           const trimmed = zpl.trim();
           
-          // 1. Descarte de blocos inválidos/vazios
-          if (trimmed.length < 20 || !trimmed.includes('^')) {
-            console.log(`[ShippingLabelPrintDialog] Bloco ${index} descartado: conteúdo insuficiente ou sem comandos ZPL.`);
+          // 1. Descarte de blocos inválidos/vazios ou puramente de configuração
+          const isUseful = trimmed.includes('^FD') || trimmed.includes('^GF') || trimmed.includes('^B');
+          if (trimmed.length < 50 || !trimmed.includes('^') || !isUseful) {
+            console.log(`[ShippingLabelPrintDialog] Bloco ${index} descartado: conteúdo insuficiente, puramente técnico ou sem dados úteis (^FD/^GF/^B).`);
             return;
           }
 

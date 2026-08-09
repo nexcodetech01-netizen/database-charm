@@ -29,6 +29,7 @@ export const labelaryService = {
         'Accept': 'application/pdf',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
+      dimensions: `${width}x${height} @ ${dpmm}dpmm`,
       zplLength: zpl.length
     });
 
