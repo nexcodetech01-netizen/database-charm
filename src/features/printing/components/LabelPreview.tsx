@@ -236,10 +236,9 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
               onLoad={() => fitToContainer()}
               className="border shadow-lg bg-white transition-all"
               style={{
-                width: fitWidth ? `${Math.round(fitWidth * zoom)}px` : '85%',
-                height: fitWidth
-                  ? `${Math.round(fitWidth * zoom * (isDanfe ? 1.414 : aspect))}px`
-                  : (isDanfe ? '1200px' : '850px'),
+                width: `${Math.round(baseWidth * zoom)}px`,
+                height: `${Math.round(baseHeight * zoom)}px`,
+
                 transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
               }}
             />
