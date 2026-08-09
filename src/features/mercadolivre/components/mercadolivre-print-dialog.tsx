@@ -279,7 +279,7 @@ export function MercadoLivrePrintDialog({
                 </TabsList>
               </div>
 
-              {/* 3. LAYOUT (ESQUERDA 220px / DIREITA FLEX) */}
+              {/* 3. LAYOUT (ESQUERDA 265px / DIREITA FLEX) */}
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {blocks.map((block) => {
                   const isSelected = activeTab === block.id;
@@ -287,8 +287,8 @@ export function MercadoLivrePrintDialog({
 
                   return (
                     <div key={block.id} className="flex-1 flex overflow-hidden">
-                      {/* 4. COLUNA ESQUERDA (220px) */}
-                      <aside className="w-[220px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-visible">
+                      {/* 4. COLUNA ESQUERDA (265px) */}
+                      <aside className="w-[265px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-visible">
                         <div>
                           <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Informações</h4>
                           <div className="space-y-2.5">
@@ -314,20 +314,19 @@ export function MercadoLivrePrintDialog({
                           <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Status</h4>
                           <div className="flex flex-col gap-2">
                             {block.previewUrl ? (
-                              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-[10.5px]">
+                              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-[10.5px] uppercase tracking-wider">
                                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 Preview disponível
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px]">
-                                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                                Preview indisponível
+                              <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px] uppercase tracking-wider">
+                                🟡 PREVIEW OFFLINE
                               </div>
                             )}
                             <p className="text-[10px] text-slate-400 leading-tight font-medium">
                               {block.previewUrl 
                                 ? "O documento está pronto para visualização e impressão."
-                                : "O serviço de preview está indisponível, mas a impressão e o download continuam funcionando normalmente."
+                                : "A impressão e o download continuam disponíveis."
                               }
                             </p>
                           </div>
@@ -335,12 +334,12 @@ export function MercadoLivrePrintDialog({
                       </aside>
 
                       {/* 5. COLUNA DIREITA (FLEX) */}
-                      <main className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 flex flex-col min-h-0 relative">
+                      <main className="flex-1 bg-slate-50 dark:bg-slate-950 p-2 flex flex-col min-h-0 relative">
                         {/* 6. BOTÕES DO DOCUMENTO ATIVO */}
-                        <div className="flex items-center justify-between mb-2 shrink-0">
+                        <div className="flex items-center justify-between mb-1.5 shrink-0 px-2 pt-1">
                           <div className="flex items-center gap-2">
                              <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Visualização</h4>
-                             {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold">LIVE</span>}
+                             {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold tracking-tight">LIVE</span>}
                           </div>
                           <div className="flex gap-2">
                             <Button 
@@ -368,25 +367,23 @@ export function MercadoLivrePrintDialog({
                             />
                           ) : (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/30 dark:bg-slate-900/30">
-                              <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-3 text-slate-300 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <Eye className="h-[24px] w-[24px]" />
+                              <div className="bg-white dark:bg-slate-800 p-3 rounded-full mb-3 text-slate-300 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <Eye className="h-[20px] w-[20px]" />
                               </div>
                               <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 mb-1">
                                 Preview indisponível
                               </h3>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[280px] leading-relaxed font-medium mb-4">
-                                O serviço Labelary está temporariamente offline. 
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[320px] leading-relaxed font-medium mb-4">
+                                O serviço Labelary está temporariamente offline.
                               </p>
-                              <div className="bg-slate-100/50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200/50 dark:border-slate-700/50 text-left">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Você ainda pode:</p>
-                                <ul className="space-y-1.5">
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-medium">
-                                    <div className="h-1 w-1 rounded-full bg-blue-500" />
-                                    Imprimir a etiqueta normalmente
+                              
+                              <div className="text-left w-full max-w-[200px] border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <ul className="space-y-2">
+                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
+                                    • Imprimir normalmente
                                   </li>
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-medium">
-                                    <div className="h-1 w-1 rounded-full bg-blue-500" />
-                                    Baixar o arquivo ZPL
+                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
+                                    • Baixar o arquivo ZPL
                                   </li>
                                 </ul>
                               </div>
