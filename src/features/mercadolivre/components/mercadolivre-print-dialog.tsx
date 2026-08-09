@@ -269,18 +269,18 @@ export function MercadoLivrePrintDialog({
           ) : blocks.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
               {/* 2. ABAS */}
-              <div className="px-8 py-3 bg-white dark:bg-slate-900 border-b shrink-0 shadow-sm">
-                <TabsList className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg border">
+              <div className="px-6 py-2 bg-white dark:bg-slate-900 border-b shrink-0 shadow-sm flex items-center justify-between">
+                <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border">
                   {blocks.map((block) => (
                     <TabsTrigger 
                       key={block.id} 
                       value={block.id}
                       className={cn(
-                        "data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all px-6 h-10 text-sm font-semibold rounded-md",
-                        "flex items-center gap-3"
+                        "data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all px-4 h-8 text-xs font-semibold rounded-md",
+                        "flex items-center gap-2"
                       )}
                     >
-                      {block.type === 'label' ? <Package className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                      {block.type === 'label' ? <Package className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                       {block.type === 'label' ? `Etiqueta (${labelsCount})` : `DANFE (${danfesCount})`}
                     </TabsTrigger>
                   ))}
