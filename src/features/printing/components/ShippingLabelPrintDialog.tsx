@@ -206,7 +206,11 @@ export function ShippingLabelPrintDialog({
       
       if (labelData.type === "zpl") {
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        zplBlocks = content.match(regex) || [];
+        // Deduplicação rigorosa: Remover blocos ZPL idênticos antes do processamento
+        const matches = content.match(regex) || [];
+        zplBlocks = Array.from(new Set(matches));
+        
+        console.log(`[ShippingLabelPrintDialog] Blocos ZPL encontrados: ${matches.length}, Únicos: ${zplBlocks.length}`);
       }
 
       if (zplBlocks.length === 0) {
@@ -221,7 +225,6 @@ export function ShippingLabelPrintDialog({
             title: "Etiqueta",
           };
 
-          
           const prepared = await prepareBlock(block, labelData);
           setBlocks([prepared]);
           setActiveTab("block-0");
@@ -382,7 +385,7 @@ export function ShippingLabelPrintDialog({
                       )}
                     >
                       {block.type === 'label' ? <Package className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-                      {block.type === 'label' ? `Etiqueta (${labelsCount})` : `DANFE (${danfesCount})`}
+                      {block.type === 'label' ? "Etiqueta" : "DANFE"}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -428,7 +431,7 @@ export function ShippingLabelPrintDialog({
                                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 Preview disponível
                               </div>
-                            ) : (
+                             ) : (
                               <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px] uppercase tracking-wider">
                                 <Info className="h-3 w-3" /> PREVIEW INDISPONÍVEL
                               </div>
@@ -436,7 +439,7 @@ export function ShippingLabelPrintDialog({
                             <p className="text-[10px] text-slate-400 leading-tight font-medium">
                               {block.previewUrl 
                                 ? "O documento está pronto para visualização e impressão."
-                                : "Preview indisponível. A impressão continua disponível."
+                                : "Preview indisponível. Impressão e download continuam disponíveis."
                               }
                             </p>
                           </div>
