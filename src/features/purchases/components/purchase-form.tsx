@@ -245,7 +245,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   const selectedSupplier = suppliers.find((s) => s.id === form.supplier_id);
   const statusMeta = PURCHASE_STATUS_OPTIONS.find((o) => o.value === form.status);
 
-  async function submit(e: React.FormEvent, receive: boolean) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = schema.safeParse({
       number: form.number,
@@ -318,7 +318,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
       console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
 
       toast.success(
-        receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",
+        isEdit ? "Compra atualizada" : "Compra cadastrada",
       );
       navigate({ to: "/compras/$purchaseId", params: { purchaseId } });
     } catch (err) {
@@ -348,7 +348,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     : "Registre entradas de mercadorias e atualize automaticamente o estoque.";
 
   return (
-    <form onSubmit={(e) => submit(e, false)}>
+    <form onSubmit={(e) => submit(e)}>
       <PageLayout
         icon={ShoppingBag}
         title={pageTitle}
