@@ -233,18 +233,18 @@ export function MercadoLivrePrintDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1100px] w-[95vw] h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
+      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
-        <div className="relative px-8 py-5 bg-white dark:bg-slate-900 border-b shrink-0">
+        <div className="relative px-6 py-4 bg-white dark:bg-slate-900 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg text-white">
-              <Printer className="h-6 w-6" />
+            <div className="bg-blue-600 p-1.5 rounded-lg text-white">
+              <Printer className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white leading-none">
+              <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white leading-none">
                 Printing Center - Mercado Livre
               </DialogTitle>
-              <p className="text-sm text-slate-500 mt-1.5 font-medium">
+              <p className="text-[12px] text-slate-500 mt-1 font-medium">
                 Gerencie e imprima etiquetas e DANFE.
               </p>
             </div>
@@ -253,7 +253,7 @@ export function MercadoLivrePrintDialog({
             variant="ghost" 
             size="icon" 
             onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-md h-8 w-8 transition-colors"
+            className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-md h-8 w-8 transition-colors"
           >
             <X className="h-5 w-5" />
           </Button>
