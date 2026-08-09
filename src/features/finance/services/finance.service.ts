@@ -231,10 +231,25 @@ export const financeService = {
     if (!parsed.success) {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
     }
-    const { status: _status, paid_at: _paidAt, ...rest } = input as
-      FinancialTransactionInsert & { status?: unknown; paid_at?: unknown };
+    
+    // Remove UI-only fields that might be in the input
+    const { 
+      status: _status, 
+      paid_at: _paidAt, 
+      payment_condition,
+      installment_count,
+      installment_interval_days,
+      first_installment_date,
+      ...rest 
+    } = input as any;
+    
     void _status;
     void _paidAt;
+    void payment_condition;
+    void installment_count;
+    void installment_interval_days;
+    void first_installment_date;
+
     const payload = {
       ...rest,
       status: _status === "cancelled" ? "cancelled" : "pending",
