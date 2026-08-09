@@ -276,13 +276,13 @@ export function PurchaseForm({ companyId, purchase }: Props) {
       return;
     }
 
-    // FLUXO ÚNICO DE RECEBIMENTO — a compra NUNCA é persistida já com
-    // status='received'. O trigger trg_apply_purchase_to_inventory só dispara
-    // em UPDATE OF status, então o recebimento passa obrigatoriamente pelo
-    // serviço oficial (purchasesService.setStatus → RPC receive_purchase).
+    // FLUXO DE PERSISTÊNCIA: A compra é salva com o status selecionado no formulário.
+    // Se o usuário clicou em "Finalizar" (receive=true), forçamos 'pending' 
+    // temporariamente no payload de salvamento para que a chamada subsequente 
+    // de statusMut.mutateAsync('received') processe o recebimento fiscal/estoque.
     const persistedStatus = receive ? "pending" : (form.status || "draft");
     
-    console.log("[PurchaseForm.submit] Status enviado:", persistedStatus);
+    console.log("[PurchaseForm.submit] Status formulário:", form.status, "Status a persistir:", persistedStatus);
 
 
 
