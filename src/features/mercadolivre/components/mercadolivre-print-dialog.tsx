@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,8 @@ import {
   Eye,
   CheckCircle2,
   X,
-  Info
+  Info,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { labelaryService } from "@/features/printing/services/labelary.service";
