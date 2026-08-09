@@ -80,7 +80,7 @@ export function MercadoLivrePrintDialog({
     } catch (error) {
       console.error(`[ML_PRINT_BLOCK_ERROR] ${block.id}:`, error);
       // Não lançamos erro aqui para permitir que o fluxo continue mesmo sem preview
-      toast.error(`Falha ao carregar preview de ${block.title}. O download do ZPL continua disponível.`);
+      // Removido toast de erro para preview conforme solicitado
     }
 
     return {
