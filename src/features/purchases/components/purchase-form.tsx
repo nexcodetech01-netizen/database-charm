@@ -279,7 +279,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     // FLUXO DE PERSISTÊNCIA: A compra é salva com o status selecionado no formulário.
     const persistedStatus = form.status || "draft";
     
-    console.log("[PurchaseForm.submit] Status formulário:", form.status, "Status a persistir:", persistedStatus);
+    
 
     const payload = {
       company_id: companyId,
@@ -311,7 +311,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
         purchaseId = created.id;
       }
 
-      console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
+      
 
 
       toast.success(
