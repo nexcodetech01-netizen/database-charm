@@ -279,7 +279,7 @@ export function MercadoLivrePrintDialog({
                 </TabsList>
               </div>
 
-              {/* 3. LAYOUT (ESQUERDA 260px / DIREITA FLEX) */}
+              {/* 3. LAYOUT (ESQUERDA 220px / DIREITA FLEX) */}
               <div className="flex-1 flex min-h-0 overflow-hidden">
                 {blocks.map((block) => {
                   const isSelected = activeTab === block.id;
@@ -287,22 +287,22 @@ export function MercadoLivrePrintDialog({
 
                   return (
                     <div key={block.id} className="flex-1 flex overflow-hidden">
-                      {/* 4. COLUNA ESQUERDA (260px) */}
-                      <aside className="w-[260px] border-r bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 shrink-0 overflow-y-auto">
+                      {/* 4. COLUNA ESQUERDA (220px) */}
+                      <aside className="w-[220px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-visible">
                         <div>
-                          <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-4">Informações</h4>
-                          <div className="space-y-3">
+                          <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Informações</h4>
+                          <div className="space-y-2.5">
                             {[
-                              { label: 'Tipo', value: block.type === 'label' ? 'Etiqueta ML' : 'DANFE Simplificado' },
+                              { label: 'Tipo', value: block.type === 'label' ? 'Etiqueta ML' : 'DANFE' },
                               { label: 'Documento', value: block.zpl ? 'ZPL' : 'PDF' },
                               { label: 'Formato', value: block.stats?.size || '100x150 mm' },
                               { label: 'Origem', value: 'Mercado Livre' },
-                              { label: 'Status', value: 'Pronto', valueClass: 'text-blue-600 font-bold' }
+                              { label: 'Status', value: 'Pronto', valueClass: 'text-blue-600 dark:text-blue-400 font-bold' }
                             ].map((item, idx) => (
-                              <div key={idx} className="flex items-center text-[11px] group">
-                                <span className="text-slate-500 shrink-0">{item.label}</span>
+                              <div key={idx} className="flex items-center text-[10.5px] group">
+                                <span className="text-slate-400 shrink-0">{item.label}</span>
                                 <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-1.5 mb-0.5" />
-                                <span className={cn("font-semibold text-slate-900 dark:text-slate-100 text-right shrink-0", item.valueClass)}>
+                                <span className={cn("font-bold text-slate-900 dark:text-slate-100 text-right shrink-0", item.valueClass)}>
                                   {item.value}
                                 </span>
                               </div>
@@ -310,48 +310,51 @@ export function MercadoLivrePrintDialog({
                           </div>
                         </div>
 
-                        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-                          <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-4">Status</h4>
-                          {block.previewUrl ? (
-                            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100/50 dark:border-emerald-800/50">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span className="text-[11px] font-bold">Preview pronto</span>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                                <AlertCircle className="h-4 w-4" />
-                                <span className="text-[11px] font-bold">Preview OFF</span>
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                          <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Status</h4>
+                          <div className="flex flex-col gap-2">
+                            {block.previewUrl ? (
+                              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-[10.5px]">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                Preview disponível
                               </div>
-                              <p className="text-[10px] text-slate-500 leading-tight font-medium">
-                                Impressão ZPL segue disponível.
-                              </p>
-                            </div>
-                          )}
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px]">
+                                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                                Preview indisponível
+                              </div>
+                            )}
+                            <p className="text-[10px] text-slate-400 leading-tight font-medium">
+                              {block.previewUrl 
+                                ? "O documento está pronto para visualização e impressão."
+                                : "O serviço de preview está indisponível, mas a impressão e o download continuam funcionando normalmente."
+                              }
+                            </p>
+                          </div>
                         </div>
                       </aside>
 
                       {/* 5. COLUNA DIREITA (FLEX) */}
                       <main className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 flex flex-col min-h-0 relative">
-                        {/* 6. BOTÕES DO DOCUMENTO ATIVO (SOBREPOSTOS OU NO TOPO) */}
-                        <div className="flex items-center justify-between mb-3 shrink-0">
+                        {/* 6. BOTÕES DO DOCUMENTO ATIVO */}
+                        <div className="flex items-center justify-between mb-2 shrink-0">
                           <div className="flex items-center gap-2">
                              <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Visualização</h4>
-                             {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-bold">LIVE</span>}
+                             {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold">LIVE</span>}
                           </div>
                           <div className="flex gap-2">
                             <Button 
                               variant="outline" 
-                              className="h-8 px-3 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 hover:bg-slate-50 transition-all rounded shadow-sm"
+                              className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
                               onClick={() => handleDownloadBlock(block)}
                             >
-                              <Download className="h-3 w-3 mr-1.5" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
+                              <Download className="h-3 w-3 mr-2" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>
                             <Button 
-                              className="h-8 px-3 font-bold text-[10px] bg-blue-600 hover:bg-blue-700 text-white transition-all rounded shadow-md"
+                              className="h-8 px-4 font-bold text-[10px] bg-blue-600 hover:bg-blue-700 text-white transition-all rounded-md shadow-md border-none"
                               onClick={() => handlePrintBlock(block)}
                             >
-                              <Printer className="h-3 w-3 mr-1.5" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
+                              <Printer className="h-3 w-3 mr-2" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>
                           </div>
                         </div>
@@ -365,15 +368,28 @@ export function MercadoLivrePrintDialog({
                             />
                           ) : (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/30 dark:bg-slate-900/30">
-                              <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-4 text-slate-200 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <Eye className="h-[36px] w-[36px]" />
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-full mb-3 text-slate-300 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <Eye className="h-[24px] w-[24px]" />
                               </div>
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                              <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 mb-1">
                                 Preview indisponível
                               </h3>
-                              <p className="text-[11px] text-slate-500 max-w-[240px] leading-relaxed font-medium">
-                                O serviço Labelary está offline. Download ZPL e impressão direta continuam ativos.
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[280px] leading-relaxed font-medium mb-4">
+                                O serviço Labelary está temporariamente offline. 
                               </p>
+                              <div className="bg-slate-100/50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200/50 dark:border-slate-700/50 text-left">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Você ainda pode:</p>
+                                <ul className="space-y-1.5">
+                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-medium">
+                                    <div className="h-1 w-1 rounded-full bg-blue-500" />
+                                    Imprimir a etiqueta normalmente
+                                  </li>
+                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-medium">
+                                    <div className="h-1 w-1 rounded-full bg-blue-500" />
+                                    Baixar o arquivo ZPL
+                                  </li>
+                                </ul>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -395,24 +411,24 @@ export function MercadoLivrePrintDialog({
         </div>
 
         {/* 7. RODAPÉ SIMPLIFICADO */}
-        <div className="h-[64px] px-6 py-2 bg-white dark:bg-slate-900 border-t shrink-0 flex items-center justify-between">
+        <div className="h-[52px] px-6 bg-white dark:bg-slate-900 border-t shrink-0 flex items-center justify-between">
           <div>
             {blocks.length > 1 && (
               <Button 
                 variant="default" 
-                className="bg-slate-900 hover:bg-black text-white px-6 h-10 font-bold text-xs rounded-lg shadow-md transition-all" 
+                className="bg-slate-900 dark:bg-slate-100 hover:bg-black dark:hover:bg-white text-white dark:text-slate-900 px-5 h-8 font-bold text-[10px] rounded-md shadow-md transition-all border-none" 
                 onClick={handlePrintAll}
                 disabled={isPrinting || isLoading}
               >
-                <Printer className="mr-2 h-4 w-4" />
+                <Printer className="mr-2 h-3.5 w-3.5" />
                 Imprimir Todos
               </Button>
             )}
           </div>
           
           <Button 
-            variant="ghost" 
-            className="h-10 px-6 font-bold text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+            variant="outline" 
+            className="h-8 px-5 font-bold text-[10px] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 rounded-md transition-all"
             onClick={() => onOpenChange(false)}
           >
             Fechar
