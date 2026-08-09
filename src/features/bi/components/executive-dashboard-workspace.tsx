@@ -108,6 +108,11 @@ export function ExecutiveDashboardWorkspace({ companyId }: { companyId: string }
   const [preset, setPreset] = useState<DashPreset>("last_30_days");
   const [range, setRange] = useState<DateRange>(() => computeRange("last_30_days"));
   const { data, isLoading, error } = useExecutiveDashboard(companyId, range);
+  const { data: accounts } = useAccounts(companyId);
+  const availableCash = (accounts || [])
+    .filter((a: any) => a.status === 'active')
+    .reduce((sum: number, a: any) => sum + (Number(a.current_balance) || 0), 0);
+
 
   const go = (to: string) => navigate({ to });
 
