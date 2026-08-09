@@ -235,7 +235,7 @@ export function MercadoLivrePrintDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1100px] w-[95vw] h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
-        <div className="flex items-center justify-between px-8 py-5 bg-white dark:bg-slate-900 border-b shrink-0">
+        <div className="relative px-8 py-5 bg-white dark:bg-slate-900 border-b shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-2 rounded-lg text-white">
               <Printer className="h-6 w-6" />
@@ -253,9 +253,9 @@ export function MercadoLivrePrintDialog({
             variant="ghost" 
             size="icon" 
             onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-full h-10 w-10 transition-colors"
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-md h-8 w-8 transition-colors"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
@@ -340,24 +340,24 @@ export function MercadoLivrePrintDialog({
                       </aside>
 
                       {/* 5. COLUNA DIREITA (72%) */}
-                      <main className="w-[72%] bg-slate-50 dark:bg-slate-950 p-8 flex flex-col min-h-0">
-                        <div className="flex items-center justify-between mb-6 shrink-0">
+                      <main className="w-[72%] bg-slate-50 dark:bg-slate-950 px-8 pt-8 pb-4 flex flex-col min-h-0">
+                        <div className="flex items-center justify-between mb-4 shrink-0">
                           <h4 className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Preview</h4>
                           
                           {/* 6. BOTÕES DO DOCUMENTO ATIVO */}
                           <div className="flex gap-3">
                             <Button 
                               variant="outline" 
-                              className="h-10 px-6 font-bold text-xs bg-white dark:bg-slate-900 border-slate-200 hover:bg-slate-50 transition-all rounded-lg shadow-sm"
+                              className="h-9 px-4 font-bold text-xs bg-white dark:bg-slate-900 border-slate-200 hover:bg-slate-50 transition-all rounded-lg shadow-sm"
                               onClick={() => handleDownloadBlock(block)}
                             >
-                              <Download className="h-4 w-4 mr-2" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
+                              <Download className="h-3.5 w-3.5 mr-2" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>
                             <Button 
-                              className="h-10 px-6 font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all rounded-lg shadow-md"
+                              className="h-9 px-4 font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all rounded-lg shadow-md"
                               onClick={() => handlePrintBlock(block)}
                             >
-                              <Printer className="h-4 w-4 mr-2" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
+                              <Printer className="h-3.5 w-3.5 mr-2" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>
                           </div>
                         </div>
@@ -370,14 +370,14 @@ export function MercadoLivrePrintDialog({
                               title={block.title}
                             />
                           ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center p-16 text-center">
-                              <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-full mb-8 text-slate-300">
-                                <Eye className="h-16 w-16" />
+                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-full mb-6 text-slate-200 dark:text-slate-700">
+                                <Eye className="h-[72px] w-[72px]" />
                               </div>
-                              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+                              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
                                 Preview indisponível
                               </h3>
-                              <p className="text-sm text-slate-500 max-w-[320px] leading-relaxed font-medium">
+                              <p className="text-xs text-slate-500 max-w-[280px] leading-relaxed font-medium">
                                 O serviço de conversão (Labelary) não está disponível. Você ainda pode imprimir ou baixar o documento normalmente.
                               </p>
                             </div>
