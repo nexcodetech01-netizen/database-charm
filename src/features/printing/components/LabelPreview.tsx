@@ -136,8 +136,20 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                      </div>
                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
                        <span className="text-muted-foreground block">Duração Parse</span>
-                       <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
-                     </div>
+                        <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Cache Hit</span>
+                        <span className={cn("font-bold", auditData.cacheHit ? "text-emerald-500" : "text-amber-500")}>
+                          {auditData.cacheHit ? "Sim" : "Não"}
+                        </span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Labelary Chamado</span>
+                        <span className={cn("font-bold", !auditData.cacheHit ? "text-blue-500" : "text-slate-500")}>
+                          {!auditData.cacheHit && auditData.url.includes('api.labelary.com') ? "Sim" : "Não"}
+                        </span>
+                      </div>
                    </div>
                    <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
                      {JSON.stringify(auditData, null, 2)}
