@@ -80,7 +80,7 @@ const financialTransactionCreateSchema = z
       .trim()
       .min(1, "Descrição é obrigatória.")
       .max(500, "Descrição muito longa."),
-    amount: z.number().positive("Valor deve ser maior que zero."),
+    amount: z.number().refine((v) => v !== 0, "Valor não pode ser zero."),
     transaction_date: z.string().trim().min(1, "Data é obrigatória."),
   })
   .passthrough();
