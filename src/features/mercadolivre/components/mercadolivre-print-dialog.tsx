@@ -327,7 +327,7 @@ export function MercadoLivrePrintDialog({
                 variant="default" 
                 className="bg-blue-600 hover:bg-blue-700" 
                 onClick={handlePrintAll}
-                    disabled={isPrinting || isLoading || (!block.blob && !block.zpl)}
+                disabled={isPrinting || isLoading}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Ambos
