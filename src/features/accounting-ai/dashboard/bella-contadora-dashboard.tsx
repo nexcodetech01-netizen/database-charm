@@ -161,7 +161,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       ...money(s?.taxes, (d) => d.taxAmount),
       hint: s?.taxes.data ? `Competência ${s.taxes.data.competence}` : undefined,
     },
-  ], [s, trends, health]);
+  ], [s, trends, health, availableCash]);
 
   const insights = useMemo(() => buildAccountingInsights(s), [s]);
   const advice = useMemo(() => (s ? buildFinancialAdvice({ summary: s }) : null), [s]);
