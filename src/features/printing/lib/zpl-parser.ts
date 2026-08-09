@@ -12,27 +12,19 @@ export interface ZPLDimensions {
 }
 
 export function detectZPLDimensions(zpl: string): ZPLDimensions {
-  let width = 4;
-  let height = 6;
-  let dpmm: 8 | 12 = 8;
+  let dotsW = 812;
+  let dotsH = 1218;
+  const dpmm: 8 | 12 = 8;
   
-  // ^PW = Print Width
   const pwMatch = zpl.match(/\^PW(\d+)/);
-  if (pwMatch) {
-    const dots = parseInt(pwMatch[1]);
-    if (dots > 1000) width = dots / (dpmm * 25.4); // Aprox polegadas
-    else if (dots > 600) width = 4;
-  }
+  if (pwMatch) dotsW = parseInt(pwMatch[1]);
 
-  // ^LL = Label Length
   const llMatch = zpl.match(/\^LL(\d+)/);
-  if (llMatch) {
-    const dots = parseInt(llMatch[1]);
-    if (dots > 1800) height = dots / (dpmm * 25.4);
-    else if (dots > 1000) height = 6;
-  }
+  if (llMatch) dotsH = parseInt(llMatch[1]);
 
-  // Identificação por conteúdo para DANFE (A4 geralmente)
+  let width = dotsW / (dpmm * 25.4);
+  let height = dotsH / (dpmm * 25.4);
+
   const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
   if (isDanfe) {
     width = 8;
@@ -40,10 +32,10 @@ export function detectZPLDimensions(zpl: string): ZPLDimensions {
   }
 
   return { 
-    width: Math.round(width), 
-    height: Math.round(height), 
+    width: Math.round(width * 10) / 10, 
+    height: Math.round(height * 10) / 10, 
     dpmm,
-    orientation: width > height ? "landscape" : "portrait"
+    orientation: dotsW > dotsH ? "landscape" : "portrait"
   };
 }
 
