@@ -218,19 +218,23 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
             )}
           </div>
         ) : previewUrl ? (
-          <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
-            <iframe 
-              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&pagemode=none`}
+          <div className="w-full flex items-start justify-center p-4">
+            <iframe
+              key={`${label.id}-${previewUrl}`}
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1&view=${isDanfe ? 'FitH' : 'Fit'}&pagemode=none`}
               title="Preview"
-              className="w-full border shadow-lg bg-white transition-all overflow-auto"
-              style={{ 
-                 height: label.height && label.height > 6 ? '1200px' : '850px',
-                 transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
-                 width: label.orientation === 'landscape' ? '70%' : '100%',
-                 maxWidth: '900px'
+              onLoad={() => fitToContainer()}
+              className="border shadow-lg bg-white transition-all"
+              style={{
+                width: fitWidth ? `${Math.round(fitWidth * zoom)}px` : '85%',
+                height: fitWidth
+                  ? `${Math.round(fitWidth * zoom * (isDanfe ? 1.414 : aspect))}px`
+                  : (isDanfe ? '1200px' : '850px'),
+                transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
               }}
             />
           </div>
+
         ) : !loading && (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground p-8 text-center">
             <FileImage className="h-12 w-12 opacity-20" />
