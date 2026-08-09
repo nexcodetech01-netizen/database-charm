@@ -39,6 +39,7 @@ import {
   GuidedTransactionDialog,
   TransactionFormDialog,
   useFinanceOverview,
+  useAccounts,
 } from "@/features/finance";
 import { FinanceBellaHints } from "@/features/bella-ai";
 import { BellaFinancePanel } from "@/features/accounting-ai/finance";
@@ -84,7 +85,7 @@ function FinancePage() {
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
-  const realAvailableCash = accounts?.filter(a => a.is_active || a.status === 'active').reduce((acc, curr) => acc + (Number(curr.current_balance) || 0), 0) ?? 0;
+  const realAvailableCash = (accounts || []).filter((a: any) => a.is_active || a.status === 'active').reduce((acc: number, curr: any) => acc + (Number(curr.current_balance) || 0), 0);
   const cashFlow = data ? data.receivable - data.payable : undefined;
   const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
 
