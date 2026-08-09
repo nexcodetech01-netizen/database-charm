@@ -390,10 +390,6 @@ export function MercadoLivrePrintDialog({
                   );
                 })}
               </div>
-                    </div>
-                  );
-                })}
-              </div>
             </Tabs>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center gap-6">
