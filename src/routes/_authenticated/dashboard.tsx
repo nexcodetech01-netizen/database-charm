@@ -106,9 +106,11 @@ function DashboardPage() {
     setMlLabelData({
       id: "TEST-ZPL-ML",
       type: "zpl",
-      content: ML_TEST_ZPL.trim()
+      content: ML_TEST_ZPL.trim(),
+      origin: "Mercado Livre"
     });
     setMlPrintOpen(true);
+
   };
 
 
