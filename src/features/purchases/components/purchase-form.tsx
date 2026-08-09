@@ -245,7 +245,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   const selectedSupplier = suppliers.find((s) => s.id === form.supplier_id);
   const statusMeta = PURCHASE_STATUS_OPTIONS.find((o) => o.value === form.status);
 
-  async function submit(e: React.FormEvent, receive: boolean) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = schema.safeParse({
       number: form.number,
@@ -313,15 +313,12 @@ export function PurchaseForm({ companyId, purchase }: Props) {
 
       console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
 
-      if (receive) {
-        // Mesmo caminho do botão "Receber compra" da tela de detalhe.
-        // O status só deve mudar para 'received' se o usuário clicar expressamente no botão "Finalizar Compra".
-        console.log("[PurchaseForm.submit] Disparando recebimento atômico (setStatus: received)");
-        await statusMut.mutateAsync({ id: purchaseId, status: "received" });
-      }
+      // O recebimento atômico (status: received) NUNCA deve ser disparado automaticamente.
+      // Ele ocorre exclusivamente por meio do botão explícito na tela de detalhes da compra.
+      console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
 
       toast.success(
-        receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",
+        isEdit ? "Compra atualizada" : "Compra cadastrada",
       );
       navigate({ to: "/compras/$purchaseId", params: { purchaseId } });
     } catch (err) {
@@ -351,7 +348,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     : "Registre entradas de mercadorias e atualize automaticamente o estoque.";
 
   return (
-    <form onSubmit={(e) => submit(e, false)}>
+    <form onSubmit={(e) => submit(e)}>
       <PageLayout
         icon={ShoppingBag}
         title={pageTitle}
@@ -705,20 +702,11 @@ export function PurchaseForm({ companyId, purchase }: Props) {
                     ) : null}
                     {isEdit ? "Salvar alterações" : "Salvar rascunho"}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="min-w-[180px] font-semibold"
-                    disabled={submitting}
-                    onClick={(e) => submit(e, true)}
-                  >
-                    {submitting ? (
-                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    ) : (
-                      <PackageCheck className="mr-1.5 h-4 w-4" />
-                    )}
-                    Finalizar compra
-                  </Button>
+                  {/* 
+                    O botão de "Finalizar Compra" foi removido do formulário 
+                    para garantir que o recebimento atômico ocorra apenas 
+                    por ação explícita na tela de detalhes, evitando disparos automáticos.
+                  */}
                 </div>
               </div>
             </div>
