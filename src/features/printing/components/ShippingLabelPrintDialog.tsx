@@ -492,25 +492,19 @@ export function ShippingLabelPrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col items-center justify-center">
-                          {block.previewUrl ? (
-                            <iframe
-                              src={block.previewUrl}
-                              className="w-full h-full border-none"
-                              title={block.title}
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center gap-4 text-slate-400 p-8 text-center">
-                              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-full">
-                                <Eye className="h-12 w-12 opacity-20" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-slate-500 dark:text-slate-300">Preview indisponível</p>
-                                <p className="text-xs mt-1">O motor de visualização (Labelary) não respondeu.</p>
-                                <p className="text-xs font-bold text-blue-500 mt-2">A impressão via ZPL direto continua disponível.</p>
-                              </div>
-                            </div>
-                          )}
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                          <LabelPreview 
+                            label={{
+                              id: block.id,
+                              zpl: block.zpl,
+                              pdf: block.pdf,
+                              image: block.image,
+                              width: 4,
+                              height: 6,
+                              dpmm: 8
+                            }} 
+                            className="flex-1 border-none min-h-full"
+                          />
                         </div>
                       </main>
                     </div>
