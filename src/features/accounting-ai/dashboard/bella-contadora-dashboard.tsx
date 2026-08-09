@@ -66,6 +66,10 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   // Sprint 7.2.1: uma única leitura resolve summary + tributário + auditoria
   // em paralelo (Promise.all no BellaContext), sem waterfalls entre blocos.
   const { summary, tax, audit, isLoading } = useBellaDashboard(companyId);
+  const { data: financialAccounts } = useAccounts(companyId);
+  const availableCash = (financialAccounts || [])
+    .filter((a: any) => a.status === 'active')
+    .reduce((sum: number, a: any) => sum + (Number(a.current_balance) || 0), 0);
   const s = (summary ?? undefined) as AccountingSummary | undefined;
 
 
@@ -109,7 +113,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       trend: trends?.monthVsPreviousProfit ?? null,
       highlight: true,
     },
-    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(116.83), hint: "Saldo atual das contas" },
+    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(availableCash), hint: "Saldo atual das contas" },
     {
       label: "Contas a pagar",
       icon: TrendingDown,
