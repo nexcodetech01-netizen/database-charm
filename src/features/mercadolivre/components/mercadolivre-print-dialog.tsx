@@ -291,10 +291,10 @@ export function MercadoLivrePrintDialog({
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handleDownloadBlock(block)}>
-                            <Download className="h-3 w-3 mr-1" /> Baixar ZPL
+                            <Download className="h-3 w-3 mr-1" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                           </Button>
                           <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handlePrintBlock(block)}>
-                            <Printer className="h-3 w-3 mr-1" /> Imprimir ZPL
+                            <Printer className="h-3 w-3 mr-1" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                           </Button>
                         </div>
                       </div>
