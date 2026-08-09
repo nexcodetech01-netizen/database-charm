@@ -18,7 +18,15 @@ export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <CardBalance 
+          label="Caixa Disponível (Total)" 
+          value={(bankAccount?.current_balance ?? 0) + (cashAccount?.current_balance ?? 0)}
+          icon={Wallet}
+          loading={isLoadingAccounts}
+          highlight
+          description="Soma exata dos saldos em Dinheiro e Banco"
+        />
         <CardBalance 
           label="Banco PJ" 
           value={bankAccount?.current_balance ?? 0}
@@ -199,38 +207,47 @@ function CardBalance({
   value, 
   icon: Icon, 
   loading,
-  onAdjust
+  onAdjust,
+  highlight,
+  description
 }: { 
   label: string; 
   value: number; 
   icon: any; 
   loading: boolean;
-  onAdjust: () => void;
+  onAdjust?: () => void;
+  highlight?: boolean;
+  description?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className={`rounded-xl border border-border p-5 ${highlight ? 'bg-primary/5 border-primary/20 ring-1 ring-primary/10' : 'bg-card'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Icon className="h-4 w-4" />
-          <span className="text-sm font-medium">{label}</span>
+          <Icon className={`h-4 w-4 ${highlight ? 'text-primary' : ''}`} />
+          <span className={`text-sm font-medium ${highlight ? 'text-foreground' : ''}`}>{label}</span>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
-          onClick={onAdjust}
-        >
-          <Pencil className="mr-1 h-3 w-3" />
-          Ajustar Saldo Real
-        </Button>
+        {onAdjust && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 px-2 text-[10px] text-muted-foreground hover:text-primary"
+            onClick={onAdjust}
+          >
+            <Pencil className="mr-1 h-3 w-3" />
+            Ajustar
+          </Button>
+        )}
       </div>
       <div className="mt-2">
         {loading ? (
           <Skeleton className="h-8 w-32" />
         ) : (
-          <p className="text-2xl font-bold tabular-nums">
-            {formatCurrency(value)}
-          </p>
+          <div>
+            <p className={`text-2xl font-bold tabular-nums ${highlight ? 'text-primary' : ''}`}>
+              {formatCurrency(value)}
+            </p>
+            {description && <p className="text-[10px] text-muted-foreground mt-1">{description}</p>}
+          </div>
         )}
       </div>
     </div>
