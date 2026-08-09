@@ -45,7 +45,7 @@ import { useSaleMetrics, salesKeys } from "@/features/sales/hooks/use-sales";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useInventoryMetrics, inventoryKeys } from "@/features/inventory/hooks/use-inventory";
-import { useFinanceOverview, financeKeys } from "@/features/finance/hooks/use-finance";
+import { useFinanceOverview, financeKeys, useAccounts } from "@/features/finance/hooks/use-finance";
 import { formatCurrency } from "@/lib/format";
 import { WhatsAppUsageCard } from "@/features/whatsapp";
 import { CashClosingReminder } from "@/features/cash";
@@ -188,8 +188,9 @@ function DashboardPage() {
     return "no Período";
   }, [period]);
 
-  // Caixa disponível — fonte oficial: soma de financial_accounts ativas.
-  const cash = finance.data?.currentBalance ?? 0;
+  // Caixa disponível — fonte oficial: soma de financial_accounts ativas (EPIC UI.2 - Sprint 8.3H).
+  const accountsData = useAccounts(company.id).data;
+  const cash = (accountsData || []).filter((a: any) => a.status === 'active').reduce((acc: number, a: any) => acc + Number(a.current_balance || 0), 0);
 
   // Dinheiro para entrar — financial_transactions de receita com status='pending'.
   const receivable = finance.data?.pendingReceivable ?? 0;
