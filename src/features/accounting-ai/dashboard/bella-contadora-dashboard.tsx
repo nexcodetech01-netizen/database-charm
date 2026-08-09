@@ -44,6 +44,7 @@ import {
   useBellaNotifications,
 } from "../proactive";
 import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
+import { useAccounts } from "@/features/finance/hooks/use-finance";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
 
