@@ -16,7 +16,7 @@ export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
   const activeAccounts = accounts?.filter(a => a.status === 'active') || [];
   const bankAccount = activeAccounts.find(a => a.type === 'bank' || a.type === 'digital_wallet');
   const cashAccount = activeAccounts.find(a => a.type === 'cash');
-  const totalBalance = activeAccounts.reduce((sum, a) => sum + Number(a.current_balance ?? 0), 0);
+  const totalBalance = accounts?.filter(a => a.status === 'active').reduce((sum, a) => sum + Number(a.current_balance ?? 0), 0) || 0;
 
   return (
     <div className="space-y-6">
