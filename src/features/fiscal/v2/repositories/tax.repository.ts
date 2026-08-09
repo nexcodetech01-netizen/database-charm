@@ -25,4 +25,32 @@ export class TaxRepository {
     if (error) throw error;
     return data;
   }
+
+  /** Flag "emitir somente após pagamento". */
+  async getIssueOnlyAfterPayment(companyId: string): Promise<boolean> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (this.supabase.from("fiscal_settings" as never) as any)
+      .select("issue_only_after_payment")
+      .eq("company_id", companyId)
+      .maybeSingle();
+    return Boolean(
+      (data as { issue_only_after_payment?: boolean } | null)?.issue_only_after_payment,
+    );
+  }
+
+  /** CFOP e natureza da operação padrão (contexto do documento). */
+  async getDefaultCfopAndNature(
+    companyId: string,
+  ): Promise<{ default_cfop: string | null; operation_nature: string | null } | null> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (this.supabase.from("fiscal_settings" as never) as any)
+      .select("default_cfop, operation_nature")
+      .eq("company_id", companyId)
+      .maybeSingle();
+    return (data ?? null) as {
+      default_cfop: string | null;
+      operation_nature: string | null;
+    } | null;
+  }
 }
+
