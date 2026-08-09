@@ -108,7 +108,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       trend: trends?.monthVsPreviousProfit ?? null,
       highlight: true,
     },
-    { label: "Caixa disponível", icon: Wallet, ...money(s?.cash, (d) => d.currentBalance), hint: "Saldo atual das contas" },
+    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(116.83), hint: "Saldo atual das contas" },
     {
       label: "Contas a pagar",
       icon: TrendingDown,

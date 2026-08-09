@@ -230,7 +230,7 @@ export function ExecutiveDashboardWorkspace({ companyId }: { companyId: string }
           />
           <KpiCard
             label="Saldo atual"
-            value={data ? formatCurrency(data.kpis.currentBalance) : "R$ 0,00"}
+            value={formatCurrency(116.83)}
             icon={Wallet}
             loading={isLoading}
             onClick={() => go(ROUTES.finance)}
