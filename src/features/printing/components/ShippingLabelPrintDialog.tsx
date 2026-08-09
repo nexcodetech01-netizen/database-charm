@@ -222,18 +222,42 @@ export function ShippingLabelPrintDialog({
     setIsLoading(true);
 
     try {
-      let zplBlocks: string[] = [];
+      let validBlocks: { zpl: string; type: "label" | "danfe" }[] = [];
       
       if (labelData.type === "zpl") {
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        // Deduplicação rigorosa: Remover blocos ZPL idênticos antes do processamento
         const matches = content.match(regex) || [];
-        zplBlocks = Array.from(new Set(matches));
         
-        console.log(`[ShippingLabelPrintDialog] Blocos ZPL encontrados: ${matches.length}, Únicos: ${zplBlocks.length}`);
+        console.log(`[ShippingLabelPrintDialog] Blocos brutos encontrados: ${matches.length}`);
+
+        matches.forEach((zpl, index) => {
+          const trimmed = zpl.trim();
+          
+          // 1. Descarte de blocos inválidos/vazios
+          if (trimmed.length < 20 || !trimmed.includes('^')) {
+            console.log(`[ShippingLabelPrintDialog] Bloco ${index} descartado: conteúdo insuficiente ou sem comandos ZPL.`);
+            return;
+          }
+
+          // 2. Classificação baseada no conteúdo
+          const isDanfe = zpl.includes("DANFE") || zpl.includes("Simplificada") || zpl.includes("Auxiliar");
+          const type = isDanfe ? "danfe" : "label";
+          
+          // 3. Evitar duplicidade exata de conteúdo (preserva blocos diferentes do mesmo tipo)
+          const isDuplicate = validBlocks.some(b => b.zpl === zpl);
+          if (isDuplicate) {
+            console.log(`[ShippingLabelPrintDialog] Bloco ${index} (${type}) descartado: conteúdo idêntico a um bloco já processado.`);
+            return;
+          }
+
+          console.log(`[ShippingLabelPrintDialog] Bloco ${index} aceito como: ${type.toUpperCase()}`);
+          validBlocks.push({ zpl, type });
+        });
+
+        console.log(`[ShippingLabelPrintDialog] Total de blocos válidos após filtragem: ${validBlocks.length}`);
       }
 
-      if (zplBlocks.length === 0) {
+      if (validBlocks.length === 0) {
         const trimmedContent = content.trim();
         if (trimmedContent.length > 0 || labelData.type === "pdf") {
           const block: DocumentBlock = {
@@ -251,12 +275,12 @@ export function ShippingLabelPrintDialog({
         }
       } else {
         const preparedBlocks = await Promise.all(
-          zplBlocks.map(async (zpl, index) => {
+          validBlocks.map(async (item, index) => {
             const block: DocumentBlock = {
               id: `block-${index}`,
-              zpl,
-              type: index === 0 ? "label" : "danfe",
-              title: index === 0 ? "Etiqueta" : "DANFE",
+              zpl: item.zpl,
+              type: item.type,
+              title: item.type === "label" ? "Etiqueta" : "DANFE",
             };
 
             return await prepareBlock(block, labelData);
