@@ -235,7 +235,7 @@ export function MercadoLivrePrintDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[1100px] w-[95vw] h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
-        <div className="flex items-center justify-between px-8 py-5 bg-white dark:bg-slate-900 border-b shrink-0">
+        <div className="relative px-8 py-5 bg-white dark:bg-slate-900 border-b shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-2 rounded-lg text-white">
               <Printer className="h-6 w-6" />
@@ -253,9 +253,9 @@ export function MercadoLivrePrintDialog({
             variant="ghost" 
             size="icon" 
             onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-full h-10 w-10 transition-colors"
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-white rounded-md h-8 w-8 transition-colors"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
