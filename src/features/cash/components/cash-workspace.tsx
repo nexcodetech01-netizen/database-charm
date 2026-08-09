@@ -113,6 +113,13 @@ export function CashWorkspace({
         };
       }
     }
+    if (summary.expectedCash < 0) {
+      return {
+        title: "Atenção: Saldo de caixa negativo",
+        message: "As sangrias superaram os suprimentos e vendas em dinheiro. Confira os lançamentos.",
+        tone: "danger" as const,
+      };
+    }
     if ((summary.cashOut ?? 0) > (summary.cashIn ?? 0) + (summary.cashSales ?? 0)) {
       return {
         title: "Sangrias acima das entradas",
