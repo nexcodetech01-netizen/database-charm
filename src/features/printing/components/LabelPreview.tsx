@@ -6,20 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Database, Zap, RefreshCw, XCircle, Clock } from 'lucide-react';
 
 interface LabelPreviewProps {
   label: LabelData;
   className?: string;
+  onPreviewLoaded?: (success: boolean) => void;
 }
 
-export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "" }) => {
+export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "", onPreviewLoaded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auditData, setAuditData] = useState<LabelaryAudit | null>(null);
   
   // Cache em memória local do componente para reaproveitar se o usuário alternar abas
-  // Embora o labelaryService já tenha cache global por hash, isso evita URLs de blob duplicadas.
   const previewRef = React.useRef<Record<string, string>>({});
 
   React.useEffect(() => {
@@ -43,7 +45,9 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         const url = URL.createObjectURL(blob);
         previewRef.current[cacheKey] = url;
         setPreviewUrl(url);
-        setAuditData(labelaryService.getLastAudit());
+        const audit = labelaryService.getLastAudit();
+        setAuditData(audit);
+        if (onPreviewLoaded) onPreviewLoaded(true);
       } catch (err: any) {
         const audit = labelaryService.getLastAudit();
         setAuditData(audit);
@@ -53,6 +57,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         } else {
           setError("Preview indisponível. Impressão e download continuam disponíveis.");
         }
+        if (onPreviewLoaded) onPreviewLoaded(false);
       } finally {
         setLoading(false);
       }
@@ -130,14 +135,14 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                    </div>
                  </DialogHeader>
                  <div className="space-y-4">
-                   <div className="grid grid-cols-2 gap-2">
-                     <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
-                       <span className="text-muted-foreground block">Duração Total</span>
-                       <span className="font-bold">{auditData.durationMs}ms</span>
-                     </div>
-                     <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
-                       <span className="text-muted-foreground block">Duração Parse</span>
-                        <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Duração Total</span>
+                        <span className="font-bold">{auditData.durationMs}ms</span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Duração Cache</span>
+                        <span className="font-bold">{auditData.cacheDurationMs?.toFixed(2) || 0}ms</span>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
                         <span className="text-muted-foreground block">Cache Hit</span>
@@ -146,12 +151,16 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                         </span>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Retentativas</span>
+                        <span className="font-bold">{auditData.retries || 0}</span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
                         <span className="text-muted-foreground block">Labelary Chamado</span>
                         <span className={cn("font-bold", !auditData.cacheHit ? "text-blue-500" : "text-slate-500")}>
                           {!auditData.cacheHit && auditData.url.includes('api.labelary.com') ? "Sim" : "Não"}
                         </span>
                       </div>
-                   </div>
+                    </div>
                    <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
                      {JSON.stringify(auditData, null, 2)}
                    </pre>
@@ -179,8 +188,36 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         </div>
       )}
       
+      <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
+        {loading && (
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[9px] font-bold">
+            <RefreshCw className="h-2.5 w-2.5 mr-1 animate-spin" /> Carregando...
+          </Badge>
+        )}
+        {!loading && auditData?.cacheHit && (
+          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-bold">
+            <Database className="h-2.5 w-2.5 mr-1" /> Cache
+          </Badge>
+        )}
+        {!loading && !auditData?.cacheHit && auditData?.status === 200 && (
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[9px] font-bold">
+            <Zap className="h-2.5 w-2.5 mr-1" /> Atualizado
+          </Badge>
+        )}
+        {!loading && auditData?.status === 429 && (
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] font-bold">
+            <XCircle className="h-2.5 w-2.5 mr-1" /> Limite Excedido
+          </Badge>
+        )}
+        {auditData?.retries && auditData.retries > 0 ? (
+          <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20 text-[9px] font-bold">
+             Tentativa {auditData.retries}
+          </Badge>
+        ) : null}
+      </div>
+
       <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 border z-20">
-        {label.width}" x {label.height}" | {label.orientation || 'portrait'}
+        <Clock className="h-3 w-3 mr-1" /> {auditData?.durationMs || 0}ms | {label.width}" x {label.height}"
       </div>
     </div>
   );
