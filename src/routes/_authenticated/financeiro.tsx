@@ -85,9 +85,10 @@ function FinancePage() {
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
-  // FORÇADO: Substituído por 116.83 para teste de limpeza de cache conforme pedido.
-  const realAvailableCash = 116.83;
-  // const realAvailableCash = (accounts || []).filter((a: any) => a.is_active || a.status === 'active').reduce((acc: number, curr: any) => acc + (Number(curr.current_balance) || 0), 0);
+  const realAvailableCash = (accounts || [])
+    .filter((a: any) => a.status === 'active')
+    .reduce((acc: number, curr: any) => acc + (Number(curr.current_balance) || 0), 0);
+
 
   const cashFlow = data ? data.receivable - data.payable : undefined;
   const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
