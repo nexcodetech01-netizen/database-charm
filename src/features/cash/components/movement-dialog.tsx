@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatCurrency } from "@/lib/format";
 import { useRegisterCashMovement, useCashSummary } from "../hooks/use-cash";
 import type { CashMovementType } from "../types";
 
