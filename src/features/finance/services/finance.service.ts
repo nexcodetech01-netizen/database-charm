@@ -232,7 +232,7 @@ export const financeService = {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
     }
     
-    // Remove UI-only fields that might be in the input
+    // Remove UI-only fields and sanitize category field
     const { 
       status: _status, 
       paid_at: _paidAt, 
@@ -240,6 +240,7 @@ export const financeService = {
       installment_count,
       installment_interval_days,
       first_installment_date,
+      category: _category,
       ...rest 
     } = input as any;
     
@@ -249,6 +250,7 @@ export const financeService = {
     void installment_count;
     void installment_interval_days;
     void first_installment_date;
+    void _category;
 
     const payload = {
       ...rest,
@@ -363,6 +365,7 @@ export const financeService = {
       installment_count,
       installment_interval_days,
       first_installment_date,
+      category: _category,
       ...safeInput
     } = input as any;
     
@@ -372,6 +375,7 @@ export const financeService = {
     void installment_count;
     void installment_interval_days;
     void first_installment_date;
+    void _category;
 
     const { data, error } = await supabase
       .from("financial_transactions")
