@@ -125,7 +125,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   const navigate = useNavigate();
   const createMut = useCreatePurchase();
   const updateMut = useUpdatePurchase();
-  const statusMut = useSetPurchaseStatus();
+  
   const isEdit = !!purchase;
   const { data: suppliers = [] } = useActiveSuppliersForPurchase(companyId);
 
