@@ -267,11 +267,12 @@ export const financeService = {
       const count = input.installment_count;
       const interval = input.installment_interval_days || 30;
       const amountPerInstallment = Number(((input.amount || 0) / count).toFixed(2));
-      const firstDateStr = input.first_installment_date || input.transaction_date || todayISO();
+      const firstDateStr = input.first_installment_date || input.transaction_date || companyDayKey(new Date(), DEFAULT_COMPANY_TZ);
       
       const transactions = [];
       for (let i = 0; i < count; i++) {
         const dueDate = addDaysStr(firstDateStr, i * interval);
+
 
         const installmentPayload = {
           ...input,
