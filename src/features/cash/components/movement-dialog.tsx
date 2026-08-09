@@ -46,6 +46,17 @@ export function MovementDialog({
       toast.error("Valor inválido.");
       return;
     }
+
+    if (type === "cash_out" && summary) {
+      const availableCash = summary.expectedCash;
+      if (value > availableCash) {
+        toast.error(
+          `Valor da sangria é superior ao saldo em dinheiro disponível na gaveta (${formatCurrency(availableCash)}).`,
+        );
+        return;
+      }
+    }
+
     if (!reason.trim()) {
       toast.error("Informe o motivo.");
       return;
