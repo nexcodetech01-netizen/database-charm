@@ -244,7 +244,7 @@ function SaleWorkspace({
     setIsFetchingLabel(true);
     try {
       const label = await getMercadoLivreOrderLabel({ data: { mlOrderId } });
-      setMlLabelData({ ...label, id: sale.id });
+      setMlLabelData({ ...label, id: sale.id, origin: "Mercado Livre" });
       setMlPrintOpen(true);
     } catch (error) {
       console.error("Erro ao buscar etiqueta ML:", error);
@@ -1020,6 +1020,7 @@ function SaleWorkspace({
         onOpenChange={setMlPrintOpen}
         labelData={mlLabelData}
       />
+
 
 
 
