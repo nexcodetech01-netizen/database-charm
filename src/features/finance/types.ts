@@ -115,6 +115,11 @@ export interface IncompleteSettlement {
   account_name: string | null;
   sale_number: string | null;
   customer_name: string | null;
+  payment_condition?: "cash" | "installments";
+  installment_count?: number;
+  installment_interval_days?: number;
+  first_installment_date?: string;
+
 }
 
 export interface TransactionListFilters {
