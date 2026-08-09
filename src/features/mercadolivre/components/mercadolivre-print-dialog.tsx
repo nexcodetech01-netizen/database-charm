@@ -454,34 +454,22 @@ export function MercadoLivrePrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col items-center justify-center">
                           {block.previewUrl ? (
                             <iframe
                               src={block.previewUrl}
-                              className="w-full h-full"
+                              className="w-full h-full border-none"
                               title={block.title}
                             />
                           ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50/30 dark:bg-slate-900/30">
-                              <div className="bg-white dark:bg-slate-800 p-3 rounded-full mb-3 text-slate-300 dark:text-slate-700 shadow-sm border border-slate-100 dark:border-slate-700">
-                                <Eye className="h-[20px] w-[20px]" />
+                            <div className="flex flex-col items-center gap-4 text-slate-400 p-8 text-center">
+                              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-full">
+                                <Eye className="h-12 w-12 opacity-20" />
                               </div>
-                              <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 mb-1">
-                                Preview indisponível
-                              </h3>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[320px] leading-relaxed font-medium mb-4">
-                                O serviço Labelary está temporariamente offline.
-                              </p>
-                              
-                              <div className="text-left w-full max-w-[200px] border-t border-slate-100 dark:border-slate-800 pt-3">
-                                <ul className="space-y-2">
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
-                                    • Imprimir normalmente
-                                  </li>
-                                  <li className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold">
-                                    • Baixar o arquivo ZPL
-                                  </li>
-                                </ul>
+                              <div>
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-300">Preview indisponível</p>
+                                <p className="text-xs mt-1">O motor de visualização (Labelary) não respondeu.</p>
+                                <p className="text-xs font-bold text-blue-500 mt-2">A impressão via ZPL direto continua disponível.</p>
                               </div>
                             </div>
                           )}
