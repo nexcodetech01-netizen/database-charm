@@ -1,3 +1,5 @@
+export type PrinterType = 'label' | 'receipt' | 'document' | 'unknown';
+
 export interface PrinterInfo {
   id: string;
   name: string;
@@ -5,5 +7,5 @@ export interface PrinterInfo {
   port: string;
   isDefault: boolean;
   status: string;
-  type: 'label' | 'receipt' | 'pdf' | 'other';
+  type: PrinterType;
 }
