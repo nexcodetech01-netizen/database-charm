@@ -404,7 +404,7 @@ export function ShippingLabelPrintDialog({
               </div>
 
               {/* 3. LAYOUT (ESQUERDA 265px / DIREITA FLEX) */}
-              <div className="flex-1 flex min-h-0 overflow-hidden">
+              <div className="flex-1 flex min-h-0 overflow-visible">
                 {blocks.map((block, index) => {
                   const isSelected = activeTab === block.id;
                   const isNext = blocks[blocks.findIndex(b => b.id === activeTab) + 1]?.id === block.id;
@@ -416,7 +416,7 @@ export function ShippingLabelPrintDialog({
                     <div 
                       key={block.id} 
                       className={cn(
-                        "flex-1 flex overflow-hidden",
+                        "flex-1 flex overflow-visible",
                         !isSelected && "hidden" // Mantém no DOM mas oculta se for apenas pré-carregamento
                       )}
                     >
