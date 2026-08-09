@@ -21,6 +21,7 @@ export interface LabelaryAudit {
   zplLength: number;
   dimensions: string;
   durationMs: number;
+  cacheDurationMs?: number;
   parseDurationMs?: number;
   status: number;
   statusText: string;
@@ -28,6 +29,7 @@ export interface LabelaryAudit {
   responseBody?: string;
   timestamp: string;
   cacheHit?: boolean;
+  retries?: number;
 }
 
 
