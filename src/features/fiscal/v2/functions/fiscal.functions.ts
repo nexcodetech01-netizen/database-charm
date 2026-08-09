@@ -2221,17 +2221,10 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
       new Set(itemList.map((it) => it.product_id).filter((v): v is string => Boolean(v))),
     );
     if (productIds.length) {
-      const { data: prods } = await supabase
-        .from("products")
-        .select("id, name, ncm")
-        .eq("company_id", companyId)
-        .in("id", productIds);
-      const list = (prods ?? []) as unknown as Array<{
-        id: string;
-        name: string | null;
-        ncm: string | null;
-      }>;
+      const productsRepo = new ProductsRepository(supabase);
+      const list = await productsRepo.findNcmInfo(companyId, productIds);
       for (const p of list) byId.set(p.id, p);
+
 
       const missing = itemList
         .map((it) => (it.product_id ? byId.get(it.product_id) : null))
