@@ -296,7 +296,7 @@ export function MercadoLivrePrintDialog({
                   return (
                     <div key={block.id} className="flex-1 flex overflow-hidden">
                       {/* 4. COLUNA ESQUERDA (28%) */}
-                      <aside className="w-[28%] border-r bg-white dark:bg-slate-900 p-8 flex flex-col gap-8 shrink-0 overflow-y-auto">
+                      <aside className="w-[28%] border-r bg-white dark:bg-slate-900 p-8 flex flex-col gap-8 shrink-0 overflow-visible h-auto">
                         <div>
                           <h4 className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-5">Informações</h4>
                           <div className="space-y-4">
