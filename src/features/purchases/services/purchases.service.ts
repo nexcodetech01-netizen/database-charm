@@ -329,12 +329,17 @@ export const purchasesService = {
       totalsPatch = totals;
     }
 
-    const updated = await updateRow("purchases", id, {
+    // PRED-001 — Garantimos que o status enviado pelo usuário seja preservado
+    // e não sobrescrito por valores default ou mutações indesejadas.
+    const updatePayload = {
       ...(header as PurchaseUpdate),
       ...totalsPatch,
-    });
+    };
+
+    const updated = await updateRow("purchases", id, updatePayload);
 
     console.log("[PurchasesService.update] Status salvo no banco:", updated.status);
+
 
 
 

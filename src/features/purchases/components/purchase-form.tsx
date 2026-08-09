@@ -281,6 +281,9 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     // em UPDATE OF status, então o recebimento passa obrigatoriamente pelo
     // serviço oficial (purchasesService.setStatus → RPC receive_purchase).
     const persistedStatus = receive ? "pending" : (form.status || "draft");
+    
+    console.log("[PurchaseForm.submit] Status enviado:", persistedStatus);
+
 
 
     const payload = {
