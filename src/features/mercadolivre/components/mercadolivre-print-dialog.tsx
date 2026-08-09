@@ -53,28 +53,40 @@ export function MercadoLivrePrintDialog({
   const [isPrinting, setIsPrinting] = useState(false);
 
   const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
-    let blob: Blob;
+    let blob: Blob | undefined;
+    let previewUrl: string | undefined;
     
-    if (source.type === "pdf") {
-      const byteCharacters = atob(source.content);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    try {
+      if (source.type === "pdf") {
+        const byteCharacters = atob(source.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type: "application/pdf" });
+      } else {
+        // Converter ZPL para PDF via Labelary
+        console.log(`[ML_PRINT_DEBUG] Requesting PDF from Labelary for ${block.id}`);
+        blob = await labelaryService.convertToPdf({
+          id: source.id + "_" + block.id,
+          zpl: block.zpl,
+        });
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      blob = new Blob([byteArray], { type: "application/pdf" });
-    } else {
-      // Converter ZPL para PDF via Labelary
-      blob = await labelaryService.convertToPdf({
-        id: source.id + "_" + block.id,
-        zpl: block.zpl,
-      });
+
+      if (blob) {
+        previewUrl = URL.createObjectURL(blob);
+      }
+    } catch (error) {
+      console.error(`[ML_PRINT_BLOCK_ERROR] ${block.id}:`, error);
+      // Não lançamos erro aqui para permitir que o fluxo continue mesmo sem preview
+      toast.error(`Falha ao carregar preview de ${block.title}. O download do ZPL continua disponível.`);
     }
 
     return {
       ...block,
       blob,
-      previewUrl: URL.createObjectURL(blob)
+      previewUrl
     };
   };
 
@@ -204,13 +216,23 @@ export function MercadoLivrePrintDialog({
   };
 
   const handleDownloadBlock = (block: ZPLBlock) => {
-    if (!block.blob) return;
-    const url = URL.createObjectURL(block.blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${block.type === 'label' ? 'etiqueta' : 'danfe'}-ml-${labelData?.id}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (block.blob) {
+      const url = URL.createObjectURL(block.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${block.type === 'label' ? 'etiqueta' : 'danfe'}-ml-${labelData?.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (block.zpl) {
+      // Fallback para baixar o ZPL se o PDF falhou
+      const blob = new Blob([block.zpl], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${block.type === 'label' ? 'etiqueta' : 'danfe'}-ml-${labelData?.id}.zpl`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   if (!open) return null;
@@ -266,9 +288,20 @@ export function MercadoLivrePrintDialog({
                         title={block.title}
                       />
                     ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-destructive">
-                        <AlertCircle className="h-10 w-10" />
-                        <p className="text-sm font-medium">Falha ao gerar visualização.</p>
+                      <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-50 dark:bg-slate-950">
+                        <div className="bg-amber-100 dark:bg-amber-900/30 p-4 rounded-full mb-4">
+                          <Eye className="h-10 w-10 text-amber-600 dark:text-amber-500 opacity-50" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Visualização Indisponível</h3>
+                        <p className="text-sm text-muted-foreground max-w-xs mb-6">
+                          O serviço de conversão externa (Labelary) não respondeu, mas você ainda pode baixar ou imprimir o arquivo original.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleDownloadBlock(block)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Baixar ZPL
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
