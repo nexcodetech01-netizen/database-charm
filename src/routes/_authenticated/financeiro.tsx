@@ -114,9 +114,11 @@ function FinancePage() {
   const kpis = (
     <KpiSection>
       <KpiCard
-        label="Saldo atual"
+        label="Caixa Disponível"
         value={data ? formatCurrency(data.currentBalance) : "—"}
         icon={Wallet}
+        highlight
+        hint="Soma dos saldos das contas ativas"
         loading={isLoading}
         onClick={() => setTab("accounts")}
       />
