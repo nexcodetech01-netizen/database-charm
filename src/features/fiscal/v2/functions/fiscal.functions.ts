@@ -1533,13 +1533,8 @@ export const testProviderConnection = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
     let environment = data.environment ?? null;
     if (!environment) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-        .select("environment")
-        .eq("company_id", companyId)
-        .maybeSingle();
-      environment = ((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment;
+      environment =
+        (await new StatusRepository(supabase).getActiveEnvironment(companyId)) ?? "homologation";
     }
     return runProviderHealth(supabase, companyId, environment);
   });
