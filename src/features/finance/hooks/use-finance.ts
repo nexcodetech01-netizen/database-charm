@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { financeService } from "../services/finance.service";
 import type {
   FinancialAccountInsert,
@@ -29,6 +31,34 @@ function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
 
 // Accounts
 export function useAccounts(companyId: string) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!companyId) return;
+
+    // Escuta notificações do Postgres sobre mudanças nas contas para invalidar o cache
+    const channel = supabase
+      .channel('finance_overview_sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'financial_accounts',
+          filter: `company_id=eq.${companyId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: financeKeys.accounts(companyId) });
+          qc.invalidateQueries({ queryKey: financeKeys.overview(companyId) });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, qc]);
+
   return useQuery({
     queryKey: financeKeys.accounts(companyId),
     queryFn: () => financeService.listAccounts(companyId),
