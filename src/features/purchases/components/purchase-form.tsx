@@ -125,7 +125,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   const navigate = useNavigate();
   const createMut = useCreatePurchase();
   const updateMut = useUpdatePurchase();
-  const statusMut = useSetPurchaseStatus();
+  
   const isEdit = !!purchase;
   const { data: suppliers = [] } = useActiveSuppliersForPurchase(companyId);
 
@@ -279,7 +279,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     // FLUXO DE PERSISTÊNCIA: A compra é salva com o status selecionado no formulário.
     const persistedStatus = form.status || "draft";
     
-    console.log("[PurchaseForm.submit] Status formulário:", form.status, "Status a persistir:", persistedStatus);
+    
 
     const payload = {
       company_id: companyId,
@@ -311,11 +311,8 @@ export function PurchaseForm({ companyId, purchase }: Props) {
         purchaseId = created.id;
       }
 
-      console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
+      
 
-      // O recebimento atômico (status: received) NUNCA deve ser disparado automaticamente.
-      // Ele ocorre exclusivamente por meio do botão explícito na tela de detalhes da compra.
-      console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
 
       toast.success(
         isEdit ? "Compra atualizada" : "Compra cadastrada",
@@ -330,7 +327,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   }
 
   const submitting =
-    createMut.isPending || updateMut.isPending || statusMut.isPending;
+    createMut.isPending || updateMut.isPending;
   const totalUnits = costMetrics.total_qty;
   const extraCosts =
     (Number(form.shipping) || 0) +
