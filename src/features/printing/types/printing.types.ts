@@ -11,6 +11,21 @@ export interface LabelData {
   width?: number; // em polegadas
   height?: number; // em polegadas
   dpmm?: 8 | 12; // dots per mm
+  orientation?: 'portrait' | 'landscape';
+}
+
+export interface LabelaryAudit {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  zplLength: number;
+  dimensions: string;
+  durationMs: number;
+  status: number;
+  statusText: string;
+  error?: string;
+  responseBody?: string;
+  timestamp: string;
 }
 
 
