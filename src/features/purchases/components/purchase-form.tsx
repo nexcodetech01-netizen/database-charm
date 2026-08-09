@@ -313,12 +313,9 @@ export function PurchaseForm({ companyId, purchase }: Props) {
 
       console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
 
-      if (receive) {
-        // Mesmo caminho do botão "Receber compra" da tela de detalhe.
-        // O status só deve mudar para 'received' se o usuário clicar expressamente no botão "Finalizar Compra".
-        console.log("[PurchaseForm.submit] Disparando recebimento atômico (setStatus: received)");
-        await statusMut.mutateAsync({ id: purchaseId, status: "received" });
-      }
+      // O recebimento atômico (status: received) NUNCA deve ser disparado automaticamente.
+      // Ele ocorre exclusivamente por meio do botão explícito na tela de detalhes da compra.
+      console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
 
       toast.success(
         receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",
