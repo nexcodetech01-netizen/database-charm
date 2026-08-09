@@ -262,24 +262,21 @@ export function MercadoLivrePrintDialog({
           ) : blocks.length > 0 ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-4 bg-muted/30 p-2 rounded-lg border">
-                <TabsList className="grid grid-cols-2 w-[400px]">
+                <TabsList className="grid grid-cols-2 w-[440px]">
                   {blocks.map((block) => (
                     <TabsTrigger 
                       key={block.id} 
                       value={block.id}
-                      className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                      className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
                     >
-                      {block.type === 'label' ? <Package className="h-4 w-4 mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-                      {block.id === 'block-0' ? 'Etiqueta' : 'DANFE'}
+                      {block.type === 'label' ? (
+                        <>📦 Etiqueta ({blocks.filter(b => b.type === 'label').length})</>
+                      ) : (
+                        <>🧾 DANFE ({blocks.filter(b => b.type === 'danfe').length})</>
+                      )}
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                
-                {blocks.length > 1 && (
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 py-1">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Multi-Documento Detectado
-                  </Badge>
-                )}
               </div>
 
               {blocks.map((block) => (
