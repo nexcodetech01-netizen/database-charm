@@ -44,6 +44,7 @@ import {
   useBellaNotifications,
 } from "../proactive";
 import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
+import { useAccounts } from "@/features/finance/hooks/use-finance";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
 
@@ -65,6 +66,10 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   // Sprint 7.2.1: uma única leitura resolve summary + tributário + auditoria
   // em paralelo (Promise.all no BellaContext), sem waterfalls entre blocos.
   const { summary, tax, audit, isLoading } = useBellaDashboard(companyId);
+  const { data: financialAccounts } = useAccounts(companyId);
+  const availableCash = (financialAccounts || [])
+    .filter((a: any) => a.status === 'active')
+    .reduce((sum: number, a: any) => sum + (Number(a.current_balance) || 0), 0);
   const s = (summary ?? undefined) as AccountingSummary | undefined;
 
 
@@ -108,7 +113,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       trend: trends?.monthVsPreviousProfit ?? null,
       highlight: true,
     },
-    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(116.83), hint: "Saldo atual das contas" },
+    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(availableCash), hint: "Saldo atual das contas" },
     {
       label: "Contas a pagar",
       icon: TrendingDown,
@@ -156,7 +161,7 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       ...money(s?.taxes, (d) => d.taxAmount),
       hint: s?.taxes.data ? `Competência ${s.taxes.data.competence}` : undefined,
     },
-  ], [s, trends, health]);
+  ], [s, trends, health, availableCash]);
 
   const insights = useMemo(() => buildAccountingInsights(s), [s]);
   const advice = useMemo(() => (s ? buildFinancialAdvice({ summary: s }) : null), [s]);
