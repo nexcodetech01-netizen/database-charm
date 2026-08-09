@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,8 @@ import {
   Eye,
   CheckCircle2,
   X,
-  Info
+  Info,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { labelaryService } from "@/features/printing/services/labelary.service";
@@ -60,6 +61,66 @@ export function MercadoLivrePrintDialog({
   const [activeTab, setActiveTab] = useState<string>("block-0");
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportZPL = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target?.result as string;
+      if (!content) return;
+
+      setIsLoading(true);
+      try {
+        const regex = /\^XA[\s\S]*?\^XZ/g;
+        const zplBlocks = content.match(regex) || [];
+
+        if (zplBlocks.length === 0) {
+          const trimmedContent = content.trim();
+          if (trimmedContent.length > 0) {
+            const block: ZPLBlock = {
+              id: "block-0",
+              zpl: content,
+              type: "label",
+              title: "Etiqueta",
+            };
+            const prepared = await prepareBlock(block, { type: "zpl", content, id: file.name });
+            setBlocks([prepared]);
+            setActiveTab("block-0");
+          }
+        } else {
+          const preparedBlocks = await Promise.all(
+            zplBlocks.map(async (zpl, index) => {
+              const block: ZPLBlock = {
+                id: `block-${index}`,
+                zpl,
+                type: index === 0 ? "label" : "danfe",
+                title: index === 0 ? "Etiqueta" : "DANFE",
+              };
+              return await prepareBlock(block, { type: "zpl", content, id: file.name });
+            })
+          );
+          setBlocks(preparedBlocks);
+          setActiveTab("block-0");
+        }
+        toast.success("ZPL importado com sucesso.");
+      } catch (error) {
+        console.error("[ZPL_IMPORT_ERROR]:", error);
+        toast.error("Erro ao processar arquivo ZPL.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = "";
+  };
 
   const extractZPLStats = (zpl: string) => {
     return {
@@ -342,6 +403,20 @@ export function MercadoLivrePrintDialog({
                              {block.previewUrl && <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold tracking-tight">LIVE</span>}
                           </div>
                           <div className="flex gap-2">
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept=".zpl,.txt"
+                              onChange={handleFileChange}
+                            />
+                            <Button 
+                              variant="outline" 
+                              className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
+                              onClick={handleImportZPL}
+                            >
+                              <Upload className="h-3 w-3 mr-2" /> Importar ZPL
+                            </Button>
                             <Button 
                               variant="outline" 
                               className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
