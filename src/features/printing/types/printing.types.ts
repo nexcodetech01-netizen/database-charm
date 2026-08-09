@@ -1,13 +1,18 @@
+export type PrintFormat = 'PDF' | 'ZPL' | 'PNG' | 'JPG' | 'RAW' | 'TSPL';
 export type PrintStrategy = 'PDF' | 'ZPL' | 'BROWSER' | 'RAW' | 'TSPL';
 
 export interface LabelData {
   id: string;
   zpl?: string;
+  pdf?: string; // Base64 ou URL
+  image?: string; // Base64 ou URL
   content?: string; // Conteúdo genérico para outras linguagens (TSPL, etc)
+  format?: PrintFormat;
   width?: number; // em polegadas
   height?: number; // em polegadas
   dpmm?: 8 | 12; // dots per mm
 }
+
 
 export type PrintJobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
