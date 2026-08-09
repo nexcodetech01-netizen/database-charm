@@ -340,13 +340,15 @@ export function MercadoLivrePrintDialog({
                 disabled={isPrinting || isLoading}
               >
                 <Printer className="mr-2 h-4 w-4" />
-                Imprimir Ambos
+                Imprimir Todos
               </Button>
             )}
             
             {blocks.map((block) => {
               const isSelected = activeTab === block.id;
-              if (!isSelected && blocks.length > 1) return null;
+              if (!isSelected) return null;
+              
+              const typeLabel = block.type === 'label' ? 'Etiqueta' : 'DANFE';
               
               return (
                 <React.Fragment key={block.id}>
@@ -356,7 +358,7 @@ export function MercadoLivrePrintDialog({
                     disabled={isPrinting || isLoading || (!block.blob && !block.zpl)}
                   >
                     <Printer className="mr-2 h-4 w-4" />
-                    {blocks.length > 1 ? `Imprimir ${block.type === 'label' ? 'Etiqueta' : 'DANFE'}` : 'Imprimir Etiqueta'}
+                    Imprimir {typeLabel}
                   </Button>
                   <Button 
                     variant="outline"
@@ -364,7 +366,7 @@ export function MercadoLivrePrintDialog({
                     disabled={isPrinting || isLoading}
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    {blocks.length > 1 ? `Baixar ${block.type === 'label' ? 'Etiqueta' : 'DANFE'}` : 'Baixar PDF'}
+                    Baixar {typeLabel}
                   </Button>
                 </React.Fragment>
               );
