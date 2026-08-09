@@ -266,12 +266,13 @@ export const financeService = {
     if (input.payment_condition === "installments" && input.installment_count && input.installment_count > 1) {
       const count = input.installment_count;
       const interval = input.installment_interval_days || 30;
-      const amountPerInstallment = Number((input.amount / count).toFixed(2));
-      const firstDateStr = input.first_installment_date || input.transaction_date;
+      const amountPerInstallment = Number(((input.amount || 0) / count).toFixed(2));
+      const firstDateStr = input.first_installment_date || input.transaction_date || todayISO();
       
       const transactions = [];
       for (let i = 0; i < count; i++) {
         const dueDate = addDaysStr(firstDateStr, i * interval);
+
         const installmentPayload = {
           ...input,
           description: `${input.description} (${i + 1}/${count})`,

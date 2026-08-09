@@ -129,6 +129,7 @@ export function TransactionFormDialog({
     if (transaction) {
 
       setForm({
+        ...form,
         type: transaction.type as TransactionType,
         description: transaction.description,
         amount: Number(transaction.amount ?? 0),
@@ -142,6 +143,7 @@ export function TransactionFormDialog({
         status: (transaction.status as TransactionStatus) ?? "pending",
         notes: transaction.notes ?? "",
       });
+
     } else {
       setForm((f) => ({
         ...f,
