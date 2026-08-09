@@ -249,6 +249,8 @@ export function TransactionFormDialog({
 
 
     try {
+      console.log("[TransactionFormDialog] Enviando payload:", payload);
+
       if (isEdit && transaction) {
         const { company_id: _c, source: _s, status: _st, ...update } = payload;
         void _c;
@@ -297,9 +299,16 @@ export function TransactionFormDialog({
         });
       }
     } catch (err: any) {
-      console.error('Erro ao salvar movimentação:', err);
+      console.error('Erro ao salvar movimentação:', {
+        error: err,
+        payload,
+        message: err.message,
+        details: err.details,
+        hint: err.hint
+      });
+      
       toast.error("Não foi possível salvar", {
-        description: err.details || err.message || "Erro desconhecido",
+        description: err.details || err.message || "Verifique o console para mais detalhes.",
       });
     }
   }
