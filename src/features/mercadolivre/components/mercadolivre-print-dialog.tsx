@@ -249,6 +249,7 @@ export function MercadoLivrePrintDialog({
               </p>
             </div>
           </div>
+        </div>
 
         {/* CONTENT */}
         <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950">
