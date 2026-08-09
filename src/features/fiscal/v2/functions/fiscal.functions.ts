@@ -2160,19 +2160,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     }
 
     // 2) Itens
-    const { data: items, error: itemsErr } = await supabase
-      .from("sale_items")
-      .select("id, product_id, description, quantity, unit_price, total")
-      .eq("sale_id", sale.id);
-    if (itemsErr) throw itemsErr;
-    const itemList = (items ?? []) as Array<{
-      id: string;
-      product_id: string | null;
-      description: string | null;
-      quantity: number | null;
-      unit_price: number | null;
-      total: number | null;
-    }>;
+    const itemList = await salesRepo.listItems(sale.id);
     if (itemList.length === 0) {
       push({
         id: "items.empty",
