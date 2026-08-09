@@ -54,7 +54,7 @@ class PrintQueue {
       // Resolução automática de impressora baseada no tipo (Sprint Final Homologação)
       let resolvedPrinterId = job.printerId;
       if (!resolvedPrinterId || resolvedPrinterId === "browser" || resolvedPrinterId === "") {
-        const companyId = job.options.companyId || job.label.id.split('_')[0] || 'default'; 
+        const companyId = job.options.companyId || 'default'; 
         const { getPrintPreferences } = await import("../lib/print-preferences");
         const prefs = getPrintPreferences(companyId);
         

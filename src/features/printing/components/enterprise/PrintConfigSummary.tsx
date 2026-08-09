@@ -90,7 +90,7 @@ export function PrintConfigSummary({ companyId }: { companyId?: string }) {
           <div className="flex items-center gap-2 pt-1">
             <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Modo:</span>
             <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20 py-0 h-5 px-2 flex items-center gap-1 font-medium">
-              ✔ {labelPrinter?.capabilities?.supportsPdf ? 'Labelary (PDF)' : 'RAW/ZPL'}
+              ✔ {labelPrinter?.capabilities?.supportsZpl ? 'RAW/ZPL' : 'Labelary (PDF)'}
             </Badge>
           </div>
         </CardContent>
