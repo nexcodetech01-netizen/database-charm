@@ -2593,41 +2593,20 @@ export const getFiscalDocumentContext = createServerFn({ method: "POST" })
     let saleNumber: number | null = null;
 
     if (saleId) {
-      const { data: sale } = await supabase
-        .from("sales")
-        .select("number, customer_id")
-        .eq("company_id", companyId)
-        .eq("id", saleId)
-        .maybeSingle();
-      const s_local = sale as unknown as { number: number | null; customer_id: string | null } | null;
-      saleNumber = s_local?.number ?? null;
-      if (s_local?.customer_id) {
-        const { data: cust } = await supabase
-          .from("customers")
-          .select("name, document")
-          .eq("company_id", companyId)
-          .eq("id", s_local.customer_id)
-          .maybeSingle();
-        const c_local = cust as { name: string | null; document: string | null } | null;
+      const salesRepo = new SalesRepository(supabase);
+      const header = await salesRepo.findHeader(companyId, saleId);
+      saleNumber = header?.number ?? null;
+      if (header?.customer_id) {
+        const customersRepo = new CustomersRepository(supabase);
+        const c_local = await customersRepo.findBasic(companyId, header.customer_id);
         customerName = c_local?.name ?? customerName;
         customerDocument = c_local?.document ?? null;
       }
-      const { count } = await supabase
-        .from("sale_items")
-        .select("id", { count: "exact", head: true })
-        .eq("sale_id", saleId);
-      itemCount = count ?? 0;
+      itemCount = await salesRepo.countItems(saleId);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settings } = await (supabase.from("fiscal_settings" as never) as any)
-      .select("default_cfop, operation_nature")
-      .eq("company_id", companyId)
-      .maybeSingle();
-    const st = (settings ?? null) as {
-      default_cfop: string | null;
-      operation_nature: string | null;
-    } | null;
+    const taxRepo = new TaxRepository(supabase);
+    const st = await taxRepo.getDefaultCfopAndNature(companyId);
 
     return {
       customerName,
