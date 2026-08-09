@@ -6,20 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Database, Zap, RefreshCw, XCircle, Clock } from 'lucide-react';
 
 interface LabelPreviewProps {
   label: LabelData;
   className?: string;
+  onPreviewLoaded?: (success: boolean) => void;
 }
 
-export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "" }) => {
+export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "", onPreviewLoaded }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auditData, setAuditData] = useState<LabelaryAudit | null>(null);
   
   // Cache em memória local do componente para reaproveitar se o usuário alternar abas
-  // Embora o labelaryService já tenha cache global por hash, isso evita URLs de blob duplicadas.
   const previewRef = React.useRef<Record<string, string>>({});
 
   React.useEffect(() => {
