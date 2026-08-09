@@ -72,8 +72,8 @@ export const _test_toSettlementTimestamp = toSettlementTimestamp;
 const financialTransactionCreateSchema = z
   .object({
     company_id: z.string().uuid("Empresa inválida."),
-    type: z.enum(["income", "expense"], {
-      message: "Selecione se é receita ou despesa.",
+    type: z.enum(["income", "expense", "transfer"], {
+      message: "Selecione o tipo da movimentação.",
     }),
     description: z
       .string()
