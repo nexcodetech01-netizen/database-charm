@@ -58,7 +58,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
+import { ShippingLabelPrintDialog } from "@/features/printing/components/ShippingLabelPrintDialog";
 import { ML_TEST_ZPL } from "@/features/mercadolivre/constants/test-zpl";
 
 
@@ -95,7 +95,8 @@ function DashboardPage() {
   const [includeHomologation, setIncludeHomologation] = useState(false);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
   const [mlPrintOpen, setMlPrintOpen] = useState(false);
-  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl"; content: string; id: string } | null>(null);
+  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl" | "image"; content: string; id: string; origin?: string } | null>(null);
+
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "month" | "custom">("today");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
 
@@ -645,11 +646,12 @@ function DashboardPage() {
         dayTotal={dayTotal}
       />
 
-      <MercadoLivrePrintDialog
-        open={mlPrintOpen}
-        onOpenChange={setMlPrintOpen}
-        labelData={mlLabelData}
+      <ShippingLabelPrintDialog 
+        open={mlPrintOpen} 
+        onOpenChange={setMlPrintOpen} 
+        labelData={mlLabelData} 
       />
+
       </div>
 
     </ErrorBoundary>

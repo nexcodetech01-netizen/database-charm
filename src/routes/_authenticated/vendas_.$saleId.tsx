@@ -95,7 +95,7 @@ import { useCustomer } from "@/features/customers/hooks/use-customers";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { CreditAccountPanel, useCreditDetailBySale } from "@/features/credit";
 import { SaleFiscalCard } from "@/features/fiscal/v2/components/sale-fiscal-card";
-import { MercadoLivrePrintDialog } from "@/features/mercadolivre/components/mercadolivre-print-dialog";
+import { ShippingLabelPrintDialog } from "@/features/printing/components/ShippingLabelPrintDialog";
 import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
 
 
@@ -180,7 +180,8 @@ function SaleWorkspace({
   const qc = useQueryClient();
 
   const [mlPrintOpen, setMlPrintOpen] = useState(false);
-  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl"; content: string; id: string } | null>(null);
+  const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl" | "image"; content: string; id: string; origin?: string } | null>(null);
+
   const [isFetchingLabel, setIsFetchingLabel] = useState(false);
 
 
@@ -1014,11 +1015,12 @@ function SaleWorkspace({
         onViewSale={() => setReceiptOpen(false)}
       />
 
-      <MercadoLivrePrintDialog
+      <ShippingLabelPrintDialog
         open={mlPrintOpen}
         onOpenChange={setMlPrintOpen}
         labelData={mlLabelData}
       />
+
 
 
       <AlertDialog
