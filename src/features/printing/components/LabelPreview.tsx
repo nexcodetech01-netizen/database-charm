@@ -20,9 +20,56 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auditData, setAuditData] = useState<LabelaryAudit | null>(null);
-  
+
+  // Viewport isolado por documento: zoom + scroll nunca são reaproveitados
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [fitWidth, setFitWidth] = useState<number | null>(null);
+
+  const isDanfe = Boolean(label.height && label.height > 6);
+  const aspect = label.width && label.height ? label.height / label.width : 1.414;
+
+  const resetViewport = React.useCallback(() => {
+    setZoom(1);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      scrollRef.current.scrollLeft = 0;
+    }
+  }, []);
+
+  // fit-to-container: 85% da largura útil, sem escala fixa
+  const fitToContainer = React.useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const available = el.clientWidth;
+    if (!available) return;
+    setFitWidth(Math.max(220, Math.round(available * 0.85)));
+    setZoom(1);
+    el.scrollTop = 0;
+    el.scrollLeft = 0;
+  }, []);
+
+  // Reset total ANTES de renderizar um novo documento
+  React.useLayoutEffect(() => {
+    resetViewport();
+    setFitWidth(null);
+  }, [label, resetViewport]);
+
+  React.useEffect(() => {
+    if (!previewUrl) return;
+    const id = window.requestAnimationFrame(() => fitToContainer());
+    return () => window.cancelAnimationFrame(id);
+  }, [previewUrl, fitToContainer]);
+
+  React.useEffect(() => {
+    const onResize = () => fitToContainer();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [fitToContainer]);
+
   // Cache em memória local do componente para reaproveitar se o usuário alternar abas
   const previewRef = React.useRef<Record<string, string>>({});
+
 
   React.useEffect(() => {
     const loadPreview = async () => {
@@ -87,7 +134,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         </div>
       )}
       
-      <div className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center justify-center">
+      <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center">
         {error ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center max-w-[300px]">
             <AlertTriangle className="h-10 w-10 text-amber-500" />
@@ -171,19 +218,23 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
             )}
           </div>
         ) : previewUrl ? (
-          <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
-            <iframe 
-              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&pagemode=none`}
+          <div className="w-full flex items-start justify-center p-4">
+            <iframe
+              key={`${label.id}-${previewUrl}`}
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1&view=${isDanfe ? 'FitH' : 'Fit'}&pagemode=none`}
               title="Preview"
-              className="w-full border shadow-lg bg-white transition-all overflow-auto"
-              style={{ 
-                 height: label.height && label.height > 6 ? '1200px' : '850px',
-                 transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
-                 width: label.orientation === 'landscape' ? '70%' : '100%',
-                 maxWidth: '900px'
+              onLoad={() => fitToContainer()}
+              className="border shadow-lg bg-white transition-all"
+              style={{
+                width: fitWidth ? `${Math.round(fitWidth * zoom)}px` : '85%',
+                height: fitWidth
+                  ? `${Math.round(fitWidth * zoom * (isDanfe ? 1.414 : aspect))}px`
+                  : (isDanfe ? '1200px' : '850px'),
+                transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
               }}
             />
           </div>
+
         ) : !loading && (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground p-8 text-center">
             <FileImage className="h-12 w-12 opacity-20" />
@@ -219,6 +270,16 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
           </Badge>
         ) : null}
       </div>
+
+      {previewUrl && !error && (
+        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-2 py-1 rounded-full border z-20">
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-xs" onClick={() => setZoom(z => Math.max(0.4, +(z - 0.1).toFixed(2)))}>-</Button>
+          <span className="text-[10px] font-bold text-slate-500 w-9 text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-xs" onClick={() => setZoom(z => Math.min(3, +(z + 0.1).toFixed(2)))}>+</Button>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] font-bold" onClick={() => fitToContainer()}>Ajustar</Button>
+        </div>
+      )}
+
 
       <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-slate-500 border z-20">
         <Clock className="h-3 w-3 mr-1" /> {auditData?.durationMs || 0}ms | {label.width}" x {label.height}"
