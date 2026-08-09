@@ -357,7 +357,7 @@ export function ShippingLabelPrintDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
+      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-visible border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
         <div className="relative px-6 py-4 bg-white dark:bg-slate-900 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">

@@ -79,7 +79,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   }, []);
 
   return (
-    <div className={`relative flex flex-col items-center justify-center border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-hidden ${className}`}>
+    <div className={`relative flex flex-col items-center border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-auto scrollbar-thin ${className}`}>
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] z-10 gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -170,11 +170,11 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
           )}
         </div>
       ) : previewUrl ? (
-        <div className="w-full h-full flex items-center justify-center p-4">
+        <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
           <iframe 
-            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit&pagemode=none`}
+            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=Fit&pagemode=none`}
             title="Preview"
-            className="w-full h-[600px] border shadow-lg bg-white transition-all"
+            className="w-full h-[850px] border shadow-lg bg-white transition-all overflow-auto"
             style={{ 
                transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
                width: label.orientation === 'landscape' ? '70%' : '100%'
