@@ -161,9 +161,10 @@ export const printQueue = new PrintQueue();
  */
 export const printManager = {
   async print(label: LabelData, options: PrintOptions): Promise<PrintResult> {
-    if (!label.zpl && !label.content) {
-      return { success: false, message: 'Conteúdo da etiqueta vazio' };
+    if (!label.zpl && !label.content && !label.pdf && !label.image) {
+      return { success: false, message: 'Conteúdo do documento vazio' };
     }
+
 
     try {
       const jobId = await printQueue.enqueue(label, options);

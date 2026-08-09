@@ -28,41 +28,47 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
 
-interface ZPLBlock {
+interface DocumentBlock {
   id: string;
-  zpl: string;
-  type: "label" | "danfe";
+  zpl?: string;
+  pdf?: string;
+  image?: string;
+  type: "label" | "danfe" | "comprovante";
   title: string;
   blob?: Blob;
   previewUrl?: string;
   stats?: {
     format: string;
     size: string;
-    commands: number;
-    encoding: string;
+    commands?: number;
+    encoding?: string;
   };
 }
 
-interface MercadoLivrePrintDialogProps {
+interface ShippingLabelPrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   labelData: {
-    type: "pdf" | "zpl";
-    content: string;
+    type: "pdf" | "zpl" | "image";
+    format?: "png" | "jpg";
+    content: string; // Base64 ou texto bruto
     id: string;
+    origin?: string; // Ex: 'Mercado Livre', 'SuperFrete'
   } | null;
 }
 
-export function MercadoLivrePrintDialog({
+
+export function ShippingLabelPrintDialog({
   open,
   onOpenChange,
   labelData,
-}: MercadoLivrePrintDialogProps) {
-  const [blocks, setBlocks] = useState<ZPLBlock[]>([]);
+}: ShippingLabelPrintDialogProps) {
+  const [blocks, setBlocks] = useState<DocumentBlock[]>([]);
   const [activeTab, setActiveTab] = useState<string>("block-0");
   const [isLoading, setIsLoading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportZPL = () => {
@@ -86,7 +92,7 @@ export function MercadoLivrePrintDialog({
         if (zplBlocks.length === 0) {
           const trimmedContent = content.trim();
           if (trimmedContent.length > 0) {
-            const block: ZPLBlock = {
+            const block: DocumentBlock = {
               id: "block-0",
               zpl: content,
               type: "label",
@@ -95,18 +101,21 @@ export function MercadoLivrePrintDialog({
             const prepared = await prepareBlock(block, { type: "zpl", content, id: file.name });
             setBlocks([prepared]);
             setActiveTab("block-0");
+
           }
         } else {
           const preparedBlocks = await Promise.all(
             zplBlocks.map(async (zpl, index) => {
-              const block: ZPLBlock = {
-                id: `block-${index}`,
-                zpl,
-                type: index === 0 ? "label" : "danfe",
-                title: index === 0 ? "Etiqueta" : "DANFE",
-              };
+            const block: DocumentBlock = {
+              id: `block-${index}`,
+              zpl,
+              type: index === 0 ? "label" : "danfe",
+              title: index === 0 ? "Etiqueta" : "DANFE",
+            };
+
               return await prepareBlock(block, { type: "zpl", content, id: file.name });
             })
+
           );
           setBlocks(preparedBlocks);
           setActiveTab("block-0");
@@ -133,7 +142,7 @@ export function MercadoLivrePrintDialog({
     };
   };
 
-  const prepareBlock = async (block: ZPLBlock, source: NonNullable<MercadoLivrePrintDialogProps["labelData"]>): Promise<ZPLBlock> => {
+  const prepareBlock = async (block: DocumentBlock, source: NonNullable<ShippingLabelPrintDialogProps["labelData"]>): Promise<DocumentBlock> => {
     let blob: Blob | undefined;
     let previewUrl: string | undefined;
     
@@ -146,16 +155,24 @@ export function MercadoLivrePrintDialog({
         }
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type: "application/pdf" });
+      } else if (source.type === "image") {
+        const type = source.format === "png" ? "image/png" : "image/jpeg";
+        const byteCharacters = atob(source.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type });
       } else {
-        // Preview é opcional. Se falhar, apenas não define previewUrl.
+        // ZPL - Preview opcional via Labelary
         try {
           blob = await labelaryService.convertToPdf({
             id: source.id + "_" + block.id,
             zpl: block.zpl,
           });
         } catch (previewErr) {
-          console.warn(`[ML_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
-          // Silenciosamente falha o preview, mas mantém o ZPL para impressão.
+          console.warn(`[PRINT_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
         }
       }
 
@@ -163,16 +180,20 @@ export function MercadoLivrePrintDialog({
         previewUrl = URL.createObjectURL(blob);
       }
     } catch (error) {
-      console.error(`[ML_PRINT_BLOCK_ERROR] ${block.id}:`, error);
+      console.error(`[PRINT_BLOCK_ERROR] ${block.id}:`, error);
     }
 
     return {
       ...block,
       blob,
       previewUrl,
-      stats: block.zpl ? extractZPLStats(block.zpl) : undefined
+      stats: block.zpl ? extractZPLStats(block.zpl) : {
+        format: source.type.toUpperCase(),
+        size: "A4 / Térmica",
+      }
     };
   };
+
 
   const processLabelData = useCallback(async () => {
     if (!labelData) return;
@@ -236,24 +257,30 @@ export function MercadoLivrePrintDialog({
     }
   }, [open, labelData, processLabelData]);
 
-  const handlePrintBlock = async (block: ZPLBlock) => {
+  const handlePrintBlock = async (block: DocumentBlock) => {
     setIsPrinting(true);
     try {
       // Prioridade absoluta: Se for ZPL, enviar BRUTO
-      const strategy = block.zpl ? "RAW" : "PDF";
-      
+      let strategy: any = "PDF";
+      if (block.zpl) strategy = "RAW";
+      if (labelData?.type === "image") strategy = "BROWSER";
+
       const result = await printManager.print(
         {
           id: labelData?.id + "_" + block.id,
           zpl: block.zpl || undefined,
+          pdf: block.pdf || undefined,
+          image: block.image || undefined,
           content: block.zpl ? undefined : labelData?.content,
+          format: labelData?.type === "image" ? (labelData.format?.toUpperCase() as any) : (labelData?.type.toUpperCase() as any)
         },
         { 
-          strategy: strategy as any,
-          type: 'LABEL', // Força o tipo para garantir a seleção automática da impressora de etiquetas
+          strategy: strategy,
+          type: 'LABEL',
           printerId: selectedPrinterId || undefined
         }
       );
+
 
       if (result.success) {
         if (block.zpl) {
@@ -283,14 +310,16 @@ export function MercadoLivrePrintDialog({
     }
   };
 
-  const handleDownloadBlock = (block: ZPLBlock) => {
+  const handleDownloadBlock = (block: DocumentBlock) => {
     if (block.blob) {
       const url = URL.createObjectURL(block.blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${block.type === 'label' ? 'etiqueta' : 'danfe'}-${labelData?.id}.pdf`;
+      const extension = labelData?.type === "pdf" || block.zpl ? "pdf" : (labelData?.format || "png");
+      a.download = `${block.type === 'label' ? 'etiqueta' : 'danfe'}-${labelData?.id}.${extension}`;
       a.click();
       URL.revokeObjectURL(url);
+
     } else if (block.zpl) {
       const blob = new Blob([block.zpl], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
@@ -318,7 +347,7 @@ export function MercadoLivrePrintDialog({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white leading-none">
-                Printing Center - Mercado Livre
+                Printing Center - {labelData?.origin || 'Logística'}
               </DialogTitle>
               <p className="text-[12px] text-slate-500 mt-1 font-medium">
                 Gerencie e imprima etiquetas e DANFE.
@@ -369,11 +398,12 @@ export function MercadoLivrePrintDialog({
                           <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Informações</h4>
                           <div className="space-y-2.5">
                             {[
-                              { label: 'Tipo', value: block.type === 'label' ? 'Etiqueta ML' : 'DANFE' },
-                              { label: 'Documento', value: block.zpl ? 'ZPL' : 'PDF' },
-                              { label: 'Formato', value: block.stats?.size || '100x150 mm' },
-                              { label: 'Origem', value: 'Mercado Livre' },
+                              { label: 'Tipo', value: block.type === 'label' ? 'Etiqueta' : block.type === 'danfe' ? 'DANFE' : 'Documento' },
+                              { label: 'Documento', value: labelData?.type.toUpperCase() || '---' },
+                              { label: 'Formato', value: block.stats?.size || 'Auto' },
+                              { label: 'Origem', value: labelData?.origin || 'Logística' },
                               { label: 'Status', value: 'Pronto', valueClass: 'text-blue-600 dark:text-blue-400 font-bold' }
+
                             ].map((item, idx) => (
                               <div key={idx} className="flex items-center text-[10.5px] group">
                                 <span className="text-slate-400 shrink-0">{item.label}</span>
