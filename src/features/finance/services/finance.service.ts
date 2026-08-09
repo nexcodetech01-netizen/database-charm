@@ -164,7 +164,7 @@ export const financeService = {
   async listTransactions(companyId: string, filters: TransactionListFilters) {
     let q = supabase
       .from("financial_transactions")
-      .select("*", { count: "exact" })
+      .select("*, category:financial_categories(name), financial_accounts(name)", { count: "exact" })
       .eq("company_id", companyId);
 
     if (filters.search.trim()) {
@@ -190,33 +190,15 @@ export const financeService = {
       return { rows: [] as TransactionWithMeta[], total: count ?? 0 };
     }
 
-    const accountIds = Array.from(
-      new Set(rows.map((r) => r.account_id).filter((v): v is string => !!v)),
-    );
-    const categoryIds = Array.from(
-      new Set(rows.map((r) => r.category_id).filter((v): v is string => !!v)),
-    );
-
-    const [accRes, catRes] = await Promise.all([
-      accountIds.length
-        ? supabase.from("financial_accounts").select("id,name").in("id", accountIds)
-        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null }),
-      categoryIds.length
-        ? supabase.from("financial_categories").select("id,name").in("id", categoryIds)
-        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null }),
-    ]);
-    if (accRes.error) throw accRes.error;
-    if (catRes.error) throw catRes.error;
-
-    const accMap = new Map((accRes.data ?? []).map((a) => [a.id, a.name]));
-    const catMap = new Map((catRes.data ?? []).map((c) => [c.id, c.name]));
-
     return {
-      rows: rows.map<TransactionWithMeta>((r) => ({
-        ...r,
-        account_name: r.account_id ? (accMap.get(r.account_id) ?? null) : null,
-        category_name: r.category_id ? (catMap.get(r.category_id) ?? null) : null,
-      })),
+      rows: rows.map<TransactionWithMeta>((r) => {
+        const cat = (r as any).category;
+        return {
+          ...r,
+          account_name: (r as any).financial_accounts?.name ?? null,
+          category_name: cat?.name ?? (r as any).category_name ?? null,
+        };
+      }),
       total: count ?? 0,
     };
   },
@@ -254,6 +236,7 @@ export const financeService = {
 
     const payload = {
       ...rest,
+      category_id: input.category_id || null,
       status: _status === "cancelled" ? "cancelled" : "pending",
     } as FinancialTransactionInsert;
 
@@ -377,9 +360,14 @@ export const financeService = {
     void first_installment_date;
     void _category;
 
+    const payload = {
+      ...safeInput,
+      category_id: input.category_id || null,
+    };
+
     const { data, error } = await supabase
       .from("financial_transactions")
-      .update(safeInput as FinancialTransactionUpdate)
+      .update(payload as FinancialTransactionUpdate)
       .eq("id", id)
       .select()
       .single();
