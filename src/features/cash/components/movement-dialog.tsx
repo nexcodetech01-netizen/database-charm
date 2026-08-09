@@ -35,6 +35,7 @@ export function MovementDialog({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
+  const { data: summary } = useCashSummary({ id: sessionId } as any);
   const { mutateAsync, isPending } = useRegisterCashMovement();
 
   const label = type === "cash_in" ? "Suprimento" : "Sangria";
