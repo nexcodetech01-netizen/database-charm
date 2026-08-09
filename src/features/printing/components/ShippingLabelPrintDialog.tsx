@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PrinterSelector } from "@/features/printing/components/PrinterSelector";
+import { LabelPreview } from "@/features/printing/components/LabelPreview";
 
 interface DocumentBlock {
   id: string;
@@ -206,7 +207,11 @@ export function ShippingLabelPrintDialog({
       
       if (labelData.type === "zpl") {
         const regex = /\^XA[\s\S]*?\^XZ/g;
-        zplBlocks = content.match(regex) || [];
+        // Deduplicação rigorosa: Remover blocos ZPL idênticos antes do processamento
+        const matches = content.match(regex) || [];
+        zplBlocks = Array.from(new Set(matches));
+        
+        console.log(`[ShippingLabelPrintDialog] Blocos ZPL encontrados: ${matches.length}, Únicos: ${zplBlocks.length}`);
       }
 
       if (zplBlocks.length === 0) {
@@ -221,7 +226,6 @@ export function ShippingLabelPrintDialog({
             title: "Etiqueta",
           };
 
-          
           const prepared = await prepareBlock(block, labelData);
           setBlocks([prepared]);
           setActiveTab("block-0");
@@ -382,7 +386,7 @@ export function ShippingLabelPrintDialog({
                       )}
                     >
                       {block.type === 'label' ? <Package className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-                      {block.type === 'label' ? `Etiqueta (${labelsCount})` : `DANFE (${danfesCount})`}
+                      {block.type === 'label' ? "Etiqueta" : "DANFE"}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -428,7 +432,7 @@ export function ShippingLabelPrintDialog({
                                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 Preview disponível
                               </div>
-                            ) : (
+                             ) : (
                               <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold text-[10.5px] uppercase tracking-wider">
                                 <Info className="h-3 w-3" /> PREVIEW INDISPONÍVEL
                               </div>
@@ -436,7 +440,7 @@ export function ShippingLabelPrintDialog({
                             <p className="text-[10px] text-slate-400 leading-tight font-medium">
                               {block.previewUrl 
                                 ? "O documento está pronto para visualização e impressão."
-                                : "Preview indisponível. A impressão continua disponível."
+                                : "Preview indisponível. Impressão e download continuam disponíveis."
                               }
                             </p>
                           </div>
@@ -489,25 +493,19 @@ export function ShippingLabelPrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col items-center justify-center">
-                          {block.previewUrl ? (
-                            <iframe
-                              src={block.previewUrl}
-                              className="w-full h-full border-none"
-                              title={block.title}
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center gap-4 text-slate-400 p-8 text-center">
-                              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-full">
-                                <Eye className="h-12 w-12 opacity-20" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-slate-500 dark:text-slate-300">Preview indisponível</p>
-                                <p className="text-xs mt-1">O motor de visualização (Labelary) não respondeu.</p>
-                                <p className="text-xs font-bold text-blue-500 mt-2">A impressão via ZPL direto continua disponível.</p>
-                              </div>
-                            </div>
-                          )}
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                          <LabelPreview 
+                            label={{
+                              id: block.id,
+                              zpl: block.zpl,
+                              pdf: block.pdf,
+                              image: block.image,
+                              width: 4,
+                              height: 6,
+                              dpmm: 8
+                            }} 
+                            className="flex-1 border-none min-h-full"
+                          />
                         </div>
                       </main>
                     </div>
