@@ -316,7 +316,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
         purchaseId = created.id;
       }
 
-      console.log("[PurchaseForm.submit] Status retornado pela API:", persistedStatus);
+      console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
 
 
       if (receive) {

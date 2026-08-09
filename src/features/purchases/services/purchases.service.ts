@@ -340,6 +340,7 @@ export const purchasesService = {
 
     console.log("[PurchasesService.update] Status retornado pela API:", updated.status);
 
+
     if (items) {
       const { error: delErr } = await supabase
         .from("purchase_items")
