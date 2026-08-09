@@ -38,6 +38,7 @@ import { CustomersRepository } from "../repositories/customers.repository";
 import { StatusRepository } from "../repositories/status.repository";
 import { TaxRepository } from "../repositories/tax.repository";
 import { SalesRepository } from "../repositories/sales.repository";
+import type { CustomerFiscalRow } from "../repositories/customers.repository";
 
 type SB = SupabaseClient<Database>;
 
