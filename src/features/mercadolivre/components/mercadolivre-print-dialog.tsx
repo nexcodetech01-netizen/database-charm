@@ -293,10 +293,10 @@ export function MercadoLivrePrintDialog({
                           <Badge variant="outline" className="text-[10px] uppercase">{block.zpl ? 'ZPL' : 'PDF'}</Badge>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="xs" className="h-7 text-[11px]" onClick={() => handleDownloadBlock(block)}>
+                          <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handleDownloadBlock(block)}>
                             <Download className="h-3 w-3 mr-1" /> Baixar ZPL
                           </Button>
-                          <Button variant="outline" size="xs" className="h-7 text-[11px]" onClick={() => handlePrintBlock(block)}>
+                          <Button variant="outline" size="sm" className="h-7 text-[11px] px-2" onClick={() => handlePrintBlock(block)}>
                             <Printer className="h-3 w-3 mr-1" /> Imprimir ZPL
                           </Button>
                         </div>
