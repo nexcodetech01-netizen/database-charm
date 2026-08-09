@@ -339,11 +339,6 @@ export const purchasesService = {
     const updated = await updateRow("purchases", id, updatePayload);
 
     console.log("[PurchasesService.update] Status retornado pela API:", updated.status);
-    return updated;
-
-
-
-
 
     if (items) {
       const { error: delErr } = await supabase
@@ -368,9 +363,9 @@ export const purchasesService = {
       }
     }
 
-
     return updated;
   },
+
 
   async setStatus(id: string, status: string) {
     // Recebimento é atômico: cria produtos faltantes e dispara triggers de
