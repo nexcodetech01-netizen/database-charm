@@ -296,6 +296,8 @@ export const purchasesService = {
     input: PurchaseUpdate & { items?: PurchaseItemDraft[] },
   ) {
     const { items: rawItems, ...header } = input;
+    
+    console.log("[PurchasesService.update] Status enviado:", header.status);
 
     // Resolve produtos auto-criados apenas quando itens vieram no update.
     let items: PurchaseItemDraft[] | undefined = rawItems;
@@ -331,6 +333,9 @@ export const purchasesService = {
       ...(header as PurchaseUpdate),
       ...totalsPatch,
     });
+
+    console.log("[PurchasesService.update] Status salvo no banco:", updated.status);
+
 
 
     if (items) {
