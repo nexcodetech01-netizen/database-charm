@@ -327,7 +327,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
   }
 
   const submitting =
-    createMut.isPending || updateMut.isPending || statusMut.isPending;
+    createMut.isPending || updateMut.isPending;
   const totalUnits = costMetrics.total_qty;
   const extraCosts =
     (Number(form.shipping) || 0) +
