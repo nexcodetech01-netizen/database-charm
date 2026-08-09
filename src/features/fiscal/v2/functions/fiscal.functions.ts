@@ -2651,16 +2651,10 @@ export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.export");
 
     // Buscamos apenas notas autorizadas ou canceladas que tenham XML
-    const { data: rows, error } = await supabase
-      .from("fiscal_documents")
-      .select("number, access_key, xml_authorized_path, xml_cancellation_path")
-      .eq("company_id", companyId)
-      .gte("created_at", data.from)
-      .lte("created_at", data.to)
-      .or("status.eq.authorized,status.eq.cancelled");
+    const docRepo = new DocumentsRepository(supabase);
+    const rows = await docRepo.listXmlPaths(companyId, data.from, data.to);
 
-    if (error) throw error;
-    if (!rows || rows.length === 0) {
+    if (rows.length === 0) {
       throw new Error("Nenhum XML encontrado no período selecionado.");
     }
 
@@ -2672,15 +2666,11 @@ export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
       if (!path) continue;
 
       try {
-        const { data: blob, error: downloadErr } = await supabase.storage
-          .from("fiscal_artifacts")
-          .download(path);
+        const buffer = await docRepo.downloadXmlArtifact(path);
+        if (!buffer) continue;
 
-        if (downloadErr || !blob) continue;
-
-        const buffer = await blob.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
-        
+
         const fileName = `${row.access_key || row.number || "nota"}.xml`;
         files.push({ name: fileName, contentBase64: base64 });
       } catch (err) {
