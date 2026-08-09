@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useRegisterCashMovement } from "../hooks/use-cash";
+import { formatCurrency } from "@/lib/format";
+import { useRegisterCashMovement, useCashSummary } from "../hooks/use-cash";
 import type { CashMovementType } from "../types";
 
 interface Props {
@@ -35,6 +36,7 @@ export function MovementDialog({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
+  const { data: summary } = useCashSummary({ id: sessionId } as any);
   const { mutateAsync, isPending } = useRegisterCashMovement();
 
   const label = type === "cash_in" ? "Suprimento" : "Sangria";
@@ -45,6 +47,17 @@ export function MovementDialog({
       toast.error("Valor inválido.");
       return;
     }
+
+    if (type === "cash_out" && summary) {
+      const availableCash = summary.expectedCash;
+      if (value > availableCash) {
+        toast.error(
+          `Valor da sangria é superior ao saldo em dinheiro disponível na gaveta (${formatCurrency(availableCash)}).`,
+        );
+        return;
+      }
+    }
+
     if (!reason.trim()) {
       toast.error("Informe o motivo.");
       return;

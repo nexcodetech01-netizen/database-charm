@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -278,6 +280,17 @@ export function CloseSessionDialog({ open, onOpenChange, session, onClosed }: Pr
               {formatCurrency(hasCounted ? difference : 0)}
             </span>
           </div>
+
+          {/* Alerta de Dinheiro Esperado Negativo */}
+          {summary && summary.expectedCash < 0 && (
+            <Alert variant="destructive" className="border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="text-sm font-bold">Atenção: Dinheiro esperado negativo</AlertTitle>
+              <AlertDescription className="text-xs">
+                As sangrias registradas ({formatCurrency(summary.cashOut)}) superaram o saldo inicial somado às vendas e suprimentos em dinheiro. Verifique os lançamentos.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Bella IA — só quando há divergência */}
           {hasCounted && difference !== 0 && (
