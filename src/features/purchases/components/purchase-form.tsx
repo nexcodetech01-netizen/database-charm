@@ -702,20 +702,11 @@ export function PurchaseForm({ companyId, purchase }: Props) {
                     ) : null}
                     {isEdit ? "Salvar alterações" : "Salvar rascunho"}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="min-w-[180px] font-semibold"
-                    disabled={submitting}
-                    onClick={(e) => submit(e, true)}
-                  >
-                    {submitting ? (
-                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    ) : (
-                      <PackageCheck className="mr-1.5 h-4 w-4" />
-                    )}
-                    Finalizar compra
-                  </Button>
+                  {/* 
+                    O botão de "Finalizar Compra" foi removido do formulário 
+                    para garantir que o recebimento atômico ocorra apenas 
+                    por ação explícita na tela de detalhes, evitando disparos automáticos.
+                  */}
                 </div>
               </div>
             </div>
