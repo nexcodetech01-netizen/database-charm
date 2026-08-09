@@ -340,7 +340,7 @@ export function MercadoLivrePrintDialog({
                       </aside>
 
                       {/* 5. COLUNA DIREITA (FLEX) */}
-                      <main className="flex-1 bg-slate-100 dark:bg-slate-950 p-4 flex flex-col min-h-0 relative">
+                      <main className="flex-1 bg-slate-50 dark:bg-slate-950 p-4 flex flex-col min-h-0 relative">
                         {/* 6. BOTÕES DO DOCUMENTO ATIVO (SOBREPOSTOS OU NO TOPO) */}
                         <div className="flex items-center justify-between mb-3 shrink-0">
                           <div className="flex items-center gap-2">
