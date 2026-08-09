@@ -27,6 +27,7 @@ export interface LabelaryAudit {
   error?: string;
   responseBody?: string;
   timestamp: string;
+  cacheHit?: boolean;
 }
 
 

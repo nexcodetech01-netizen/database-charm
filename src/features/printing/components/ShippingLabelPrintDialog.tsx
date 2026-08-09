@@ -167,19 +167,8 @@ export function ShippingLabelPrintDialog({
         }
         const byteArray = new Uint8Array(byteNumbers);
         blob = new Blob([byteArray], { type });
-      } else if (block.zpl) {
-        // ZPL - Preview via Labelary com detecção de dimensões
-        const dimensions = detectZPLDimensions(block.zpl);
-        try {
-          blob = await labelaryService.convertToPdf({
-            id: source.id + "_" + block.id,
-            zpl: block.zpl,
-            ...dimensions
-          });
-        } catch (previewErr) {
-          console.warn(`[PRINT_PREVIEW_UNAVAILABLE] ${block.id}:`, previewErr);
-        }
       }
+      // O ZPL não é convertido aqui agora. A conversão ocorre sob demanda no LabelPreview.
 
       if (blob) {
         previewUrl = URL.createObjectURL(blob);
@@ -496,13 +485,12 @@ export function ShippingLabelPrintDialog({
                         <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
                           <LabelPreview 
                             label={{
-                              id: block.id,
+                              id: labelData?.id + "_" + block.id,
                               zpl: block.zpl,
                               pdf: block.pdf,
                               image: block.image,
-                              width: 4,
-                              height: 6,
-                              dpmm: 8
+                              format: labelData?.type === "image" ? (labelData.format?.toUpperCase() as any) : (labelData?.type.toUpperCase() as any),
+                              ...detectZPLDimensions(block.zpl || '')
                             }} 
                             className="flex-1 border-none min-h-full"
                           />

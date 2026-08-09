@@ -5,6 +5,7 @@ import { Loader2, FileImage, AlertTriangle, Bug, Copy, Download } from 'lucide-r
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface LabelPreviewProps {
   label: LabelData;
@@ -17,21 +18,41 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auditData, setAuditData] = useState<LabelaryAudit | null>(null);
   
+  // Cache em memória local do componente para reaproveitar se o usuário alternar abas
+  // Embora o labelaryService já tenha cache global por hash, isso evita URLs de blob duplicadas.
+  const previewRef = React.useRef<Record<string, string>>({});
+
   React.useEffect(() => {
-    let currentUrl: string | null = null;
-    
     const loadPreview = async () => {
+      if (!label.zpl && !label.pdf && !label.image) return;
+
+      const cacheKey = label.zpl || label.pdf || label.image || 'empty';
+      if (previewRef.current[cacheKey]) {
+        console.log(`[LabelPreview] Reusing local preview for ${label.id}`);
+        setPreviewUrl(previewRef.current[cacheKey]);
+        setAuditData(labelaryService.getLastAudit()); // Opcional: mostrar o audit do hit anterior
+        return;
+      }
+
       setLoading(true);
       setError(null);
       setAuditData(null);
       
       try {
         const blob = await labelaryService.convertToPdf(label);
-        currentUrl = URL.createObjectURL(blob);
-        setPreviewUrl(currentUrl);
-      } catch (err) {
+        const url = URL.createObjectURL(blob);
+        previewRef.current[cacheKey] = url;
+        setPreviewUrl(url);
         setAuditData(labelaryService.getLastAudit());
-        setError("Preview indisponível. Impressão e download continuam disponíveis.");
+      } catch (err: any) {
+        const audit = labelaryService.getLastAudit();
+        setAuditData(audit);
+        
+        if (audit?.status === 429) {
+          setError("Limite temporário da Labelary atingido.");
+        } else {
+          setError("Preview indisponível. Impressão e download continuam disponíveis.");
+        }
       } finally {
         setLoading(false);
       }
@@ -40,9 +61,17 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
     loadPreview();
 
     return () => {
-      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      // Nota: Não revogamos aqui imediatamente para permitir reaproveitamento entre trocas de abas no mesmo diálogo
+      // A limpeza deve ocorrer quando o diálogo fechar (gerenciado pelo pai) ou no unmount final.
     };
   }, [label]);
+
+  // Limpeza no unmount do componente
+  React.useEffect(() => {
+    return () => {
+      Object.values(previewRef.current).forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   return (
     <div className={`relative flex flex-col items-center justify-center border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-hidden ${className}`}>
@@ -108,8 +137,20 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                      </div>
                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
                        <span className="text-muted-foreground block">Duração Parse</span>
-                       <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
-                     </div>
+                        <span className="font-bold">{auditData.parseDurationMs?.toFixed(2) || 0}ms</span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Cache Hit</span>
+                        <span className={cn("font-bold", auditData.cacheHit ? "text-emerald-500" : "text-amber-500")}>
+                          {auditData.cacheHit ? "Sim" : "Não"}
+                        </span>
+                      </div>
+                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
+                        <span className="text-muted-foreground block">Labelary Chamado</span>
+                        <span className={cn("font-bold", !auditData.cacheHit ? "text-blue-500" : "text-slate-500")}>
+                          {!auditData.cacheHit && auditData.url.includes('api.labelary.com') ? "Sim" : "Não"}
+                        </span>
+                      </div>
                    </div>
                    <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
                      {JSON.stringify(auditData, null, 2)}

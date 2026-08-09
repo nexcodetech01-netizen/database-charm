@@ -24,6 +24,20 @@ export const labelaryService = {
     const cacheKey = CryptoJS.MD5(`${zpl}|${width}|${height}|${dpmm}`).toString();
     if (cache.has(cacheKey)) {
       console.log(`[Labelary] Cache hit for ZPL hash: ${cacheKey}`);
+      // Atualiza auditoria para refletir cache hit
+      lastAudit = {
+        url: 'cache://local',
+        method: 'GET',
+        headers: {},
+        zplLength: zpl.length,
+        dimensions: `${width}x${height} @ ${dpmm}dpmm`,
+        durationMs: 0,
+        parseDurationMs: 0,
+        status: 200,
+        statusText: 'OK (Cache)',
+        timestamp: new Date().toISOString(),
+        cacheHit: true
+      };
       return cache.get(cacheKey)!;
     }
 
@@ -31,7 +45,7 @@ export const labelaryService = {
     const startTime = Date.now();
     const parseStart = performance.now();
     
-    // Simulação de tempo de parse (já que o ZPL é passado direto)
+    // Simulação de tempo de parse
     const parseTime = performance.now() - parseStart;
     
     const headers = {
@@ -60,12 +74,16 @@ export const labelaryService = {
         status: response.status,
         statusText: response.statusText,
         responseBody,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        cacheHit: false
       };
       
       console.log(`[Labelary] Request completed in ${duration}ms. Status: ${response.status}`);
       
       if (!response.ok) {
+        if (response.status === 429) {
+           console.warn("[Labelary] Rate limit exceeded (429)");
+        }
         throw new Error(`Labelary error ${response.status}: ${responseBody || 'Unknown error'}`);
       }
 
@@ -86,10 +104,11 @@ export const labelaryService = {
         dimensions: `${width}x${height} @ ${dpmm}dpmm`,
         durationMs: duration,
         parseDurationMs: parseTime,
-        status: 0,
-        statusText: 'Failed',
+        status: lastAudit?.status || 0,
+        statusText: lastAudit?.statusText || 'Failed',
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        cacheHit: false
       };
       
       console.error(`[Labelary] Critical failure in ${duration}ms:`, error);
