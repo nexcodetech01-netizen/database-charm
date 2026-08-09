@@ -61,7 +61,7 @@ function IndexComponent() {
             <PrinterIcon className="h-5 w-5 text-blue-600" /> Print Manager Enterprise
           </h2>
           
-          <PrintConfigSummary />
+          <PrintConfigSummary companyId="default" />
           <PrintManager />
           
           <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4">

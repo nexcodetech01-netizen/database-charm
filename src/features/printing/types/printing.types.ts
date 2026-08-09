@@ -55,6 +55,8 @@ export interface PrinterProfile {
 export interface PrintOptions {
   strategy: PrintStrategy;
   printerId?: string;
+  type?: 'LABEL' | 'RECEIPT';
+  companyId?: string;
   copies?: number;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
