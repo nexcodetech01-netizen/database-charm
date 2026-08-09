@@ -26,6 +26,8 @@ import type { PrintPreferences } from "../lib/print-preferences";
 import { describePrinter } from "../lib/printer";
 import { LABEL_LAYOUT_LIST } from "../lib/labels";
 
+import { PrinterSelector } from "./PrinterSelector";
+
 /**
  * Configurações de impressão (Sprint 4.0).
  * Preferências locais por empresa — nenhuma alteração de banco.
@@ -83,8 +85,26 @@ export function PrintSettingsSection() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Impressora de Etiquetas</Label>
+              <PrinterSelector 
+                value={current.labelPrinterId}
+                onValueChange={(v) => update({ labelPrinterId: v })}
+              />
+              <p className="text-[10px] text-muted-foreground">Padrão para etiquetas ZPL/ML.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Impressora de Cupom</Label>
+              <PrinterSelector 
+                value={current.receiptPrinterId}
+                onValueChange={(v) => update({ receiptPrinterId: v })}
+              />
+              <p className="text-[10px] text-muted-foreground">Padrão para vendas e PDV.</p>
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="printer-name" className="text-xs text-muted-foreground">
-                Impressora padrão
+                Nome amigável (Legado)
               </Label>
               <Input
                 id="printer-name"
