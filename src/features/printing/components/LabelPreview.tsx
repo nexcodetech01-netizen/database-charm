@@ -79,7 +79,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
   }, []);
 
   return (
-    <div className={`relative flex flex-col items-center justify-center border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-hidden ${className}`}>
+    <div className={cn("relative flex flex-col border rounded-md bg-slate-100 dark:bg-slate-900/50 min-h-[500px] overflow-hidden", className)}>
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] z-10 gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -87,54 +87,55 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
         </div>
       )}
       
-      {error ? (
-        <div className="flex flex-col items-center gap-4 p-8 text-center max-w-[300px]">
-          <AlertTriangle className="h-10 w-10 text-amber-500" />
-          <p className="text-xs font-semibold text-amber-600">{error}</p>
-          {auditData && (
-             <Dialog>
-               <DialogTrigger asChild>
-                 <button className="flex items-center gap-2 text-[10px] font-bold bg-slate-800 text-white px-3 py-1.5 rounded-full hover:bg-slate-700">
+      <div className="flex-1 overflow-auto scrollbar-thin w-full flex flex-col items-center justify-center">
+        {error ? (
+          <div className="flex flex-col items-center gap-4 p-8 text-center max-w-[300px]">
+            <AlertTriangle className="h-10 w-10 text-amber-500" />
+            <p className="text-xs font-semibold text-amber-600">{error}</p>
+            {auditData && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-2 text-[10px] font-bold bg-slate-800 text-white px-3 py-1.5 rounded-full hover:bg-slate-700">
                     <Bug className="h-3 w-3" /> Ver Auditoria Técnica
-                 </button>
-               </DialogTrigger>
-               <DialogContent className="max-w-xl">
-                 <DialogHeader>
-                   <div className="flex items-center justify-between pr-8">
-                     <DialogTitle>Diagnóstico Labelary</DialogTitle>
-                     <div className="flex gap-2">
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         className="h-7 text-[10px]"
-                         onClick={() => {
-                           navigator.clipboard.writeText(JSON.stringify(auditData, null, 2));
-                           toast.success("Copiado para a área de transferência");
-                         }}
-                       >
-                         <Copy className="h-3 w-3 mr-1" /> Copiar
-                       </Button>
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         className="h-7 text-[10px]"
-                         onClick={() => {
-                           const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
-                           const url = URL.createObjectURL(blob);
-                           const a = document.createElement('a');
-                           a.href = url;
-                           a.download = `audit-labelary-${new Date().getTime()}.json`;
-                           a.click();
-                           URL.revokeObjectURL(url);
-                           toast.success("Arquivo de auditoria exportado");
-                         }}
-                       >
-                         <Download className="h-3 w-3 mr-1" /> Exportar
-                       </Button>
-                     </div>
-                   </div>
-                 </DialogHeader>
-                 <div className="space-y-4">
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-xl">
+                  <DialogHeader>
+                    <div className="flex items-center justify-between pr-8">
+                      <DialogTitle>Diagnóstico Labelary</DialogTitle>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 text-[10px]"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(auditData, null, 2));
+                            toast.success("Copiado para a área de transferência");
+                          }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" /> Copiar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-7 text-[10px]"
+                          onClick={() => {
+                            const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `audit-labelary-${new Date().getTime()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            toast.success("Arquivo de auditoria exportado");
+                          }}
+                        >
+                          <Download className="h-3 w-3 mr-1" /> Exportar
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                  <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-[10px]">
                         <span className="text-muted-foreground block">Duração Total</span>
@@ -161,32 +162,35 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
                         </span>
                       </div>
                     </div>
-                   <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
-                     {JSON.stringify(auditData, null, 2)}
-                   </pre>
-                 </div>
-               </DialogContent>
-             </Dialog>
-          )}
-        </div>
-      ) : previewUrl ? (
-        <div className="w-full h-full flex items-center justify-center p-4">
-          <iframe 
-            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit&pagemode=none`}
-            title="Preview"
-            className="w-full h-[600px] border shadow-lg bg-white transition-all"
-            style={{ 
-               transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
-               width: label.orientation === 'landscape' ? '70%' : '100%'
-            }}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-2 text-muted-foreground p-8 text-center">
-          <FileImage className="h-12 w-12 opacity-20" />
-          <p className="text-xs">Aguardando dados...</p>
-        </div>
-      )}
+                    <pre className="text-[10px] bg-slate-950 text-emerald-400 p-4 rounded overflow-auto h-[300px]">
+                      {JSON.stringify(auditData, null, 2)}
+                    </pre>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        ) : previewUrl ? (
+          <div className="w-full flex-1 flex items-start justify-center p-4 min-h-max overflow-visible">
+            <iframe 
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&pagemode=none`}
+              title="Preview"
+              className="w-full border shadow-lg bg-white transition-all overflow-auto"
+              style={{ 
+                 height: label.height && label.height > 6 ? '1200px' : '850px',
+                 transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
+                 width: label.orientation === 'landscape' ? '70%' : '100%',
+                 maxWidth: '900px'
+              }}
+            />
+          </div>
+        ) : !loading && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground p-8 text-center">
+            <FileImage className="h-12 w-12 opacity-20" />
+            <p className="text-xs">Aguardando dados...</p>
+          </div>
+        )}
+      </div>
       
       <div className="absolute top-3 right-3 flex items-center gap-2 z-20">
         {loading && (

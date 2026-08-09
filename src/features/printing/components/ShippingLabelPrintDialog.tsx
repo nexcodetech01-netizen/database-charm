@@ -357,7 +357,7 @@ export function ShippingLabelPrintDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
+      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-visible border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
         <div className="relative px-6 py-4 bg-white dark:bg-slate-900 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -404,7 +404,7 @@ export function ShippingLabelPrintDialog({
               </div>
 
               {/* 3. LAYOUT (ESQUERDA 265px / DIREITA FLEX) */}
-              <div className="flex-1 flex min-h-0 overflow-hidden">
+              <div className="flex-1 flex min-h-0 overflow-visible">
                 {blocks.map((block, index) => {
                   const isSelected = activeTab === block.id;
                   const isNext = blocks[blocks.findIndex(b => b.id === activeTab) + 1]?.id === block.id;
@@ -416,7 +416,7 @@ export function ShippingLabelPrintDialog({
                     <div 
                       key={block.id} 
                       className={cn(
-                        "flex-1 flex overflow-hidden",
+                        "flex-1 flex overflow-visible",
                         !isSelected && "hidden" // Mantém no DOM mas oculta se for apenas pré-carregamento
                       )}
                     >
@@ -513,7 +513,7 @@ export function ShippingLabelPrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-auto flex flex-col scrollbar-thin">
                           <LabelPreview 
                             label={{
                               id: labelData?.id + "_" + block.id,
