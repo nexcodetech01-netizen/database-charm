@@ -314,13 +314,18 @@ export function PurchaseForm({ companyId, purchase }: Props) {
       
 
 
-      toast.success(
-        isEdit ? "Compra atualizada" : "Compra cadastrada",
-      );
+      const statusLabel =
+        PURCHASE_STATUS_OPTIONS.find((o) => o.value === persistedStatus)?.label ??
+        persistedStatus;
+
+      toast.success(isEdit ? "Compra atualizada" : "Compra cadastrada", {
+        description: `Status: ${statusLabel}`,
+      });
       navigate({ to: "/compras/$purchaseId", params: { purchaseId } });
     } catch (err) {
+      console.error("[PurchaseForm.submit] Erro:", err);
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        description: err instanceof Error ? err.message : "Erro desconhecido. Tente novamente.",
       });
     }
 
