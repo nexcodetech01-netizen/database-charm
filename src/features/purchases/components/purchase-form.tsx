@@ -277,14 +277,9 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     }
 
     // FLUXO DE PERSISTÊNCIA: A compra é salva com o status selecionado no formulário.
-    // Se o usuário clicou em "Finalizar" (receive=true), forçamos 'pending' 
-    // temporariamente no payload de salvamento para que a chamada subsequente 
-    // de statusMut.mutateAsync('received') processe o recebimento fiscal/estoque.
-    const persistedStatus = receive ? "pending" : (form.status || "draft");
+    const persistedStatus = form.status || "draft";
     
     console.log("[PurchaseForm.submit] Status formulário:", form.status, "Status a persistir:", persistedStatus);
-
-
 
     const payload = {
       company_id: companyId,
@@ -318,13 +313,12 @@ export function PurchaseForm({ companyId, purchase }: Props) {
 
       console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
 
-
       if (receive) {
         // Mesmo caminho do botão "Receber compra" da tela de detalhe.
+        // O status só deve mudar para 'received' se o usuário clicar expressamente no botão "Finalizar Compra".
         console.log("[PurchaseForm.submit] Disparando recebimento atômico (setStatus: received)");
         await statusMut.mutateAsync({ id: purchaseId, status: "received" });
       }
-
 
       toast.success(
         receive ? "Compra recebida" : isEdit ? "Compra atualizada" : "Compra cadastrada",
