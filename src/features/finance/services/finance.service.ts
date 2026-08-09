@@ -283,27 +283,29 @@ export const financeService = {
       for (let i = 0; i < count; i++) {
         const dueDate = addDaysStr(firstDateStr, i * interval);
 
+        const { 
+          payment_condition: _pc, 
+          installment_count: _ic, 
+          installment_interval_days: _iid, 
+          first_installment_date: _fid, 
+          ...basePayload 
+        } = input as any;
+        void _pc; void _ic; void _iid; void _fid;
 
         const installmentPayload = {
-          ...input,
+          ...basePayload,
           description: `${input.description} (${i + 1}/${count})`,
           amount: amountPerInstallment,
           due_date: dueDate,
           transaction_date: input.transaction_date,
           status: "pending",
         };
-        // Remove campos de controle de parcelamento para não salvar no banco
-        delete (installmentPayload as any).payment_condition;
-        delete (installmentPayload as any).installment_count;
-        delete (installmentPayload as any).installment_interval_days;
-        delete (installmentPayload as any).first_installment_date;
         
         transactions.push(this.createTransaction(installmentPayload as FinancialTransactionInsert));
       }
       
       const results = await Promise.all(transactions);
       
-      // Se a primeira parcela for marcada como paga (settleOnCreate na UI)
       if (settle && results.length > 0) {
         await this.settleTransaction(results[0].id, settle);
       }
@@ -311,8 +313,19 @@ export const financeService = {
       return results[0];
     }
 
-    const created = await this.createTransaction(input);
-    await this.settleTransaction(created.id, settle);
+    const { 
+      payment_condition: _pc, 
+      installment_count: _ic, 
+      installment_interval_days: _iid, 
+      first_installment_date: _fid, 
+      ...cleanInput 
+    } = input as any;
+    void _pc; void _ic; void _iid; void _fid;
+
+    const created = await this.createTransaction(cleanInput as FinancialTransactionInsert);
+    if (settle) {
+      await this.settleTransaction(created.id, settle);
+    }
     return created;
   },
 
