@@ -513,7 +513,7 @@ export function ShippingLabelPrintDialog({
                           </div>
                         </div>
 
-                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-hidden flex flex-col">
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-lg shadow-inner border border-slate-200/60 dark:border-slate-800 overflow-auto flex flex-col scrollbar-thin">
                           <LabelPreview 
                             label={{
                               id: labelData?.id + "_" + block.id,
