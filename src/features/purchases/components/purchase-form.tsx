@@ -311,11 +311,8 @@ export function PurchaseForm({ companyId, purchase }: Props) {
         purchaseId = created.id;
       }
 
-      console.log("[PurchaseForm.submit] Status final confirmado:", persistedStatus);
-
-      // O recebimento atômico (status: received) NUNCA deve ser disparado automaticamente.
-      // Ele ocorre exclusivamente por meio do botão explícito na tela de detalhes da compra.
       console.log("[PurchaseForm.submit] Persistência concluída com status:", persistedStatus);
+
 
       toast.success(
         isEdit ? "Compra atualizada" : "Compra cadastrada",
