@@ -37,6 +37,7 @@ import { ProductsRepository } from "../repositories/products.repository";
 import { CustomersRepository } from "../repositories/customers.repository";
 import { StatusRepository } from "../repositories/status.repository";
 import { TaxRepository } from "../repositories/tax.repository";
+import { SalesRepository } from "../repositories/sales.repository";
 
 type SB = SupabaseClient<Database>;
 
@@ -287,14 +288,9 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.create");
 
     // Valida a venda pertence à empresa.
-    const { data: sale, error: saleErr } = await supabase
-      .from("sales")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("id", data.saleId)
-      .maybeSingle();
-    if (saleErr) throw saleErr;
-    if (!sale) throw new Error("Venda não encontrada.");
+    const salesRepo = new SalesRepository(supabase);
+    const saleExists = await salesRepo.exists(companyId, data.saleId);
+    if (!saleExists) throw new Error("Venda não encontrada.");
 
     // Impede duplicidade usando Repository.
     const repo = new DocumentsRepository(supabase);
@@ -505,11 +501,9 @@ export const getFiscalArtifactUrl = createServerFn({ method: "POST" })
     if (!data.path.startsWith(`${companyId}/`)) {
       throw new Error("Caminho fora do escopo da empresa.");
     }
-    const { data: signed, error } = await supabase.storage
-      .from("fiscal-artifacts")
-      .createSignedUrl(data.path, 60);
-    if (error) throw error;
-    return { url: signed.signedUrl };
+    const docRepo = new DocumentsRepository(supabase);
+    const url = await docRepo.createArtifactSignedUrl(data.path, 60);
+    return { url };
   });
 
 // ------------------------------------------------------- PROVIDER CONFIG
@@ -718,12 +712,8 @@ export const getFiscalProviderConfig = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select(PROVIDER_COLS)
-      .eq("company_id", companyId)
-      .maybeSingle();
-    if (error) throw error;
+    const statusRepo = new StatusRepository(supabase);
+    const data = await statusRepo.getProviderRow(companyId, PROVIDER_COLS);
     const hasKey = await fetchHasApiKey(supabase, companyId);
     const environments = await fetchEnvironments(supabase, companyId);
     return mapProvider((data ?? null) as ProviderRow | null, hasKey, environments);
@@ -799,34 +789,22 @@ export const updateFiscalProviderConfig = createServerFn({ method: "POST" })
       updated_by: context.userId,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const table = () => (supabase.from("fiscal_provider_config" as never) as any);
+    const statusRepo = new StatusRepository(supabase);
 
     // UPDATE explícito + INSERT de fallback: o upsert do PostgREST dependia da
     // resolução de conflito e mascarava falhas silenciosas de persistência.
-    const { data: updated, error: updateError } = await table()
-      .update(payload)
-      .eq("company_id", companyId)
-      .select(PROVIDER_COLS)
-      .maybeSingle();
-    if (updateError) throw updateError;
-
-    let row = updated as ProviderRow | null;
+    let row = (await statusRepo.updateProviderConfig(
+      companyId,
+      payload,
+      PROVIDER_COLS,
+    )) as ProviderRow | null;
     if (!row) {
-      const { data: inserted, error: insertError } = await table()
-        .insert(payload)
-        .select(PROVIDER_COLS)
-        .single();
-      if (insertError) throw insertError;
-      row = inserted as ProviderRow;
+      row = (await statusRepo.insertProviderConfig(payload, PROVIDER_COLS)) as ProviderRow;
     }
 
     // Read-back: garante que api_url foi realmente gravada (RLS/trigger podem
     // devolver linha sem persistir o valor esperado).
-    const { data: verify } = await table()
-      .select(PROVIDER_COLS)
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const verify = await statusRepo.getProviderRow(companyId, PROVIDER_COLS);
     const persisted = (verify ?? row) as ProviderRow;
     if ((persisted?.api_url ?? null) !== payload.api_url) {
       throw new Error(
@@ -920,15 +898,9 @@ export const provisionFiscalProvider = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cfg } = await (supabase.from("fiscal_provider_config" as never) as any)
-      .select("environment")
-      .eq("company_id", companyId)
-      .maybeSingle();
+    const statusRepo = new StatusRepository(supabase);
     const environment: NfeEnvironment =
-      data.environment ??
-      (((cfg as { environment?: NfeEnvironment } | null)?.environment ??
-        "homologation") as NfeEnvironment);
+      data.environment ?? (await statusRepo.getActiveEnvironment(companyId)) ?? "homologation";
 
     const { provisionProviderCertificateEngine } = await import("./nfe-engine.server");
     return provisionProviderCertificateEngine({
