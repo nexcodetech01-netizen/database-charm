@@ -174,10 +174,12 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
           <iframe 
             src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&view=Fit&pagemode=none`}
             title="Preview"
-            className="w-full h-[850px] border shadow-lg bg-white transition-all overflow-auto"
+            className="w-full border shadow-lg bg-white transition-all overflow-auto"
             style={{ 
+               height: label.type === 'danfe' ? '1200px' : '850px',
                transform: label.orientation === 'landscape' ? 'rotate(90deg)' : 'none',
-               width: label.orientation === 'landscape' ? '70%' : '100%'
+               width: label.orientation === 'landscape' ? '70%' : '100%',
+               maxWidth: '900px'
             }}
           />
         </div>
