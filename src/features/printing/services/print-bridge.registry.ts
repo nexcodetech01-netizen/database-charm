@@ -23,8 +23,9 @@ export const getPrintBridge = async (): Promise<IPrintBridge> => {
 
   if (!bridgeInstance) {
     try {
-      // @ts-ignore - bypass import-protection during build, we know this only runs on client
-      const module = await import("./print-bridge.client" + "");
+      // @ts-ignore - bypass import-protection
+      const moduleName = "./print-bridge.client";
+      const module = await import(/* @vite-ignore */ moduleName);
       bridgeInstance = (module as any).printBridgeClient as IPrintBridge;
     } catch (e) {
       console.error('[PrintBridgeRegistry] Failed to load print bridge client', e);
