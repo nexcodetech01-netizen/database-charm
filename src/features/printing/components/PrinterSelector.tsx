@@ -90,13 +90,22 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     return printerService.groupByCategory(printers);
   }, [printers]);
 
+  console.log('[PrinterSelector] Pre-render check:', {
+    printersLength: printers.length,
+    isBridgeOnline,
+    loading,
+    bridgeUnavailable,
+    value,
+    groups: Object.keys(groups).reduce((acc, cat) => ({ ...acc, [cat]: groups[cat as PrinterCategory]?.length }), {})
+  });
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
         Selecione a Impressora
       </label>
       
-      {bridgeUnavailable ? (
+      {bridgeUnavailable && printers.length === 0 ? (
         <div className="p-3 border border-destructive/50 bg-destructive/10 rounded-md text-destructive text-sm font-medium flex items-center gap-2">
           <Monitor className="h-4 w-4" />
           Bridge indisponível
