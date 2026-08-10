@@ -210,7 +210,7 @@ export const printManager = {
   },
 
   subscribe(listener: (event: PrintingEvent) => void) {
-    printQueue.addListener(listener);
+    return printQueue.addListener(listener);
   }
 };
 
