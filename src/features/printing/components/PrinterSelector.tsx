@@ -102,42 +102,73 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-        Selecione a Impressora (MODO TESTE VISUAL)
+        Impressora
       </label>
       
-      <div style={{ border: '1px solid red', padding: 16, borderRadius: 8, background: '#fff' }}>
-        <p style={{ fontWeight: 'bold', marginBottom: 8, color: 'red' }}>
-          TESTE VISUAL: Sem componentes Radix/Select
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {printers.length === 0 && <p>Nenhuma impressora no estado.</p>}
-          {printers.map(p => (
-            <div
-              key={p.id}
-              style={{
-                padding: 8,
-                margin: 0,
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                fontSize: '13px',
-                background: '#f9f9f9',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span><strong>{p.name}</strong> | {p.category} | {p.port}</span>
-              <span style={{ fontSize: '10px', color: '#666' }}>{p.source}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+          <SelectValue placeholder="Selecione uma impressora" />
+        </SelectTrigger>
+        <SelectContent 
+          className="z-[9999]" 
+          position="popper" 
+          sideOffset={5}
+          avoidCollisions={true}
+          collisionPadding={10}
+        >
+          {CATEGORY_ORDER.map(category => {
+            const categoryPrinters = groups[category];
+            if (!categoryPrinters || categoryPrinters.length === 0) return null;
 
-      <div className="mt-4 p-2 bg-slate-100 rounded text-xs">
-        <p><strong>Debug Info:</strong></p>
-        <p>printers.length: {printers.length}</p>
-        <p>loading: {String(loading)}</p>
-        <p>bridgeUnavailable: {String(bridgeUnavailable)}</p>
-      </div>
+            return (
+              <SelectGroup key={category}>
+                <SelectLabel className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1">
+                  {category}
+                </SelectLabel>
+                {categoryPrinters.map(printer => (
+                  <SelectItem 
+                    key={printer.id} 
+                    value={printer.id}
+                    className="py-2 focus:bg-blue-50 dark:focus:bg-blue-900/20"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-xs flex items-center gap-2">
+                        {printer.source === 'agent' || printer.source === 'webusb' ? (
+                          <PrinterIcon className="h-3 w-3 text-blue-500" />
+                        ) : (
+                          <Monitor className="h-3 w-3 text-slate-400" />
+                        )}
+                        {printer.name}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-medium">
+                        {printer.driver} • {printer.port}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            );
+          })}
+        </SelectContent>
+      </Select>
+
+      {loading && (
+        <div className="text-[10px] text-slate-400 animate-pulse flex items-center gap-1.5 mt-1">
+          <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+          Buscando impressoras...
+        </div>
+      )}
+
+      {bridgeUnavailable && !loading && printers.length === 0 && (
+        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-md mt-2">
+          <p className="text-[10px] text-amber-700 dark:text-amber-400 font-bold leading-tight">
+            BRIDGE INDISPONÍVEL
+          </p>
+          <p className="text-[9px] text-amber-600 dark:text-amber-500 mt-0.5">
+            Certifique-se que o NexOS Print Bridge está rodando na porta 48555.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

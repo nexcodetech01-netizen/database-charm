@@ -395,7 +395,7 @@ export function ShippingLabelPrintDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 overflow-visible border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
+      <DialogContent className="max-w-[1200px] w-[98vw] h-[95vh] flex flex-col p-0 border-none shadow-2xl rounded-xl bg-white dark:bg-slate-950">
         {/* 1. HEADER */}
         <div className="relative px-6 py-4 bg-white dark:bg-slate-900 border-b shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -442,7 +442,7 @@ export function ShippingLabelPrintDialog({
               </div>
 
               {/* 3. LAYOUT (ESQUERDA 265px / DIREITA FLEX) */}
-              <div className="flex-1 flex min-h-0 overflow-visible">
+              <div className="flex-1 flex min-h-0">
                 {blocks.map((block, index) => {
                   const isSelected = activeTab === block.id;
                   const isNext = blocks[blocks.findIndex(b => b.id === activeTab) + 1]?.id === block.id;
@@ -454,12 +454,12 @@ export function ShippingLabelPrintDialog({
                     <div 
                       key={block.id} 
                       className={cn(
-                        "flex-1 flex overflow-visible",
+                        "flex-1 flex",
                         !isSelected && "hidden" // Mantém no DOM mas oculta se for apenas pré-carregamento
                       )}
                     >
                       {/* 4. COLUNA ESQUERDA (265px) */}
-                      <aside className="w-[265px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-visible">
+                      <aside className="w-[265px] border-r bg-white dark:bg-slate-900 p-4 flex flex-col gap-4 shrink-0 overflow-y-auto">
                         <div>
                           <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 mb-3">Informações</h4>
                           <div className="space-y-2.5">
