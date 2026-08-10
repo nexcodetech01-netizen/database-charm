@@ -25,15 +25,21 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
 
   React.useEffect(() => {
     printerService.listPrinters().then(data => {
+      console.log("[PrinterSelector] Lista enviada ao dropdown:", data);
       setPrinters(data);
       setLoading(false);
-      // Comparação: descobertas x exibidas no dropdown (browser + todas as impressoras)
-      console.info(
-        `[PrinterSelector] Impressoras descobertas: ${data.length} · exibidas no dropdown: ${data.length + 1} (inclui "Navegador (PDF)")`,
-      );
+
       if (!value && data.length > 0) {
-        const defaultPrinter = data.find(p => p.isDefault) || data[0];
-        onValueChange(defaultPrinter.id);
+        const isBridgeOnline = data.some(p => p.source === 'agent' || p.source === 'webusb');
+        
+        // Se o bridge estiver online, priorizamos impressoras físicas sobre o navegador
+        if (isBridgeOnline) {
+          const physicalPrinters = data.filter(p => p.source !== 'fallback');
+          const defaultPrinter = physicalPrinters.find(p => p.isDefault) || physicalPrinters[0];
+          onValueChange(defaultPrinter.id);
+        } else {
+          onValueChange('browser');
+        }
       }
     });
   }, [onValueChange, value]);
