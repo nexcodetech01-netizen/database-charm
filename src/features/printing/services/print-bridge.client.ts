@@ -24,12 +24,15 @@ export const printBridgeClient = {
       let body: any = { printer };
 
       if (label.zpl) {
+        console.info("POST /print/zpl");
         endpoint = '/print/zpl';
         body.zpl = label.zpl;
       } else if (label.pdf) {
+        console.info("POST /print/pdf");
         endpoint = '/print/pdf';
         body.data = label.pdf;
       } else if (label.image) {
+        console.info("POST /print/image");
         endpoint = '/print/image';
         body.data = label.image;
       } else if (label.content) {
