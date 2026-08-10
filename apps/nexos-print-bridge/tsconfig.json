@@ -8,7 +8,7 @@
     "strict": false,
     "outDir": "./dist",
     "baseUrl": ".",
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*"]
 }
