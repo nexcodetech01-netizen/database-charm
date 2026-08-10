@@ -142,7 +142,7 @@ export const printerService = {
     const hasBridgeResponse = unique.some(p => p.source === 'agent' || p.source === 'webusb');
     const source = hasBridgeResponse 
       ? unique.filter(p => p.source !== 'fallback') 
-      : unique.length > 0 ? unique : FALLBACK_PRINTERS;
+      : [...unique, ...FALLBACK_PRINTERS.filter(f => !unique.some(u => u.id === f.id))];
 
     const printers = source.map((p, i) => toPrinter(p, i));
 
