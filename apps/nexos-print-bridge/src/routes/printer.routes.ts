@@ -1,101 +1,90 @@
 import { FastifyInstance } from 'fastify';
 import { PrinterDiscoveryService } from '../services/printer-discovery.service';
+import { printJobService } from '../services/print-job.service';
 import { logger } from '../config/logger';
 import { z } from 'zod';
 import os from 'os';
 
-// Fila de jobs em memória no bridge
-let jobQueue: any[] = [];
-let jobHistory: any[] = [];
-let isProcessing = false;
-
-async function processQueue() {
-  if (isProcessing || jobQueue.length === 0) return;
-  isProcessing = true;
-  
-  const job = jobQueue[0];
-  job.status = 'Printing';
-  
-  try {
-    // Simulação de tempo de impressão real
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    job.status = 'Completed';
-    job.finishedAt = new Date().toISOString();
-    jobHistory.unshift(jobQueue.shift());
-    // Limitar histórico a 100 itens
-    if (jobHistory.length > 100) jobHistory.pop();
-  } catch (error) {
-    job.status = 'Error';
-    job.error = String(error);
-    jobHistory.unshift(jobQueue.shift());
-  } finally {
-    isProcessing = false;
-    process.nextTick(processQueue);
-  }
-}
-
 export async function printerRoutes(fastify: FastifyInstance) {
   const printerService = new PrinterDiscoveryService();
 
-  fastify.get('/health', async () => {
-    const printers = await printerService.discoverPrinters();
+  // Versionamento (Requirement 10)
+  fastify.get('/version', async () => {
     return {
-      status: 'online',
-      version: '1.3.0',
-      uptime: process.uptime(),
-      queue: jobQueue.length,
-      jobs: jobHistory.length,
-      printers: printers.length,
-      memory: {
-        free: os.freemem(),
-        total: os.totalmem()
-      },
-      cpu: os.loadavg(),
-      windowsSpooler: 'Running' // Idealmente checar via service
+      bridge: '2.0.0-hardening',
+      electron: process.versions.electron || 'N/A',
+      node: process.version,
+      build: new Date().toISOString(),
+      gitCommit: process.env.GIT_COMMIT || 'development'
     };
   });
 
-  fastify.get('/printers', async (request, reply) => {
+  // Health Check Expandido (Requirement 3)
+  fastify.get('/health', async () => {
     try {
       const printers = await printerService.discoverPrinters();
-      return printers;
-    } catch (error) {
-      logger.error('Erro ao descobrir impressoras:', error);
-      return reply.status(500).send({ error: 'Erro ao listar impressoras' });
+      return {
+        status: 'online',
+        uptime: process.uptime(),
+        windowsSpooler: 'Running', // Placeholder
+        printersCount: printers.length,
+        timestamp: new Date().toISOString()
+      };
+    } catch (e) {
+      return { status: 'degraded', error: String(e) };
     }
+  });
+
+  // Métricas (Requirement 8)
+  fastify.get('/metrics', async () => {
+    const metrics = printJobService.getMetrics();
+    return {
+      ...metrics,
+      system: {
+        cpuUsage: os.loadavg(),
+        freeMem: os.freemem(),
+        totalMem: os.totalmem(),
+        platform: os.platform()
+      }
+    };
+  });
+
+  fastify.get('/printers', async () => {
+    return await printerService.discoverPrinters();
   });
 
   const printSchema = z.object({
     printer: z.string(),
     data: z.string().optional(),
-    url: z.string().url().optional(),
     zpl: z.string().optional(),
     content: z.string().optional(),
-    commands: z.array(z.any()).optional(),
-    documentName: z.string().optional()
+    documentName: z.string().optional(),
+    metadata: z.object({
+        user: z.string().optional(),
+        companyId: z.string().optional(),
+        documentId: z.string().optional()
+    }).optional()
   });
 
-  const handlePrint = async (type: string, request: any, reply: any) => {
+  const handlePrint = async (type: any, request: any, reply: any) => {
     const result = printSchema.safeParse(request.body);
     if (!result.success) {
       return reply.status(400).send({ error: result.error });
     }
 
-    const job = {
-      id: Math.random().toString(36).substr(2, 9),
+    const jobId = await printJobService.enqueue({
       type,
       printer: result.data.printer,
       document: result.data.documentName || `Doc ${type}`,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
+      metadata: {
+        ...result.data.metadata,
+        version: '2.0.0',
+        ip: request.ip
+      },
       data: result.data
-    };
-
-    jobQueue.push(job);
-    processQueue();
+    });
     
-    return { success: true, jobId: job.id, status: job.status };
+    return { success: true, jobId };
   };
 
   fastify.post('/print/pdf', (req, res) => handlePrint('PDF', req, res));
@@ -105,24 +94,6 @@ export async function printerRoutes(fastify: FastifyInstance) {
   fastify.post('/print/receipt', (req, res) => handlePrint('RECEIPT', req, res));
 
   fastify.get('/jobs', async () => {
-    return {
-      pending: jobQueue,
-      history: jobHistory
-    };
-  });
-
-  fastify.delete('/jobs/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const index = jobQueue.findIndex(j => j.id === id);
-    if (index > -1) {
-      jobQueue.splice(index, 1);
-      return { status: 'Cancelled' };
-    }
-    return reply.status(404).send({ error: 'Job not found in queue' });
-  });
-
-  fastify.post('/jobs/clear-history', async () => {
-    jobHistory = [];
-    return { success: true };
+    return printJobService.getJobs();
   });
 }

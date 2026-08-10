@@ -68,7 +68,7 @@ function IndexComponent() {
           <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Print Hub v2.0 Online</span>
+              <span>Print Hub v2.0.0-hardening Online</span>
             </div>
             
             <div className="flex items-center gap-2">

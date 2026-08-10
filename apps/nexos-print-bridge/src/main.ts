@@ -6,6 +6,7 @@ import fs from 'fs';
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let fastifyProcess: ChildProcess | null = null;
+let isQuitting = false;
 const isDev = process.env.NODE_ENV === 'development';
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -33,9 +34,17 @@ function startFastify() {
   const command = isDev ? 'npx' : 'node';
   const args = isDev ? ['tsx', serverPath] : [serverPath];
 
+  // Watchdog: Reiniciar automaticamente em caso de falha (Requirement 1)
   fastifyProcess = spawn(command, args, {
     stdio: 'inherit',
-    env: { ...process.env, PORT: '8081' }
+    env: { ...process.env, PORT: '48555' }
+  });
+
+  fastifyProcess.on('exit', (code) => {
+    if (!isQuitting) {
+      console.log(`Fastify process exited with code ${code}. Restarting...`);
+      setTimeout(startFastify, 1000);
+    }
   });
 
   fastifyProcess.on('error', (err) => {
@@ -63,7 +72,7 @@ function createWindow() {
   }
 
   mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -99,7 +108,7 @@ function createTray() {
     }},
     { type: 'separator' },
     { label: 'Encerrar', click: () => {
-        app.isQuitting = true;
+        isQuitting = true;
         app.quit();
     }}
   ]);

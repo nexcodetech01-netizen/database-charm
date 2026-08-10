@@ -20,8 +20,16 @@ fastify.addHook('onResponse', async (request, reply) => {
   }
 });
 
+// Segurança: Aceitar apenas requisições de localhost (Requirement 9)
 fastify.register(cors, {
-  origin: true // Permitir de qualquer origem (inclusive o ERP em preview)
+  origin: (origin, cb) => {
+    // Em desenvolvimento Electron, origin pode ser nulo ou localhost
+    if (!origin || origin.includes('127.0.0.1') || origin.includes('localhost')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Not allowed by CORS"), false);
+  }
 });
 
 fastify.register(printerRoutes);
