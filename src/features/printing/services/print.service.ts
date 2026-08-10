@@ -12,6 +12,9 @@ class PrintQueue {
 
   addListener(listener: (event: PrintingEvent) => void) {
     this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
   }
 
   private emit(event: PrintingEvent) {
