@@ -24,7 +24,7 @@ export const getPrintBridge = async (): Promise<IPrintBridge> => {
   if (!bridgeInstance) {
     try {
       const { printBridgeClient } = await import("./print-bridge.client");
-      bridgeInstance = printBridgeClient as IPrintBridge;
+      bridgeInstance = printBridgeClient as any;
     } catch (e) {
       console.error('[PrintBridgeRegistry] Failed to load print bridge client', e);
       return new NoopPrintBridge();
