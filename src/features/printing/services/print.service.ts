@@ -89,17 +89,37 @@ class PrintQueue {
       
       this.emit({ type: 'PRINT_STARTED', jobId: job.id, timestamp: new Date() });
 
-      // Lógica de Impressão Enterprise
-      if (isZpl && canDoRaw) {
-        job.isRaw = true;
-        console.log(`[PrintManager] Enviando ZPL bruto para ${printerName}:`, job.label.zpl);
-        // Simulação de envio RAW (WebUSB ou Agente Local)
-        await new Promise(resolve => setTimeout(resolve, 300));
-      } else if (job.strategy === 'RAW') {
-        throw new Error('Impressora selecionada não suporta modo RAW/ZPL');
+      // Lógica de Impressão Enterprise via Print Bridge
+      const { printBridgeClient } = await import("./print-bridge.client");
+      const bridgeStatus = await printBridgeClient.health();
+
+      if (bridgeStatus.status === 'online') {
+        job.history.push({ 
+          timestamp: new Date(), 
+          status: 'PROCESSING',
+          message: `Enviando para NexOS Print Bridge...`,
+        });
+
+        const result = await printBridgeClient.print(job.label, job.options);
+        if (!result.success) throw new Error(result.message);
+        
+        job.history.push({ 
+          timestamp: new Date(), 
+          status: 'COMPLETED',
+          message: `Print Bridge confirmou recebimento (Job: ${result.jobId})`,
+        });
       } else {
-        // Fallback para impressão via browser/PDF
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Fallback local se o bridge estiver offline (apenas para ambiente de desenvolvimento/preview)
+        if (isZpl && canDoRaw) {
+          job.isRaw = true;
+          console.log(`[PrintManager] Fallback: Enviando ZPL bruto para ${printerName}:`, job.label.zpl);
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } else if (job.strategy === 'RAW') {
+          throw new Error('NexOS Print Bridge está offline e a impressora não suporta modo RAW direto');
+        } else {
+          // Fallback para impressão via browser/PDF
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
       }
 
       job.status = 'COMPLETED';
