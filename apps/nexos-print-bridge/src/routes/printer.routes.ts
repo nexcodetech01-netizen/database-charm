@@ -53,6 +53,7 @@ export async function printerRoutes(fastify: FastifyInstance) {
     return await printerService.discoverPrinters();
   });
 
+
   const printSchema = z.object({
     printer: z.string(),
     data: z.string().optional(),
