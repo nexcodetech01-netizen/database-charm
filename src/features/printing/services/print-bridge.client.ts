@@ -1,6 +1,8 @@
 import { LabelData, PrintOptions, PrintResult } from "../types/printing.types";
 
-const BRIDGE_URL = "http://127.0.0.1:48555";
+import { PRINT_BRIDGE_URL } from "@/config/print-bridge";
+
+const BRIDGE_URL = PRINT_BRIDGE_URL;
 
 export const printBridgeClient = {
   async health() {

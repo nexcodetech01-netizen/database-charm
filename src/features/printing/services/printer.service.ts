@@ -1,4 +1,5 @@
 import { Printer, PrinterCategory, RawPrinterInfo } from "../types/printing.types";
+import { PRINT_BRIDGE_URL } from "@/config/print-bridge";
 
 /**
  * Descoberta de impressoras — SEM FILTRO POR TECNOLOGIA.
@@ -10,8 +11,7 @@ import { Printer, PrinterCategory, RawPrinterInfo } from "../types/printing.type
  */
 
 const AGENT_ENDPOINTS = [
-  "http://127.0.0.1:48555/printers", // NexOS Print Bridge (Nova Porta)
-  "http://127.0.0.1:9110/printers", 
+  `${PRINT_BRIDGE_URL}/printers`, // NexOS Print Bridge (Porta configurada)
   "http://127.0.0.1:9100/printers",
   "http://localhost:8631/printers",
 ];
