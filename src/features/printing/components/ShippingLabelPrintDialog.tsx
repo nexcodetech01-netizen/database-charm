@@ -505,10 +505,10 @@ export function ShippingLabelPrintDialog({
                         </div>
                         
                         <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                           <PrinterSelector 
-                              value={selectedPrinterId} 
-                              onValueChange={setSelectedPrinterId} 
-                           />
+                        <PrinterSelector 
+                          value={selectedPrinterId} 
+                          onValueChange={setSelectedPrinterId} 
+                        />
                         </div>
                       </aside>
 
