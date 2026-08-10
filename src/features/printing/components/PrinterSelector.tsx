@@ -8,7 +8,7 @@ interface PrinterSelectorProps {
   onValueChange: (value: string) => void;
 }
 
-const CATEGORY_ORDER: PrinterCategory[] = ['Etiquetas', 'Cupom', 'PDF', 'Outras'];
+
 
 export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValueChange }) => {
   const [printers, setPrintersState] = React.useState<Printer[]>([]);
@@ -76,19 +76,11 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     });
   }, [onValueChange, value, setPrinters, isBridgeOnline]);
 
-  const groups = React.useMemo(() => {
-    console.log(`[PrinterSelector] [${new Date().toISOString()}] [DEBUG 5] Agrupando por categoria...`);
-    const grouped = printerService.groupByCategory(printers);
-    Object.keys(grouped).forEach(cat => {
-      console.log(`  Categoria ${cat}: ${grouped[cat as PrinterCategory]?.length} impressoras`);
-    });
-    return grouped;
-  }, [printers]);
 
   console.log("=== ESTADO FINAL DO REACT ===");
   console.log("printers.length =", printers.length);
   console.table(printers);
-  console.log("groups =", groups);
+  
 
   return (
     <div className="space-y-2">
