@@ -25,20 +25,27 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
 
   React.useEffect(() => {
     printerService.listPrinters().then(data => {
+      console.log("[PrinterSelector] Lista enviada ao dropdown:", data);
       setPrinters(data);
       setLoading(false);
-      // Comparação: descobertas x exibidas no dropdown (browser + todas as impressoras)
-      console.info(
-        `[PrinterSelector] Impressoras descobertas: ${data.length} · exibidas no dropdown: ${data.length + 1} (inclui "Navegador (PDF)")`,
-      );
+
       if (!value && data.length > 0) {
-        const defaultPrinter = data.find(p => p.isDefault) || data[0];
-        onValueChange(defaultPrinter.id);
+        const isBridgeOnline = data.some(p => p.source === 'agent' || p.source === 'webusb');
+        
+        // Se o bridge estiver online, priorizamos impressoras físicas sobre o navegador
+        if (isBridgeOnline) {
+          const physicalPrinters = data.filter(p => p.source !== 'fallback');
+          const defaultPrinter = physicalPrinters.find(p => p.isDefault) || physicalPrinters[0];
+          onValueChange(defaultPrinter.id);
+        } else {
+          onValueChange('browser');
+        }
       }
     });
   }, [onValueChange, value]);
 
   const groups = React.useMemo(() => printerService.groupByCategory(printers), [printers]);
+  const isBridgeOnline = React.useMemo(() => printers.some(p => p.source === 'agent' || p.source === 'webusb'), [printers]);
 
   return (
     <div className="space-y-2">
@@ -50,13 +57,15 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
           <SelectValue placeholder={loading ? 'Carregando...' : 'Selecione uma impressora'} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="browser">
-            <div className="flex items-center gap-2">
-              <Monitor className="h-4 w-4" />
-              <span>Navegador (PDF)</span>
-            </div>
-          </SelectItem>
-          {CATEGORY_ORDER.filter(category => groups[category].length > 0).map(category => (
+          {!isBridgeOnline && (
+            <SelectItem value="browser">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                <span>Navegador (PDF)</span>
+              </div>
+            </SelectItem>
+          )}
+          {CATEGORY_ORDER.filter(category => groups[category] && groups[category].length > 0).map(category => (
             <SelectGroup key={category}>
               <SelectLabel>{category}</SelectLabel>
               {groups[category].map(printer => (
@@ -76,8 +85,8 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
         </SelectContent>
       </Select>
       {!loading && (
-        <p className="text-xs text-muted-foreground">
-          {printers.length} impressora(s) encontrada(s) — nenhuma filtrada por tecnologia.
+        <p className="text-xs text-muted-foreground italic">
+          {printers.length} impressora(s) física(s) detectada(s) via Bridge {isBridgeOnline ? '(Online)' : '(Offline)'}.
         </p>
       )}
     </div>

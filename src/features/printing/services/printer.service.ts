@@ -126,7 +126,7 @@ export const printerService = {
     ]);
 
     const raw = results.flat();
-    const discoveredFromSystem = raw.length;
+    console.log("[PrinterDiscovery] Impressoras brutas recebidas:", raw);
 
     // Deduplica somente por identidade (nome + porta) — nunca por tecnologia.
     const seen = new Set<string>();
@@ -138,12 +138,21 @@ export const printerService = {
       unique.push(item);
     }
 
-    const source = unique.length > 0 ? unique : FALLBACK_PRINTERS;
-    const printers = source.map(toPrinter);
+    console.log("[PrinterDiscovery] Impressoras após deduplicação:", unique);
+
+    // Bloqueio rigoroso de fallback se o bridge estiver online
+    const hasBridgeResponse = unique.some(p => p.source === 'agent' || p.source === 'webusb');
+    const source = hasBridgeResponse 
+      ? unique.filter(p => p.source !== 'fallback') 
+      : unique.length > 0 ? unique : FALLBACK_PRINTERS;
+
+    const printers = source.map((p, i) => toPrinter(p, i));
+
+    console.log("[PrinterDiscovery] Impressoras após transformação e filtros (final):", printers);
 
     if (typeof console !== "undefined") {
       console.groupCollapsed(
-        `[PrinterDiscovery] Windows/agentes: ${discoveredFromSystem} · após dedupe: ${printers.length}`,
+        `[PrinterDiscovery] Sistema: ${raw.length} · Únicas: ${printers.length}`,
       );
       console.table(
         printers.map((p) => ({
@@ -157,16 +166,6 @@ export const printerService = {
           origem: p.source,
         })),
       );
-      if (discoveredFromSystem !== printers.length) {
-        console.warn(
-          `[PrinterDiscovery] ${discoveredFromSystem - printers.length} entrada(s) duplicada(s) removida(s) (mesmo nome+porta).`,
-        );
-      }
-      if (unique.length === 0) {
-        console.warn(
-          "[PrinterDiscovery] Nenhum agente local respondeu — exibindo fallback. Instale/inicie o Print Bridge para enumerar as impressoras do Windows.",
-        );
-      }
       console.groupEnd();
     }
 
