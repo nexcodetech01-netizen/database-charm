@@ -788,7 +788,7 @@ function ChannelTile({
       onChangeFixedCost(0);
       return;
     }
-    const parsed = Number(normalized);
+    const parsed = parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
       setFixedCostError("Valor inválido");
       return;
@@ -812,7 +812,7 @@ function ChannelTile({
       onChangeMargin(null);
       return;
     }
-    const parsed = Number(normalized);
+    const parsed = parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
       setMarginError("Valor inválido");
       return;
