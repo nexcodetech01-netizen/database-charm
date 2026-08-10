@@ -33,9 +33,17 @@ function startFastify() {
   const command = isDev ? 'npx' : 'node';
   const args = isDev ? ['tsx', serverPath] : [serverPath];
 
+  // Watchdog: Reiniciar automaticamente em caso de falha (Requirement 1)
   fastifyProcess = spawn(command, args, {
     stdio: 'inherit',
-    env: { ...process.env, PORT: '8081' }
+    env: { ...process.env, PORT: '48555' }
+  });
+
+  fastifyProcess.on('exit', (code) => {
+    if (!app.isQuitting) {
+      console.log(`Fastify process exited with code ${code}. Restarting...`);
+      setTimeout(startFastify, 1000);
+    }
   });
 
   fastifyProcess.on('error', (err) => {
