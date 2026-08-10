@@ -6,6 +6,7 @@ import fs from 'fs';
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let fastifyProcess: ChildProcess | null = null;
+let isQuitting = false;
 const isDev = process.env.NODE_ENV === 'development';
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -40,7 +41,7 @@ function startFastify() {
   });
 
   fastifyProcess.on('exit', (code) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       console.log(`Fastify process exited with code ${code}. Restarting...`);
       setTimeout(startFastify, 1000);
     }
@@ -71,7 +72,7 @@ function createWindow() {
   }
 
   mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
+    if (!isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -107,7 +108,7 @@ function createTray() {
     }},
     { type: 'separator' },
     { label: 'Encerrar', click: () => {
-        app.isQuitting = true;
+        isQuitting = true;
         app.quit();
     }}
   ]);
