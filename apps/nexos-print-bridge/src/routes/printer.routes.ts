@@ -70,25 +70,35 @@ export async function printerRoutes(fastify: FastifyInstance) {
     }).optional()
   });
 
-  const handlePrint = async (type: any, request: any, reply: any) => {
-    const result = printSchema.safeParse(request.body);
-    if (!result.success) {
-      return reply.status(400).send({ error: result.error });
-    }
-
-    const jobId = await printJobService.enqueue({
-      type,
-      printer: result.data.printer,
-      document: result.data.documentName || `Doc ${type}`,
-      metadata: {
-        ...result.data.metadata,
-        version: '2.0.0',
-        ip: request.ip
-      },
-      data: result.data
-    });
+  const handlePrint = async (type: string, request: any, reply: any) => {
+    console.log(`--- NEXOS PRINT BRIDGE: ENTRADA NO HANDLER POST /print/${type.toLowerCase()} ---`);
+    console.log('Body:', JSON.stringify(request.body, null, 2));
     
-    return { success: true, jobId };
+    try {
+      const result = printSchema.safeParse(request.body);
+      if (!result.success) {
+        console.error('Falha na validação Zod:', result.error);
+        return reply.status(400).send({ error: result.error });
+      }
+
+      const jobId = await printJobService.enqueue({
+        type,
+        printer: result.data.printer,
+        document: result.data.documentName || `Doc ${type}`,
+        metadata: {
+          ...result.data.metadata,
+          version: '2.0.0',
+          ip: request.ip
+        },
+        data: result.data
+      });
+      
+      console.log(`Job criado com sucesso: ${jobId}`);
+      return { success: true, jobId };
+    } catch (error: any) {
+      console.error('Erro no handler de impressão:', error);
+      throw error; // Deixar o setErrorHandler global cuidar da resposta detalhada
+    }
   };
 
   // REGISTRO EXPLÍCITO DAS ROTAS DE IMPRESSÃO
