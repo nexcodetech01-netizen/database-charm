@@ -140,10 +140,12 @@ export const printerService = {
 
     console.log("[PrinterDiscovery] Impressoras após deduplicação:", unique);
 
-    // Se o bridge retornou impressoras, usamos apenas elas. 
-    // O fallback só entra se realmente não houver nada vindo de agentes ou WebUSB.
-    // Se o bridge retornou impressoras, usamos apenas elas (bloqueando o fallback).
-    const source = unique.length > 0 ? unique.filter(p => p.source !== 'fallback') : FALLBACK_PRINTERS;
+    // Bloqueio rigoroso de fallback se o bridge estiver online
+    const hasBridgeResponse = unique.some(p => p.source === 'agent' || p.source === 'webusb');
+    const source = hasBridgeResponse 
+      ? unique.filter(p => p.source !== 'fallback') 
+      : unique.length > 0 ? unique : FALLBACK_PRINTERS;
+
     const printers = source.map((p, i) => toPrinter(p, i));
 
     console.log("[PrinterDiscovery] Impressoras após transformação e filtros (final):", printers);
