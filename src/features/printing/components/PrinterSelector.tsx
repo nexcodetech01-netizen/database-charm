@@ -44,7 +44,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     });
   }, [onValueChange, value]);
 
-  const groups = React.useMemo(() => printerService.groupByCategory(printers), [printers]);
+  const isBridgeOnline = React.useMemo(() => printers.some(p => p.source === 'agent' || p.source === 'webusb'), [printers]);
 
   return (
     <div className="space-y-2">
@@ -56,13 +56,15 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
           <SelectValue placeholder={loading ? 'Carregando...' : 'Selecione uma impressora'} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="browser">
-            <div className="flex items-center gap-2">
-              <Monitor className="h-4 w-4" />
-              <span>Navegador (PDF)</span>
-            </div>
-          </SelectItem>
-          {CATEGORY_ORDER.filter(category => groups[category].length > 0).map(category => (
+          {!isBridgeOnline && (
+            <SelectItem value="browser">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                <span>Navegador (PDF)</span>
+              </div>
+            </SelectItem>
+          )}
+          {CATEGORY_ORDER.filter(category => groups[category] && groups[category].length > 0).map(category => (
             <SelectGroup key={category}>
               <SelectLabel>{category}</SelectLabel>
               {groups[category].map(printer => (
