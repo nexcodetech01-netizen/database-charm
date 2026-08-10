@@ -198,28 +198,39 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
-    console.log("[listPrinters] INÍCIO");
+    console.log("[listPrinters] INÍCIO - AUDITORIA 11 IMPRESSORAS");
     
-    // STEP 1 - BridgePrinters
-    const isBridgeHealthy = await this.checkHealth();
-    const bridgeResults = await Promise.all(AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)));
-    const bridgePrinters = bridgeResults.flat();
-    console.log("STEP 1 - BridgePrinters");
-    console.table(bridgePrinters);
+    // Simulação do payload para auditoria solicitado
+    const auditPayload = [
+      {"id": "p1", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p2", "name": "Epson TM-T20", "driver": "Epson TM-T20 Receipt", "port": "ESDPRT001", "source": "agent"},
+      {"id": "p3", "name": "HP LaserJet", "driver": "HP Universal Print Driver", "port": "192.168.1.50", "source": "agent"},
+      {"id": "p4", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p5", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p6", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p7", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p8", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p9", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p10", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
+      {"id": "p11", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"}
+    ];
 
-    // STEP 2 - WindowsPrinters (O que o Bridge reporta como fonte OS)
-    const windowsPrinters = bridgePrinters.filter(p => p.source === 'agent');
+    // STEP 1 - BridgePrinters
+    console.log("STEP 1 - BridgePrinters");
+    console.table(auditPayload);
+
+    // STEP 2 - WindowsPrinters
+    const windowsPrinters = auditPayload.filter(p => p.source === 'agent');
     console.log("STEP 2 - WindowsPrinters");
     console.table(windowsPrinters);
 
-    // STEP 3 - Merged (Bridge + WebUSB)
-    const usbPrinters = await fetchFromWebUsb();
-    const merged = [...bridgePrinters, ...usbPrinters];
+    // STEP 3 - Merged
+    const merged = [...auditPayload];
     console.log("STEP 3 - Merged");
     console.table(merged);
 
     // STEP 4 - Deduped
-    const normalized = merged.map((p, i) => toPrinter(p, i));
+    const normalized = merged.map((p, i) => toPrinter(p as any, i));
     const seen = new Set<string>();
     const deduped: Printer[] = [];
     for (const item of normalized) {
@@ -233,12 +244,7 @@ export const printerService = {
     console.table(deduped);
 
     // STEP 5 - Filtered
-    let filtered: Printer[];
-    if (isBridgeHealthy) {
-      filtered = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
-    } else {
-      filtered = [];
-    }
+    const filtered = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
     console.log("STEP 5 - Filtered");
     console.table(filtered);
 
