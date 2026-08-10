@@ -44,6 +44,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     });
   }, [onValueChange, value]);
 
+  const groups = React.useMemo(() => printerService.groupByCategory(printers), [printers]);
   const isBridgeOnline = React.useMemo(() => printers.some(p => p.source === 'agent' || p.source === 'webusb'), [printers]);
 
   return (
