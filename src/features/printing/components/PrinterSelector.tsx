@@ -102,60 +102,42 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-        Selecione a Impressora
+        Selecione a Impressora (MODO TESTE VISUAL)
       </label>
       
-      {bridgeUnavailable && printers.length === 0 ? (
-        <div className="p-3 border border-destructive/50 bg-destructive/10 rounded-md text-destructive text-sm font-medium flex items-center gap-2">
-          <Monitor className="h-4 w-4" />
-          Bridge indisponível
-        </div>
-      ) : (
-        <Select value={value} onValueChange={onValueChange} disabled={loading}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={loading ? 'Carregando...' : 'Selecione uma impressora'} />
-          </SelectTrigger>
-          <SelectContent>
-            {/* O fallback Navegador (PDF) só aparece se bridgeOnline for falso E não estivermos em modo diagnóstico restrito */}
-            {(!isBridgeOnline || value === 'browser') && !printers.some(p => p.source === 'agent') && (
-              <SelectItem value="browser">
-                <div className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4" />
-                  <span>Navegador (PDF)</span>
-                </div>
-              </SelectItem>
-            )}
-            {CATEGORY_ORDER.filter(category => groups[category] && groups[category].length > 0).map(category => {
-              console.log("Renderizando categoria:", category);
-              console.table(groups[category]);
-              
-              return (
-                <SelectGroup key={category}>
-                  <SelectLabel>{category}</SelectLabel>
-                  {groups[category].map(printer => (
-                    <SelectItem key={printer.id} value={printer.id}>
-                      <div className="flex items-center gap-2">
-                        <PrinterIcon className="h-4 w-4" />
-                        <span>{printer.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {printer.port} · {printer.type}
-                          {printer.isDefault ? ' · padrão' : ''}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      )}
-      
-      {!loading && !bridgeUnavailable && (
-        <p className="text-xs text-muted-foreground italic">
-          {printers.length} impressora(s) física(s) detectada(s) via Bridge {isBridgeOnline ? '(Online)' : '(Offline)'}.
+      <div style={{ border: '1px solid red', padding: 16, borderRadius: 8, background: '#fff' }}>
+        <p style={{ fontWeight: 'bold', marginBottom: 8, color: 'red' }}>
+          TESTE VISUAL: Sem componentes Radix/Select
         </p>
-      )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {printers.length === 0 && <p>Nenhuma impressora no estado.</p>}
+          {printers.map(p => (
+            <div
+              key={p.id}
+              style={{
+                padding: 8,
+                margin: 0,
+                border: '1px solid #ccc',
+                borderRadius: 4,
+                fontSize: '13px',
+                background: '#f9f9f9',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}
+            >
+              <span><strong>{p.name}</strong> | {p.category} | {p.port}</span>
+              <span style={{ fontSize: '10px', color: '#666' }}>{p.source}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 p-2 bg-slate-100 rounded text-xs">
+        <p><strong>Debug Info:</strong></p>
+        <p>printers.length: {printers.length}</p>
+        <p>loading: {String(loading)}</p>
+        <p>bridgeUnavailable: {String(bridgeUnavailable)}</p>
+      </div>
     </div>
   );
 };
