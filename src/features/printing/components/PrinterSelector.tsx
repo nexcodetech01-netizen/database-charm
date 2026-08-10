@@ -20,37 +20,62 @@ interface PrinterSelectorProps {
 const CATEGORY_ORDER: PrinterCategory[] = ['Etiquetas', 'Cupom', 'PDF', 'Outras'];
 
 export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValueChange }) => {
-  const [printers, setPrinters] = React.useState<Printer[]>([]);
+  const [printers, setPrintersState] = React.useState<Printer[]>([]);
   const [loading, setLoading] = React.useState(true);
 
+  // Instrumentação do estado printers
+  const setPrinters = React.useCallback((newPrinters: Printer[], origem: string) => {
+    console.log(`[PrinterSelector] setPrinters chamado por: ${origem}`);
+    console.log("[PrinterSelector] Estado anterior printers:", printers);
+    console.log("[PrinterSelector] Novos printers a definir:", newPrinters);
+    
+    // Critério: O estado printers nunca pode ser sobrescrito pelo fallback quando bridgeOnline === true
+    const isBridgeOnline = newPrinters.some(p => p.source === 'agent' || p.source === 'webusb');
+    const wasBridgeOnline = printers.some(p => p.source === 'agent' || p.source === 'webusb');
+
+    if (wasBridgeOnline && !isBridgeOnline && newPrinters.every(p => p.source === 'fallback')) {
+      console.error("[PrinterSelector] BLOQUEIO: Tentativa de sobrescrever impressoras do Bridge com fallback!");
+      console.trace();
+      return;
+    }
+
+    setPrintersState(newPrinters);
+  }, [printers]);
+
+  const isBridgeOnline = React.useMemo(() => {
+    const online = printers.some(p => p.source === 'agent' || p.source === 'webusb');
+    console.log("[PrinterSelector] bridgeOnline:", online);
+    return online;
+  }, [printers]);
+
   React.useEffect(() => {
+    console.log("[PrinterSelector] Iniciando busca de impressoras...");
     printerService.listPrinters().then(data => {
-      console.log("Bridge printers:", data);
-      setPrinters(data);
+      console.log("[PrinterSelector] Bridge retornou:", data);
+      setPrinters(data, "useEffect (printerService.listPrinters)");
       setLoading(false);
 
       if (!value && data.length > 0) {
-        const isBridgeOnline = data.some(p => p.source === 'agent' || p.source === 'webusb');
-        
         // Se o bridge estiver online, priorizamos impressoras físicas sobre o navegador
         if (isBridgeOnline) {
           const physicalPrinters = data.filter(p => p.source !== 'fallback');
           const defaultPrinter = physicalPrinters.find(p => p.isDefault) || physicalPrinters[0];
-          onValueChange(defaultPrinter.id);
+          if (defaultPrinter) {
+            console.log("[PrinterSelector] Seleção automática (Bridge):", defaultPrinter.id);
+            onValueChange(defaultPrinter.id);
+          }
         } else {
+          console.log("[PrinterSelector] Fallback executado: Navegador (PDF)");
           onValueChange('browser');
         }
       }
     });
-  }, [onValueChange, value]);
+  }, [onValueChange, value, setPrinters, isBridgeOnline]);
 
   const groups = React.useMemo(() => {
-    const g = printerService.groupByCategory(printers);
-    console.log("Rendered printers:", printers);
-    return g;
+    console.log("[PrinterSelector] Rendered printers:", printers);
+    return printerService.groupByCategory(printers);
   }, [printers]);
-
-  const isBridgeOnline = React.useMemo(() => printers.some(p => p.source === 'agent' || p.source === 'webusb'), [printers]);
 
   return (
     <div className="space-y-2">
