@@ -90,7 +90,7 @@ export function PrintSettingsSection() {
               <Label className="text-xs text-muted-foreground">Impressora de Etiquetas</Label>
               <PrinterSelector 
                 value={current.labelPrinterId}
-                onValueChange={(v) => update({ labelPrinterId: v })}
+                onValueChange={(v: string) => update({ labelPrinterId: v })}
               />
               <p className="text-[10px] text-muted-foreground">Padrão para etiquetas ZPL/ML.</p>
             </div>
@@ -99,7 +99,7 @@ export function PrintSettingsSection() {
               <Label className="text-xs text-muted-foreground">Impressora de Cupom</Label>
               <PrinterSelector 
                 value={current.receiptPrinterId}
-                onValueChange={(v) => update({ receiptPrinterId: v })}
+                onValueChange={(v: string) => update({ receiptPrinterId: v })}
               />
               <p className="text-[10px] text-muted-foreground">Padrão para vendas e PDV.</p>
             </div>

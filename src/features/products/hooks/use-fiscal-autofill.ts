@@ -95,12 +95,6 @@ export function useFiscalAutofill({
         const targetCest = categorySuggestion?.cest || cest;
 
         if (!targetNcm) {
-          if (!ncm && categoryId) {
-            toast.info("Nenhuma sugestão automática para esta categoria.", {
-              description: "Selecione uma categoria diferente ou preencha o NCM manualmente.",
-              duration: 4000,
-            });
-          }
           return;
         }
 
