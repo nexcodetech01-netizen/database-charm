@@ -92,9 +92,9 @@ export async function printerRoutes(fastify: FastifyInstance) {
   };
 
   // REGISTRO EXPLÍCITO DAS ROTAS DE IMPRESSÃO
-  fastify.post('/print/pdf', (req, res) => handlePrint('PDF', req, res));
-  fastify.post('/print/zpl', (req, res) => handlePrint('ZPL', req, res));
-  fastify.post('/print/raw', (req, res) => handlePrint('RAW', req, res));
-  fastify.post('/print/image', (req, res) => handlePrint('IMAGE', req, res));
-  fastify.post('/print/receipt', (req, res) => handlePrint('RECEIPT', req, res));
+  fastify.post('/print/pdf', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('PDF', req, res));
+  fastify.post('/print/zpl', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('ZPL', req, res));
+  fastify.post('/print/raw', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('RAW', req, res));
+  fastify.post('/print/image', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('IMAGE', req, res));
+  fastify.post('/print/receipt', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('RECEIPT', req, res));
 }
