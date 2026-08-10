@@ -160,21 +160,22 @@ export const printerService = {
     
     const start = performance.now();
     const timestamp = new Date().toISOString();
-    console.log(`[printer.service] [${timestamp}] GET /printers iniciada`);
-    console.trace("[printer.service] Stack trace da chamada listPrinters");
+    console.log(`[printer.service] [${timestamp}] listPrinters() iniciada. Bridge Healthy: ${isBridgeHealthy}`);
 
     const results = await Promise.all([
-      ...AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)),
+      ...AGENT_ENDPOINTS.map((url) => {
+        console.log(`[printer.service] Fetching from endpoint: ${url}`);
+        return fetchFromAgent(url);
+      }),
       fetchFromWebUsb(),
     ]);
 
     const end = performance.now();
-    console.log(`[printer.service] [${new Date().toISOString()}] GET /printers finalizada - Duração: ${(end - start).toFixed(2)}ms`);
-
     const raw = results.flat();
-    console.log(`[printer.service] [${timestamp}] Impressoras brutas recebidas:`, raw);
+    
+    console.log(`[printer.service] [${timestamp}] Descoberta finalizada em ${(end - start).toFixed(2)}ms. Brutas: ${raw.length}`);
 
-    // Deduplica somente por identidade (nome + porta) — nunca por tecnologia.
+    // Deduplica somente por identidade (nome + porta)
     const seen = new Set<string>();
     const unique: RawPrinterInfo[] = [];
     for (const item of raw) {
@@ -184,41 +185,27 @@ export const printerService = {
       unique.push(item);
     }
 
-    console.log(`[printer.service] [${timestamp}] Impressoras após deduplicação:`, unique);
+    console.log(`[printer.service] [${timestamp}] Únicas após dedupe: ${unique.length}`);
 
     let source: RawPrinterInfo[];
     
-    // Regras temporárias de diagnóstico:
     if (isBridgeHealthy) {
-      console.log(`[printer.service] [${timestamp}] Bridge saudável (200 OK). FORÇANDO EXCLUSIVIDADE do Bridge. Removendo qualquer fallback.`);
-      // Se o bridge está saudável, usamos apenas o que ele retornou + WebUSB, removendo explicitamente qualquer fallback.
-      source = unique.filter(p => p.source !== 'fallback');
+      // Se o bridge está saudável, usamos EXCLUSIVAMENTE o que ele retornou + WebUSB.
+      // Filtramos para garantir que não restou nenhum 'fallback' acidental.
+      source = unique.filter(p => p.source === 'agent' || p.source === 'webusb');
+      console.log(`[printer.service] [${timestamp}] Bridge OK. Windows/agentes: ${source.filter(p => p.source === 'agent').length} · WebUSB: ${source.filter(p => p.source === 'webusb').length}`);
     } else {
-      console.warn(`[printer.service] [${timestamp}] Bridge INDISPONÍVEL. Retornando lista vazia para evitar substituição silenciosa.`);
-      // Se falhou o health check, não retornamos fallbacks (PDF). Retornamos vazio para que o UI trate.
+      console.warn(`[printer.service] [${timestamp}] Bridge INDISPONÍVEL. Retornando vazio.`);
       source = [];
     }
 
     const printers = source.map((p, i) => toPrinter(p, i));
 
-    console.log(`[printer.service] [${timestamp}] listPrinters retornando final:`, printers);
-
     if (typeof console !== "undefined") {
       console.groupCollapsed(
-        `[printer.service] [${timestamp}] Sumário Diagnóstico: ${raw.length} brutas · ${printers.length} finais (Healthy: ${isBridgeHealthy})`,
+        `[printer.service] [${timestamp}] Descoberta: ${raw.length} brutas -> ${printers.length} finais`
       );
-      console.table(
-        printers.map((p) => ({
-          nome: p.name,
-          driver: p.driver,
-          porta: p.port,
-          status: p.status,
-          padrão: p.isDefault ? "Sim" : "Não",
-          tipo: p.type,
-          classificação: p.category,
-          origem: p.source,
-        })),
-      );
+      console.table(printers.map(p => ({ nome: p.name, origem: p.source, status: p.status })));
       console.groupEnd();
     }
 
