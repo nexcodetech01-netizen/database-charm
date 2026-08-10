@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Printer, Save } from "lucide-react";
+import { Printer, Save, Server } from "lucide-react";
 import { toast } from "sonner";
 import {
   Card,
@@ -26,6 +26,7 @@ import type { PrintPreferences } from "../lib/print-preferences";
 import { describePrinter } from "../lib/printer";
 import { LABEL_LAYOUT_LIST } from "../lib/labels";
 import { PrinterSelector } from "./PrinterSelector";
+import { PrintBridgeStatus } from "./enterprise/PrintBridgeStatus";
 
 /**
  * Configurações de impressão (Sprint 4.0).
@@ -58,6 +59,8 @@ export function PrintSettingsSection() {
 
   return (
     <div className="space-y-6">
+      <PrintBridgeStatus />
+
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-start gap-3">

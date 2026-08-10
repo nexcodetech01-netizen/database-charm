@@ -4,49 +4,37 @@ import { logger } from './config/logger';
 import { printerRoutes } from './routes/printer.routes';
 
 const fastify = Fastify({
-  logger: false // Desativamos o logger nativo para usar o Winston
+  logger: false 
 });
 
-// Logger Middleware para tempo de resposta e logs de requisição
 fastify.addHook('onRequest', async (request) => {
   (request as any).startTime = Date.now();
-  logger.info(`Iniciando requisição: ${request.method} ${request.url}`);
 });
 
 fastify.addHook('onResponse', async (request, reply) => {
   const responseTime = Date.now() - (request as any).startTime;
-  logger.info(`Requisição concluída: ${request.method} ${request.url} - Status: ${reply.statusCode} - Tempo: ${responseTime}ms`);
-});
-
-// Configuração de CORS
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://nexos.nexxcode.com.br'
-];
-
-fastify.register(cors, {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true);
-      return;
-    }
-    cb(new Error('Não permitido pelo CORS'), false);
+  if (reply.statusCode >= 400) {
+    logger.error(`${request.method} ${request.url} - ${reply.statusCode} - ${responseTime}ms`);
+  } else {
+    logger.info(`${request.method} ${request.url} - ${reply.statusCode} - ${responseTime}ms`);
   }
 });
 
-// Registro de rotas
+fastify.register(cors, {
+  origin: true // Permitir de qualquer origem (inclusive o ERP em preview)
+});
+
 fastify.register(printerRoutes);
 
 const start = async () => {
   try {
-    const port = 48555;
+    const port = Number(process.env.PORT) || 48555;
     const host = '127.0.0.1';
     
     await fastify.listen({ port, host });
-    logger.info(`NexOS Print Bridge inicializado com sucesso em http://${host}:${port}`);
+    logger.info(`NexOS Print Bridge v1.3.0 em http://${host}:${port}`);
   } catch (err) {
-    logger.error('Erro ao inicializar o servidor:', err);
+    logger.error('Erro fatal:', err);
     process.exit(1);
   }
 };
