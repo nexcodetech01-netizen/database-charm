@@ -1,15 +1,6 @@
 import React from 'react';
-import { Printer, PrinterCategory } from '../types/printing.types';
+import { Printer } from '../types/printing.types';
 import { printerService } from '../services/printer.service';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Monitor, Printer as PrinterIcon } from 'lucide-react';
 
 interface PrinterSelectorProps {
@@ -105,52 +96,18 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
         Impressora
       </label>
       
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-          <SelectValue placeholder="Selecione uma impressora" />
-        </SelectTrigger>
-        <SelectContent 
-          className="z-[9999]" 
-          position="popper" 
-          sideOffset={5}
-          avoidCollisions={true}
-          collisionPadding={10}
-        >
-          {CATEGORY_ORDER.map(category => {
-            const categoryPrinters = groups[category];
-            if (!categoryPrinters || categoryPrinters.length === 0) return null;
-
-            return (
-              <SelectGroup key={category}>
-                <SelectLabel className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1">
-                  {category}
-                </SelectLabel>
-                {categoryPrinters.map(printer => (
-                  <SelectItem 
-                    key={printer.id} 
-                    value={printer.id}
-                    className="py-2 focus:bg-blue-50 dark:focus:bg-blue-900/20"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-xs flex items-center gap-2">
-                        {printer.source === 'agent' || printer.source === 'webusb' ? (
-                          <PrinterIcon className="h-3 w-3 text-blue-500" />
-                        ) : (
-                          <Monitor className="h-3 w-3 text-slate-400" />
-                        )}
-                        {printer.name}
-                      </span>
-                      <span className="text-[9px] text-slate-500 font-medium">
-                        {printer.driver} • {printer.port}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            );
-          })}
-        </SelectContent>
-      </Select>
+      <select
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        className="w-full h-9 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-slate-100 cursor-pointer"
+      >
+        <option value="" disabled>Selecione uma impressora</option>
+        {printers.map(printer => (
+          <option key={printer.id} value={printer.id}>
+            {printer.name} ({printer.category} - {printer.port})
+          </option>
+        ))}
+      </select>
 
       {loading && (
         <div className="text-[10px] text-slate-400 animate-pulse flex items-center gap-1.5 mt-1">
