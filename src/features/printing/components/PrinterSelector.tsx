@@ -25,7 +25,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
 
   React.useEffect(() => {
     printerService.listPrinters().then(data => {
-      console.log("[PrinterSelector] Lista enviada ao dropdown:", data);
+      console.log("Bridge printers:", data);
       setPrinters(data);
       setLoading(false);
 
@@ -44,7 +44,12 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     });
   }, [onValueChange, value]);
 
-  const groups = React.useMemo(() => printerService.groupByCategory(printers), [printers]);
+  const groups = React.useMemo(() => {
+    const g = printerService.groupByCategory(printers);
+    console.log("Rendered printers:", printers);
+    return g;
+  }, [printers]);
+
   const isBridgeOnline = React.useMemo(() => printers.some(p => p.source === 'agent' || p.source === 'webusb'), [printers]);
 
   return (
