@@ -1,14 +1,11 @@
 import React from 'react';
 import { Printer } from '../types/printing.types';
 import { printerService } from '../services/printer.service';
-import { Monitor, Printer as PrinterIcon } from 'lucide-react';
 
 interface PrinterSelectorProps {
   value?: string;
   onValueChange: (value: string) => void;
 }
-
-
 
 export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValueChange }) => {
   const [printers, setPrintersState] = React.useState<Printer[]>([]);
@@ -76,11 +73,9 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     });
   }, [onValueChange, value, setPrinters, isBridgeOnline]);
 
-
   console.log("=== ESTADO FINAL DO REACT ===");
   console.log("printers.length =", printers.length);
   console.table(printers);
-  
 
   return (
     <div className="space-y-2">
