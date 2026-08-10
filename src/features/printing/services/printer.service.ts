@@ -118,13 +118,17 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
+    const timestamp = new Date().toISOString();
+    console.log(`[printer.service] [${timestamp}] listPrinters iniciada`);
+    console.trace("[printer.service] Stack trace da chamada listPrinters");
+
     const results = await Promise.all([
       ...AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)),
       fetchFromWebUsb(),
     ]);
 
     const raw = results.flat();
-    console.log("[PrinterDiscovery] Impressoras brutas recebidas:", raw);
+    console.log(`[printer.service] [${timestamp}] Impressoras brutas recebidas:`, raw);
 
     // Deduplica somente por identidade (nome + porta) — nunca por tecnologia.
     const seen = new Set<string>();
@@ -136,27 +140,27 @@ export const printerService = {
       unique.push(item);
     }
 
-    console.log("[PrinterDiscovery] Impressoras após deduplicação:", unique);
+    console.log(`[printer.service] [${timestamp}] Impressoras após deduplicação:`, unique);
 
     // Bloqueio rigoroso de fallback se o bridge estiver online
     const hasBridgeResponse = unique.some(p => p.source === 'agent' || p.source === 'webusb');
     
     let source: RawPrinterInfo[];
     if (hasBridgeResponse) {
-      console.log("[PrinterDiscovery] Bridge detectado. Removendo fallbacks.");
+      console.log(`[printer.service] [${timestamp}] Bridge detectado. Removendo fallbacks.`);
       source = unique.filter(p => p.source !== 'fallback');
     } else {
-      console.warn("[PrinterDiscovery] Bridge não detectado ou vazio. Usando fallbacks.");
+      console.warn(`[printer.service] [${timestamp}] Bridge não detectado ou vazio. Usando fallbacks.`);
       source = [...unique, ...FALLBACK_PRINTERS.filter(f => !unique.some(u => u.id === f.id))];
     }
 
     const printers = source.map((p, i) => toPrinter(p, i));
 
-    console.log("[PrinterDiscovery] Impressoras após transformação e filtros (final):", printers);
+    console.log(`[printer.service] [${timestamp}] listPrinters retornando final:`, printers);
 
     if (typeof console !== "undefined") {
       console.groupCollapsed(
-        `[PrinterDiscovery] Sistema: ${raw.length} · Únicas: ${printers.length}`,
+        `[printer.service] [${timestamp}] Sumário: ${raw.length} brutas · ${printers.length} finais`,
       );
       console.table(
         printers.map((p) => ({
