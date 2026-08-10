@@ -49,10 +49,14 @@ export async function printerRoutes(fastify: FastifyInstance) {
     };
   });
 
+  // ROTAS CORRIGIDAS - SEM PREFIXO DE OTIMIZAÇÃO DO FASTIFY
   fastify.get('/printers', async () => {
     return await printerService.discoverPrinters();
   });
 
+  fastify.get('/jobs', async () => {
+    return printJobService.getJobs();
+  });
 
   const printSchema = z.object({
     printer: z.string(),
@@ -88,13 +92,10 @@ export async function printerRoutes(fastify: FastifyInstance) {
     return { success: true, jobId };
   };
 
+  // REGISTRO EXPLÍCITO DAS ROTAS DE IMPRESSÃO
   fastify.post('/print/pdf', (req, res) => handlePrint('PDF', req, res));
   fastify.post('/print/zpl', (req, res) => handlePrint('ZPL', req, res));
   fastify.post('/print/raw', (req, res) => handlePrint('RAW', req, res));
   fastify.post('/print/image', (req, res) => handlePrint('IMAGE', req, res));
   fastify.post('/print/receipt', (req, res) => handlePrint('RECEIPT', req, res));
-
-  fastify.get('/jobs', async () => {
-    return printJobService.getJobs();
-  });
 }
