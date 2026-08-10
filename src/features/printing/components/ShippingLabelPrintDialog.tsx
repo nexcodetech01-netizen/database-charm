@@ -278,44 +278,71 @@ export function ShippingLabelPrintDialog({
 
   const handlePrintBlock = async (block: DocumentBlock) => {
     setIsPrinting(true);
+    const labelId = labelData?.id + "_" + block.id;
+    console.log(`[PrintDialog] Iniciando impressão para bloco ${block.id}`, { labelId, type: block.type });
+
     try {
       // Prioridade absoluta: Se for ZPL, enviar BRUTO
       let strategy: any = "PDF";
       if (block.zpl) strategy = "RAW";
       if (labelData?.type === "image") strategy = "BROWSER";
 
-      const result = await printManager.print(
-        {
-          id: labelData?.id + "_" + block.id,
-          zpl: block.zpl || undefined,
-          pdf: block.pdf || undefined,
-          image: block.image || undefined,
-          content: block.zpl ? undefined : labelData?.content,
-          format: labelData?.type === "image" ? (labelData.format?.toUpperCase() as any) : (labelData?.type.toUpperCase() as any)
-        },
-        { 
-          strategy: strategy,
-          type: 'LABEL',
-          printerId: selectedPrinterId || undefined
-        }
-      );
-
-
-      if (result.success) {
-        if (block.zpl) {
-          toast.success(`ZPL enviado para fila enterprise: ${block.title}`);
-        } else if (block.blob) {
-          const url = URL.createObjectURL(block.blob);
-          const printWindow = window.open(url);
-          if (printWindow) {
-            printWindow.print();
+      const printPromise = new Promise<void>((resolve, reject) => {
+        let unsubscribe: (() => void) | undefined;
+        
+        unsubscribe = printManager.subscribe((event) => {
+          if (event.type !== 'PRINTER_STATUS_CHANGED') {
+            const ev = event as any;
+            if (ev.jobId.includes(labelId) || ev.jobId === labelId) {
+              if (event.type === 'PRINT_FINISHED') {
+                if (unsubscribe) unsubscribe();
+                resolve();
+              } else if (event.type === 'PRINT_ERROR') {
+                if (unsubscribe) unsubscribe();
+                reject(new Error(event.error));
+              }
+            }
           }
-          toast.success(`${block.title} aberta para impressão.`);
-        }
-      } else {
-        throw new Error(result.message || "Erro ao enfileirar impressão.");
+        }) as unknown as (() => void); // Forçar cast se o TS ainda estiver confuso
+
+        printManager.print(
+          {
+            id: labelId,
+            zpl: block.zpl || undefined,
+            pdf: block.pdf || undefined,
+            image: block.image || undefined,
+            content: block.zpl ? undefined : labelData?.content,
+            format: labelData?.type === "image" ? (labelData.format?.toUpperCase() as any) : (labelData?.type.toUpperCase() as any)
+          },
+          { 
+            strategy: strategy,
+            type: 'LABEL',
+            printerId: selectedPrinterId || undefined
+          }
+        ).then(result => {
+          if (!result.success) {
+            if (unsubscribe) unsubscribe();
+            reject(new Error(result.message || "Erro ao enfileirar impressão."));
+          }
+        }).catch(err => {
+          if (unsubscribe) unsubscribe();
+          reject(err);
+        });
+      });
+
+      await printPromise;
+
+      if (block.zpl) {
+        toast.success(`ZPL impresso com sucesso: ${block.title}`);
+      } else if (block.blob) {
+        // Fallback visual para PDF se não for via Bridge
+        const url = URL.createObjectURL(block.blob);
+        const printWindow = window.open(url);
+        if (printWindow) printWindow.print();
+        toast.success(`${block.title} enviada para o sistema.`);
       }
     } catch (error) {
+      console.error("[PrintDialog] Erro na execução da impressão:", error);
       toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro"));
     } finally {
       setIsPrinting(false);

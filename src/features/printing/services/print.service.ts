@@ -12,6 +12,9 @@ class PrintQueue {
 
   addListener(listener: (event: PrintingEvent) => void) {
     this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
   }
 
   private emit(event: PrintingEvent) {
@@ -102,7 +105,10 @@ class PrintQueue {
         });
 
         const result = await bridge.print(job.label, job.options);
-        if (!result.success) throw new Error(result.message);
+        if (!result.success) {
+          console.error(`[PrintQueue] Bridge print failed for job ${job.id}:`, result.message);
+          throw new Error(result.message);
+        }
         
         job.history.push({ 
           timestamp: new Date(), 
@@ -110,17 +116,9 @@ class PrintQueue {
           message: `Print Bridge confirmou recebimento (Job: ${result.jobId})`,
         });
       } else {
-        // Fallback local se o bridge estiver offline (apenas para ambiente de desenvolvimento/preview)
-        if (isZpl && canDoRaw) {
-          job.isRaw = true;
-          console.log(`[PrintManager] Fallback: Enviando ZPL bruto para ${printerName}:`, job.label.zpl);
-          await new Promise(resolve => setTimeout(resolve, 300));
-        } else if (job.strategy === 'RAW') {
-          throw new Error('NexOS Print Bridge está offline e a impressora não suporta modo RAW direto');
-        } else {
-          // Fallback para impressão via browser/PDF
-          await new Promise(resolve => setTimeout(resolve, 800));
-        }
+        // Bloqueio rigoroso: No ambiente de produção (online bridge), não permitimos falha silenciosa
+        // Se o bridge está offline, informamos o erro
+        throw new Error(`NexOS Print Bridge está offline. A saída física requer o Bridge ativo.`);
       }
 
       job.status = 'COMPLETED';
@@ -212,7 +210,7 @@ export const printManager = {
   },
 
   subscribe(listener: (event: PrintingEvent) => void) {
-    printQueue.addListener(listener);
+    return printQueue.addListener(listener);
   }
 };
 
