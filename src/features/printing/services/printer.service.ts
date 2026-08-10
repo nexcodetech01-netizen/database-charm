@@ -182,34 +182,59 @@ export const printerService = {
       fetchFromWebUsb(),
     ]);
 
-    const normalized = results.flat();
+    const rawPrinters = results.flat();
+    // STEP 4 movido para dentro de fetchFromAgent ou aqui se consolidado
+    console.log("STEP 4 - RAW LENGTH", rawPrinters.length);
+    console.table(rawPrinters);
+
+    const normalized = rawPrinters.map((p, i) => toPrinter(p, i));
+    console.log("STEP 5 - NORMALIZED LENGTH", normalized.length);
+    console.table(normalized);
     
     // Deduplica somente por identidade (nome + porta)
-    console.log("STEP 5 - NORMALIZED LENGTH", normalized.length);
-    
     const seen = new Set<string>();
-    const deduped: RawPrinterInfo[] = [];
+    const deduped: Printer[] = [];
     for (const item of normalized) {
       const key = `${(item.name ?? "").toLowerCase()}|${(item.port ?? "").toLowerCase()}`;
       if (seen.has(key)) {
+        console.log(`DESCARTANDO IMPRESSORA (Duplicada):
+- Nome: ${item.name}
+- Motivo: Nome e Porta já existem no set de impressoras únicas.
+- Linha do código: 196
+- Arquivo: src/features/printing/services/printer.service.ts`);
         continue;
       }
       seen.add(key);
       deduped.push(item);
     }
+    console.log("STEP 6 - DEDUPED LENGTH", deduped.length);
     console.table(deduped);
 
-    let source: RawPrinterInfo[];
+    const grouped = this.groupByCategory(deduped);
+    console.log("STEP 7 - GROUPED", grouped);
+    console.table(Object.entries(grouped).map(([cat, list]) => ({ categoria: cat, count: list.length })));
+
+    let returnValue: Printer[];
     if (isBridgeHealthy) {
-      source = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
+      returnValue = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
+      
+      const discardedBySource = deduped.filter(p => p.source !== 'agent' && p.source !== 'webusb');
+      discardedBySource.forEach(p => {
+        console.log(`DESCARTANDO IMPRESSORA (Source restricted):
+- Nome: ${p.name}
+- Motivo: Bridge está saudável, portanto descartando fallbacks para priorizar impressoras reais.
+- Linha do código: 211
+- Arquivo: src/features/printing/services/printer.service.ts`);
+      });
     } else {
-      source = [];
+      console.log("STEP: Bridge indisponível, retornando lista vazia para evitar fallbacks silenciosos.");
+      returnValue = [];
     }
 
-    const printers = source.map((p, i) => toPrinter(p, i));
-    console.log("STEP 6 - RETURN", printers);
+    console.log("STEP 8 - RETURN", returnValue);
+    console.table(returnValue);
 
-    return printers;
+    return returnValue;
   },
 
   /**
