@@ -131,35 +131,15 @@ const FALLBACK_PRINTERS: RawPrinterInfo[] = [
 
 export const printerService = {
   async checkHealth(): Promise<boolean> {
-    const start = performance.now();
-    const timestamp = new Date().toISOString();
     const url = `${PRINT_BRIDGE_URL}/health`;
-    console.log(`[printer.service] [${timestamp}] GET /health iniciado. URL: ${url}`);
-    
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
     
-    let result = false;
     try {
-      // Forçamos true para auditoria se falhar por CORS no preview
-      result = true;
-      try {
-        const res = await fetch(url, { signal: controller.signal, mode: 'no-cors' });
-        console.log("Health URL:", url);
-        console.log(`[printer.service] Health check mock active for audit.`);
-      } catch (e) {
-        console.warn("Health check failed but forced to true for audit logs");
-      }
-      
-      console.log("checkHealth retornou:", result);
-      return result;
-    } catch (err: any) {
-      const end = performance.now();
-      const reason = err.name === 'AbortError' ? 'Timeout' : err.message;
-      console.error(`[printer.service] [${new Date().toISOString()}] GET /health falhou - Motivo: ${reason} - Duração: ${(end - start).toFixed(2)}ms`);
-      result = false;
-      console.log("checkHealth retornou:", result);
-      return result;
+      const res = await fetch(url, { signal: controller.signal });
+      return res.ok;
+    } catch (err) {
+      return false;
     } finally {
       clearTimeout(timer);
     }
