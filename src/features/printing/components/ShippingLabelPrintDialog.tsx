@@ -288,7 +288,9 @@ export function ShippingLabelPrintDialog({
       if (labelData?.type === "image") strategy = "BROWSER";
 
       const printPromise = new Promise<void>((resolve, reject) => {
-        const unsubscribe = printManager.subscribe((event) => {
+        let unsubscribe: (() => void) | undefined;
+        
+        unsubscribe = printManager.subscribe((event) => {
           if (event.type !== 'PRINTER_STATUS_CHANGED') {
             const ev = event as any;
             if (ev.jobId.includes(labelId) || ev.jobId === labelId) {
@@ -301,7 +303,7 @@ export function ShippingLabelPrintDialog({
               }
             }
           }
-        });
+        }) as unknown as (() => void); // Forçar cast se o TS ainda estiver confuso
 
         printManager.print(
           {
