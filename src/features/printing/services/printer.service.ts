@@ -64,13 +64,28 @@ function toPrinter(raw: RawPrinterInfo, index: number): Printer {
 async function fetchFromAgent(url: string): Promise<RawPrinterInfo[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
+  const start = performance.now();
   try {
     const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) return [];
+    const end = performance.now();
+    console.log(`[printer.service] [DEBUG 1] Resposta bruta do GET ${url}: Status ${res.status}, Time: ${(end - start).toFixed(2)}ms`);
+    
+    if (!res.ok) {
+      console.warn(`[printer.service] [DEBUG 1] GET ${url} falhou com status ${res.status}`);
+      return [];
+    }
+    
     const body = await res.json();
+    console.log(`[printer.service] [DEBUG 2] Resultado após parse do JSON de ${url}:`, JSON.stringify(body, null, 2));
+    
     const list = Array.isArray(body) ? body : (body?.printers ?? []);
-    return Array.isArray(list) ? (list as RawPrinterInfo[]) : [];
-  } catch {
+    console.log(`[printer.service] [DEBUG 2] Quantidade de impressoras identificadas no JSON: ${list.length}`);
+    
+    const result = Array.isArray(list) ? (list as RawPrinterInfo[]) : [];
+    // Marcar a origem explicitamente se não vier do agente
+    return result.map(p => ({ ...p, source: p.source || 'agent' }));
+  } catch (err: any) {
+    console.error(`[printer.service] [DEBUG 1] Erro no fetch de ${url}:`, err.message);
     return [];
   } finally {
     clearTimeout(timer);
@@ -173,39 +188,55 @@ export const printerService = {
     const end = performance.now();
     const raw = results.flat();
     
-    console.log(`[printer.service] [${timestamp}] Descoberta finalizada em ${(end - start).toFixed(2)}ms. Brutas: ${raw.length}`);
+    console.log(`[printer.service] [DEBUG 3] Resultado após normalização (Total Bruto): ${raw.length} impressoras`);
+    raw.forEach((p, idx) => console.log(`  [${idx}] Nome: ${p.name}, Driver: ${p.driver}, Porta: ${p.port}, Origem: ${p.source}`));
 
     // Deduplica somente por identidade (nome + porta)
     const seen = new Set<string>();
     const unique: RawPrinterInfo[] = [];
     for (const item of raw) {
       const key = `${(item.name ?? "").toLowerCase()}|${(item.port ?? "").toLowerCase()}`;
-      if (seen.has(key)) continue;
+      if (seen.has(key)) {
+        console.log(`[printer.service] [DEBUG 4] Impressora descartada no dedupe (já vista): ${item.name} (${item.port})`);
+        continue;
+      }
       seen.add(key);
       unique.push(item);
     }
 
-    console.log(`[printer.service] [${timestamp}] Únicas após dedupe: ${unique.length}`);
+    console.log(`[printer.service] [DEBUG 4] Resultado após deduplicação: ${unique.length} impressoras`);
+    unique.forEach((p, idx) => console.log(`  [${idx}] Nome: ${p.name}, Porta: ${p.port}, Origem: ${p.source}`));
 
     let source: RawPrinterInfo[];
     
     if (isBridgeHealthy) {
-      // Se o bridge está saudável, usamos EXCLUSIVAMENTE o que ele retornou + WebUSB.
-      // Filtramos para garantir que não restou nenhum 'fallback' acidental.
+      // Se o bridge está saudável, usamos o que ele retornou + WebUSB.
       source = unique.filter(p => p.source === 'agent' || p.source === 'webusb');
-      console.log(`[printer.service] [${timestamp}] Bridge OK. Windows/agentes: ${source.filter(p => p.source === 'agent').length} · WebUSB: ${source.filter(p => p.source === 'webusb').length}`);
+      
+      const discarded = unique.filter(p => p.source !== 'agent' && p.source !== 'webusb');
+      if (discarded.length > 0) {
+        console.log(`[printer.service] [DEBUG 5] Impressoras descartadas (não são Bridge/WebUSB): ${discarded.length}`);
+        discarded.forEach(p => console.log(`  Descartada: ${p.name} (Origem: ${p.source})`));
+      }
+      
+      console.log(`[printer.service] [DEBUG 5] Resultado final filtrado: ${source.length} impressoras (Windows/Agente: ${source.filter(p => p.source === 'agent').length})`);
     } else {
-      console.warn(`[printer.service] [${timestamp}] Bridge INDISPONÍVEL. Retornando vazio.`);
+      console.warn(`[printer.service] [DEBUG 5] Bridge INDISPONÍVEL. Retornando vazio conforme regra de diagnóstico.`);
       source = [];
     }
 
     const printers = source.map((p, i) => toPrinter(p, i));
+    
+    console.log(`[printer.service] [DEBUG 6] Array final retornado ao PrinterSelector: ${printers.length} impressoras`);
+    printers.forEach((p, idx) => {
+      console.log(`  [${idx}] Nome: ${p.name}, Categoria: ${p.category}, Driver: ${p.driver}, Porta: ${p.port}, Origem: ${p.source}`);
+    });
 
     if (typeof console !== "undefined") {
       console.groupCollapsed(
-        `[printer.service] [${timestamp}] Descoberta: ${raw.length} brutas -> ${printers.length} finais`
+        `[printer.service] [${timestamp}] Descoberta Completa: ${raw.length} brutas -> ${printers.length} finais`
       );
-      console.table(printers.map(p => ({ nome: p.name, origem: p.source, status: p.status })));
+      console.table(printers.map(p => ({ nome: p.name, categoria: p.category, origem: p.source, status: p.status })));
       console.groupEnd();
     }
 
