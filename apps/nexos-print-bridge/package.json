@@ -9,10 +9,11 @@
     "pkg": "pkg . --targets node18-win-x64 --out-path dist"
   },
   "dependencies": {
-    "@fastify/cors": "^10.0.0",
-    "fastify": "^5.0.0",
-    "winston": "^3.11.0",
-    "zod": "^3.22.4"
+    "@fastify/cors": "^11.3.0",
+    "electron": "^43.3.0",
+    "fastify": "^5.11.3",
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
