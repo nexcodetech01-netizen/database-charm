@@ -97,8 +97,24 @@ export function PrintBridgeStatus() {
             </div>
           </div>
         ) : (
-          <div className="py-2 text-xs text-muted-foreground">
-            O serviço local não foi detectado. Certifique-se de que o <strong>NexOS Print Bridge</strong> está rodando no seu Windows.
+          <div className="py-4 text-center space-y-4">
+            <div className="flex flex-col items-center gap-2 text-red-600">
+              <XCircle className="h-10 w-10 opacity-20" />
+              <span className="text-sm font-semibold">Bridge desconectado</span>
+            </div>
+            <p className="text-xs text-muted-foreground px-4">
+              O serviço local não foi detectado. Certifique-se de que o <strong>NexOS Print Bridge</strong> está rodando no seu computador.
+            </p>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="w-full max-w-[200px]"
+              onClick={checkConnection}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              Reconectar
+            </Button>
           </div>
         )}
 
