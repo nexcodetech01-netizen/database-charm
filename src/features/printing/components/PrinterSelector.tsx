@@ -85,8 +85,8 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
         </SelectContent>
       </Select>
       {!loading && (
-        <p className="text-xs text-muted-foreground">
-          {printers.length} impressora(s) encontrada(s) — nenhuma filtrada por tecnologia.
+        <p className="text-xs text-muted-foreground italic">
+          {printers.length} impressora(s) física(s) detectada(s) via Bridge {isBridgeOnline ? '(Online)' : '(Offline)'}.
         </p>
       )}
     </div>
