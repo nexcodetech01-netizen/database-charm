@@ -289,13 +289,16 @@ export function ShippingLabelPrintDialog({
 
       const printPromise = new Promise<void>((resolve, reject) => {
         const unsubscribe = printManager.subscribe((event) => {
-          if (event.jobId.includes(labelId) || (event as any).jobId === labelId) {
-            if (event.type === 'PRINT_FINISHED') {
-              unsubscribe();
-              resolve();
-            } else if (event.type === 'PRINT_ERROR') {
-              unsubscribe();
-              reject(new Error(event.error));
+          if (event.type !== 'PRINTER_STATUS_CHANGED') {
+            const ev = event as any;
+            if (ev.jobId.includes(labelId) || ev.jobId === labelId) {
+              if (event.type === 'PRINT_FINISHED') {
+                if (unsubscribe) unsubscribe();
+                resolve();
+              } else if (event.type === 'PRINT_ERROR') {
+                if (unsubscribe) unsubscribe();
+                reject(new Error(event.error));
+              }
             }
           }
         });
@@ -316,11 +319,11 @@ export function ShippingLabelPrintDialog({
           }
         ).then(result => {
           if (!result.success) {
-            unsubscribe();
+            if (unsubscribe) unsubscribe();
             reject(new Error(result.message || "Erro ao enfileirar impressão."));
           }
         }).catch(err => {
-          unsubscribe();
+          if (unsubscribe) unsubscribe();
           reject(err);
         });
       });
