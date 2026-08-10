@@ -34,7 +34,7 @@ export function PrinterSelector({ value, onValueChange }: PrinterSelectorProps) 
               list.push(...bridgePrinters.map((p: any) => ({
                 id: p.name,
                 name: p.name,
-                type: 'ZPL'
+                type: 'ZPL' as const
               })));
             }
           }
