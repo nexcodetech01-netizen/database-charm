@@ -94,14 +94,10 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
     return grouped;
   }, [printers]);
 
-  console.log('[PrinterSelector] Pre-render check:', {
-    printersLength: printers.length,
-    isBridgeOnline,
-    loading,
-    bridgeUnavailable,
-    value,
-    groups: Object.keys(groups).reduce((acc, cat) => ({ ...acc, [cat]: groups[cat as PrinterCategory]?.length }), {})
-  });
+  console.log("=== ESTADO FINAL DO REACT ===");
+  console.log("printers.length =", printers.length);
+  console.table(printers);
+  console.log("groups =", groups);
 
   return (
     <div className="space-y-2">
@@ -129,23 +125,28 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
                 </div>
               </SelectItem>
             )}
-            {CATEGORY_ORDER.filter(category => groups[category] && groups[category].length > 0).map(category => (
-              <SelectGroup key={category}>
-                <SelectLabel>{category}</SelectLabel>
-                {groups[category].map(printer => (
-                  <SelectItem key={printer.id} value={printer.id}>
-                    <div className="flex items-center gap-2">
-                      <PrinterIcon className="h-4 w-4" />
-                      <span>{printer.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {printer.port} · {printer.type}
-                        {printer.isDefault ? ' · padrão' : ''}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
+            {CATEGORY_ORDER.filter(category => groups[category] && groups[category].length > 0).map(category => {
+              console.log("Renderizando categoria:", category);
+              console.table(groups[category]);
+              
+              return (
+                <SelectGroup key={category}>
+                  <SelectLabel>{category}</SelectLabel>
+                  {groups[category].map(printer => (
+                    <SelectItem key={printer.id} value={printer.id}>
+                      <div className="flex items-center gap-2">
+                        <PrinterIcon className="h-4 w-4" />
+                        <span>{printer.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {printer.port} · {printer.type}
+                          {printer.isDefault ? ' · padrão' : ''}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              );
+            })}
           </SelectContent>
         </Select>
       )}
