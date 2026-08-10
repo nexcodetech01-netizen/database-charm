@@ -1,5 +1,6 @@
 import React from 'react';
-import { usePrinters } from '../services/printer.service';
+import { usePrinters } from '../hooks/use-printers';
+import { Printer } from '../types/printing.types';
 
 interface PrinterSelectorProps {
   value: string;
@@ -21,7 +22,7 @@ export function PrinterSelector({ value, onValueChange }: PrinterSelectorProps) 
         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
       >
         <option value="" disabled>Selecione uma impressora</option>
-        {printers.map((printer) => (
+        {printers.map((printer: Printer) => (
           <option key={printer.id} value={printer.id}>
             {printer.name} {printer.isDefault ? '(Padrão)' : ''}
           </option>
