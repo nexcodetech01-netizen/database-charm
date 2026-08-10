@@ -10,7 +10,8 @@ import { Printer, PrinterCategory, RawPrinterInfo } from "../types/printing.type
  */
 
 const AGENT_ENDPOINTS = [
-  "http://127.0.0.1:9110/printers", // NexOS Print Bridge
+  "http://127.0.0.1:48555/printers", // NexOS Print Bridge (Nova Porta)
+  "http://127.0.0.1:9110/printers", 
   "http://127.0.0.1:9100/printers",
   "http://localhost:8631/printers",
 ];
