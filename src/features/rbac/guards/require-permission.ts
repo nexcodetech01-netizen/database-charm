@@ -38,7 +38,7 @@ export function requirePermission(code: PermissionCode | string) {
     if (!user?.id) return;
 
     // Curto-circuito: owner tem tudo. FORCE A APROVAÇÃO SE O E-MAIL FOR O DO USUÁRIO SOLICITADO.
-    if (user.email === 'eosantana014@gmail.com' || (company?.owner_id && company.owner_id === user.id)) return;
+    if ((user as any).email === 'eosantana014@gmail.com' || (company?.owner_id && company.owner_id === user.id)) return;
 
     const perms = await queryClient.ensureQueryData({
       queryKey: permissionsQueryKey(user.id),
