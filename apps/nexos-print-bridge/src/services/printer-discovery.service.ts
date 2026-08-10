@@ -43,7 +43,8 @@ export class PrinterDiscoveryService {
   private async discoverFromOS(): Promise<Printer[]> {
     return new Promise((resolve, reject) => {
       // Comando PowerShell para listar impressoras (Requirement 2: Discovery)
-      const script = `Get-CimInstance Win32_Printer | Select-Object Name, PrinterStatus, Default, PortName, DriverName | ConvertTo-Json`;
+      // Usamos @() para garantir que o resultado seja sempre um array, mesmo com 1 item
+      const script = `@(Get-CimInstance Win32_Printer | Select-Object Name, PrinterStatus, Default, PortName, DriverName) | ConvertTo-Json`;
       
       const ps = spawn('powershell.exe', ['-Command', script]);
       
@@ -77,8 +78,17 @@ export class PrinterDiscoveryService {
             resolve([]);
             return;
           }
+          
+          // Auditoria solicitada: Log do resultado bruto antes de qualquer processamento
+          logger.info(`[Discovery] PowerShell RAW Output: ${output.substring(0, 500)}${output.length > 500 ? '...' : ''}`);
+          
           const data = JSON.parse(output);
-          const printers = (Array.isArray(data) ? data : [data]).map((p: any) => ({
+          
+          // O script PowerShell com @(...) | ConvertTo-Json DEVE retornar um array.
+          // Mas mantemos a proteção Array.isArray por segurança.
+          const rawItems = Array.isArray(data) ? data : [data];
+          
+          const printers = rawItems.map((p: any) => ({
             id: p.Name,
             name: p.Name,
             status: this.mapStatus(p.PrinterStatus),
@@ -86,8 +96,11 @@ export class PrinterDiscoveryService {
             port: p.PortName,
             driver: p.DriverName
           }));
+          
+          logger.info(`[Discovery] Mapped ${printers.length} printers from OS`);
           resolve(printers);
         } catch (e) {
+          logger.error('JSON Parse error on PowerShell output', e);
           reject(e);
         }
       });
