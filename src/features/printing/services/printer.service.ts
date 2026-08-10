@@ -202,61 +202,35 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
-    console.log("[listPrinters] INÍCIO - AUDITORIA 11 IMPRESSORAS");
+    const promises = AGENT_ENDPOINTS.map((url) => fetchFromAgent(url));
+    promises.push(fetchFromWebUsb());
+
+    const results = await Promise.all(promises);
+    const allRaw = results.flat();
     
-    // Simulação do payload para auditoria solicitado
-    const auditPayload = [
-      {"id": "p1", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p2", "name": "Epson TM-T20", "driver": "Epson TM-T20 Receipt", "port": "ESDPRT001", "source": "agent"},
-      {"id": "p3", "name": "HP LaserJet", "driver": "HP Universal Print Driver", "port": "192.168.1.50", "source": "agent"},
-      {"id": "p4", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p5", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p6", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p7", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p8", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p9", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p10", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"},
-      {"id": "p11", "name": "Zebra ZD420", "driver": "ZDesigner ZD420", "port": "USB001", "source": "agent"}
-    ];
+    if (allRaw.length === 0) {
+      console.warn("[printer.service] Nenhuma impressora encontrada via agentes ou USB. Usando fallback.");
+      return FALLBACK_PRINTERS.map((p, i) => toPrinter(p, i));
+    }
 
-    // STEP 1 - BridgePrinters
-    console.log("STEP 1 - BridgePrinters");
-    console.table(auditPayload);
+    const normalized = allRaw.map((p, i) => toPrinter(p, i));
 
-    // STEP 2 - WindowsPrinters
-    const windowsPrinters = auditPayload.filter(p => p.source === 'agent');
-    console.log("STEP 2 - WindowsPrinters");
-    console.table(windowsPrinters);
-
-    // STEP 3 - Merged
-    const merged = [...auditPayload];
-    console.log("STEP 3 - Merged");
-    console.table(merged);
-
-    // STEP 4 - Deduped
-    const normalized = merged.map((p, i) => toPrinter(p as any, i));
+    // Deduplicação baseada em NOME + PORTO para evitar entradas duplicadas da mesma física
     const seen = new Set<string>();
     const deduped: Printer[] = [];
+
     for (const item of normalized) {
-      const key = `${(item.name ?? "").toLowerCase()}|${(item.port ?? "").toLowerCase()}`;
+      // Normalizamos para evitar variações de case (ex: USB001 vs usb001)
+      const key = `${(item.name ?? "").toLowerCase().trim()}|${(item.port ?? "").toLowerCase().trim()}`;
       if (!seen.has(key)) {
         seen.add(key);
         deduped.push(item);
+      } else {
+        console.log(`[printer.service] Duplicata ignorada: ${item.name} em ${item.port}`);
       }
     }
-    console.log("STEP 4 - Deduped");
-    console.table(deduped);
 
-    // STEP 5 - Filtered
-    const filtered = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
-    console.log("STEP 5 - Filtered");
-    console.table(filtered);
-
-    // STEP 6 - Return
-    console.log("STEP 6 - Return");
-    console.table(filtered);
-
-    return filtered;
+    return deduped;
   },
 
   /**
