@@ -62,7 +62,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
           <SelectValue placeholder={loading ? 'Carregando...' : 'Selecione uma impressora'} />
         </SelectTrigger>
         <SelectContent>
-          {!isBridgeOnline && (
+          {(!isBridgeOnline || value === 'browser') && (
             <SelectItem value="browser">
               <div className="flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
