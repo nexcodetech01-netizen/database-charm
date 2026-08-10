@@ -140,9 +140,15 @@ export const printerService = {
 
     // Bloqueio rigoroso de fallback se o bridge estiver online
     const hasBridgeResponse = unique.some(p => p.source === 'agent' || p.source === 'webusb');
-    const source = hasBridgeResponse 
-      ? unique.filter(p => p.source !== 'fallback') 
-      : [...unique, ...FALLBACK_PRINTERS.filter(f => !unique.some(u => u.id === f.id))];
+    
+    let source: RawPrinterInfo[];
+    if (hasBridgeResponse) {
+      console.log("[PrinterDiscovery] Bridge detectado. Removendo fallbacks.");
+      source = unique.filter(p => p.source !== 'fallback');
+    } else {
+      console.warn("[PrinterDiscovery] Bridge não detectado ou vazio. Usando fallbacks.");
+      source = [...unique, ...FALLBACK_PRINTERS.filter(f => !unique.some(u => u.id === f.id))];
+    }
 
     const printers = source.map((p, i) => toPrinter(p, i));
 
