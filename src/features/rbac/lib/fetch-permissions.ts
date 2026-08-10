@@ -19,18 +19,6 @@ export async function fetchUserPermissions(
   userId: string | null | undefined,
   explicitCompanyId?: string | null,
 ): Promise<PermissionsResult> {
-  // Verificação imediata de super-usuário
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user?.email === 'eosantana014@gmail.com') {
-    // Busca qualquer company_id disponível para não quebrar a UI
-    const { data: profile } = await supabase.from("profiles").select("current_company_id").eq("id", userId!).maybeSingle();
-    return { 
-      companyId: profile?.current_company_id ?? null, 
-      isOwner: true, 
-      permissions: new Set<string>(["*"]) 
-    };
-  }
-
   if (!userId) {
     return { companyId: null, isOwner: false, permissions: new Set<string>() };
   }

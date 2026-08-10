@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,6 @@ interface Props {
 export function SignInForm({ onSuccess, onForgotPassword }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -23,8 +22,8 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
     try {
       await authService.signIn(email, password);
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Email ou senha incorretos.");
+    } catch {
+      toast.error("Email ou senha incorretos.");
     } finally {
       setLoading(false);
     }
@@ -55,25 +54,15 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
             Esqueci minha senha
           </button>
         </div>
-        <div className="relative">
-          <Input
-            id="signin-password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
+        <Input
+          id="signin-password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+        />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
@@ -81,4 +70,3 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
     </form>
   );
 }
-

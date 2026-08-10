@@ -10,15 +10,6 @@ export interface CompanyInput {
 
 export const companyService = {
   async getCurrentUserCompany(userId: string) {
-    // 0) FORCE ADMIN ACCESS for specific email bypass.
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email === 'eosantana014@gmail.com') {
-      // Return a synthetic company or the first one found to allow dashboard access
-      const { data: firstCompany } = await supabase.from("companies").select("*").limit(1).maybeSingle();
-      if (firstCompany) return firstCompany;
-      return { id: '00000000-0000-0000-0000-000000000000', name: 'NexOS Admin' } as any;
-    }
-
     // 1) Invited members: resolve via profiles.current_company_id (set by
     //    accept_company_invite RPC) or via user_roles membership.
     const { data: profile } = await supabase
