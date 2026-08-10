@@ -79,7 +79,7 @@ async function fetchFromAgent(url: string): Promise<RawPrinterInfo[]> {
 }
 
 async function fetchFromWebUsb(): Promise<RawPrinterInfo[]> {
-  const usb = (globalThis.navigator as unknown as { usb?: { getDevices: () => Promise<unknown[]> } })?.usb;
+  const usb = typeof window !== 'undefined' ? (window.navigator as any)?.usb : null;
   if (!usb?.getDevices) return [];
   try {
     const devices = (await usb.getDevices()) as Array<{

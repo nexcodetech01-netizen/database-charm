@@ -25,12 +25,12 @@ export const getPrintBridge = async (): Promise<IPrintBridge> => {
     try {
       // @ts-ignore - bypass import-protection during build, we know this only runs on client
       const module = await import("./print-bridge.client" + "");
-      bridgeInstance = (module as any).printBridgeClient;
+      bridgeInstance = (module as any).printBridgeClient as IPrintBridge;
     } catch (e) {
       console.error('[PrintBridgeRegistry] Failed to load print bridge client', e);
       return new NoopPrintBridge();
     }
   }
 
-  return bridgeInstance;
+  return bridgeInstance as IPrintBridge;
 };
