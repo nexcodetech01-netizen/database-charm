@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-// NexOS Enterprise - Sprint 1.2 oii
+// NexOS Enterprise - Sprint 1.3 - Print Bridge Manager + Produção
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isPreviewHostname } from "@/hooks/version-check.utils";
