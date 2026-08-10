@@ -89,9 +89,10 @@ class PrintQueue {
       
       this.emit({ type: 'PRINT_STARTED', jobId: job.id, timestamp: new Date() });
 
-      // Lógica de Impressão Enterprise via Print Bridge
-      const { printBridgeClient } = await import("./print-bridge.client");
-      const bridgeStatus = await printBridgeClient.health();
+      // Lógica de Impressão Enterprise via Print Bridge Registry
+      const { getPrintBridge } = await import("./print-bridge.registry");
+      const bridge = await getPrintBridge();
+      const bridgeStatus = await bridge.health();
 
       if (bridgeStatus.status === 'online') {
         job.history.push({ 
@@ -100,7 +101,7 @@ class PrintQueue {
           message: `Enviando para NexOS Print Bridge...`,
         });
 
-        const result = await printBridgeClient.print(job.label, job.options);
+        const result = await bridge.print(job.label, job.options);
         if (!result.success) throw new Error(result.message);
         
         job.history.push({ 
@@ -223,7 +224,7 @@ export const printService = {
   
   // Helpers legados podem ser mantidos ou movidos
   downloadZpl(label: LabelData) {
-    if (!label.zpl) return;
+    if (typeof window === 'undefined' || !label.zpl) return;
     const blob = new Blob([label.zpl], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -234,6 +235,7 @@ export const printService = {
   },
 
   async downloadPdf(label: LabelData) {
+    if (typeof window === 'undefined') return;
     const { labelaryService } = await import("./labelary.service");
     const blob = await labelaryService.convertToPdf(label);
     const url = URL.createObjectURL(blob);
