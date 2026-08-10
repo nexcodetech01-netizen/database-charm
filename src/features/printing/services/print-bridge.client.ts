@@ -15,6 +15,8 @@ export const printBridgeClient = {
   async print(label: LabelData, options: PrintOptions): Promise<PrintResult> {
     const printer = options.printerId || 'default';
     
+    console.log("[PrintBridgeClient] Iniciando impressão", { jobId: label.id, printer, type: options.type });
+
     try {
       let endpoint = '/print/raw';
       let body: any = { printer };
@@ -32,6 +34,9 @@ export const printBridgeClient = {
         body.content = label.content;
       }
 
+      console.log("[PrintBridgeClient] Chamando Print Bridge", { url: `${BRIDGE_URL}${endpoint}` });
+      console.log("[PrintBridgeClient] Payload enviado", body);
+
       const res = await fetch(`${BRIDGE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,15 +44,18 @@ export const printBridgeClient = {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        return { success: false, message: err.error || 'Erro na ponte de impressão' };
+        const err = await res.json().catch(() => ({ error: 'Erro desconhecido no Bridge' }));
+        console.error("[PrintBridgeClient] Resposta de erro recebida", { status: res.status, err });
+        return { success: false, message: err.error || `Erro ${res.status} na ponte de impressão` };
       }
 
       const data = await res.json();
+      console.log("[PrintBridgeClient] Resposta de sucesso recebida", data);
       return { success: true, jobId: data.id };
     } catch (e) {
-      console.error('[PrintBridgeClient] Connection error:', e);
-      return { success: false, message: 'Print Bridge não encontrado em http://127.0.0.1:48555' };
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error('[PrintBridgeClient] Erro detalhado:', e);
+      return { success: false, message: `Print Bridge não encontrado ou erro de conexão: ${errorMsg}` };
     }
   }
 };
