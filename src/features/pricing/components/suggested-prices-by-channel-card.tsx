@@ -641,6 +641,8 @@ function buildRows(
     // confiável para os cálculos de "Manter lucro em R$".
     // ─────────────────────────────────────────────────────────────────
     if (c.id === "store") {
+      // LOJA FÍSICA: Usamos o valor numérico puro.
+      // Se currentStorePrice for 35.90, priceCents deve ser 3590.
       const storePrice = roundMoney(currentStorePrice);
       const storeProfit = roundMoney(storePrice - costTotal);
       const storeMarginPct = storePrice > 0 ? roundPercent((storeProfit / storePrice) * 100) : 0;
@@ -788,7 +790,7 @@ function ChannelTile({
       onChangeFixedCost(0);
       return;
     }
-    const parsed = Number(normalized);
+    const parsed = parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
       setFixedCostError("Valor inválido");
       return;
@@ -812,7 +814,7 @@ function ChannelTile({
       onChangeMargin(null);
       return;
     }
-    const parsed = Number(normalized);
+    const parsed = parseFloat(normalized);
     if (!Number.isFinite(parsed)) {
       setMarginError("Valor inválido");
       return;

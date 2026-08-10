@@ -14,7 +14,10 @@ interface PricingFormProps {
 export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin }: PricingFormProps) {
   const num = (v: any) => {
     if (typeof v === "number") return v;
-    return parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0;
+    // TRATAMENTO UNIFICADO: converte vírgula em ponto antes do parse
+    const normalized = String(v ?? "").replace(",", ".").replace(/[^\d.-]/g, "");
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
   };
 
   const cost = num(form.cost);
@@ -39,6 +42,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
               <Label htmlFor="cost">Custo Unitário (Produto)</Label>
               <Input
                 id="cost"
+                placeholder="0,00"
                 value={form.cost}
                 onChange={(e) => setForm((s: any) => ({ ...s, cost: e.target.value }))}
               />
@@ -87,8 +91,13 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
               <Input
                 id="price"
                 className="text-lg font-bold"
+                placeholder="0,00"
                 value={form.price}
-                onChange={(e) => setForm((s: any) => ({ ...s, price: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Permitimos digitar vírgula, o num() no topo cuida do parse decimal
+                  setForm((s: any) => ({ ...s, price: val }));
+                }}
               />
             </div>
 
