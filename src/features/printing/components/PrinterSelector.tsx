@@ -86,8 +86,12 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
   }, [onValueChange, value, setPrinters, isBridgeOnline]);
 
   const groups = React.useMemo(() => {
-    console.log(`[PrinterSelector] [${new Date().toISOString()}] Rendered printers (agrupando):`, printers);
-    return printerService.groupByCategory(printers);
+    console.log(`[PrinterSelector] [${new Date().toISOString()}] [DEBUG 5] Agrupando por categoria...`);
+    const grouped = printerService.groupByCategory(printers);
+    Object.keys(grouped).forEach(cat => {
+      console.log(`  Categoria ${cat}: ${grouped[cat as PrinterCategory]?.length} impressoras`);
+    });
+    return grouped;
   }, [printers]);
 
   console.log('[PrinterSelector] Pre-render check:', {
