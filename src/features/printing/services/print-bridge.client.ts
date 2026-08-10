@@ -55,7 +55,7 @@ export const printBridgeClient = {
       }
 
       const data = await res.json();
-      console.log("[PrintBridgeClient] Resposta de sucesso recebida", data);
+      console.info("Resposta recebida", data);
       return { success: true, jobId: data.id };
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
