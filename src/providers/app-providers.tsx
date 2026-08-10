@@ -20,7 +20,7 @@ export function AppProviders({ children, queryClient }: AppProvidersProps) {
       <ThemeProvider defaultTheme="system" storageKey="nexos-theme">
         <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
-      <Toaster limit={1} />
+      <Toaster />
     </QueryClientProvider>
   );
 }
