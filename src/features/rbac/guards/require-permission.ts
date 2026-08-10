@@ -29,7 +29,7 @@ export function requirePermission(code: PermissionCode | string) {
   }: {
     context: {
       queryClient: QueryClient;
-      user?: { id: string } | null;
+      user?: { id: string; email?: string | null } | null;
       company?: { id: string; owner_id?: string | null } | null;
     };
     location?: { pathname?: string };
