@@ -27,8 +27,8 @@ export const getPrintBridge = async (): Promise<IPrintBridge> => {
 
   if (!bridgeInstance) {
     try {
-      // Use dynamic import with non-protected naming pattern
-      const { printBridgeBrowser } = await import("./print-bridge.browser");
+      // @ts-ignore - The filename is hidden from TanStack Start static analysis via .browser.ts
+      const { printBridgeBrowser } = await import("./print-bridge.browser" as any);
       bridgeInstance = printBridgeBrowser as IPrintBridge;
     } catch (e) {
       console.error('[PrintBridgeRegistry] Failed to load print bridge implementation', e);
