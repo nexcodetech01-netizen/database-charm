@@ -175,58 +175,55 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
-    console.log("[listPrinters] Início da descoberta");
+    console.log("[listPrinters] INÍCIO");
+    
+    // STEP 1 - BridgePrinters
     const isBridgeHealthy = await this.checkHealth();
-    console.log("[listPrinters] 1. Status do Bridge (48555):", isBridgeHealthy ? "SAUDÁVEL" : "INDISPONÍVEL");
-    
-    // 1. Busca no Bridge e WebUSB
-    const results = await Promise.all([
-      ...AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)),
-      fetchFromWebUsb(),
-    ]);
+    const bridgeResults = await Promise.all(AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)));
+    const bridgePrinters = bridgeResults.flat();
+    console.log("STEP 1 - BridgePrinters");
+    console.table(bridgePrinters);
 
-    const rawPrinters = results.flat();
-    console.log("[listPrinters] 2. Total de impressoras brutas (Bridge + USB):", rawPrinters.length);
-    if (rawPrinters.length > 0) console.table(rawPrinters);
+    // STEP 2 - WindowsPrinters (O que o Bridge reporta como fonte OS)
+    const windowsPrinters = bridgePrinters.filter(p => p.source === 'agent');
+    console.log("STEP 2 - WindowsPrinters");
+    console.table(windowsPrinters);
 
-    // 2. Normalização
-    const normalized = rawPrinters.map((p, i) => toPrinter(p, i));
-    
-    // 3. Deduplicação
+    // STEP 3 - Merged (Bridge + WebUSB)
+    const usbPrinters = await fetchFromWebUsb();
+    const merged = [...bridgePrinters, ...usbPrinters];
+    console.log("STEP 3 - Merged");
+    console.table(merged);
+
+    // STEP 4 - Deduped
+    const normalized = merged.map((p, i) => toPrinter(p, i));
     const seen = new Set<string>();
     const deduped: Printer[] = [];
     for (const item of normalized) {
       const key = `${(item.name ?? "").toLowerCase()}|${(item.port ?? "").toLowerCase()}`;
-      if (seen.has(key)) {
-        console.log(`[listPrinters] 3. DESCARTANDO DUPLICADA: ${item.name} (${item.port})`);
-        continue;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
       }
-      seen.add(key);
-      deduped.push(item);
     }
-    console.log("[listPrinters] 3. Resultado da deduplicação:", deduped.length, "impressoras únicas");
+    console.log("STEP 4 - Deduped");
+    console.table(deduped);
 
-    // 4. Filtro de Prioridade
-    let returnValue: Printer[];
+    // STEP 5 - Filtered
+    let filtered: Printer[];
     if (isBridgeHealthy) {
-      // Se o bridge está saudável, confiamos nele e no WebUSB
-      returnValue = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
-      
-      const discardedBySource = deduped.filter(p => p.source !== 'agent' && p.source !== 'webusb');
-      if (discardedBySource.length > 0) {
-        console.log("[listPrinters] 4. Filtrando fontes secundárias (priorizando Bridge/USB):", discardedBySource.map(p => p.name));
-      }
+      filtered = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
     } else {
-      // Se o bridge falhou, não queremos fallbacks que podem confundir o usuário (como PDF local se ele espera ZPL)
-      console.log("[listPrinters] 4. Bridge indisponível - Retornando lista vazia para evitar confusão com fallbacks.");
-      returnValue = [];
+      filtered = [];
     }
+    console.log("STEP 5 - Filtered");
+    console.table(filtered);
 
-    // 5. Retorno Final
-    console.log("[listPrinters] 5. Resultado final antes do return:", returnValue.length, "impressoras");
-    if (returnValue.length > 0) console.table(returnValue);
+    // STEP 6 - Return
+    console.log("STEP 6 - Return");
+    console.table(filtered);
 
-    return returnValue;
+    return filtered;
   },
 
   /**
