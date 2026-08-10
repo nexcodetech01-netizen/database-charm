@@ -49,7 +49,6 @@ export async function printerRoutes(fastify: FastifyInstance) {
     };
   });
 
-  // ROTAS CORRIGIDAS - SEM PREFIXO DE OTIMIZAÇÃO DO FASTIFY
   fastify.get('/printers', async () => {
     return await printerService.discoverPrinters();
   });

@@ -36,7 +36,7 @@ fastify.register(printerRoutes);
 
 const start = async () => {
   try {
-    const port = Number(process.env.PORT) || 48556;
+    const port = Number(process.env.PORT) || 48555;
     const host = '127.0.0.1';
     
     await fastify.listen({ port, host });
