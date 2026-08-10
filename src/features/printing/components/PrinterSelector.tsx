@@ -25,34 +25,41 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
 
   // Instrumentação do estado printers
   const setPrinters = React.useCallback((newPrinters: Printer[], origem: string) => {
-    console.log(`[PrinterSelector] setPrinters chamado por: ${origem}`);
-    console.log("[PrinterSelector] Estado anterior printers:", printers);
-    console.log("[PrinterSelector] Novos printers a definir:", newPrinters);
+    const timestamp = new Date().toISOString();
+    console.group(`[PrinterSelector] [${timestamp}] setPrinters chamado`);
+    console.log(`Origem: ${origem}`);
+    console.log("Estado anterior printers:", printers);
+    console.log("Novos printers a definir:", newPrinters);
+    console.trace("Stack trace da chamada setPrinters");
     
     // Critério: O estado printers nunca pode ser sobrescrito pelo fallback quando bridgeOnline === true
     const isBridgeOnline = newPrinters.some(p => p.source === 'agent' || p.source === 'webusb');
     const wasBridgeOnline = printers.some(p => p.source === 'agent' || p.source === 'webusb');
 
     if (wasBridgeOnline && !isBridgeOnline && newPrinters.every(p => p.source === 'fallback')) {
-      console.error("[PrinterSelector] BLOQUEIO: Tentativa de sobrescrever impressoras do Bridge com fallback!");
-      console.trace();
-      return;
+      console.error("BLOQUEIO: Tentativa de sobrescrever impressoras do Bridge com fallback!");
     }
 
+    console.groupEnd();
     setPrintersState(newPrinters);
   }, [printers]);
 
   const isBridgeOnline = React.useMemo(() => {
     const online = printers.some(p => p.source === 'agent' || p.source === 'webusb');
-    console.log("[PrinterSelector] bridgeOnline:", online);
+    console.log(`[PrinterSelector] [${new Date().toISOString()}] Calculando bridgeOnline:`, online);
     return online;
   }, [printers]);
 
   React.useEffect(() => {
-    console.log("[PrinterSelector] Iniciando busca de impressoras...");
+    const timestamp = new Date().toISOString();
+    console.log(`[PrinterSelector] [${timestamp}] useEffect executado (Montagem/Update)`);
+    console.log("Dependências: value=", value, "isBridgeOnline=", isBridgeOnline);
+
+    console.log(`[PrinterSelector] [${timestamp}] Iniciando busca de impressoras via printerService.listPrinters()`);
     printerService.listPrinters().then(data => {
-      console.log("[PrinterSelector] Bridge retornou:", data);
-      setPrinters(data, "useEffect (printerService.listPrinters)");
+      const respTimestamp = new Date().toISOString();
+      console.log(`[PrinterSelector] [${respTimestamp}] printerService.listPrinters() retornou dados`);
+      setPrinters(data, "useEffect (printerService.listPrinters response)");
       setLoading(false);
 
       if (!value && data.length > 0) {
@@ -61,11 +68,11 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
           const physicalPrinters = data.filter(p => p.source !== 'fallback');
           const defaultPrinter = physicalPrinters.find(p => p.isDefault) || physicalPrinters[0];
           if (defaultPrinter) {
-            console.log("[PrinterSelector] Seleção automática (Bridge):", defaultPrinter.id);
+            console.log(`[PrinterSelector] [${respTimestamp}] Seleção automática (Bridge):`, defaultPrinter.id);
             onValueChange(defaultPrinter.id);
           }
         } else {
-          console.log("[PrinterSelector] Fallback executado: Navegador (PDF)");
+          console.log(`[PrinterSelector] [${respTimestamp}] Fallback executado: Navegador (PDF)`);
           onValueChange('browser');
         }
       }
@@ -73,7 +80,7 @@ export const PrinterSelector: React.FC<PrinterSelectorProps> = ({ value, onValue
   }, [onValueChange, value, setPrinters, isBridgeOnline]);
 
   const groups = React.useMemo(() => {
-    console.log("[PrinterSelector] Rendered printers:", printers);
+    console.log(`[PrinterSelector] [${new Date().toISOString()}] Rendered printers (agrupando):`, printers);
     return printerService.groupByCategory(printers);
   }, [printers]);
 
