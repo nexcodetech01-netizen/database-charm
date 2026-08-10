@@ -117,21 +117,36 @@ export const printerService = {
   async checkHealth(): Promise<boolean> {
     const start = performance.now();
     const timestamp = new Date().toISOString();
-    console.log(`[printer.service] [${timestamp}] GET /health iniciado`);
+    const url = `${PRINT_BRIDGE_URL}/health`;
+    console.log(`[printer.service] [${timestamp}] GET /health iniciado. URL: ${url}`);
     
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
     
+    let result = false;
     try {
-      const res = await fetch(`${PRINT_BRIDGE_URL}/health`, { signal: controller.signal });
+      const res = await fetch(url, { signal: controller.signal });
       const end = performance.now();
+      
+      const json = await res.json();
+      
+      console.log("Health URL:", url);
+      console.log("HTTP:", res.status);
+      console.log("JSON:", json);
+      
+      // Critério de aceite: status: "online" E 200 OK
+      result = res.ok && json.status === "online";
+      
+      console.log("checkHealth retornou:", result);
       console.log(`[printer.service] [${new Date().toISOString()}] GET /health finalizado - Status: ${res.status} - Duração: ${(end - start).toFixed(2)}ms`);
-      return res.ok;
+      return result;
     } catch (err: any) {
       const end = performance.now();
       const reason = err.name === 'AbortError' ? 'Timeout' : err.message;
       console.error(`[printer.service] [${new Date().toISOString()}] GET /health falhou - Motivo: ${reason} - Duração: ${(end - start).toFixed(2)}ms`);
-      return false;
+      result = false;
+      console.log("checkHealth retornou:", result);
+      return result;
     } finally {
       clearTimeout(timer);
     }
