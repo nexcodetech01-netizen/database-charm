@@ -168,12 +168,12 @@ export const printerService = {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
     
+    let result = false;
     try {
       // Forçamos true para auditoria se falhar por CORS no preview
       result = true;
       try {
         const res = await fetch(url, { signal: controller.signal, mode: 'no-cors' });
-        const end = performance.now();
         console.log("Health URL:", url);
         console.log(`[printer.service] Health check mock active for audit.`);
       } catch (e) {
