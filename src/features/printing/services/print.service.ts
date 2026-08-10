@@ -118,6 +118,7 @@ class PrintQueue {
       } else {
         // Bloqueio rigoroso: No ambiente de produção (online bridge), não permitimos falha silenciosa
         // Se o bridge está offline, informamos o erro
+        console.warn(`[PrintQueue] Bridge offline. Status:`, bridgeStatus);
         throw new Error(`NexOS Print Bridge está offline. A saída física requer o Bridge ativo.`);
       }
 
