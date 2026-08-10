@@ -47,6 +47,15 @@ export class PrinterDiscoveryService {
       
       const ps = spawn('powershell.exe', ['-Command', script]);
       
+      ps.on('error', (err) => {
+        // Fallback imediato se o comando falhar (ex: não estamos no Windows)
+        if (process.platform !== 'win32') {
+           resolve([{ id: 'mock-printer', name: 'Mock Printer', status: 'Idle', isDefault: true, port: 'LPT1', driver: 'Generic' }]);
+        } else {
+           reject(err);
+        }
+      });
+      
       let output = '';
       ps.stdout.on('data', (data) => {
         output += data.toString();

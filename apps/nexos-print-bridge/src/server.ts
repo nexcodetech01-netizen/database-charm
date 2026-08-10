@@ -41,6 +41,11 @@ const start = async () => {
     
     await fastify.listen({ port, host });
     logger.info(`NexOS Print Bridge v1.3.0 em http://${host}:${port}`);
+    
+    // Log detalhado das rotas em inicialização (Requisito de Auditoria)
+    console.log('--- NEXOS PRINT BRIDGE: ROTAS REGISTRADAS ---');
+    console.log(fastify.printRoutes());
+    console.log('---------------------------------------------');
   } catch (err) {
     logger.error('Erro fatal:', err);
     process.exit(1);
