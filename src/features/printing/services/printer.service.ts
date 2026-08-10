@@ -175,64 +175,56 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
+    console.log("[listPrinters] Início da descoberta");
     const isBridgeHealthy = await this.checkHealth();
+    console.log("[listPrinters] 1. Status do Bridge (48555):", isBridgeHealthy ? "SAUDÁVEL" : "INDISPONÍVEL");
     
+    // 1. Busca no Bridge e WebUSB
     const results = await Promise.all([
       ...AGENT_ENDPOINTS.map((url) => fetchFromAgent(url)),
       fetchFromWebUsb(),
     ]);
 
     const rawPrinters = results.flat();
-    // STEP 4 movido para dentro de fetchFromAgent ou aqui se consolidado
-    console.log("STEP 4 - RAW LENGTH", rawPrinters.length);
-    console.table(rawPrinters);
+    console.log("[listPrinters] 2. Total de impressoras brutas (Bridge + USB):", rawPrinters.length);
+    if (rawPrinters.length > 0) console.table(rawPrinters);
 
+    // 2. Normalização
     const normalized = rawPrinters.map((p, i) => toPrinter(p, i));
-    console.log("STEP 5 - NORMALIZED LENGTH", normalized.length);
-    console.table(normalized);
     
-    // Deduplica somente por identidade (nome + porta)
+    // 3. Deduplicação
     const seen = new Set<string>();
     const deduped: Printer[] = [];
     for (const item of normalized) {
       const key = `${(item.name ?? "").toLowerCase()}|${(item.port ?? "").toLowerCase()}`;
       if (seen.has(key)) {
-        console.log(`DESCARTANDO IMPRESSORA (Duplicada):
-- Nome: ${item.name}
-- Motivo: Nome e Porta já existem no set de impressoras únicas.
-- Linha do código: 196
-- Arquivo: src/features/printing/services/printer.service.ts`);
+        console.log(`[listPrinters] 3. DESCARTANDO DUPLICADA: ${item.name} (${item.port})`);
         continue;
       }
       seen.add(key);
       deduped.push(item);
     }
-    console.log("STEP 6 - DEDUPED LENGTH", deduped.length);
-    console.table(deduped);
+    console.log("[listPrinters] 3. Resultado da deduplicação:", deduped.length, "impressoras únicas");
 
-    const grouped = this.groupByCategory(deduped);
-    console.log("STEP 7 - GROUPED", grouped);
-    console.table(Object.entries(grouped).map(([cat, list]) => ({ categoria: cat, count: list.length })));
-
+    // 4. Filtro de Prioridade
     let returnValue: Printer[];
     if (isBridgeHealthy) {
+      // Se o bridge está saudável, confiamos nele e no WebUSB
       returnValue = deduped.filter(p => p.source === 'agent' || p.source === 'webusb');
       
       const discardedBySource = deduped.filter(p => p.source !== 'agent' && p.source !== 'webusb');
-      discardedBySource.forEach(p => {
-        console.log(`DESCARTANDO IMPRESSORA (Source restricted):
-- Nome: ${p.name}
-- Motivo: Bridge está saudável, portanto descartando fallbacks para priorizar impressoras reais.
-- Linha do código: 211
-- Arquivo: src/features/printing/services/printer.service.ts`);
-      });
+      if (discardedBySource.length > 0) {
+        console.log("[listPrinters] 4. Filtrando fontes secundárias (priorizando Bridge/USB):", discardedBySource.map(p => p.name));
+      }
     } else {
-      console.log("STEP: Bridge indisponível, retornando lista vazia para evitar fallbacks silenciosos.");
+      // Se o bridge falhou, não queremos fallbacks que podem confundir o usuário (como PDF local se ele espera ZPL)
+      console.log("[listPrinters] 4. Bridge indisponível - Retornando lista vazia para evitar confusão com fallbacks.");
       returnValue = [];
     }
 
-    console.log("STEP 8 - RETURN", returnValue);
-    console.table(returnValue);
+    // 5. Retorno Final
+    console.log("[listPrinters] 5. Resultado final antes do return:", returnValue.length, "impressoras");
+    if (returnValue.length > 0) console.table(returnValue);
 
     return returnValue;
   },
