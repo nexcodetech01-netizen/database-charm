@@ -83,7 +83,7 @@ function timeGreeting() {
  * Eventos → Atividade) usando o Design System UI.1.
  */
 function DashboardPage() {
-  const { user, company } = Route.useRouteContext();
+  const { user, company } = Route.useRouteContext() as { user: any, company: any };
   const navigate = useNavigate();
   const first =
     ((user.user_metadata?.full_name as string | undefined) ||
