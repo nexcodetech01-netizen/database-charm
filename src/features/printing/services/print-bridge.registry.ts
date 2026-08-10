@@ -24,7 +24,7 @@ export const getPrintBridge = async (): Promise<IPrintBridge> => {
   if (!bridgeInstance) {
     try {
       // @ts-ignore - bypass import-protection
-      const moduleName = "./print-bridge.client";
+      const moduleName = "./print-bridge.client.ts";
       const module = await import(/* @vite-ignore */ moduleName);
       bridgeInstance = (module as any).printBridgeClient as IPrintBridge;
     } catch (e) {
