@@ -39,8 +39,13 @@ function toPrinter(raw: RawPrinterInfo, index: number): Printer {
   const name = raw.name ?? `Impressora ${index + 1}`;
   const category = classify(name, raw.driver);
   const type = raw.type ?? inferType(raw.port, raw.driver);
+  
+  // A ID deve ser o nome se não houver ID única vinda do agente.
+  // No Windows, o nome da impressora é o identificador único primário.
+  const id = raw.id || name;
+
   return {
-    id: raw.id ?? name,
+    id,
     name,
     driver: raw.driver ?? "Desconhecido",
     port: raw.port ?? "Desconhecida",
@@ -51,7 +56,6 @@ function toPrinter(raw: RawPrinterInfo, index: number): Printer {
     isDefault: Boolean(raw.isDefault),
     source: raw.source ?? "agent",
     capabilities: {
-      // Sem restrição: o agente envia bytes brutos para qualquer impressora.
       supportsPdf: true,
       supportsZpl: true,
       supportsRaw: true,
