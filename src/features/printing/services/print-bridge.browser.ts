@@ -4,7 +4,7 @@ import { PRINT_BRIDGE_URL } from "@/config/print-bridge";
 
 const BRIDGE_URL = PRINT_BRIDGE_URL;
 
-export const printBridgeClient = {
+export const printBridgeBrowser = {
   async health() {
     try {
       const res = await fetch(`${BRIDGE_URL}/health`);
