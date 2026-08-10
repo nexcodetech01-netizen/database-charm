@@ -11,9 +11,7 @@ import { PRINT_BRIDGE_URL } from "@/config/print-bridge";
  */
 
 const AGENT_ENDPOINTS = [
-  `${PRINT_BRIDGE_URL}/printers`, // NexOS Print Bridge (Porta configurada)
-  "http://127.0.0.1:9100/printers",
-  "http://localhost:8631/printers",
+  `${PRINT_BRIDGE_URL}/printers`, // NexOS Print Bridge (Porta principal configurada)
 ];
 
 const AGENT_TIMEOUT_MS = 1500;
