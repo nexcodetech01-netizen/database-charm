@@ -44,6 +44,7 @@ import { MarketingForm } from "./modules/marketing-form";
 import { MultimediaForm } from "./modules/multimedia-form";
 import { StockForm } from "./modules/stock-form";
 import { FiscalForm } from "./modules/fiscal-form";
+import { KitCompositionModule } from "./modules/kit-composition-module";
 
 import { ProductCreatedDialog } from "../product-created-dialog";
 import { SupplierQuickFormDialog } from "./supplier-quick-form-dialog";
@@ -78,7 +79,8 @@ type FormState = {
   other_costs: string; margin: string; use_category_margin: boolean;
   price: string; stock: string; min_stock: string; tags: string[];
   weight: string; width: string; height: string; length: string;
-  video_url: string;
+  video_url: string; product_type: "simple" | "kit";
+  composition: any[];
   channel_fee_pct: string; channel_fixed_fee: string; tax_pct: string;
 };
 
@@ -90,6 +92,7 @@ const empty: FormState = {
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
   channel_fee_pct: "0", channel_fixed_fee: "0", tax_pct: "0",
   tags: [], weight: "0.3", width: "15", height: "15", length: "15", video_url: "",
+  product_type: "simple", composition: [],
 };
 
 function toState(p?: Product): FormState {
@@ -183,7 +186,33 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
   // Pricing Logic
   const { inputs: pricingInputs } = usePricingInputs(companyId, form.category_id || null);
-  const totalCost = num(form.cost) + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
+  
+  const compositionCost = useMemo(() => {
+    if (form.product_type !== 'kit') return 0;
+    return (form.composition || []).reduce((acc, item) => acc + (num(item.cost) * num(item.quantity)), 0);
+  }, [form.product_type, form.composition]);
+
+  const kitStock = useMemo(() => {
+    if (form.product_type !== 'kit' || !form.composition?.length) return 0;
+    const stocks = form.composition.map(c => Math.floor(num(c.stock) / num(c.quantity)));
+    return Math.min(...stocks);
+  }, [form.product_type, form.composition]);
+
+  const currentCost = form.product_type === 'kit' ? compositionCost : num(form.cost);
+  const currentStock = form.product_type === 'kit' ? kitStock : num(form.stock);
+
+  const totalCost = currentCost + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
+
+  // Sync cost and stock if kit
+  useEffect(() => {
+    if (form.product_type === 'kit') {
+      setForm(s => ({
+        ...s,
+        cost: String(compositionCost),
+        stock: String(kitStock)
+      }));
+    }
+  }, [form.product_type, compositionCost, kitStock, setForm]);
 
   // Apply operational defaults for NEW products
   useEffect(() => {
@@ -305,6 +334,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       height: num(form.height),
       length: num(form.length),
       sales_channels: form.sales_channels,
+      product_type: form.product_type,
+      composition: form.composition,
     };
 
     try {
@@ -376,6 +407,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           <TabsTrigger value="custos" className="px-6 py-2.5 rounded-lg">Custos & Preço</TabsTrigger>
           <TabsTrigger value="marketing" className="px-6 py-2.5 rounded-lg">Marketing & Tags</TabsTrigger>
           <TabsTrigger value="multimidia" className="px-6 py-2.5 rounded-lg">Fotos & Canais</TabsTrigger>
+          {form.product_type === 'kit' && (
+            <TabsTrigger value="composicao" className="px-6 py-2.5 rounded-lg">Composição do Kit</TabsTrigger>
+          )}
         </TabsList>
 
         <div className="bg-card rounded-2xl border shadow-sm p-8 min-h-[500px]">
@@ -475,6 +509,16 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               onVideoUpload={handleVideoUpload}
             />
           </TabsContent>
+
+          {form.product_type === 'kit' && (
+            <TabsContent value="composicao" className="mt-0 space-y-8">
+              <KitCompositionModule
+                companyId={companyId}
+                composition={form.composition}
+                setComposition={(composition) => setForm(s => ({ ...s, composition }))}
+              />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
 
