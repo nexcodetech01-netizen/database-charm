@@ -507,7 +507,10 @@ export function SuggestedPricesByChannelCard(props: Props) {
                   hasMarginOverride={
                     channelMargins[r.id] !== undefined && Number.isFinite(channelMargins[r.id])
                   }
-                  onChangeFixedCost={(v) => setFixedCosts((prev) => ({ ...prev, [r.id]: v }))}
+                  onChangeFixedCost={(v) => {
+                    manualFixedOverridesRef.current[r.id] = true;
+                    setFixedCosts((prev) => ({ ...prev, [r.id]: v }));
+                  }}
                   onChangeMargin={(v) =>
                     setChannelMargins((prev) => {
                       const next = { ...prev };
