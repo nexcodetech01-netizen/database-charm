@@ -4698,6 +4698,58 @@ export type Database = {
           },
         ]
       }
+      product_kit_components: {
+        Row: {
+          company_id: string
+          component_id: string
+          created_at: string
+          id: string
+          parent_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          component_id: string
+          created_at?: string
+          id?: string
+          parent_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          component_id?: string
+          created_at?: string
+          id?: string
+          parent_id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_kit_components_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_kit_components_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_kit_components_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_pricing_policies: {
         Row: {
           company_id: string
@@ -4865,6 +4917,7 @@ export type Database = {
           other_costs: number
           packaging: number
           price: number
+          product_type: Database["public"]["Enums"]["product_type"] | null
           sales_channel: string | null
           sales_channels: string[] | null
           sku: string | null
@@ -4909,6 +4962,7 @@ export type Database = {
           other_costs?: number
           packaging?: number
           price?: number
+          product_type?: Database["public"]["Enums"]["product_type"] | null
           sales_channel?: string | null
           sales_channels?: string[] | null
           sku?: string | null
@@ -4953,6 +5007,7 @@ export type Database = {
           other_costs?: number
           packaging?: number
           price?: number
+          product_type?: Database["public"]["Enums"]["product_type"] | null
           sales_channel?: string | null
           sales_channels?: string[] | null
           sku?: string | null
@@ -7231,6 +7286,7 @@ export type Database = {
         | "avisado"
         | "concluido"
         | "cancelado"
+      product_type: "simple" | "kit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7373,6 +7429,7 @@ export const Constants = {
         "concluido",
         "cancelado",
       ],
+      product_type: ["simple", "kit"],
     },
   },
 } as const
