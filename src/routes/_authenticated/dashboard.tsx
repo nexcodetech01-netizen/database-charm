@@ -96,6 +96,7 @@ function DashboardPage() {
   const [includeHomologation, setIncludeHomologation] = useState(false);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
   const [mlPrintOpen, setMlPrintOpen] = useState(false);
+  const [operationalPrintOpen, setOperationalPrintOpen] = useState(false);
   const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl" | "image"; content: string; id: string; origin?: string } | null>(null);
 
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "month" | "custom">("today");
