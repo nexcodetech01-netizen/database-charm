@@ -80,6 +80,20 @@ export function useFiscalAutofill({
   const lastMaterialRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!category) return;
+    
+    // Herança automática por categoria (Requisito 3)
+    const targetNcm = normalizeNcm(category?.default_ncm);
+    const targetCest = normalizeCest(category.default_cest);
+
+    if (targetNcm && (ncm !== targetNcm)) {
+      setSource("category");
+      onApply({ ncm: targetNcm, cest: targetCest });
+      toast.success(`NCM herdado da categoria: ${targetNcm}`);
+    }
+  }, [categoryId, category, onApply]);
+
+  useEffect(() => {
     async function checkMasterNcm() {
       if (!category) return;
       if (lastCategoryRef.current === categoryId && lastMaterialRef.current === material) return;
@@ -106,7 +120,7 @@ export function useFiscalAutofill({
         onApply({ ncm: targetNcm, cest: targetCest });
         
         if (masterSuggestion) {
-          toast.success(`NCM sugerido: ${targetNcm}`, {
+          toast.success(`Sugestão NCM: ${targetNcm}`, {
             description: `Baseado na categoria "${category.name}"${material ? ` e material "${material}"` : ""}.`,
           });
         }
@@ -118,7 +132,7 @@ export function useFiscalAutofill({
     }
 
     checkMasterNcm();
-  }, [categoryId, material, category, categorySuggestion, ncm, cest, onApply]);
+  }, [categoryId, material, category, categorySuggestion, onApply]);
 
   const debouncedName = useDebouncedValue(name.trim(), 450);
   

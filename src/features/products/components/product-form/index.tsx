@@ -416,9 +416,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               <FiscalForm
                 form={form}
                 setForm={setForm}
-                onFiscalAutofill={() => {}}
-                fiscalLoading={false}
+                onFiscalAutofill={fiscal.applySuggestion as any}
+                fiscalLoading={fiscal.masterLoading}
                 errors={formErrors}
+                categoryName={categoryName}
               />
             </div>
           </TabsContent>
