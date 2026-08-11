@@ -487,6 +487,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           }}
         />
       )}
+      <CategoryQuickFormDialog
+        companyId={companyId}
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        onCreated={(c) => setForm(prev => ({ ...prev, category_id: c.id }))}
+      />
     </div>
   );
 }
