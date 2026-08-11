@@ -73,21 +73,21 @@ export interface CheckoutSession {
 export const CHECKOUT_SESSION_TTL_MS = 30 * 60 * 1000;
 
 export const EMPTY_CART_MESSAGE =
-  "Seu carrinho ainda está vazio 😊 Me diga o que você procura que eu te mostro as opções.";
+  "O seu pedido ainda está vazio! 🛍️ Me conte o que você procura que eu te mostro as nossas melhores opções. 😊";
 export const CHECKOUT_ABORTED_MESSAGE =
-  "Sem problemas! Cancelei o fechamento, mas seu carrinho continua salvo. 😊";
-export const SUMMARY_CONFIRM_MESSAGE = "Está tudo correto? 😊";
+  "Tudo bem! Cancelei o fechamento por aqui, mas o seu pedido continua salvo. Quando quiser concluir, é só me chamar! 😊";
+export const SUMMARY_CONFIRM_MESSAGE = "Está tudo certinho? 😊";
 
 export const INVALID_CPF_MESSAGE =
-  "Esse CPF não parece válido 😕 Pode conferir e enviar novamente?";
+  "Poxa, esse CPF não parece válido. 😕 Pode conferir os números e me enviar novamente?";
 export const INVALID_CNPJ_MESSAGE =
-  "Esse CNPJ não parece válido 😕 Pode conferir e enviar novamente?";
+  "Esse CNPJ não parece válido. 😕 Pode dar uma conferida e me enviar de novo?";
 export const INVALID_CEP_MESSAGE =
-  "O CEP precisa ter 8 dígitos. Pode enviar novamente? (ex: 01001-000)";
+  "O CEP precisa ter 8 dígitos, sabe? Pode me enviar novamente? (ex: 01001-000) 😊";
 export const CEP_NOT_FOUND_MESSAGE =
-  "Não encontrei esse CEP 😕 Pode conferir e enviar novamente?";
+  "Não consegui encontrar esse CEP por aqui. 😕 Pode conferir os números e me mandar novamente?";
 export const INVALID_BIRTH_DATE_MESSAGE =
-  "A data precisa estar no formato DD/MM/AAAA. Pode enviar novamente?";
+  "A data precisa estar no formato DD/MM/AAAA, tá bom? Pode me enviar novamente? 😊";
 
 const FINALIZE_RE =
   /\b(quero finalizar|finalizar|fechar pedido|fechar o pedido|fechar a compra|concluir compra|concluir o pedido|concluir|pode finalizar|pode fechar|vamos fechar|quero comprar|fechar|continuar)\b/;
@@ -258,25 +258,34 @@ export function formatBirthDate(iso: string | null): string {
 }
 
 export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> = {
-  buyer_name: "Qual é o seu nome completo?",
+  buyer_name: "Com certeza! Para começar, qual é o seu nome completo? 😊",
   person_type: [
-    "Você compra como:",
+    "Perfeito! E você está comprando como:",
     "",
-    "• Pessoa Física",
-    "• Pessoa Jurídica",
+    "1. Pessoa Física (CPF)",
+    "2. Pessoa Jurídica (CNPJ)",
   ].join("\n"),
-  document: "Qual é o seu CPF?",
-  zip_code: "Qual é o seu CEP?",
-  address_number: "Qual o número do endereço?",
-  address_complement: "Algum complemento? (opcional — responda *não* para pular)",
-  birth_date: "Qual a sua data de nascimento? (DD/MM/AAAA)",
-  fulfillment: ["Como deseja receber?", "", "🏪 Retirada", "🚚 Entrega"].join("\n"),
-  payment: ["Forma de pagamento pretendida:", "", "• PIX", "• Cartão", "• Dinheiro"].join(
-    "\n",
-  ),
+  document: "Entendido! E qual é o seu CPF? 😊",
+  zip_code: "Certo! Agora me conta o seu CEP para a entrega. 🚚",
+  address_number: "Qual é o número do endereço? 😊",
+  address_complement: "Temos algum complemento por lá? (Apto, bloco, etc. Se não tiver, é só responder *não*! 😊)",
+  birth_date: "E para completar, qual a sua data de nascimento? (No formato DD/MM/AAAA) 😊",
+  fulfillment: [
+    "Como você prefere receber o seu pedido? 😊",
+    "",
+    "1. 🏪 Retirada na loja",
+    "2. 🚚 Entrega no meu endereço",
+  ].join("\n"),
+  payment: [
+    "E qual seria a melhor forma de pagamento para você? 😊",
+    "",
+    "1. • PIX",
+    "2. • Cartão",
+    "3. • Dinheiro",
+  ].join("\n"),
 };
 
-export const CNPJ_PROMPT = "Qual é o CNPJ da empresa?";
+export const CNPJ_PROMPT = "Entendido! E qual é o CNPJ da empresa? 😊";
 
 /** Pergunta do documento conforme PF/PJ. */
 export function documentPrompt(personType: PersonType | null): string {
@@ -320,30 +329,30 @@ export function formatCheckoutSummary(
 ): string {
   const c = session.customer;
   const items = cart.items.map(
-    (i) => `• ${i.qty}x ${i.name} — ${money(i.subtotal)}`,
+    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`,
   );
   const lines = [
-    "🛍️ *Resumo do Pedido*",
+    "🛍️ *Resumo do seu Pedido*",
     "",
-    `Cliente: ${c.fullName ?? session.buyerName ?? "-"}`,
-    `${c.personType === "pj" ? "CNPJ" : "CPF"}: ${formatDocument(c)}`,
+    `*Cliente:* ${c.fullName ?? session.buyerName ?? "-"}`,
+    `*${c.personType === "pj" ? "CNPJ" : "CPF"}:* ${formatDocument(c)}`,
   ];
   if (c.personType === "pf") {
-    lines.push(`Nascimento: ${formatBirthDate(c.birthDate)}`);
+    lines.push(`*Nascimento:* ${formatBirthDate(c.birthDate)}`);
   }
-  lines.push(`Endereço: ${formatCustomerAddress(c) || "-"}`);
+  lines.push(`*Endereço:* ${formatCustomerAddress(c) || "-"}`);
   lines.push(
     "",
-    "Entrega:",
+    "*Entrega:*",
     formatFulfillmentLine(session),
     "",
-    "Pagamento:",
+    "*Pagamento:*",
     session.payment ? PAYMENT_LABEL[session.payment] : "-",
     "",
-    "Itens:",
+    "*Itens do pedido:*",
     ...items,
     "",
-    `Total: ${money(cart.total)}`,
+    `*Total: ${money(cart.total)}*`,
     "",
     SUMMARY_CONFIRM_MESSAGE,
   );

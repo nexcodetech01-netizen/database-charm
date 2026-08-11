@@ -98,17 +98,17 @@ export function matchCategory(
 
 export function formatCategoriesMessage(categories: CatalogCategoryOption[]): string {
   if (categories.length === 0) {
-    return "Ainda não temos produtos disponíveis no catálogo no momento.";
+    return "Ainda não temos produtos disponíveis no catálogo no momento. Me avise se eu puder ajudar com outra coisa! 😊";
   }
   const lines = categories.map(
     (c, i) => `${i + 1}. ${categoryEmoji(c.icon)} ${c.name}`,
   );
   return [
-    "*Temos estas categorias:*",
+    "Claro! Confira as nossas categorias de produtos disponíveis:",
     "",
     ...lines,
     "",
-    "_Responda com o nome ou o número da categoria para ver os produtos._",
+    "Qual dessas você gostaria de ver? É só responder com o nome ou o número! 😊",
   ].join("\n");
 }
 
@@ -127,26 +127,24 @@ export function formatProductsMessage(
 ): string {
   if (products.length === 0) {
     return [
-      `*${categoryName}*`,
+      `Poxa, não temos produtos disponíveis em *${categoryName}* no momento.`,
       "",
-      "Nenhum produto disponível nesta categoria agora.",
-      "",
-      "_Digite *voltar* para ver as categorias._",
+      "Gostaria de ver outra categoria? Me avise o que você procura! 😊",
     ].join("\n");
   }
   const lines = products
     .slice(0, CATALOG_PRODUCTS_LIMIT)
-    .map((p) => `• ${p.name} — ${money(p.price)}`);
+    .map((p) => `• *${p.name}* — *${money(p.price)}*`);
   const extra =
     products.length > CATALOG_PRODUCTS_LIMIT
       ? [`_… e mais ${products.length - CATALOG_PRODUCTS_LIMIT} produto(s)._`]
       : [];
   return [
-    `*${categoryName}*`,
+    `Temos sim! Confira as nossas opções em *${categoryName}*:`,
     "",
     ...lines,
     ...extra,
     "",
-    "_Digite *voltar* para ver as categorias._",
+    "Gostou de algum desses modelos? Me avise se quiser ver fotos ou tirar alguma dúvida! 😊",
   ].join("\n");
 }

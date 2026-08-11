@@ -247,16 +247,16 @@ export function formatSearchResultsMessage(
   const described = describeFilters(filters);
   if (products.length === 0) {
     return [
-      described ? `Não encontrei produtos para *${described}*.` : "Não encontrei produtos com esse pedido.",
+      described ? `Poxa, não encontrei produtos para *${described}*.` : "Não encontrei produtos com esse pedido no momento.",
       "",
-      "_Digite *voltar* para ver as categorias._",
+      "Quer tentar pesquisar por outra categoria ou marca? Me avise se eu puder ajudar! 😊",
     ].join("\n");
   }
   return [
-    described ? `*Encontrei para ${described}:*` : "*Encontrei estas opções:*",
+    `Temos sim! Confira algumas das nossas opções ${described ? `de *${described}* ` : ""}disponíveis:`,
     "",
-    ...products.map((p) => `• ${p.name}${p.brand ? ` (${p.brand})` : ""} — ${money(p.price)}`),
+    ...products.map((p) => `• *${p.name}*${p.brand ? ` (${p.brand})` : ""} — *${money(p.price)}*`),
     "",
-    "_Digite *voltar* para ver as categorias._",
+    "Gostou de algum desses modelos? Me avise se quiser ver fotos ou tirar alguma dúvida! 😊",
   ].join("\n");
 }
