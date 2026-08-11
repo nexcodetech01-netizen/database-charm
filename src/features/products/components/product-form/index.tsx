@@ -47,6 +47,7 @@ import { FiscalForm } from "./modules/fiscal-form";
 
 import { ProductCreatedDialog } from "../product-created-dialog";
 import { SupplierQuickFormDialog } from "./supplier-quick-form-dialog";
+import { CategoryQuickFormDialog } from "./category-quick-form-dialog";
 import { MovementFormDialog } from "@/features/inventory/components/movement-form-dialog";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 
@@ -117,6 +118,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
   const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
@@ -124,6 +126,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [tagInput, setTagInput] = useState("");
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [suggestingTags, setSuggestingTags] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Hooks de dados
   const { data: categories = [] } = useCategories(companyId);
@@ -230,9 +233,34 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   };
 
   const submit = async () => {
+    setFormErrors({});
     const validation = schema.safeParse(form);
     if (!validation.success) {
-      return toast.error("Verifique os campos obrigatórios: " + validation.error.errors[0].message);
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach(err => {
+        const path = err.path[0] as string;
+        if (!errors[path]) errors[path] = err.message;
+      });
+      setFormErrors(errors);
+
+      // Smart Focus & Tab Switching
+      const firstError = validation.error.errors[0];
+      const field = firstError.path[0] as string;
+
+      if (["name", "category_id"].includes(field)) setTab("geral");
+      else if (["sku", "barcode", "ncm"].includes(field)) setTab("estoque");
+      else if (["price"].includes(field)) setTab("custos");
+
+      // Scroll and focus
+      setTimeout(() => {
+        const el = document.getElementById(field);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus();
+        }
+      }, 100);
+
+      return toast.error("Verifique os campos obrigatórios");
     }
 
     const payload: ProductUpdate = {
@@ -343,6 +371,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               categories={categories}
               suppliers={suppliers}
+              errors={formErrors}
+              onOpenQuickCategory={() => setCategoryDialogOpen(true)}
               onTitleBlur={() => {
                 const formatted = toTitleCasePtBr(form.name);
                 if (formatted !== form.name) setForm(s => ({ ...s, name: formatted }));
@@ -359,6 +389,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 onRegenerateSku={handleRegenerateSku}
                 eanLoading={eanLoading}
                 onEanLookup={handleEanLookup}
+                errors={formErrors}
               />
               <div className="h-px bg-border" />
               <StockForm
@@ -373,6 +404,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 setForm={setForm}
                 onFiscalAutofill={() => {}}
                 fiscalLoading={false}
+                errors={formErrors}
               />
             </div>
           </TabsContent>
@@ -382,6 +414,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               form={form}
               setForm={setForm}
               categoryName={categoryName}
+              errors={formErrors}
+              onOpenQuickCategory={() => setCategoryDialogOpen(true)}
               onApplyCategoryMargin={() => {}}
             />
             <SuggestedPricesByChannelCard
