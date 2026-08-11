@@ -79,6 +79,7 @@ type FormState = {
   price: string; stock: string; min_stock: string; tags: string[];
   weight: string; width: string; height: string; length: string;
   video_url: string;
+  channel_fee_pct: string; channel_fixed_fee: string; tax_pct: string;
 };
 
 const empty: FormState = {
@@ -87,6 +88,7 @@ const empty: FormState = {
   supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica"],
   cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
+  channel_fee_pct: "0", channel_fixed_fee: "0", tax_pct: "0",
   tags: [], weight: "0.3", width: "15", height: "15", length: "15", video_url: "",
 };
 
@@ -101,6 +103,9 @@ function toState(p?: Product): FormState {
     freight: String(p.freight), packaging: String(p.packaging ?? 0),
     insurance: String(p.insurance), other_costs: String(p.other_costs),
     margin: String(p.margin), use_category_margin: (p as any).use_category_margin ?? false,
+    channel_fee_pct: String((p as any).channel_pricing_settings?.ml?.fee_pct ?? 0),
+    channel_fixed_fee: String((p as any).channel_pricing_settings?.ml?.fixed_fee ?? 0),
+    tax_pct: String((p as any).channel_pricing_settings?.ml?.tax_pct ?? 0),
     price: String(p.price), stock: String(p.stock), min_stock: String(p.min_stock),
     tags: p.tags ?? [], weight: String((p as any).weight || ""),
     width: String((p as any).width || ""), height: String((p as any).height || ""),
@@ -284,6 +289,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       other_costs: num(form.other_costs),
       margin: num(form.margin),
       use_category_margin: form.use_category_margin,
+      // Persistência em channel_pricing_settings para manter compatibilidade com o schema Supabase
+      channel_pricing_settings: {
+        ml: {
+          fee_pct: num(form.channel_fee_pct),
+          fixed_fee: num(form.channel_fixed_fee),
+          tax_pct: num(form.tax_pct)
+        }
+      } as any,
       stock: num(form.stock),
       min_stock: num(form.min_stock),
       weight: num(form.weight),
