@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertTriangle, Bot, StickyNote, User, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,18 +10,29 @@ type TimelineItem =
   | { kind: "note"; at: string; note: ConversationNote }
   | { kind: "event"; at: string; label: string; icon: "skill" | "warn" };
 
+function safeFormatTime(iso: string | null): string {
+  if (!iso) return "--:--";
+  try {
+    const d = new Date(iso);
+    if (!isValid(d)) return "--:--";
+    return format(d, "HH:mm", { locale: ptBR });
+  } catch {
+    return "--:--";
+  }
+}
+
 export function ConversationTimeline({
-  messages,
-  notes,
+  messages = [],
+  notes = [],
 }: {
   messages: ConversationMessage[];
   notes: ConversationNote[];
 }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // Constrói timeline combinando mensagens, notas e eventos (skill/erro).
   const items: TimelineItem[] = [];
-  for (const m of messages) {
+  for (const m of (messages || [])) {
+    if (!m?.created_at) continue;
     items.push({ kind: "message", at: m.created_at, message: m });
     if (m.skill_id) {
       items.push({
@@ -40,12 +51,22 @@ export function ConversationTimeline({
       });
     }
   }
-  for (const n of notes) items.push({ kind: "note", at: n.created_at, note: n });
-  items.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  for (const n of (notes || [])) {
+    if (!n?.created_at) continue;
+    items.push({ kind: "note", at: n.created_at, note: n });
+  }
+  
+  items.sort((a, b) => {
+    try {
+      return new Date(a.at).getTime() - new Date(b.at).getTime();
+    } catch {
+      return 0;
+    }
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, notes.length]);
+  }, [messages?.length, notes?.length]);
 
   if (items.length === 0) {
     return (
@@ -58,19 +79,19 @@ export function ConversationTimeline({
   return (
     <div className="flex-1 space-y-3 overflow-y-auto p-4">
       {items.map((it, idx) => {
-        const time = format(new Date(it.at), "HH:mm", { locale: ptBR });
+        const time = safeFormatTime(it.at);
         if (it.kind === "note") {
           return (
             <div
-              key={`n-${it.note.id}-${idx}`}
+              key={`n-${it.note?.id || idx}`}
               className="mx-auto max-w-lg rounded-md border border-amber-500/30 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
             >
               <div className="mb-0.5 flex items-center gap-1.5 font-medium">
                 <StickyNote className="h-3 w-3" /> Observação interna
                 <span className="ml-auto text-[10px] text-muted-foreground">{time}</span>
               </div>
-              <p className="whitespace-pre-wrap">{it.note.text}</p>
-              {it.note.author_name ? (
+              <p className="whitespace-pre-wrap">{it.note?.text || ""}</p>
+              {it.note?.author_name ? (
                 <p className="mt-1 text-[10px] text-muted-foreground">— {it.note.author_name}</p>
               ) : null}
             </div>
@@ -94,12 +115,12 @@ export function ConversationTimeline({
           );
         }
         const m = it.message;
-        const inbound = m.direction === "inbound";
-        const isOperator = m.provider === "operator";
-        const isSystem = m.provider === "system";
+        const inbound = m?.direction === "inbound";
+        const isOperator = m?.provider === "operator";
+        const isSystem = m?.provider === "system";
 
         return (
-          <div key={m.id} className={cn("flex", inbound ? "justify-start" : "justify-end")}>
+          <div key={m?.id || idx} className={cn("flex", inbound ? "justify-start" : "justify-end")}>
             <div
               className={cn(
                 "relative max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
@@ -126,7 +147,7 @@ export function ConversationTimeline({
                 </div>
               ) : null}
               <p className={cn("whitespace-pre-wrap break-words", isSystem && "italic")}>
-                {m.text || <em>(vazio)</em>}
+                {m?.text || <em>(vazio)</em>}
               </p>
               <div
                 className={cn(
@@ -135,7 +156,7 @@ export function ConversationTimeline({
                 )}
               >
                 <span>{time}</span>
-                {m.status && !inbound && !isSystem ? (
+                {m?.status && !inbound && !isSystem ? (
                   <span
                     className={cn(
                       m.status === "failed" && "flex items-center gap-0.5 font-bold text-red-400",
