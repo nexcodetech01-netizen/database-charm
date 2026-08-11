@@ -68,25 +68,34 @@ function toPrinter(raw: RawPrinterInfo, index: number): Printer {
 async function fetchFromAgent(url: string): Promise<RawPrinterInfo[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
-  
+
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    
-    if (!response.ok) {
+    console.log("[PrinterDiscovery] FETCH:", url);
+
+    const res = await fetch(url, { signal: controller.signal });
+
+    console.log("[PrinterDiscovery] STATUS:", res.status);
+    console.log("[PrinterDiscovery] OK:", res.ok);
+
+    const text = await res.text();
+
+    console.log("[PrinterDiscovery] RAW RESPONSE:", text);
+
+    if (!res.ok) {
+      console.error("[PrinterDiscovery] HTTP ERROR:", res.status, text);
       return [];
     }
-    
-    const json = await response.json();
-    const list = Array.isArray(json) ? json : (json?.printers ?? []);
-    
-    return list.map((p: any) => ({
-      ...p,
-      source: p.source || 'agent'
-    })) as RawPrinterInfo[];
-  } catch (err: any) {
-    if (err.name !== 'AbortError') {
-      console.warn(`[printer.service] Falha ao consultar agente em ${url}:`, err.message);
-    }
+
+    const body = JSON.parse(text);
+
+    const list = Array.isArray(body) ? body : (body?.printers ?? []);
+
+    console.log("[PrinterDiscovery] PRINTERS RECEIVED:", list.length);
+    console.table(list);
+
+    return Array.isArray(list) ? (list as RawPrinterInfo[]) : [];
+  } catch (error) {
+    console.error("[PrinterDiscovery] FETCH ERROR:", url, error);
     return [];
   } finally {
     clearTimeout(timer);
