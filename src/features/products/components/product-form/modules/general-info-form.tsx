@@ -2,6 +2,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { RequiredLabel } from "@/components/ui/required-label";
 import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS } from "../../../types";
 
 interface GeneralInfoFormProps {
@@ -10,21 +13,33 @@ interface GeneralInfoFormProps {
   categories: any[];
   suppliers: any[];
   onTitleBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  errors?: Record<string, string>;
+  onOpenQuickCategory?: () => void;
 }
 
-export function GeneralInfoForm({ form, setForm, categories, suppliers, onTitleBlur }: GeneralInfoFormProps) {
+export function GeneralInfoForm({ 
+  form, 
+  setForm, 
+  categories, 
+  suppliers, 
+  onTitleBlur,
+  errors = {},
+  onOpenQuickCategory
+}: GeneralInfoFormProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4 md:col-span-2">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome do Produto</Label>
+          <RequiredLabel htmlFor="name" required>Nome do Produto</RequiredLabel>
           <Input
             id="name"
             placeholder="Ex: Camiseta Algodão Premium"
             value={form.name}
             onChange={(e) => setForm((s: any) => ({ ...s, name: e.target.value }))}
             onBlur={onTitleBlur}
+            className={errors.name ? "border-destructive ring-destructive" : ""}
           />
+          {errors.name && <p className="text-xs text-destructive font-medium">{errors.name}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">Descrição</Label>
@@ -39,12 +54,23 @@ export function GeneralInfoForm({ form, setForm, categories, suppliers, onTitleB
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="category">Categoria</Label>
+        <div className="flex items-center justify-between">
+          <RequiredLabel htmlFor="category" required>Categoria</RequiredLabel>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-5 w-5 text-primary" 
+            type="button"
+            onClick={onOpenQuickCategory}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
         <Select
           value={form.category_id}
           onValueChange={(val) => setForm((s: any) => ({ ...s, category_id: val }))}
         >
-          <SelectTrigger id="category">
+          <SelectTrigger id="category_id" className={errors.category_id ? "border-destructive ring-destructive" : ""}>
             <SelectValue placeholder="Selecione uma categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -55,6 +81,7 @@ export function GeneralInfoForm({ form, setForm, categories, suppliers, onTitleB
             ))}
           </SelectContent>
         </Select>
+        {errors.category_id && <p className="text-xs text-destructive font-medium">{errors.category_id}</p>}
       </div>
 
       <div className="space-y-2">
