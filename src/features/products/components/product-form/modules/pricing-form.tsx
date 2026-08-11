@@ -1,8 +1,9 @@
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
-import { Calculator, Info } from "lucide-react";
+import { Calculator, Info, AlertCircle } from "lucide-react";
 
 interface PricingFormProps {
   form: any;
