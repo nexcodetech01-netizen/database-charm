@@ -31,6 +31,7 @@ const queue: Array<{
   label: LabelData;
   resolve: (value: Blob) => void;
   reject: (reason: any) => void;
+  format?: 'pdf' | 'png';
 }> = [];
 
 const RATE_LIMIT_MS = 1000; // 1 requisição por segundo
@@ -56,15 +57,15 @@ export const labelaryService = {
   },
 
   /**
-   * Converte ZPL para PDF usando o Labelary com cache permanente e resiliência
+   * Converte ZPL para PDF ou PNG usando o Labelary com cache permanente e resiliência
    */
-  async convertToPdf(label: LabelData): Promise<Blob> {
+  async convertToFormat(label: LabelData, format: 'pdf' | 'png' = 'pdf'): Promise<Blob> {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
-    const cacheKey = CryptoJS.SHA256(`${zpl}|${width}|${height}|${dpmm}`).toString();
+    const cacheKey = CryptoJS.SHA256(`${zpl}|${width}|${height}|${dpmm}|${format}`).toString();
 
     // 1. Check Memory Cache
     if (memoryCache.has(cacheKey)) {
-      console.log(`[Labelary] Memory cache hit: ${cacheKey}`);
+      console.log(`[Labelary] Memory cache hit: ${cacheKey} (${format})`);
       this.updateAuditForCache(label, true, 'Memory');
       return memoryCache.get(cacheKey)!;
     }
@@ -76,7 +77,7 @@ export const labelaryService = {
       const cached = await db.get('previews', cacheKey);
       if (cached) {
         const cacheDuration = performance.now() - startTime;
-        console.log(`[Labelary] IndexedDB cache hit: ${cacheKey} (${cacheDuration.toFixed(2)}ms)`);
+        console.log(`[Labelary] IndexedDB cache hit: ${cacheKey} (${format}, ${cacheDuration.toFixed(2)}ms)`);
         memoryCache.set(cacheKey, cached.blob);
         this.updateAuditForCache(label, true, 'IndexedDB', cacheDuration);
         return cached.blob;
@@ -85,9 +86,29 @@ export const labelaryService = {
 
     // 3. Queue request if not in cache
     return new Promise((resolve, reject) => {
-      queue.push({ label, resolve, reject });
+      // Pass the format to the queued item
+      queue.push({ 
+        label, 
+        resolve, 
+        reject, 
+        format 
+      } as any);
       this.processQueue();
     });
+  },
+
+  /**
+   * Mantemos convertToPdf por compatibilidade
+   */
+  async convertToPdf(label: LabelData): Promise<Blob> {
+    return this.convertToFormat(label, 'pdf');
+  },
+
+  /**
+   * Converte ZPL para PNG
+   */
+  async convertToPng(label: LabelData): Promise<Blob> {
+    return this.convertToFormat(label, 'png');
   },
 
   updateAuditForCache(label: LabelData, hit: boolean, type: string, cacheTime: number = 0) {
@@ -114,7 +135,7 @@ export const labelaryService = {
 
     const item = queue.shift()!;
     try {
-      const blob = await this.executeRequestWithRetry(item.label);
+      const blob = await this.executeRequestWithRetry(item.label, 0, item.format || 'pdf');
       item.resolve(blob);
     } catch (error) {
       item.reject(error);
@@ -127,13 +148,13 @@ export const labelaryService = {
     }
   },
 
-  async executeRequestWithRetry(label: LabelData, attempt: number = 0): Promise<Blob> {
+  async executeRequestWithRetry(label: LabelData, attempt: number = 0, format: 'pdf' | 'png' = 'pdf'): Promise<Blob> {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
     const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
     const startTime = Date.now();
     
     const headers = {
-      'Accept': 'application/pdf',
+      'Accept': format === 'pdf' ? 'application/pdf' : 'image/png',
       'Content-Type': 'application/x-www-form-urlencoded'
     };
 
@@ -168,13 +189,13 @@ export const labelaryService = {
           const backoff = Math.pow(2, attempt + 1) * 1000;
           console.warn(`[Labelary] Rate limit (429). Retrying in ${backoff}ms... (Attempt ${attempt + 1})`);
           await new Promise(r => setTimeout(r, backoff));
-          return this.executeRequestWithRetry(label, attempt + 1);
+          return this.executeRequestWithRetry(label, attempt + 1, format);
         }
         throw new Error(`Labelary error ${response.status}: ${responseBody || 'Unknown error'}`);
       }
 
       const blob = await response.blob();
-      const cacheKey = CryptoJS.SHA256(`${zpl}|${width}|${height}|${dpmm}`).toString();
+      const cacheKey = CryptoJS.SHA256(`${zpl}|${width}|${height}|${dpmm}|${format}`).toString();
       
       // Save to caches
       memoryCache.set(cacheKey, blob);
@@ -195,7 +216,7 @@ export const labelaryService = {
          // Retry for network errors too
          console.warn(`[Labelary] Network error. Retrying... (Attempt ${attempt + 1})`);
          await new Promise(r => setTimeout(r, 1000));
-         return this.executeRequestWithRetry(label, attempt + 1);
+         return this.executeRequestWithRetry(label, attempt + 1, format);
       }
       
       lastAudit = {

@@ -24,9 +24,22 @@ export const printBridgeBrowser = {
       let body: any = { printer };
 
       if (label.zpl) {
-        console.info("POST /print/zpl");
-        endpoint = '/print/zpl';
-        body.zpl = label.zpl;
+        console.info("POST /print/image (converted from ZPL)");
+        endpoint = '/print/image';
+        
+        // Obter serviço Labelary dinamicamente
+        const { labelaryService } = await import("./labelary.service");
+        const blob = await labelaryService.convertToPng(label);
+        
+        // Converter Blob para Base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        body.image = base64;
       } else if (label.pdf) {
         console.info("POST /print/pdf");
         endpoint = '/print/pdf';
