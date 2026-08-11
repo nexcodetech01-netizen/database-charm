@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertTriangle, Bot, StickyNote, User, Zap } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import type { ConversationMessage, ConversationNote } from "./types";
 
@@ -19,6 +21,13 @@ function safeFormatTime(iso: string | null): string {
   } catch {
     return "--:--";
   }
+}
+
+function formatWhatsAppText(text: string) {
+  if (!text) return "";
+  // Converte *negrito* do WhatsApp para **negrito** do Markdown
+  // Protegendo contra negritos já existentes (Markdown padrão)
+  return text.replace(/(^|[^*])\*([^*]+)\*([^*]|$)/g, "$1**$2**$3");
 }
 
 export function ConversationTimeline({
@@ -99,10 +108,15 @@ export function ConversationTimeline({
         }
         if (it.kind === "event") {
           const Icon = it.icon === "warn" ? AlertTriangle : Zap;
+          const isSkill = it.icon === "skill";
+          
           return (
             <div
               key={`e-${idx}-${it.at}`}
-              className="mx-auto flex items-center gap-1.5 text-[10px] text-muted-foreground"
+              className={cn(
+                "mx-auto flex items-center gap-1.5",
+                isSkill ? "opacity-40 text-[10px]" : "text-[10px] text-muted-foreground"
+              )}
             >
               <Icon
                 className={cn(
@@ -123,18 +137,18 @@ export function ConversationTimeline({
           <div key={m?.id || idx} className={cn("flex", inbound ? "justify-start" : "justify-end")}>
             <div
               className={cn(
-                "relative max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                "relative max-w-[70%] px-3 py-2 text-sm shadow-sm",
                 inbound
-                  ? "rounded-2xl rounded-tl-none bg-[#1E293B] text-white"
+                  ? "mr-auto rounded-2xl rounded-tl-sm bg-slate-800 text-slate-100"
                   : isOperator
                     ? isSystem
-                      ? "rounded-2xl rounded-br-none border border-blue-200 bg-blue-50/50 py-1 text-[11px] text-blue-800 shadow-none dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-300"
-                      : "rounded-2xl rounded-tr-none bg-primary/90 text-white"
-                    : "rounded-2xl rounded-tr-none bg-slate-800 text-white",
+                      ? "ml-auto rounded-2xl rounded-br-none border border-blue-200 bg-blue-50/50 py-1 text-[11px] text-blue-800 shadow-none dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-300"
+                      : "ml-auto rounded-2xl rounded-tr-sm bg-blue-600 text-white"
+                    : "ml-auto rounded-2xl rounded-tr-sm bg-blue-600 text-white",
               )}
             >
               {!inbound && !isSystem ? (
-                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-90">
+                <div className="mb-1 flex items-center gap-1 text-[10px] opacity-80">
                   {isOperator ? (
                     <>
                       <User className="h-3 w-3" /> Operador
@@ -146,13 +160,26 @@ export function ConversationTimeline({
                   )}
                 </div>
               ) : null}
-              <p className={cn("whitespace-pre-wrap break-words", isSystem && "italic")}>
-                {m?.text || <em>(vazio)</em>}
-              </p>
+              
+              <div className={cn("whitespace-pre-wrap break-words prose prose-invert prose-sm max-w-none", isSystem && "italic")}>
+                {m?.text ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => <p className="m-0 inline">{children}</p>,
+                    }}
+                  >
+                    {formatWhatsAppText(m.text)}
+                  </ReactMarkdown>
+                ) : (
+                  <em>(vazio)</em>
+                )}
+              </div>
+
               <div
                 className={cn(
-                  "mt-1 flex items-center justify-end gap-1 text-[10px] opacity-60",
-                  !isSystem && "absolute bottom-1 right-2 mt-0",
+                  "mt-1 flex items-center justify-end gap-1 text-[10px] text-slate-300",
+                  !isSystem && "mt-0.5",
                 )}
               >
                 <span>{time}</span>
@@ -173,7 +200,6 @@ export function ConversationTimeline({
                   </span>
                 ) : null}
               </div>
-              {!isSystem && <div className="h-3 w-10" /> /* Spacer for absolute time */}
             </div>
           </div>
         );
