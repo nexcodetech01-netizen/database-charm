@@ -158,10 +158,17 @@ export const printerService = {
    * Lista TODAS as impressoras encontradas, sem qualquer filtro por tecnologia.
    */
   async listPrinters(): Promise<Printer[]> {
+    console.log("[PrinterDiscovery] listPrinters() INICIOU");
     const promises = AGENT_ENDPOINTS.map((url) => fetchFromAgent(url));
     promises.push(fetchFromWebUsb());
 
+    console.log("[PrinterDiscovery] Chamando agentes:", AGENT_ENDPOINTS);
     const results = await Promise.all(promises);
+    console.log("[PrinterDiscovery] Resultados dos agentes:", results);
+    console.log(
+      "[PrinterDiscovery] Quantidade por resultado:",
+      results.map((result) => result.length)
+    );
     const allRaw = results.flat();
     
     if (allRaw.length === 0) {
@@ -186,6 +193,7 @@ export const printerService = {
       }
     }
 
+    console.log("[PrinterDiscovery] RETORNANDO:", deduped.length, deduped);
     return deduped;
   },
 
