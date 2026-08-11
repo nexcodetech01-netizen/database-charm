@@ -114,12 +114,12 @@ export function useConsoleRealtime(companyId: string | null) {
           event: "*",
           schema: "public",
           table: "whatsapp_conversations",
-          filter: `company_id=eq.${companyId}`,
+          filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
         (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
           qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
-          const id = (payload.new as { id?: string } | null)?.id;
+          const id = (payload.new as { id?: string } | null)?.id || (payload.old as { id?: string } | null)?.id;
           if (id) qc.invalidateQueries({ queryKey: KEY.detail(id) });
         },
       )
@@ -129,7 +129,7 @@ export function useConsoleRealtime(companyId: string | null) {
           event: "INSERT",
           schema: "public",
           table: "whatsapp_messages",
-          filter: `company_id=eq.${companyId}`,
+          filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
         (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
