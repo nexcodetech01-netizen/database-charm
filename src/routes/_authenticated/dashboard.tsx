@@ -662,6 +662,11 @@ function DashboardPage() {
         labelData={mlLabelData} 
       />
 
+      <GenericLabelPrintDialog
+        open={operationalPrintOpen}
+        onOpenChange={setOperationalPrintOpen}
+      />
+
 
       </div>
 
