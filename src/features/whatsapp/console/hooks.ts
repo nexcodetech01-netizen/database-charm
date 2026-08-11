@@ -102,7 +102,7 @@ export function useConversationDetail(conversationId: string | null) {
   });
 }
 
-export function useConsoleRealtime(companyId: string | null) {
+export function useConsoleRealtime(companyId: string | null, onNewInbound?: (message: { conversation_id: string; text: string; contact_name?: string }) => void) {
   const qc = useQueryClient();
   useEffect(() => {
     if (!companyId) return;
@@ -131,18 +131,36 @@ export function useConsoleRealtime(companyId: string | null) {
           table: "whatsapp_messages",
           filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
-        (payload) => {
+        async (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
           qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
-          const convId = (payload.new as { conversation_id?: string } | null)?.conversation_id;
-          if (convId) qc.invalidateQueries({ queryKey: KEY.detail(convId) });
+          const msg = payload.new as any;
+          if (msg.conversation_id) {
+            qc.invalidateQueries({ queryKey: KEY.detail(msg.conversation_id) });
+            
+            // Notificação apenas para mensagens recebidas (inbound)
+            if (msg.direction === "inbound" && onNewInbound) {
+              // Tenta buscar o nome do contato se não estiver no payload (que geralmente não está em mensagens)
+              const { data: conv } = await supabase
+                .from("whatsapp_conversations")
+                .select("contact_name")
+                .eq("id", msg.conversation_id)
+                .single();
+              
+              onNewInbound({
+                conversation_id: msg.conversation_id,
+                text: msg.text || "",
+                contact_name: conv?.contact_name || "Cliente",
+              });
+            }
+          }
         },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [companyId, qc]);
+  }, [companyId, qc, onNewInbound]);
 }
 
 /* -------- Mutations -------- */
