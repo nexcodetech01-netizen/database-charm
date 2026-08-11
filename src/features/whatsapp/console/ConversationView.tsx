@@ -33,6 +33,20 @@ export function ConversationView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
+  const conv = detail.data;
+  const busy =
+    mutations.assume.isPending ||
+    mutations.returnToBella.isPending ||
+    mutations.setStatus.isPending;
+
+  const isSecurityReduced = useMemo(() => {
+    if (typeof window !== "undefined") {
+      return window.location.hostname.includes("lovable.app") || 
+             window.location.hostname.includes("localhost");
+    }
+    return false;
+  }, []);
+
   if (!selected) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-12 text-center">
@@ -53,7 +67,8 @@ export function ConversationView({
       </div>
     );
   }
-  if (detail.isLoading || !detail.data) {
+
+  if (detail.isLoading || !conv) {
     return (
       <div className="flex h-full flex-col gap-3 p-6">
         <div className="h-14 animate-pulse rounded-md bg-muted/50" />
@@ -61,12 +76,6 @@ export function ConversationView({
       </div>
     );
   }
-
-  const conv = detail.data;
-  const busy =
-    mutations.assume.isPending ||
-    mutations.returnToBella.isPending ||
-    mutations.setStatus.isPending;
 
   const lastInboundAt = conv.ultima_mensagem_cliente_at;
   const isOpen = lastInboundAt 
@@ -102,16 +111,6 @@ export function ConversationView({
     }
   };
 
-  const isSecurityReduced = useMemo(() => {
-    // Verifica se estamos em ambiente de preview ou se o secret está ausente
-    // Como process.env não está disponível no browser, dependemos da resposta do backend
-    // ou de uma flag injetada. Por enquanto, mostramos o aviso se for um host de desenvolvimento.
-    if (typeof window !== "undefined") {
-      return window.location.hostname.includes("lovable.app") || 
-             window.location.hostname.includes("localhost");
-    }
-    return false;
-  }, []);
 
   return (
     <div className="flex h-full flex-col">
