@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Package, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +32,8 @@ const empty: OperationalForm = {
   default_other_costs: "0",
 };
 
-function num(v: string) {
+function num(v: string | number) {
+  if (typeof v === "number") return v;
   const n = Number(v.replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
@@ -144,31 +146,27 @@ export function CustosOperacionaisSection() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Frete padrão (R$)">
-            <Input
-              inputMode="decimal"
-              value={form.default_freight}
-              onChange={(e) => set("default_freight", e.target.value)}
+            <BRLCurrencyInput
+              value={num(form.default_freight)}
+              onValueChange={(val) => set("default_freight", String(val))}
             />
           </Field>
           <Field label="Embalagem padrão (R$)">
-            <Input
-              inputMode="decimal"
-              value={form.default_packaging}
-              onChange={(e) => set("default_packaging", e.target.value)}
+            <BRLCurrencyInput
+              value={num(form.default_packaging)}
+              onValueChange={(val) => set("default_packaging", String(val))}
             />
           </Field>
           <Field label="Seguro padrão (R$)">
-            <Input
-              inputMode="decimal"
-              value={form.default_insurance}
-              onChange={(e) => set("default_insurance", e.target.value)}
+            <BRLCurrencyInput
+              value={num(form.default_insurance)}
+              onValueChange={(val) => set("default_insurance", String(val))}
             />
           </Field>
           <Field label="Outros custos padrão (R$)">
-            <Input
-              inputMode="decimal"
-              value={form.default_other_costs}
-              onChange={(e) => set("default_other_costs", e.target.value)}
+            <BRLCurrencyInput
+              value={num(form.default_other_costs)}
+              onValueChange={(val) => set("default_other_costs", String(val))}
             />
           </Field>
         </CardContent>
