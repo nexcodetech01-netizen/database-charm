@@ -140,6 +140,10 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 id="use-category-margin"
                 checked={form.use_category_margin}
                 onCheckedChange={(val: boolean) => {
+                  if (val && !categoryName) {
+                    toast.error("Selecione uma categoria na aba Geral para usar a margem automática.");
+                    return;
+                  }
                   setForm((s: any) => ({ ...s, use_category_margin: val }));
                   if (val && categoryName) onApplyCategoryMargin();
                 }}
