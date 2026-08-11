@@ -69,7 +69,15 @@ export function WhatsAppConsole({
 }) {
   const list = useConsoleConversations(companyId);
   const metrics = useConsoleMetrics(companyId);
-  useConsoleRealtime(companyId);
+  useConsoleRealtime(companyId, (msg) => {
+    toast(`📩 Nova mensagem de ${msg.contact_name}`, {
+      description: msg.text,
+      action: {
+        label: "Ver",
+        onClick: () => setSelectedId(msg.conversation_id),
+      },
+    });
+  });
 
   const [filters, setFilters] = useState<ConversationFilterState>({
     bucket: "all",
