@@ -255,8 +255,8 @@ export function GenericLabelPrintDialog({
                         <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-3">Configurações</h4>
                         <div className="space-y-4">
                           <PrinterSelector 
-                            selectedPrinterId={selectedPrinterId}
-                            onPrinterChange={setSelectedPrinterId}
+                            value={selectedPrinterId}
+                            onValueChange={setSelectedPrinterId}
                           />
                         </div>
                       </div>
