@@ -25,11 +25,20 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
             id="stock"
             type="number"
             value={form.stock}
-            onChange={(e) => setForm((s: any) => ({ ...s, stock: e.target.value }))}
+            onChange={(e) => {
+              if (form.product_type === 'kit') return;
+              setForm((s: any) => ({ ...s, stock: e.target.value }));
+            }}
+            disabled={form.product_type === 'kit'}
             className="text-lg font-bold tabular-nums"
           />
+          {form.product_type === 'kit' && (
+            <p className="text-[10px] text-blue-400 font-bold">
+              Estoque calculado pelo item gargalo da composição.
+            </p>
+          )}
           
-          {isEdit && (
+          {isEdit && form.product_type !== 'kit' && (
             <div className="flex gap-2">
               <Button
                 variant="outline"
