@@ -98,6 +98,7 @@ const empty: FormState = {
 function toState(p?: Product): FormState {
   if (!p) return empty;
   return {
+    ...empty,
     name: p.name, sku: p.sku ?? "", barcode: p.barcode ?? "", ncm: p.ncm ?? "",
     cest: (p as any).cest ?? "", brand: p.brand ?? "", model: (p as any).model ?? "",
     description: p.description ?? "", category_id: p.category_id ?? "",
@@ -113,6 +114,8 @@ function toState(p?: Product): FormState {
     tags: p.tags ?? [], weight: String((p as any).weight || ""),
     width: String((p as any).width || ""), height: String((p as any).height || ""),
     length: String((p as any).length || ""), video_url: (p as any).video_url ?? "",
+    product_type: (p as any).product_type ?? "simple",
+    composition: (p as any).composition ?? [],
   };
 }
 

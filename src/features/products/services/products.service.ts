@@ -106,7 +106,11 @@ export const productsService = {
         *,
         category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
         supplier:product_suppliers(id, name),
-        images:product_images(id, path, position, focal_x, focal_y, zoom)
+        images:product_images(id, path, position, focal_x, focal_y, zoom),
+        composition:product_kit_components(
+          id, component_id, quantity,
+          product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+        )
       `)
       .eq("id", id)
       .maybeSingle();
