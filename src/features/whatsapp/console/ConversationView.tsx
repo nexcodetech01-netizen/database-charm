@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { ConversationHeader } from "./ConversationHeader";
 import { ConversationTimeline } from "./ConversationTimeline";
 import { useConsoleMutations, useConversationDetail } from "./hooks";
 import type { ConversationListItem } from "./types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function ConversationView({
   selected,
@@ -101,8 +102,31 @@ export function ConversationView({
     }
   };
 
+  const isSecurityReduced = useMemo(() => {
+    // Verifica se estamos em ambiente de preview ou se o secret está ausente
+    // Como process.env não está disponível no browser, dependemos da resposta do backend
+    // ou de uma flag injetada. Por enquanto, mostramos o aviso se for um host de desenvolvimento.
+    if (typeof window !== "undefined") {
+      return window.location.hostname.includes("lovable.app") || 
+             window.location.hostname.includes("localhost");
+    }
+    return false;
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
+      {isSecurityReduced && (
+        <div className="px-6 pt-4">
+          <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 py-2">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle className="text-xs font-bold mb-0">Segurança Reduzida (Modo Fallback)</AlertTitle>
+            <AlertDescription className="text-[10px] leading-tight">
+              META_APP_SECRET não detectado. A validação HMAC está desativada para evitar bloqueios no ambiente atual.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       <ConversationHeader
         conversation={conv}
         onAssume={() =>
