@@ -114,7 +114,7 @@ export function useConsoleRealtime(companyId: string | null) {
           event: "*",
           schema: "public",
           table: "whatsapp_conversations",
-          filter: `company_id=eq.${companyId}`,
+          filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
         (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
@@ -129,7 +129,7 @@ export function useConsoleRealtime(companyId: string | null) {
           event: "INSERT",
           schema: "public",
           table: "whatsapp_messages",
-          filter: `company_id=eq.${companyId}`,
+          filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
         (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });

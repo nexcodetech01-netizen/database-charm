@@ -504,7 +504,10 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   // 3b) Incrementa não lidas para o console (não bloqueia o fluxo).
   await db
     .from("whatsapp_conversations")
-    .update({ unread_count: (Number(conversation.unread_count) || 0) + 1 })
+    .update({ 
+      unread_count: (Number(conversation.unread_count) || 0) + 1,
+      updated_at: new Date().toISOString()
+    })
     .eq("id", conversationId);
 
   // 3c) Se a conversa foi assumida por operador (ou arquivada/resolvida),
@@ -551,7 +554,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (sent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString() })
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
     return;
@@ -581,7 +584,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (checkoutSent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString() })
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
     return;
@@ -644,7 +647,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (recSent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString() })
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
     return;
@@ -695,7 +698,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (photoSent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString() })
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
     return;
@@ -737,7 +740,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (catalogSent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString() })
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", conversationId);
     }
 
@@ -767,7 +770,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       if (upsellSent.ok) {
         await db
           .from("whatsapp_conversations")
-          .update({ last_outbound_at: new Date().toISOString() })
+          .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", conversationId);
       }
     }
@@ -842,7 +845,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
   await db
     .from("whatsapp_conversations")
-    .update({ bella_state: stateToSave })
+    .update({ bella_state: stateToSave, updated_at: new Date().toISOString() })
     .eq("id", conversationId);
 
   // 7) Envia resposta pelo WhatsApp (texto livre — janela de 24h).
