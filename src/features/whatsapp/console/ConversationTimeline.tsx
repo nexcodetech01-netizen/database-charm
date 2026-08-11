@@ -63,7 +63,7 @@ export function ConversationTimeline({
           return (
             <div
               key={`n-${it.note.id}-${idx}`}
-              className="mx-auto max-w-lg rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
+              className="mx-auto max-w-lg rounded-md border border-amber-500/30 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
             >
               <div className="mb-0.5 flex items-center gap-1.5 font-medium">
                 <StickyNote className="h-3 w-3" /> Observação interna
@@ -96,7 +96,7 @@ export function ConversationTimeline({
         const m = it.message;
         const inbound = m.direction === "inbound";
         const isOperator = m.provider === "operator";
-        const isSystem = m.type === "template" || m.provider === "system";
+        const isSystem = m.provider === "system";
 
         return (
           <div key={m.id} className={cn("flex", inbound ? "justify-start" : "justify-end")}>
