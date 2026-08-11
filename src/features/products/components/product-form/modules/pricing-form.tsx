@@ -2,19 +2,30 @@ import { Label } from "@/components/ui/label";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
-import { Calculator, Info, AlertCircle } from "lucide-react";
+import { Calculator, Info, AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RequiredLabel } from "@/components/ui/required-label";
 
 interface PricingFormProps {
   form: any;
   setForm: (val: any) => void;
   categoryName: string | null;
   onApplyCategoryMargin: () => void;
+  errors?: Record<string, string>;
+  onOpenQuickCategory?: () => void;
 }
 
-export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin }: PricingFormProps) {
+export function PricingForm({ 
+  form, 
+  setForm, 
+  categoryName, 
+  onApplyCategoryMargin,
+  errors = {},
+  onOpenQuickCategory
+}: PricingFormProps) {
   const num = (v: any) => {
     if (typeof v === "number") return v;
     const normalized = String(v ?? "").replace(",", ".").replace(/[^\d.-]/g, "");
@@ -30,6 +41,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
   
   const totalCost = cost + freight + packaging + insurance + other;
   const price = num(form.price);
+  const desiredMargin = num(form.margin);
   
   const margin = price > 0 ? ((price - totalCost) / price) * 100 : 0;
   const grossProfit = price - totalCost;
@@ -99,19 +111,23 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
           )}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="price">Preço de Venda Final</Label>
+                <RequiredLabel htmlFor="price" required>Preço de Venda Final</RequiredLabel>
                 <Badge className={cn("text-[10px] font-bold uppercase py-0 px-2", status.color)}>
                   {status.label}: {margin.toFixed(2)}%
                 </Badge>
               </div>
               <BRLCurrencyInput
                 id="price"
-                className="text-lg font-bold"
+                className={cn("text-lg font-bold", errors.price ? "border-destructive ring-destructive" : "")}
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
                   setForm((s: any) => {
                     const next = { ...s, price: val };
+                    // Recalcula a margem ao mudar o preço
+                    if (val > 0) {
+                      next.margin = (((val - totalCost) / val) * 100).toFixed(2);
+                    }
                     if (s.use_category_margin) {
                       next.use_category_margin = false;
                     }
@@ -119,6 +135,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                   });
                 }}
               />
+              {errors.price && <p className="text-xs text-destructive font-medium">{errors.price}</p>}
               <p className="text-[10px] text-muted-foreground font-medium">
                 Lucro Bruto: <span className={grossProfit < 0 ? "text-red-500" : "text-emerald-600"}>
                   {formatCurrency(grossProfit)}
@@ -126,9 +143,51 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
               </p>
             </div>
 
+            <div className="space-y-2 pt-2 border-t border-dashed">
+              <Label htmlFor="margin" className="text-xs">Margem Desejada (%)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="margin"
+                  type="number"
+                  step="0.01"
+                  className="h-8 text-xs font-medium"
+                  value={desiredMargin}
+                  onChange={(e) => {
+                    const m = num(e.target.value);
+                    setForm((s: any) => {
+                      const next = { ...s, margin: m };
+                      // Se tem custo, calcula preço
+                      if (totalCost > 0) {
+                        // Preço = Custo / (1 - Margem/100)
+                        const p = totalCost / (1 - m / 100);
+                        if (p > 0 && p !== Infinity) {
+                          next.price = p.toFixed(2);
+                        }
+                      }
+                      return next;
+                    });
+                  }}
+                />
+                <div className="flex items-center justify-center bg-muted rounded px-2 h-8 text-[10px] font-bold text-muted-foreground">
+                  %
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between space-x-2 pt-2 border-t border-dashed">
               <div className="space-y-0.5">
-                <Label className="text-xs cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 text-primary" 
+                    type="button"
+                    onClick={onOpenQuickCategory}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
                 <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                   {categoryName ? (
                     `Aplicar política de ${categoryName}`

@@ -2,15 +2,23 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileText, Sparkles } from "lucide-react";
+import { RequiredLabel } from "@/components/ui/required-label";
 
 interface FiscalFormProps {
   form: any;
   setForm: (val: any) => void;
   onFiscalAutofill: () => void;
   fiscalLoading?: boolean;
+  errors?: Record<string, string>;
 }
 
-export function FiscalForm({ form, setForm, onFiscalAutofill, fiscalLoading }: FiscalFormProps) {
+export function FiscalForm({ 
+  form, 
+  setForm, 
+  onFiscalAutofill, 
+  fiscalLoading,
+  errors = {} 
+}: FiscalFormProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4 md:col-span-2">
@@ -34,13 +42,14 @@ export function FiscalForm({ form, setForm, onFiscalAutofill, fiscalLoading }: F
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="ncm">NCM (Nomenclatura Comum do Mercosul)</Label>
+        <RequiredLabel htmlFor="ncm" required>NCM (Nomenclatura Comum do Mercosul)</RequiredLabel>
         <div className="flex gap-2">
           <Input
             id="ncm"
             placeholder="Ex: 42022100"
             value={form.ncm}
             onChange={(e) => setForm((s: any) => ({ ...s, ncm: e.target.value.replace(/\D/g, "") }))}
+            className={errors.ncm ? "border-destructive ring-destructive" : ""}
           />
           <Button variant="ghost" size="icon" type="button" title="Consultar NCM">
             <FileText className="h-4 w-4" />
