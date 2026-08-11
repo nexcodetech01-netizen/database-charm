@@ -27,9 +27,7 @@ export class MockProvider implements AIProvider {
     const lastUser = [...request.messages].reverse().find((m) => m.role === "user");
     const echo = lastUser?.content ?? "";
     return {
-      content: echo
-        ? `Recebi sua mensagem: "${truncate(echo, 140)}". (resposta gerada em modo offline)`
-        : "Estou em modo offline no momento.",
+      content: "", // Removida a resposta automática genérica "offline"
       provider: this.id,
       model: "mock-1",
       tokensInput: echo.length,

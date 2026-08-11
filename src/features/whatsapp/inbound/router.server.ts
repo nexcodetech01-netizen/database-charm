@@ -797,6 +797,21 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
         userMessage: msg.text,
         companyName: tenant.companyName,
       });
+
+      // Se o provider for 'mock', significa que estamos em fallback/offline
+      // ou a IA está indisponível. Conforme requisito 1 e 2, não enviamos resposta automática.
+      if (ai.provider === "mock") {
+        console.log(
+          JSON.stringify({
+            scope: "whatsapp.bella",
+            level: "info",
+            msg: "Bella em modo offline/fallback — silenciando resposta automática",
+            conversationId,
+          }),
+        );
+        return; // Interrompe o fluxo para não enviar o outbound vazio
+      }
+
       providerId = ai.provider;
       response = {
         action: "UNKNOWN",
@@ -810,23 +825,17 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       skillId = "execute_skill";
     }
   } catch (err) {
-    response = {
-      action: "UNKNOWN",
-      title: "Não consegui processar",
-      description:
-        "Tive um problema para entender agora. Pode reformular em uma frase curta?",
-      metrics: [],
-      priority: "high",
-      suggestions: [],
-    };
+    // Se ocorrer um erro grave, apenas logamos e não respondemos o cliente.
     console.error(
       JSON.stringify({
         scope: "whatsapp.bella",
         level: "error",
-        msg: "engine.run falhou",
+        msg: "engine.run falhou gravemente",
         error: err instanceof Error ? err.message : String(err),
+        conversationId,
       }),
     );
+    return; // Interrompe para não enviar mensagem de erro genérica ao cliente
   }
 
   // 6) Snapshot do contexto atualizado → persistência por contato.
