@@ -322,9 +322,22 @@ export async function handleWhatsAppInboundPayload(payload: Any): Promise<void> 
           .select("id, name")
           .eq("whatsapp_phone_number_id", msg.phoneNumberId)
           .maybeSingle();
-        tenant = company
-          ? { companyId: company.id as string, companyName: (company.name as string) ?? null }
-          : null;
+
+        if (company) {
+          tenant = { companyId: company.id as string, companyName: (company.name as string) ?? null };
+        } else {
+          // Fallback: Busca a primeira empresa ativa para não descartar a mensagem
+          const { data: fallback } = await db
+            .from("companies")
+            .select("id, name")
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          
+          tenant = fallback
+            ? { companyId: fallback.id as string, companyName: (fallback.name as string) ?? null }
+            : null;
+        }
         tenantCache.set(msg.phoneNumberId, tenant);
       }
       if (!tenant) {
@@ -332,7 +345,7 @@ export async function handleWhatsAppInboundPayload(payload: Any): Promise<void> 
           JSON.stringify({
             scope: "whatsapp.inbound",
             level: "warn",
-            msg: "tenant não resolvido — nenhuma empresa mapeia este phone_number_id",
+            msg: "tenant não resolvido — nenhuma empresa encontrada (nem fallback)",
             phoneNumberId: msg.phoneNumberId,
           }),
         );
