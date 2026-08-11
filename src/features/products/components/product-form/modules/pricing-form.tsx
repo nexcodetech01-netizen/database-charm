@@ -134,17 +134,17 @@ export function PricingForm({
         {/* Coluna de Custos */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
-              <Calculator className="h-4 w-4 text-slate-600" />
+            <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
+              <Calculator className="h-4 w-4 text-slate-300" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Custos</h4>
+            <h4 className="text-sm font-bold text-slate-300 uppercase tracking-tight">Custos</h4>
           </div>
-          <div className="space-y-3 p-5 rounded-xl border bg-slate-50/50 shadow-sm">
+          <div className="space-y-3 p-5 rounded-xl border border-slate-800 bg-slate-900/50 shadow-sm">
             <div className="space-y-2">
-              <RequiredLabel htmlFor="cost" required className="text-xs font-bold text-slate-700">Custo Unitário do Produto</RequiredLabel>
+              <RequiredLabel htmlFor="cost" required className="text-xs font-bold text-slate-300">Custo Unitário do Produto</RequiredLabel>
               <BRLCurrencyInput
                 id="cost"
-                className="text-lg font-bold h-12 bg-white"
+                className="text-lg font-bold h-12 bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                 value={cost}
                 onValueChange={(val: number) => {
                   setForm((s: any) => ({ ...s, cost: val }));
@@ -157,7 +157,7 @@ export function PricingForm({
 
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="operational-costs" className="border-none">
-                <AccordionTrigger className="py-2 text-[10px] font-bold uppercase text-slate-500 hover:no-underline flex gap-2">
+                <AccordionTrigger className="py-2 text-[10px] font-bold uppercase text-slate-400 hover:text-slate-200 hover:no-underline flex gap-2">
                   Ver detalhes dos custos operacionais
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 space-y-3 pb-0">
@@ -166,7 +166,7 @@ export function PricingForm({
                       <Label htmlFor="freight" className="text-[10px] uppercase font-bold text-slate-400">Frete</Label>
                       <BRLCurrencyInput
                         id="freight"
-                        className="h-9 text-xs bg-white"
+                        className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={freight}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, freight: val }))}
                       />
@@ -175,7 +175,7 @@ export function PricingForm({
                       <Label htmlFor="packaging" className="text-[10px] uppercase font-bold text-slate-400">Embalagem</Label>
                       <BRLCurrencyInput
                         id="packaging"
-                        className="h-9 text-xs bg-white"
+                        className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={packaging}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, packaging: val }))}
                       />
@@ -186,7 +186,7 @@ export function PricingForm({
                       <Label htmlFor="insurance" className="text-[10px] uppercase font-bold text-slate-400">Seguro</Label>
                       <BRLCurrencyInput
                         id="insurance"
-                        className="h-9 text-xs bg-white"
+                        className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={insurance}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, insurance: val }))}
                       />
@@ -195,7 +195,7 @@ export function PricingForm({
                       <Label htmlFor="other_costs" className="text-[10px] uppercase font-bold text-slate-400">Outros Custos</Label>
                       <BRLCurrencyInput
                         id="other_costs"
-                        className="h-9 text-xs bg-white"
+                        className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={other}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, other_costs: val }))}
                       />
@@ -205,9 +205,9 @@ export function PricingForm({
               </AccordionItem>
             </Accordion>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
-              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">Custo Total Efetivo</span>
-              <span className="text-base font-black text-slate-900">{formatCurrency(totalCost)}</span>
+            <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
+              <span className="text-[10px] font-bold uppercase text-slate-400 tracking-tight">Custo Total Efetivo</span>
+              <span className="text-base font-black text-white">{formatCurrency(totalCost)}</span>
             </div>
           </div>
         </div>
@@ -215,27 +215,24 @@ export function PricingForm({
         {/* Coluna de Preço da Loja/Base */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+            <div className="h-8 w-8 rounded-lg bg-blue-900/40 flex items-center justify-center border border-blue-800/50">
+              <TrendingUp className="h-4 w-4 text-blue-400" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Preço da Loja / Base</h4>
+            <h4 className="text-sm font-bold text-slate-300 uppercase tracking-tight">Preço da Loja / Base</h4>
           </div>
           <div className={cn(
-            "space-y-4 p-5 rounded-xl border transition-all shadow-sm",
-            margin < 0 ? "bg-red-50 border-red-200" : 
-            margin <= 20 ? "bg-amber-50 border-amber-200" : 
-            "bg-blue-50/50 border-blue-200"
+            "space-y-4 p-5 rounded-xl border border-slate-800 transition-all shadow-sm bg-slate-900/50"
           )}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <RequiredLabel htmlFor="price" required className="text-xs font-bold text-slate-700">Preço de Venda Final</RequiredLabel>
+                <RequiredLabel htmlFor="price" required className="text-xs font-bold text-slate-300">Preço de Venda Final</RequiredLabel>
                 <Badge className={cn("text-[9px] font-black uppercase py-0.5 px-2 tracking-tighter shadow-none border-none", status.color)}>
                   {status.label}: {margin.toFixed(2)}%
                 </Badge>
               </div>
               <BRLCurrencyInput
                 id="price"
-                className={cn("text-lg font-black h-12 bg-white shadow-inner", errors.price ? "border-destructive ring-destructive" : "border-slate-200")}
+                className={cn("text-lg font-black h-12 bg-slate-950 text-white placeholder:text-slate-500", errors.price ? "border-destructive ring-destructive" : "border-slate-700")}
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
@@ -261,13 +258,13 @@ export function PricingForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="margin" className="text-[10px] font-bold uppercase text-slate-500">Margem Desejada (%)</Label>
+                <Label htmlFor="margin" className="text-[10px] font-bold uppercase text-slate-400">Margem Desejada (%)</Label>
                 <div className="relative group">
                   <Input
                     id="margin"
                     type="number"
                     step="0.01"
-                    className="h-10 text-sm font-bold bg-white pr-8"
+                    className="h-10 text-sm font-bold bg-slate-950 border-slate-700 text-white placeholder:text-slate-500 pr-8"
                     value={desiredMargin}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const m = num(e.target.value);
@@ -279,10 +276,10 @@ export function PricingForm({
               </div>
 
               <div className="space-y-2 flex flex-col justify-end">
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Lucro Bruto</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Lucro Bruto</span>
                 <div className={cn(
                   "h-10 rounded-md border flex items-center px-3 font-black text-sm shadow-sm",
-                  grossProfit < 0 ? "bg-red-100 border-red-200 text-red-600" : "bg-emerald-100 border-emerald-200 text-emerald-600"
+                  grossProfit < 0 ? "bg-red-950/40 border-red-800 text-red-400" : "bg-emerald-950/40 border-emerald-800/50 text-emerald-400"
                 )}>
                   {formatCurrency(grossProfit)}
                 </div>
@@ -290,10 +287,10 @@ export function PricingForm({
             </div>
 
             {categoryName && (
-              <div className="flex items-center justify-between pt-3 border-t border-slate-200/50">
+              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                 <div className="space-y-0.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
-                  <p className="text-[9px] text-slate-400 font-medium">Aplicar política de {categoryName}</p>
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
+                  <p className="text-[9px] text-slate-500 font-medium">Aplicar política de {categoryName}</p>
                 </div>
                 <Switch
                   id="use-category-margin"

@@ -43,7 +43,7 @@ export const BRLCurrencyInput = React.forwardRef<HTMLInputElement, BRLCurrencyIn
         inputMode="numeric"
         value={format(value ?? 0)}
         onChange={handleChange}
-        className={cn("tabular-nums font-medium", className)}
+        className={cn("tabular-nums font-bold", className)}
       />
     );
   }
