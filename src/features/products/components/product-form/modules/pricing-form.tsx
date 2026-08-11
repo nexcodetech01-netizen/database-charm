@@ -304,7 +304,6 @@ export function PricingForm({
                   }}
                 />
               </div>
-            )}
           </div>
         </div>
       </div>
