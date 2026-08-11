@@ -310,5 +310,4 @@ export function PricingForm({
       </div>
     </div>
   );
-  );
 }
