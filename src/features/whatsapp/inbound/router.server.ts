@@ -59,16 +59,29 @@ interface ParsedTextMessage {
 function phoneVariants(raw: string): string[] {
   const digits = String(raw ?? "").replace(/\D/g, "");
   const set = new Set<string>();
-  if (digits) set.add(digits);
-  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
-    const cc = digits.slice(0, 2); // "55"
+  if (!digits) return [];
+  set.add(digits);
+
+  // Normalização para o 9º dígito brasileiro
+  // Se o número tem 12 ou 13 dígitos e começa com 55 (Brasil)
+  if (digits.startsWith("55")) {
+    const cc = "55";
     const ddd = digits.slice(2, 4);
     const rest = digits.slice(4);
-    if (digits.length === 13 && rest.startsWith("9")) {
-      set.add(`${cc}${ddd}${rest.slice(1)}`); // remove 9
+
+    if (rest.length === 9 && rest.startsWith("9")) {
+      // Tem 9 dígitos (ex: 55 11 987654321), adiciona variante com 8 (55 11 87654321)
+      set.add(`${cc}${ddd}${rest.slice(1)}`);
+    } else if (rest.length === 8) {
+      // Tem 8 dígitos (ex: 55 11 87654321), adiciona variante com 9 (55 11 987654321)
+      set.add(`${cc}${ddd}9${rest}`);
     }
-    if (digits.length === 12) {
-      set.add(`${cc}${ddd}9${rest}`); // adiciona 9
+    
+    // Fallback agressivo: últimos 8 dígitos para comparação de contato
+    if (digits.length >= 8) {
+      const suffix = digits.slice(-8);
+      // Aqui poderíamos adicionar mais variantes se a busca permitisse regex, 
+      // mas o set ajuda o .in() do Supabase
     }
   }
   return Array.from(set);

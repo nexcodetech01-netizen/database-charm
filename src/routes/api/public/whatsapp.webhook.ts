@@ -54,7 +54,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         } catch {
           parsedForLog = raw;
         }
-        console.log("Mensagem recebida do Webhook:", JSON.stringify(parsedForLog));
+        console.log("PAYLOAD RECEBIDO DA META:", JSON.stringify(parsedForLog));
 
         try {
           // 2) Rate limit + verificação de assinatura (antes de qualquer persistência).
