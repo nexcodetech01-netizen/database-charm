@@ -34,6 +34,7 @@ export async function listActiveProducts(
     .select("id, name, price, brand, category_id, unit")
     .eq("company_id", companyId)
     .eq("status", "active")
+    .gt("stock", 0)
     .order("name");
 
   return ((data ?? []) as ProductRow[]).map((p) => ({
