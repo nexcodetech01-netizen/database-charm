@@ -1,14 +1,21 @@
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export type Product = Tables<"products"> & {
+export type Product = Omit<Tables<"products">, "product_type"> & {
   video_url?: string | null;
+  product_type?: ProductType | null;
+  composition?: any[];
 };
-export type ProductInsert = TablesInsert<"products">;
-export type ProductUpdate = TablesUpdate<"products">;
+export type ProductInsert = TablesInsert<"products"> & {
+  composition?: any[];
+};
+export type ProductUpdate = TablesUpdate<"products"> & {
+  composition?: any[];
+};
 export type ProductCategory = Tables<"product_categories">;
 export type ProductSupplier = Tables<"product_suppliers">;
 export type ProductImage = Tables<"product_images">;
 
+export type ProductType = "simple" | "kit";
 export type ProductStatus = "active" | "inactive" | "draft";
 
 export const PRODUCT_STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
@@ -106,7 +107,11 @@ export const productsService = {
         *,
         category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
         supplier:product_suppliers(id, name),
-        images:product_images(id, path, position, focal_x, focal_y, zoom)
+        images:product_images(id, path, position, focal_x, focal_y, zoom),
+        composition:product_kit_components!product_kit_components_parent_id_fkey(
+          id, component_id, quantity,
+          product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+        )
       `)
       .eq("id", id)
       .maybeSingle();
@@ -173,9 +178,10 @@ export const productsService = {
         ...(duplicate.sku ? {} : { sku: sku ?? null }),
       } as ProductUpdate;
 
+      const { composition: _composition, ...safePatch } = patch;
       const { data: updated, error: updateError } = await supabase
         .from("products")
-        .update(patch)
+        .update(safePatch as any)
         .eq("id", duplicate.id)
         .select()
         .single();
@@ -199,12 +205,33 @@ export const productsService = {
       return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as unknown as typeof updated;
     }
 
+    const { composition, ...insertPayload } = input;
     const { data, error } = await supabase
       .from("products")
-      .insert(input)
+      .insert(insertPayload as any)
       .select()
       .single();
     if (error) throw error;
+
+    // Handle composition for kits
+    if (composition && composition.length > 0 && data?.id) {
+      const components = composition.map((c: any) => ({
+        company_id: (input as any).company_id,
+        parent_id: data.id,
+        component_id: c.component_id,
+        quantity: c.quantity
+      }));
+
+      const { error: compError } = await supabase
+        .from("product_kit_components")
+        .insert(components);
+      
+      if (compError) {
+        console.error("Erro ao salvar composição:", compError);
+        toast.error("Produto criado, mas erro ao salvar composição");
+      }
+    }
+
     return data;
   },
 
@@ -217,7 +244,28 @@ export const productsService = {
     const { stock: _ignoredStock, ...safeInput } = input as ProductUpdate & {
       stock?: number;
     };
-    const updated = await updateRow("products", id, safeInput as ProductUpdate);
+    const { composition, ...safeInputWithoutComp } = safeInput;
+    const updated = await updateRow("products", id, safeInputWithoutComp as any);
+
+    // Sync composition
+    if (composition !== undefined) {
+      // Clear existing
+      await supabase.from("product_kit_components").delete().eq("parent_id", id);
+      
+      if (composition.length > 0) {
+        // Get company_id from updated or input
+        const companyId = (updated as any)?.company_id || (input as any)?.company_id;
+        if (companyId) {
+          const components = composition.map((c: any) => ({
+            company_id: companyId,
+            parent_id: id,
+            component_id: c.component_id,
+            quantity: c.quantity
+          }));
+          await supabase.from("product_kit_components").insert(components);
+        }
+      }
+    }
     // Sincronização fire-and-forget com Mercado Livre quando o produto
     // já está publicado (ml_item_id) e price foi alterado.
     const patched = safeInput as Partial<{ price: number }>;

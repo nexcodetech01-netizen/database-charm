@@ -147,12 +147,19 @@ export function PricingForm({
                 className="text-lg font-bold h-12 bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                 value={cost}
                 onValueChange={(val: number) => {
+                  if (form.product_type === 'kit') return;
                   setForm((s: any) => ({ ...s, cost: val }));
                   if (desiredMargin > 0) {
                     recalculatePrice(desiredMargin, channelFeePct, channelFixedFee);
                   }
                 }}
+                disabled={form.product_type === 'kit'}
               />
+              {form.product_type === 'kit' && (
+                <p className="text-[10px] text-blue-400 font-bold mt-1">
+                  Custo automático pela composição do kit.
+                </p>
+              )}
             </div>
 
             <Accordion type="single" collapsible className="w-full">

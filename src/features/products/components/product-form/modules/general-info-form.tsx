@@ -28,6 +28,35 @@ export function GeneralInfoForm({
 }: GeneralInfoFormProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-4 md:col-span-2 bg-slate-900/30 p-4 rounded-xl border border-slate-800/50 mb-2">
+        <Label className="text-xs font-bold uppercase text-slate-400">Tipo de Produto</Label>
+        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 w-fit">
+          <Button
+            type="button"
+            variant={form.product_type === 'simple' || !form.product_type ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-8 px-4 text-xs font-bold"
+            onClick={() => setForm((s: any) => ({ ...s, product_type: 'simple' }))}
+          >
+            Produto Simples
+          </Button>
+          <Button
+            type="button"
+            variant={form.product_type === 'kit' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-8 px-4 text-xs font-bold"
+            onClick={() => setForm((s: any) => ({ ...s, product_type: 'kit' }))}
+          >
+            Kit / Composto
+          </Button>
+        </div>
+        <p className="text-[10px] text-slate-500 mt-2">
+          {form.product_type === 'kit' 
+            ? "O custo e estoque serão baseados na composição dos itens." 
+            : "Controle individual de custo e saldo de estoque."}
+        </p>
+      </div>
+
       <div className="space-y-4 md:col-span-2">
         <div className="space-y-2">
           <RequiredLabel htmlFor="name" required>Nome do Produto</RequiredLabel>
