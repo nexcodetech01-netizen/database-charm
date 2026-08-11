@@ -122,6 +122,7 @@ function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
 }
 
 const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, ml: 6 };
+const ML_FREE_SHIPPING_THRESHOLD = 79;
 
 const LOW_MARGIN_ALERT_PCT = 10;
 
