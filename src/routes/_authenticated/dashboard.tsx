@@ -59,6 +59,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { ShippingLabelPrintDialog } from "@/features/printing/components/ShippingLabelPrintDialog";
+import { GenericLabelPrintDialog } from "@/features/printing/components/GenericLabelPrintDialog";
 import { ML_TEST_ZPL } from "@/features/mercadolivre/constants/test-zpl";
 
 
@@ -95,6 +96,7 @@ function DashboardPage() {
   const [includeHomologation, setIncludeHomologation] = useState(false);
   const [isAuditOpen, setIsAuditOpen] = useState(false);
   const [mlPrintOpen, setMlPrintOpen] = useState(false);
+  const [operationalPrintOpen, setOperationalPrintOpen] = useState(false);
   const [mlLabelData, setMlLabelData] = useState<{ type: "pdf" | "zpl" | "image"; content: string; id: string; origin?: string } | null>(null);
 
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "month" | "custom">("today");
@@ -277,6 +279,7 @@ function DashboardPage() {
             createLabel="Nova venda"
             onCreate={() => navigate({ to: ROUTES.sales })}
             moreActions={[
+              { label: "Imprimir Etiqueta", icon: Printer, onSelect: () => setOperationalPrintOpen(true) },
               { label: "Testar Etiqueta ML", icon: Printer, onSelect: handleTestMLPrint },
               { label: "Nova compra", icon: ShoppingBag, onSelect: () => navigate({ to: ROUTES.purchases }) },
               { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
@@ -657,6 +660,11 @@ function DashboardPage() {
         open={mlPrintOpen} 
         onOpenChange={setMlPrintOpen} 
         labelData={mlLabelData} 
+      />
+
+      <GenericLabelPrintDialog
+        open={operationalPrintOpen}
+        onOpenChange={setOperationalPrintOpen}
       />
 
 
