@@ -138,8 +138,8 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
           if (msg.conversation_id) {
             qc.invalidateQueries({ queryKey: KEY.detail(msg.conversation_id) });
             
-            // Notificação apenas para mensagens recebidas (inbound)
-            if (msg.direction === "inbound" && onNewInbound) {
+            // Notificação apenas para mensagens recebidas (inbound) ou que não sejam do operador
+            if ((msg.direction === "inbound" || msg.sender !== "operator") && onNewInbound) {
               // Busca os dados da conversa para pegar o nome do contato
               const { data: conv } = await supabase
                 .from("whatsapp_conversations")

@@ -64,6 +64,7 @@ export async function listActiveRecommendationCandidates(
     .select("id, name, price, brand, category_id, unit, cover_image_path")
     .eq("company_id", companyId)
     .eq("status", "active")
+    .gt("stock", 0)
     .order("name");
   return ((data ?? []) as ProductRow[]).map(toItem);
 }
