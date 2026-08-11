@@ -836,7 +836,6 @@ function ChannelTile({
       return;
     }
     setFixedCostError(null);
-    manualFixedOverridesRef.current[row.id] = true;
     onChangeFixedCost(parsed);
   };
 
