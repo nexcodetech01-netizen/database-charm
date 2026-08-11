@@ -488,10 +488,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         />
       )}
       <CategoryQuickFormDialog
-        companyId={companyId}
         open={categoryDialogOpen}
         onOpenChange={setCategoryDialogOpen}
         onCreated={(c) => setForm(prev => ({ ...prev, category_id: c.id }))}
+        onCreate={(name) => createCategory.mutateAsync({ name })}
+        isPending={createCategory.isPending}
       />
     </div>
   );
