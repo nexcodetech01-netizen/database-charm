@@ -102,9 +102,9 @@ export function rankRecommendations(
 }
 
 export const NO_RECOMMENDATIONS_MESSAGE =
-  "No momento não encontrei outro produto parecido, mas posso mostrar outras opções da mesma categoria.";
+  "No momento não encontrei outro produto parecido, mas posso mostrar outras opções da mesma categoria. O que você acha? 😊";
 
-export const RECOMMENDATIONS_FOOTER = "Algum desses chamou sua atenção? 😊";
+export const RECOMMENDATIONS_FOOTER = "Gostou de algum desses modelos? Me avise se quiser ver fotos ou tirar alguma dúvida! 😊";
 
 function money(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -118,9 +118,9 @@ export function formatRecommendationsMessage(
 ): string {
   if (products.length === 0) return NO_RECOMMENDATIONS_MESSAGE;
   return [
-    "*Separei estas opções parecidas:*",
+    "Temos sim! Separei estas opções parecidas que você pode gostar:",
     "",
-    ...products.map((p) => `• ${p.name} — ${money(Number(p.price) || 0)}`),
+    ...products.map((p) => `• *${p.name}* — *${money(Number(p.price) || 0)}*`),
     "",
     RECOMMENDATIONS_FOOTER,
   ].join("\n");
@@ -128,5 +128,5 @@ export function formatRecommendationsMessage(
 
 /** Legenda enviada junto da foto principal de cada produto. */
 export function formatRecommendationCaption(product: RecommendationItem): string {
-  return `${product.name} — ${money(Number(product.price) || 0)}`;
+  return `*${product.name}* — *${money(Number(product.price) || 0)}*`;
 }
