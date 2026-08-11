@@ -119,7 +119,7 @@ export function useConsoleRealtime(companyId: string | null) {
         (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
           qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
-          const id = (payload.new as { id?: string } | null)?.id;
+          const id = (payload.new as { id?: string } | null)?.id || (payload.old as { id?: string } | null)?.id;
           if (id) qc.invalidateQueries({ queryKey: KEY.detail(id) });
         },
       )

@@ -866,7 +866,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   if (sent.ok) {
     await db
       .from("whatsapp_conversations")
-      .update({ last_outbound_at: new Date().toISOString() })
+      .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("id", conversationId);
   }
 
