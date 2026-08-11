@@ -56,7 +56,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
               <BRLCurrencyInput
                 id="cost"
                 value={cost}
-                onValueChange={(val) => setForm((s: any) => ({ ...s, cost: val }))}
+                onValueChange={(val: number) => setForm((s: any) => ({ ...s, cost: val }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -65,7 +65,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 <BRLCurrencyInput
                   id="freight"
                   value={freight}
-                  onValueChange={(val) => setForm((s: any) => ({ ...s, freight: val }))}
+                  onValueChange={(val: number) => setForm((s: any) => ({ ...s, freight: val }))}
                 />
               </div>
               <div className="space-y-2">
@@ -73,7 +73,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 <BRLCurrencyInput
                   id="packaging"
                   value={packaging}
-                  onValueChange={(val) => setForm((s: any) => ({ ...s, packaging: val }))}
+                  onValueChange={(val: number) => setForm((s: any) => ({ ...s, packaging: val }))}
                 />
               </div>
             </div>
@@ -108,11 +108,11 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 className="text-lg font-bold"
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
-                onValueChange={(val) => {
+                onValueChange={(val: number) => {
                   setForm((s: any) => ({ 
                     ...s, 
                     price: val,
-                    use_category_margin: false // Desativa switch ao editar manualmente
+                    use_category_margin: false 
                   }));
                 }}
               />
@@ -139,7 +139,7 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
               <Switch
                 id="use-category-margin"
                 checked={form.use_category_margin}
-                onCheckedChange={(val) => {
+                onCheckedChange={(val: boolean) => {
                   setForm((s: any) => ({ ...s, use_category_margin: val }));
                   if (val && categoryName) onApplyCategoryMargin();
                 }}
