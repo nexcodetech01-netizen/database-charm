@@ -1,8 +1,8 @@
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export type Product = Tables<"products"> & {
+export type Product = Omit<Tables<"products">, "product_type"> & {
   video_url?: string | null;
-  product_type?: ProductType;
+  product_type?: ProductType | null;
   composition?: any[];
 };
 export type ProductInsert = TablesInsert<"products"> & {
