@@ -125,12 +125,12 @@ export function ConversationTimeline({
               className={cn(
                 "relative max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                 inbound
-                  ? "rounded-bl-sm bg-[#1E293B] text-white"
+                  ? "rounded-2xl rounded-tl-none bg-[#1E293B] text-white"
                   : isOperator
                     ? isSystem
-                      ? "rounded-br-sm border border-blue-200 bg-blue-50/50 py-1 text-[11px] text-blue-800 shadow-none dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-300"
-                      : "rounded-br-sm bg-blue-600 text-white"
-                    : "rounded-br-sm bg-slate-800 text-white",
+                      ? "rounded-2xl rounded-br-none border border-blue-200 bg-blue-50/50 py-1 text-[11px] text-blue-800 shadow-none dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-300"
+                      : "rounded-2xl rounded-tr-none bg-primary/90 text-white"
+                    : "rounded-2xl rounded-tr-none bg-slate-800 text-white",
               )}
             >
               {!inbound && !isSystem ? (

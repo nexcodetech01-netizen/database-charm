@@ -102,7 +102,7 @@ export function useConversationDetail(conversationId: string | null) {
   });
 }
 
-export function useConsoleRealtime(companyId: string | null) {
+export function useConsoleRealtime(companyId: string | null, onNewInbound?: (message: { conversation_id: string; text: string; contact_name?: string }) => void) {
   const qc = useQueryClient();
   useEffect(() => {
     if (!companyId) return;
@@ -131,18 +131,48 @@ export function useConsoleRealtime(companyId: string | null) {
           table: "whatsapp_messages",
           filter: companyId ? `company_id=eq.${companyId}` : undefined,
         },
-        (payload) => {
+        async (payload) => {
           qc.invalidateQueries({ queryKey: KEY.list(companyId) });
           qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
-          const convId = (payload.new as { conversation_id?: string } | null)?.conversation_id;
-          if (convId) qc.invalidateQueries({ queryKey: KEY.detail(convId) });
+          const msg = payload.new as any;
+          if (msg.conversation_id) {
+            qc.invalidateQueries({ queryKey: KEY.detail(msg.conversation_id) });
+            
+            // Notificação apenas para mensagens recebidas (inbound)
+            if (msg.direction === "inbound" && onNewInbound) {
+              // Busca os dados da conversa para pegar o nome do contato
+              const { data: conv } = await supabase
+                .from("whatsapp_conversations")
+                .select("id, contact_id")
+                .eq("id", msg.conversation_id as string)
+                .single();
+
+              let contactName = "Cliente";
+              
+              const contactId = (conv as any)?.contact_id;
+              if (contactId) {
+                const { data: contact } = await supabase
+                  .from("whatsapp_contacts")
+                  .select("name")
+                  .eq("id", contactId as string)
+                  .single();
+                if ((contact as any)?.name) contactName = (contact as any).name;
+              }
+              
+              onNewInbound({
+                conversation_id: msg.conversation_id as string,
+                text: msg.text || "",
+                contact_name: contactName,
+              });
+            }
+          }
         },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [companyId, qc]);
+  }, [companyId, qc, onNewInbound]);
 }
 
 /* -------- Mutations -------- */

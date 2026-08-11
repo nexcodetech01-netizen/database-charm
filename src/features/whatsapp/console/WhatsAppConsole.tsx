@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, MessageCircle, MessageSquarePlus, Timer, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { KpiCard, KpiSection } from "@/components/layout";
 import { ConversationFilters } from "./ConversationFilters";
 import { ConversationList } from "./ConversationList";
@@ -69,7 +70,15 @@ export function WhatsAppConsole({
 }) {
   const list = useConsoleConversations(companyId);
   const metrics = useConsoleMetrics(companyId);
-  useConsoleRealtime(companyId);
+  useConsoleRealtime(companyId, (msg) => {
+    toast(`📩 Nova mensagem de ${msg.contact_name}`, {
+      description: msg.text,
+      action: {
+        label: "Ver",
+        onClick: () => setSelectedId(msg.conversation_id),
+      },
+    });
+  });
 
   const [filters, setFilters] = useState<ConversationFilterState>({
     bucket: "all",
