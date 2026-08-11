@@ -103,9 +103,9 @@ function toState(p?: Product): FormState {
     freight: String(p.freight), packaging: String(p.packaging ?? 0),
     insurance: String(p.insurance), other_costs: String(p.other_costs),
     margin: String(p.margin), use_category_margin: (p as any).use_category_margin ?? false,
-    channel_fee_pct: String((p as any).channel_fee_pct ?? 0),
-    channel_fixed_fee: String((p as any).channel_fixed_fee ?? 0),
-    tax_pct: String((p as any).tax_pct ?? 0),
+    channel_fee_pct: String((p as any).channel_pricing_settings?.ml?.fee_pct ?? 0),
+    channel_fixed_fee: String((p as any).channel_pricing_settings?.ml?.fixed_fee ?? 0),
+    tax_pct: String((p as any).channel_pricing_settings?.ml?.tax_pct ?? 0),
     price: String(p.price), stock: String(p.stock), min_stock: String(p.min_stock),
     tags: p.tags ?? [], weight: String((p as any).weight || ""),
     width: String((p as any).width || ""), height: String((p as any).height || ""),
@@ -289,9 +289,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       other_costs: num(form.other_costs),
       margin: num(form.margin),
       use_category_margin: form.use_category_margin,
-      channel_fee_pct: num(form.channel_fee_pct),
-      channel_fixed_fee: num(form.channel_fixed_fee),
-      tax_pct: num(form.tax_pct),
+      // Persistência em channel_pricing_settings para manter compatibilidade com o schema Supabase
+      channel_pricing_settings: {
+        ml: {
+          fee_pct: num(form.channel_fee_pct),
+          fixed_fee: num(form.channel_fixed_fee),
+          tax_pct: num(form.tax_pct)
+        }
+      } as any,
       stock: num(form.stock),
       min_stock: num(form.min_stock),
       weight: num(form.weight),
