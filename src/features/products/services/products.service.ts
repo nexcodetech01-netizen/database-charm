@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
@@ -107,7 +108,7 @@ export const productsService = {
         category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
         supplier:product_suppliers(id, name),
         images:product_images(id, path, position, focal_x, focal_y, zoom),
-        composition:product_kit_components(
+        composition:product_kit_components!product_kit_components_parent_id_fkey(
           id, component_id, quantity,
           product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
         )

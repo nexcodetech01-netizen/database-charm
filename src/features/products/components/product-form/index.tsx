@@ -115,7 +115,15 @@ function toState(p?: Product): FormState {
     width: String((p as any).width || ""), height: String((p as any).height || ""),
     length: String((p as any).length || ""), video_url: (p as any).video_url ?? "",
     product_type: (p as any).product_type ?? "simple",
-    composition: (p as any).composition ?? [],
+    composition: ((p as any).composition || []).map((c: any) => ({
+      id: c.id,
+      component_id: c.component_id,
+      quantity: c.quantity,
+      name: c.product?.name || "",
+      sku: c.product?.sku || "",
+      cost: c.product?.cost || 0,
+      stock: c.product?.stock || 0
+    })),
   };
 }
 
