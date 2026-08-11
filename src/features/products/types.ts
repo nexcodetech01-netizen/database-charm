@@ -9,6 +9,7 @@ export type ProductCategory = Tables<"product_categories">;
 export type ProductSupplier = Tables<"product_suppliers">;
 export type ProductImage = Tables<"product_images">;
 
+export type ProductType = "simple" | "kit";
 export type ProductStatus = "active" | "inactive" | "draft";
 
 export const PRODUCT_STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
