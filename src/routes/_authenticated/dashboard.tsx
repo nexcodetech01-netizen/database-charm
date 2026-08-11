@@ -59,6 +59,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { subDays, startOfMonth, endOfMonth, format, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { ShippingLabelPrintDialog } from "@/features/printing/components/ShippingLabelPrintDialog";
+import { GenericLabelPrintDialog } from "@/features/printing/components/GenericLabelPrintDialog";
 import { ML_TEST_ZPL } from "@/features/mercadolivre/constants/test-zpl";
 
 
