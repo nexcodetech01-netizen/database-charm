@@ -63,7 +63,7 @@ export function ConversationTimeline({
           return (
             <div
               key={`n-${it.note.id}-${idx}`}
-              className="mx-auto max-w-lg rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
+              className="mx-auto max-w-lg rounded-md border border-amber-500/30 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
             >
               <div className="mb-0.5 flex items-center gap-1.5 font-medium">
                 <StickyNote className="h-3 w-3" /> Observação interna
@@ -96,19 +96,23 @@ export function ConversationTimeline({
         const m = it.message;
         const inbound = m.direction === "inbound";
         const isOperator = m.provider === "operator";
+        const isSystem = m.provider === "system";
+
         return (
           <div key={m.id} className={cn("flex", inbound ? "justify-start" : "justify-end")}>
             <div
               className={cn(
-                "max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
+                "relative max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm",
                 inbound
-                  ? "rounded-bl-sm bg-muted text-foreground"
+                  ? "rounded-bl-sm bg-[#1E293B] text-white"
                   : isOperator
-                    ? "rounded-br-sm bg-blue-600 text-white"
+                    ? isSystem
+                      ? "rounded-br-sm border border-blue-200 bg-blue-50/50 py-1 text-[11px] text-blue-800 shadow-none dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-300"
+                      : "rounded-br-sm bg-blue-600 text-white"
                     : "rounded-br-sm bg-slate-800 text-white",
               )}
             >
-              {!inbound ? (
+              {!inbound && !isSystem ? (
                 <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-90">
                   {isOperator ? (
                     <>
@@ -121,14 +125,26 @@ export function ConversationTimeline({
                   )}
                 </div>
               ) : null}
-              <p className="whitespace-pre-wrap break-words">{m.text || <em>(vazio)</em>}</p>
-              <div className="mt-1 flex items-center justify-end gap-1 text-[10px] opacity-80">
+              <p className={cn("whitespace-pre-wrap break-words", isSystem && "italic")}>
+                {m.text || <em>(vazio)</em>}
+              </p>
+              <div
+                className={cn(
+                  "mt-1 flex items-center justify-end gap-1 text-[10px] opacity-60",
+                  !isSystem && "absolute bottom-1 right-2 mt-0",
+                )}
+              >
                 <span>{time}</span>
-                {m.status && !inbound ? (
-                  <span className={cn(m.status === "failed" && "font-bold text-red-400 flex items-center gap-0.5")}>
-                    · {m.status === "failed" ? (
+                {m.status && !inbound && !isSystem ? (
+                  <span
+                    className={cn(
+                      m.status === "failed" && "flex items-center gap-0.5 font-bold text-red-400",
+                    )}
+                  >
+                    ·{" "}
+                    {m.status === "failed" ? (
                       <>
-                        <AlertTriangle className="h-2 w-2" /> Falha no envio
+                        <AlertTriangle className="h-2 w-2" /> Falha
                       </>
                     ) : (
                       m.status
@@ -136,6 +152,7 @@ export function ConversationTimeline({
                   </span>
                 ) : null}
               </div>
+              {!isSystem && <div className="h-3 w-10" /> /* Spacer for absolute time */}
             </div>
           </div>
         );
