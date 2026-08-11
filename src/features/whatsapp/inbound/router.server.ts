@@ -391,12 +391,6 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     .eq("company_id", tenant.companyId)
     .in("wa_id", variants)
     .limit(1);
-  console.log("Resultado da busca de contato:", {
-    from: msg.waContactId,
-    variants,
-    companyId: tenant.companyId,
-    found: Array.isArray(existingContacts) ? existingContacts[0] ?? null : null,
-  });
 
   let contactId: string;
   const existing = Array.isArray(existingContacts) ? existingContacts[0] : null;
@@ -406,20 +400,20 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       .from("whatsapp_contacts")
       .update({
         phone: existing.wa_id ?? canonical,
-        profile_name: msg.profileName,
+        profile_name: msg.profileName || "Cliente",
         last_seen_at: new Date(msg.timestamp).toISOString(),
         ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
       })
       .eq("id", contactId);
   } else {
-    const { data: created } = await db
+    const { data: created, error: createErr } = await db
       .from("whatsapp_contacts")
       .upsert(
         {
           company_id: tenant.companyId,
           wa_id: canonical,
           phone: canonical,
-          profile_name: msg.profileName,
+          profile_name: msg.profileName || "Cliente",
           last_seen_at: new Date(msg.timestamp).toISOString(),
           ultima_mensagem_cliente_at: new Date(msg.timestamp).toISOString(),
         },
@@ -427,7 +421,10 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       )
       .select("id")
       .single();
-    if (!created) return;
+    if (createErr || !created) {
+       console.error("[whatsapp.inbound] falha ao criar contato:", createErr);
+       return;
+    }
     contactId = created.id as string;
   }
 

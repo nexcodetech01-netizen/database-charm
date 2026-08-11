@@ -10,7 +10,9 @@ import type { ConversationListItem } from "./types";
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
   try {
-    return formatDistanceToNowStrict(new Date(iso), { addSuffix: false, locale: ptBR });
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return "";
+    return formatDistanceToNowStrict(date, { addSuffix: false, locale: ptBR });
   } catch {
     return "";
   }
@@ -68,7 +70,10 @@ export function ConversationList({
           <li key={c.id}>
             <button
               type="button"
-              onClick={() => onSelect(c.id)}
+              onClick={() => {
+                if (!c?.id) return;
+                onSelect(c.id);
+              }}
               className={cn(
                 "flex w-full items-start gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/50",
                 isSelected && "bg-muted",
@@ -90,7 +95,7 @@ export function ConversationList({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 truncate text-sm font-medium">
                     <span className="truncate">
-                      {c.contact_name || c.contact_phone || c.contact_wa_id}
+                      {c?.contact_name || c?.contact_phone || c?.contact_wa_id || "Contato Sem Nome"}
                     </span>
                     {answeredByBella ? (
                       <Bot className="h-3 w-3 shrink-0 text-violet-500" aria-label="Bella" />
