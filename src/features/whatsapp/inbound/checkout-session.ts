@@ -329,30 +329,30 @@ export function formatCheckoutSummary(
 ): string {
   const c = session.customer;
   const items = cart.items.map(
-    (i) => `• ${i.qty}x ${i.name} — ${money(i.subtotal)}`,
+    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`,
   );
   const lines = [
-    "🛍️ *Resumo do Pedido*",
+    "🛍️ *Resumo do seu Pedido*",
     "",
-    `Cliente: ${c.fullName ?? session.buyerName ?? "-"}`,
-    `${c.personType === "pj" ? "CNPJ" : "CPF"}: ${formatDocument(c)}`,
+    `*Cliente:* ${c.fullName ?? session.buyerName ?? "-"}`,
+    `*${c.personType === "pj" ? "CNPJ" : "CPF"}:* ${formatDocument(c)}`,
   ];
   if (c.personType === "pf") {
-    lines.push(`Nascimento: ${formatBirthDate(c.birthDate)}`);
+    lines.push(`*Nascimento:* ${formatBirthDate(c.birthDate)}`);
   }
-  lines.push(`Endereço: ${formatCustomerAddress(c) || "-"}`);
+  lines.push(`*Endereço:* ${formatCustomerAddress(c) || "-"}`);
   lines.push(
     "",
-    "Entrega:",
+    "*Entrega:*",
     formatFulfillmentLine(session),
     "",
-    "Pagamento:",
+    "*Pagamento:*",
     session.payment ? PAYMENT_LABEL[session.payment] : "-",
     "",
-    "Itens:",
+    "*Itens do pedido:*",
     ...items,
     "",
-    `Total: ${money(cart.total)}`,
+    `*Total: ${money(cart.total)}*`,
     "",
     SUMMARY_CONFIRM_MESSAGE,
   );
