@@ -190,9 +190,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     if (!isEdit && operationalDefaults && !recoveryData) {
       setForm(prev => ({
         ...prev,
-        freight: prev.freight === "0" ? String(operationalDefaults.freight || 0) : prev.freight,
-        packaging: prev.packaging === "0" ? String(operationalDefaults.packaging || 0) : prev.packaging,
-        other_costs: prev.other_costs === "0" ? String(operationalDefaults.other_costs || 0) : prev.other_costs,
+        freight: String(operationalDefaults.freight || 0),
+        packaging: String(operationalDefaults.packaging || 0),
+        insurance: String(operationalDefaults.insurance || 0),
+        other_costs: String(operationalDefaults.other_costs || 0),
       }));
     }
   }, [isEdit, operationalDefaults, recoveryData, setForm]);
