@@ -122,6 +122,7 @@ function buildChannels(paymentFeePct: number): readonly ChannelPreset[] {
 }
 
 const DEFAULT_FIXED_COSTS: Record<string, number> = { store: 0, ml: 6 };
+const ML_FREE_SHIPPING_THRESHOLD = 79;
 
 const LOW_MARGIN_ALERT_PCT = 10;
 
@@ -173,6 +174,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const [fixedCosts, setFixedCosts] = useState<Record<string, number>>(() => ({
     ...DEFAULT_FIXED_COSTS,
   }));
+
 
   // Margem alvo customizada por canal (%) — editável na UI. Ausente = usa
   // a margem alvo do snapshot (política comercial).
@@ -286,7 +288,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
     localTick,
   ]);
 
-  const channels = useMemo(() => {
+  const channelsData = useMemo(() => {
     const reference = snapshot?.currentStorePrice || 100;
     return buildChannels(effectiveFeePct(worstCaseFee(feeTable, reference), reference));
   }, [feeTable, snapshot?.currentStorePrice]);
@@ -299,11 +301,41 @@ export function SuggestedPricesByChannelCard(props: Props) {
         fixedCosts,
         channelMargins,
         channelStrategies,
-        channels,
+        channelsData,
         companyId,
       ),
-    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies, channels, companyId],
+    [snapshot, strategy, fixedCosts, channelMargins, channelStrategies, channelsData, companyId],
   );
+
+  // Monitora o preço de venda para ajuste automático da tarifa do Mercado Livre (apenas se não houver override manual).
+  const manualFixedOverridesRef = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!snapshot) return;
+
+    setFixedCosts((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      // Regra Mercado Livre: se preço >= 79, tarifa fixa = 0. Se < 79, tarifa fixa = 6.
+      // Só aplicamos se o usuário não tiver alterado manualmente este campo nesta sessão.
+      if (rows.length > 0) {
+        const mlRow = rows.find((r) => r.id === "ml");
+        if (mlRow && !manualFixedOverridesRef.current["ml"]) {
+          const currentPrice = mlRow.priceCents / 100;
+          const expectedFixed =
+            currentPrice >= ML_FREE_SHIPPING_THRESHOLD ? 0 : DEFAULT_FIXED_COSTS.ml;
+
+          if (prev.ml !== expectedFixed) {
+            next.ml = expectedFixed;
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [snapshot?.costTotal, snapshot?.currentStorePrice, snapshot?.targetMarginPct, strategy, rows]);
 
   // "Manter lucro" só faz sentido com preço de loja > custo.
   const keepProfitAvailable =
@@ -475,7 +507,10 @@ export function SuggestedPricesByChannelCard(props: Props) {
                   hasMarginOverride={
                     channelMargins[r.id] !== undefined && Number.isFinite(channelMargins[r.id])
                   }
-                  onChangeFixedCost={(v) => setFixedCosts((prev) => ({ ...prev, [r.id]: v }))}
+                  onChangeFixedCost={(v) => {
+                    manualFixedOverridesRef.current[r.id] = true;
+                    setFixedCosts((prev) => ({ ...prev, [r.id]: v }));
+                  }}
                   onChangeMargin={(v) =>
                     setChannelMargins((prev) => {
                       const next = { ...prev };
