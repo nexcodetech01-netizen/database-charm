@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle, ShieldAlert } from "lucide-react";
+import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle, ShieldAlert, Paperclip, Smile, Zap as ZapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -208,40 +208,51 @@ export function ConversationView({
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-7 text-[10px] rounded-full px-3"
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 rounded-full px-3 text-[10px] border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 dark:border-amber-900/30 dark:bg-amber-900/10 dark:text-amber-400"
                   disabled={mutations.sendMessage.isPending}
-                  onClick={() => mutations.sendMessage.mutate({
-                    conversationId: conv.id,
-                    text: "Enviando template de boas-vindas...",
-                    type: "template",
-                    templateName: "boas_vindas"
-                  })}
+                  onClick={() =>
+                    mutations.sendMessage.mutate({
+                      conversationId: conv.id,
+                      text: "Enviando template de boas-vindas...",
+                      type: "template",
+                      templateName: "boas_vindas",
+                    })
+                  }
                 >
-                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Boas-vindas
+                  <ZapIcon className="mr-1 h-3 w-3 fill-amber-500 text-amber-500" /> Boas-vindas
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-7 text-[10px] rounded-full px-3"
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 rounded-full px-3 text-[10px] border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 dark:border-amber-900/30 dark:bg-amber-900/10 dark:text-amber-400"
                   disabled={mutations.sendMessage.isPending}
-                  onClick={() => mutations.sendMessage.mutate({
-                    conversationId: conv.id,
-                    text: "Enviando template de cobrança...",
-                    type: "template",
-                    templateName: "cobranca_criada"
-                  })}
+                  onClick={() =>
+                    mutations.sendMessage.mutate({
+                      conversationId: conv.id,
+                      text: "Enviando template de cobrança...",
+                      type: "template",
+                      templateName: "cobranca_criada",
+                    })
+                  }
                 >
-                  <MessageSquarePlus className="mr-1 h-3 w-3" /> Cobrança
+                  <ZapIcon className="mr-1 h-3 w-3 fill-amber-500 text-amber-500" /> Cobrança
                 </Button>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <Button 
-                  size="sm" 
-                  onClick={handleSubmit} 
+              <div className="flex items-center gap-1">
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" title="Anexar arquivo">
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" title="Emojis">
+                  <Smile className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSubmit}
                   disabled={!isOpen || mutations.sendMessage.isPending}
+                  className="ml-1"
                 >
                   <Send className="mr-1.5 h-3.5 w-3.5" /> Enviar
                 </Button>

@@ -70,7 +70,7 @@ export function ConversationList({
               type="button"
               onClick={() => onSelect(c.id)}
               className={cn(
-                "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50",
+                "flex w-full items-start gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/50",
                 isSelected && "bg-muted",
               )}
             >
