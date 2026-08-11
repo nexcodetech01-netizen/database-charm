@@ -424,22 +424,26 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           </TabsContent>
 
           <TabsContent value="custos" className="mt-0 space-y-8">
-            <PricingForm
-              form={form}
-              setForm={setForm}
-              categoryName={categoryName}
-              errors={formErrors}
-              onOpenQuickCategory={() => setCategoryDialogOpen(true)}
-              onApplyCategoryMargin={() => {}}
-            />
-            <SuggestedPricesByChannelCard
-              mode="local"
-              costTotalCents={Math.round(totalCost * 100)}
-              targetMarginPct={num(form.margin)}
-              currentStorePriceCents={Math.round(num(form.price) * 100)}
-              productId={product?.id}
-              onApplySuggested={(p) => setForm(s => ({ ...s, price: p.toFixed(2) }))}
-            />
+            <div className="space-y-6">
+              <PricingForm
+                form={form}
+                setForm={setForm}
+                categoryName={categoryName}
+                errors={formErrors}
+                onOpenQuickCategory={() => setCategoryDialogOpen(true)}
+                onApplyCategoryMargin={() => {}}
+              />
+              <div className="pt-6 border-t border-slate-100">
+                <SuggestedPricesByChannelCard
+                  mode="local"
+                  costTotalCents={Math.round(totalCost * 100)}
+                  targetMarginPct={num(form.margin)}
+                  currentStorePriceCents={Math.round(num(form.price) * 100)}
+                  productId={product?.id}
+                  onApplySuggested={(p) => setForm(s => ({ ...s, price: p.toFixed(2) }))}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="marketing" className="mt-0 space-y-8">
