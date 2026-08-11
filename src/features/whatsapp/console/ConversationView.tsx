@@ -111,16 +111,6 @@ export function ConversationView({
     }
   };
 
-  const isSecurityReduced = useMemo(() => {
-    // Verifica se estamos em ambiente de preview ou se o secret está ausente
-    // Como process.env não está disponível no browser, dependemos da resposta do backend
-    // ou de uma flag injetada. Por enquanto, mostramos o aviso se for um host de desenvolvimento.
-    if (typeof window !== "undefined") {
-      return window.location.hostname.includes("lovable.app") || 
-             window.location.hostname.includes("localhost");
-    }
-    return false;
-  }, []);
 
   return (
     <div className="flex h-full flex-col">
