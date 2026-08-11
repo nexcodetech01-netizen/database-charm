@@ -142,24 +142,25 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
             if (msg.direction === "inbound" && onNewInbound) {
               // Busca os dados da conversa para pegar o nome do contato
               const { data: conv } = await supabase
-                .from("whatsapp_conversations" as any)
+                .from("whatsapp_conversations")
                 .select("id, contact_id")
-                .eq("id", msg.conversation_id)
+                .eq("id", msg.conversation_id as string)
                 .single();
 
               let contactName = "Cliente";
               
-              if (conv?.contact_id) {
+              const contactId = (conv as any)?.contact_id;
+              if (contactId) {
                 const { data: contact } = await supabase
-                  .from("whatsapp_contacts" as any)
+                  .from("whatsapp_contacts")
                   .select("name")
-                  .eq("id", conv.contact_id)
+                  .eq("id", contactId as string)
                   .single();
-                if (contact?.name) contactName = contact.name;
+                if ((contact as any)?.name) contactName = (contact as any).name;
               }
               
               onNewInbound({
-                conversation_id: msg.conversation_id,
+                conversation_id: msg.conversation_id as string,
                 text: msg.text || "",
                 contact_name: contactName,
               });
