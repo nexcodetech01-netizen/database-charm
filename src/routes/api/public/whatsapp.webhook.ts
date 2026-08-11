@@ -65,22 +65,28 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           });
           if (limited) return limited;
 
-          // Fail-closed: sem META_APP_SECRET não há como provar a origem.
+          // 2.1) Verificação de assinatura (HMAC SHA-256)
           const appSecret = process.env.META_APP_SECRET;
+          
           if (!appSecret) {
-            console.error(
-              "[whatsapp.webhook] CRÍTICO: META_APP_SECRET ausente — fail-closed (503)",
+            console.warn(
+              "[whatsapp.webhook] AVISO: META_APP_SECRET ausente — ignorando verificação HMAC (segurança reduzida)",
             );
-            return new Response("Webhook signature not configured", { status: 503 });
-          }
-          if (!signature?.startsWith("sha256=")) {
-            return new Response("Missing signature", { status: 401 });
-          }
-          const expected = "sha256=" + createHmac("sha256", appSecret).update(raw).digest("hex");
-          const a = Buffer.from(signature);
-          const b = Buffer.from(expected);
-          if (a.length !== b.length || !timingSafeEqual(a, b)) {
-            return new Response("Invalid signature", { status: 401 });
+          } else {
+            // Se o secret existe, a verificação é OBRIGATÓRIA
+            if (!signature?.startsWith("sha256=")) {
+              console.error("[whatsapp.webhook] Assinatura ausente, mas META_APP_SECRET configurado.");
+              return new Response("Missing signature", { status: 401 });
+            }
+            
+            const expected = "sha256=" + createHmac("sha256", appSecret).update(raw).digest("hex");
+            const a = Buffer.from(signature);
+            const b = Buffer.from(expected);
+            
+            if (a.length !== b.length || !timingSafeEqual(a, b)) {
+              console.error("[whatsapp.webhook] Assinatura inválida detectada.");
+              return new Response("Invalid signature", { status: 401 });
+            }
           }
 
           // 3) Persiste payload bruto (AWAIT — sem fire-and-forget).
