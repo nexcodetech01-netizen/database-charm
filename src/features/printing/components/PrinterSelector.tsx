@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePrinters } from '../hooks/use-printers';
 import { Printer } from '../types/printing.types';
 
@@ -7,8 +7,30 @@ interface PrinterSelectorProps {
   onValueChange: (value: string) => void;
 }
 
+const FALLBACK_PRINTER_NAME = 'LABEL TERMICA';
+
 export function PrinterSelector({ value, onValueChange }: PrinterSelectorProps) {
   const { printers, loading } = usePrinters();
+
+  // Seleção automática ao carregar as impressoras
+  useEffect(() => {
+    if (!loading && printers.length > 0 && !value) {
+      // 1. Tentar encontrar a impressora padrão (isDefault)
+      const defaultPrinter = printers.find(p => p.isDefault);
+      if (defaultPrinter) {
+        onValueChange(defaultPrinter.id);
+        return;
+      }
+
+      // 2. Fallback: procurar pelo nome "LABEL TERMICA"
+      const fallbackPrinter = printers.find(p => 
+        p.name.toUpperCase().includes(FALLBACK_PRINTER_NAME.toUpperCase())
+      );
+      if (fallbackPrinter) {
+        onValueChange(fallbackPrinter.id);
+      }
+    }
+  }, [loading, printers, value, onValueChange]);
 
   if (loading) {
     return <div className="h-10 w-full animate-pulse rounded-md bg-muted" />;
