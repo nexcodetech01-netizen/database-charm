@@ -110,36 +110,6 @@ export const labelaryService = {
   async convertToPng(label: LabelData): Promise<Blob> {
     return this.convertToFormat(label, 'png');
   },
-    const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
-    const cacheKey = CryptoJS.SHA256(`${zpl}|${width}|${height}|${dpmm}`).toString();
-
-    // 1. Check Memory Cache
-    if (memoryCache.has(cacheKey)) {
-      console.log(`[Labelary] Memory cache hit: ${cacheKey}`);
-      this.updateAuditForCache(label, true, 'Memory');
-      return memoryCache.get(cacheKey)!;
-    }
-
-    // 2. Check Permanent Cache (IndexedDB)
-    const db = await getDB();
-    if (db) {
-      const startTime = performance.now();
-      const cached = await db.get('previews', cacheKey);
-      if (cached) {
-        const cacheDuration = performance.now() - startTime;
-        console.log(`[Labelary] IndexedDB cache hit: ${cacheKey} (${cacheDuration.toFixed(2)}ms)`);
-        memoryCache.set(cacheKey, cached.blob);
-        this.updateAuditForCache(label, true, 'IndexedDB', cacheDuration);
-        return cached.blob;
-      }
-    }
-
-    // 3. Queue request if not in cache
-    return new Promise((resolve, reject) => {
-      queue.push({ label, resolve, reject });
-      this.processQueue();
-    });
-  },
 
   updateAuditForCache(label: LabelData, hit: boolean, type: string, cacheTime: number = 0) {
     const { zpl = '', width = 4, height = 6, dpmm = 8 } = label;
