@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
 import { Calculator, Info, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface PricingFormProps {
@@ -109,11 +110,13 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
-                  setForm((s: any) => ({ 
-                    ...s, 
-                    price: val,
-                    use_category_margin: false 
-                  }));
+                  setForm((s: any) => {
+                    const next = { ...s, price: val };
+                    if (s.use_category_margin) {
+                      next.use_category_margin = false;
+                    }
+                    return next;
+                  });
                 }}
               />
               <p className="text-[10px] text-muted-foreground font-medium">
@@ -140,6 +143,10 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 id="use-category-margin"
                 checked={form.use_category_margin}
                 onCheckedChange={(val: boolean) => {
+                  if (val && !categoryName) {
+                    toast.error("Selecione uma categoria na aba Geral para usar a margem automática.");
+                    return;
+                  }
                   setForm((s: any) => ({ ...s, use_category_margin: val }));
                   if (val && categoryName) onApplyCategoryMargin();
                 }}

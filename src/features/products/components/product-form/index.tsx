@@ -177,6 +177,18 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const { inputs: pricingInputs } = usePricingInputs(companyId, form.category_id || null);
   const totalCost = num(form.cost) + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
 
+  // Apply operational defaults for NEW products
+  useEffect(() => {
+    if (!isEdit && operationalDefaults && !recoveryData) {
+      setForm(prev => ({
+        ...prev,
+        freight: prev.freight === "0" ? String(operationalDefaults.freight || 0) : prev.freight,
+        packaging: prev.packaging === "0" ? String(operationalDefaults.packaging || 0) : prev.packaging,
+        other_costs: prev.other_costs === "0" ? String(operationalDefaults.other_costs || 0) : prev.other_costs,
+      }));
+    }
+  }, [isEdit, operationalDefaults, recoveryData, setForm]);
+
   // Event Handlers
   const handleRegenerateSku = async () => {
     if (!form.name.trim()) return toast.error("Nome obrigatório");

@@ -15,11 +15,12 @@ interface BRLCurrencyInputProps
  */
 export const BRLCurrencyInput = React.forwardRef<HTMLInputElement, BRLCurrencyInputProps>(
   ({ value, onValueChange, className, disabled, ...rest }, ref) => {
-    const format = (val: number) => {
+    const format = (val: number | undefined | null) => {
+      const safeValue = typeof val === "number" ? val : 0;
       return new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
-      }).format(val);
+      }).format(safeValue);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
