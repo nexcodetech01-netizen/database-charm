@@ -110,11 +110,13 @@ export function PricingForm({ form, setForm, categoryName, onApplyCategoryMargin
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
-                  setForm((s: any) => ({ 
-                    ...s, 
-                    price: val,
-                    use_category_margin: false 
-                  }));
+                  setForm((s: any) => {
+                    const next = { ...s, price: val };
+                    if (s.use_category_margin) {
+                      next.use_category_margin = false;
+                    }
+                    return next;
+                  });
                 }}
               />
               <p className="text-[10px] text-muted-foreground font-medium">
