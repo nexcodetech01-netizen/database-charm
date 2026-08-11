@@ -14,7 +14,7 @@ const AGENT_ENDPOINTS = [
   "http://127.0.0.1:48555/printers",
 ];
 
-const AGENT_TIMEOUT_MS = 1500;
+const AGENT_TIMEOUT_MS = 5000;
 
 function classify(name: string, driver?: string): PrinterCategory {
   const haystack = `${name} ${driver ?? ""}`.toLowerCase();
