@@ -81,7 +81,8 @@ export function GenericLabelPrintDialog({
 
       try {
         const validBlocks = parseZPLBlocks(content);
-        
+        console.info(`[TXT_IMPORT] Blocos válidos encontrados: ${validBlocks.length}`);
+
         if (validBlocks.length === 0) {
           const trimmedContent = content.trim();
           if (trimmedContent.length > 0) {
@@ -128,8 +129,8 @@ export function GenericLabelPrintDialog({
     if (isPrinting) return;
     
     setIsPrinting(true);
-    // Usamos um jobId que garanta um único job no bridge, mas permitindo tentativas.
-    // O backend do bridge na porta 48555 processa por jobId.
+    // Usamos um ID estável para o job, combinando o ID da aba para evitar loops.
+    // Assim como em ShippingLabelPrintDialog, evitamos timestamps aqui.
     const jobId = `OP-${block.id}`; 
     
     try {
