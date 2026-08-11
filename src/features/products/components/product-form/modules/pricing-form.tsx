@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -152,7 +153,7 @@ export function PricingForm({
                   step="0.01"
                   className="h-8 text-xs font-medium"
                   value={desiredMargin}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const m = num(e.target.value);
                     setForm((s: any) => {
                       const next = { ...s, margin: m };
