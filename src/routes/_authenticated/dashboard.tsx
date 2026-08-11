@@ -279,6 +279,7 @@ function DashboardPage() {
             createLabel="Nova venda"
             onCreate={() => navigate({ to: ROUTES.sales })}
             moreActions={[
+              { label: "Imprimir Etiqueta", icon: Printer, onSelect: () => setOperationalPrintOpen(true) },
               { label: "Testar Etiqueta ML", icon: Printer, onSelect: handleTestMLPrint },
               { label: "Nova compra", icon: ShoppingBag, onSelect: () => navigate({ to: ROUTES.purchases }) },
               { label: "Novo produto", icon: Package, onSelect: () => navigate({ to: ROUTES.products }) },
