@@ -125,17 +125,23 @@ export function GenericLabelPrintDialog({
   };
 
   const handlePrintBlock = async (block: DocumentBlock) => {
+    if (isPrinting) return;
+    
     setIsPrinting(true);
-    const jobId = `OP-${Date.now()}-${block.id}`;
+    // Usamos um jobId que garanta um único job no bridge, mas permitindo tentativas.
+    // O backend do bridge na porta 48555 processa por jobId.
+    const jobId = `OP-${block.id}`; 
     
     try {
+      console.info("[GenericPrint] Iniciando impressão", { blockId: block.id, type: block.type });
+      
       const result = await printManager.print(
         {
           id: jobId,
           zpl: block.zpl,
         },
         { 
-          strategy: "RAW", // O Bridge detecta ZPL e converte para /print/image automaticamente no print-bridge.browser.ts
+          strategy: "RAW",
           type: 'LABEL',
           printerId: selectedPrinterId || undefined
         }
