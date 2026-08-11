@@ -171,39 +171,39 @@ export function money(value: number): string {
 }
 
 function itemBlock(item: CartSessionItem): string[] {
-  return [`• ${item.name}`, `Qtd: ${item.qty}`, money(item.subtotal)];
+  return [`• *${item.name}* — *${money(item.subtotal)}*`, `(Qtd: ${item.qty})`].join("\n").split("\n");
 }
 
 /** Resumo padrão do pedido: itens + total. */
 export function formatCartSummary(session: CartSession): string {
-  const blocks = session.items.map((i) => itemBlock(i).join("\n"));
-  return [...blocks, "", "Total:", money(session.total)].join("\n");
+  const blocks = session.items.map((i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`);
+  return [...blocks, "", `*Total: ${money(session.total)}*`].join("\n");
 }
 
 export function formatCartUpdatedMessage(session: CartSession): string {
   return [
-    "🛍️ *Pedido atualizado*",
+    "🛍️ *Pedido atualizado!*",
     "",
     formatCartSummary(session),
     "",
-    "Deseja continuar comprando ou finalizar?",
+    "Gostaria de adicionar algo mais ou prefere finalizar o seu pedido agora? 😊",
   ].join("\n");
 }
 
 export function formatCartMessage(session: CartSession): string {
   if (session.items.length === 0) {
     return [
-      "Seu pedido ainda está vazio. 🛍️",
+      "O seu pedido ainda está vazio! 🛍️",
       "",
-      "_Digite *catálogo* para ver os produtos._",
+      "Que tal dar uma olhadinha no nosso catálogo para escolher algo especial? Me avise o que você procura! 😊",
     ].join("\n");
   }
   return [
-    "🛍️ *Seu pedido*",
+    "🛍️ *Aqui está o seu pedido:*",
     "",
     formatCartSummary(session),
     "",
-    "Deseja continuar comprando ou finalizar?",
+    "Deseja continuar comprando ou vamos finalizar o seu pedido? 😊",
   ].join("\n");
 }
 
@@ -212,26 +212,26 @@ export function formatRemovedMessage(
   session: CartSession,
 ): string {
   if (!removed) {
-    return "Não encontrei esse item no seu pedido. Pode me dizer o nome do produto?";
+    return "Poxa, não encontrei esse item no seu pedido. Pode me confirmar o nome do produto que você deseja retirar? 😊";
   }
   if (session.items.length === 0) {
-    return `Removi *${removed.name}*. Seu pedido está vazio agora. 🛍️`;
+    return `Prontinho! Removi *${removed.name}* e o seu pedido está vazio agora. 🛍️`;
   }
   return [
-    `Removi *${removed.name}*.`,
+    `Certo! Removi *${removed.name}* do seu pedido.`,
     "",
-    "🛍️ *Pedido atualizado*",
+    "🛍️ *Pedido atualizado:*",
     "",
     formatCartSummary(session),
     "",
-    "Deseja continuar comprando ou finalizar?",
+    "Gostaria de ver mais alguma coisa ou podemos finalizar? 😊",
   ].join("\n");
 }
 
 export function formatClearedMessage(): string {
-  return "Pronto, limpei seu pedido. 🛍️\n\n_Digite *catálogo* quando quiser recomeçar._";
+  return "Tudo limpo! Esvaziei o seu pedido. 🛍️\n\nQuando quiser recomeçar, é só me chamar! 😊";
 }
 
 export function formatAmbiguousAddMessage(): string {
-  return "Claro! Me diga o nome do produto que você quer adicionar. 💕";
+  return "Com certeza! Me diga o nome do produto que você gostaria de adicionar ao seu pedido. 😊";
 }
