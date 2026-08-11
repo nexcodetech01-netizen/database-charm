@@ -128,20 +128,23 @@ export function PricingForm({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* SEÇÃO 1: Precificação Base */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Coluna de Custos */}
         <div className="space-y-4">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <Calculator className="h-4 w-4 text-muted-foreground" />
-            Composição de Custos
-          </h4>
-          <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
+              <Calculator className="h-4 w-4 text-slate-600" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Custos</h4>
+          </div>
+          <div className="space-y-3 p-5 rounded-xl border bg-slate-50/50 shadow-sm">
             <div className="space-y-2">
-              <RequiredLabel htmlFor="cost" required>Custo Unitário (Produto)</RequiredLabel>
+              <RequiredLabel htmlFor="cost" required className="text-xs font-bold text-slate-700">Custo Unitário do Produto</RequiredLabel>
               <BRLCurrencyInput
                 id="cost"
-                className="text-lg font-semibold"
+                className="text-lg font-bold h-12 bg-white"
                 value={cost}
                 onValueChange={(val: number) => {
                   setForm((s: any) => ({ ...s, cost: val }));
@@ -154,25 +157,25 @@ export function PricingForm({
 
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="operational-costs" className="border-none">
-                <AccordionTrigger className="py-2 text-[11px] font-semibold uppercase text-muted-foreground hover:no-underline">
+                <AccordionTrigger className="py-2 text-[10px] font-bold uppercase text-slate-500 hover:no-underline flex gap-2">
                   Ver detalhes dos custos operacionais
                 </AccordionTrigger>
                 <AccordionContent className="pt-2 space-y-3 pb-0">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="freight" className="text-[10px] uppercase text-muted-foreground">Frete</Label>
+                      <Label htmlFor="freight" className="text-[10px] uppercase font-bold text-slate-400">Frete</Label>
                       <BRLCurrencyInput
                         id="freight"
-                        className="h-8 text-xs"
+                        className="h-9 text-xs bg-white"
                         value={freight}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, freight: val }))}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="packaging" className="text-[10px] uppercase text-muted-foreground">Embalagem</Label>
+                      <Label htmlFor="packaging" className="text-[10px] uppercase font-bold text-slate-400">Embalagem</Label>
                       <BRLCurrencyInput
                         id="packaging"
-                        className="h-8 text-xs"
+                        className="h-9 text-xs bg-white"
                         value={packaging}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, packaging: val }))}
                       />
@@ -180,19 +183,19 @@ export function PricingForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3 pb-2">
                     <div className="space-y-2">
-                      <Label htmlFor="insurance" className="text-[10px] uppercase text-muted-foreground">Seguro</Label>
+                      <Label htmlFor="insurance" className="text-[10px] uppercase font-bold text-slate-400">Seguro</Label>
                       <BRLCurrencyInput
                         id="insurance"
-                        className="h-8 text-xs"
+                        className="h-9 text-xs bg-white"
                         value={insurance}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, insurance: val }))}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="other_costs" className="text-[10px] uppercase text-muted-foreground">Outros Custos</Label>
+                      <Label htmlFor="other_costs" className="text-[10px] uppercase font-bold text-slate-400">Outros Custos</Label>
                       <BRLCurrencyInput
                         id="other_costs"
-                        className="h-8 text-xs"
+                        className="h-9 text-xs bg-white"
                         value={other}
                         onValueChange={(val: number) => setForm((s: any) => ({ ...s, other_costs: val }))}
                       />
@@ -202,61 +205,42 @@ export function PricingForm({
               </AccordionItem>
             </Accordion>
 
-            <div className="pt-2 border-t flex justify-between items-center">
-              <span className="text-xs font-medium uppercase text-muted-foreground">Custo Total Efetivo</span>
-              <span className="text-sm font-bold">{formatCurrency(totalCost)}</span>
+            <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
+              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-tight">Custo Total Efetivo</span>
+              <span className="text-base font-black text-slate-900">{formatCurrency(totalCost)}</span>
             </div>
           </div>
         </div>
 
-        {/* Coluna de Preço e Margem */}
+        {/* Coluna de Preço da Loja/Base */}
         <div className="space-y-4">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <Calculator className="h-4 w-4 text-muted-foreground" />
-            Venda e Margem
-          </h4>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-blue-600" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Preço da Loja / Base</h4>
+          </div>
           <div className={cn(
-            "space-y-4 p-4 rounded-lg border transition-colors",
-            margin < 0 ? "bg-red-500/5 border-red-500/20" : 
-            margin <= 20 ? "bg-amber-500/5 border-amber-500/20" : 
-            "bg-emerald-500/5 border-emerald-500/20"
+            "space-y-4 p-5 rounded-xl border transition-all shadow-sm",
+            margin < 0 ? "bg-red-50 border-red-200" : 
+            margin <= 20 ? "bg-amber-50 border-amber-200" : 
+            "bg-blue-50/50 border-blue-200"
           )}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <RequiredLabel htmlFor="price" required>Preço de Venda Final</RequiredLabel>
-                <Badge className={cn("text-[10px] font-bold uppercase py-0 px-2", status.color)}>
+                <RequiredLabel htmlFor="price" required className="text-xs font-bold text-slate-700">Preço de Venda Final</RequiredLabel>
+                <Badge className={cn("text-[9px] font-black uppercase py-0.5 px-2 tracking-tighter shadow-none border-none", status.color)}>
                   {status.label}: {margin.toFixed(2)}%
                 </Badge>
               </div>
               <BRLCurrencyInput
                 id="price"
-                className={cn("text-lg font-bold", errors.price ? "border-destructive ring-destructive" : "")}
+                className={cn("text-lg font-black h-12 bg-white shadow-inner", errors.price ? "border-destructive ring-destructive" : "border-slate-200")}
                 value={price}
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
                   setForm((s: any) => {
                     const next = { ...s, price: val };
-                    // Recalcula a margem ao mudar o preço, usando o motor para maior precisão
-                    const evaluation = computeOfficialPricing({
-                      companyId: "current",
-                      productId: "temp",
-                      costs: {
-                        acquisition: num(next.cost),
-                        freight: num(next.freight),
-                        packaging: num(next.packaging),
-                        insurance: num(next.insurance),
-                        otherCosts: num(next.other_costs),
-                      },
-                      margins: { minPct: 0, targetPct: 0 },
-                      behavior: { kind: "standard" },
-                      rounding: { kind: "none" },
-                      fee: { pct: channelFeePct, fixed: channelFixedFee },
-                      taxPct: taxPct
-                    });
-                    
-                    // Nota: O motor não tem evaluateOfficialPrice aqui mas podemos deduzir a margem 
-                    // do lucro líquido projetado para este preço. 
-                    // Como estamos mudando o preço manualmente, a margem é o subproduto.
                     const practicedPrice = val;
                     const channelDeduction = (practicedPrice * channelFeePct) / 100 + channelFixedFee;
                     const taxDeduction = (practicedPrice * taxPct) / 100;
@@ -273,137 +257,55 @@ export function PricingForm({
                 }}
               />
               {errors.price && <p className="text-xs text-destructive font-medium">{errors.price}</p>}
-              <p className="text-[10px] text-muted-foreground font-medium">
-                Lucro Bruto: <span className={grossProfit < 0 ? "text-red-500" : "text-emerald-600"}>
-                  {formatCurrency(grossProfit)}
-                </span> por unidade
-              </p>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-dashed">
-              <Label htmlFor="margin" className="text-xs">Margem Desejada (%)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="margin"
-                  type="number"
-                  step="0.01"
-                  className="h-8 text-xs font-medium"
-                  value={desiredMargin}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const m = num(e.target.value);
-                    recalculatePrice(m, channelFeePct, channelFixedFee);
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="margin" className="text-[10px] font-bold uppercase text-slate-500">Margem Desejada (%)</Label>
+                <div className="relative group">
+                  <Input
+                    id="margin"
+                    type="number"
+                    step="0.01"
+                    className="h-10 text-sm font-bold bg-white pr-8"
+                    value={desiredMargin}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const m = num(e.target.value);
+                      recalculatePrice(m, channelFeePct, channelFixedFee);
+                    }}
+                  />
+                  <div className="absolute right-3 top-2.5 text-[10px] font-black text-slate-400">%</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 flex flex-col justify-end">
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Lucro Bruto</span>
+                <div className={cn(
+                  "h-10 rounded-md border flex items-center px-3 font-black text-sm shadow-sm",
+                  grossProfit < 0 ? "bg-red-100 border-red-200 text-red-600" : "bg-emerald-100 border-emerald-200 text-emerald-600"
+                )}>
+                  {formatCurrency(grossProfit)}
+                </div>
+              </div>
+            </div>
+
+            {categoryName && (
+              <div className="flex items-center justify-between pt-3 border-t border-slate-200/50">
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
+                  <p className="text-[9px] text-slate-400 font-medium">Aplicar política de {categoryName}</p>
+                </div>
+                <Switch
+                  id="use-category-margin"
+                  checked={form.use_category_margin}
+                  onCheckedChange={(val: boolean) => {
+                    setForm((s: any) => ({ ...s, use_category_margin: val }));
+                    if (val && categoryName) onApplyCategoryMargin();
                   }}
                 />
-                <div className="flex items-center justify-center bg-muted rounded px-2 h-8 text-[10px] font-bold text-muted-foreground">
-                  %
-                </div>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between space-x-2 pt-2 border-t border-dashed">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-4 w-4 text-primary" 
-                    type="button"
-                    onClick={onOpenQuickCategory}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                  {categoryName ? (
-                    `Aplicar política de ${categoryName}`
-                  ) : (
-                    <span className="text-amber-600 flex items-center gap-1 font-medium">
-                      <AlertCircle className="h-3 w-3" /> Selecione uma categoria na aba Geral
-                    </span>
-                  )}
-                </p>
-              </div>
-              <Switch
-                id="use-category-margin"
-                checked={form.use_category_margin}
-                onCheckedChange={(val: boolean) => {
-                  if (val && !categoryName) {
-                    toast.error("Selecione uma categoria na aba Geral para usar a margem automática.");
-                    return;
-                  }
-                  setForm((s: any) => ({ ...s, use_category_margin: val }));
-                  if (val && categoryName) onApplyCategoryMargin();
-                }}
-              />
-            </div>
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* Resumo Visual Limpo de Lucro */}
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden border-emerald-500/20">
-        <div className="bg-emerald-500/5 px-4 py-2 border-b flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-emerald-600" />
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Resultado Financeiro Sugerido</span>
-          </div>
-          <Badge className="bg-emerald-500 hover:bg-emerald-600 text-[10px]">
-            Líquido: {pricing.marginPct.toFixed(1)}%
-          </Badge>
-        </div>
-        <div className="p-6 grid gap-6 md:grid-cols-2 items-center bg-emerald-500/5">
-          <div className="space-y-1">
-            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Preço de Venda Final Sugerido</span>
-            <p className="text-3xl font-black text-slate-900 tracking-tight">{formatCurrency(pricing.targetPrice)}</p>
-          </div>
-          
-          <div className="space-y-1 md:text-right p-3 rounded-lg bg-white/50 border border-emerald-500/10">
-            <span className="text-[10px] text-emerald-700 uppercase font-black tracking-tight">Lucro Líquido no Bolso</span>
-            <div className="flex items-baseline md:justify-end gap-2">
-              <p className="text-3xl font-black text-emerald-600 tracking-tight">{formatCurrency(pricing.profit)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            Configurações do Canal (Mercado Livre)
-          </h4>
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border bg-muted/30">
-            <div className="space-y-2">
-              <Label htmlFor="channel_fee_pct" className="text-xs">Comissão ML (%)</Label>
-              <div className="relative">
-                <Input
-                  id="channel_fee_pct"
-                  type="number"
-                  className="h-9 pr-8"
-                  value={channelFeePct}
-                  onChange={(e) => recalculatePrice(desiredMargin, num(e.target.value), channelFixedFee)}
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">%</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="channel_fixed_fee" className="text-xs">Taxa Fixa (R$)</Label>
-              <BRLCurrencyInput
-                id="channel_fixed_fee"
-                className="h-9"
-                value={channelFixedFee}
-                onValueChange={(val) => recalculatePrice(desiredMargin, channelFeePct, val)}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex items-start gap-2 p-3 rounded-md bg-blue-500/5 border border-blue-500/10 text-[11px] text-blue-600 dark:text-blue-400 self-center">
-          <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <p>
-            O motor de cálculo considera a comissão do canal e as taxas fixas para garantir que sua margem líquida seja preservada sobre o valor final da venda.
-          </p>
         </div>
       </div>
     </div>
