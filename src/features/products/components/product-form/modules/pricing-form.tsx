@@ -47,6 +47,7 @@ export function PricingForm({
   const insurance = num(form.insurance);
   const other = num(form.other_costs);
   
+  // LÓGICA RÍGIDA: Custo Total Efetivo é a soma de todos os componentes
   const totalCost = cost + freight + packaging + insurance + other;
   const price = num(form.price);
   const desiredMargin = num(form.margin);
@@ -92,11 +93,11 @@ export function PricingForm({
 
   // Função para recalcular o preço final baseado na margem desejada e taxas
   const recalculatePrice = useCallback((newMargin: number, newFeePct: number, newFixedFee: number) => {
-    // A Categoria e a Matemática devem ser baseadas no Custo Total Efetivo
-    // Fórmula: Preço Final = Custo Total Efetivo / (1 - (Margem / 100))
+    // LÓGICA RÍGIDA: O preço final DEVE ser calculado usando o total_cost real
+    // Fórmula de Margem sobre Venda: Preço Final = Custo Total Efetivo / (1 - (Margem / 100))
     const m = newMargin / 100;
     
-    // Evitar divisão por zero ou margens 100%+ que quebram a fórmula de margem sobre venda
+    // Evitar divisão por zero ou margens 100%+
     if (m >= 1) {
       setForm((s: any) => ({ ...s, margin: String(newMargin) }));
       return;
@@ -104,37 +105,10 @@ export function PricingForm({
 
     const calculatedPrice = totalCost / (1 - m);
     
-    // Aplicar taxas de canal se houver
-    // Nota: O motor oficial deve ser usado para o cálculo final, 
-    // mas aqui atualizamos o estado da UI imediatamente.
-    const p = computeOfficialPricing({
-      companyId: "current",
-      productId: "temp",
-      costs: {
-        acquisition: cost,
-        freight,
-        packaging,
-        insurance,
-        otherCosts: other,
-      },
-      margins: {
-        minPct: 0,
-        targetPct: newMargin,
-      },
-      fee: {
-        pct: newFeePct,
-        fixed: newFixedFee,
-      },
-      taxPct: taxPct,
-      rounding: { kind: "none" }
-    });
-
-    const practicePrice = p.targetPrice;
-
-    if (practicePrice > 0 && practicePrice !== Infinity) {
+    if (calculatedPrice > 0 && calculatedPrice !== Infinity) {
       setForm((s: any) => ({ 
         ...s, 
-        price: practicePrice.toFixed(2),
+        price: calculatedPrice.toFixed(2),
         margin: String(newMargin),
         channel_fee_pct: String(newFeePct),
         channel_fixed_fee: String(newFixedFee)
@@ -147,7 +121,7 @@ export function PricingForm({
         channel_fixed_fee: String(newFixedFee)
       }));
     }
-  }, [totalCost, cost, freight, packaging, insurance, other, taxPct, setForm]);
+  }, [totalCost, setForm]);
 
   // Efeito para garantir que a margem da categoria seja aplicada se o switch estiver ativo
   useEffect(() => {
@@ -299,19 +273,17 @@ export function PricingForm({
                 disabled={form.use_category_margin && !!categoryName}
                 onValueChange={(val: number) => {
                   setForm((s: any) => {
-                    const next = { ...s, price: val };
                     const practicedPrice = val;
-                    const channelDeduction = (practicedPrice * channelFeePct) / 100 + channelFixedFee;
-                    const taxDeduction = (practicedPrice * taxPct) / 100;
-                    const netRevenue = practicedPrice - channelDeduction - taxDeduction;
-                    const practicedMargin = practicedPrice > 0 ? ((netRevenue - totalCost) / practicedPrice) * 100 : 0;
+                    // LÓGICA RÍGIDA: Margem sobre venda calculada sobre o Custo Total Efetivo
+                    // Margem = ((Preço - Custo Total) / Preço) * 100
+                    const practicedMargin = practicedPrice > 0 ? ((practicedPrice - totalCost) / practicedPrice) * 100 : 0;
                     
-                    next.margin = practicedMargin.toFixed(2);
-                    
-                    if (s.use_category_margin) {
-                      next.use_category_margin = false;
-                    }
-                    return next;
+                    return { 
+                      ...s, 
+                      price: val,
+                      margin: practicedMargin.toFixed(2),
+                      use_category_margin: s.use_category_margin ? false : s.use_category_margin
+                    };
                   });
                 }}
               />

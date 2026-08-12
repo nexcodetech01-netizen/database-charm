@@ -152,13 +152,14 @@ function buildContext(input: OfficialPricingInput): {
   const freight = Math.max(0, num(c.freight));
   const packaging = Math.max(0, num(c.packaging));
   const insurance = Math.max(0, num(c.insurance));
+  const otherCosts = Math.max(0, num(c.otherCosts));
   const extras =
     Math.max(0, num(c.label)) +
     Math.max(0, num(c.commission)) +
-    Math.max(0, num(c.otherCosts)) +
     Math.max(0, num(c.operationalExpenses));
 
-  const directCost = acquisition + freight + packaging + insurance + extras;
+  // LÓGICA RÍGIDA: O Custo Direto (total_cost) é a soma rigorosa de todos os componentes
+  const directCost = acquisition + freight + packaging + insurance + otherCosts + extras;
   const lossPct = Math.max(0, num(c.lossPct));
   const loss = (directCost * lossPct) / 100;
 

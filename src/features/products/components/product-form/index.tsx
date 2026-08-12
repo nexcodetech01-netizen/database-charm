@@ -230,21 +230,33 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     }
   }, [form.product_type, compositionCost, kitStock, setForm]);
 
-  // Apply operational defaults for NEW products
+  // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL
   useEffect(() => {
-    if (!isEdit && operationalDefaults && !recoveryData) {
+    if (operationalDefaults && !recoveryData) {
       setForm(prev => {
-        // Se já houver um frete preenchido (ex: vindo de uma pré-seleção ou importação), não sobrescrever
-        // A menos que seja o frete 0 padrão.
+        // Se já houver valores, só preenche se for novo produto ou se estiverem zerados
         const currentFreight = num(prev.freight);
-        
+        const currentPackaging = num(prev.packaging);
+        const currentInsurance = num(prev.insurance);
+        const currentOther = num(prev.other_costs);
+
+        // Se for novo produto, força os padrões da empresa
+        if (!isEdit) {
+          return {
+            ...prev,
+            freight: currentFreight > 0 ? String(currentFreight) : String(operationalDefaults.freight || 0),
+            packaging: currentPackaging > 0 ? String(currentPackaging) : String(operationalDefaults.packaging ?? 2.30),
+            insurance: currentInsurance > 0 ? String(currentInsurance) : String(operationalDefaults.insurance ?? 0),
+            other_costs: currentOther > 0 ? String(currentOther) : String(operationalDefaults.other_costs ?? 0.10),
+            use_category_margin: true,
+          };
+        }
+
+        // Para produtos existentes, só preenche se estiverem zerados e os padrões existirem
         return {
           ...prev,
-          freight: currentFreight > 0 ? String(currentFreight) : String(operationalDefaults.freight || 0),
-          packaging: String(operationalDefaults.packaging ?? 0),
-          insurance: String(operationalDefaults.insurance ?? 0),
-          other_costs: String(operationalDefaults.other_costs ?? 0),
-          use_category_margin: true,
+          packaging: currentPackaging === 0 ? String(operationalDefaults.packaging ?? 2.30) : String(currentPackaging),
+          other_costs: currentOther === 0 ? String(operationalDefaults.other_costs ?? 0.10) : String(currentOther),
         };
       });
     }
