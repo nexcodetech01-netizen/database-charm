@@ -1998,7 +1998,6 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     return emissionService.validate(data.saleId, data.environment);
   });
 
-  });
 
 // ---------- Contexto do documento (cliente + CFOP para painel lateral)
 
