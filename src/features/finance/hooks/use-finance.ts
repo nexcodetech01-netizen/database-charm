@@ -36,9 +36,12 @@ export function useAccounts(companyId: string) {
   useEffect(() => {
     if (!companyId) return;
 
-    // Escuta notificações do Postgres sobre mudanças nas contas para invalidar o cache
+    // Nome do canal escopado por empresa, para não colidir quando o hook
+    // é montado em mais de um lugar ao mesmo tempo (ex: Dashboard + Financeiro).
+    const channelName = `finance_overview_sync-${companyId}`;
+
     const channel = supabase
-      .channel('finance_overview_sync')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
