@@ -161,9 +161,7 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
         const { data: asaasCfg, error: cfgError } = await supabase
           .from("bella_pay_config")
           .select("api_key_production, api_key_sandbox, environment")
-        .eq("company_id", companyId)
-        .select("api_key_production, api_key_sandbox, environment")
-
+          .eq("company_id", companyId)
           .maybeSingle();
 
         if (cfgError) {
