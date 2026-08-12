@@ -55,7 +55,7 @@ export function useAccounts(companyId: string) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [companyId, qc]);
 
