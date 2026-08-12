@@ -342,24 +342,37 @@ export function PricingForm({
         </div>
       </div>
 
-      {/* SEÇÃO 2: Canais de Venda / Sugestões */}
+      {/* SEÇÃO 2: Canais de Venda / Sugestões — fechado por padrão para não
+          pesar o cadastro; abre só quando o usuário quiser conferir. */}
       <div className="pt-4 border-t border-slate-800">
-        <SuggestedPricesByChannelCard
-          mode="local"
-          costTotalCents={Math.round(totalCost * 100)}
-          targetMarginPct={desiredMargin}
-          currentStorePriceCents={Math.round(price * 100)}
-          onApplySuggested={(recommendedPrice: number) => {
-            setForm((s: any) => ({
-              ...s,
-              price: recommendedPrice.toFixed(2),
-              // Ao aplicar o sugerido, recalculamos a margem baseada no preço aplicado
-              margin: (((recommendedPrice - totalCost) / recommendedPrice) * 100).toFixed(2),
-              use_category_margin: false
-            }));
-            toast.success(`Preço de ${formatCurrency(recommendedPrice)} aplicado com sucesso!`);
-          }}
-        />
+        <Accordion type="single" collapsible>
+          <AccordionItem value="suggested-prices" className="border-none">
+            <AccordionTrigger className="py-2 hover:no-underline">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase text-slate-400">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Preços sugeridos por canal (Bella)
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-2">
+              <SuggestedPricesByChannelCard
+                mode="local"
+                costTotalCents={Math.round(totalCost * 100)}
+                targetMarginPct={desiredMargin}
+                currentStorePriceCents={Math.round(price * 100)}
+                onApplySuggested={(recommendedPrice: number) => {
+                  setForm((s: any) => ({
+                    ...s,
+                    price: recommendedPrice.toFixed(2),
+                    // Ao aplicar o sugerido, recalculamos a margem baseada no preço aplicado
+                    margin: (((recommendedPrice - totalCost) / recommendedPrice) * 100).toFixed(2),
+                    use_category_margin: false
+                  }));
+                  toast.success(`Preço de ${formatCurrency(recommendedPrice)} aplicado com sucesso!`);
+                }}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   );
