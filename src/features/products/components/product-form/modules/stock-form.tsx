@@ -33,7 +33,7 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
             readOnly={isEdit || form.product_type === 'kit'}
             className={cn(
               "text-lg font-bold tabular-nums",
-              (isEdit || form.product_type === 'kit') && "bg-muted cursor-not-allowed"
+              (isEdit || form.product_type === 'kit') && "bg-muted/50 cursor-not-allowed border-dashed"
             )}
           />
           {form.product_type === 'kit' && (
