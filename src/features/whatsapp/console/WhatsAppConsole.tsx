@@ -194,6 +194,7 @@ export function WhatsAppConsole({
               selected={selected}
               companyId={companyId}
               onDeleted={() => setSelectedId(null)}
+              onStartNewConversation={() => setDialogOpen(true)}
             />
           </section>
         </div>
