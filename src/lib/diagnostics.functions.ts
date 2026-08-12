@@ -146,15 +146,21 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
     });
 
     // 6. Asaas
-    const asaasKey = Boolean(process.env.ASAAS_API_KEY);
+    const { data: asaasCfg } = await supabase
+      .from("bella_pay_config")
+      .select("api_key_production, api_key_sandbox, environment")
+      .eq("company_id", claims?.company_id || "")
+      .maybeSingle();
+
+    const asaasKey = Boolean(asaasCfg?.api_key_production || asaasCfg?.api_key_sandbox);
     checks.push({
       id: "asaas-key",
       category: "Asaas",
       label: "API Key",
       status: asaasKey ? "ok" : "warning",
       message: asaasKey
-        ? `API Key configurada (${process.env.ASAAS_ENV ?? "sandbox"}).`
-        : "ASAAS_API_KEY ausente.",
+        ? `API Key configurada (${asaasCfg?.environment ?? "sandbox"}).`
+        : "ASAAS_API_KEY ausente no banco de dados.",
     });
 
     // 7. Bella IA
