@@ -344,8 +344,10 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const recalc = () => {
     if (isLocal) {
       setLocalTick((t) => t + 1);
+      toast.success("Preços sugeridos atualizados com base nos novos custos!");
     } else {
       qc.invalidateQueries({ queryKey });
+      toast.success("Preços sugeridos atualizados!");
     }
   };
 
