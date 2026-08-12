@@ -26,8 +26,17 @@ import { PricingStatusBadge } from "./pricing-status-badge";
 import { cn } from "@/lib/utils";
 
 const num = (s: string | number | null | undefined) => {
-  const n = Number(String(s ?? "0").replace(",", "."));
+  if (typeof s === "number") return s;
+  const n = Number(String(s ?? "0").replace(/\./g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
+};
+
+const formatInput = (v: number | string) => {
+  const n = typeof v === "number" ? v : num(v);
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
 };
 
 export interface ProductPricingSheetProduct {
@@ -96,19 +105,19 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
   // Puxa margem da categoria ou usa a da política como fallback
   const initialTarget = productCategory?.target_margin_pct ?? policy.idealMargin;
 
-  const [freight, setFreight] = useState(String(initialFreight));
-  const [packaging, setPackaging] = useState(String(initialPackaging));
-  const [otherCosts, setOtherCosts] = useState(String(initialOther));
-  const [target, setTarget] = useState(String(initialTarget));
+  const [freight, setFreight] = useState(formatInput(initialFreight));
+  const [packaging, setPackaging] = useState(formatInput(initialPackaging));
+  const [otherCosts, setOtherCosts] = useState(formatInput(initialOther));
+  const [target, setTarget] = useState(formatInput(initialTarget));
   const [simulatedChannel, setSimulatedChannel] = useState<"standard" | "ml">("standard");
   const [selectedTier, setSelectedTier] = useState<"min" | "target" | "premium">("target");
 
   useEffect(() => {
     if (open) {
-      setFreight(String(initialFreight));
-      setPackaging(String(initialPackaging));
-      setOtherCosts(String(initialOther));
-      setTarget(String(initialTarget));
+      setFreight(formatInput(initialFreight));
+      setPackaging(formatInput(initialPackaging));
+      setOtherCosts(formatInput(initialOther));
+      setTarget(formatInput(initialTarget));
       setSelectedTier("target");
     }
   }, [open, product.id, initialFreight, initialPackaging, initialOther, initialTarget]);
@@ -143,11 +152,15 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
   );
 
   const result = useMemo(() => computeOfficialPricing(input), [input]);
-  const thresholds = {
-    minMarginPct: policy.minMargin,
-    idealMarginPct: num(target),
-    premiumMarginPct: policy.premiumMargin,
-  };
+  // LÓGICA RÍGIDA: Mínimo < Recomendado < Premium
+  const thresholds = useMemo(() => {
+    const t = num(target);
+    return {
+      minMarginPct: policy.minMargin,
+      idealMarginPct: t,
+      premiumMarginPct: Math.max(t + 0.01, policy.premiumMargin),
+    };
+  }, [policy.minMargin, policy.premiumMargin, target]);
   const currentEval = useMemo(() => {
     const evaluated = evaluateOfficialPrice(num(product.price), input);
     return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
@@ -313,7 +326,14 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
                   : "border-border/60 hover:border-primary/50"
               )}
             >
-              <div className="text-[11px] uppercase text-muted-foreground">Premium</div>
+              <div className="flex items-center justify-center gap-1">
+                <div className="text-[11px] uppercase text-muted-foreground">Premium</div>
+                {suggestedEval.status === "premium" && selectedTier === "premium" && (
+                   <span className="inline-flex items-center rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                     Margem premium
+                   </span>
+                )}
+              </div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.premiumPrice)}
               </div>

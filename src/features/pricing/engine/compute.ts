@@ -152,6 +152,8 @@ export function compute(ctx: PricingContext): PricingResult {
     ? Math.round(atLeast(ctx.channel.fixedFeePerOrderCents, 0) / quantity)
     : 0;
   const taxFixedCents = ctx.taxQuote ? atLeast(ctx.taxQuote.totalFixedCents, 0) : 0;
+  
+  // LÓGICA RÍGIDA: Custos fixos por unidade que compõem o Custo Total Efetivo
   const fixedAddCents = opCostCents + fixedFeeCents + taxFixedCents;
   const costTotalCents = costCents + fixedAddCents;
 
@@ -389,10 +391,17 @@ export function compute(ctx: PricingContext): PricingResult {
 
   // ─── Indicadores ─────────────────────────────────────────────────────────
   const netFactor = 1 - feePct / 100 - taxPct / 100;
-  const netFinalCents = finalPriceCents * (netFactor > 0 ? netFactor : 0) - fixedAddCents;
-  const netProfitCents = toCents(netFinalCents - costCents);
+  
+  // LÓGICA RÍGIDA (ADR-001): Lucro Líquido = Preço - Custos Diretos - (Preço * Taxas%)
+  // O fixedAddCents já inclui taxas fixas por unidade.
+  const netRevenueCents = finalPriceCents * (netFactor > 0 ? netFactor : 0) - (fixedFeeCents + taxFixedCents);
+  const netProfitCents = toCents(netRevenueCents - costCents - opCostCents);
+  
   const grossProfitCents = toCents(finalPriceCents - costTotalCents);
+  
+  // Margem Líquida (%) = (Lucro / Preço) * 100
   const marginPct = finalPriceCents > 0 ? (netProfitCents / finalPriceCents) * 100 : 0;
+  // Markup (%) = (Lucro / Custo Total) * 100
   const markupPct = costTotalCents > 0 ? (netProfitCents / costTotalCents) * 100 : 0;
 
   if (marginPct < minMarginPct) {
