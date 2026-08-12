@@ -33,8 +33,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import {
   scanLegacySkus,
   applyLegacySkuRename,
@@ -45,21 +45,7 @@ import {
 export function SkuCleanupSection() {
   const { user } = useAuth();
 
-  const companyQ = useQuery({
-    queryKey: ["settings", "sku-cleanup", "company", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-  });
-  const companyId = companyQ.data?.id ?? null;
+  const { companyId } = useResolvedCompanyId(user?.id);
 
   const scan = useServerFn(scanLegacySkus);
   const apply = useServerFn(applyLegacySkuRename);

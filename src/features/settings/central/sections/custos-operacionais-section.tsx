@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import { operationalDefaultsKey } from "../../hooks/use-operational-defaults";
 
 type OperationalForm = {
@@ -42,22 +43,21 @@ export function CustosOperacionaisSection() {
   const { user } = useAuth();
   const qc = useQueryClient();
 
+  const { companyId, isLoading: companyLoading } = useResolvedCompanyId(user?.id);
+
   const companyQ = useQuery({
-    queryKey: ["settings", "company-operational", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["settings", "company-operational", companyId],
+    enabled: !!companyId,
     queryFn: async () => {
       const { data } = await supabase
         .from("companies")
         .select("id, default_freight, default_packaging, default_insurance, default_other_costs")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
+        .eq("id", companyId as string)
         .maybeSingle();
       return data;
     },
   });
 
-  const companyId = companyQ.data?.id ?? null;
   const [form, setForm] = useState<OperationalForm>(empty);
   const [dirty, setDirty] = useState(false);
 
@@ -104,7 +104,7 @@ export function CustosOperacionaisSection() {
     setDirty(true);
   };
 
-  if (companyQ.isLoading) {
+  if (companyLoading || companyQ.isLoading) {
     return (
       <Card>
         <CardContent className="space-y-3 p-6">
@@ -116,7 +116,7 @@ export function CustosOperacionaisSection() {
     );
   }
 
-  if (!companyQ.data) {
+  if (!companyId || !companyQ.data) {
     return (
       <EmptyState
         icon={Building2}

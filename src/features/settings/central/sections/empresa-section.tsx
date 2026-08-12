@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import { companyBrandingService } from "@/services/company-branding.service";
 import { useCompanyBranding } from "../../hooks/use-company-branding";
 import { offerUndo } from "@/lib/undo-manager";
@@ -90,22 +91,21 @@ export function EmpresaSection() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const { companyId, isLoading: companyIdLoading } = useResolvedCompanyId(user?.id);
+
   const companyQ = useQuery({
-    queryKey: ["settings", "company", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["settings", "company", companyId],
+    enabled: !!companyId,
     queryFn: async () => {
       const { data } = await supabase
         .from("companies")
         .select("*")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
+        .eq("id", companyId as string)
         .maybeSingle();
       return data;
     },
   });
 
-  const companyId = companyQ.data?.id ?? null;
   const brandingQ = useCompanyBranding(companyId);
 
   const [form, setForm] = useState<CompanyForm>(empty);
@@ -275,7 +275,7 @@ export function EmpresaSection() {
     }
   }
 
-  if (companyQ.isLoading) {
+  if (companyIdLoading || companyQ.isLoading) {
     return (
       <Card>
         <CardContent className="space-y-3 p-6">
@@ -287,7 +287,7 @@ export function EmpresaSection() {
     );
   }
 
-  if (!companyQ.data) {
+  if (!companyId || !companyQ.data) {
     return (
       <EmptyState
         icon={Building2}
