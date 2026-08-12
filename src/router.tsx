@@ -24,7 +24,7 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreload: "intent",
+    defaultPreload: false,
     defaultPreloadDelay: 50,
     // Query owns freshness; router não invalida preloads.
     defaultPreloadStaleTime: 0,

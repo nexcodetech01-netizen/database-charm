@@ -30,17 +30,18 @@ export function installNavTelemetry(router: Router<any, any>): () => void {
   let startedAt = 0;
   let fromPath = window.location.pathname;
 
-  const offStart = router.subscribe("onBeforeLoad", () => {
+  const offStart = router.subscribe("onBeforeLoad", (event) => {
     try {
+      if (!event) return;
       startedAt = performance.now();
     } catch (err) {
       console.error("[nav-telemetry] Error in onBeforeLoad:", err);
     }
   });
 
-  const offEnd = router.subscribe("onResolved", () => {
+  const offEnd = router.subscribe("onResolved", (event) => {
     try {
-      if (!startedAt) return;
+      if (!event || !startedAt) return;
       const durationMs = Math.round(performance.now() - startedAt);
       const toPath = window.location.pathname;
       const showedFallback = durationMs > FALLBACK_THRESHOLD_MS;
