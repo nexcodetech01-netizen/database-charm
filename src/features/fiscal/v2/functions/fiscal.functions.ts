@@ -1995,7 +1995,7 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
     const emissionService = new EmissionService(supabase, companyId, context.userId);
-    return emissionService.validate(data.saleId, data.environment);
+    return emissionService.validate(data.saleId, "55", data.environment);
   });
 
 

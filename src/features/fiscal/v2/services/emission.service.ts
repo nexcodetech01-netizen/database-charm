@@ -52,7 +52,7 @@ export class EmissionService {
     await this.docsRepo.update(this.companyId, documentId, patch);
   }
 
-  async validate(saleId: string, model: "55" | "65" = "55", environment?: any): Promise<void> {
+  async validate(saleId: string, model: "55" | "65" = "55", environment?: any): Promise<{ ok: true; saleId: string }> {
     // 1) Valida existência da venda
     const salesRepo = new SalesRepository(this.supabase);
     const sale = await salesRepo.findById(this.companyId, saleId);
@@ -66,13 +66,11 @@ export class EmissionService {
     const companyRepo = new CompanyRepository(this.supabase);
     const taxRepo = new TaxRepository(this.supabase);
     const [company, settings] = await Promise.all([
-      companyRepo.findById(this.companyId),
+      companyRepo.getProfile(this.companyId),
       taxRepo.getSettings(this.companyId)
     ]);
     
     CompanyValidator.validateFiscalSettings(settings);
-    // Nota: emitter mapping em nfe-engine buildContext converte snake_case para camelCase
-    // Aqui validamos os dados brutos ou o que temos no repo
     
     // 4) Valida itens
     const items = await salesRepo.listItems(saleId);
@@ -82,5 +80,7 @@ export class EmissionService {
     const certRepo = new CertificateRepository(this.supabase);
     const activeCert = await certRepo.findActive(this.companyId);
     CertificateValidator.validate(activeCert);
+
+    return { ok: true, saleId };
   }
 }
