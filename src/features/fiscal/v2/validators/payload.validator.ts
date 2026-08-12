@@ -1,4 +1,5 @@
-import { blocksNewFiscalDocument, toDocLikes } from "../lib/issue-guard";
+import { blocksNewFiscalDocument } from "../lib/fiscal-status";
+import { toDocLikes } from "../lib/issue-guard";
 
 export class PayloadValidator {
   static validateIssueRequest(existingDocs: any[], model: "55" | "65"): void {
