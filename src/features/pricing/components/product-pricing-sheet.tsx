@@ -20,6 +20,8 @@ import { resolvePricingStatus } from "../official/status";
 import { toRoundingPolicySpec } from "../types";
 import { usePricingPolicy } from "../hooks/use-pricing-policy";
 import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
+import { useOperationalDefaults } from "@/features/settings/hooks/use-operational-defaults";
+import { useCategories } from "@/features/products/hooks/use-products";
 import { PricingStatusBadge } from "./pricing-status-badge";
 
 const num = (s: string | number | null | undefined) => {
@@ -36,6 +38,7 @@ export interface ProductPricingSheetProduct {
   insurance?: number | null;
   other_costs?: number | null;
   price: number | null;
+  category_id?: string | null;
 }
 
 interface Props {
@@ -68,33 +71,48 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
 export function ProductPricingSheet({ open, onOpenChange, companyId, product, onApply }: Props) {
   const { policy } = usePricingPolicy(companyId);
   const { feeTable } = useCompanyFeeTable(companyId);
+  const { data: operationalDefaults } = useOperationalDefaults(companyId);
+  const { data: categories = [] } = useCategories(companyId);
+
+  const productCategory = useMemo(() => {
+    return categories.find(c => c.id === product.category_id);
+  }, [categories, product.category_id]);
 
   const baseCost = num(product.cost);
-  const baseFreight = num(product.freight);
-  const baseOther = num(product.other_costs) + num(product.insurance);
-  const basePackaging =
-    typeof product.packaging === "number" ? product.packaging : policy.packaging;
+  
+  // LÓGICA RÍGIDA: Carrega padrões da empresa se os do produto estiverem zerados
+  const getInitialValue = (productVal: number | null | undefined, defaultVal: number) => {
+    return num(productVal) > 0 ? num(productVal) : defaultVal;
+  };
 
-  const [freight, setFreight] = useState(String(baseFreight));
-  const [packaging, setPackaging] = useState(String(basePackaging));
-  const [otherCosts, setOtherCosts] = useState(String(baseOther));
-  const [target, setTarget] = useState(String(policy.idealMargin));
+  const initialFreight = getInitialValue(product.freight, operationalDefaults?.freight ?? 0);
+  const initialPackaging = getInitialValue(product.packaging, operationalDefaults?.packaging ?? 2.30);
+  const initialOther = getInitialValue(num(product.other_costs) + num(product.insurance), operationalDefaults?.other_costs ?? 0.10);
+  
+  // Puxa margem da categoria ou usa a da política como fallback
+  const initialTarget = productCategory?.target_margin_pct ?? policy.idealMargin;
+
+  const [freight, setFreight] = useState(String(initialFreight));
+  const [packaging, setPackaging] = useState(String(initialPackaging));
+  const [otherCosts, setOtherCosts] = useState(String(initialOther));
+  const [target, setTarget] = useState(String(initialTarget));
+  const [simulatedChannel, setSimulatedChannel] = useState<"standard" | "ml">("standard");
 
   useEffect(() => {
     if (open) {
-      setFreight(String(baseFreight));
-      setPackaging(String(basePackaging));
-      setOtherCosts(String(baseOther));
-      setTarget(String(policy.idealMargin));
+      setFreight(String(initialFreight));
+      setPackaging(String(initialPackaging));
+      setOtherCosts(String(initialOther));
+      setTarget(String(initialTarget));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, product.id]);
+  }, [open, product.id, initialFreight, initialPackaging, initialOther, initialTarget]);
 
-  // FASE 4 — taxa vem da tabela única da empresa (pior caso permitido).
+  // LÓGICA RÍGIDA: Taxa considerada deve ser 0% para padrão, a menos que simule Marketplace
   const feePct = useMemo(() => {
+    if (simulatedChannel === "standard") return 0;
     const reference = num(product.price) || baseCost * 2 || 100;
     return effectiveFeePct(worstCaseFee(feeTable, reference), reference);
-  }, [feeTable, product.price, baseCost]);
+  }, [feeTable, product.price, baseCost, simulatedChannel]);
 
   const input = useMemo(
     () => ({
@@ -208,7 +226,16 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
               />
             </Field>
             <Field label="Taxa considerada (%)">
-              <Input value={formatNumber(result.feePct)} disabled />
+              <div className="flex gap-2">
+                <Input value={formatNumber(feePct)} disabled className="flex-1" />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setSimulatedChannel(s => s === "standard" ? "ml" : "standard")}
+                >
+                  {simulatedChannel === "standard" ? "Simular ML" : "Padrão (0%)"}
+                </Button>
+              </div>
             </Field>
           </div>
 

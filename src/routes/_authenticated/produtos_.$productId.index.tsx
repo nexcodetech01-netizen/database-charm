@@ -838,6 +838,7 @@ function ProductDetailPage() {
           insurance: product.insurance,
           other_costs: product.other_costs,
           price: product.price,
+          category_id: product.category_id,
         }}
         onApply={(newPrice) => {
           void navigate({
