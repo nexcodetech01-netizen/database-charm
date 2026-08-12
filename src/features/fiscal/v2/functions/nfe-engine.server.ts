@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { FiscalProvider } from "../provider/fiscal-provider";
 import { resolveFiscalProviderFor } from "../provider/resolve.server";
-import type { NfePayload, NfeEnvironment, NfeStatus } from "../types";
+import type { NfePayload, NfeEnvironment, NfeStatus, FiscalDocumentDto } from "../types";
 import { requireCrt } from "../lib/crt";
 import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 import {
@@ -39,11 +39,17 @@ import {
   type FiscalArtifactKind,
 } from "../lib/artifacts";
 
+import { DocumentsRepository } from "../repositories/documents.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { ProductsRepository } from "../repositories/products.repository";
+import { CustomersRepository } from "../repositories/customers.repository";
+import { StatusRepository } from "../repositories/status.repository";
+import { TaxRepository } from "../repositories/tax.repository";
+import { SalesRepository } from "../repositories/sales.repository";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = SupabaseClient<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const anyFrom = (supabase: SB, table: string) => supabase.from(table as never) as any;
 
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
 

@@ -1172,8 +1172,8 @@ export const getFiscalSettings = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    const settings = await fetchFiscalSettings(supabase, companyId);
-    return settings ?? defaultSettings(companyId);
+    const settings = await new TaxRepository(supabase).getSettings(companyId);
+    return settings;
   });
 
 
