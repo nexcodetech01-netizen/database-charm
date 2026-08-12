@@ -61,7 +61,14 @@ export function useAccounts(companyId: string) {
 
   return useQuery({
     queryKey: financeKeys.accounts(companyId),
-    queryFn: () => financeService.listAccounts(companyId),
+    queryFn: async () => {
+      try {
+        return await financeService.listAccounts(companyId);
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+        throw error;
+      }
+    },
     enabled: !!companyId,
   });
 }
@@ -234,7 +241,14 @@ export function useDeleteTransaction() {
 export function useFinanceOverview(companyId: string) {
   return useQuery({
     queryKey: financeKeys.overview(companyId),
-    queryFn: () => financeService.overview(companyId),
+    queryFn: async () => {
+      try {
+        return await financeService.overview(companyId);
+      } catch (error) {
+        console.error("Error fetching finance overview:", error);
+        throw error;
+      }
+    },
     enabled: !!companyId,
   });
 }

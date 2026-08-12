@@ -13,10 +13,10 @@ export function FinanceSummaryPanel({ companyId }: { companyId: string }) {
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustingAccount, setAdjustingAccount] = useState<any>(null);
 
-  const activeAccounts = accounts?.filter(a => a.status === 'active') || [];
-  const bankAccount = activeAccounts.find(a => a.type === 'bank' || a.type === 'digital_wallet');
-  const cashAccount = activeAccounts.find(a => a.type === 'cash');
-  const totalBalance = activeAccounts.reduce((sum: number, a: any) => sum + (Number(a.current_balance) || 0), 0);
+  const activeAccounts = (accounts || []).filter(a => a?.status === 'active');
+  const bankAccount = activeAccounts.find(a => a?.type === 'bank' || a?.type === 'digital_wallet');
+  const cashAccount = activeAccounts.find(a => a?.type === 'cash');
+  const totalBalance = activeAccounts.reduce((sum: number, a: any) => sum + (Number(a?.current_balance) || 0), 0);
 
 
 

@@ -57,7 +57,7 @@ export function filterFinanceInsights(
 }
 
 function pick<T>(result: ProviderResult<T> | undefined, get: (data: T) => number) {
-  if (!result?.available || !result.data) return { value: null, available: false };
+  if (!result?.available || result?.data === undefined || result?.data === null) return { value: null, available: false };
   return { value: get(result.data), available: true };
 }
 

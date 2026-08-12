@@ -23,7 +23,7 @@ export function TransactionStatusBadge({ status }: Props) {
   const display =
     (status as DisplayStatus) in DISPLAY_STATUS_LABEL
       ? (status as DisplayStatus)
-      : (LEGACY[status as TransactionStatus] ?? "pending");
+      : (LEGACY[status as TransactionStatus] ?? "pending" as DisplayStatus);
   return (
     <Badge variant="outline" className={DISPLAY_STATUS_TONE[display]}>
       {DISPLAY_STATUS_LABEL[display]}

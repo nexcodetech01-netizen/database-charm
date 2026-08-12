@@ -270,7 +270,7 @@ export function SettleTransactionDialog({
                   {formatCurrency(discountAmount)}
                   {discountType === "percent" && discountAmount > 0 && !discountTooLarge ? (
                     <span className="ml-1 text-xs text-muted-foreground">
-                      ({Math.min(rawDiscount ?? 0, 100).toLocaleString("pt-BR")}%)
+                      ({Math.min(Number(rawDiscount) || 0, 100).toLocaleString("pt-BR")}%)
                     </span>
                   ) : null}
                 </span>

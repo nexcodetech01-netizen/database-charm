@@ -23,8 +23,8 @@ interface MetricItem {
 export function FinanceMetrics({ companyId }: { companyId: string }) {
   const { data, isLoading } = useFinanceOverview(companyId);
 
-  const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
-  const cashFlow = data ? data.receivable - data.payable : undefined;
+  const monthResult = data ? (data.monthIncome || 0) - (data.monthExpense || 0) : undefined;
+  const cashFlow = data ? (data.receivable || 0) - (data.payable || 0) : undefined;
 
   const items: MetricItem[] = [
     {
@@ -111,7 +111,7 @@ function MetricCard({ item, isLoading }: { item: MetricItem; isLoading: boolean 
           <Skeleton className="h-8 w-32" />
         ) : (
           <span className="text-2xl font-semibold tracking-tight tabular-nums">
-            {item.value ?? "—"}
+            {item.value || "R$ 0,00"}
           </span>
         )}
       </div>

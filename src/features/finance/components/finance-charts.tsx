@@ -49,8 +49,9 @@ const WIDE_FILTERS = {
 };
 
 function currencyShort(v: number) {
-  if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}k`;
-  return String(v);
+  const val = Number(v) || 0;
+  if (Math.abs(val) >= 1000) return `${(val / 1000).toFixed(1)}k`;
+  return String(val);
 }
 
 export function MonthlyIncomeExpenseChart({ companyId }: { companyId: string }) {

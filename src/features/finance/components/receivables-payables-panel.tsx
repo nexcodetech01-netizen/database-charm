@@ -122,12 +122,12 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   const [settleOpen, setSettleOpen] = useState(false);
   const [settling, setSettling] = useState<FinancialTransaction | null>(null);
 
-  const rows = data?.rows ?? [];
+  const rows = data?.rows || [];
   const groups = useMemo(() => groupByReference(rows), [rows]);
 
   const enriched = useMemo(
     () =>
-      rows.map((r) => ({
+      (rows || []).map((r) => ({
         row: r,
         display: deriveGroupStatus(r, groups),
       })),
@@ -313,14 +313,34 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-16">
-                    <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-                      {kind === "receivable" ? (
-                        <ArrowDownRight className="h-8 w-8" />
-                      ) : (
-                        <Receipt className="h-8 w-8" />
-                      )}
-                      <p className="font-medium text-foreground">{meta.empty}</p>
+                  <TableCell colSpan={6} className="py-24">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <div className="rounded-full bg-muted p-4">
+                        {kind === "receivable" ? (
+                          <ArrowDownRight className="h-8 w-8 text-muted-foreground" />
+                        ) : (
+                          <Receipt className="h-8 w-8 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-foreground">{meta.empty}</p>
+                        <p className="text-sm text-muted-foreground max-w-[280px]">
+                          Não encontramos nenhum lançamento com os filtros selecionados.
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setSearch("");
+                          setTab("all");
+                          setPeriod("all");
+                          setOrigin("all");
+                          setPage(1);
+                        }}
+                      >
+                        Limpar filtros
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
