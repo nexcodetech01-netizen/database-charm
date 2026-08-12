@@ -23,6 +23,7 @@ import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCas
 import { productImagesService } from "../../services/product-images.service";
 import { productMediaService } from "../../services/product-media.service";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
+import { getLastPurchaseInfo } from "@/features/purchases/services/purchase-history.functions";
 
 import {
   useCategories,
@@ -160,6 +161,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const createCategory = useCreateCategory(companyId);
   const suggestTagsFn = useServerFn(suggestProductTags);
   const lookupEan = useServerFn(lookupProductByEan);
+  const fetchLastPurchase = useServerFn(getLastPurchaseInfo);
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
   
   const isEdit = !!product;
@@ -277,6 +279,46 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     } catch (err) { toast.error("Erro no upload"); }
     finally { setUploadingVideo(false); }
   };
+
+  const handleFetchLastPurchase = useCallback(async () => {
+    if (!form.supplier_id) return;
+    // Se estivermos editando um produto, usamos o ID dele. Se for novo, não temos histórico ainda (a menos que seja por nome/SKU, mas aqui focamos no produto atual)
+    if (!product?.id) {
+      toast.info("Histórico de compras disponível apenas para produtos já cadastrados.");
+      return;
+    }
+
+    try {
+      const info = await fetchLastPurchase({ 
+        data: { 
+          companyId, 
+          productId: product.id, 
+          supplierId: form.supplier_id 
+        } 
+      });
+
+      if (info) {
+        setForm(s => ({
+          ...s,
+          cost: info.unitPrice.toFixed(2),
+          freight: info.unitShipping.toFixed(2),
+        }));
+        toast.success(`Dados sincronizados da compra em ${new Date(info.purchaseDate).toLocaleDateString()}`);
+      } else {
+        toast.info("Nenhuma compra encontrada para este produto com o fornecedor selecionado.");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar histórico:", err);
+      toast.error("Erro ao consultar histórico de compras.");
+    }
+  }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm]);
+
+  // Sincronizar ao trocar de fornecedor se já tivermos o produto
+  useEffect(() => {
+    if (isEdit && form.supplier_id && product?.id) {
+      handleFetchLastPurchase();
+    }
+  }, [form.supplier_id]);
 
   const submit = async () => {
     setFormErrors({});
@@ -482,6 +524,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                   const target = pricingInputs.margins.targetPct;
                   setForm((s: any) => ({ ...s, margin: String(target), use_category_margin: true }));
                 }}
+                onFetchLastPurchase={handleFetchLastPurchase}
               />
               <div className="pt-6 border-t border-slate-100">
                 <SuggestedPricesByChannelCard
