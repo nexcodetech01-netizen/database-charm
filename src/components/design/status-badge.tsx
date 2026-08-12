@@ -28,7 +28,7 @@ export function StatusBadge({
   status = "neutral",
   children,
   label,
-  appearance = "outline",
+  appearance = "soft",
   withDot = true,
   className,
 }: StatusBadgeProps) {

@@ -232,7 +232,7 @@ export const LabelPreview: React.FC<LabelPreviewProps> = ({ label, className = "
             <iframe
               key={`${label.id}-${previewUrl}`}
               src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1&view=${isDanfe ? 'FitH' : 'Fit'}&pagemode=none`}
-              title="Preview"
+              title="Visualização"
               onLoad={() => fitToContainer()}
               className="border shadow-lg bg-white transition-all"
               style={{

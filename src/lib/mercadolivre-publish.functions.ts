@@ -105,7 +105,23 @@ export const mlPublishPayloadSchema = z
       }
     }),
   })
-  .passthrough();
+  .passthrough()
+  // `title` e `variations` foram removidos permanentemente do payload (o
+  // título agora é derivado de family_name + attributes pelo próprio ML).
+  // Bloqueados explicitamente aqui para pegar código legado que ainda
+  // tenta enviá-los — sem tornar o schema inteiro estrito, então outros
+  // campos extras legítimos continuam passando normalmente.
+  .superRefine((payload, ctx) => {
+    for (const legacyField of ["title", "variations"] as const) {
+      if (legacyField in payload) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Campo "${legacyField}" foi removido permanentemente do payload de publicação.`,
+          path: [legacyField],
+        });
+      }
+    }
+  });
 
 
 

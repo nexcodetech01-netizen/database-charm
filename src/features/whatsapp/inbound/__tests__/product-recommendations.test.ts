@@ -34,7 +34,9 @@ function dbWith(rows: unknown[]) {
     from: () => ({
       select: () => ({
         eq: () => ({
-          eq: () => ({ order: async () => ({ data: rows }) }),
+          eq: () => ({
+            gt: () => ({ order: async () => ({ data: rows }) }),
+          }),
         }),
       }),
     }),

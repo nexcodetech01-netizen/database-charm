@@ -293,11 +293,12 @@ describe("formatCheckoutSummary", () => {
       "cartão",
     ]);
     const text = formatCheckoutSummary(r.session, cart);
-    expect(text).toContain("🛍️ *Resumo do Pedido*");
-    expect(text).toContain("Cliente: Maria Silva");
-    expect(text).toContain("CPF: 529.982.247-25");
-    expect(text).toContain("Nascimento: 05/03/1990");
-    expect(text).toContain("2x Bolsa");
+    expect(text).toContain("🛍️ *Resumo do seu Pedido*");
+    expect(text).toContain("*Cliente:* Maria Silva");
+    expect(text).toContain("*CPF:* 529.982.247-25");
+    expect(text).toContain("*Nascimento:* 05/03/1990");
+    expect(text).toContain("Bolsa");
+    expect(text).toContain("(x2)");
     expect(text).toContain("Carteira");
     expect(text).toContain("Cartão");
     expect(text).toContain("489,90");

@@ -215,7 +215,7 @@ function buildContext(input: OfficialPricingInput): {
       freightCents: cents(freight),
       packagingCents: cents(packaging),
       insuranceCents: cents(insurance),
-      otherExpensesCents: cents(extras + loss),
+      otherExpensesCents: cents(extras + otherCosts + loss),
       computedAt: now,
       origin: "inventory",
     },

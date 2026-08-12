@@ -23,7 +23,7 @@ const CONTRACT: Record<string, string[]> = {
   accounting: ["dre", "balanceSheet", "kpis", "monthlyEvolution"],
   finance: ["snapshot"],
   sales: ["metrics", "products", "customers"],
-  inventory: ["metrics"],
+  inventory: ["metrics", "ledgerAudit"],
   fiscal: [
     "monthlyRevenue",
     "apportionments",
@@ -44,6 +44,8 @@ const CONTRACT: Record<string, string[]> = {
     "fiscalDocuments",
     "fiscalDefaults",
     "stagnantProducts",
+    "purchases",
+    "suppliers",
   ],
 };
 

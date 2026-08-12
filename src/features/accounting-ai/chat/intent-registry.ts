@@ -479,8 +479,11 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
     priority: 39, // Prioridade alta para auditoria de frente de caixa
     terms: [
       [
-        "como esta meu caixa",
-        "como esta o caixa",
+        // "como esta meu caixa" / "como esta o caixa" foram removidos:
+        // colidiam com consultar_caixa (pergunta simples de saldo) e,
+        // pela prioridade mais alta, sempre venciam mesmo para perguntas
+        // genéricas de saldo. Mantidos apenas termos que sinalizam
+        // claramente auditoria/fechamento de frente de caixa.
         "meu caixa esta pronto",
         "existem diferenças",
         "posso fechar o caixa",
@@ -501,16 +504,23 @@ export const INTENT_REGISTRY: readonly IntentRule[] = [
         "como esta meu estoque",
         "como esta o estoque",
         "situacao do estoque",
-        "meu estoque",
+        // "meu estoque" isolado foi removido: colidia com explicar_estoque
+        // ("por que meu estoque..." contém "meu estoque" como substring) e,
+        // pelo mesmo motivo de prioridade do fix acima, sempre vencia mesmo
+        // em perguntas claramente explicativas ("por que"/"explique").
         "o que preciso comprar",
         "o que comprar",
         "preciso repor",
         "o que esta acabando",
         "esta acabando",
         "produtos parados",
-        "estao parados",
-        "parados",
-        "esta parado",
+        "produtos estao parados",
+        "estoque parado",
+        // "esta parado" / "parados" isolados foram removidos: colidiam com
+        // situacao_crm ("quem esta parado" = cliente inativo), e por causa
+        // da prioridade mais alta (37 vs 17) o estoque sempre vencia mesmo
+        // em perguntas claramente sobre cliente. Mantido "produto(s) parado(s)"
+        // e "estoque parado", que exigem o substantivo e não colidem.
         "produto parado",
         "sem giro",
         "estoque baixo",

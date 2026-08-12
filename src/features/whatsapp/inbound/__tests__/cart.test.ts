@@ -50,6 +50,7 @@ function makeDb() {
       const builder: any = {
         select: () => builder,
         eq: () => builder,
+        gt: () => builder,
         in: () => builder,
         not: () => builder,
         order: () => Promise.resolve({ data: rows }),
@@ -176,21 +177,21 @@ describe("carrinho — mensagens", () => {
     const msg = formatCartUpdatedMessage(
       addProduct(createCartSession("c1", "p", 0), products[0]!),
     );
-    expect(msg).toContain("🛍️ *Pedido atualizado*");
-    expect(msg).toContain("• Bolsa Helena");
-    expect(msg).toContain("Qtd: 1");
+    expect(msg).toContain("🛍️ *Pedido atualizado!*");
+    expect(msg).toContain("• *Bolsa Helena*");
+    expect(msg).toContain("(x1)");
     expect(msg).toContain("R$ 189,90");
-    expect(msg).toContain("Total:");
-    expect(msg).toContain("Deseja continuar comprando ou finalizar?");
+    expect(msg).toContain("*Total:");
+    expect(msg).toContain("Gostaria de adicionar algo mais ou prefere finalizar o seu pedido agora?");
   });
 
   it("mostra o resumo completo com mais de um item", () => {
     let s = addProduct(createCartSession("c1", "p", 0), products[0]!);
     s = addProduct(s, products[2]!, 2);
     const msg = formatCartMessage(s);
-    expect(msg).toContain("• Bolsa Helena");
-    expect(msg).toContain("• Perfume Floral 100ml");
-    expect(msg).toContain("Qtd: 2");
+    expect(msg).toContain("• *Bolsa Helena*");
+    expect(msg).toContain("• *Perfume Floral 100ml*");
+    expect(msg).toContain("(x2)");
     expect(msg).toContain("R$ 429,70");
   });
 
@@ -206,8 +207,8 @@ describe("carrinho — turno conversacional", () => {
 
   it("adiciona produto citado pelo nome", async () => {
     const r = await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
-    expect(r!.text).toContain("🛍️ *Pedido atualizado*");
-    expect(r!.text).toContain("Qtd: 1");
+    expect(r!.text).toContain("🛍️ *Pedido atualizado!*");
+    expect(r!.text).toContain("(x1)");
     expect(getCartSession("c1", "5511999").total).toBe(189.9);
   });
 
@@ -218,7 +219,7 @@ describe("carrinho — turno conversacional", () => {
       text: "Quero duas Bolsa Helena",
       state: { step: "cart" },
     });
-    expect(r!.text).toContain("Qtd: 3");
+    expect(r!.text).toContain("(x3)");
     expect(getCartSession("c1", "5511999").total).toBe(569.7);
   });
 
@@ -228,7 +229,7 @@ describe("carrinho — turno conversacional", () => {
       text: "Quero essa",
       state: { step: "products", lastProductIds: ["p1"] },
     });
-    expect(r!.text).toContain("• Bolsa Helena");
+    expect(r!.text).toContain("• *Bolsa Helena*");
     expect(getCartSession("c1", "5511999").items).toHaveLength(1);
   });
 
@@ -262,7 +263,7 @@ describe("carrinho — turno conversacional", () => {
       text: "Limpar pedido",
       state: { step: "cart" },
     });
-    expect(cleared!.text).toContain("limpei seu pedido");
+    expect(cleared!.text).toContain("Esvaziei o seu pedido");
     expect(getCartSession("c1", "5511999").items).toEqual([]);
   });
 

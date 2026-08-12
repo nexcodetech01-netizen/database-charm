@@ -1,18 +1,38 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ShippingLabelPrintDialog } from '../../printing/components/ShippingLabelPrintDialog';
 import React from 'react';
+
+// ShippingLabelPrintDialog renderiza PrinterSelector, que usa useQuery — precisa
+// de um QueryClientProvider real no teste (não só mocks de service).
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
 
 // Mock dependencies
 vi.mock('@/features/printing/services/labelary.service', () => ({
   labelaryService: {
     convertToPdf: vi.fn().mockResolvedValue(new Blob(['mock-pdf'], { type: 'application/pdf' })),
+    getLastAudit: vi.fn().mockReturnValue(null),
   },
 }));
 
 vi.mock('@/features/printing/services/print.service', () => ({
   printManager: {
     print: vi.fn().mockResolvedValue({ success: true, jobId: '123' }),
+    subscribe: vi.fn(() => () => {}),
+  },
+}));
+
+vi.mock('@/features/printing/services/printer.service', () => ({
+  printerService: {
+    listPrinters: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -41,12 +61,12 @@ describe('ShippingLabelPrintDialog UI', () => {
   };
 
   it('should show PDF preview when loaded', async () => {
-    render(<ShippingLabelPrintDialog {...defaultProps} />);
+    renderWithProviders(<ShippingLabelPrintDialog {...defaultProps} />);
     
     await waitFor(() => {
       const iframe = screen.getByTitle('Visualização');
       expect(iframe).toBeDefined();
-      expect(iframe.getAttribute('src')).toBe('blob:mock-url');
+      expect(iframe.getAttribute('src')).toContain('blob:mock-url');
     }, { timeout: 2000 });
   });
 
@@ -55,7 +75,7 @@ describe('ShippingLabelPrintDialog UI', () => {
     // Force a long print delay
     (printManager.print as any).mockImplementationOnce(() => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100)));
 
-    render(<ShippingLabelPrintDialog {...defaultProps} />);
+    renderWithProviders(<ShippingLabelPrintDialog {...defaultProps} />);
     
     await waitFor(() => screen.getByRole('button', { name: /Imprimir/i }));
     

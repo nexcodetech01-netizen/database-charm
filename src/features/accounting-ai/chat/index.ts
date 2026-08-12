@@ -10,6 +10,7 @@ import type { ProviderDeps } from "../providers";
 import { buildAccountingSummary } from "../providers/summary";
 import { taxRegimeProvider } from "../tax/provider";
 import { explanationProvider } from "../explanation/provider";
+import { auditProvider } from "../audit";
 import { detectIntent } from "./intent-engine";
 import { planIntent } from "./planner";
 import { executePlan } from "./router";
@@ -140,6 +141,42 @@ export async function askBella(
       deps.explanation = await bellaTelemetry.measure(
         { kind: "explanation", label: "explanation_snapshot", cache: "miss", providers: 2 },
         () => explanationProvider(companyId, deps),
+      );
+    }
+  }
+
+  // Sprint 7.4 — o snapshot de auditoria também é lido UMA vez por
+  // pergunta e compartilhado entre as skills do plano (auditar_empresa,
+  // consultar_inconsistencias, consultar_saude_operacional).
+  const AUDIT_SKILLS = new Set([
+    "auditar_empresa",
+    "consultar_inconsistencias",
+    "consultar_saude_operacional",
+  ]);
+  if (plan.steps.some((s) => AUDIT_SKILLS.has(s.skillId))) {
+    if (deps.auditSnapshot) {
+      cache.hits += 1;
+      bellaTelemetry.record({
+        kind: "audit",
+        label: "audit_snapshot",
+        durationMs: 0,
+        cache: "hit",
+      });
+    } else {
+      // auditProvider também precisa do retrato tributário internamente;
+      // computamos aqui e reaproveitamos, senão ele buscaria de novo
+      // (mesmo bug de duplicação que o bloco TAX_SKILLS evita acima).
+      if (!deps.taxSnapshot) {
+        cache.misses += 1;
+        deps.taxSnapshot = await bellaTelemetry.measure(
+          { kind: "tax", label: "tax_snapshot", cache: "miss", providers: 1 },
+          () => taxRegimeProvider(companyId, deps),
+        );
+      }
+      cache.misses += 1;
+      deps.auditSnapshot = await bellaTelemetry.measure(
+        { kind: "audit", label: "audit_snapshot", cache: "miss", providers: 8 },
+        () => auditProvider(companyId, deps),
       );
     }
   }

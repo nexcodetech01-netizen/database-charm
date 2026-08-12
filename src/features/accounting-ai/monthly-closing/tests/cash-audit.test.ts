@@ -43,7 +43,7 @@ describe("auditCashClosing", () => {
     const result = auditCashClosing(summary, sessions, month);
     
     expect(result.healthScore.score).toBe(100);
-    expect(result.healthScore.level).toBe("Exelente");
+    expect(result.healthScore.level).toBe("Excelente");
     expect(result.checklist.length).toBe(0);
   });
 

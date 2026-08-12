@@ -42,7 +42,7 @@ describe("catalog-nav", () => {
       { id: "p1", name: "Bolsa Couro", price: 199.9, unit: "un" },
     ]);
     expect(msg).toContain("Bolsa Couro");
-    expect(msg.toLowerCase()).toContain("voltar");
+    expect(msg.toLowerCase()).toContain("gostou de algum desses modelos");
   });
 
   it("mensagem vazia quando não há categorias", () => {

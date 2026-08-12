@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import {
   DESIGN_TOKENS,
   MOTION_DURATION_MS,
@@ -13,7 +15,11 @@ import {
   statusToken,
 } from "../tokens";
 
-const css = readFileSync(new URL("../../styles.css", import.meta.url), "utf8");
+// jsdom (ambiente deste arquivo de teste) resolve `new URL(rel, import.meta.url)`
+// contra sua própria location (http://localhost:3000/), ignorando a base
+// file://. Resolvemos o caminho manualmente via dirname do arquivo atual.
+const currentFile = fileURLToPath(import.meta.url);
+const css = readFileSync(join(dirname(currentFile), "../../styles.css"), "utf8");
 
 describe("UI.1.1 — Design Tokens", () => {
   it("define os 12 tokens de status", () => {
