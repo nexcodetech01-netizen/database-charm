@@ -190,6 +190,31 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   });
   const [eanLoading, setEanLoading] = useState(false);
 
+  // Botão "Sugestão IA" da aba fiscal — antes era um no-op (onFiscalAutofill
+  // sempre vazio, fiscalLoading sempre false). Aplica a melhor sugestão já
+  // calculada pelo hook: categoria > histórico de produtos similares > tabela
+  // mestre de NCM.
+  const handleFiscalAutofill = useCallback(() => {
+    if (fiscal.categorySuggestion?.ncm) {
+      fiscal.applySuggestion(
+        { ncm: fiscal.categorySuggestion.ncm, cest: fiscal.categorySuggestion.cest },
+        "category",
+      );
+      return;
+    }
+    const bestHistory = fiscal.historySuggestions[0];
+    if (bestHistory?.ncm) {
+      fiscal.applySuggestion({ ncm: bestHistory.ncm, cest: bestHistory.cest }, "history");
+      return;
+    }
+    const bestMaster = fiscal.masterSuggestions[0];
+    if (bestMaster?.ncm) {
+      fiscal.applySuggestion({ ncm: bestMaster.ncm, cest: null }, "barcode");
+      return;
+    }
+    toast.error("Nenhuma sugestão fiscal encontrada. Preencha nome e categoria do produto.");
+  }, [fiscal]);
+
   // Draft Logic
   const draft = useDraft({
     key: isEdit ? null : DRAFT_KEYS.product(companyId),
