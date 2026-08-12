@@ -15,10 +15,12 @@ export function ConversationView({
   selected,
   companyId,
   onDeleted,
+  onStartNewConversation,
 }: {
   selected: ConversationListItem | null;
   companyId: string | null;
   onDeleted?: (id: string) => void;
+  onStartNewConversation?: () => void;
 }) {
   const detail = useConversationDetail(selected?.id ?? null);
   const mutations = useConsoleMutations(companyId);
@@ -60,7 +62,8 @@ export function ConversationView({
         <Button 
           variant="outline" 
           className="mt-6 gap-2"
-          onClick={() => {}}
+          onClick={onStartNewConversation}
+          disabled={!onStartNewConversation}
         >
           <MessageSquarePlus className="h-4 w-4" /> Iniciar Nova Conversa
         </Button>
