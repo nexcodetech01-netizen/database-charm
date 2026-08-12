@@ -30,18 +30,18 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               if (form.product_type === 'kit') return;
               setForm((s: any) => ({ ...s, stock: e.target.value }));
             }}
-            readOnly={isEdit || form.product_type === 'kit'}
-            className={cn(
-              "text-lg font-bold tabular-nums",
-              (isEdit || form.product_type === 'kit') && "bg-muted/50 cursor-not-allowed border-dashed"
-            )}
+            className="text-lg font-bold tabular-nums"
+            disabled={isEdit}
+            readOnly={isEdit}
           />
-          {form.product_type === 'kit' && (
-            <p className="text-[10px] text-blue-400 font-bold">
-              Estoque calculado pelo item gargalo da composição.
+          {isEdit && (
+            <p className="text-[10px] text-muted-foreground">
+              O saldo não pode ser editado direto aqui — o sistema bloqueia essa alteração no banco
+              de dados (o valor precisa passar por uma movimentação, para manter o histórico
+              correto). Use os botões <strong>Entrada</strong> ou <strong>Ajuste</strong> abaixo.
             </p>
           )}
-          
+
           {isEdit && form.product_type !== 'kit' && (
             <div className="flex gap-2">
               <Button
