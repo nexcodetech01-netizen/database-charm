@@ -146,22 +146,32 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
     });
 
     // 6. Asaas
-    const { data: asaasCfg } = await supabase
-      .from("bella_pay_config")
-      .select("api_key_production, api_key_sandbox, environment")
-      .eq("company_id", claims?.company_id || "")
-      .maybeSingle();
+    try {
+      const { data: asaasCfg } = await supabase
+        .from("bella_pay_config")
+        .select("api_key_production, api_key_sandbox, environment")
+        .eq("company_id", claims?.company_id || "")
+        .maybeSingle();
 
-    const asaasKey = Boolean(asaasCfg?.api_key_production || asaasCfg?.api_key_sandbox);
-    checks.push({
-      id: "asaas-key",
-      category: "Asaas",
-      label: "API Key",
-      status: asaasKey ? "ok" : "warning",
-      message: asaasKey
-        ? `API Key configurada (${asaasCfg?.environment ?? "sandbox"}).`
-        : "ASAAS_API_KEY ausente no banco de dados.",
-    });
+      const asaasKey = Boolean(asaasCfg?.api_key_production || asaasCfg?.api_key_sandbox);
+      checks.push({
+        id: "asaas-key",
+        category: "Asaas",
+        label: "API Key",
+        status: asaasKey ? "ok" : "warning",
+        message: asaasKey
+          ? `API Key configurada no banco (${asaasCfg?.environment ?? "sandbox"}).`
+          : "ASAAS_API_KEY ausente na tabela bella_pay_config.",
+      });
+    } catch (err) {
+      checks.push({
+        id: "asaas-key",
+        category: "Asaas",
+        label: "API Key",
+        status: "error",
+        message: "Erro ao consultar configuração do Asaas no banco.",
+      });
+    }
 
     // 7. Bella IA
     const lovableKey = Boolean(process.env.LOVABLE_API_KEY);
