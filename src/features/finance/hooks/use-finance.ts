@@ -29,17 +29,22 @@ function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: financeKeys.all });
 }
 
-// Accounts
-export function useAccounts(companyId: string) {
-  const qc = useQueryClient();
+// ---------------------------------------------------------------------------
+// Realtime "finance_overview_sync" — inscrição única por empresa.
+type FinanceRealtimeEntry = {
+  channel: ReturnType<typeof supabase.channel>;
+  refCount: number;
+  listeners: Set<() => void>;
+};
 
-  useEffect(() => {
-    if (!companyId) return;
+const financeRealtimeRegistry = new Map<string, FinanceRealtimeEntry>();
 
-    // Nome do canal escopado por empresa, para não colidir quando o hook
-    // é montado em mais de um lugar ao mesmo tempo (ex: Dashboard + Financeiro).
+function subscribeFinanceRealtime(companyId: string, onChange: () => void) {
+  let entry = financeRealtimeRegistry.get(companyId);
+
+  if (!entry) {
     const channelName = `finance_overview_sync-${companyId}`;
-
+    const listeners = new Set<() => void>();
     const channel = supabase
       .channel(channelName)
       .on(
@@ -51,15 +56,42 @@ export function useAccounts(companyId: string) {
           filter: `company_id=eq.${companyId}`,
         },
         () => {
-          qc.invalidateQueries({ queryKey: financeKeys.accounts(companyId) });
-          qc.invalidateQueries({ queryKey: financeKeys.overview(companyId) });
+          listeners.forEach((fn) => fn());
         }
       )
       .subscribe();
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    entry = { channel, refCount: 0, listeners };
+    financeRealtimeRegistry.set(companyId, entry);
+  }
+
+  entry.refCount += 1;
+  entry.listeners.add(onChange);
+
+  return () => {
+    const current = financeRealtimeRegistry.get(companyId);
+    if (!current) return;
+    current.listeners.delete(onChange);
+    current.refCount -= 1;
+
+    if (current.refCount <= 0) {
+      void supabase.removeChannel(current.channel);
+      financeRealtimeRegistry.delete(companyId);
+    }
+  };
+}
+
+// Accounts
+export function useAccounts(companyId: string) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!companyId) return;
+
+    return subscribeFinanceRealtime(companyId, () => {
+      qc.invalidateQueries({ queryKey: financeKeys.accounts(companyId) });
+      qc.invalidateQueries({ queryKey: financeKeys.overview(companyId) });
+    });
   }, [companyId, qc]);
 
   return useQuery({
