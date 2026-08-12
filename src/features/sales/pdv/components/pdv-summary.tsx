@@ -83,7 +83,7 @@ export function PDVSummary({
   onOpenNotes,
 }: Props) {
   const hint = discountHint(discount);
-  const { profit, margin, hasCost } = computeSaleMetrics(items);
+  const { profit, margin, hasCost } = computeSaleMetrics(items, discountValue);
   const isNegative = profit < 0;
   const hasNotes = items.some(it => !!it.notes);
 

@@ -13,12 +13,17 @@ import {
 /** Atalhos exibidos no diálogo do PDV (somente leitura). */
 export const PDV_SHORTCUTS: { key: string; label: string }[] = [
   { key: "ENTER", label: "Adicionar" },
+  { key: "ESC", label: "Limpar busca" },
   { key: "F2", label: "Cliente" },
   { key: "F3", label: "Qtd" },
+  { key: "F4", label: "Desconto" },
+  { key: "F5", label: "Pagamento" },
   { key: "F6", label: "Preço" },
   { key: "F7", label: "Desc Item" },
   { key: "F8", label: "Acrés Item" },
-  { key: "F5", label: "Pagamento" },
+  { key: "F12", label: "Fechar caixa" },
+  { key: "CTRL+P", label: "Focar busca" },
+  { key: "CTRL+C", label: "Cliente" },
   { key: "CTRL+S", label: "Suspender" },
   { key: "CTRL+R", label: "Recuperar" },
   { key: "CTRL+L", label: "Limpar" },

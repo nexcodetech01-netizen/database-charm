@@ -115,8 +115,6 @@ export function saleReducer(
         ),
       };
     case "HYDRATE":
-      return action.state;
-    case "HYDRATE":
       return { ...action.state };
     case "RESET":
       return createSaleDraftState(action.state);

@@ -1,7 +1,13 @@
 import { memo, useCallback } from "react";
-import { ImageIcon, Minus, Package, Plus, ShoppingCart, XCircle, Tag, MessageSquare, ExternalLink } from "lucide-react";
+import { ImageIcon, Minus, Package, Plus, ShoppingCart, XCircle, Tag, MessageSquare, MoreVertical, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatCurrency } from "@/lib/format";
 import { PDV_LAYOUT } from "../lib/layout";
 import { pdvQuantityInputId } from "../lib/focus";
@@ -146,9 +152,48 @@ const PDVCartRow = memo(function PDVCartRow({
             </Button>
           </div>
 
-          <div className="text-sm font-bold text-gray-100 tabular-nums shrink-0">
+          <button
+            type="button"
+            disabled={readOnly}
+            onClick={() => onEditPrice?.(item)}
+            className={cn(
+              "text-sm font-bold tabular-nums shrink-0 rounded px-1 -mx-1",
+              "text-gray-100 hover:bg-primary/10 hover:text-primary disabled:pointer-events-none",
+              (hasDiscount || hasAddition) && "text-primary",
+            )}
+            title="Editar preço do item"
+          >
             {formatCurrency(itemTotal)}
-          </div>
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                disabled={readOnly}
+                className="h-6 w-6 shrink-0 text-slate-500 hover:text-gray-100"
+                title="Mais ações do item"
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEditPrice?.(item)}>
+                <DollarSign className="h-3.5 w-3.5 mr-2" /> Editar preço
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditDiscount?.(item)}>
+                <Tag className="h-3.5 w-3.5 mr-2" /> Desconto do item
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditAddition?.(item)}>
+                <Plus className="h-3.5 w-3.5 mr-2" /> Acréscimo do item
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditNotes?.(item)}>
+                <MessageSquare className="h-3.5 w-3.5 mr-2" /> Observações
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
@@ -163,7 +208,16 @@ const PDVCartRow = memo(function PDVCartRow({
               </span>
             </>
           )}
-          {hasNotes && <MessageSquare className="h-2.5 w-2.5 text-primary ml-auto" />}
+          {hasNotes && (
+            <button
+              type="button"
+              onClick={() => onEditNotes?.(item)}
+              className="ml-auto flex items-center hover:opacity-70"
+              title="Ver observações"
+            >
+              <MessageSquare className="h-2.5 w-2.5 text-primary" />
+            </button>
+          )}
         </div>
       </div>
 

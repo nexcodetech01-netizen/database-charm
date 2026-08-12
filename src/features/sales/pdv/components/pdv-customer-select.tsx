@@ -211,7 +211,7 @@ export function PDVCustomerSelect({ companyId, value, onChange }: Props) {
                     </button>
                   );
                 })}
-                {options.length === 0 && (
+                {options.length === 1 && search.trim() !== "" && (
                   <div className="py-8 text-center text-indigo-400/50 text-sm">
                     Nenhum cliente encontrado
                   </div>

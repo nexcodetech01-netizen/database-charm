@@ -45,11 +45,6 @@ export function PDVFiscalStatus({ outcome, isIssuing, onRetry }: Props) {
         )}
         <div className="flex flex-wrap items-center gap-2">
           <DanfePrintButton path={document.danfePath} />
-          <DanfePrintButton
-            path={document.danfePath}
-            label="Reimprimir"
-            variant="outline"
-          />
           <DanfeDownloadButton
             path={document.danfePath}
             doc={{

@@ -29,7 +29,6 @@ import { usePdvFiscal } from "../hooks/use-pdv-fiscal";
 import {
   PDV_SESSION_INITIAL,
   pdvSessionReducer,
-  printPdvReceipt,
 } from "../lib/completion";
 import { pdvActivity, pdvCashStatus, resolvePdvStage } from "../lib/layout";
 import { formatOpenedAt } from "@/features/cash";
@@ -295,17 +294,13 @@ export function PDVScreen({
   }
 
   function handlePrintReceipt() {
-    console.log("[PDVScreen] handlePrintReceipt invocado. Estado receiptOpen:", receiptOpen);
-    
-    // Se o diálogo não estiver aberto, abre ele. 
-    // O useEffect em PDVScreen ou ReceiptDialog tratará a auto-impressão se configurada,
-    // mas aqui garantimos que a função seja rastreável.
+    // Se o diálogo não estiver aberto, abre ele. O useEffect em PDVScreen
+    // ou ReceiptDialog trata a auto-impressão se configurada.
     if (!receiptOpen) {
-      console.log("[PDVScreen] Abrindo ReceiptDialog...");
       dispatchSession({ type: "OPEN_RECEIPT" });
-    } else {
-      console.log("[PDVScreen] ReceiptDialog já aberto. O clique no botão 'Imprimir cupom' dentro do modal deve ser usado.");
     }
+    // Se já estiver aberto, o clique no botão "Imprimir cupom" dentro do
+    // modal é quem dispara a impressão.
   }
 
   // P0.2 — cliente é opcional no balcão (consumidor final). A regra vive no
@@ -389,16 +384,10 @@ export function PDVScreen({
         : undefined,
       "finalize": () => clickPdvElement(PDV_FINALIZE_BUTTON_ID),
       "new-sale": !!completed || pdv.state.items.length === 0 ? handleNewSale : undefined,
-      "print-receipt": completed ? () => {
-        console.log("[PDVScreen] Atalho print-receipt detectado.");
-        handlePrintReceipt();
-      } : undefined,
+      "print-receipt": completed ? handlePrintReceipt : undefined,
       // F12 apenas ABRE o diálogo de fechamento existente.
       "close-cash": session ? requestCloseCash : undefined,
-      "confirm-dialog": receiptOpen ? () => {
-        console.log("[PDVScreen] Atalho confirm-dialog detectado (Impressão).");
-        handlePrintReceipt();
-      } : undefined,
+      "confirm-dialog": receiptOpen ? handlePrintReceipt : undefined,
       "close-dialog": receiptOpen
         ? () => dispatchSession({ type: "CLOSE_RECEIPT" })
         : undefined,

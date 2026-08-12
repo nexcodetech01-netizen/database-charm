@@ -194,9 +194,12 @@ export function computeTotals(
 
 /**
  * Lucro estimado e margem % da venda.
- * Considera unit_cost quando disponível no draft.
+ * Considera unit_cost quando disponível no draft, e desconta o desconto
+ * geral da venda (campo "Desconto" do PDV/formulário) — sem isso o lucro
+ * exibido ficava inflado sempre que um desconto era aplicado, já que só
+ * o custo dos produtos era subtraído, nunca o desconto concedido.
  */
-export function computeSaleMetrics(items: SaleItemDraft[]) {
+export function computeSaleMetrics(items: SaleItemDraft[], saleDiscount = 0) {
   let revenue = 0;
   let cost = 0;
   let hasCost = false;
@@ -207,6 +210,7 @@ export function computeSaleMetrics(items: SaleItemDraft[]) {
       cost += Number(it.unit_cost) * (it.quantity || 0);
     }
   }
+  revenue = Math.max(0, revenue - (Number(saleDiscount) || 0));
   const profit = revenue - cost;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
   return { revenue, cost, profit, margin, hasCost };
