@@ -132,40 +132,60 @@ export function GeneralInfoForm({
 
       <div className="space-y-2">
         <Label htmlFor="supplier">Fornecedor Principal</Label>
-        <Select
-          value={form.supplier_id}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, supplier_id: val }))}
-        >
-          <SelectTrigger id="supplier">
-            <SelectValue placeholder="Selecione um fornecedor" />
-          </SelectTrigger>
-          <SelectContent>
-            {suppliers.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="supplier_id"
+          control={control}
+          defaultValue={form.supplier_id || ""}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, supplier_id: val }));
+              }}
+            >
+              <SelectTrigger id="supplier">
+                <SelectValue placeholder="Selecione um fornecedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
-        <Select
-          value={form.status}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, status: val }))}
-        >
-          <SelectTrigger id="status">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((opt: any) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="status"
+          control={control}
+          defaultValue={form.status || "active"}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, status: val }));
+              }}
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt: any) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       <div className="space-y-2">
