@@ -13,6 +13,8 @@ export const bellaPayService = {
       .from("bella_pay_config")
       .select("*")
       .eq("company_id", companyId)
+      .select("*")
+
       .maybeSingle();
     if (error) throw error;
     return data as BellaPayConfig | null;

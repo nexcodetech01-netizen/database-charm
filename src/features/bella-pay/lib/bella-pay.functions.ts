@@ -155,6 +155,8 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       .from("bella_pay_config")
       .select("*")
       .eq("company_id", data.companyId)
+      .select("*")
+
       .maybeSingle();
     if (cfgErr) throw cfgErr;
     if (!cfg) throw new Error("Bella Pay não configurado.");
