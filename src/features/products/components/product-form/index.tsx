@@ -655,8 +655,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               <FiscalForm
                 form={form}
                 setForm={setForm}
-                onFiscalAutofill={fiscal.applySuggestion as any}
-                fiscalLoading={fiscal.masterLoading}
+                onFiscalAutofill={handleFiscalAutofill}
+                fiscalLoading={fiscal.historyLoading || fiscal.masterLoading}
                 errors={formErrors}
                 categoryName={categoryName}
               />
