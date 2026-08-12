@@ -25,21 +25,6 @@ import { StatusRepository } from "../repositories/status.repository";
 import { TaxRepository } from "../repositories/tax.repository";
 import { SalesRepository } from "../repositories/sales.repository";
 import type { CustomerFiscalRow } from "../repositories/customers.repository";
-import {
-  type FiscalArtifactKind,
-  normalizePendingKinds,
-} from "../lib/artifacts";
-import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
-
-import { DocumentsRepository } from "../repositories/documents.repository";
-import { CertificateRepository } from "../repositories/certificate.repository";
-import { CompanyRepository } from "../repositories/company.repository";
-import { ProductsRepository } from "../repositories/products.repository";
-import { CustomersRepository } from "../repositories/customers.repository";
-import { StatusRepository } from "../repositories/status.repository";
-import { TaxRepository } from "../repositories/tax.repository";
-import { SalesRepository } from "../repositories/sales.repository";
-import type { CustomerFiscalRow } from "../repositories/customers.repository";
 
 type SB = SupabaseClient<Database>;
 

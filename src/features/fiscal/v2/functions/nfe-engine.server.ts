@@ -258,7 +258,7 @@ async function buildContext(
 
   // NCM vem exclusivamente do cadastro do produto (nunca de fiscal_settings).
   const productIds = Array.from(
-    new Set(items.map((it) => it.product_id).filter((v): v is string => Boolean(v))),
+    new Set(items.map((it: any) => it.product_id).filter((v: any): v is string => Boolean(v))),
   );
   const productNcm = new Map<
     string,
