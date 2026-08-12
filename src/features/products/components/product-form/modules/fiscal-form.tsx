@@ -9,19 +9,7 @@ import { suggestFiscalCodes } from "../../../lib/fiscal-ai.functions";
 import { toast } from "sonner";
 import { ncmMasterService, type NcmMasterEntry } from "../../../lib/ncm-master";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { NcmSearchDialog } from "./ncm-search-dialog";
 import { cn } from "@/lib/utils";
 
 interface FiscalFormProps {
@@ -45,30 +33,11 @@ export function FiscalForm({
   const suggestFiscalFn = useServerFn(suggestFiscalCodes);
   
   // Autocomplete NCM
-  const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const debouncedSearch = useDebouncedValue(searchValue, 300);
-  const [searchResults, setSearchResults] = useState<NcmMasterEntry[]>([]);
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  
+  // O autocomplete via Popover foi removido em favor do modal de busca explícito
+  // Mas mantemos a lógica de busca se necessário para o input debounced
   const [searching, setSearching] = useState(false);
-
-  useEffect(() => {
-    async function performSearch() {
-      if (debouncedSearch.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-      setSearching(true);
-      try {
-        const results = await ncmMasterService.search(debouncedSearch);
-        setSearchResults(results);
-      } catch (error) {
-        console.error("Erro na busca de NCM:", error);
-      } finally {
-        setSearching(false);
-      }
-    }
-    performSearch();
-  }, [debouncedSearch]);
 
   const handleAiSuggestion = async () => {
     if (!form.name) {
@@ -131,71 +100,52 @@ export function FiscalForm({
       <div className="space-y-2">
         <RequiredLabel htmlFor="ncm" required>NCM (Nomenclatura Comum do Mercosul)</RequiredLabel>
         <div className="flex gap-2">
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <div className="relative flex-1">
-                <Input
-                  id="ncm"
-                  placeholder="Busque por nome ou código..."
-                  value={form.ncm}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setForm((s: any) => ({ ...s, ncm: val }));
-                    if (val.length > 2) setOpen(true);
-                  }}
-                  className={cn(
-                    "pr-10 bg-slate-950 border-slate-700 text-white placeholder:text-slate-500",
-                    errors.ncm ? "border-destructive ring-destructive" : ""
-                  )}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer" onClick={() => setOpen(true)}>
-                  {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </div>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput 
-                  placeholder="Digite para buscar NCM..." 
-                  value={searchValue}
-                  onValueChange={setSearchValue}
-                />
-                <CommandList>
-                  <CommandEmpty>
-                    {searching ? "Buscando..." : "Nenhum NCM encontrado."}
-                  </CommandEmpty>
-                  <CommandGroup heading="Resultados da Tabela NCM">
-                    {searchResults.map((item) => (
-                      <CommandItem
-                        key={`${item.ncm}-${item.description}`}
-                        value={item.ncm}
-                        onSelect={() => {
-                          setForm((s: any) => ({ ...s, ncm: item.ncm }));
-                          setOpen(false);
-                          setSearchValue("");
-                        }}
-                        className="flex flex-col items-start gap-1 py-3"
-                      >
-                        <div className="flex items-center w-full justify-between">
-                          <span className="font-bold text-blue-500">{item.ncm}</span>
-                          {form.ncm === item.ncm && <Check className="h-4 w-4 text-emerald-500" />}
-                        </div>
-                        <span className="text-xs text-muted-foreground line-clamp-2">
-                          {item.description}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <div className="relative flex-1">
+            <Input
+              id="ncm"
+              placeholder="00000000"
+              value={form.ncm}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, "").substring(0, 8);
+                setForm((s: any) => ({ ...s, ncm: val }));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setSearchDialogOpen(true);
+                }
+              }}
+              className={cn(
+                "pr-10 bg-slate-950 border-slate-700 text-white placeholder:text-slate-500",
+                errors.ncm ? "border-destructive ring-destructive" : ""
+              )}
+            />
+            <div 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 cursor-pointer hover:text-blue-400 transition-colors" 
+              onClick={() => setSearchDialogOpen(true)}
+            >
+              <Search className="h-4 w-4" />
+            </div>
+          </div>
           
-          <Button variant="ghost" size="icon" type="button" title="Consultar NCM" className="shrink-0 text-slate-400 hover:text-white">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            type="button" 
+            title="Buscar NCM" 
+            className="shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+            onClick={() => setSearchDialogOpen(true)}
+          >
             <FileText className="h-4 w-4" />
           </Button>
+
+          <NcmSearchDialog 
+            open={searchDialogOpen}
+            onOpenChange={setSearchDialogOpen}
+            onSelect={(ncm) => setForm((s: any) => ({ ...s, ncm }))}
+          />
         </div>
-        <p className="text-[10px] text-muted-foreground">Digite palavras (ex: bolsa, relógio) ou o código de 8 dígitos.</p>
+        <p className="text-[10px] text-muted-foreground">Pressione Enter ou clique na lupa para buscar por descrição.</p>
       </div>
 
       <div className="space-y-2">
