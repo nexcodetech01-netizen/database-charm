@@ -475,9 +475,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 form={form}
                 setForm={setForm}
                 categoryName={categoryName}
+                categoryMargin={pricingInputs.margins.targetPct}
                 errors={formErrors}
                 onOpenQuickCategory={() => setCategoryDialogOpen(true)}
-                onApplyCategoryMargin={() => {}}
+                onApplyCategoryMargin={() => {
+                  const target = pricingInputs.margins.targetPct;
+                  setForm((s: any) => ({ ...s, margin: String(target), use_category_margin: true }));
+                }}
               />
               <div className="pt-6 border-t border-slate-100">
                 <SuggestedPricesByChannelCard
