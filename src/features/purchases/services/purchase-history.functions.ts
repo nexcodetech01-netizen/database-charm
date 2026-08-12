@@ -40,11 +40,9 @@ export const getLastPurchaseInfo = createServerFn({ method: "GET" })
 
     if (productId) {
       query = query.eq("product_id", productId);
-    } else if (sku) {
-      query = query.eq("product_sku", sku);
-    } else if (productName) {
-      query = query.ilike("product_name", `%${productName}%`);
     } else {
+      // Se não temos productId, não conseguimos buscar com precisão no purchase_items 
+      // sem colunas de denormalização.
       return null;
     }
 
