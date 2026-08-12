@@ -43,6 +43,16 @@ export function findActiveDocument<T extends { status?: unknown }>(
   return docs.find((d) => isActiveFiscalStatus(d.status)) ?? null;
 }
 
+/** Transforma DTOs ou linhas do banco em interface compatível com lib/fiscal-status */
+export function toDocLikes(rows: any[]): any[] {
+  return rows.map((r) => ({
+    status: r.status,
+    accessKey: r.access_key || r.accessKey,
+    protocol: r.protocol,
+    createdAt: r.created_at || r.createdAt,
+  }));
+}
+
 /** Erro do Postgres é violação do índice único de emissão ativa? */
 export function isActiveSaleUniqueViolation(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -51,3 +61,4 @@ export function isActiveSaleUniqueViolation(error: unknown): boolean {
   const haystack = `${String(e.message ?? "")} ${String(e.details ?? "")}`;
   return haystack.includes(ACTIVE_SALE_INDEX);
 }
+
