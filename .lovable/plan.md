@@ -5,7 +5,7 @@ Este plano corrige o comportamento do botão "Gerenciar" do Asaas, ajusta a lóg
 ## Mudanças
 
 ### Backend (Infraestrutura)
-- Criar migração SQL para garantir a existência do bucket  no Supabase Storage.
+- Criar migração SQL para garantir a existência do bucket `product-images` no Supabase Storage.
 - Configurar políticas de RLS para o bucket: leitura pública e escrita/gestão apenas para usuários autenticados da empresa.
 
 ### Backend (Lógica)
