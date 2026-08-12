@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RequiredLabel } from "@/components/ui/required-label";
 import { computeOfficialPricing } from "@/features/pricing/official/official-pricing";
+import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 
 interface PricingFormProps {
   form: any;
@@ -348,7 +349,7 @@ export function PricingForm({
           costTotalCents={Math.round(totalCost * 100)}
           targetMarginPct={desiredMargin}
           currentStorePriceCents={Math.round(price * 100)}
-          onApplySuggested={(recommendedPrice) => {
+          onApplySuggested={(recommendedPrice: number) => {
             setForm((s: any) => ({
               ...s,
               price: recommendedPrice.toFixed(2),
