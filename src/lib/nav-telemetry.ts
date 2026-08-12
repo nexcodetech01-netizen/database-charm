@@ -30,22 +30,23 @@ export function installNavTelemetry(router: Router<any, any>): () => void {
   let startedAt = 0;
   let fromPath = window.location.pathname;
 
-  const offStart = router.subscribe("onBeforeLoad", () => {
+  const offStart = router.subscribe("onBeforeLoad", (event) => {
     try {
+      if (!event) return;
       startedAt = performance.now();
     } catch (err) {
       console.error("[nav-telemetry] Error in onBeforeLoad:", err);
     }
   });
 
-  const offEnd = router.subscribe("onResolved", () => {
+  const offEnd = router.subscribe("onResolved", (ev) => {
     try {
-      if (!startedAt) return;
+      if (!ev || !startedAt) return;
       const durationMs = Math.round(performance.now() - startedAt);
       const toPath = window.location.pathname;
       const showedFallback = durationMs > FALLBACK_THRESHOLD_MS;
 
-      const event: NavTelemetryEvent = {
+      const navEvent: NavTelemetryEvent = {
         from: fromPath,
         to: toPath,
         durationMs,
@@ -55,14 +56,14 @@ export function installNavTelemetry(router: Router<any, any>): () => void {
 
       // Console visível em produção para debugging pontual — barato.
       // eslint-disable-next-line no-console
-      console.debug("[nav-telemetry]", event);
+      console.debug("[nav-telemetry]", navEvent);
 
-      window.dispatchEvent(new CustomEvent<NavTelemetryEvent>("nexos:nav", { detail: event }));
+      window.dispatchEvent(new CustomEvent<NavTelemetryEvent>("nexos:nav", { detail: navEvent }));
 
       // Buffer para leitura em testes E2E.
       const w = window as unknown as { __nexosNav?: NavTelemetryEvent[] };
       w.__nexosNav = w.__nexosNav || [];
-      w.__nexosNav.push(event);
+      w.__nexosNav.push(navEvent);
       if (w.__nexosNav.length > 50) w.__nexosNav.shift();
 
       fromPath = toPath;

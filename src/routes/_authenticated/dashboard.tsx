@@ -314,9 +314,8 @@ function DashboardPage() {
               void (async () => {
                 try {
                   const { error } = await supabase.rpc("get_dashboard_metrics", { 
-                    p_period: "ontem",
-                    p_company_id: company.id
-                  } as any);
+                    p_period: "ontem"
+                  });
                   if (error) console.error("RPC get_dashboard_metrics (yesterday) error:", error);
                 } catch (err) {
                   console.error("Critical error calling get_dashboard_metrics (yesterday):", err);
@@ -335,9 +334,8 @@ function DashboardPage() {
               void (async () => {
                 try {
                   const { error } = await supabase.rpc("get_dashboard_metrics", { 
-                    p_period: "mes",
-                    p_company_id: company.id
-                  } as any);
+                    p_period: "mes"
+                  });
                   if (error) console.error("RPC get_dashboard_metrics (month) error:", error);
                 } catch (err) {
                   console.error("Critical error calling get_dashboard_metrics (month):", err);

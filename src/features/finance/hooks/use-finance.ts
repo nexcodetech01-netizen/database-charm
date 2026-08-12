@@ -52,7 +52,7 @@ export function useAccounts(companyId: string) {
           qc.invalidateQueries({ queryKey: financeKeys.overview(companyId) });
         }
       )
-      .subscribe(); // O .subscribe() DEVE SER O ÚLTIMO MÉTODO NA CADEIA!
+      .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);

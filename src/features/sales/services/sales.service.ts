@@ -461,9 +461,8 @@ export const salesService = {
     try {
       if (rpcPeriod) {
         const { data, error } = await supabase.rpc("get_dashboard_metrics", { 
-          p_period: rpcPeriod,
-          p_company_id: companyId 
-        } as any);
+          p_period: rpcPeriod
+        });
         
         if (error) {
            console.error("RPC get_dashboard_metrics failed:", error);
