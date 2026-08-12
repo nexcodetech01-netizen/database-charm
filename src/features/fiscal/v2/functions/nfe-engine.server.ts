@@ -268,12 +268,6 @@ async function buildContext(
     const productsRepo = new ProductsRepository(supabase);
     const prods = await productsRepo.findFiscalLookup(companyId, productIds);
     for (const pr of prods) {
-      id: string;
-      name: string | null;
-      ncm: string | null;
-      sku: string | null;
-      unit: string | null;
-    }>) {
       productNcm.set(pr.id, {
         name: pr.name ?? "",
         ncm: pr.ncm ?? null,
