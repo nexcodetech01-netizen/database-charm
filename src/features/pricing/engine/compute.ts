@@ -392,6 +392,8 @@ export function compute(ctx: PricingContext): PricingResult {
   const netFinalCents = finalPriceCents * (netFactor > 0 ? netFactor : 0) - fixedAddCents;
   const netProfitCents = toCents(netFinalCents - costCents);
   const grossProfitCents = toCents(finalPriceCents - costTotalCents);
+  
+  // LÓGICA RÍGIDA (§22): Margem sobre Venda e Markup sobre Custo Total Efetivo
   const marginPct = finalPriceCents > 0 ? (netProfitCents / finalPriceCents) * 100 : 0;
   const markupPct = costTotalCents > 0 ? (netProfitCents / costTotalCents) * 100 : 0;
 
