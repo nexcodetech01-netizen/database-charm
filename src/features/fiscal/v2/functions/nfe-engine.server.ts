@@ -380,7 +380,7 @@ async function buildContext(
       ? `${companyId.slice(0, 8)}-${saleRow.id}`
       : `${companyId.slice(0, 8)}-${saleRow.id}-r${attempt}`;
 
-  const products = items.reduce((acc, it) => acc + Number(it.total ?? 0), 0);
+  const products = items.reduce((acc: any, it: any) => acc + Number(it.total ?? 0), 0);
   const discount = Number(saleRow.discount ?? 0);
   // Frete do documento (vFrete). Somente representação: o valor já está
   // embutido em `grand_total` pelo motor de vendas.
@@ -406,7 +406,7 @@ async function buildContext(
 
       address: customer?.address,
     },
-    items: items.map((it) => ({
+    items: items.map((it: any) => ({
       productId: it.product_id ?? it.id,
       // P0.6.3: SKU é o código comercial oficial; UUID só na ausência dele.
       sku: it.product_id ? (productNcm.get(it.product_id)?.sku ?? null) : null,
