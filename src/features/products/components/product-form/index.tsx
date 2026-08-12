@@ -71,6 +71,7 @@ const schema = z.object({
   barcode: z.string().trim().min(1, "EAN/GTIN obrigatório").max(80),
   ncm: z.preprocess((v) => (typeof v === "string" ? v.replace(/\D/g, "") : v), z.string().regex(/^\d{8}$/, "NCM inválido")),
   category_id: z.string().min(1, "Categoria obrigatória"),
+  unit: z.string().min(1, "Unidade obrigatória"),
   price: z.preprocess((v) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0, z.number().positive("Preço inválido")),
 });
 
@@ -142,11 +143,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   });
 
   // Sincroniza o control do RHF quando o useEntityForm reseta o form
+  // Adicionamos guarda para não resetar enquanto o usuário está ativamente editando (isDirty)
+  // Porém useEntityForm é para sincronização externa (id/updated_at), então é seguro manter se as dependências forem corretas.
   useEffect(() => {
     Object.entries(form).forEach(([key, value]) => {
       setValue(key as any, value);
     });
-  }, [form, setValue]);
+  }, [product?.id, product?.updated_at, setValue]); // Mudamos as dependências para serem mais específicas e evitar resets em cada mudança de estado local
 
   // States para modais e utilitários
   const [movementOpen, setMovementOpen] = useState(false);

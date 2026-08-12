@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { RequiredLabel } from "@/components/ui/required-label";
 import { Controller } from "react-hook-form";
 import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS } from "../../../types";
+import { useMemo } from "react";
 
 interface GeneralInfoFormProps {
   form: any;
@@ -29,6 +30,9 @@ export function GeneralInfoForm({
   errors = {},
   onOpenQuickCategory
 }: GeneralInfoFormProps) {
+  const unitOptions = useMemo(() => PRODUCT_UNIT_OPTIONS, []);
+  const statusOptions = useMemo(() => PRODUCT_STATUS_OPTIONS, []);
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4 md:col-span-2 bg-slate-900/30 p-4 rounded-xl border border-slate-800/50 mb-2">
@@ -128,59 +132,89 @@ export function GeneralInfoForm({
 
       <div className="space-y-2">
         <Label htmlFor="supplier">Fornecedor Principal</Label>
-        <Select
-          value={form.supplier_id}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, supplier_id: val }))}
-        >
-          <SelectTrigger id="supplier">
-            <SelectValue placeholder="Selecione um fornecedor" />
-          </SelectTrigger>
-          <SelectContent>
-            {suppliers.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="supplier_id"
+          control={control}
+          defaultValue={form.supplier_id || ""}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, supplier_id: val }));
+              }}
+            >
+              <SelectTrigger id="supplier">
+                <SelectValue placeholder="Selecione um fornecedor" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="status">Status</Label>
-        <Select
-          value={form.status}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, status: val }))}
-        >
-          <SelectTrigger id="status">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PRODUCT_STATUS_OPTIONS.map((opt: any) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="status"
+          control={control}
+          defaultValue={form.status || "active"}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, status: val }));
+              }}
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt: any) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="unit">Unidade</Label>
-        <Select
-          value={form.unit}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, unit: val }))}
-        >
-          <SelectTrigger id="unit">
-            <SelectValue />
-          </SelectTrigger>
+        <Controller
+          name="unit"
+          control={control}
+          defaultValue={form.unit || "UN"}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, unit: val }));
+              }}
+            >
+              <SelectTrigger id="unit">
+                <SelectValue />
+              </SelectTrigger>
           <SelectContent>
-            {PRODUCT_UNIT_OPTIONS.map((opt: any) => (
+            {unitOptions.map((opt: any) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
     </div>
   );
