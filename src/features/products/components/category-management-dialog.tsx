@@ -65,8 +65,14 @@ export function CategoryManagementDialog({ companyId, open, onOpenChange, catego
         toast.success("Categoria criada com sucesso");
       }
       onOpenChange(false);
-    } catch (err) {
-      toast.error("Erro ao salvar categoria");
+    } catch (err: any) {
+      const errorMsg = err?.message || "Erro ao salvar categoria";
+      
+      if (errorMsg.includes("unique constraint") || errorMsg.includes("already exists")) {
+        toast.error("Uma categoria com este nome já existe");
+      } else {
+        toast.error(errorMsg);
+      }
     }
   };
 

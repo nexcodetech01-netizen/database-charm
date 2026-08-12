@@ -22,22 +22,33 @@ export const categoriesService = {
   },
 
   async create(companyId: string, name: string, targetMarginPct?: number, defaultNcm?: string) {
+    const cleanNcm = defaultNcm?.replace(/[.\-]/g, "");
+    
+    // Tentamos fazer upsert pelo nome e company_id para evitar erro de duplicidade
+    // se o banco tiver a constraint única.
     const { data, error } = await supabase
       .from("product_categories")
-      .insert({ 
+      .upsert({ 
         company_id: companyId, 
         name: name.trim(),
         target_margin_pct: targetMarginPct,
-        default_ncm: defaultNcm
+        default_ncm: cleanNcm
+      }, {
+        onConflict: "company_id, name"
       })
       .select()
       .single();
+      
     if (error) throw error;
     return data;
   },
 
   async update(id: string, input: { name?: string; target_margin_pct?: number; default_ncm?: string }) {
-    return updateRow("product_categories", id, input);
+    const cleanInput = { ...input };
+    if (cleanInput.default_ncm) {
+      cleanInput.default_ncm = cleanInput.default_ncm.replace(/[.\-]/g, "");
+    }
+    return updateRow("product_categories", id, cleanInput);
   },
 
   async remove(id: string) {
