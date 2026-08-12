@@ -37,11 +37,12 @@ export function KitCompositionModule({ companyId, composition, setComposition }:
       if (!search.trim()) return [];
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, sku, cost, stock')
+        .select('id, name, sku, cost, stock, created_at')
         .eq('company_id', companyId)
         .eq('product_type', 'simple')
         .or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`)
-        .limit(10);
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       if (error) throw error;
       return data || [];
