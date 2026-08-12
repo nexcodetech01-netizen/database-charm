@@ -561,6 +561,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         cover_image_path,
       };
 
+      // O banco bloqueia qualquer alteração direta de "stock" em produtos já
+      // existentes (só é permitida via inventory_movements, para manter o
+      // histórico correto). Removemos aqui por segurança para nunca disparar
+      // esse erro ao salvar edições.
+      if (isEdit) {
+        delete (finalPayload as any).stock;
+      }
+
       const saved = isEdit 
         ? await updateProduct.mutateAsync({ id: product.id, input: finalPayload })
         : await createProduct.mutateAsync({ ...finalPayload, company_id: companyId } as ProductInsert);
