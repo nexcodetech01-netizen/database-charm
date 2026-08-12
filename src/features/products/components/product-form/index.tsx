@@ -187,6 +187,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [skuChecking, setSkuChecking] = useState(false);
   const [skuTaken, setSkuTaken] = useState(false);
 
+  const handleFiscalApply = useCallback(
+    (v: Record<string, unknown>) => setForm((s: any) => ({ ...s, ...v })),
+    [setForm],
+  );
+
   // Fiscal Suggestion Logic
   const fiscal = useFiscalAutofill({
     companyId,
@@ -196,7 +201,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     categories,
     ncm: form.ncm,
     cest: form.cest,
-    onApply: (v) => setForm((s: any) => ({ ...s, ...v })),
+    // Memoizado: setForm já é estável, e manter onApply estável evita que
+    // os efeitos internos de useFiscalAutofill (que o têm em suas
+    // dependências) reexecutem a cada render deste componente.
+    onApply: handleFiscalApply,
   });
   const [eanLoading, setEanLoading] = useState(false);
 
