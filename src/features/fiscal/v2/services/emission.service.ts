@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DocumentsRepository } from "../repositories/documents.repository";
 import type { NfeStatus, FiscalArtifactKind } from "../types";
+import { CompanyValidator, PayloadValidator, ProductValidator, CustomerValidator, CertificateValidator } from "../validators";
+import { toDocLikes } from "../lib/issue-guard";
+import { SalesRepository } from "../repositories/sales.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { TaxRepository } from "../repositories/tax.repository";
 
 export class EmissionService {
   private readonly docsRepo: DocumentsRepository;
@@ -46,8 +52,35 @@ export class EmissionService {
     await this.docsRepo.update(this.companyId, documentId, patch);
   }
 
-  async validate(saleId: string, environment?: any): Promise<any> {
-    // Implementação consolidada de validação (Mock por enquanto para build)
-    return { ok: true, saleId };
+  async validate(saleId: string, model: "55" | "65" = "55", environment?: any): Promise<void> {
+    // 1) Valida existência da venda
+    const salesRepo = new SalesRepository(this.supabase);
+    const sale = await salesRepo.findById(this.companyId, saleId);
+    if (!sale) throw new Error("Venda não encontrada.");
+
+    // 2) Valida duplicidade
+    const existingDocs = await this.docsRepo.findBySaleId(this.companyId, saleId);
+    PayloadValidator.validateIssueRequest(existingDocs, model);
+
+    // 3) Valida empresa e configurações
+    const companyRepo = new CompanyRepository(this.supabase);
+    const taxRepo = new TaxRepository(this.supabase);
+    const [company, settings] = await Promise.all([
+      companyRepo.findById(this.companyId),
+      taxRepo.getSettings(this.companyId)
+    ]);
+    
+    CompanyValidator.validateFiscalSettings(settings);
+    // Nota: emitter mapping em nfe-engine buildContext converte snake_case para camelCase
+    // Aqui validamos os dados brutos ou o que temos no repo
+    
+    // 4) Valida itens
+    const items = await salesRepo.listItems(saleId);
+    ProductValidator.validateItems(items);
+
+    // 5) Valida certificado
+    const certRepo = new CertificateRepository(this.supabase);
+    const activeCert = await certRepo.findActive(this.companyId);
+    CertificateValidator.validate(activeCert);
   }
 }
