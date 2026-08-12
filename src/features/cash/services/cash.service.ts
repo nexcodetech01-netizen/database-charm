@@ -219,6 +219,14 @@ export const cashService = {
         .select("id,description,amount,payment_method,paid_at,source,reference_id,settlement_session_id")
         .eq("status", "paid")
         .eq("type", "income")
+        // FIXED (HOTFIX-002 parte 2, migration 20260812130000): antes,
+        // `settlement_session_id` nunca era preenchido e o fallback de
+        // janela de tempo abaixo era ambíguo com múltiplos caixas abertos.
+        // Agora settle_financial_transaction() grava settlement_session_id
+        // no momento da baixa (sessão do próprio operador, com fallback pra
+        // sessão mais recente só se ele não tiver nenhuma aberta). O `.or()`
+        // abaixo permanece como fallback só para baixas antigas, anteriores
+        // à migration, que ainda não têm settlement_session_id preenchido.
         .or(`settlement_session_id.eq.${session.id},and(paid_at.gte.${session.opened_at},paid_at.lte.${session.closed_at || new Date().toISOString()})`)
     ]);
 

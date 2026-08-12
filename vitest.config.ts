@@ -1,10 +1,16 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig, configDefaults } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // src/routes usa o roteamento por arquivo do TanStack Router, onde "."
+    // vira "/" na URL (ex.: bella-pay.test.tsx → rota real /bella-pay/test).
+    // Isso colide com o glob de testes acima sempre que uma rota real tem
+    // um segmento chamado "test" — excluímos a pasta inteira das rotas,
+    // já que arquivos de rota nunca são arquivos de teste.
+    exclude: [...configDefaults.exclude, "src/routes/**"],
     environment: "jsdom",
     globals: false,
     coverage: {

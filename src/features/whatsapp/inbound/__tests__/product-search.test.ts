@@ -147,8 +147,8 @@ describe("product-search — relevância", () => {
     expect(describeFilters(f)).toContain("Perfumes");
     const msg = formatSearchResultsMessage(f, rankProducts(products, f));
     expect(msg).toContain("Perfume Floral 100ml");
-    expect(msg).toContain("voltar");
-    expect(formatSearchResultsMessage(f, [])).toContain("Não encontrei");
+    expect(msg).toContain("Gostou de algum desses modelos");
+    expect(formatSearchResultsMessage(f, [])).toContain("não encontrei produtos");
   });
 });
 
@@ -158,6 +158,10 @@ function makeDb(rows = products, capture: Record<string, unknown> = {}) {
     select: () => query,
     eq: (col: string, value: unknown) => {
       capture[col] = value;
+      return query;
+    },
+    gt: (col: string, value: unknown) => {
+      capture[`gt_${col}`] = value;
       return query;
     },
     order: () => Promise.resolve({ data: rows.map((p) => ({ ...p, category_id: p.categoryId })) }),
@@ -222,6 +226,6 @@ describe("product-search — consulta (somente produtos ativos)", () => {
       categories,
     });
     expect(result!.products).toHaveLength(0);
-    expect(result!.text).toContain("Não encontrei");
+    expect(result!.text).toContain("não encontrei produtos");
   });
 });

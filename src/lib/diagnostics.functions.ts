@@ -4,6 +4,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveCompanyId } from "@/lib/company-resolver.server";
 
 export type CheckStatus = "ok" | "warning" | "error";
 
@@ -146,15 +147,36 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
     });
 
     // 6. Asaas (Bella Pay)
+    const asaasWebhookToken = Boolean(process.env.ASAAS_WEBHOOK_ACCESS_TOKEN);
+    checks.push({
+      id: "asaas-webhook-token",
+      category: "Asaas",
+      label: "Webhook Access Token",
+      status: asaasWebhookToken ? "ok" : "error",
+      message: asaasWebhookToken
+        ? "Token de autenticação do webhook configurado."
+        : "ASAAS_WEBHOOK_ACCESS_TOKEN ausente — o webhook do Asaas responde 503 (fail-closed) enquanto isso não for configurado, e nenhum evento de pagamento é sincronizado.",
+    });
     try {
-      const companyId = claims?.company_id;
+      // `claims` (o JWT do Supabase Auth) nunca teve `company_id` como campo
+      // — esse projeto não usa um Auth Hook de custom claims. O jeito
+      // correto de resolver a empresa do usuário, usado em todo o resto do
+      // código (mercadolivre, knowledge, external-orders, meta...), é
+      // resolveCompanyId(supabase, userId), que consulta profiles/user_roles.
+      let companyId: string | null = null;
+      try {
+        companyId = await resolveCompanyId(supabase, userId);
+      } catch {
+        companyId = null;
+      }
+
       if (!companyId) {
         checks.push({
           id: "asaas-key",
           category: "Asaas",
           label: "API Key",
           status: "warning",
-          message: "Company ID não encontrado na sessão (necessário para validar Bella Pay).",
+          message: "Nenhuma empresa associada a este usuário — não foi possível validar a configuração do Bella Pay.",
         });
       } else {
         // Buscamos EXATAMENTE nas colunas api_key_sandbox e api_key_production da tabela bella_pay_config
@@ -185,7 +207,7 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
             status: hasKey ? "ok" : "warning",
             message: hasKey
               ? `API Key configurada no banco (ambiente ativo: ${asaasCfg?.environment ?? "sandbox"}).`
-              : "ASAAS_API_KEY ausente na tabela bella_pay_config (verifique em /bella-pay).",
+              : "Chave do Asaas não configurada (Configurações → Bella Pay).",
           });
         }
       }

@@ -539,12 +539,14 @@ export function ShippingLabelPrintDialog({
                               variant="outline" 
                               className="h-8 px-4 font-bold text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 transition-all rounded-md shadow-sm"
                               onClick={() => handleDownloadBlock(block)}
+                              disabled={isPrinting || isLoading}
                             >
                               <Download className="h-3 w-3 mr-2" /> Baixar {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>
                             <Button 
                               className="h-8 px-4 font-bold text-[10px] bg-blue-600 hover:bg-blue-700 text-white transition-all rounded-md shadow-md border-none"
                               onClick={() => handlePrintBlock(block)}
+                              disabled={isPrinting || isLoading}
                             >
                               <Printer className="h-3 w-3 mr-2" /> Imprimir {block.type === 'label' ? 'Etiqueta' : 'DANFE'}
                             </Button>

@@ -2,6 +2,22 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { printManager, printQueue } from "../services/print.service";
 import { LabelData, PrintOptions } from "../types/printing.types";
 
+// O serviço exige um Print Bridge físico online para confirmar a impressão
+// (bloqueio intencional contra falha silenciosa — ver print.service.ts).
+// Simulamos um bridge online e bem-sucedido para PDF, mas mantemos a falha
+// para RAW (usada de propósito pelo teste de retry logic abaixo).
+vi.mock("../services/print-bridge.registry", () => ({
+  getPrintBridge: vi.fn(async () => ({
+    health: vi.fn(async () => ({ status: "online" })),
+    print: vi.fn(async (_label: LabelData, options: PrintOptions) => {
+      if (options.strategy === "RAW") {
+        return { success: false, message: "RAW não suportado pelo bridge simulado." };
+      }
+      return { success: true, jobId: "bridge-job-1" };
+    }),
+  })),
+}));
+
 describe("PrintManager Enterprise", () => {
   const mockLabel: LabelData = {
     id: "test-001",

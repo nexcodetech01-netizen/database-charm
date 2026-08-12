@@ -87,6 +87,6 @@ describe("auditPurchasesClosing", () => {
     const result = auditPurchasesClosing(mockSummary, purchases, products, suppliers, "2024-01");
     
     expect(result.healthScore.score).toBe(100);
-    expect(result.healthScore.level).toBe("Exelente");
+    expect(result.healthScore.level).toBe("Excelente");
   });
 });

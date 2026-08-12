@@ -48,6 +48,6 @@ describe("auditFiscalClosing", () => {
     const result = auditFiscalClosing(mockSummary, fiscalDocs, products, "2024-01");
     
     expect(result.healthScore.score).toBe(100);
-    expect(result.healthScore.level).toBe("Exelente");
+    expect(result.healthScore.level).toBe("Excelente");
   });
 });
