@@ -100,4 +100,12 @@ export class CertificateRepository {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.storage.from(BUCKET).remove([path]);
   }
+
+  async activate(companyId: string, id: string): Promise<void> {
+    // Desativa todos
+    await this.update(companyId, "all", { is_active: false });
+    // Ativa o alvo
+    await this.update(companyId, id, { is_active: true });
+  }
 }
+

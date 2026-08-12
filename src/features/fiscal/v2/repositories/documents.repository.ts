@@ -61,7 +61,31 @@ export class DocumentsRepository {
     return data ? mapDocument(data) : null;
   }
 
+  async findByIdWithRequestPayload(companyId: string, id: string): Promise<any | null> {
+    const { data, error } = await this.supabase
+      .from("fiscal_documents")
+      .select(`${DOC_COLS}, request_payload`)
+      .eq("company_id", companyId)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+
+  async findByIdWithArtifactPayloads(companyId: string, id: string): Promise<any | null> {
+    const { data, error } = await this.supabase
+      .from("fiscal_documents")
+      .select(`${DOC_COLS}, request_payload, response_payload`)
+      .eq("company_id", companyId)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
   async findBySaleId(companyId: string, saleId: string): Promise<FiscalDocumentDto[]> {
+
     const { data, error } = await this.supabase
       .from("fiscal_documents")
       .select("id, status, access_key, protocol, created_at")
@@ -174,4 +198,28 @@ export class DocumentsRepository {
       .maybeSingle();
     return data ? mapDocument(data) : null;
   }
+
+  async countPreviousAttempts(companyId: string, saleId: string): Promise<number> {
+    const { count } = await this.supabase
+      .from("fiscal_documents")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("sale_id", saleId);
+    return count ?? 0;
+  }
+
+  async findActiveBySale(companyId: string, saleId: string, statuses: string[]): Promise<any | null> {
+    const { data } = await this.supabase
+      .from("fiscal_documents")
+      .select(DOC_COLS)
+      .eq("company_id", companyId)
+      .eq("sale_id", saleId)
+      .in("status", statuses)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
+  }
 }
+
+

@@ -39,6 +39,16 @@ import {
   type FiscalArtifactKind,
 } from "../lib/artifacts";
 
+import { 
+  EmissionService, 
+  AuthorizationService, 
+  CancellationService, 
+  StatusService, 
+  EventsService, 
+  CertificateService, 
+  XmlService 
+} from "../services";
+
 import { DocumentsRepository } from "../repositories/documents.repository";
 import { CertificateRepository } from "../repositories/certificate.repository";
 import { CompanyRepository } from "../repositories/company.repository";
@@ -51,10 +61,8 @@ import { SalesRepository } from "../repositories/sales.repository";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = SupabaseClient<any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const anyFrom = (supabase: SB, table: string) => supabase.from(table as never) as any;
-
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
+
 
 // ----------------------------------------------------------------- secrets
 
@@ -192,15 +200,13 @@ export async function readProviderEnvironment(
   companyId: string,
   environment: NfeEnvironment,
 ): Promise<ProviderEnvironmentRow> {
-  const { data } = await anyFrom(supabase, "fiscal_provider_environments")
-    .select(
-      "api_url, provisioned_at, provisioned_environment, provisioned_certificate_id," +
-        " provisioned_note, last_health_check_at, last_health_status, last_health_message",
-    )
-    .eq("company_id", companyId)
-    .eq("environment", environment)
-    .maybeSingle();
-  const row = (data ?? null) as Record<string, string | null> | null;
+  const repo = new StatusRepository(supabase);
+  const row = await repo.getEnvironmentRow(
+    companyId,
+    environment,
+    "api_url, provisioned_at, provisioned_environment, provisioned_certificate_id," +
+      " provisioned_note, last_health_check_at, last_health_status, last_health_message",
+  );
   if (!row) return { ...EMPTY_PROVIDER_ENV };
   return {
     apiUrl: row.api_url ?? null,
@@ -214,6 +220,7 @@ export async function readProviderEnvironment(
   };
 }
 
+
 /** Upsert idempotente de um ambiente do provedor. */
 export async function upsertProviderEnvironment(
   supabase: SB,
@@ -221,19 +228,16 @@ export async function upsertProviderEnvironment(
   environment: NfeEnvironment,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  const { data } = await anyFrom(supabase, "fiscal_provider_environments")
-    .update(patch)
-    .eq("company_id", companyId)
-    .eq("environment", environment)
-    .select("company_id")
-    .maybeSingle();
-  if (data) return;
-  await anyFrom(supabase, "fiscal_provider_environments").insert({
+  const repo = new StatusRepository(supabase);
+  const updated = await repo.updateEnvironment(companyId, environment, patch);
+  if (updated) return;
+  await repo.insertEnvironment({
     company_id: companyId,
     environment,
     ...patch,
   });
 }
+
 
 
 // ---------------------------------------------------------------- payload
@@ -331,10 +335,9 @@ async function buildContext(
     .maybeSingle();
   const co = (companyRaw ?? {}) as unknown as Record<string, string | null>;
 
-  const { data: settingsRaw } = await anyFrom(supabase, "fiscal_settings")
-    .select("*")
-    .eq("company_id", companyId)
-    .maybeSingle();
+  const taxRepo = new TaxRepository(supabase);
+  const settingsRaw = await taxRepo.getSettings(companyId);
+
   const st = (settingsRaw ?? null) as {
     nfe_series: number | null;
     nfe_next_number: number | null;
@@ -349,10 +352,9 @@ async function buildContext(
     default_environment: NfeEnvironment | null;
   } | null;
 
-  const { data: cfgRaw } = await anyFrom(supabase, "fiscal_provider_config")
-    .select("provider_id, environment, api_url")
-    .eq("company_id", companyId)
-    .maybeSingle();
+  const statusRepo = new StatusRepository(supabase);
+  const cfgRaw = await statusRepo.getProviderConfig(companyId);
+
   const cfg = (cfgRaw ?? null) as {
     provider_id: string | null;
     environment: NfeEnvironment | null;
@@ -379,10 +381,9 @@ async function buildContext(
   // Reemissão após descarte: cada tentativa precisa de uma referência
   // única no provedor. Sufixamos com o nº da tentativa (a 1ª mantém o
   // formato histórico, sem sufixo).
-  const { count: previousAttempts } = await anyFrom(supabase, "fiscal_documents")
-    .select("id", { count: "exact", head: true })
-    .eq("company_id", companyId)
-    .eq("sale_id", saleRow.id);
+  const docRepo = new DocumentsRepository(supabase);
+  const previousAttempts = await docRepo.countPreviousAttempts(companyId, saleRow.id);
+
   const attempt = Number(previousAttempts ?? 0) + 1;
   const reference =
     attempt <= 1
@@ -677,15 +678,14 @@ async function markArtifactsPending(
   pending: FiscalArtifactKind[],
   lastError: string | null,
 ): Promise<void> {
-  await anyFrom(supabase, "fiscal_documents")
-    .update({
-      artifacts_pending: pending,
-      artifacts_last_error: lastError,
-      artifacts_checked_at: new Date().toISOString(),
-    })
-    .eq("company_id", companyId)
-    .eq("id", documentId);
+  const docRepo = new DocumentsRepository(supabase);
+  await docRepo.update(companyId, documentId, {
+    artifacts_pending: pending,
+    artifacts_last_error: lastError,
+    artifacts_checked_at: new Date().toISOString(),
+  });
 }
+
 
 
 /** Envia o A1 armazenado ao provedor (server-only, best-effort). */
@@ -750,13 +750,13 @@ export async function readProviderProvisioning(
       };
     }
   }
-  const { data } = await anyFrom(supabase, "fiscal_provider_config")
-    .select(
-      "provisioned_at, provisioned_environment, provisioned_certificate_id, provisioned_note",
-    )
-    .eq("company_id", companyId)
-    .maybeSingle();
-  const row = (data ?? null) as Record<string, string | null> | null;
+
+  const statusRepo = new StatusRepository(supabase);
+  const row = await statusRepo.getProviderRow(
+    companyId,
+    "provisioned_at, provisioned_environment, provisioned_certificate_id, provisioned_note"
+  );
+
   return {
     provisionedAt: row?.provisioned_at ?? null,
     provisionedEnvironment: row?.provisioned_environment ?? null,
@@ -764,6 +764,7 @@ export async function readProviderProvisioning(
     provisionedNote: row?.provisioned_note ?? null,
   };
 }
+
 
 /**
  * Provisionado para este ambiente E este certificado. Troca de A1 ou de
@@ -798,11 +799,10 @@ export async function markProviderProvisioned(args: {
   };
   await upsertProviderEnvironment(supabase, companyId, environment, patch);
   // Espelho legado: mantém a tela legada consistente para o ambiente ativo.
-  await anyFrom(supabase, "fiscal_provider_config")
-    .update(patch)
-    .eq("company_id", companyId)
-    .eq("environment", environment);
+  const statusRepo = new StatusRepository(supabase);
+  await statusRepo.updateProviderConfig(companyId, patch, "company_id");
 }
+
 
 export async function clearProviderProvisioning(
   supabase: SB,
@@ -816,15 +816,15 @@ export async function clearProviderProvisioning(
     provisioned_by: null,
     provisioned_note: null,
   };
+  const statusRepo = new StatusRepository(supabase);
   if (environment) {
     await upsertProviderEnvironment(supabase, companyId, environment, patch);
   } else {
-    await anyFrom(supabase, "fiscal_provider_environments")
-      .update(patch)
-      .eq("company_id", companyId);
+    await statusRepo.updateAllEnvironments(companyId, patch);
   }
-  await anyFrom(supabase, "fiscal_provider_config").update(patch).eq("company_id", companyId);
+  await statusRepo.updateProviderConfig(companyId, patch, "company_id");
 }
+
 
 
 /**
@@ -842,12 +842,9 @@ export async function provisionProviderCertificateEngine(args: {
 }): Promise<{ ok: boolean; message: string }> {
   const { supabase, companyId, userId, environment, markOnly = false } = args;
 
-  const { data: certRaw } = await anyFrom(supabase, "fiscal_certificates")
-    .select("id, storage_path")
-    .eq("company_id", companyId)
-    .eq("is_active", true)
-    .maybeSingle();
-  const cert = (certRaw ?? null) as { id: string; storage_path: string | null } | null;
+  const certRepo = new CertificateRepository(supabase);
+  const cert = await certRepo.findActive(companyId);
+
 
   if (markOnly) {
     await markProviderProvisioned({
@@ -884,18 +881,19 @@ export async function provisionProviderCertificateEngine(args: {
     .maybeSingle();
   const cnpj = ((coRaw ?? null) as { cnpj: string | null } | null)?.cnpj ?? "";
   if (!cnpj) return { ok: false, message: "CNPJ da empresa não cadastrado." };
-  if (!cert?.id || !cert.storage_path)
+  if (!cert?.id || !cert.storagePath)
     return { ok: false, message: "Nenhum certificado A1 ativo cadastrado." };
 
   const error = await registerCertificate(
     provider,
     {
       certificateId: cert.id,
-      certificateStoragePath: cert.storage_path,
+      certificateStoragePath: cert.storagePath,
       emitterCnpj: cnpj,
     } as BuiltContext,
     companyId,
   );
+
   if (error) return { ok: false, message: error };
 
   await markProviderProvisioned({
@@ -919,14 +917,10 @@ async function appendEvent(
   payload: Record<string, unknown> | null,
   actorId: string | null,
 ): Promise<void> {
-  await supabase.from("fiscal_events").insert({
-    company_id: companyId,
-    document_id: documentId,
-    event_type: eventType,
-    payload: payload as never,
-    actor_id: actorId ?? null,
-  } as never);
+  const service = new EventsService(supabase, companyId);
+  await service.record(documentId, eventType as any, payload, actorId);
 }
+
 
 async function patchDocument(
   supabase: SB,
@@ -934,15 +928,12 @@ async function patchDocument(
   documentId: string,
   patch: Record<string, unknown>,
 ) {
-  const { data, error } = await anyFrom(supabase, "fiscal_documents")
-    .update(patch)
-    .eq("company_id", companyId)
-    .eq("id", documentId)
-    .select(DOC_COLS)
-    .single();
-  if (error) throw error;
-  return data as Record<string, unknown>;
+  const docRepo = new DocumentsRepository(supabase);
+  const data = await docRepo.update(companyId, documentId, patch);
+  return data as unknown as Record<string, unknown>;
 }
+
+
 
 /**
  * Numeração NF-e — reserva transacional.
@@ -1011,16 +1002,16 @@ async function findActiveSaleDocument(
   companyId: string,
   saleId: string,
 ): Promise<Record<string, unknown> | null> {
-  const { data } = await anyFrom(supabase, "fiscal_documents")
-    .select(DOC_COLS)
-    .eq("company_id", companyId)
-    .eq("sale_id", saleId)
-    .in("status", ACTIVE_FISCAL_STATUSES as unknown as string[])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data as Record<string, unknown> | null) ?? null;
+  const docRepo = new DocumentsRepository(supabase);
+  const data = await docRepo.findActiveBySale(
+    companyId, 
+    saleId, 
+    ACTIVE_FISCAL_STATUSES as unknown as string[]
+  );
+  return (data as unknown as Record<string, unknown> | null) ?? null;
 }
+
+
 
 export async function issueNfeFromSaleEngine(
   input: IssueEngineInput,
@@ -1045,40 +1036,33 @@ export async function issueNfeFromSaleEngine(
   });
 
   // 1) Documento em rascunho — histórico auditável mesmo se rejeitado.
-  //    O INSERT é o ponto de serialização real: o índice único parcial
-  //    `fiscal_documents_one_active_per_sale` deixa apenas UMA transação
-  //    concorrente criar o rascunho; as demais recebem 23505 e retornam
-  //    o documento vencedor (check-then-act deixa de existir).
-  const { data: created, error: createErr } = await anyFrom(supabase, "fiscal_documents")
-    .insert({
-      company_id: companyId,
-      sale_id: saleId,
-      customer_id: ctx.payload.customer.id || null,
-      status: "draft",
+  const emissionService = new EmissionService(supabase, companyId, userId || "system");
+  let created: any;
+  try {
+    created = await emissionService.createDraft({
+      saleId,
+      totalAmount: ctx.payload.totals.total,
       environment: ctx.environment,
-      doc_type: model === "65" ? "nfce" : "nfe",
-      model,
-      series: ctx.seriesFromSettings,
-      // Número só é reservado imediatamente antes da transmissão (passo 4).
-      number: null,
-
-      operation_nature: ctx.payload.fiscal?.operationNature ?? null,
-      cfop: ctx.payload.fiscal?.cfop ?? null,
-      total_amount: ctx.payload.totals.total,
       provider: provider.id,
-      created_by: userId ?? null,
-      request_payload: { reference: ctx.payload.reference } as never,
-    })
-    .select(DOC_COLS)
-    .single();
-  if (createErr) {
-    if (isActiveSaleUniqueViolation(createErr)) {
+      model: model === "65" ? "65" : "55",
+      customerId: ctx.payload.customer.id || null,
+      series: ctx.seriesFromSettings,
+      operationNature: ctx.payload.fiscal?.operationNature ?? null,
+      cfop: ctx.payload.fiscal?.cfop ?? null,
+      createdBy: userId ?? null,
+      requestPayload: { reference: ctx.payload.reference } as any,
+    });
+
+  } catch (err: any) {
+    if (isActiveSaleUniqueViolation(err)) {
       const winner = await findActiveSaleDocument(supabase, companyId, saleId);
       if (winner) return winner;
     }
-    throw createErr;
+    throw err;
   }
+
   const documentId = (created as { id: string }).id;
+
 
   await appendEvent(
     supabase,
@@ -1313,62 +1297,31 @@ export async function issueNfeFromSaleEngine(
   }
 
 
-  const authorized = await patchDocument(supabase, companyId, documentId, {
-    status: result.status,
-    access_key: result.accessKey ?? null,
+  const authorized = await emissionService.updateAfterProvider(documentId, {
+    ok: result.ok,
+    status: result.status as any,
+    accessKey: result.accessKey ?? undefined,
+    protocol: result.protocol ?? undefined,
     number: result.number ?? allocatedNumber,
-
     series: result.series ?? ctx.seriesFromSettings,
-    protocol: result.protocol ?? null,
-    protocol_at: result.status === "authorized" ? new Date().toISOString() : null,
-    xml_signed_path: result.xmlSignedPath ?? null,
-    xml_authorized_path: xmlPath,
-    danfe_path: danfePath,
-    artifacts_pending: artifactPending,
-    artifacts_last_error: artifactError,
-    artifacts_checked_at: new Date().toISOString(),
-
-    response_payload: {
-      provider: provider.id,
-      transmissionMs,
-      totalMs: Date.now() - startedAt,
-      xmlUrl: result.xmlUrl ?? null,
-      danfeUrl: result.danfeUrl ?? null,
-      raw: (result.raw ?? null) as never,
-    } as never,
-    request_payload: {
-      reference: ctx.payload.reference,
-      providerRef: result.providerRef ?? null,
-    } as never,
+    xmlAuthorizedPath: xmlPath ?? undefined,
+    danfePath: danfePath ?? undefined,
+    xmlSignedPath: result.xmlSignedPath ?? undefined,
+    raw: result.raw
   });
 
-  await appendEvent(
-    supabase,
-    companyId,
-    documentId,
-    result.status === "authorized" ? "authorized" : "sent",
-    {
-      protocol: result.protocol ?? null,
-      accessKey: result.accessKey ?? null,
-      providerRef: result.providerRef ?? null,
-      number: result.number ?? allocatedNumber,
-      series: result.series ?? ctx.seriesFromSettings,
-      transmissionMs,
-      totalMs: Date.now() - startedAt,
-      xmlAuthorizedPath: xmlPath,
-      danfePath,
-      providerResponse: (result.raw ?? null) as never,
-    },
-    userId,
-  );
+
+  return authorized as unknown as Record<string, unknown>;
+
 
   // A sequência já foi avançada atomicamente na reserva do número.
   // Nada a fazer aqui — números autorizados nunca são reaproveitados.
 
 
 
-  return authorized;
+  return {} as any;
 }
+
 
 // ------------------------------------------------------------------ status
 
@@ -1378,10 +1331,9 @@ async function providerForDocument(
   documentProvider: string | null,
   environment: NfeEnvironment,
 ): Promise<FiscalProvider> {
-  const { data: cfgRaw } = await anyFrom(supabase, "fiscal_provider_config")
-    .select("provider_id, api_url")
-    .eq("company_id", companyId)
-    .maybeSingle();
+  const statusRepo = new StatusRepository(supabase);
+  const cfgRaw = await statusRepo.getProviderConfig(companyId);
+
   const cfg = (cfgRaw ?? null) as { provider_id: string | null; api_url: string | null } | null;
   const providerId = documentProvider ?? cfg?.provider_id ?? "mock";
   const envCfg = await readProviderEnvironment(supabase, companyId, environment);
@@ -1425,13 +1377,11 @@ export async function refreshDocumentStatusEngine(args: {
   documentId: string;
 }): Promise<Record<string, unknown>> {
   const { supabase, companyId, userId, documentId } = args;
-  const { data: row, error } = await anyFrom(supabase, "fiscal_documents")
-    .select(`${DOC_COLS}, request_payload`)
-    .eq("company_id", companyId)
-    .eq("id", documentId)
-    .maybeSingle();
-  if (error) throw error;
+  const docRepo = new DocumentsRepository(supabase);
+  const row = await docRepo.findByIdWithRequestPayload(companyId, documentId);
+
   if (!row) throw new Error("Documento fiscal não encontrado.");
+
   const doc = row as Record<string, unknown>;
 
   const status = doc.status as NfeStatus;
@@ -1581,22 +1531,11 @@ export async function refreshDocumentStatusEngine(args: {
   }
   patch.response_payload = (result.raw ?? null) as never;
 
-  const updated = await patchDocument(supabase, companyId, documentId, patch);
-  if (result.status !== status) {
-    await appendEvent(
-      supabase,
-      companyId,
-      documentId,
-      result.status,
-      {
-        source: "status-refresh",
-        protocol: result.protocol ?? null,
-      },
-      userId,
-    );
-  }
-  return updated;
+  const authService = new AuthorizationService(supabase, companyId, userId || "system");
+  const updated = await authService.refreshStatus(documentId, result);
+  return updated as unknown as Record<string, unknown>;
 }
+
 
 // ------------------------------------------------------------------ cancel
 
@@ -1608,12 +1547,9 @@ export async function cancelDocumentEngine(args: {
   reason: string;
 }): Promise<Record<string, unknown>> {
   const { supabase, companyId, userId, documentId, reason } = args;
-  const { data: row, error } = await anyFrom(supabase, "fiscal_documents")
-    .select(`${DOC_COLS}, request_payload`)
-    .eq("company_id", companyId)
-    .eq("id", documentId)
-    .maybeSingle();
-  if (error) throw error;
+  const docRepo = new DocumentsRepository(supabase);
+  const row = await docRepo.findByIdWithRequestPayload(companyId, documentId);
+
   if (!row) throw new Error("Documento não encontrado.");
   const doc = row as Record<string, unknown>;
   const status = doc.status as NfeStatus;
@@ -1887,35 +1823,18 @@ async function finalizeCancellation(args: {
     pending = clearPending(doc.artifacts_pending, ["xml_cancellation"]);
   }
 
-  const cancelled = await patchDocument(supabase, companyId, documentId, {
-    status: "cancelled",
-    cancelled_at: cancelledAt,
-    cancelled_by: (doc.cancelled_by as string | null) ?? userId ?? null,
-    cancellation_reason: reason.slice(0, 500),
-    cancellation_protocol: protocol,
-    ...(cancellationXmlPath ? { xml_cancellation_path: cancellationXmlPath } : {}),
-    artifacts_pending: pending,
-    artifacts_last_error: lastError,
-    artifacts_checked_at: new Date().toISOString(),
-    response_payload: (raw ?? null) as never,
+  const cancelService = new CancellationService(supabase, companyId, userId || "system");
+  await cancelService.finalize(documentId, {
+    protocol,
+    reason,
+    cancelledAt,
+    xmlPath: cancellationXmlPath,
   });
 
-  await appendEvent(
-    supabase,
-    companyId,
-    documentId,
-    "cancelled",
-    {
-      scope: "sefaz",
-      protocol,
-      cancelledAt,
-      deadline,
-      xmlPath: cancellationXmlPath,
-      reason,
-      elapsedMs: args.elapsedMs ?? null,
-    },
-    userId,
-  );
+  const docRepo = new DocumentsRepository(supabase);
+  const cancelled = (await docRepo.findById(companyId, documentId)) as Record<string, unknown>;
+
+
   console.info("[fiscal] cancel.confirmed", {
     company_id: companyId,
     document_id: documentId,
@@ -2020,13 +1939,10 @@ export async function reprocessDocumentArtifactsEngine(args: {
 }): Promise<ReprocessArtifactsOutcome> {
   const { supabase, companyId, userId, documentId } = args;
 
-  const { data: row, error } = await anyFrom(supabase, "fiscal_documents")
-    .select(`${DOC_COLS}, request_payload, response_payload`)
-    .eq("company_id", companyId)
-    .eq("id", documentId)
-    .maybeSingle();
-  if (error) throw error;
+  const docRepo = new DocumentsRepository(supabase);
+  const row = await docRepo.findByIdWithArtifactPayloads(companyId, documentId);
   if (!row) throw new Error("Documento fiscal não encontrado.");
+
   const doc = row as Record<string, unknown>;
 
   const docLike = {
