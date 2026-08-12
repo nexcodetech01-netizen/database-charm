@@ -166,21 +166,31 @@ export function GeneralInfoForm({
 
       <div className="space-y-2">
         <Label htmlFor="unit">Unidade</Label>
-        <Select
-          value={form.unit}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, unit: val }))}
-        >
-          <SelectTrigger id="unit">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PRODUCT_UNIT_OPTIONS.map((opt: any) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="unit"
+          control={control}
+          defaultValue={form.unit || "UN"}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, unit: val }));
+              }}
+            >
+              <SelectTrigger id="unit">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUCT_UNIT_OPTIONS.map((opt: any) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
       </div>
     </div>
   );

@@ -71,6 +71,7 @@ const schema = z.object({
   barcode: z.string().trim().min(1, "EAN/GTIN obrigatório").max(80),
   ncm: z.preprocess((v) => (typeof v === "string" ? v.replace(/\D/g, "") : v), z.string().regex(/^\d{8}$/, "NCM inválido")),
   category_id: z.string().min(1, "Categoria obrigatória"),
+  unit: z.string().min(1, "Unidade obrigatória"),
   price: z.preprocess((v) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0, z.number().positive("Preço inválido")),
 });
 
