@@ -1533,17 +1533,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                               // Isso vai disparar o useEffect de sincronização
                               const desired = Number(walletTarget);
                               if (desired > 0) {
-                                const isPremium = listingType === "gold_pro";
-                                const feePct = isPremium ? 0.15 : 0.135; 
-                                const shipping = desired >= 79 ? 24.65 : 0;
-                                let calculatedFinal = isPremium 
-                                  ? (desired + shipping) / 0.85 
-                                  : (desired + shipping) / (1 - feePct);
-                                
-                                if (!isPremium && calculatedFinal < 79) {
-                                  calculatedFinal = (desired + 6.5 + shipping) / (1 - feePct);
-                                }
-                                
+                                // Usa a MESMA função oficial usada no resto do fluxo
+                                // (calculateMLFinalPrice), respeitando as configurações
+                                // reais (settings) em vez de números fixos no código.
+                                const calculatedFinal = calculateMLFinalPrice(desired, listingType, settings);
                                 const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
                                 setPrice(roundedFinal);
                               }
