@@ -14,29 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import { computeOfficialPricing, evaluateOfficialPrice } from "../official";
+import { computeSuggestedPrice, evaluateOfficialPrice } from "../official";
 import { worstCaseFee, effectiveFeePct } from "../official/fees";
 import { resolvePricingStatus } from "../official/status";
 import { toRoundingPolicySpec } from "../types";
 import { usePricingPolicy } from "../hooks/use-pricing-policy";
 import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
-import { useOperationalDefaults } from "@/features/settings/hooks/use-operational-defaults";
-import { useCategories } from "@/features/products/hooks/use-products";
 import { PricingStatusBadge } from "./pricing-status-badge";
-import { cn } from "@/lib/utils";
 
 const num = (s: string | number | null | undefined) => {
-  if (typeof s === "number") return s;
-  const n = Number(String(s ?? "0").replace(/\./g, "").replace(",", "."));
+  const n = Number(String(s ?? "0").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
-};
-
-const formatInput = (v: number | string) => {
-  const n = typeof v === "number" ? v : num(v);
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
 };
 
 export interface ProductPricingSheetProduct {
@@ -81,55 +69,35 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
 export function ProductPricingSheet({ open, onOpenChange, companyId, product, onApply }: Props) {
   const { policy } = usePricingPolicy(companyId);
   const { feeTable } = useCompanyFeeTable(companyId);
-  const { data: operationalDefaults } = useOperationalDefaults(companyId);
-  const { data: categories = [] } = useCategories(companyId);
-
-  const productCategory = useMemo(() => {
-    return categories.find(c => c.id === product.category_id);
-  }, [categories, product.category_id]);
 
   const baseCost = num(product.cost);
+  const baseFreight = num(product.freight);
+  const baseOther = num(product.other_costs) + num(product.insurance);
+  const basePackaging =
+    typeof product.packaging === "number" ? product.packaging : policy.packaging;
 
-  // LÓGICA RÍGIDA: Carrega padrões da empresa se os do produto estiverem zerados (R$ 0,00)
-  // mas se o produto já tem valores salvos (mesmo que baixos), respeita o que está no banco.
-  const getInitialValue = (productVal: number | null | undefined, defaultVal: number) => {
-    const val = num(productVal);
-    // Se for exatamente 0 ou null, usa o padrão. Se for > 0, usa o valor do produto.
-    return val > 0 ? val : defaultVal;
-  };
-
-  const initialFreight = getInitialValue(product.freight, operationalDefaults?.freight ?? 0);
-  const initialPackaging = getInitialValue(product.packaging, operationalDefaults?.packaging ?? 2.30);
-  const initialOther = getInitialValue(num(product.other_costs) + num(product.insurance), operationalDefaults?.other_costs ?? 0.10);
-
-  // Puxa margem da categoria ou usa a da política como fallback
-  const initialTarget = productCategory?.target_margin_pct ?? policy.idealMargin;
-
-  const [freight, setFreight] = useState(formatInput(initialFreight));
-  const [packaging, setPackaging] = useState(formatInput(initialPackaging));
-  const [otherCosts, setOtherCosts] = useState(formatInput(initialOther));
-  const [target, setTarget] = useState(formatInput(initialTarget));
-  const [simulatedChannel, setSimulatedChannel] = useState<"standard" | "ml">("standard");
-  const [selectedTier, setSelectedTier] = useState<"min" | "target" | "premium">("target");
+  const [freight, setFreight] = useState(String(baseFreight));
+  const [packaging, setPackaging] = useState(String(basePackaging));
+  const [otherCosts, setOtherCosts] = useState(String(baseOther));
+  const [target, setTarget] = useState(String(policy.idealMargin));
 
   useEffect(() => {
     if (open) {
-      setFreight(formatInput(initialFreight));
-      setPackaging(formatInput(initialPackaging));
-      setOtherCosts(formatInput(initialOther));
-      setTarget(formatInput(initialTarget));
-      setSelectedTier("target");
+      setFreight(String(baseFreight));
+      setPackaging(String(basePackaging));
+      setOtherCosts(String(baseOther));
+      setTarget(String(policy.idealMargin));
     }
-  }, [open, product.id, initialFreight, initialPackaging, initialOther, initialTarget]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, product.id]);
 
-  // LÓGICA RÍGIDA: Taxa considerada deve ser 0% para padrão, a menos que simule Marketplace
-  const feePct = useMemo(() => {
-    if (simulatedChannel === "standard") return 0;
+  // Taxa do preço ATUAL (para avaliar o preço já praticado na faixa dele).
+  const currentFeePct = useMemo(() => {
     const reference = num(product.price) || baseCost * 2 || 100;
     return effectiveFeePct(worstCaseFee(feeTable, reference), reference);
-  }, [feeTable, product.price, baseCost, simulatedChannel]);
+  }, [feeTable, product.price, baseCost]);
 
-  const input = useMemo(
+  const pricingInputBase = useMemo(
     () => ({
       companyId,
       productId: product.id,
@@ -144,15 +112,21 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
         targetPct: num(target),
         premiumPct: policy.premiumMargin,
       },
-      fee: { pct: feePct, label: "de recebimento" },
       rounding: toRoundingPolicySpec(policy.rounding),
-      module: "pricing.product-sheet",
+      module: "pricing.product-sheet" as const,
     }),
-    [companyId, product.id, baseCost, freight, packaging, otherCosts, target, feePct, policy],
+    [companyId, product.id, baseCost, freight, packaging, otherCosts, target, policy]
   );
 
-  const result = useMemo(() => computeOfficialPricing(input), [input]);
-  // LÓGICA RÍGIDA: Mínimo < Recomendado < Premium
+  // MOTOR OFICIAL DE PREÇO SUGERIDO (resolve taxas por convergência)
+  const result = useMemo(() => {
+    return computeSuggestedPrice({
+      ...pricingInputBase,
+      feeTable,
+    });
+  }, [pricingInputBase, feeTable]);
+
+  // Mínimo < Recomendado < Premium
   const thresholds = useMemo(() => {
     const t = num(target);
     return {
@@ -161,30 +135,32 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
       premiumMarginPct: Math.max(t + 0.01, policy.premiumMargin),
     };
   }, [policy.minMargin, policy.premiumMargin, target]);
-  const currentEval = useMemo(() => {
-    const evaluated = evaluateOfficialPrice(num(product.price), input);
-    return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product.price, input]);
-  const suggestedEval = useMemo(() => {
-    const evaluated = evaluateOfficialPrice(result.targetPrice, input);
-    return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result.targetPrice, input]);
 
-  const finalAppliedPrice = useMemo(() => {
-    if (selectedTier === "min") return result.minPrice;
-    if (selectedTier === "premium") return result.premiumPrice;
-    return result.targetPrice;
-  }, [selectedTier, result.minPrice, result.targetPrice, result.premiumPrice]);
+  const currentEval = useMemo(() => {
+    const evaluated = evaluateOfficialPrice(num(product.price), {
+      ...pricingInputBase,
+      fee: { pct: currentFeePct, label: "atual" },
+    });
+    return { ...evaluated, ...resolvePricingStatus(evaluated.marginPct, thresholds) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.price, pricingInputBase, currentFeePct, thresholds]);
+
+  const suggestedEval = useMemo(() => {
+    // O result já vem do computeSuggestedPrice, que é a autoridade máxima.
+    return { ...result, ...resolvePricingStatus(result.marginPct, thresholds) };
+  }, [result, thresholds]);
 
   function apply() {
     if (!onApply) {
-      toast.info("Preço sugerido aplicado ao formulário. Revise os dados e clique em Salvar Produto para confirmar.");
+      toast.info(
+        "Preço sugerido aplicado ao formulário. Revise os dados e clique em Salvar Produto para confirmar."
+      );
       return;
     }
-    onApply(finalAppliedPrice);
-    toast.success(`Preço sugerido aplicado ao formulário: ${formatCurrency(finalAppliedPrice)}. Clique em Salvar Produto para confirmar.`);
+    onApply(result.targetPrice);
+    toast.success(
+      `Preço sugerido aplicado ao formulário: ${formatCurrency(result.targetPrice)}. Clique em Salvar Produto para confirmar.`
+    );
     onOpenChange(false);
   }
 
@@ -250,17 +226,8 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
                 onChange={(e) => setTarget(e.target.value)}
               />
             </Field>
-            <Field label="Taxa considerada (%)">
-              <div className="flex gap-2">
-                <Input value={formatNumber(feePct)} disabled className="flex-1" />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setSimulatedChannel(s => s === "standard" ? "ml" : "standard")}
-                >
-                  {simulatedChannel === "standard" ? "Simular ML" : "Padrão (0%)"}
-                </Button>
-              </div>
+            <Field label="Taxa estimada (%)">
+              <Input value={formatNumber(result.feePct)} disabled />
             </Field>
           </div>
 
@@ -272,12 +239,14 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
               <PricingStatusBadge status={suggestedEval.status} label={suggestedEval.label} />
             </div>
             <div className="mt-1 text-3xl font-semibold tabular-nums">
-              {formatCurrency(finalAppliedPrice)}
+              {formatCurrency(result.targetPrice)}
             </div>
             <div className="mt-3 divide-y divide-border/50">
-              <Line 
-                label="Custo total" 
-                value={formatCurrency(num(baseCost) + num(freight) + num(packaging) + num(otherCosts))} 
+              <Line
+                label="Custo total"
+                value={formatCurrency(
+                  num(baseCost) + num(freight) + num(packaging) + num(otherCosts)
+                )}
               />
               <Line label="Lucro por unidade" value={formatCurrency(result.profit)} strong />
               <Line label="Margem líquida" value={`${formatNumber(result.marginPct)}%`} />
@@ -286,58 +255,24 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3">
-            <button 
-              type="button"
-              onClick={() => setSelectedTier("min")}
-              className={cn(
-                "rounded-lg border p-3 text-center transition-all",
-                selectedTier === "min" 
-                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
-                  : "border-border/60 hover:border-primary/50"
-              )}
-            >
+            <div className="rounded-lg border border-border/60 p-3 text-center">
               <div className="text-[11px] uppercase text-muted-foreground">Mínimo</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.minPrice)}
               </div>
-            </button>
-            <button 
-              type="button"
-              onClick={() => setSelectedTier("target")}
-              className={cn(
-                "rounded-lg border p-3 text-center transition-all",
-                selectedTier === "target" 
-                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
-                  : "border-primary/30 bg-primary/5"
-              )}
-            >
+            </div>
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center ring-1 ring-primary/20">
               <div className="text-[11px] uppercase text-primary">Recomendado</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
-                {formatCurrency(result.recommendedPrice)}
+                {formatCurrency(result.targetPrice)}
               </div>
-            </button>
-            <button 
-              type="button"
-              onClick={() => setSelectedTier("premium")}
-              className={cn(
-                "rounded-lg border p-3 text-center transition-all",
-                selectedTier === "premium" 
-                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
-                  : "border-border/60 hover:border-primary/50"
-              )}
-            >
-              <div className="flex items-center justify-center gap-1">
-                <div className="text-[11px] uppercase text-muted-foreground">Premium</div>
-                {suggestedEval.status === "premium" && selectedTier === "premium" && (
-                   <span className="inline-flex items-center rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary">
-                     Margem premium
-                   </span>
-                )}
-              </div>
+            </div>
+            <div className="rounded-lg border border-border/60 p-3 text-center">
+              <div className="text-[11px] uppercase text-muted-foreground">Premium</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.premiumPrice)}
               </div>
-            </button>
+            </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground">
