@@ -143,11 +143,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   });
 
   // Sincroniza o control do RHF quando o useEntityForm reseta o form
+  // Adicionamos guarda para não resetar enquanto o usuário está ativamente editando (isDirty)
+  // Porém useEntityForm é para sincronização externa (id/updated_at), então é seguro manter se as dependências forem corretas.
   useEffect(() => {
     Object.entries(form).forEach(([key, value]) => {
       setValue(key as any, value);
     });
-  }, [form, setValue]);
+  }, [product?.id, product?.updated_at, setValue]); // Mudamos as dependências para serem mais específicas e evitar resets em cada mudança de estado local
 
   // States para modais e utilitários
   const [movementOpen, setMovementOpen] = useState(false);
