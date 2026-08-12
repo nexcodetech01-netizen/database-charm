@@ -698,7 +698,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               onRemoveTag={() => {}}
               suggestedTags={suggestedTags}
               suggestingTags={suggestingTags}
-              onSuggestTags={() => {}}
+              onSuggestTags={handleSuggestTags}
             />
           </TabsContent>
 
