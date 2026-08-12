@@ -152,6 +152,8 @@ export function compute(ctx: PricingContext): PricingResult {
     ? Math.round(atLeast(ctx.channel.fixedFeePerOrderCents, 0) / quantity)
     : 0;
   const taxFixedCents = ctx.taxQuote ? atLeast(ctx.taxQuote.totalFixedCents, 0) : 0;
+  
+  // LÓGICA RÍGIDA: Custos fixos por unidade que compõem o Custo Total Efetivo
   const fixedAddCents = opCostCents + fixedFeeCents + taxFixedCents;
   const costTotalCents = costCents + fixedAddCents;
 
