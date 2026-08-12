@@ -316,7 +316,7 @@ function DashboardPage() {
                   await supabase.rpc("get_dashboard_metrics", { 
                     p_period: "ontem",
                     p_company_id: company.id
-                  });
+                  } as any);
                 } catch (err) {
                   console.error("Error calling get_dashboard_metrics (yesterday):", err);
                 }
@@ -336,7 +336,7 @@ function DashboardPage() {
                   await supabase.rpc("get_dashboard_metrics", { 
                     p_period: "mes",
                     p_company_id: company.id
-                  });
+                  } as any);
                 } catch (err) {
                   console.error("Error calling get_dashboard_metrics (month):", err);
                 }
