@@ -250,38 +250,11 @@ async function buildContext(
   environmentOverride?: NfeEnvironment,
   model: "55" | "65" = "55",
 ): Promise<BuiltContext> {
-  const { data: sale, error: saleErr } = await supabase
-    .from("sales")
-    .select("id, grand_total, discount, shipping, customer_id, sale_date, payment_method")
-    .eq("company_id", companyId)
-    .eq("id", saleId)
-    .maybeSingle();
-  if (saleErr) throw saleErr;
-  if (!sale) throw new Error("Venda não encontrada.");
-  const saleRow = sale as unknown as {
-    id: string;
-    grand_total: number | null;
-    discount: number | null;
-    shipping: number | null;
-    customer_id: string | null;
-    sale_date: string | null;
-    payment_method: string | null;
-  };
+  const salesRepo = new SalesRepository(supabase);
+  const saleRow = await salesRepo.findById(companyId, saleId);
+  if (!saleRow) throw new Error("Venda não encontrada.");
 
-
-  const { data: itemsRaw, error: itemsErr } = await supabase
-    .from("sale_items")
-    .select("id, product_id, description, quantity, unit_price, total")
-    .eq("sale_id", saleId);
-  if (itemsErr) throw itemsErr;
-  const items = (itemsRaw ?? []) as unknown as Array<{
-    id: string;
-    product_id: string | null;
-    description: string | null;
-    quantity: number | null;
-    unit_price: number | null;
-    total: number | null;
-  }>;
+  const items = await salesRepo.listItems(saleId);
 
   // NCM vem exclusivamente do cadastro do produto (nunca de fiscal_settings).
   const productIds = Array.from(
@@ -292,12 +265,9 @@ async function buildContext(
     { name: string; ncm: string | null; sku: string | null; unit: string | null }
   >();
   if (productIds.length) {
-    const { data: prods } = await supabase
-      .from("products")
-      .select("id, name, ncm, sku, unit")
-      .eq("company_id", companyId)
-      .in("id", productIds);
-    for (const pr of (prods ?? []) as unknown as Array<{
+    const productsRepo = new ProductsRepository(supabase);
+    const prods = await productsRepo.findFiscalLookup(companyId, productIds);
+    for (const pr of prods) {
       id: string;
       name: string | null;
       ncm: string | null;

@@ -8,22 +8,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
 import { toCustomerReference } from "@/lib/customer-reference";
+import { mapDocument as mapDocFromQuery } from "../queries/documents.query";
+import { mapCertificate } from "../queries/certificate.query";
 import {
-  fetchFiscalDocuments,
-  fetchFiscalDashboard,
-  fetchFiscalDocument,
-  fetchFiscalDocumentEvents,
-  mapDocument as mapDocFromQuery,
-} from "../queries/documents.query";
-import {
-  fetchFiscalCertificates,
-  fetchActiveCertificate,
-} from "../queries/certificate.query";
-import {
-  fetchProviderConfig,
-  fetchProviderEnvironments,
-} from "../queries/status.query";
-import { fetchFiscalSettings } from "../queries/tax.query";
+  type FiscalArtifactKind,
+  normalizePendingKinds,
+} from "../lib/artifacts";
+import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
+
+import { DocumentsRepository } from "../repositories/documents.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { ProductsRepository } from "../repositories/products.repository";
+import { CustomersRepository } from "../repositories/customers.repository";
+import { StatusRepository } from "../repositories/status.repository";
+import { TaxRepository } from "../repositories/tax.repository";
+import { SalesRepository } from "../repositories/sales.repository";
+import type { CustomerFiscalRow } from "../repositories/customers.repository";
 import {
   type FiscalArtifactKind,
   normalizePendingKinds,
@@ -212,7 +213,7 @@ export const listFiscalDocuments = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    return fetchFiscalDocuments(supabase, companyId, data);
+    return new DocumentsRepository(supabase).list(companyId, data);
   });
 
 
@@ -231,7 +232,41 @@ export const getFiscalDashboard = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    return fetchFiscalDashboard(supabase, companyId);
+    
+    const docRepo = new DocumentsRepository(supabase);
+    const rows = await docRepo.getDashboard(companyId);
+
+    const totals: Record<NfeStatus, number> = {
+      draft: 0, validating: 0, signing: 0, sending: 0, authorized: 0,
+      rejected: 0, cancelling: 0, cancelled: 0, error: 0, discarded: 0,
+    };
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    let monthAuthorized = 0;
+    let monthValue = 0;
+
+    const list = (rows ?? []) as Array<{
+      status: NfeStatus;
+      total_amount: number | null;
+      protocol_at: string | null;
+    }>;
+
+    list.forEach((r) => {
+      totals[r.status] = (totals[r.status] ?? 0) + 1;
+      if (r.status === "authorized" && r.protocol_at && r.protocol_at >= monthStart) {
+        monthAuthorized += 1;
+        monthValue += Number(r.total_amount ?? 0);
+      }
+    });
+
+    const lastDocument = await docRepo.findLast(companyId);
+
+    return {
+      totals,
+      monthAuthorized,
+      monthValue,
+      lastDocument,
+    };
   });
 
 
@@ -247,9 +282,10 @@ export const getFiscalDocument = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
+    const docRepo = new DocumentsRepository(supabase);
     const [document, events] = await Promise.all([
-      fetchFiscalDocument(supabase, companyId, data.documentId),
-      fetchFiscalDocumentEvents(supabase, companyId, data.documentId),
+      docRepo.findById(companyId, data.documentId),
+      docRepo.fetchEvents(companyId, data.documentId),
     ]);
 
     if (!document) throw new Error("Documento fiscal não encontrado.");
