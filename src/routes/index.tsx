@@ -109,6 +109,22 @@ function IndexComponent() {
             </div>
           </div>
         </div>
+        
+        <div className="mt-4 p-6 border rounded-lg bg-card text-card-foreground shadow-sm">
+          <h2 className="text-lg font-semibold mb-4 text-emerald-600 flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Correção: Estoque e Listagem Dinâmica
+          </h2>
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p className="text-muted-foreground font-medium">Melhorias Implementadas:</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>Campo <b>Estoque Inicial</b> desbloqueado para novos produtos (com persistência via <i>inventory_movements</i>).</li>
+              <li>Busca de produtos no Inventário e Kits agora exibe os <b>mais recentes no topo</b>.</li>
+              <li>Capacidade de listagem aumentada para 100 itens no seletor de movimentação.</li>
+              <li>Filtro dinâmico por Nome, SKU ou EAN em tempo real.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
