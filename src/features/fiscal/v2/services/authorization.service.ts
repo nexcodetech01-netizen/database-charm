@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DocumentsRepository } from "../repositories/documents.repository";
 import type { ProviderStatusResult, FiscalDocumentDto } from "../types";
+import { AuthorizationValidator } from "../validators";
 
 export class AuthorizationService {
   private readonly docsRepo: DocumentsRepository;
@@ -17,6 +18,9 @@ export class AuthorizationService {
     documentId: string,
     result: ProviderStatusResult
   ): Promise<FiscalDocumentDto> {
+    const current = await this.docsRepo.findById(this.companyId, documentId);
+    AuthorizationValidator.validateRefresh(current);
+
     const patch: any = {
       status: result.status,
       updated_at: new Date().toISOString(),
