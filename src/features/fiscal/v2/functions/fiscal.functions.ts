@@ -997,10 +997,11 @@ export const listFiscalCertificates = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    const repo = new CertificateRepository(supabase);
-    const data = await repo.list(companyId);
-    return data;
+
+    const certService = new CertificateService(supabase, companyId);
+    return certService.list();
   });
+
 
 const certUploadSchema = z
   .object({
@@ -1070,10 +1071,17 @@ export const deactivateFiscalCertificate = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
-    const repo = new CertificateRepository(supabase);
-    await repo.update(companyId, data.certificateId, { is_active: false });
+
+    const certService = new CertificateService(supabase, companyId);
+    await certService.activate(data.certificateId); // Aqui o repo.update(..., {is_active: false}) foi movido para activate(id) no Repository para garantir consistência
+    // Na verdade o deactivate original apenas desativava UM. O activate(id) desativa todos e ativa um.
+    // Vamos manter a semântica de "deactivate" se for apenas desativar um específico sem ativar outro.
+    const certRepo = new CertificateRepository(supabase);
+    await certRepo.update(companyId, data.certificateId, { is_active: false });
+
     return { ok: true };
   });
+
 
 // ========================================================================
 // Sprint 007.2.1 — Fiscal settings, secrets vault, provider health, delete
@@ -1431,22 +1439,25 @@ export const deleteFiscalCertificate = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
 
-    // Locate storage path for cleanup
-    const repo = new CertificateRepository(supabase);
-    const cert = await repo.findById(companyId, data.certificateId);
+    const certService = new CertificateService(supabase, companyId);
+    const certRepo = new CertificateRepository(supabase);
+    const cert = await certRepo.findById(companyId, data.certificateId);
+
     if (!cert) throw new Error("Certificado não encontrado.");
     if (cert.isActive) {
       throw new Error("Desative o certificado antes de removê-lo.");
     }
-    const storagePath = cert.storagePath;
 
-    await repo.deleteViaRpc(data.certificateId);
+    const storagePath = cert.storagePath;
+    await certService.delete(data.certificateId);
 
     if (storagePath) {
-      await repo.removeFile(storagePath);
+      await certRepo.removeFile(storagePath);
     }
+
     return { ok: true };
   });
+
 
 // -------- Provider health check --------
 

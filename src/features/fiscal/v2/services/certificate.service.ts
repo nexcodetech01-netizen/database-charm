@@ -29,8 +29,9 @@ export class CertificateService {
   }
 
   async delete(certificateId: string): Promise<void> {
-    await this.certRepo.delete(this.companyId, certificateId);
+    await this.certRepo.deleteViaRpc(certificateId);
   }
+
 
   async activate(certificateId: string): Promise<void> {
     await this.certRepo.activate(this.companyId, certificateId);
