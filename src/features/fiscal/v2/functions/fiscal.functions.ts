@@ -38,7 +38,7 @@ import {
   CertificateService, 
   XmlService 
 } from "../services";
-import { PayloadValidator } from "../validators";
+import { PayloadValidator, AuthorizationValidator } from "../validators";
 
 type SB = SupabaseClient<Database>;
 
