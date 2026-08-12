@@ -9,29 +9,25 @@ export class CustomerValidator {
 
   private static validateForNfe(customer: any): void {
     if (!customer) {
-      throw new Error("Destinatário é obrigatório para NF-e (Modelo 55).");
-    }
-
-    if (!customer.document) {
-      throw new Error("Documento (CPF/CNPJ) do destinatário é obrigatório.");
+      throw new Error("Cliente sem nome.");
     }
 
     if (!customer.name) {
-      throw new Error("Nome/Razão Social do destinatário é obrigatório.");
+      throw new Error("Cliente sem nome.");
+    }
+
+    if (!customer.document) {
+      throw new Error("Cliente sem CPF/CNPJ.");
     }
 
     if (!customer.address || !customer.address.street || !customer.address.city || !customer.address.state || !customer.address.zip) {
-      throw new Error("Endereço completo do destinatário é obrigatório para NF-e.");
+      throw new Error("Endereço do cliente incompleto.");
     }
   }
 
   private static validateForNfce(customer: any): void {
-    // Para NFC-e o cliente é opcional até certo valor, mas se informado deve ser válido
-    if (customer && customer.document) {
-      const doc = customer.document.replace(/\D/g, "");
-      if (doc.length !== 11 && doc.length !== 14) {
-        throw new Error("CPF/CNPJ do destinatário inválido.");
-      }
+    if (customer && customer.document && !customer.name) {
+      throw new Error("Cliente sem nome.");
     }
   }
 }

@@ -12,7 +12,7 @@ export class ProductValidator {
       throw new Error(`NCM "${item.ncm}" do produto "${item.description}" deve ter 8 dígitos.`);
     }
 
-    if (item.quantity <= 0) {
+    if (!(item.quantity > 0)) {
       throw new Error(`Quantidade do produto "${item.description}" deve ser maior que zero.`);
     }
 
@@ -23,7 +23,7 @@ export class ProductValidator {
 
   static validateItems(items: any[]): void {
     if (!items || items.length === 0) {
-      throw new Error("A venda deve possuir ao menos um item para emissão fiscal.");
+      throw new Error("Venda sem itens.");
     }
     
     items.forEach(item => this.validateItem(item));

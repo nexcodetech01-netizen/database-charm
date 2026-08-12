@@ -48,6 +48,7 @@ import {
   CertificateService, 
   XmlService 
 } from "../services";
+import { PayloadValidator } from "../validators";
 
 import { DocumentsRepository } from "../repositories/documents.repository";
 import { CertificateRepository } from "../repositories/certificate.repository";
@@ -494,55 +495,7 @@ async function buildContext(
 
 // -------------------------------------------------------------- validation
 
-export interface EngineIssue {
-  field: string;
-  message: string;
-}
-
-function validatePayload(ctx: BuiltContext): EngineIssue[] {
-  const issues: EngineIssue[] = [];
-  const p = ctx.payload;
-  const isNfce = ctx.model === "65";
-  // NFC-e é venda presencial ao consumidor: identificação do destinatário
-  // é OPCIONAL. Quando informada, precisa estar completa.
-  if (isNfce) {
-    if (p.customer.document && !p.customer.name)
-      issues.push({ field: "customer.name", message: "Cliente sem nome." });
-    if (!p.nfce?.cscId)
-      issues.push({ field: "nfce.cscId", message: "CSC (ID) não configurado para NFC-e." });
-    if (!p.nfce?.cscToken)
-      issues.push({ field: "nfce.cscToken", message: "Token CSC não configurado para NFC-e." });
-  } else {
-    if (!p.customer.name) issues.push({ field: "customer.name", message: "Cliente sem nome." });
-    if (!p.customer.document)
-      issues.push({ field: "customer.document", message: "Cliente sem CPF/CNPJ." });
-    if (!p.customer.address)
-      issues.push({ field: "customer.address", message: "Endereço do cliente incompleto." });
-  }
-  if (p.items.length === 0) issues.push({ field: "items", message: "Venda sem itens." });
-  p.items.forEach((it, i) => {
-    if (!it.description)
-      issues.push({ field: `items[${i}].description`, message: "Item sem descrição." });
-    if (!(it.quantity > 0))
-      issues.push({ field: `items[${i}].quantity`, message: "Quantidade inválida." });
-  });
-  const missingNcm = p.items.filter((it) => !it.ncm).map((it) => it.description || "Produto");
-  if (missingNcm.length)
-    issues.push({
-      field: "items.ncm",
-      message: `Produtos sem NCM:\n${Array.from(new Set(missingNcm))
-        .map((n) => `- ${n}`)
-        .join("\n")}`,
-    });
-  if (!(p.totals.total > 0))
-    issues.push({ field: "totals.total", message: "Valor total deve ser maior que zero." });
-  const e = p.emitter;
-  if (!e?.cnpj || !e.ie || !e.street || !e.city || !e.state || !e.zip)
-    issues.push({ field: "company", message: "Dados fiscais da empresa incompletos." });
-  if (ctx.providerId !== "mock" && !ctx.certificateId)
-    issues.push({ field: "certificate", message: "Nenhum certificado A1 ativo." });
-  return issues;
-}
+// Validações agora residem em ../validators/payload.validator.ts
 
 // --------------------------------------------------------------- artifacts
 
@@ -1080,18 +1033,16 @@ export async function issueNfeFromSaleEngine(
 
   // 2) Validação pré-envio.
   await patchDocument(supabase, companyId, documentId, { status: "validating" });
-  const issues = validatePayload(ctx);
-  if (issues.length > 0) {
-    const reason = issues
-      .map((i) => `${i.field}: ${i.message}`)
-      .join("; ")
-      .slice(0, 500);
+  try {
+    PayloadValidator.validateFullContext(ctx);
+  } catch (err: any) {
+    const reason = err.message.slice(0, 500);
     const rejected = await patchDocument(supabase, companyId, documentId, {
       status: "rejected",
       rejection_code: "VALIDATION",
       rejection_reason: reason,
     });
-    await appendEvent(supabase, companyId, documentId, "rejected", { issues }, userId);
+    await appendEvent(supabase, companyId, documentId, "rejected", { error: err.message }, userId);
     return rejected;
   }
 

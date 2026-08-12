@@ -29,10 +29,10 @@ export class CompanyValidator {
   }
 
   static validateEmitterData(emitter: any): void {
-    const required = ["cnpj", "legalName", "street", "number", "district", "city", "state", "zip"];
+    const required = ["cnpj", "ie", "street", "city", "state", "zip"];
     for (const field of required) {
       if (!emitter[field]) {
-        throw new Error(`Dados do emitente incompletos: campo ${field} é obrigatório.`);
+        throw new Error("Dados fiscais da empresa incompletos.");
       }
     }
 
