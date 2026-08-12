@@ -21,6 +21,7 @@ interface PricingFormProps {
   onApplyCategoryMargin: () => void;
   errors?: Record<string, string>;
   onOpenQuickCategory?: () => void;
+  onFetchLastPurchase?: () => void;
 }
 
 export function PricingForm({ 
