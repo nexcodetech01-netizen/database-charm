@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RequiredLabel } from "@/components/ui/required-label";
 import { computeOfficialPricing } from "@/features/pricing/official/official-pricing";
+import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 
 interface PricingFormProps {
   form: any;
@@ -339,6 +340,26 @@ export function PricingForm({
             )}
           </div>
         </div>
+      </div>
+
+      {/* SEÇÃO 2: Canais de Venda / Sugestões */}
+      <div className="pt-4 border-t border-slate-800">
+        <SuggestedPricesByChannelCard
+          mode="local"
+          costTotalCents={Math.round(totalCost * 100)}
+          targetMarginPct={desiredMargin}
+          currentStorePriceCents={Math.round(price * 100)}
+          onApplySuggested={(recommendedPrice: number) => {
+            setForm((s: any) => ({
+              ...s,
+              price: recommendedPrice.toFixed(2),
+              // Ao aplicar o sugerido, recalculamos a margem baseada no preço aplicado
+              margin: (((recommendedPrice - totalCost) / recommendedPrice) * 100).toFixed(2),
+              use_category_margin: false
+            }));
+            toast.success(`Preço de ${formatCurrency(recommendedPrice)} aplicado com sucesso!`);
+          }}
+        />
       </div>
     </div>
   );
