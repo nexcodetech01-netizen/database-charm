@@ -1,30 +1,52 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureCategoryByName } from "@/features/categories/lib/ensure-category";
+import { updateRow } from "@/services/supabase.service";
 
 export const categoriesService = {
   async list(companyId: string) {
     const { data, error } = await supabase
       .from("product_categories")
-      .select("*")
+      .select(`
+        *,
+        product_count:products(count)
+      `)
       .eq("company_id", companyId)
       .order("name");
+    
     if (error) throw error;
-    return data ?? [];
+    
+    return (data ?? []).map(cat => ({
+      ...cat,
+      product_count: cat.product_count?.[0]?.count ?? 0
+    }));
   },
-  /**
-   * Cria a categoria OU reutiliza a equivalente já existente
-   * (plural/acentos/caixa/espaços) — nunca gera duplicidade.
-   */
-  async create(companyId: string, name: string) {
-    const id = await ensureCategoryByName(companyId, name);
+
+  async create(companyId: string, name: string, targetMarginPct?: number, defaultNcm?: string) {
     const { data, error } = await supabase
       .from("product_categories")
-      .select("*")
-      .eq("id", id!)
+      .insert({ 
+        company_id: companyId, 
+        name: name.trim(),
+        target_margin_pct: targetMarginPct,
+        default_ncm: defaultNcm
+      })
+      .select()
       .single();
     if (error) throw error;
     return data;
   },
+
+  async update(id: string, input: { name?: string; target_margin_pct?: number; default_ncm?: string }) {
+    return updateRow("product_categories", id, input);
+  },
+
+  async remove(id: string) {
+    const { error } = await supabase
+      .from("product_categories")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+  }
 };
 
 export interface QuickSupplierInput {

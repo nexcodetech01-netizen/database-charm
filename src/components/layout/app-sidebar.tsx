@@ -70,7 +70,17 @@ const groups: NavGroup[] = [
       { title: "Dashboard", url: ROUTES.dashboard, icon: LayoutDashboard, status: "available", permission: "dashboard.view" },
       { title: "Vendas", url: ROUTES.sales, icon: Receipt, status: "available", permission: "sales.view" },
       { title: "Clientes", url: ROUTES.customers, icon: Users, status: "available", permission: "customers.view" },
-      { title: "Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
+      { 
+        title: "Produtos", 
+        url: ROUTES.products, 
+        icon: Package, 
+        status: "available", 
+        permission: "products.view",
+        children: [
+          { title: "Listagem", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
+          { title: "Categorias", url: ROUTES.categories, icon: Layers, status: "available", permission: "products.view" },
+        ]
+      },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
       { title: "Compras", url: ROUTES.purchases, icon: ShoppingCart, status: "available", permission: "purchases.view" },
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
