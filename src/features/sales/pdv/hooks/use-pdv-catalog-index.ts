@@ -22,6 +22,21 @@ export const PDV_CATALOG_PREFETCH_LIMIT = 2000;
 /** Primeiro lote para carregamento instantâneo. */
 export const PDV_CATALOG_INITIAL_BATCH = 200;
 
+async function fetchPdvCatalog(
+  companyId: string,
+  limit: number,
+): Promise<PdvSearchOption[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,name,sku,barcode,brand,price,cost,stock,unit")
+    .eq("company_id", companyId)
+    .eq("status", "active")
+    .order("name")
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(mapProduct);
+}
+
 export function usePdvCatalogIndex(
   companyId: string,
   enabled = true,
@@ -36,22 +51,18 @@ export function usePdvCatalogIndex(
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     queryFn: async (): Promise<PdvSearchOption[]> => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,sku,barcode,brand,price,cost,stock,unit")
-        .eq("company_id", companyId)
-        .eq("status", "active")
-        .order("name")
-        .limit(PDV_CATALOG_INITIAL_BATCH);
-      
-      if (error) throw error;
-      const mapped = (data ?? []).map(mapProduct);
+      const mapped = await fetchPdvCatalog(companyId, PDV_CATALOG_INITIAL_BATCH);
 
       // 1.5 Prefetch paralelo do catálogo completo assim que o inicial termina
-      // Sem await para não bloquear o retorno do lote inicial
+      // Sem await para não bloquear o retorno do lote inicial. Precisa do
+      // próprio queryFn aqui: prefetchQuery não usa um queryFn padrão do
+      // QueryClient (este projeto não configura um), então sem isto o
+      // prefetch nunca buscava nada — o catálogo completo só carregava
+      // quando a segunda query abaixo ficava habilitada por conta própria.
       queryClient.prefetchQuery({
         queryKey: ["pdv", "catalog-index", "full", companyId],
         staleTime: 5 * 60_000,
+        queryFn: () => fetchPdvCatalog(companyId, PDV_CATALOG_PREFETCH_LIMIT),
       });
 
       return mapped;
@@ -65,17 +76,7 @@ export function usePdvCatalogIndex(
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
-    queryFn: async (): Promise<PdvSearchOption[]> => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,sku,barcode,brand,price,cost,stock,unit")
-        .eq("company_id", companyId)
-        .eq("status", "active")
-        .order("name")
-        .limit(PDV_CATALOG_PREFETCH_LIMIT);
-      if (error) throw error;
-      return (data ?? []).map(mapProduct);
-    },
+    queryFn: () => fetchPdvCatalog(companyId, PDV_CATALOG_PREFETCH_LIMIT),
   });
 
   const products = fullData ?? initialData ?? [];

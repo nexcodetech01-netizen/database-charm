@@ -91,7 +91,7 @@ export function PDVSettingsDialog({ companyId }: { companyId: string }) {
           <div className="grid gap-2">
             <Label>Conta de Destino Padrão</Label>
             <Select
-              defaultValue={company?.pos_default_account_id || ""}
+              value={company?.pos_default_account_id || ""}
               onValueChange={(val) => mutation.mutate(val)}
             >
               <SelectTrigger>

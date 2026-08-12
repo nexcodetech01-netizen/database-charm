@@ -69,6 +69,7 @@ export const PDVOperationBar = memo(function PDVOperationBar({
   onProduct,
   onClearSearch,
   operatorName,
+  sessionLabel,
   activity,
   cashMenu,
   isSyncing,
@@ -117,6 +118,13 @@ export const PDVOperationBar = memo(function PDVOperationBar({
           value={operatorName || "—"}
           title="Operador"
         />
+        {sessionLabel && (
+          <MetaChip
+            icon={Wallet}
+            value={`Caixa ${sessionLabel}`}
+            title="Sessão de caixa vigente"
+          />
+        )}
         <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
           {saleNumber}
         </span>

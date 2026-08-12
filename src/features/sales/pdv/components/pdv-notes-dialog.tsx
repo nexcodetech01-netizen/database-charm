@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import {
   Dialog,
@@ -21,6 +21,14 @@ type Props = {
 
 export function PDVNotesDialog({ open, onOpenChange, onConfirm, initialValue, title }: Props) {
   const [notes, setNotes] = useState(initialValue);
+
+  // Este diálogo pode ficar montado entre vendas (ex.: "Observações da
+  // Venda", sempre presente na tela, só alternando `open`). Sem isto, ao
+  // abrir de novo o campo mostrava o valor da venda ANTERIOR — e salvar
+  // sem reparar vazava a observação antiga para a venda nova.
+  useEffect(() => {
+    if (open) setNotes(initialValue);
+  }, [open, initialValue]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
