@@ -329,7 +329,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       console.error("Erro ao buscar histórico:", err);
       toast.error("Erro ao consultar histórico de compras.");
     }
-  }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm]);
+  }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm, operationalDefaults]);
 
   // Sincronizar ao trocar de fornecedor se já tivermos o produto
   useEffect(() => {
