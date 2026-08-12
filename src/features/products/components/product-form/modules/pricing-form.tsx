@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
-import { Calculator, Info, AlertCircle, Plus, ShoppingBag, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { Calculator, Info, AlertCircle, Plus, ShoppingBag, TrendingUp, ChevronDown, ChevronUp, History } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -143,11 +143,25 @@ export function PricingForm({
       <div className="grid gap-6 md:grid-cols-2">
         {/* Coluna de Custos */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
-              <Calculator className="h-4 w-4 text-slate-300" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
+                <Calculator className="h-4 w-4 text-slate-300" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-300 uppercase tracking-tight">Custos</h4>
             </div>
-            <h4 className="text-sm font-bold text-slate-300 uppercase tracking-tight">Custos</h4>
+            {form.supplier_id && onFetchLastPurchase && (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 text-[10px] font-bold uppercase text-slate-400 hover:text-white gap-1.5"
+                onClick={onFetchLastPurchase}
+              >
+                <History className="h-3 w-3" />
+                Sincronizar última compra
+              </Button>
+            )}
           </div>
           <div className="space-y-3 p-5 rounded-xl border border-slate-800 bg-slate-900/50 shadow-sm">
             <div className="space-y-2">
