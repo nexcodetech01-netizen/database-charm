@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -134,6 +136,18 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [tab, setTab] = useState("geral");
   const [form, setForm] = useEntityForm(product, toState);
   
+  const { control, setValue } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: form,
+  });
+
+  // Sincroniza o control do RHF quando o useEntityForm reseta o form
+  useEffect(() => {
+    Object.entries(form).forEach(([key, value]) => {
+      setValue(key as any, value);
+    });
+  }, [form, setValue]);
+
   // States para modais e utilitários
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
@@ -624,6 +638,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               categories={categories}
               suppliers={suppliers}
+              control={control}
               errors={formErrors}
               onOpenQuickCategory={() => setCategoryDialogOpen(true)}
               onTitleBlur={() => {
@@ -760,7 +775,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       <CategoryQuickFormDialog
         open={categoryDialogOpen}
         onOpenChange={setCategoryDialogOpen}
-        onCreated={(c) => setForm(prev => ({ ...prev, category_id: c.id }))}
+        onCreated={(c) => {
+          qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) });
+          setForm(prev => ({ ...prev, category_id: c.id }));
+          setValue('category_id', c.id, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+        }}
         onCreate={(name) => createCategory.mutateAsync({ name })}
         isPending={createCategory.isPending}
       />

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { RequiredLabel } from "@/components/ui/required-label";
+import { Controller } from "react-hook-form";
 import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS } from "../../../types";
 
 interface GeneralInfoFormProps {
@@ -13,6 +14,7 @@ interface GeneralInfoFormProps {
   categories: any[];
   suppliers: any[];
   onTitleBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  control: any;
   errors?: Record<string, string>;
   onOpenQuickCategory?: () => void;
 }
@@ -23,6 +25,7 @@ export function GeneralInfoForm({
   categories, 
   suppliers, 
   onTitleBlur,
+  control,
   errors = {},
   onOpenQuickCategory
 }: GeneralInfoFormProps) {
@@ -95,21 +98,31 @@ export function GeneralInfoForm({
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <Select
-          value={form.category_id}
-          onValueChange={(val) => setForm((s: any) => ({ ...s, category_id: val }))}
-        >
-          <SelectTrigger id="category_id" className={errors.category_id ? "border-destructive ring-destructive" : ""}>
-            <SelectValue placeholder="Selecione uma categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Controller
+          name="category_id"
+          control={control}
+          defaultValue={form.category_id || ""}
+          render={({ field }) => (
+            <Select
+              value={field.value || ""}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setForm((s: any) => ({ ...s, category_id: val }));
+              }}
+            >
+              <SelectTrigger id="category_id" className={errors.category_id ? "border-destructive ring-destructive" : ""}>
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.category_id && <p className="text-xs text-destructive font-medium">{errors.category_id}</p>}
       </div>
 
