@@ -321,13 +321,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
           return next;
         });
-        toast.success(`Dados sincronizados da compra em ${new Date(info.purchaseDate).toLocaleDateString()}`);
-      } else {
-        toast.info("Nenhuma compra encontrada para este produto com o fornecedor selecionado.");
+        // Sincronização silenciosa removida toast.success
       }
     } catch (err) {
       console.error("Erro ao buscar histórico:", err);
-      toast.error("Erro ao consultar histórico de compras.");
+      // Silenciado: toast.error("Erro ao consultar histórico de compras.");
     }
   }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm, operationalDefaults]);
 
