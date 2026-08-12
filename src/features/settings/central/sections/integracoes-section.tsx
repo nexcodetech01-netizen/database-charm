@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { testAsaasConnection } from "@/features/bella-pay/lib/bella-pay.functions";
+
 import type { LucideIcon } from "lucide-react";
 import {
   CreditCard,
@@ -96,12 +98,15 @@ export function IntegracoesSection() {
   const [mlOpen, setMlOpen] = useState(false);
   const queryClient = useQueryClient();
   const getMlIntegration = useServerFn(getMercadoLivreIntegration);
-  const { company } = (Link as any).useRouteContext?.() || { company: { id: "default" } }; // Fallback for context if needed, but usually available in parent
+  const bellaPayConfigFn = useServerFn(testAsaasConnection);
+  const router = useRouter();
+  const companyId = (router.state.location as any).company?.id || (router.state.matches[0]?.context as any)?.company?.id;
 
   const { data: bellaPayConfig } = useQuery({
-    queryKey: ["bella-pay", "config", company?.id],
-    queryFn: () => bellaPayConfigFn({ data: { companyId: company?.id } }),
-    enabled: !!company?.id,
+    queryKey: ["bella-pay", "config", companyId],
+    queryFn: () => bellaPayConfigFn({ data: { companyId, environment: "sandbox" } }),
+    enabled: !!companyId,
+    retry: false,
   });
 
   const { data: mlIntegration } = useQuery({
@@ -110,7 +115,7 @@ export function IntegracoesSection() {
     staleTime: 30_000,
   });
   const mlConnected = mlIntegration?.connected ?? false;
-  const asaasConnected = !!bellaPayConfig?.api_key_production || !!bellaPayConfig?.api_key_sandbox;
+  const asaasConnected = bellaPayConfig?.ok ?? false;
 
   const handleMlStatusChange = () => {
     void queryClient.invalidateQueries({ queryKey: MERCADOLIVRE_INTEGRATION_QUERY_KEY });
@@ -123,7 +128,11 @@ export function IntegracoesSection() {
           const Icon = card.icon;
           const SecondaryIcon = card.secondaryIcon;
           const effectiveStatus: IntegrationStatus =
-            card.action === "mercadolivre" && mlConnected ? "connected" : card.status;
+            card.action === "mercadolivre" 
+              ? (mlConnected ? "connected" : "available")
+              : card.title === "Asaas"
+                ? (asaasConnected ? "connected" : "available")
+                : card.status;
           const status = STATUS[effectiveStatus];
           const label = effectiveStatus === "connected" ? "Gerenciar" : "Configurar";
           const variant = effectiveStatus === "connected" ? "outline" : "default";
@@ -137,6 +146,7 @@ export function IntegracoesSection() {
                       <SecondaryIcon className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-background p-0.5 text-primary" />
                     ) : null}
                   </div>
+
                   <div>
                     <CardTitle className="text-sm">{card.title}</CardTitle>
                     <p className="mt-0.5 text-xs text-muted-foreground">{card.description}</p>
