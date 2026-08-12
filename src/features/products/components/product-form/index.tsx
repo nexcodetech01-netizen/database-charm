@@ -182,6 +182,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     companyId,
     name: form.name,
     categoryId: form.category_id,
+    material: form.model || null,
     categories,
     ncm: form.ncm,
     cest: form.cest,
@@ -290,18 +291,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
   const handleFetchLastPurchase = useCallback(async () => {
     if (!form.supplier_id) return;
-    // Se estivermos editando um produto, usamos o ID dele. Se for novo, não temos histórico ainda (a menos que seja por nome/SKU, mas aqui focamos no produto atual)
-    if (!product?.id) {
-      toast.info("Histórico de compras disponível apenas para produtos já cadastrados.");
-      return;
-    }
 
     try {
       const info = await fetchLastPurchase({ 
         data: { 
           companyId, 
-          productId: product.id, 
-          supplierId: form.supplier_id 
+          productId: product?.id || null, 
+          supplierId: form.supplier_id,
+          productName: !product?.id ? form.name : undefined,
+          sku: !product?.id ? form.sku : undefined
         } 
       });
 
@@ -333,9 +331,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     }
   }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm, operationalDefaults]);
 
-  // Sincronizar ao trocar de fornecedor se já tivermos o produto
+  // Sincronizar ao trocar de fornecedor
   useEffect(() => {
-    if (isEdit && form.supplier_id && product?.id) {
+    if (form.supplier_id) {
       handleFetchLastPurchase();
     }
   }, [form.supplier_id]);

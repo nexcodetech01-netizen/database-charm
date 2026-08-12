@@ -64,7 +64,6 @@ export function FiscalForm({
       console.error("Erro na sugestão IA:", error);
       toast.error("Não foi possível obter sugestão da Bella IA");
     } finally {
-      setIaLoading(true); // Manter true por um momento ou resetar
       setIaLoading(false);
     }
   };

@@ -303,7 +303,7 @@ function useProductsPicker(companyId: string, q: string) {
         .select("id, name, sku, unit, stock, created_at")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(200);
       if (debounced.trim()) {
         const s = `%${debounced.trim()}%`;
         qry = qry.or(`name.ilike.${s},sku.ilike.${s}`);

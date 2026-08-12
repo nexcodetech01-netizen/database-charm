@@ -42,7 +42,7 @@ export function KitCompositionModule({ companyId, composition, setComposition }:
         .eq('product_type', 'simple')
         .or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
       
       if (error) throw error;
       return data || [];
