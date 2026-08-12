@@ -29,7 +29,7 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               if (form.product_type === 'kit') return;
               setForm((s: any) => ({ ...s, stock: e.target.value }));
             }}
-            disabled={form.product_type === 'kit'}
+            disabled={isEdit || form.product_type === 'kit'}
             className="text-lg font-bold tabular-nums"
           />
           {form.product_type === 'kit' && (

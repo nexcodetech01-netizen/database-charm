@@ -205,13 +205,31 @@ export const productsService = {
       return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as unknown as typeof updated;
     }
 
-    const { composition, ...insertPayload } = input;
+    const { composition, stock, ...insertPayload } = input as ProductInsert & { stock?: number };
     const { data, error } = await supabase
       .from("products")
       .insert(insertPayload as any)
       .select()
       .single();
     if (error) throw error;
+
+    // Handle initial stock movement
+    const initialQty = Number(stock ?? 0);
+    if (initialQty > 0 && data?.id) {
+      const { error: movError } = await supabase.from("inventory_movements").insert({
+        company_id: input.company_id,
+        product_id: data.id,
+        quantity: initialQty,
+        type: "in",
+        source: "product_create",
+        reason: "Saldo inicial no cadastro do produto",
+        movement_date: new Date().toISOString(),
+      });
+      if (movError) {
+        console.error("Erro ao registrar estoque inicial:", movError);
+        toast.error("Produto criado, mas erro ao registrar saldo inicial");
+      }
+    }
 
     // Handle composition for kits
     if (composition && composition.length > 0 && data?.id) {
