@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,7 +51,6 @@ import { ProductCreatedDialog } from "../product-created-dialog";
 import { SupplierQuickFormDialog } from "./supplier-quick-form-dialog";
 import { CategoryQuickFormDialog } from "./category-quick-form-dialog";
 import { MovementFormDialog } from "@/features/inventory/components/movement-form-dialog";
-import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
 import type { ManualMovementType } from "@/features/inventory/types";
@@ -71,7 +68,6 @@ const schema = z.object({
   barcode: z.string().trim().min(1, "EAN/GTIN obrigatório").max(80),
   ncm: z.preprocess((v) => (typeof v === "string" ? v.replace(/\D/g, "") : v), z.string().regex(/^\d{8}$/, "NCM inválido")),
   category_id: z.string().min(1, "Categoria obrigatória"),
-  unit: z.string().min(1, "Unidade obrigatória"),
   price: z.preprocess((v) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0, z.number().positive("Preço inválido")),
 });
 
@@ -135,22 +131,19 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState("geral");
-  const [form, setForm] = useEntityForm(product, toState);
-  
-  const { control, setValue } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: form,
+  const [form, setForm] = useEntityForm(product, (p) => {
+    // "Duplicar produto": pré-preenche a partir do produto original, mas
+    // continua sendo uma criação nova (product/id fica undefined) — por
+    // isso SKU e código de barras não são copiados, já que precisam ser
+    // únicos por empresa (a geração automática de SKU cuida disso).
+    const seed = p ?? duplicateOf;
+    const state = toState(seed);
+    if (!p && duplicateOf) {
+      return { ...state, sku: "", barcode: "SEM GTIN" };
+    }
+    return state;
   });
-
-  // Sincroniza o control do RHF quando o useEntityForm reseta o form
-  // Adicionamos guarda para não resetar enquanto o usuário está ativamente editando (isDirty)
-  // Porém useEntityForm é para sincronização externa (id/updated_at), então é seguro manter se as dependências forem corretas.
-  useEffect(() => {
-    Object.entries(form).forEach(([key, value]) => {
-      setValue(key as any, value);
-    });
-  }, [product?.id, product?.updated_at, setValue]); // Mudamos as dependências para serem mais específicas e evitar resets em cada mudança de estado local
-
+  
   // States para modais e utilitários
   const [movementOpen, setMovementOpen] = useState(false);
   const [movementType, setMovementType] = useState<ManualMovementType>("in");
@@ -641,7 +634,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setForm={setForm}
               categories={categories}
               suppliers={suppliers}
-              control={control}
               errors={formErrors}
               onOpenQuickCategory={() => setCategoryDialogOpen(true)}
               onTitleBlur={() => {
@@ -693,16 +685,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 onApplyCategoryMargin={applyCategoryMargin}
                 onFetchLastPurchase={handleFetchLastPurchase}
               />
-              <div className="pt-6 border-t border-slate-100">
-                <SuggestedPricesByChannelCard
-                  mode="local"
-                  costTotalCents={Math.round(totalCost * 100)}
-                  targetMarginPct={num(form.margin)}
-                  currentStorePriceCents={Math.round(num(form.price) * 100)}
-                  productId={product?.id}
-                  onApplySuggested={(p) => setForm(s => ({ ...s, price: p.toFixed(2) }))}
-                />
-              </div>
             </div>
           </TabsContent>
 
@@ -778,11 +760,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       <CategoryQuickFormDialog
         open={categoryDialogOpen}
         onOpenChange={setCategoryDialogOpen}
-        onCreated={(c) => {
-          qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) });
-          setForm(prev => ({ ...prev, category_id: c.id }));
-          setValue('category_id', c.id, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
-        }}
+        onCreated={(c) => setForm(prev => ({ ...prev, category_id: c.id }))}
         onCreate={(name) => createCategory.mutateAsync({ name })}
         isPending={createCategory.isPending}
       />
