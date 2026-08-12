@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Boxes, ArrowUpRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StockFormProps {
   form: any;
@@ -29,8 +30,11 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               if (form.product_type === 'kit') return;
               setForm((s: any) => ({ ...s, stock: e.target.value }));
             }}
-            disabled={isEdit || form.product_type === 'kit'}
-            className="text-lg font-bold tabular-nums"
+            readOnly={isEdit || form.product_type === 'kit'}
+            className={cn(
+              "text-lg font-bold tabular-nums",
+              (isEdit || form.product_type === 'kit') && "bg-muted/50 cursor-not-allowed border-dashed"
+            )}
           />
           {form.product_type === 'kit' && (
             <p className="text-[10px] text-blue-400 font-bold">

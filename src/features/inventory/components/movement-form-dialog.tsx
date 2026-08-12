@@ -300,10 +300,10 @@ function useProductsPicker(companyId: string, q: string) {
     queryFn: async () => {
       let qry = supabase
         .from("products")
-        .select("id, name, sku, unit, stock")
+        .select("id, name, sku, unit, stock, created_at")
         .eq("company_id", companyId)
-        .order("name")
-        .limit(20);
+        .order("created_at", { ascending: false })
+        .limit(100);
       if (debounced.trim()) {
         const s = `%${debounced.trim()}%`;
         qry = qry.or(`name.ilike.${s},sku.ilike.${s}`);
