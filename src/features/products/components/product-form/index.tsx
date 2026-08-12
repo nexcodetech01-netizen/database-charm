@@ -304,11 +304,23 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       });
 
       if (info) {
-        setForm(s => ({
-          ...s,
-          cost: info.unitPrice.toFixed(2),
-          freight: info.unitShipping.toFixed(2),
-        }));
+        setForm(s => {
+          const next = {
+            ...s,
+            cost: info.unitPrice.toFixed(2),
+          };
+
+          // Sobreposição inteligente para o frete:
+          // Se houver frete na compra, use-o.
+          if (info.unitShipping > 0) {
+            next.freight = info.unitShipping.toFixed(2);
+          } else if (operationalDefaults) {
+            // Se não houver frete na compra, mas houver padrão da empresa, use o padrão
+            next.freight = operationalDefaults.freight.toFixed(2);
+          }
+
+          return next;
+        });
         toast.success(`Dados sincronizados da compra em ${new Date(info.purchaseDate).toLocaleDateString()}`);
       } else {
         toast.info("Nenhuma compra encontrada para este produto com o fornecedor selecionado.");
