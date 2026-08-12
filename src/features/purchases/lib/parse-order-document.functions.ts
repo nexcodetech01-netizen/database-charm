@@ -55,6 +55,14 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
       "- Números em português: converta '1.299,90' para 1299.90.",
       "- Se um valor não estiver presente, use 0 para números e string vazia para textos.",
       "- Não invente itens. Não retorne totais, frete ou impostos como itens.",
+      "",
+      "REGRA DE FRACIONAMENTO DE KITS (CRÍTICO):",
+      "Se a descrição do produto indicar que ele é um kit, pacote ou caixa com várias unidades (ex: 'Kit 20 unidades', 'Caixa c/ 12', 'Pacote com 50', 'Pct 50 un'), você deve:",
+      "1. Extrair a quantidade de peças por kit (ex: 20).",
+      "2. A 'quantity' final deve ser (Quantidade de kits no pedido * Peças por kit).",
+      "3. O 'unit_price' final deve ser o valor total do item dividido pela 'quantity' final.",
+      "Exemplo: Pedido diz '1 Kit Cabo USB (20 unidades) - Total R$ 80,00'. Você retorna: description='Cabo USB (Kit 20 un)', quantity=20, unit_price=4.00.",
+      "",
       "Devolva SOMENTE JSON no formato { items: [...] }.",
     ].join("\n");
 
@@ -66,7 +74,7 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
     const userContent =
       data.kind === "pdf"
         ? [
-            { type: "text" as const, text: "Extraia os itens deste pedido:" },
+            { type: "text" as const, text: "Extraia os itens deste pedido, aplicando as regras de fracionamento de kits se necessário:" },
             {
               type: "file" as const,
               mediaType,
@@ -75,7 +83,7 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
             },
           ]
         : [
-            { type: "text" as const, text: "Extraia os itens desta imagem de pedido:" },
+            { type: "text" as const, text: "Extraia os itens desta imagem de pedido, aplicando as regras de fracionamento de kits se necessário:" },
             { type: "image" as const, image: data.dataUrl },
           ];
 
@@ -85,7 +93,7 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
 
     try {
       const gateway = createLovableAiGatewayProvider(apiKey);
-      const model = gateway("google/gemini-2.5-flash");
+      const model = gateway("google/gemini-2.0-flash");
       const { output } = await generateText({
         model,
         system,

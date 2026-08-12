@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Plus, ShoppingBag } from "lucide-react";
+import { Plus, ShoppingBag, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageLayout, KpiSection, KpiCard } from "@/components/layout";
@@ -15,12 +15,14 @@ import {
   useSetPurchaseStatus,
   usePurchaseMetrics,
 } from "@/features/purchases";
+import { ImportOrderDialog } from "@/features/purchases/components/import-order-dialog";
 import { PurchasesBellaHints } from "@/features/bella-ai";
 import { BellaPurchasesPanel } from "@/features/accounting-ai/purchases";
-import type { PurchaseListFilters, PurchaseWithMeta } from "@/features/purchases";
+import type { PurchaseListFilters, PurchaseWithMeta, PurchaseItemDraft } from "@/features/purchases";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useNextAction } from "@/components/feedback/next-action-provider";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/compras")({
   beforeLoad: requirePermission("purchases.view"),
@@ -39,7 +41,10 @@ const DEFAULT: PurchaseListFilters = {
 
 function PurchasesPage() {
   const { company } = Route.useRouteContext();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<PurchaseListFilters>(DEFAULT);
+  const [importOpen, setImportOpen] = useState(false);
+  
   const debouncedSearch = useDebouncedValue(filters.search, 300);
   const effective = useMemo(
     () => ({ ...filters, search: debouncedSearch }),
@@ -51,6 +56,12 @@ function PurchasesPage() {
   const setStatusMut = useSetPurchaseStatus();
   const deleteMut = useDeletePurchase();
   const showNextAction = useNextAction();
+
+  const handleImportSuccess = (items: PurchaseItemDraft[]) => {
+    // Armazenamos temporariamente os itens no sessionStorage para a tela de novo pedido
+    sessionStorage.setItem('nexos_pending_purchase_import', JSON.stringify(items));
+    navigate({ to: "/compras/novo" });
+  };
 
   async function handleStatus(p: PurchaseWithMeta, status: string, label: string) {
     try {
@@ -98,14 +109,25 @@ function PurchasesPage() {
       title="Compras"
       meta={`${metrics.data?.monthCount ?? 0} pedidos no mês`}
       actions={
-        <Button size="sm" asChild>
-          <Link to="/compras/novo">
-            <Plus className="mr-1.5 h-4 w-4" /> Nova compra
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-1.5 h-4 w-4" /> Importar Pedido (PDF)
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/compras/novo">
+              <Plus className="mr-1.5 h-4 w-4" /> Nova compra
+            </Link>
+          </Button>
+        </div>
       }
       kpis={null}
     >
+      <ImportOrderDialog 
+        open={importOpen} 
+        onOpenChange={setImportOpen} 
+        companyId={company.id} 
+        onImport={handleImportSuccess}
+      />
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8">
           <TabsTrigger 

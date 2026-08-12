@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Ban,
   Clock,
+  Plus,
 } from "lucide-react";
 import {
   Table,
@@ -84,14 +85,25 @@ export function PurchaseTable({
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-16">
-                  <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-                    <ShoppingCart className="h-8 w-8" />
-                    <p className="font-medium text-foreground">
-                      Nenhuma compra encontrada
-                    </p>
-                    <p className="text-sm">
-                      Cadastre uma nova compra ou ajuste os filtros.
-                    </p>
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <div className="rounded-full bg-muted p-4">
+                      <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-lg text-foreground">
+                        Nenhuma compra encontrada
+                      </p>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                        Registre suas entradas de mercadorias manualmente ou importe pedidos em PDF para automação.
+                      </p>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button asChild size="sm">
+                        <Link to="/compras/novo">
+                          <Plus className="mr-1.5 h-4 w-4" /> Nova compra
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>

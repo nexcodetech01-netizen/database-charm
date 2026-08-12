@@ -178,6 +178,18 @@ export function PurchaseForm({ companyId, purchase }: Props) {
       setRecoveryUpdatedAt(found.updatedAt);
       setRecoveryOpen(true);
     }
+    // Checar importação pendente via sessionStorage (vindo da tela de listagem)
+    const pendingImport = sessionStorage.getItem('nexos_pending_purchase_import');
+    if (pendingImport) {
+      try {
+        const parsedItems = JSON.parse(pendingImport) as PurchaseItemDraft[];
+        setItems(parsedItems);
+        sessionStorage.removeItem('nexos_pending_purchase_import');
+        toast.success("Itens importados carregados com sucesso.");
+      } catch (e) {
+        console.error("Erro ao carregar importação pendente:", e);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit]);
   const restoreDraft = () => {
