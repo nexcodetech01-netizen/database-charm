@@ -313,12 +313,13 @@ function DashboardPage() {
               // Executa rigorosamente conforme solicitado (a query será disparada automaticamente pelo useSaleMetrics via period na queryKey)
               void (async () => {
                 try {
-                  await supabase.rpc("get_dashboard_metrics", { 
+                  const { error } = await supabase.rpc("get_dashboard_metrics", { 
                     p_period: "ontem",
                     p_company_id: company.id
                   } as any);
+                  if (error) console.error("RPC get_dashboard_metrics (yesterday) error:", error);
                 } catch (err) {
-                  console.error("Error calling get_dashboard_metrics (yesterday):", err);
+                  console.error("Critical error calling get_dashboard_metrics (yesterday):", err);
                 }
               })();
             }}
@@ -333,12 +334,13 @@ function DashboardPage() {
               setPeriod("month");
               void (async () => {
                 try {
-                  await supabase.rpc("get_dashboard_metrics", { 
+                  const { error } = await supabase.rpc("get_dashboard_metrics", { 
                     p_period: "mes",
                     p_company_id: company.id
                   } as any);
+                  if (error) console.error("RPC get_dashboard_metrics (month) error:", error);
                 } catch (err) {
-                  console.error("Error calling get_dashboard_metrics (month):", err);
+                  console.error("Critical error calling get_dashboard_metrics (month):", err);
                 }
               })();
             }}

@@ -460,23 +460,28 @@ export const salesService = {
 
     try {
       if (rpcPeriod) {
-        const result = await supabase.rpc("get_dashboard_metrics", { 
+        const { data, error } = await supabase.rpc("get_dashboard_metrics", { 
           p_period: rpcPeriod,
           p_company_id: companyId 
         } as any);
-        revenueData = result.data;
-        revenueErr = result.error;
+        
+        if (error) {
+           console.error("RPC get_dashboard_metrics failed:", error);
+           revenueErr = error;
+        } else {
+           revenueData = data;
+        }
       } else {
-        const result = await supabase.rpc("get_daily_revenue", {
+        const { data, error } = await supabase.rpc("get_daily_revenue", {
           _company_id: companyId,
           _start_date: range?.from || undefined,
           _end_date: range?.to || undefined,
         });
-        revenueData = result.data;
-        revenueErr = result.error;
+        revenueData = data;
+        revenueErr = error;
       }
     } catch (e) {
-      console.error("Dashboard metric RPC failed, falling back to direct query:", e);
+      console.error("Dashboard metric RPC exception:", e);
       revenueErr = e;
     }
 
