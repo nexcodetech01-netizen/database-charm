@@ -7,42 +7,47 @@ export class EmissionService {
 
   constructor(
     private readonly supabase: SupabaseClient,
-    private readonly companyId: string
+    private readonly companyId: string,
+    private readonly userId?: string
   ) {
     this.docsRepo = new DocumentsRepository(this.supabase);
   }
 
-  async createDraft(saleId: string, options: { 
+  async createDraft(payload: {
+    saleId: string;
+    totalAmount: number;
     environment: any;
     provider: string;
+    model: "55" | "65";
+    customerId: string | null;
     series: number;
-    cfop: string;
-    natureza: string;
-    crt: number;
-    regime: string;
-  }): Promise<string> {
-    const draft = await this.docsRepo.insert(this.companyId, {
-      sale_id: saleId,
-      environment: options.environment,
-      provider_id: options.provider,
+    operationNature: string | null;
+    cfop: string | null;
+    createdBy: string | null;
+    requestPayload?: any;
+  }): Promise<{ id: string }> {
+    const draft = await this.docsRepo.insert({
+      company_id: this.companyId,
+      sale_id: payload.saleId,
+      total_amount: payload.totalAmount,
+      environment: payload.environment,
+      provider_id: payload.provider,
       status: "draft",
-      series: options.series,
-      cfop: options.cfop,
-      operation_nature: options.natureza,
-      tax_regime: options.regime,
-      crt: options.crt,
-      created_at: new Date().toISOString(),
+      series: payload.series,
+      operation_nature: payload.operationNature,
+      cfop: payload.cfop,
+      created_by: payload.createdBy || this.userId,
+      request_payload: payload.requestPayload,
     });
-    return draft.id;
+    return { id: draft.id };
   }
-
 
   async updateAfterProvider(documentId: string, patch: any): Promise<void> {
     await this.docsRepo.update(this.companyId, documentId, patch);
   }
 
   async validate(saleId: string, environment?: any): Promise<any> {
-    // Implementação consolidada de validação
+    // Implementação consolidada de validação (Mock por enquanto para build)
     return { ok: true, saleId };
   }
 }

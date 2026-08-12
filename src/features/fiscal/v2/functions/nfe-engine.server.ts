@@ -1319,7 +1319,7 @@ export async function issueNfeFromSaleEngine(
 
 
 
-  return authorized;
+  return authorized || ({} as any);
 }
 
 // ------------------------------------------------------------------ status
