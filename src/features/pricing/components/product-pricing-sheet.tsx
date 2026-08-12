@@ -36,6 +36,7 @@ export interface ProductPricingSheetProduct {
   insurance?: number | null;
   other_costs?: number | null;
   price: number | null;
+  category_id?: string | null;
 }
 
 interface Props {
