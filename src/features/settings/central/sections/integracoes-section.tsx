@@ -100,7 +100,7 @@ export function IntegracoesSection() {
   const getMlIntegration = useServerFn(getMercadoLivreIntegration);
   const bellaPayConfigFn = useServerFn(testAsaasConnection);
   const router = useRouter();
-  const companyId = (router.state.location as any).company?.id || (router.state.matches[0]?.context as any)?.company?.id;
+  const companyId = (router.state.matches.find(m => (m.context as any)?.company?.id)?.context as any)?.company?.id;
 
   const { data: bellaPayConfig } = useQuery({
     queryKey: ["bella-pay", "config", companyId],
