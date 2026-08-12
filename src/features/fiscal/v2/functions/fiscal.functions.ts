@@ -38,6 +38,7 @@ import {
   CertificateService, 
   XmlService 
 } from "../services";
+import { PayloadValidator } from "../validators";
 
 type SB = SupabaseClient<Database>;
 
@@ -328,13 +329,7 @@ export const issueFiscalFromSale = createServerFn({ method: "POST" })
     // Impede duplicidade usando Repository.
     const repo = new DocumentsRepository(supabase);
     const existingDocs = await repo.findBySaleId(companyId, data.saleId);
-    if (blocksNewFiscalDocument(toDocLikes(existingDocs))) {
-      throw new Error(
-        data.model === "65"
-          ? "Já existe uma NFC-e ativa para esta venda."
-          : "Já existe uma NF-e ativa para esta venda.",
-      );
-    }
+    PayloadValidator.validateIssueRequest(existingDocs, data.model || "55");
 
     // Motor real: validação → certificado A1 → provider → persistência.
     const { issueNfeFromSaleEngine } = await import("./nfe-engine.server");
@@ -412,22 +407,7 @@ export const discardFiscalDocument = createServerFn({ method: "POST" })
 
     const row = current;
 
-    if (row.status === "authorized")
-      throw new Error("NF-e autorizada não pode ser descartada — utilize o cancelamento.");
-    if (row.status === "cancelled")
-      throw new Error("NF-e cancelada não pode ser descartada.");
-    if (row.status === "rejected" && row.rejectionCode === "denied")
-      throw new Error("NF-e denegada não pode ser descartada.");
-    if (row.status === "discarded")
-      throw new Error("Esta tentativa já foi descartada.");
-    if (row.accessKey || row.protocol)
-      throw new Error(
-        "Documento já possui chave/protocolo na SEFAZ — descarte indisponível.",
-      );
-    if (!(row.status === "error" || row.status === "rejected"))
-      throw new Error(
-        `Somente tentativas com erro podem ser descartadas (status atual: ${row.status}).`,
-      );
+    AuthorizationValidator.validateDiscard(current);
 
     const reason = data.reason?.trim() || "Reemissão";
 

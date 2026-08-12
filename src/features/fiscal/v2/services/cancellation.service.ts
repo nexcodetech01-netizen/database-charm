@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { DocumentsRepository } from "../repositories/documents.repository";
 import type { ProviderCancelResult, FiscalDocumentDto } from "../types";
 import { recordAudit } from "@/lib/audit.server";
+import { AuthorizationValidator } from "../validators";
 
 export class CancellationService {
   private readonly docsRepo: DocumentsRepository;
@@ -19,6 +20,9 @@ export class CancellationService {
     result: ProviderCancelResult,
     reason: string
   ): Promise<FiscalDocumentDto> {
+    const current = await this.docsRepo.findById(this.companyId, documentId);
+    AuthorizationValidator.validateCancel(current, reason);
+
     const patch: any = {
       status: result.status,
       updated_at: new Date().toISOString(),
