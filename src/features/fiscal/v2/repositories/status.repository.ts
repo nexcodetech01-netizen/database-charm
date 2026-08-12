@@ -117,4 +117,50 @@ export class StatusRepository {
       _message: message,
     } as never);
   }
+
+  async getEnvironmentRow(
+    companyId: string,
+    environment: string,
+    columns: string,
+  ): Promise<any | null> {
+    const { data, error } = await this.supabase
+      .from("fiscal_provider_environments")
+      .select(columns)
+      .eq("company_id", companyId)
+      .eq("environment", environment)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  }
+
+  async updateEnvironment(
+    companyId: string,
+    environment: string,
+    patch: any,
+  ): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from("fiscal_provider_environments")
+      .update(patch)
+      .eq("company_id", companyId)
+      .eq("environment", environment)
+      .select("company_id")
+      .maybeSingle();
+    if (error) throw error;
+    return Boolean(data);
+  }
+
+  async insertEnvironment(payload: any): Promise<void> {
+    const { error } = await this.supabase
+      .from("fiscal_provider_environments")
+      .insert(payload);
+    if (error) throw error;
+  }
+
+  async updateAllEnvironments(companyId: string, patch: any): Promise<void> {
+    const { error } = await this.supabase
+      .from("fiscal_provider_environments")
+      .update(patch)
+      .eq("company_id", companyId);
+    if (error) throw error;
+  }
 }

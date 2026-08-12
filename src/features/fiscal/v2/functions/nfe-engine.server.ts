@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { FiscalProvider } from "../provider/fiscal-provider";
 import { resolveFiscalProviderFor } from "../provider/resolve.server";
-import type { NfePayload, NfeEnvironment, NfeStatus } from "../types";
+import type { NfePayload, NfeEnvironment, NfeStatus, FiscalDocumentDto } from "../types";
 import { requireCrt } from "../lib/crt";
 import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 import {
@@ -39,9 +39,18 @@ import {
   type FiscalArtifactKind,
 } from "../lib/artifacts";
 
+import { DocumentsRepository } from "../repositories/documents.repository";
+import { CertificateRepository } from "../repositories/certificate.repository";
+import { CompanyRepository } from "../repositories/company.repository";
+import { ProductsRepository } from "../repositories/products.repository";
+import { CustomersRepository } from "../repositories/customers.repository";
+import { StatusRepository } from "../repositories/status.repository";
+import { TaxRepository } from "../repositories/tax.repository";
+import { SalesRepository } from "../repositories/sales.repository";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = SupabaseClient<any>;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const anyFrom = (supabase: SB, table: string) => supabase.from(table as never) as any;
 
@@ -250,60 +259,24 @@ async function buildContext(
   environmentOverride?: NfeEnvironment,
   model: "55" | "65" = "55",
 ): Promise<BuiltContext> {
-  const { data: sale, error: saleErr } = await supabase
-    .from("sales")
-    .select("id, grand_total, discount, shipping, customer_id, sale_date, payment_method")
-    .eq("company_id", companyId)
-    .eq("id", saleId)
-    .maybeSingle();
-  if (saleErr) throw saleErr;
-  if (!sale) throw new Error("Venda não encontrada.");
-  const saleRow = sale as unknown as {
-    id: string;
-    grand_total: number | null;
-    discount: number | null;
-    shipping: number | null;
-    customer_id: string | null;
-    sale_date: string | null;
-    payment_method: string | null;
-  };
+  const salesRepo = new SalesRepository(supabase);
+  const saleRow = await salesRepo.findById(companyId, saleId);
+  if (!saleRow) throw new Error("Venda não encontrada.");
 
-
-  const { data: itemsRaw, error: itemsErr } = await supabase
-    .from("sale_items")
-    .select("id, product_id, description, quantity, unit_price, total")
-    .eq("sale_id", saleId);
-  if (itemsErr) throw itemsErr;
-  const items = (itemsRaw ?? []) as unknown as Array<{
-    id: string;
-    product_id: string | null;
-    description: string | null;
-    quantity: number | null;
-    unit_price: number | null;
-    total: number | null;
-  }>;
+  const items = await salesRepo.listItems(saleId);
 
   // NCM vem exclusivamente do cadastro do produto (nunca de fiscal_settings).
   const productIds = Array.from(
-    new Set(items.map((it) => it.product_id).filter((v): v is string => Boolean(v))),
+    new Set(items.map((it: any) => it.product_id).filter((v: any): v is string => Boolean(v))),
   );
   const productNcm = new Map<
     string,
     { name: string; ncm: string | null; sku: string | null; unit: string | null }
   >();
   if (productIds.length) {
-    const { data: prods } = await supabase
-      .from("products")
-      .select("id, name, ncm, sku, unit")
-      .eq("company_id", companyId)
-      .in("id", productIds);
-    for (const pr of (prods ?? []) as unknown as Array<{
-      id: string;
-      name: string | null;
-      ncm: string | null;
-      sku: string | null;
-      unit: string | null;
-    }>) {
+    const productsRepo = new ProductsRepository(supabase);
+    const prods = await productsRepo.findFiscalLookup(companyId, productIds);
+    for (const pr of prods) {
       productNcm.set(pr.id, {
         name: pr.name ?? "",
         ncm: pr.ncm ?? null,
@@ -416,7 +389,7 @@ async function buildContext(
       ? `${companyId.slice(0, 8)}-${saleRow.id}`
       : `${companyId.slice(0, 8)}-${saleRow.id}-r${attempt}`;
 
-  const products = items.reduce((acc, it) => acc + Number(it.total ?? 0), 0);
+  const products = items.reduce((acc: any, it: any) => acc + Number(it.total ?? 0), 0);
   const discount = Number(saleRow.discount ?? 0);
   // Frete do documento (vFrete). Somente representação: o valor já está
   // embutido em `grand_total` pelo motor de vendas.
@@ -442,7 +415,7 @@ async function buildContext(
 
       address: customer?.address,
     },
-    items: items.map((it) => ({
+    items: items.map((it: any) => ({
       productId: it.product_id ?? it.id,
       // P0.6.3: SKU é o código comercial oficial; UUID só na ausência dele.
       sku: it.product_id ? (productNcm.get(it.product_id)?.sku ?? null) : null,

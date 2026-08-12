@@ -19,4 +19,18 @@ export class ProductsRepository {
     if (error) throw error;
     return (data ?? []) as unknown as ProductNcmRow[];
   }
+
+  async findFiscalLookup(
+    companyId: string,
+    productIds: string[],
+  ): Promise<Array<{ id: string; name: string; ncm: string | null; sku: string | null; unit: string | null }>> {
+    if (productIds.length === 0) return [];
+    const { data, error } = await this.supabase
+      .from("products")
+      .select("id, name, ncm, sku, unit")
+      .eq("company_id", companyId)
+      .in("id", productIds);
+    if (error) throw error;
+    return (data ?? []) as any[];
+  }
 }
