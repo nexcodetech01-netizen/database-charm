@@ -3,7 +3,7 @@ import { isValidCrt, CRT_BY_REGIME, type FiscalTaxRegime } from "../lib/crt";
 export class CompanyValidator {
   static validateCrt(crt: number | null | undefined, regime?: string | null): void {
     if (!isValidCrt(crt)) {
-      throw new Error("CRT da empresa não configurado ou inválido.");
+      throw new Error("CRT da empresa não configurado.");
     }
     
     if (regime) {
@@ -20,7 +20,7 @@ export class CompanyValidator {
     }
     
     if (!settings.crt) {
-      throw new Error("Regime Tributário (CRT) não configurado.");
+      throw new Error("CRT da empresa não configurado.");
     }
 
     if (!settings.nfe_series && !settings.nfce_series) {

@@ -1,19 +1,17 @@
+import { NcmValidator } from "./codes.validator";
+import { CestValidator } from "./codes.validator";
+
 export class ProductValidator {
   static validateItem(item: any): void {
     if (!item.description) {
-      throw new Error("Descrição do produto é obrigatória.");
+      throw new Error("Item sem descrição.");
     }
 
-    if (!item.ncm) {
-      throw new Error(`NCM do produto "${item.description}" não informado.`);
-    }
-
-    if (item.ncm.replace(/\D/g, "").length !== 8) {
-      throw new Error(`NCM "${item.ncm}" do produto "${item.description}" deve ter 8 dígitos.`);
-    }
+    NcmValidator.validate(item.ncm);
+    CestValidator.validate(item.cest);
 
     if (!(item.quantity > 0)) {
-      throw new Error(`Quantidade do produto "${item.description}" deve ser maior que zero.`);
+      throw new Error("Quantidade inválida.");
     }
 
     if (item.unitPrice < 0) {

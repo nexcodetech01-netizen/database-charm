@@ -1042,7 +1042,7 @@ export async function issueNfeFromSaleEngine(
       rejection_code: "VALIDATION",
       rejection_reason: reason,
     });
-    await appendEvent(supabase, companyId, documentId, "rejected", { error: err.message }, userId);
+    await appendEvent(supabase, companyId, documentId, "rejected", { issues: [{ field: "validation", message: err.message }] }, userId);
     return rejected;
   }
 
