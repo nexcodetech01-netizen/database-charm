@@ -43,7 +43,8 @@ const CARDS: IntegrationCard[] = [
     title: "Asaas",
     description: "Gateway de PIX, cartão e boleto usado pelo Bella Pay.",
     icon: CreditCard,
-    status: "connected",
+    status: "available",
+    manageTo: "/bella-pay",
   },
   {
     title: "Meta",
@@ -95,6 +96,13 @@ export function IntegracoesSection() {
   const [mlOpen, setMlOpen] = useState(false);
   const queryClient = useQueryClient();
   const getMlIntegration = useServerFn(getMercadoLivreIntegration);
+  const { company } = (Link as any).useRouteContext?.() || { company: { id: "default" } }; // Fallback for context if needed, but usually available in parent
+
+  const { data: bellaPayConfig } = useQuery({
+    queryKey: ["bella-pay", "config", company?.id],
+    queryFn: () => bellaPayConfigFn({ data: { companyId: company?.id } }),
+    enabled: !!company?.id,
+  });
 
   const { data: mlIntegration } = useQuery({
     queryKey: MERCADOLIVRE_INTEGRATION_QUERY_KEY,
@@ -102,6 +110,7 @@ export function IntegracoesSection() {
     staleTime: 30_000,
   });
   const mlConnected = mlIntegration?.connected ?? false;
+  const asaasConnected = !!bellaPayConfig?.api_key_production || !!bellaPayConfig?.api_key_sandbox;
 
   const handleMlStatusChange = () => {
     void queryClient.invalidateQueries({ queryKey: MERCADOLIVRE_INTEGRATION_QUERY_KEY });
