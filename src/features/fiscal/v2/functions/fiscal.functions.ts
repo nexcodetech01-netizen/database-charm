@@ -1,5 +1,8 @@
 /**
- * Sprint 007.2 — Server functions do módulo Fiscal.
+ * Sprint 011 — Server functions do módulo Fiscal (RC4 - Hardening Fase 4).
+ *
+ * Esta camada atua como Fachada/Orquestrador (Facade Pattern).
+ * Valida permissões de usuário e delega 100% da lógica para Services.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -26,7 +29,18 @@ import { TaxRepository } from "../repositories/tax.repository";
 import { SalesRepository } from "../repositories/sales.repository";
 import type { CustomerFiscalRow } from "../repositories/customers.repository";
 
+import { 
+  EmissionService, 
+  AuthorizationService, 
+  CancellationService, 
+  StatusService, 
+  EventsService, 
+  CertificateService, 
+  XmlService 
+} from "../services";
+
 type SB = SupabaseClient<Database>;
+
 
 // -------------------------------------------------------------------- types
 
@@ -198,8 +212,12 @@ export const listFiscalDocuments = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    return new DocumentsRepository(supabase).list(companyId, data);
+
+    // Delegando para o serviço de emissão/listagem (neste caso ainda no repo por ser SELECT puro)
+    const repo = new DocumentsRepository(supabase);
+    return repo.list(companyId, data);
   });
+
 
 
 // --------------------------------------------------------------- DASHBOARD
@@ -917,15 +935,10 @@ export const provisionFiscalProvider = createServerFn({ method: "POST" })
     const environment: NfeEnvironment =
       data.environment ?? (await statusRepo.getActiveEnvironment(companyId)) ?? "homologation";
 
-    const { provisionProviderCertificateEngine } = await import("./nfe-engine.server");
-    return provisionProviderCertificateEngine({
-      supabase,
-      companyId,
-      userId: context.userId,
-      environment,
-      markOnly: data.markOnly === true,
-    });
+    const service = new StatusService(supabase, companyId);
+    return service.provision(context.userId, environment, data.markOnly === true);
   });
+
 
 /** Remove o provisionamento — próxima emissão volta a cadastrar a empresa. */
 export const resetFiscalProviderProvisioning = createServerFn({ method: "POST" })
@@ -934,10 +947,12 @@ export const resetFiscalProviderProvisioning = createServerFn({ method: "POST" }
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.manage");
-    const { clearProviderProvisioning } = await import("./nfe-engine.server");
-    await clearProviderProvisioning(supabase, companyId);
+    
+    const service = new StatusService(supabase, companyId);
+    await service.clearProvisioning();
     return { ok: true };
   });
+
 
 
 // ------------------------------------------------------- CERTIFICATES
@@ -2388,6 +2403,8 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     const environment: NfeEnvironment =
       data.environment ?? s?.defaultEnvironment ?? "homologation";
 
+
+
     return {
       ok: blockers.length === 0,
       saleId: sale.id,
@@ -2498,38 +2515,8 @@ export const exportFiscalXmlsBatch = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.export");
 
-    // Buscamos apenas notas autorizadas ou canceladas que tenham XML
-    const docRepo = new DocumentsRepository(supabase);
-    const rows = await docRepo.listXmlPaths(companyId, data.from, data.to);
-
-    if (rows.length === 0) {
-      throw new Error("Nenhum XML encontrado no período selecionado.");
-    }
-
-    const files: { name: string; contentBase64: string }[] = [];
-
-    for (const row of rows) {
-      // Prioridade para XML autorizado
-      const path = row.xml_authorized_path || row.xml_cancellation_path;
-      if (!path) continue;
-
-      try {
-        const buffer = await docRepo.downloadXmlArtifact(path);
-        if (!buffer) continue;
-
-        const base64 = Buffer.from(buffer).toString("base64");
-
-        const fileName = `${row.access_key || row.number || "nota"}.xml`;
-        files.push({ name: fileName, contentBase64: base64 });
-      } catch (err) {
-        console.error(`Falha ao baixar XML: ${path}`, err);
-      }
-    }
-
-    if (files.length === 0) {
-      throw new Error("Nenhum arquivo XML pôde ser baixado.");
-    }
-
-    return files;
+    const xmlService = new XmlService(supabase, companyId);
+    return xmlService.exportBatch(data.from, data.to);
   });
+
 

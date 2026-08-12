@@ -1,22 +1,19 @@
 import { z } from "zod";
 
+export const fiscalEnvironmentSchema = z.enum(["homologation", "production"]);
+
+export type NfeEnvironment = z.infer<typeof fiscalEnvironmentSchema>;
+
 export const FISCAL_ENVIRONMENTS = ["homologation", "production"] as const;
 
-export type NfeEnvironment = (typeof FISCAL_ENVIRONMENTS)[number];
-
-export const fiscalEnvironmentSchema = z.enum(FISCAL_ENVIRONMENTS);
-
-/** Tabelas cujo CHECK de ambiente deve bater com FISCAL_ENVIRONMENTS. */
 export const FISCAL_ENVIRONMENT_CONSTRAINTS = [
-  "fiscal_documents_environment_check",
   "fiscal_provider_config_environment_check",
-  "fiscal_settings_default_environment_check",
+  "fiscal_documents_environment_check",
+  "fiscal_provider_environments_environment_check",
 ] as const;
 
-/**
- * Normaliza qualquer valor legado/externo para o enum canônico.
- * Default seguro: homologação (nunca produção por engano).
- */
 export function normalizeFiscalEnvironment(value: unknown): NfeEnvironment {
-  return String(value ?? "").toLowerCase() === "production" ? "production" : "homologation";
+  if (value === "production") return "production";
+  return "homologation";
 }
+
