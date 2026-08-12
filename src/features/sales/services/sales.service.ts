@@ -463,7 +463,7 @@ export const salesService = {
         const result = await supabase.rpc("get_dashboard_metrics", { 
           p_period: rpcPeriod,
           p_company_id: companyId 
-        });
+        } as any);
         revenueData = result.data;
         revenueErr = result.error;
       } else {
