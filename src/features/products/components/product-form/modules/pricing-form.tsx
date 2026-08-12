@@ -31,7 +31,8 @@ export function PricingForm({
   categoryMargin,
   onApplyCategoryMargin,
   errors = {},
-  onOpenQuickCategory
+  onOpenQuickCategory,
+  onFetchLastPurchase
 }: PricingFormProps) {
   const num = (v: any) => {
     if (typeof v === "number") return v;
