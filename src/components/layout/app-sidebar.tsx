@@ -77,7 +77,7 @@ const groups: NavGroup[] = [
         status: "available", 
         permission: "products.view",
         children: [
-          { title: "Listagem", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
+          { title: "Todos os Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
           { title: "Categorias", url: ROUTES.categories, icon: Layers, status: "available", permission: "products.view" },
         ]
       },
