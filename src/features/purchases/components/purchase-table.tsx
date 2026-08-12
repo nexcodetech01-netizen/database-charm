@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Ban,
   Clock,
+  Plus,
 } from "lucide-react";
 import {
   Table,
