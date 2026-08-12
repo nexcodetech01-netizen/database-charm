@@ -219,6 +219,65 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
   const totalCost = currentCost + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
 
+  // "Usar margem da categoria": recalcula o preço pelo MOTOR OFICIAL
+  // (computeSuggestedPrice), nunca localmente.
+  const applyCategoryMargin = useCallback(() => {
+    if (!form.category_id) return;
+    const suggestion = computeSuggestedPrice({
+      companyId,
+      productId: product?.id ?? "new-product",
+      categoryId: form.category_id,
+      categoryName: categoryName ?? undefined,
+      costs: {
+        acquisition: num(form.cost),
+        freight: num(form.freight),
+        packaging: num(form.packaging),
+        insurance: num(form.insurance),
+        otherCosts: num(form.other_costs),
+      },
+      margins: pricingInputs.margins,
+      feeTable: pricingInputs.feeTable,
+      taxPct: pricingInputs.taxPct,
+      module: "products.form",
+    });
+    setForm((s: any) => ({
+      ...s,
+      price: suggestion.targetPrice.toFixed(2),
+      margin: String(suggestion.marginPct),
+    }));
+  }, [
+    companyId,
+    product?.id,
+    form.category_id,
+    form.cost,
+    form.freight,
+    form.packaging,
+    form.insurance,
+    form.other_costs,
+    categoryName,
+    pricingInputs,
+    setForm,
+  ]);
+
+  // Mantém o preço em sincronia com o motor oficial enquanto a margem da
+  // categoria estiver ativa (ex: usuário muda o custo depois de já ter
+  // ligado o switch).
+  useEffect(() => {
+    if (form.use_category_margin && form.category_id) {
+      applyCategoryMargin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    form.use_category_margin,
+    form.category_id,
+    form.cost,
+    form.freight,
+    form.packaging,
+    form.insurance,
+    form.other_costs,
+    pricingInputs,
+  ]);
+
   // Sync cost and stock if kit
   useEffect(() => {
     if (form.product_type === 'kit') {
