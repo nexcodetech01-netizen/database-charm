@@ -311,10 +311,16 @@ function DashboardPage() {
             onClick={() => {
               setPeriod("yesterday");
               // Executa rigorosamente conforme solicitado (a query será disparada automaticamente pelo useSaleMetrics via period na queryKey)
-              supabase.rpc("get_dashboard_metrics", { 
-                p_period: "ontem",
-                p_company_id: company.id
-              }).catch(err => console.error("Error calling get_dashboard_metrics (yesterday):", err));
+              void (async () => {
+                try {
+                  await supabase.rpc("get_dashboard_metrics", { 
+                    p_period: "ontem",
+                    p_company_id: company.id
+                  });
+                } catch (err) {
+                  console.error("Error calling get_dashboard_metrics (yesterday):", err);
+                }
+              })();
             }}
             className="flex-1 sm:flex-none"
           >
@@ -325,10 +331,16 @@ function DashboardPage() {
             size="sm"
             onClick={() => {
               setPeriod("month");
-              supabase.rpc("get_dashboard_metrics", { 
-                p_period: "mes",
-                p_company_id: company.id
-              }).catch(err => console.error("Error calling get_dashboard_metrics (month):", err));
+              void (async () => {
+                try {
+                  await supabase.rpc("get_dashboard_metrics", { 
+                    p_period: "mes",
+                    p_company_id: company.id
+                  });
+                } catch (err) {
+                  console.error("Error calling get_dashboard_metrics (month):", err);
+                }
+              })();
             }}
             className="flex-1 sm:flex-none"
           >
