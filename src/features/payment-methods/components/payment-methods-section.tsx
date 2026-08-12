@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -14,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import {
   paymentMethodsKeys,
   usePaymentMethodFees,
@@ -56,22 +56,7 @@ export function PaymentMethodsSection() {
   const { user } = useAuth();
   const qc = useQueryClient();
 
-  const companyQ = useQuery({
-    queryKey: ["settings", "company-basic", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  const companyId = companyQ.data?.id ?? null;
+  const { companyId, isLoading: companyLoading } = useResolvedCompanyId(user?.id);
   const feesQ = usePaymentMethodFees(companyId);
 
   const [rows, setRows] = useState<Row[]>([]);
@@ -108,7 +93,7 @@ export function PaymentMethodsSection() {
 
   const dirtyCount = rows.filter((r) => r.dirty).length;
 
-  if (companyQ.isLoading || feesQ.isLoading) {
+  if (companyLoading || feesQ.isLoading) {
     return (
       <Card>
         <CardContent className="space-y-3 p-6">
@@ -120,7 +105,7 @@ export function PaymentMethodsSection() {
     );
   }
 
-  if (!companyQ.data) {
+  if (!companyId) {
     return (
       <EmptyState
         icon={Building2}

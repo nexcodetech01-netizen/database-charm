@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/providers/auth-provider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import {
   DEFAULT_DISCOUNT_POLICY,
   useDiscountPolicy,
@@ -35,21 +36,8 @@ import {
  */
 export function DiscountPolicySection() {
   const { user } = useAuth();
-  const { data: company } = useQuery({
-    queryKey: ["settings", "company", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-  });
-  const companyId = company?.id ?? "default";
+  const { companyId: resolvedCompanyId } = useResolvedCompanyId(user?.id);
+  const companyId = resolvedCompanyId ?? "default";
 
   const [saved, updatePolicy] = useDiscountPolicy(companyId);
   const [draft, setDraft] = useState<DiscountPolicy>(saved);
@@ -62,12 +50,12 @@ export function DiscountPolicySection() {
   // Margem média dos produtos ativos — base para a recomendação da Bella.
   const { data: avgMargin } = useQuery({
     queryKey: ["settings", "avg-margin", companyId],
-    enabled: !!company?.id,
+    enabled: !!resolvedCompanyId,
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
         .select("margin")
-        .eq("company_id", company!.id)
+        .eq("company_id", resolvedCompanyId as string)
         .eq("status", "active")
         .limit(1000);
       if (!data || data.length === 0) return null;

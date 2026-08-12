@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Receipt, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -12,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import { useReceiptPreferences } from "../../hooks/use-receipt-preferences";
 import type { ReceiptPreferences } from "../../lib/receipt-preferences";
 
@@ -34,21 +33,7 @@ const TOGGLES: {
 
 export function CupomSection() {
   const { user } = useAuth();
-  const companyQ = useQuery({
-    queryKey: ["settings", "company", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("owner_id", user!.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-  });
-  const companyId = companyQ.data?.id ?? null;
+  const { companyId } = useResolvedCompanyId(user?.id);
   const { prefs, save } = useReceiptPreferences(companyId);
   const [draft, setDraft] = useState<ReceiptPreferences | null>(null);
 
