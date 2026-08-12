@@ -51,6 +51,9 @@ import { SalesRepository } from "../repositories/sales.repository";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = SupabaseClient<any>;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const anyFrom = (supabase: SB, table: string) => supabase.from(table as never) as any;
+
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
 
 // ----------------------------------------------------------------- secrets
