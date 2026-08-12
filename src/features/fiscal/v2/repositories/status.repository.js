@@ -98,4 +98,42 @@ export class StatusRepository {
             _message: message,
         });
     }
+    async getEnvironmentRow(companyId, environment, columns) {
+        const { data, error } = await this.supabase
+            .from("fiscal_provider_environments")
+            .select(columns)
+            .eq("company_id", companyId)
+            .eq("environment", environment)
+            .maybeSingle();
+        if (error)
+            throw error;
+        return data ?? null;
+    }
+    async updateEnvironment(companyId, environment, patch) {
+        const { data, error } = await this.supabase
+            .from("fiscal_provider_environments")
+            .update(patch)
+            .eq("company_id", companyId)
+            .eq("environment", environment)
+            .select("company_id")
+            .maybeSingle();
+        if (error)
+            throw error;
+        return Boolean(data);
+    }
+    async insertEnvironment(payload) {
+        const { error } = await this.supabase
+            .from("fiscal_provider_environments")
+            .insert(payload);
+        if (error)
+            throw error;
+    }
+    async updateAllEnvironments(companyId, patch) {
+        const { error } = await this.supabase
+            .from("fiscal_provider_environments")
+            .update(patch)
+            .eq("company_id", companyId);
+        if (error)
+            throw error;
+    }
 }

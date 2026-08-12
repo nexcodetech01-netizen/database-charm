@@ -5,6 +5,8 @@ import { evaluateCancelEligibility, validateCancelReason, } from "../lib/cancell
 import { ACTIVE_FISCAL_STATUSES, isActiveSaleUniqueViolation, } from "../lib/issue-guard";
 import { recordAudit } from "@/lib/audit.server";
 import { ARTIFACT_LABELS, addPending, artifactObjectPath, artifactPathColumn, clearPending, computePendingArtifacts, extractArtifactUrls, mergeArtifactUrls, normalizePendingKinds, } from "../lib/artifacts";
+import { ProductsRepository } from "../repositories/products.repository";
+import { SalesRepository } from "../repositories/sales.repository";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const anyFrom = (supabase, table) => supabase.from(table);
 const DOC_COLS = FISCAL_DOCUMENT_COLUMNS;
@@ -140,34 +142,18 @@ export async function upsertProviderEnvironment(supabase, companyId, environment
     });
 }
 async function buildContext(supabase, companyId, saleId, environmentOverride, model = "55") {
-    const { data: sale, error: saleErr } = await supabase
-        .from("sales")
-        .select("id, grand_total, discount, shipping, customer_id, sale_date, payment_method")
-        .eq("company_id", companyId)
-        .eq("id", saleId)
-        .maybeSingle();
-    if (saleErr)
-        throw saleErr;
-    if (!sale)
+    const salesRepo = new SalesRepository(supabase);
+    const saleRow = await salesRepo.findById(companyId, saleId);
+    if (!saleRow)
         throw new Error("Venda não encontrada.");
-    const saleRow = sale;
-    const { data: itemsRaw, error: itemsErr } = await supabase
-        .from("sale_items")
-        .select("id, product_id, description, quantity, unit_price, total")
-        .eq("sale_id", saleId);
-    if (itemsErr)
-        throw itemsErr;
-    const items = (itemsRaw ?? []);
+    const items = await salesRepo.listItems(saleId);
     // NCM vem exclusivamente do cadastro do produto (nunca de fiscal_settings).
     const productIds = Array.from(new Set(items.map((it) => it.product_id).filter((v) => Boolean(v))));
     const productNcm = new Map();
     if (productIds.length) {
-        const { data: prods } = await supabase
-            .from("products")
-            .select("id, name, ncm, sku, unit")
-            .eq("company_id", companyId)
-            .in("id", productIds);
-        for (const pr of (prods ?? [])) {
+        const productsRepo = new ProductsRepository(supabase);
+        const prods = await productsRepo.findFiscalLookup(companyId, productIds);
+        for (const pr of prods) {
             productNcm.set(pr.id, {
                 name: pr.name ?? "",
                 ncm: pr.ncm ?? null,

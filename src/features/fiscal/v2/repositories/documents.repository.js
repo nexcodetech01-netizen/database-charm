@@ -109,10 +109,37 @@ export class DocumentsRepository {
             throw error;
         return mapDocument(data);
     }
+    async insert(payload) {
+        const { data, error } = await this.supabase
+            .from("fiscal_documents")
+            .insert(payload)
+            .select(DOC_COLS)
+            .single();
+        if (error)
+            throw error;
+        return mapDocument(data);
+    }
     async insertEvent(payload) {
         const { error } = await this.supabase.from("fiscal_events").insert(payload);
         if (error)
             throw error;
+    }
+    async fetchEvents(companyId, documentId) {
+        const { data, error } = await this.supabase
+            .from("fiscal_events")
+            .select("id, document_id, event_type, payload, created_at")
+            .eq("company_id", companyId)
+            .eq("document_id", documentId)
+            .order("created_at", { ascending: true });
+        if (error)
+            throw error;
+        return (data ?? []).map((r) => ({
+            id: r.id,
+            documentId: r.document_id,
+            eventType: r.event_type,
+            payloadJson: r.payload == null ? null : JSON.stringify(r.payload),
+            createdAt: r.created_at,
+        }));
     }
     async getDashboard(companyId) {
         const { data, error } = await this.supabase
@@ -122,5 +149,15 @@ export class DocumentsRepository {
         if (error)
             throw error;
         return data;
+    }
+    async findLast(companyId) {
+        const { data } = await this.supabase
+            .from("fiscal_documents")
+            .select(DOC_COLS)
+            .eq("company_id", companyId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        return data ? mapDocument(data) : null;
     }
 }

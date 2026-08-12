@@ -78,4 +78,15 @@ export class SalesRepository {
             throw error;
         return count ?? 0;
     }
+    async findById(companyId, saleId) {
+        const { data, error } = await this.supabase
+            .from("sales")
+            .select("id, grand_total, discount, shipping, customer_id, sale_date, payment_method")
+            .eq("company_id", companyId)
+            .eq("id", saleId)
+            .maybeSingle();
+        if (error)
+            throw error;
+        return data;
+    }
 }

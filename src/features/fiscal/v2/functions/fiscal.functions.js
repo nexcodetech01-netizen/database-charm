@@ -6,8 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveCompanyId } from "@/lib/company-resolver.server";
 import { z } from "zod";
 import { toCustomerReference } from "@/lib/customer-reference";
-import { fetchFiscalDocuments, fetchFiscalDashboard, fetchFiscalDocument, fetchFiscalDocumentEvents, mapDocument as mapDocFromQuery, } from "../queries/documents.query";
-import { fetchFiscalSettings } from "../queries/tax.query";
+import { mapDocument as mapDocFromQuery } from "../queries/documents.query";
 import { FISCAL_DOCUMENT_COLUMNS } from "../lib/document-columns";
 import { DocumentsRepository } from "../repositories/documents.repository";
 import { CertificateRepository } from "../repositories/certificate.repository";
@@ -58,7 +57,7 @@ export const listFiscalDocuments = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    return fetchFiscalDocuments(supabase, companyId, data);
+    return new DocumentsRepository(supabase).list(companyId, data);
 });
 export const getFiscalDashboard = createServerFn({ method: "POST" })
     .middleware([requireSupabaseAuth])
@@ -66,7 +65,31 @@ export const getFiscalDashboard = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    return fetchFiscalDashboard(supabase, companyId);
+    const docRepo = new DocumentsRepository(supabase);
+    const rows = await docRepo.getDashboard(companyId);
+    const totals = {
+        draft: 0, validating: 0, signing: 0, sending: 0, authorized: 0,
+        rejected: 0, cancelling: 0, cancelled: 0, error: 0, discarded: 0,
+    };
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    let monthAuthorized = 0;
+    let monthValue = 0;
+    const list = (rows ?? []);
+    list.forEach((r) => {
+        totals[r.status] = (totals[r.status] ?? 0) + 1;
+        if (r.status === "authorized" && r.protocol_at && r.protocol_at >= monthStart) {
+            monthAuthorized += 1;
+            monthValue += Number(r.total_amount ?? 0);
+        }
+    });
+    const lastDocument = await docRepo.findLast(companyId);
+    return {
+        totals,
+        monthAuthorized,
+        monthValue,
+        lastDocument,
+    };
 });
 // -------------------------------------------------------------- DOC + HIST
 export const getFiscalDocument = createServerFn({ method: "POST" })
@@ -76,9 +99,10 @@ export const getFiscalDocument = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
+    const docRepo = new DocumentsRepository(supabase);
     const [document, events] = await Promise.all([
-        fetchFiscalDocument(supabase, companyId, data.documentId),
-        fetchFiscalDocumentEvents(supabase, companyId, data.documentId),
+        docRepo.findById(companyId, data.documentId),
+        docRepo.fetchEvents(companyId, data.documentId),
     ]);
     if (!document)
         throw new Error("Documento fiscal não encontrado.");
@@ -690,8 +714,8 @@ export const getFiscalSettings = createServerFn({ method: "POST" })
     const supabase = context.supabase;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    const settings = await fetchFiscalSettings(supabase, companyId);
-    return settings ?? defaultSettings(companyId);
+    const settings = await new TaxRepository(supabase).getSettings(companyId);
+    return settings;
 });
 const settingsSchema = z
     .object({
