@@ -165,7 +165,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
   
   const isEdit = !!product;
-  const categoryName = categories.find(c => c.id === form.category_id)?.name || null;
+  const currentCategory = categories.find(c => c.id === form.category_id);
+  const categoryName = currentCategory?.name || null;
+  const categoryMargin = (currentCategory as any)?.target_margin_pct ?? null;
   const num = (v: any) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0;
 
   // SKU Logic
@@ -535,12 +537,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 form={form}
                 setForm={setForm}
                 categoryName={categoryName}
-                categoryMargin={pricingInputs.margins.targetPct}
+                categoryMargin={categoryMargin}
                 errors={formErrors}
                 onOpenQuickCategory={() => setCategoryDialogOpen(true)}
                 onApplyCategoryMargin={() => {
-                  const target = pricingInputs.margins.targetPct;
-                  setForm((s: any) => ({ ...s, margin: String(target), use_category_margin: true }));
+                  if (categoryMargin !== null) {
+                    setForm((s: any) => ({ ...s, margin: String(categoryMargin), use_category_margin: true }));
+                  }
                 }}
                 onFetchLastPurchase={handleFetchLastPurchase}
               />
