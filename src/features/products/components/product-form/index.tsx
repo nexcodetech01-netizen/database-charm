@@ -374,6 +374,37 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     finally { setEanLoading(false); }
   };
 
+  // Botão "Sugerir com IA" das tags — suggestTagsFn já existia (importado e
+  // instanciado via useServerFn), mas nunca era chamado; onSuggestTags
+  // estava ligado a uma função vazia.
+  const handleSuggestTags = async () => {
+    if (!form.name.trim()) {
+      toast.error("Preencha o nome do produto antes de gerar sugestões.");
+      return;
+    }
+    setSuggestingTags(true);
+    try {
+      const result = await suggestTagsFn({
+        data: {
+          name: form.name,
+          category: categoryName || null,
+          brand: form.brand || null,
+          description: form.description || null,
+          existingTags: form.tags,
+        },
+      });
+      setSuggestedTags(result.tags);
+      if (!result.tags.length) {
+        toast.info("Nenhuma sugestão encontrada para esse produto.");
+      }
+    } catch (err) {
+      console.error("[handleSuggestTags]", err);
+      toast.error("Erro ao sugerir tags");
+    } finally {
+      setSuggestingTags(false);
+    }
+  };
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
