@@ -190,6 +190,31 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   });
   const [eanLoading, setEanLoading] = useState(false);
 
+  // Botão "Sugestão IA" da aba fiscal — antes era um no-op (onFiscalAutofill
+  // sempre vazio, fiscalLoading sempre false). Aplica a melhor sugestão já
+  // calculada pelo hook: categoria > histórico de produtos similares > tabela
+  // mestre de NCM.
+  const handleFiscalAutofill = useCallback(() => {
+    if (fiscal.categorySuggestion?.ncm) {
+      fiscal.applySuggestion(
+        { ncm: fiscal.categorySuggestion.ncm, cest: fiscal.categorySuggestion.cest },
+        "category",
+      );
+      return;
+    }
+    const bestHistory = fiscal.historySuggestions[0];
+    if (bestHistory?.ncm) {
+      fiscal.applySuggestion({ ncm: bestHistory.ncm, cest: bestHistory.cest }, "history");
+      return;
+    }
+    const bestMaster = fiscal.masterSuggestions[0];
+    if (bestMaster?.ncm) {
+      fiscal.applySuggestion({ ncm: bestMaster.ncm, cest: null }, "barcode");
+      return;
+    }
+    toast.error("Nenhuma sugestão fiscal encontrada. Preencha nome e categoria do produto.");
+  }, [fiscal]);
+
   // Draft Logic
   const draft = useDraft({
     key: isEdit ? null : DRAFT_KEYS.product(companyId),
@@ -349,6 +374,37 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     finally { setEanLoading(false); }
   };
 
+  // Botão "Sugerir com IA" das tags — suggestTagsFn já existia (importado e
+  // instanciado via useServerFn), mas nunca era chamado; onSuggestTags
+  // estava ligado a uma função vazia.
+  const handleSuggestTags = async () => {
+    if (!form.name.trim()) {
+      toast.error("Preencha o nome do produto antes de gerar sugestões.");
+      return;
+    }
+    setSuggestingTags(true);
+    try {
+      const result = await suggestTagsFn({
+        data: {
+          name: form.name,
+          category: categoryName || null,
+          brand: form.brand || null,
+          description: form.description || null,
+          existingTags: form.tags,
+        },
+      });
+      setSuggestedTags(result.tags);
+      if (!result.tags.length) {
+        toast.info("Nenhuma sugestão encontrada para esse produto.");
+      }
+    } catch (err) {
+      console.error("[handleSuggestTags]", err);
+      toast.error("Erro ao sugerir tags");
+    } finally {
+      setSuggestingTags(false);
+    }
+  };
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -505,6 +561,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         cover_image_path,
       };
 
+      // O banco bloqueia qualquer alteração direta de "stock" em produtos já
+      // existentes (só é permitida via inventory_movements, para manter o
+      // histórico correto). Removemos aqui por segurança para nunca disparar
+      // esse erro ao salvar edições.
+      if (isEdit) {
+        delete (finalPayload as any).stock;
+      }
+
       const saved = isEdit 
         ? await updateProduct.mutateAsync({ id: product.id, input: finalPayload })
         : await createProduct.mutateAsync({ ...finalPayload, company_id: companyId } as ProductInsert);
@@ -591,8 +655,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               <FiscalForm
                 form={form}
                 setForm={setForm}
-                onFiscalAutofill={fiscal.applySuggestion as any}
-                fiscalLoading={fiscal.masterLoading}
+                onFiscalAutofill={handleFiscalAutofill}
+                fiscalLoading={fiscal.historyLoading || fiscal.masterLoading}
                 errors={formErrors}
                 categoryName={categoryName}
               />
@@ -634,7 +698,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               onRemoveTag={() => {}}
               suggestedTags={suggestedTags}
               suggestingTags={suggestingTags}
-              onSuggestTags={() => {}}
+              onSuggestTags={handleSuggestTags}
             />
           </TabsContent>
 
