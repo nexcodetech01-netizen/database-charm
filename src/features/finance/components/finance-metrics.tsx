@@ -111,7 +111,7 @@ function MetricCard({ item, isLoading }: { item: MetricItem; isLoading: boolean 
           <Skeleton className="h-8 w-32" />
         ) : (
           <span className="text-2xl font-semibold tracking-tight tabular-nums">
-            {item.value ?? "—"}
+            {item.value || "R$ 0,00"}
           </span>
         )}
       </div>

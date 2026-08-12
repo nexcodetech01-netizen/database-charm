@@ -284,15 +284,29 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                 ))
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-16">
-                    <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-                      <Receipt className="h-8 w-8" />
-                      <p className="font-medium text-foreground">
-                        Nenhuma movimentação encontrada
-                      </p>
-                      <p className="text-sm">
-                        Ajuste os filtros ou registre uma nova movimentação.
-                      </p>
+                  <TableCell colSpan={6} className="py-24">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <div className="rounded-full bg-muted p-4">
+                        <Receipt className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-foreground">
+                          Nenhum lançamento financeiro encontrado
+                        </p>
+                        <p className="text-sm text-muted-foreground max-w-[280px]">
+                          Ajuste os filtros ou registre uma nova movimentação manual.
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setFilters(DEFAULT);
+                          setSourceFilter("");
+                        }}
+                      >
+                        Limpar filtros
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
