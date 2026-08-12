@@ -11,16 +11,18 @@ import {
   CRT_NOT_CONFIGURED_MESSAGE,
   isCrtCoherent,
   crtCoherenceMessage,
-  resolveItemTaxes,
-  blocksNewFiscalDocument,
-  toDocLikes
-} from "../lib/fiscal-utils";
+  requireCrt
+} from "../lib/crt";
+import { resolveItemTaxes } from "../lib/item-taxes";
+import { blocksNewFiscalDocument } from "../lib/fiscal-status";
+import { toDocLikes } from "../lib/issue-guard";
 import type { 
   NfeEnvironment, 
-  FiscalTaxRegime, 
-  FiscalValidationResult, 
-  FiscalIssue 
+  TaxRegime as FiscalTaxRegime, 
+  FiscalSimulationResult as FiscalValidationResult, 
+  SimulationIssue as FiscalIssue 
 } from "../types";
+
 
 export class EmissionService {
   private readonly docsRepo: DocumentsRepository;

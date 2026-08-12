@@ -96,19 +96,22 @@ export class SalesRepository {
   async findHeader(
     companyId: string,
     saleId: string,
-  ): Promise<{ number: number | null; customer_id: string | null } | null> {
+  ): Promise<{ id: string; number: number | null; customer_id: string | null; grand_total: number | null } | null> {
     const { data, error } = await this.supabase
       .from("sales")
-      .select("number, customer_id")
+      .select("id, number, customer_id, grand_total")
       .eq("company_id", companyId)
       .eq("id", saleId)
       .maybeSingle();
     if (error) throw error;
     return (data ?? null) as unknown as {
+      id: string;
       number: number | null;
       customer_id: string | null;
+      grand_total: number | null;
     } | null;
   }
+
 
   async listItems(saleId: string): Promise<SaleItemRow[]> {
     const { data, error } = await this.supabase
