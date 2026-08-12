@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const getLastPurchaseInfo = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({
     companyId: z.string().uuid(),
-    productId: z.string().uuid(),
+    productId: z.string().uuid().optional().nullable(),
     supplierId: z.string().uuid().optional().nullable(),
+    productName: z.string().optional().nullable(),
+    sku: z.string().optional().nullable(),
   }).parse(data))
   .handler(async ({ data }) => {
-    const { companyId, productId, supplierId } = data;
+    const { companyId, productId, supplierId, productName, sku } = data;
 
     let query = supabase
       .from("purchase_items")
@@ -31,11 +33,20 @@ export const getLastPurchaseInfo = createServerFn({ method: "GET" })
           supplier_id
         )
       `)
-      .eq("product_id", productId)
       .eq("purchase.company_id", companyId)
       .eq("purchase.status", "received")
       .order("purchase(purchase_date)", { ascending: false })
       .limit(1);
+
+    if (productId) {
+      query = query.eq("product_id", productId);
+    } else if (sku) {
+      query = query.eq("product_sku", sku);
+    } else if (productName) {
+      query = query.ilike("product_name", `%${productName}%`);
+    } else {
+      return null;
+    }
 
     if (supplierId) {
       query = query.eq("purchase.supplier_id", supplierId);
