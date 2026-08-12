@@ -322,8 +322,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           return next;
         });
         toast.success(`Dados sincronizados da compra em ${new Date(info.purchaseDate).toLocaleDateString()}`);
-      } else {
-        toast.info("Nenhuma compra encontrada para este produto com o fornecedor selecionado.");
       }
     } catch (err) {
       console.error("Erro ao buscar histórico:", err);
