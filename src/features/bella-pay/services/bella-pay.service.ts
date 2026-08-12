@@ -13,6 +13,8 @@ export const bellaPayService = {
       .from("bella_pay_config")
       .select("*")
       .eq("company_id", companyId)
+      .select("*")
+
       .maybeSingle();
     if (error) throw error;
     return data as BellaPayConfig | null;
@@ -49,12 +51,28 @@ export const bellaPayService = {
         : {}),
     };
 
+    console.log("[bellaPayService] upsertConfig starting", {
+      companyId: patch.company_id,
+      environment: patch.environment,
+      hasSandbox: !!patch.api_key_sandbox,
+      hasProduction: !!patch.api_key_production
+    });
+
     const { data, error } = await supabase
       .from("bella_pay_config")
       .upsert(patch, { onConflict: "company_id" })
       .select()
       .single();
-    if (error) throw error;
+
+    if (error) {
+      console.error("[bellaPayService] upsertConfig error", error);
+      throw error;
+    }
+
+    console.log("[bellaPayService] upsertConfig success", {
+      id: data.id,
+      companyId: data.company_id
+    });
     return data as BellaPayConfig;
   },
 

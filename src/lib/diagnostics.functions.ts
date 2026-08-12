@@ -145,31 +145,58 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
       message: waWaba ? "WABA ID configurado." : "WHATSAPP_WABA_ID ausente.",
     });
 
-    // 6. Asaas
+    // 6. Asaas (Bella Pay)
     try {
-      const { data: asaasCfg } = await supabase
-        .from("bella_pay_config")
-        .select("api_key_production, api_key_sandbox, environment")
-        .eq("company_id", claims?.company_id || "")
-        .maybeSingle();
+      const companyId = claims?.company_id;
+      if (!companyId) {
+        checks.push({
+          id: "asaas-key",
+          category: "Asaas",
+          label: "API Key",
+          status: "warning",
+          message: "Company ID não encontrado na sessão (necessário para validar Bella Pay).",
+        });
+      } else {
+        // Buscamos EXATAMENTE nas colunas api_key_sandbox e api_key_production da tabela bella_pay_config
+        const { data: asaasCfg, error: cfgError } = await supabase
+          .from("bella_pay_config")
+          .select("api_key_production, api_key_sandbox, environment")
+          .eq("company_id", companyId)
+          .maybeSingle();
 
-      const asaasKey = Boolean(asaasCfg?.api_key_production || asaasCfg?.api_key_sandbox);
-      checks.push({
-        id: "asaas-key",
-        category: "Asaas",
-        label: "API Key",
-        status: asaasKey ? "ok" : "warning",
-        message: asaasKey
-          ? `API Key configurada no banco (${asaasCfg?.environment ?? "sandbox"}).`
-          : "ASAAS_API_KEY ausente na tabela bella_pay_config.",
-      });
+        if (cfgError) {
+          console.error("[Diagnostics] Error querying bella_pay_config:", cfgError);
+          checks.push({
+            id: "asaas-key",
+            category: "Asaas",
+            label: "API Key",
+            status: "error",
+            message: `Erro de banco/RLS ao consultar configuração: ${cfgError.message}`,
+          });
+        } else {
+          // Se qualquer uma das chaves estiver presente e não for vazia, status OK.
+          // Consideramos OK mesmo se for apenas uma delas, pois o usuário pode usar apenas um ambiente.
+          const hasKey = Boolean(asaasCfg?.api_key_production || asaasCfg?.api_key_sandbox);
+          
+          checks.push({
+            id: "asaas-key",
+            category: "Asaas",
+            label: "API Key",
+            status: hasKey ? "ok" : "warning",
+            message: hasKey
+              ? `API Key configurada no banco (ambiente ativo: ${asaasCfg?.environment ?? "sandbox"}).`
+              : "ASAAS_API_KEY ausente na tabela bella_pay_config (verifique em /bella-pay).",
+          });
+        }
+      }
     } catch (err) {
+      console.error("[Diagnostics] Unexpected error in Asaas check:", err);
       checks.push({
         id: "asaas-key",
         category: "Asaas",
         label: "API Key",
         status: "error",
-        message: "Erro ao consultar configuração do Asaas no banco.",
+        message: "Erro inesperado ao consultar diagnóstico do Asaas.",
       });
     }
 
