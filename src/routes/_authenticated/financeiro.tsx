@@ -86,12 +86,11 @@ function FinancePage() {
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
   const realAvailableCash = (accounts || [])
-    .filter((a: any) => a.status === 'active')
-    .reduce((acc: number, curr: any) => acc + (Number(curr.current_balance) || 0), 0);
+    .filter((a: any) => a?.status === 'active')
+    .reduce((acc: number, curr: any) => acc + (Number(curr?.current_balance) || 0), 0);
 
-
-  const cashFlow = data ? data.receivable - data.payable : undefined;
-  const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
+  const cashFlow = data ? (data.receivable || 0) - (data.payable || 0) : undefined;
+  const monthResult = data ? (data.monthIncome || 0) - (data.monthExpense || 0) : undefined;
 
   function openTx(type: TransactionType) {
     setTxType(type);

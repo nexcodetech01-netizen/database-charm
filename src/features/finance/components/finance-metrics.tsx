@@ -23,8 +23,8 @@ interface MetricItem {
 export function FinanceMetrics({ companyId }: { companyId: string }) {
   const { data, isLoading } = useFinanceOverview(companyId);
 
-  const monthResult = data ? data.monthIncome - data.monthExpense : undefined;
-  const cashFlow = data ? data.receivable - data.payable : undefined;
+  const monthResult = data ? (data.monthIncome || 0) - (data.monthExpense || 0) : undefined;
+  const cashFlow = data ? (data.receivable || 0) - (data.payable || 0) : undefined;
 
   const items: MetricItem[] = [
     {

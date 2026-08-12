@@ -122,12 +122,12 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   const [settleOpen, setSettleOpen] = useState(false);
   const [settling, setSettling] = useState<FinancialTransaction | null>(null);
 
-  const rows = data?.rows ?? [];
+  const rows = data?.rows || [];
   const groups = useMemo(() => groupByReference(rows), [rows]);
 
   const enriched = useMemo(
     () =>
-      rows.map((r) => ({
+      (rows || []).map((r) => ({
         row: r,
         display: deriveGroupStatus(r, groups),
       })),

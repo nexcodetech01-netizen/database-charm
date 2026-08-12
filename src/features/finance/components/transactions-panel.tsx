@@ -190,8 +190,8 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
   }
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / filters.pageSize));
-  const allRows = data?.rows ?? [];
-  const rows = sourceFilter ? allRows.filter((r) => r.source === sourceFilter) : allRows;
+  const allRows = data?.rows || [];
+  const rows = sourceFilter ? (allRows || []).filter((r) => r?.source === sourceFilter) : (allRows || []);
 
   return (
     <div className="space-y-4">
