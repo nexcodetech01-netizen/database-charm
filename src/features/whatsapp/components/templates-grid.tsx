@@ -47,7 +47,7 @@ export function TemplatesGrid() {
                     <span key={i} className="rounded-sm bg-primary/10 px-0.5 font-bold text-primary">{part}</span>
                   ) : part
                 )}
-                <div className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-[1px]">
+                <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
                   <div className="flex items-center gap-1">
                     <Button variant="secondary" size="sm" className="h-7 gap-1 px-2 text-[10px]">
                       <Edit2 className="h-3 w-3" /> Editar
