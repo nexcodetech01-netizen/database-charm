@@ -542,7 +542,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 onOpenQuickCategory={() => setCategoryDialogOpen(true)}
                 onApplyCategoryMargin={() => {
                   if (categoryMargin !== null) {
-                    setForm((s: any) => ({ ...s, margin: String(categoryMargin), use_category_margin: true }));
+                    setForm((s: any) => ({ 
+                      ...s, 
+                      margin: String(categoryMargin), 
+                      use_category_margin: true 
+                    }));
                   }
                 }}
                 onFetchLastPurchase={handleFetchLastPurchase}

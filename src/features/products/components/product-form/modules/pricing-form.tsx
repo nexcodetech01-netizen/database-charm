@@ -139,11 +139,15 @@ export function PricingForm({
   };
 
   // Efeito para garantir que a margem da categoria seja aplicada se o switch estiver ativo
+  // ou quando a margem da categoria mudar (troca de categoria no formulário pai)
   useEffect(() => {
-    if (form.use_category_margin && categoryMargin !== null && num(form.margin) !== categoryMargin) {
-      recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
+    if (form.use_category_margin && categoryMargin !== null) {
+      // Se a margem atual do formulário for diferente da margem da categoria, sincroniza
+      if (num(form.margin) !== categoryMargin) {
+        recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
+      }
     }
-  }, [form.use_category_margin, categoryMargin, cost, freight, packaging, insurance, other, channelFeePct, channelFixedFee, taxPct]);
+  }, [form.use_category_margin, categoryMargin, cost, freight, packaging, insurance, other, channelFeePct, channelFixedFee, taxPct, form.margin]);
 
   return (
     <div className="space-y-8">
