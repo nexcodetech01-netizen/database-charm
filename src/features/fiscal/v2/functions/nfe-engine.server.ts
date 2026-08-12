@@ -1319,8 +1319,9 @@ export async function issueNfeFromSaleEngine(
 
 
 
-  return ({} as any);
+  return {} as any;
 }
+
 
 // ------------------------------------------------------------------ status
 

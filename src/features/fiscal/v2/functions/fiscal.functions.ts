@@ -1994,20 +1994,10 @@ export const simulateFiscalIssue = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
 
-    const blockers: SimulationIssue[] = [];
-    const warnings: SimulationIssue[] = [];
-    const push = (issue: SimulationIssue) =>
-      (issue.severity === "error" ? blockers : warnings).push(issue);
+    const emissionService = new EmissionService(supabase, companyId, context.userId);
+    return emissionService.validate(data.saleId, data.environment);
+  });
 
-    // 1) Venda + cliente
-    const salesRepo = new SalesRepository(supabase);
-    const saleRow = await salesRepo.findSummary(companyId, data.saleId);
-    if (!saleRow) throw new Error("Venda não encontrada.");
-    const sale = saleRow;
-
-    let customer: CustomerFiscalRow | null = null;
-    if (sale.customer_id) {
-      const customersRepo = new CustomersRepository(supabase);
       customer = await customersRepo.findFiscalInfo(companyId, sale.customer_id);
     }
     const customerAddress = customer
