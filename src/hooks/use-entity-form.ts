@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * useEntityForm
@@ -20,6 +20,16 @@ import { useEffect, useRef, useState } from "react";
  * Agora só resincroniza por `updated_at` se o usuário ainda não tiver
  * começado a editar nesta sessão do formulário; troca de entidade (`id`)
  * sempre resincroniza normalmente.
+ *
+ * FIX (2026-08-12, parte 2): a primeira versão deste fix retornava um
+ * `setForm` recriado a cada render (uma arrow function nova toda vez).
+ * O `setState` nativo do React é sempre estável entre renders — vários
+ * componentes consumidores (ex. ProductForm) dependem dessa estabilidade
+ * em arrays de dependência de outros efeitos/callbacks. Quebrar isso fez
+ * esses efeitos reexecutarem a cada render, causando loop infinito de
+ * atualização ("Maximum update depth exceeded") em telas de edição.
+ * `setForm` agora é memoizado com `useCallback` e mantém identidade
+ * estável entre renders, como o `setState` original.
  */
 export function useEntityForm<
   E extends { id: string; updated_at?: string | null } | null | undefined,
@@ -28,6 +38,7 @@ export function useEntityForm<
   const [form, setFormState] = useState<S>(() => toState(entity));
   const dirtyRef = useRef(false);
   const idRef = useRef(entity?.id ?? null);
+  const hasSyncedRef = useRef(false);
 
   const id = entity?.id ?? null;
   const updatedAt =
@@ -41,19 +52,23 @@ export function useEntityForm<
       // resincroniza e reseta o estado de "edição em andamento".
       dirtyRef.current = false;
       setFormState(toState(entity));
-    } else if (!dirtyRef.current) {
+    } else if (!dirtyRef.current && hasSyncedRef.current) {
       // Mesma entidade, só updated_at mudou (refetch em background) — só
       // resincroniza se o usuário ainda não tiver mexido no formulário.
+      // `hasSyncedRef` evita um setState redundante logo no primeiro
+      // efeito após o mount, quando o useState já inicializou com o
+      // valor certo (idChanged é false no primeiro run também).
       setFormState(toState(entity));
     }
+    hasSyncedRef.current = true;
     // toState é intencionalmente omitido para evitar reset em cada render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, updatedAt]);
 
-  const setForm: typeof setFormState = (value) => {
+  const setForm = useCallback<typeof setFormState>((value) => {
     dirtyRef.current = true;
     setFormState(value);
-  };
+  }, []);
 
   return [form, setForm] as const;
 }
