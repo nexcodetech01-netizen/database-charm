@@ -23,6 +23,7 @@ import { useCompanyFeeTable } from "../hooks/use-company-fee-table";
 import { useOperationalDefaults } from "@/features/settings/hooks/use-operational-defaults";
 import { useCategories } from "@/features/products/hooks/use-products";
 import { PricingStatusBadge } from "./pricing-status-badge";
+import { cn } from "@/lib/utils";
 
 const num = (s: string | number | null | undefined) => {
   const n = Number(String(s ?? "0").replace(",", "."));
@@ -79,16 +80,19 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
   }, [categories, product.category_id]);
 
   const baseCost = num(product.cost);
-  
-  // LÓGICA RÍGIDA: Carrega padrões da empresa se os do produto estiverem zerados
+
+  // LÓGICA RÍGIDA: Carrega padrões da empresa se os do produto estiverem zerados (R$ 0,00)
+  // mas se o produto já tem valores salvos (mesmo que baixos), respeita o que está no banco.
   const getInitialValue = (productVal: number | null | undefined, defaultVal: number) => {
-    return num(productVal) > 0 ? num(productVal) : defaultVal;
+    const val = num(productVal);
+    // Se for exatamente 0 ou null, usa o padrão. Se for > 0, usa o valor do produto.
+    return val > 0 ? val : defaultVal;
   };
 
   const initialFreight = getInitialValue(product.freight, operationalDefaults?.freight ?? 0);
   const initialPackaging = getInitialValue(product.packaging, operationalDefaults?.packaging ?? 2.30);
   const initialOther = getInitialValue(num(product.other_costs) + num(product.insurance), operationalDefaults?.other_costs ?? 0.10);
-  
+
   // Puxa margem da categoria ou usa a da política como fallback
   const initialTarget = productCategory?.target_margin_pct ?? policy.idealMargin;
 
@@ -97,6 +101,7 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
   const [otherCosts, setOtherCosts] = useState(String(initialOther));
   const [target, setTarget] = useState(String(initialTarget));
   const [simulatedChannel, setSimulatedChannel] = useState<"standard" | "ml">("standard");
+  const [selectedTier, setSelectedTier] = useState<"min" | "target" | "premium">("target");
 
   useEffect(() => {
     if (open) {
@@ -104,6 +109,7 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
       setPackaging(String(initialPackaging));
       setOtherCosts(String(initialOther));
       setTarget(String(initialTarget));
+      setSelectedTier("target");
     }
   }, [open, product.id, initialFreight, initialPackaging, initialOther, initialTarget]);
 
@@ -153,13 +159,19 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result.targetPrice, input]);
 
+  const finalAppliedPrice = useMemo(() => {
+    if (selectedTier === "min") return result.minPrice;
+    if (selectedTier === "premium") return result.premiumPrice;
+    return result.targetPrice;
+  }, [selectedTier, result.minPrice, result.targetPrice, result.premiumPrice]);
+
   function apply() {
     if (!onApply) {
       toast.info("Preço sugerido aplicado ao formulário. Revise os dados e clique em Salvar Produto para confirmar.");
       return;
     }
-    onApply(result.targetPrice);
-    toast.success(`Preço sugerido aplicado ao formulário: ${formatCurrency(result.targetPrice)}. Clique em Salvar Produto para confirmar.`);
+    onApply(finalAppliedPrice);
+    toast.success(`Preço sugerido aplicado ao formulário: ${formatCurrency(finalAppliedPrice)}. Clique em Salvar Produto para confirmar.`);
     onOpenChange(false);
   }
 
@@ -247,10 +259,13 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
               <PricingStatusBadge status={suggestedEval.status} label={suggestedEval.label} />
             </div>
             <div className="mt-1 text-3xl font-semibold tabular-nums">
-              {formatCurrency(result.targetPrice)}
+              {formatCurrency(finalAppliedPrice)}
             </div>
             <div className="mt-3 divide-y divide-border/50">
-              <Line label="Custo total" value={formatCurrency(result.costTotal)} />
+              <Line 
+                label="Custo total" 
+                value={formatCurrency(num(baseCost) + num(freight) + num(packaging) + num(otherCosts))} 
+              />
               <Line label="Lucro por unidade" value={formatCurrency(result.profit)} strong />
               <Line label="Margem líquida" value={`${formatNumber(result.marginPct)}%`} />
               <Line label="Markup" value={`${formatNumber(result.markupPct)}%`} />
@@ -258,24 +273,51 @@ export function ProductPricingSheet({ open, onOpenChange, companyId, product, on
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3">
-            <div className="rounded-lg border border-border/60 p-3 text-center">
+            <button 
+              type="button"
+              onClick={() => setSelectedTier("min")}
+              className={cn(
+                "rounded-lg border p-3 text-center transition-all",
+                selectedTier === "min" 
+                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
+                  : "border-border/60 hover:border-primary/50"
+              )}
+            >
               <div className="text-[11px] uppercase text-muted-foreground">Mínimo</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.minPrice)}
               </div>
-            </div>
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+            </button>
+            <button 
+              type="button"
+              onClick={() => setSelectedTier("target")}
+              className={cn(
+                "rounded-lg border p-3 text-center transition-all",
+                selectedTier === "target" 
+                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
+                  : "border-primary/30 bg-primary/5"
+              )}
+            >
               <div className="text-[11px] uppercase text-primary">Recomendado</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.recommendedPrice)}
               </div>
-            </div>
-            <div className="rounded-lg border border-border/60 p-3 text-center">
+            </button>
+            <button 
+              type="button"
+              onClick={() => setSelectedTier("premium")}
+              className={cn(
+                "rounded-lg border p-3 text-center transition-all",
+                selectedTier === "premium" 
+                  ? "border-primary bg-primary/10 ring-1 ring-primary" 
+                  : "border-border/60 hover:border-primary/50"
+              )}
+            >
               <div className="text-[11px] uppercase text-muted-foreground">Premium</div>
               <div className="mt-1 text-sm font-semibold tabular-nums">
                 {formatCurrency(result.premiumPrice)}
               </div>
-            </div>
+            </button>
           </div>
 
           <p className="text-[11px] text-muted-foreground">
