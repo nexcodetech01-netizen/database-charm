@@ -230,13 +230,19 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   // Apply operational defaults for NEW products
   useEffect(() => {
     if (!isEdit && operationalDefaults && !recoveryData) {
-      setForm(prev => ({
-        ...prev,
-        freight: String(operationalDefaults.freight || 0),
-        packaging: String(operationalDefaults.packaging || 0),
-        insurance: String(operationalDefaults.insurance || 0),
-        other_costs: String(operationalDefaults.other_costs || 0),
-      }));
+      setForm(prev => {
+        // Se já houver um frete preenchido (ex: vindo de uma pré-seleção ou importação), não sobrescrever
+        // A menos que seja o frete 0 padrão.
+        const currentFreight = num(prev.freight);
+        
+        return {
+          ...prev,
+          freight: currentFreight > 0 ? String(currentFreight) : String(operationalDefaults.freight || 0),
+          packaging: String(operationalDefaults.packaging || 0),
+          insurance: String(operationalDefaults.insurance || 0),
+          other_costs: String(operationalDefaults.other_costs || 0),
+        };
+      });
     }
   }, [isEdit, operationalDefaults, recoveryData, setForm]);
 
@@ -298,11 +304,23 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       });
 
       if (info) {
-        setForm(s => ({
-          ...s,
-          cost: info.unitPrice.toFixed(2),
-          freight: info.unitShipping.toFixed(2),
-        }));
+        setForm(s => {
+          const next = {
+            ...s,
+            cost: info.unitPrice.toFixed(2),
+          };
+
+          // Sobreposição inteligente para o frete:
+          // Se houver frete na compra, use-o.
+          if (info.unitShipping > 0) {
+            next.freight = info.unitShipping.toFixed(2);
+          } else if (operationalDefaults) {
+            // Se não houver frete na compra, mas houver padrão da empresa, use o padrão
+            next.freight = operationalDefaults.freight.toFixed(2);
+          }
+
+          return next;
+        });
         toast.success(`Dados sincronizados da compra em ${new Date(info.purchaseDate).toLocaleDateString()}`);
       } else {
         toast.info("Nenhuma compra encontrada para este produto com o fornecedor selecionado.");
@@ -311,7 +329,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       console.error("Erro ao buscar histórico:", err);
       toast.error("Erro ao consultar histórico de compras.");
     }
-  }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm]);
+  }, [companyId, product?.id, form.supplier_id, fetchLastPurchase, setForm, operationalDefaults]);
 
   // Sincronizar ao trocar de fornecedor se já tivermos o produto
   useEffect(() => {
