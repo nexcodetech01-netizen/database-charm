@@ -165,7 +165,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
   
   const isEdit = !!product;
-  const categoryName = categories.find(c => c.id === form.category_id)?.name || null;
+  const currentCategory = categories.find(c => c.id === form.category_id);
+  const categoryName = currentCategory?.name || null;
+  const categoryMargin = (currentCategory as any)?.target_margin_pct ?? null;
   const num = (v: any) => parseFloat(String(v).replace(/[^\d.-]/g, "")) || 0;
 
   // SKU Logic

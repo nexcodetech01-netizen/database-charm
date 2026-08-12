@@ -92,6 +92,10 @@ export function PricingForm({
 
   // Função para recalcular o preço final baseado na margem desejada e taxas
   const recalculatePrice = (newMargin: number, newFeePct: number, newFixedFee: number) => {
+    // Fórmula: Preço Final = Custo Total Efetivo / (1 - (Margem % / 100))
+    // Nota: O motor oficial computeOfficialPricing já implementa essa lógica,
+    // mas vamos garantir que o targetPrice seja atualizado.
+    
     const p = computeOfficialPricing({
       companyId: "current",
       productId: "temp",
@@ -114,10 +118,12 @@ export function PricingForm({
       rounding: { kind: "none" }
     });
 
-    if (p.targetPrice > 0 && p.targetPrice !== Infinity) {
+    const practicePrice = p.targetPrice;
+
+    if (practicePrice > 0 && practicePrice !== Infinity) {
       setForm((s: any) => ({ 
         ...s, 
-        price: p.targetPrice.toFixed(2),
+        price: practicePrice.toFixed(2),
         margin: String(newMargin),
         channel_fee_pct: String(newFeePct),
         channel_fixed_fee: String(newFixedFee)
@@ -336,7 +342,7 @@ export function PricingForm({
               <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                 <div className="space-y-0.5">
                   <Label className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
-                  <p className="text-[9px] text-slate-500 font-medium">Aplicar política de {categoryName}</p>
+                  <p className="text-[9px] text-slate-500 font-medium">Aplicar política de {categoryName} ({categoryMargin || 0}%)</p>
                 </div>
                 <Switch
                   id="use-category-margin"
