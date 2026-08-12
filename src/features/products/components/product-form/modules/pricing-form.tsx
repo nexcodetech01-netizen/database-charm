@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface PricingFormProps {
   form: any;
   setForm: (val: any) => void;
   categoryName: string | null;
+  categoryMargin: number | null;
   onApplyCategoryMargin: () => void;
   errors?: Record<string, string>;
   onOpenQuickCategory?: () => void;
@@ -25,6 +27,7 @@ export function PricingForm({
   form, 
   setForm, 
   categoryName, 
+  categoryMargin,
   onApplyCategoryMargin,
   errors = {},
   onOpenQuickCategory
@@ -113,19 +116,26 @@ export function PricingForm({
       setForm((s: any) => ({ 
         ...s, 
         price: p.targetPrice.toFixed(2),
-        margin: newMargin,
-        channel_fee_pct: newFeePct,
-        channel_fixed_fee: newFixedFee
+        margin: String(newMargin),
+        channel_fee_pct: String(newFeePct),
+        channel_fixed_fee: String(newFixedFee)
       }));
     } else {
       setForm((s: any) => ({ 
         ...s, 
-        margin: newMargin,
-        channel_fee_pct: newFeePct,
-        channel_fixed_fee: newFixedFee
+        margin: String(newMargin),
+        channel_fee_pct: String(newFeePct),
+        channel_fixed_fee: String(newFixedFee)
       }));
     }
   };
+
+  // Efeito para garantir que a margem da categoria seja aplicada se o switch estiver ativo
+  useEffect(() => {
+    if (form.use_category_margin && categoryMargin !== null && num(form.margin) !== categoryMargin) {
+      recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
+    }
+  }, [form.use_category_margin, categoryMargin, cost, freight, packaging, insurance, other, channelFeePct, channelFixedFee, taxPct]);
 
   return (
     <div className="space-y-8">
@@ -175,7 +185,10 @@ export function PricingForm({
                         id="freight"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={freight}
-                        onValueChange={(val: number) => setForm((s: any) => ({ ...s, freight: val }))}
+                        onValueChange={(val: number) => {
+                          setForm((s: any) => ({ ...s, freight: val }));
+                          if (desiredMargin > 0) recalculatePrice(desiredMargin, channelFeePct, channelFixedFee);
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
@@ -184,7 +197,10 @@ export function PricingForm({
                         id="packaging"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={packaging}
-                        onValueChange={(val: number) => setForm((s: any) => ({ ...s, packaging: val }))}
+                        onValueChange={(val: number) => {
+                          setForm((s: any) => ({ ...s, packaging: val }));
+                          if (desiredMargin > 0) recalculatePrice(desiredMargin, channelFeePct, channelFixedFee);
+                        }}
                       />
                     </div>
                   </div>
@@ -195,7 +211,10 @@ export function PricingForm({
                         id="insurance"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={insurance}
-                        onValueChange={(val: number) => setForm((s: any) => ({ ...s, insurance: val }))}
+                        onValueChange={(val: number) => {
+                          setForm((s: any) => ({ ...s, insurance: val }));
+                          if (desiredMargin > 0) recalculatePrice(desiredMargin, channelFeePct, channelFixedFee);
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
@@ -204,7 +223,10 @@ export function PricingForm({
                         id="other_costs"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
                         value={other}
-                        onValueChange={(val: number) => setForm((s: any) => ({ ...s, other_costs: val }))}
+                        onValueChange={(val: number) => {
+                          setForm((s: any) => ({ ...s, other_costs: val }));
+                          if (desiredMargin > 0) recalculatePrice(desiredMargin, channelFeePct, channelFixedFee);
+                        }}
                       />
                     </div>
                   </div>
@@ -271,8 +293,9 @@ export function PricingForm({
                     id="margin"
                     type="number"
                     step="0.01"
-                    className="h-10 text-sm font-bold bg-slate-950 border-slate-700 text-white placeholder:text-slate-500 pr-8"
+                    className="h-10 text-sm font-bold bg-slate-950 border-slate-700 text-white placeholder:text-slate-500 pr-8 disabled:opacity-70 disabled:cursor-not-allowed"
                     value={desiredMargin}
+                    disabled={form.use_category_margin && categoryMargin !== null}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const m = num(e.target.value);
                       recalculatePrice(m, channelFeePct, channelFixedFee);
