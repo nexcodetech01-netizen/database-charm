@@ -91,11 +91,22 @@ export function PricingForm({
   const status = getMarginStatus();
 
   // Função para recalcular o preço final baseado na margem desejada e taxas
-  const recalculatePrice = (newMargin: number, newFeePct: number, newFixedFee: number) => {
-    // Fórmula: Preço Final = Custo Total Efetivo / (1 - (Margem % / 100))
-    // Nota: O motor oficial computeOfficialPricing já implementa essa lógica,
-    // mas vamos garantir que o targetPrice seja atualizado.
+  const recalculatePrice = useCallback((newMargin: number, newFeePct: number, newFixedFee: number) => {
+    // A Categoria e a Matemática devem ser baseadas no Custo Total Efetivo
+    // Fórmula: Preço Final = Custo Total Efetivo / (1 - (Margem / 100))
+    const m = newMargin / 100;
     
+    // Evitar divisão por zero ou margens 100%+ que quebram a fórmula de margem sobre venda
+    if (m >= 1) {
+      setForm((s: any) => ({ ...s, margin: String(newMargin) }));
+      return;
+    }
+
+    const calculatedPrice = totalCost / (1 - m);
+    
+    // Aplicar taxas de canal se houver
+    // Nota: O motor oficial deve ser usado para o cálculo final, 
+    // mas aqui atualizamos o estado da UI imediatamente.
     const p = computeOfficialPricing({
       companyId: "current",
       productId: "temp",
@@ -136,18 +147,14 @@ export function PricingForm({
         channel_fixed_fee: String(newFixedFee)
       }));
     }
-  };
+  }, [totalCost, cost, freight, packaging, insurance, other, taxPct, setForm]);
 
   // Efeito para garantir que a margem da categoria seja aplicada se o switch estiver ativo
-  // ou quando a margem da categoria mudar (troca de categoria no formulário pai)
   useEffect(() => {
     if (form.use_category_margin && categoryMargin !== null) {
-      // Se a margem atual do formulário for diferente da margem da categoria, sincroniza
-      if (num(form.margin) !== categoryMargin) {
-        recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
-      }
+      recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
     }
-  }, [form.use_category_margin, categoryMargin, cost, freight, packaging, insurance, other, channelFeePct, channelFixedFee, taxPct, form.margin]);
+  }, [form.use_category_margin, categoryMargin, totalCost, channelFeePct, channelFixedFee, recalculatePrice]);
 
   return (
     <div className="space-y-8">
@@ -346,7 +353,7 @@ export function PricingForm({
               <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                 <div className="space-y-0.5">
                   <Label className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer" htmlFor="use-category-margin">Usar margem da categoria</Label>
-                  <p className="text-[9px] text-slate-500 font-medium">Aplicar política de {categoryName} ({categoryMargin || 0}%)</p>
+                  <p className="text-[9px] text-slate-500 font-medium">Aplicar política de {categoryName} ({categoryMargin ?? 0}%)</p>
                 </div>
                 <Switch
                   id="use-category-margin"

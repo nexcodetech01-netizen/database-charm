@@ -241,9 +241,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         return {
           ...prev,
           freight: currentFreight > 0 ? String(currentFreight) : String(operationalDefaults.freight || 0),
-          packaging: String(operationalDefaults.packaging || 0),
-          insurance: String(operationalDefaults.insurance || 0),
-          other_costs: String(operationalDefaults.other_costs || 0),
+          packaging: String(operationalDefaults.packaging ?? 0),
+          insurance: String(operationalDefaults.insurance ?? 0),
+          other_costs: String(operationalDefaults.other_costs ?? 0),
+          use_category_margin: true,
         };
       });
     }
