@@ -65,13 +65,28 @@ export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
 /**
  * Estado agrupado por reference_id (venda/compra origem).
  * Se o grupo tem parcelas pagas e pendentes → 'partial'.
+ *
+ * FIX: baixas de crediário (entrada) têm seu `reference_id` reatribuído
+ * pelo banco (aponta para o registro de pagamento, não mais para a
+ * venda — ver create_credit_sale), enquanto o lançamento do saldo
+ * pendente da mesma venda mantém `reference_id = venda`. Isso quebrava
+ * o agrupamento: a entrada paga ficava "órfã" e o saldo pendente
+ * aparecia sozinho como "Vencido", escondendo que parte já foi paga.
+ * `reference_number` (o número da venda, ex. "PDV-2026...") continua
+ * igual nos dois lançamentos mesmo quando `reference_id` diverge, então
+ * usamos ele como chave de agrupamento preferencial.
  */
+function groupKey(t: TransactionWithMeta): string | null {
+  return (t as any).reference_number || t.reference_id || null;
+}
+
 export function deriveGroupStatus(
   t: TransactionWithMeta,
   groups: Map<string, TransactionWithMeta[]>,
 ): DisplayStatus {
-  if (!t.reference_id) return deriveRowStatus(t);
-  const siblings = groups.get(t.reference_id);
+  const key = groupKey(t);
+  if (!key) return deriveRowStatus(t);
+  const siblings = groups.get(key);
   if (!siblings || siblings.length <= 1) return deriveRowStatus(t);
   const paid = siblings.filter((s) => s.status === "paid").length;
   const pending = siblings.length - paid;
@@ -84,10 +99,11 @@ export function groupByReference(
 ): Map<string, TransactionWithMeta[]> {
   const map = new Map<string, TransactionWithMeta[]>();
   for (const r of rows) {
-    if (!r.reference_id) continue;
-    const arr = map.get(r.reference_id) ?? [];
+    const key = groupKey(r);
+    if (!key) continue;
+    const arr = map.get(key) ?? [];
     arr.push(r);
-    map.set(r.reference_id, arr);
+    map.set(key, arr);
   }
   return map;
 }
