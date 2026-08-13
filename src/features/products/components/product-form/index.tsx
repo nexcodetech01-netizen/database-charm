@@ -201,7 +201,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     if (productStock == null) return;
     
     if (form.product_type === "kit" && productComposition) {
-      const calculated = calculateKitStock(productComposition);
+      const calculated = calculateKitStock(productComposition, product?.id);
       setForm((s: any) => (s.stock === String(calculated) ? s : { ...s, stock: String(calculated) }));
     } else {
       setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
