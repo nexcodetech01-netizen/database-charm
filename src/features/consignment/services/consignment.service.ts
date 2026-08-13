@@ -31,7 +31,7 @@ export class ConsignmentService {
 
   static async listConsignments(companyId: string, resellerId?: string): Promise<Consignment[]> {
     let query = supabase
-      .from('consignments')
+      .from('consignacoes')
       .select(`
         *,
         reseller:resellers(*)
@@ -51,7 +51,7 @@ export class ConsignmentService {
   static async getConsignment(id: string): Promise<{ consignment: Consignment; items: ConsignmentItem[] }> {
     const [consignmentRes, itemsRes] = await Promise.all([
       supabase
-        .from('consignments')
+        .from('consignacoes')
         .select(`
           *,
           reseller:resellers(*)
@@ -82,7 +82,7 @@ export class ConsignmentService {
   ): Promise<Consignment> {
     const { reseller, ...consignmentData } = consignment as any;
     const { data: newConsignment, error: cError } = await supabase
-      .from('consignments')
+      .from('consignacoes')
       .insert({ ...consignmentData, status: 'ativa' })
       .select()
       .single();
@@ -97,7 +97,7 @@ export class ConsignmentService {
 
     const { error: iError } = await supabase
       .from('consignment_items')
-      .insert(itemsToInsert);
+      .insert(itemsToInsert as any);
 
     if (iError) throw iError;
 
@@ -110,6 +110,8 @@ export class ConsignmentService {
     settlementData: {
       items_sold: Record<string, number>;
       items_returned: Record<string, number>;
+      items_extraviado: Record<string, number>;
+      extravio_notes: Record<string, string>;
       gross_amount: number;
       reseller_commission: number;
       net_receivable: number;
@@ -122,44 +124,47 @@ export class ConsignmentService {
         consignment_id: consignmentId,
         items_snapshot: {
           sold: settlementData.items_sold,
-          returned: settlementData.items_returned
+          returned: settlementData.items_returned,
+          extraviado: settlementData.items_extraviado,
+          notes: settlementData.extravio_notes
         },
         gross_amount: settlementData.gross_amount,
         reseller_commission: settlementData.reseller_commission,
         net_receivable: settlementData.net_receivable,
         payment_status: 'pendente'
-      })
+      } as any)
       .select()
       .single();
 
     if (sError) throw sError;
 
-    // Update items quantities
     const itemIds = Object.keys(settlementData.items_sold);
     
-    // We do this in a loop for simplicity, but ideally we'd use an RPC or multiple updates
     for (const itemId of itemIds) {
       const sold = settlementData.items_sold[itemId] || 0;
       const returned = settlementData.items_returned[itemId] || 0;
+      const extraviado = settlementData.items_extraviado[itemId] || 0;
       
       const { data: currentItem } = await supabase
         .from('consignment_items')
-        .select('sold_quantity, returned_quantity')
+        .select('*')
         .eq('id', itemId)
         .single();
       
       if (currentItem) {
+        const item = currentItem as any;
         await supabase
           .from('consignment_items')
           .update({
-            sold_quantity: (currentItem as any).sold_quantity + sold,
-            returned_quantity: (currentItem as any).returned_quantity + returned
-          })
+            sold_quantity: (item.sold_quantity || 0) + sold,
+            returned_quantity: (item.returned_quantity || 0) + returned,
+            quantidade_extraviada: (item.quantidade_extraviada || 0) + extraviado
+          } as any)
           .eq('id', itemId);
       }
     }
 
-    return (settlement as unknown) as ConsignmentSettlement;
+    return settlement as unknown as ConsignmentSettlement;
   }
 
   static async listSettlements(consignmentId: string): Promise<ConsignmentSettlement[]> {

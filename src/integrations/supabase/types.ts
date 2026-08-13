@@ -1731,6 +1731,56 @@ export type Database = {
           },
         ]
       }
+      consignacoes: {
+        Row: {
+          commission_type: string
+          commission_value: number
+          company_id: string
+          contract_pdf_url: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          reseller_id: string
+          sent_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commission_type: string
+          commission_value: number
+          company_id: string
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reseller_id: string
+          sent_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_type?: string
+          commission_value?: number
+          company_id?: string
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reseller_id?: string
+          sent_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignacoes_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consignment_items: {
         Row: {
           company_id: string

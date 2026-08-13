@@ -43,6 +43,7 @@ export interface ConsignmentItem {
   sent_quantity: number;
   sold_quantity: number;
   returned_quantity: number;
+  quantidade_extraviada: number;
   cost_price: number;
   suggested_price?: number | null;
   created_at: string;
