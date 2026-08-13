@@ -527,6 +527,35 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       return toast.error("Verifique os campos obrigatórios");
     }
 
+    // Se "usar margem da categoria" estiver ligado, forçamos o recálculo do
+    // preço no motor oficial NESSE MOMENTO para garantir que o que for pro
+    // banco seja o preço exato da categoria, mesmo que a UI mostre algo
+    // desalinhado (ex: custo alterado mas effect de UI não rodou ainda).
+    let finalPrice = num(form.price);
+    let finalMargin = num(form.margin);
+
+    if (form.use_category_margin && form.category_id) {
+      const suggestion = computeSuggestedPrice({
+        companyId,
+        productId: product?.id ?? "new-product",
+        categoryId: form.category_id,
+        categoryName: categoryName ?? undefined,
+        costs: {
+          acquisition: num(form.cost),
+          freight: num(form.freight),
+          packaging: num(form.packaging),
+          insurance: num(form.insurance),
+          otherCosts: num(form.other_costs),
+        },
+        margins: pricingInputs.margins,
+        feeTable: pricingInputs.feeTable,
+        taxPct: pricingInputs.taxPct,
+        module: "products.form.save",
+      });
+      finalPrice = suggestion.targetPrice;
+      finalMargin = suggestion.marginPct;
+    }
+
     const payload: ProductUpdate = {
       name: toTitleCasePtBr(form.name),
       sku: form.sku.trim(),
@@ -540,13 +569,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       supplier_id: form.supplier_id || null,
       status: form.status as any,
       unit: form.unit,
-      price: num(form.price),
+      price: finalPrice,
       cost: num(form.cost),
       freight: num(form.freight),
       packaging: num(form.packaging),
       insurance: num(form.insurance),
       other_costs: num(form.other_costs),
-      margin: num(form.margin),
+      margin: finalMargin,
       use_category_margin: form.use_category_margin,
       // Persistência em channel_pricing_settings para manter compatibilidade com o schema Supabase
       channel_pricing_settings: {
