@@ -129,15 +129,22 @@ function toState(p?: Product): FormState {
 
 function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
-  const stocks = composition.map((c: any) => {
-    // Garantimos que estamos pegando o estoque do produto vinculado ao componente
+
+  const components = parentId
+    ? composition.filter((c: any) => c.parent_id === parentId || c.parent_product_id === parentId)
+    : composition;
+
+  if (components.length === 0) return 0;
+
+  const stocks = components.map((c: any) => {
+    // Garantimos que estamos pegando o estoque do produto vinculado ao componente individualmente
     const componentProduct = c.product || c.produto_componente || c;
     const componentStock = Number(componentProduct.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
     return Math.floor(componentStock / safeQuantity);
   });
-  if (stocks.length === 0) return 0;
+  
   return Math.min(...stocks);
 }
 
