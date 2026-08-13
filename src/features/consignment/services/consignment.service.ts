@@ -150,7 +150,7 @@ export class ConsignmentService {
       }
     }
 
-    return settlement as ConsignmentSettlement;
+    return (settlement as unknown) as ConsignmentSettlement;
   }
 
   static async listSettlements(consignmentId: string): Promise<ConsignmentSettlement[]> {
