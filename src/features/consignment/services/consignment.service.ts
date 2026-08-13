@@ -31,7 +31,7 @@ export class ConsignmentService {
 
   static async listConsignments(companyId: string, resellerId?: string): Promise<Consignment[]> {
     let query = supabase
-      .from('consignments')
+      .from('consignacoes')
       .select(`
         *,
         reseller:resellers(*)
@@ -51,7 +51,7 @@ export class ConsignmentService {
   static async getConsignment(id: string): Promise<{ consignment: Consignment; items: ConsignmentItem[] }> {
     const [consignmentRes, itemsRes] = await Promise.all([
       supabase
-        .from('consignments')
+        .from('consignacoes')
         .select(`
           *,
           reseller:resellers(*)
@@ -82,7 +82,7 @@ export class ConsignmentService {
   ): Promise<Consignment> {
     const { reseller, ...consignmentData } = consignment as any;
     const { data: newConsignment, error: cError } = await supabase
-      .from('consignments')
+      .from('consignacoes')
       .insert({ ...consignmentData, status: 'ativa' })
       .select()
       .single();
@@ -138,10 +138,8 @@ export class ConsignmentService {
 
     if (sError) throw sError;
 
-    // Update items quantities
     const itemIds = Object.keys(settlementData.items_sold);
     
-    // We do this in a loop for simplicity, but ideally we'd use an RPC or multiple updates
     for (const itemId of itemIds) {
       const sold = settlementData.items_sold[itemId] || 0;
       const returned = settlementData.items_returned[itemId] || 0;
@@ -157,15 +155,15 @@ export class ConsignmentService {
         await supabase
           .from('consignment_items')
           .update({
-            sold_quantity: (currentItem as any).sold_quantity + sold,
-            returned_quantity: (currentItem as any).returned_quantity + returned,
-            quantidade_extraviada: ((currentItem as any).quantidade_extraviada || 0) + extraviado
-          } as any)
+            sold_quantity: (currentItem as ConsignmentItem).sold_quantity + sold,
+            returned_quantity: (currentItem as ConsignmentItem).returned_quantity + returned,
+            quantidade_extraviada: ((currentItem as ConsignmentItem).quantidade_extraviada || 0) + extraviado
+          })
           .eq('id', itemId);
       }
     }
 
-    return (settlement as unknown) as ConsignmentSettlement;
+    return settlement as ConsignmentSettlement;
   }
 
   static async listSettlements(consignmentId: string): Promise<ConsignmentSettlement[]> {
