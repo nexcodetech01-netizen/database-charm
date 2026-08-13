@@ -321,6 +321,10 @@ interface PublishInput {
   imageOverrides?: Record<string, string>;
   videoUrl?: string;
   extraAttributes?: Array<{ id: string; value_name: string }>;
+  weight?: number;
+  width?: number;
+  height?: number;
+  length?: number;
   variations?: Array<{
     price: number;
     available_quantity: number;
@@ -377,6 +381,10 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
       imageOverrides: typeof input.imageOverrides === "object" ? input.imageOverrides : undefined,
       videoUrl: input.videoUrl?.toString().trim() || undefined,
       extraAttributes,
+      weight: typeof input.weight === "number" ? input.weight : undefined,
+      width: typeof input.width === "number" ? input.width : undefined,
+      height: typeof input.height === "number" ? input.height : undefined,
+      length: typeof input.length === "number" ? input.length : undefined,
       variations: Array.isArray(input.variations) ? input.variations : undefined,
     };
   })
@@ -665,11 +673,11 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // Conforme regra de tratamento: REMOVER completamente é a opção mais segura.
     // Omitimos a inserção automática de "NÃO APLICA" que estava causando erro.
 
-    // Dimensões padrão para ME2 (Mercado Envíos)
-    const weight = Number((product as any).weight || 0.5) * 1000; // kg -> g
-    const length = Number((product as any).length || 30);
-    const width = Number((product as any).width || 20);
-    const height = Number((product as any).height || 10);
+    // Dimensões: Prioriza o que veio do formulário de publicação, depois o produto, depois fallback ME2
+    const finalWeight = Number(data.weight || (product as any).weight || 0.3) * 1000; // kg -> g
+    const finalLength = Number(data.length || (product as any).length || 15);
+    const finalWidth = Number(data.width || (product as any).width || 15);
+    const finalHeight = Number(data.height || (product as any).height || 15);
 
     const body: Record<string, unknown> = {
       family_name: cleanTitle.substring(0, 50),
@@ -688,6 +696,7 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         mode: "me2",
         local_pick_up: false,
         free_shipping: price >= 79,
+        dimensions: `${finalHeight}x${finalWidth}x${finalLength},${finalWeight}`,
       }
     };
 

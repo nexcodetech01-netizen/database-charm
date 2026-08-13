@@ -28,6 +28,10 @@ export function validateMercadoLivreRequirements(
     model?: string;
     listingType?: string;
     walletTarget?: number;
+    weight?: number | string;
+    width?: number | string;
+    height?: number | string;
+    length?: number | string;
   }
 ): MercadoLivreValidationResult {
   const requirements: MercadoLivreRequirement[] = [];
