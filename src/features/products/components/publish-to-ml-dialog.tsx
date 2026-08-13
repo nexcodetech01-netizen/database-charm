@@ -1560,13 +1560,14 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                             ? "border-destructive focus-visible:ring-destructive" 
                             : ""
                           }`}
-                          value={price}
+                          value={priceInput}
                           onChange={(e) => {
-                            const val = e.target.value === "" ? 0 : Number(e.target.value);
-                            setPrice(val);
+                            const valStr = e.target.value;
+                            setPriceInput(valStr);
                             setPriceTouched(true);
                             setUsingMlSuggested(false);
                             
+                            const val = valStr === "" ? 0 : Number(valStr);
                             // Re-calcula o líquido reverso para exibição visual imediata
                             // O debounce do useEffect cuidará da sincronização reversa sem loop
                             const calculatedNet = calculateMLNetValue(val, listingType, settings);
@@ -1595,6 +1596,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 const calculatedFinal = calculateMLFinalPrice(desired, listingType, settings);
                                 const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
                                 setPrice(roundedFinal);
+                                setPriceInput(roundedFinal.toString());
                               }
                             }}
                           >
