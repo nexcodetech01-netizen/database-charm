@@ -216,13 +216,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   useEffect(() => {
     if (productStock == null) return;
     
-    if (form.product_type === "kit" && productComposition) {
-      const calculated = calculateKitStock(productComposition, product?.id);
-      setForm((s: any) => (s.stock === String(calculated) ? s : { ...s, stock: String(calculated) }));
-    } else {
-      setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
-    }
-  }, [productStock, productComposition, form.product_type, setForm]);
+    // Simplificamos: o valor inicial do form.stock deve vir do banco.
+    // Removida a sobrescrita automática de Kit aqui para não atrapalhar a digitação manual do usuário.
+    // O cálculo de Kit é mostrado apenas como dica visual no StockForm.
+    setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
+  }, [productStock, setForm]);
   const currentCategory = categories.find(c => c.id === form.category_id);
   const categoryName = currentCategory?.name || null;
   const categoryMargin = (currentCategory as any)?.target_margin_pct ?? null;
@@ -373,11 +371,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     if (form.product_type === 'kit') {
       setForm(s => ({
         ...s,
-        cost: String(compositionCost),
-        stock: String(kitStockValue)
+        cost: String(compositionCost)
+        // Removida a sincronização automática de stock: String(kitStockValue) 
+        // para permitir que o usuário digite e mantenha seu valor manual.
       }));
     }
-  }, [form.product_type, compositionCost, kitStockValue, setForm]);
+  }, [form.product_type, compositionCost, setForm]);
 
   // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL
   useEffect(() => {
