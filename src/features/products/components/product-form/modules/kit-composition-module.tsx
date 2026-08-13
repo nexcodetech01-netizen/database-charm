@@ -25,37 +25,29 @@ interface Props {
   companyId: string;
   composition: ComponentItem[];
   setComposition: (c: ComponentItem[]) => void;
-  currentProductId?: string;
 }
 
-export function KitCompositionModule({ companyId, composition, setComposition, currentProductId }: Props) {
+export function KitCompositionModule({ companyId, composition, setComposition }: Props) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
   const { data: searchResults = [] } = useQuery({
-    queryKey: ['product-search-kit', search, companyId, currentProductId],
+    queryKey: ['product-search-kit', search],
     queryFn: async () => {
-      let query = supabase
+      if (!search.trim()) return [];
+      const { data, error } = await supabase
         .from('products')
         .select('id, name, sku, cost, stock, created_at')
         .eq('company_id', companyId)
         .eq('product_type', 'simple')
+        .or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`)
         .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (currentProductId) {
-        query = query.neq('id', currentProductId);
-      }
-
-      if (search.trim()) {
-        query = query.ilike('name', `%${search.trim()}%`);
-      }
-
-      const { data, error } = await query;
+        .limit(100);
       
       if (error) throw error;
       return data || [];
     },
+    enabled: search.length > 2
   });
 
   const addComponent = (product: any) => {
@@ -125,7 +117,7 @@ export function KitCompositionModule({ companyId, composition, setComposition, c
                 />
                 <CommandList>
                   <CommandEmpty className="py-6 text-center text-sm text-slate-500">
-                    {search.trim().length > 0 ? "Nenhum produto encontrado." : "Nenhum produto disponível."}
+                    {search.length > 2 ? "Nenhum produto encontrado." : "Digite pelo menos 3 caracteres..."}
                   </CommandEmpty>
                   <CommandGroup>
                     {searchResults.map((p) => (
@@ -181,7 +173,10 @@ export function KitCompositionModule({ companyId, composition, setComposition, c
                           type="number"
                           className="w-16 h-8 text-center bg-slate-950 border-slate-800"
                           value={item.quantity}
-                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                          onChange={(e) => {
+                            const parsed = parseInt(e.target.value, 10);
+                            updateQuantity(item.id, Number.isFinite(parsed) ? parsed : 1);
+                          }}
                         />
                       </div>
                     </TableCell>
