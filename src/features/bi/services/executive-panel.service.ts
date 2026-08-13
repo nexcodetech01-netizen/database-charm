@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { companyDayStartUtc, companyEndOfDay } from "@/lib/time/company-day";
 import {
   daysBetween,
   labelDay,
@@ -192,8 +193,11 @@ export const executivePanelService = {
         .from("customers")
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
-        .gte("created_at", `${range.from}T00:00:00.000Z`)
-        .lte("created_at", `${range.to}T23:59:59.999Z`),
+        // FIX (auditoria 2026-08-13): "Z" tratava a data como UTC, não
+        // como fuso do Brasil — clientes cadastrados à noite ficavam de
+        // fora da contagem de "novos no período". Ver reports/utils/date-range.ts.
+        .gte("created_at", new Date(companyDayStartUtc(range.from)).toISOString())
+        .lte("created_at", companyEndOfDay(range.to).toISOString()),
       supabase
         .from("customers")
         .select("id", { count: "exact", head: true })

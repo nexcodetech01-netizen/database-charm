@@ -77,10 +77,25 @@ export function labelDay(iso: string) {
   return `${d}/${m}`;
 }
 
+import { companyDayStartUtc, companyEndOfDay } from "@/lib/time/company-day";
+
+/**
+ * Converte um DateRange (datas "de calendário", ex.: "2026-08-13") em
+ * timestamps UTC prontos para consultas no Supabase.
+ *
+ * FIX (auditoria de 2026-08-13): antes, o sufixo "Z" tratava a data como
+ * meia-noite em UTC, não no fuso do Brasil (UTC-3) — meia-noite em UTC é
+ * 21h da noite ANTERIOR aqui. Na prática, vendas feitas à noite (depois
+ * das ~21h) ficavam de fora do relatório de "hoje" (só apareciam no dia
+ * seguinte), e dados da noite do dia anterior vazavam para "hoje". Usa o
+ * utilitário compartilhado `company-day` (já é o padrão do projeto para
+ * qualquer leitura de "hoje"/limite de dia) em vez de montar a string à
+ * mão.
+ */
 export function rangeToTimestamp(range: DateRange) {
   return {
-    fromTs: `${range.from}T00:00:00.000Z`,
-    toTs: `${range.to}T23:59:59.999Z`,
+    fromTs: new Date(companyDayStartUtc(range.from)).toISOString(),
+    toTs: companyEndOfDay(range.to).toISOString(),
   };
 }
 

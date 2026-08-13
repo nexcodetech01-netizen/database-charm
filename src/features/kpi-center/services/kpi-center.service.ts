@@ -10,6 +10,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { companyDayStartUtc } from "@/lib/time/company-day";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type {
   Indicator,
@@ -74,7 +75,10 @@ export const kpiCenterService = {
         .from("pricing_decisions")
         .select("id, created_at, context, result")
         .eq("company_id", companyId)
-        .gte("created_at", `${shiftISO(-30)}T00:00:00.000Z`)
+        // FIX (auditoria 2026-08-13): "Z" tratava a data como UTC, não
+        // como fuso do Brasil — decisões de preço da noite ficavam fora
+        // da janela de 30 dias até o dia seguinte. Ver reports/utils/date-range.ts.
+        .gte("created_at", new Date(companyDayStartUtc(shiftISO(-30))).toISOString())
         .order("created_at", { ascending: false })
         .limit(500),
       supabase
