@@ -4,8 +4,6 @@ import {
   Consignment, 
   ConsignmentItem, 
   ConsignmentSettlement,
-  ConsignmentStatus,
-  CommissionType
 } from "../types";
 
 export class ConsignmentService {
@@ -85,7 +83,7 @@ export class ConsignmentService {
     const itemsToInsert = items.map(item => ({
       ...item,
       company_id: consignment.company_id,
-      consignment_id: newConsignment.id
+      consignment_id: (newConsignment as any).id
     }));
 
     const { error: iError } = await supabase
@@ -145,14 +143,14 @@ export class ConsignmentService {
         await supabase
           .from('consignment_items')
           .update({
-            sold_quantity: currentItem.sold_quantity + sold,
-            returned_quantity: currentItem.returned_quantity + returned
+            sold_quantity: (currentItem as any).sold_quantity + sold,
+            returned_quantity: (currentItem as any).returned_quantity + returned
           })
           .eq('id', itemId);
       }
     }
 
-    return settlement;
+    return settlement as ConsignmentSettlement;
   }
 
   static async listSettlements(consignmentId: string): Promise<ConsignmentSettlement[]> {
