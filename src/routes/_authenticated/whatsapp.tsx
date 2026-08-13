@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -24,18 +24,14 @@ import { KpiCard, KpiSection, PageHeader } from "@/components/layout";
 import { BreadcrumbNav } from "@/components/layout/breadcrumb-nav";
 import {
   AutomationsList,
-  ChatPanel,
   CloudApiConfigCard,
   CommunicationTimeline,
-  ConversationList,
-  CustomerPanel,
   ProvidersGrid,
   TemplatesGrid,
-  WHATSAPP_CONVERSATIONS,
   WHATSAPP_TIMELINE,
-  type WhatsAppConversation,
 } from "@/features/whatsapp";
 import { WhatsAppConsole } from "@/features/whatsapp/console";
+import { useConsoleMetrics } from "@/features/whatsapp/console/hooks";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/whatsapp")({
@@ -45,20 +41,14 @@ export const Route = createFileRoute("/_authenticated/whatsapp")({
 
 function WhatsAppPage() {
   const navigate = useNavigate();
-  const conversations = WHATSAPP_CONVERSATIONS;
-  const [selectedId, setSelectedId] = useState<string | null>(
-    conversations[0]?.id ?? null,
-  );
   const perms = usePermissions();
   const companyId = perms.companyId ?? null;
 
   const [activeTab, setActiveTab] = useState("console");
   const [newConversationOpen, setNewConversationOpen] = useState(false);
 
-  const selected = useMemo<WhatsAppConversation | null>(
-    () => conversations.find((c) => c.id === selectedId) ?? null,
-    [conversations, selectedId],
-  );
+  const metricsQuery = useConsoleMetrics(companyId);
+  const metrics = metricsQuery.data;
 
   const openNewConversation = () => {
     setActiveTab("console");
@@ -95,23 +85,27 @@ function WhatsAppPage() {
       <KpiSection columns={5} className="gap-3">
         <KpiCard
           label="Conversas abertas"
-          value={conversations.filter((c) => c.status === "open").length}
+          value={metrics?.open ?? "—"}
           icon={MessageCircle}
         />
         <KpiCard 
           label="Atendimento Bella/IA" 
-          value={conversations.filter((c) => (c.status as string) === "bella").length} 
+          value={metrics?.bella ?? "—"}
           icon={Sparkles} 
         />
         <KpiCard 
           label="Humano" 
-          value={conversations.filter((c) => (c.status as string) === "human").length} 
+          value={metrics?.human ?? "—"}
           icon={User} 
         />
-        <KpiCard label="Taxa de Resolução" value="95%" icon={CheckCheck} />
+        <KpiCard
+          label="Taxa de Resolução"
+          value={metrics ? `${metrics.resolutionRate}%` : "—"}
+          icon={CheckCheck}
+        />
         <KpiCard 
-          label="Janelas Ativas" 
-          value={conversations.filter((c) => (c.lastMessageAt ? (Date.now() - new Date(c.lastMessageAt).getTime()) <= 24 * 60 * 60 * 1000 : false)).length} 
+          label="Mensagens hoje" 
+          value={metrics?.messagesToday ?? "—"}
           icon={Timer} 
         />
       </KpiSection>
@@ -123,12 +117,6 @@ function WhatsAppPage() {
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
           >
             Console
-          </TabsTrigger>
-          <TabsTrigger 
-            value="inbox" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-2"
-          >
-            Caixa de entrada
           </TabsTrigger>
           <TabsTrigger 
             value="timeline" 
@@ -165,22 +153,6 @@ function WhatsAppPage() {
         </TabsContent>
 
 
-
-        <TabsContent value="inbox" className="mt-0">
-          <Card className="overflow-hidden">
-            <div className="grid h-[calc(100vh-320px)] min-h-[560px] grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)_320px]">
-              <ConversationList
-                conversations={conversations}
-                selectedId={selectedId}
-                onSelect={(c) => setSelectedId(c.id)}
-              />
-              <ChatPanel conversation={selected} />
-              <div className="hidden lg:block">
-                <CustomerPanel conversation={selected} />
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="timeline" className="mt-0 space-y-3">
           <SectionHeader
