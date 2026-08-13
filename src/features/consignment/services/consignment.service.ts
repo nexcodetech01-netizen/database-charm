@@ -97,7 +97,7 @@ export class ConsignmentService {
 
     const { error: iError } = await supabase
       .from('consignment_items')
-      .insert(itemsToInsert);
+      .insert(itemsToInsert as any);
 
     if (iError) throw iError;
 
@@ -132,7 +132,7 @@ export class ConsignmentService {
         reseller_commission: settlementData.reseller_commission,
         net_receivable: settlementData.net_receivable,
         payment_status: 'pendente'
-      })
+      } as any)
       .select()
       .single();
 
@@ -147,23 +147,24 @@ export class ConsignmentService {
       
       const { data: currentItem } = await supabase
         .from('consignment_items')
-        .select('sold_quantity, returned_quantity, quantidade_extraviada')
+        .select('*')
         .eq('id', itemId)
         .single();
       
       if (currentItem) {
+        const item = currentItem as any;
         await supabase
           .from('consignment_items')
           .update({
-            sold_quantity: (currentItem as ConsignmentItem).sold_quantity + sold,
-            returned_quantity: (currentItem as ConsignmentItem).returned_quantity + returned,
-            quantidade_extraviada: ((currentItem as ConsignmentItem).quantidade_extraviada || 0) + extraviado
-          })
+            sold_quantity: (item.sold_quantity || 0) + sold,
+            returned_quantity: (item.returned_quantity || 0) + returned,
+            quantidade_extraviada: (item.quantidade_extraviada || 0) + extraviado
+          } as any)
           .eq('id', itemId);
       }
     }
 
-    return settlement as ConsignmentSettlement;
+    return settlement as unknown as ConsignmentSettlement;
   }
 
   static async listSettlements(consignmentId: string): Promise<ConsignmentSettlement[]> {
