@@ -42,7 +42,9 @@ import {
   deriveRowStatus,
   deriveGroupStatus,
   groupByReference,
+  groupKey,
   daysOverdue,
+  summarize,
   type DisplayStatus,
 } from "../lib/receivables";
 import { TransactionStatusBadge } from "./transaction-status-badge";
@@ -401,7 +403,14 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-1.5">
-                          <TransactionStatusBadge status={display} />
+                          <TransactionStatusBadge
+                            status={display}
+                            receivedAmount={
+                              display === "partial"
+                                ? summarize(t, groups.get(groupKey(t) ?? "") ?? null).received
+                                : undefined
+                            }
+                          />
                           {source === "bella_pay" ? (
                             <Zap className="h-3.5 w-3.5 text-primary" />
                           ) : null}

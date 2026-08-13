@@ -20,6 +20,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   FileBarChart,
+  FileText,
+  ListChecks,
   Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -168,7 +170,7 @@ function FinancePage() {
       title="Financeiro"
       meta={data ? `Resultado: ${formatCurrency(monthResult ?? 0)}` : "Carregando..."}
       actions={actions}
-      kpis={null}
+      kpis={kpis}
     >
 
       <Tabs
@@ -181,24 +183,23 @@ function FinancePage() {
             value="summary" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            📊 Resumo
+            <LineChart className="h-4 w-4" /> Resumo
           </TabsTrigger>
           <TabsTrigger 
             value="receivables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            📋 Contas a Pagar e Receber
+            <ListChecks className="h-4 w-4" /> Contas a Pagar e Receber
           </TabsTrigger>
           <TabsTrigger 
             value="cashflow" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            📄 Extrato de Movimentações
+            <FileText className="h-4 w-4" /> Extrato de Movimentações
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="space-y-8">
-          {kpis}
           <FinanceSummaryPanel companyId={company.id} />
           <BellaPayCard />
         </TabsContent>
