@@ -86,9 +86,10 @@ export const productsService = {
     if (filters.status) q = q.eq("status", filters.status);
     else if (!filters.includeInactive) q = q.eq("status", "active");
 
-    // Produtos inativados por mesclagem recebem sufixo -MERGED no SKU.
+    // Listagem total de produtos ativos (auditável).
+    // Filtros de exclusão por mesclagem removidos conforme solicitação Sprint RC2.
     if (!filters.includeInactive) {
-      q = q.or("sku.is.null,and(sku.not.ilike.%-MERGED,sku.not.ilike.%_MERGED)");
+      q = q.eq("status", "active");
     }
 
     if (filters.stock === "out") q = q.lte("stock", 0);
