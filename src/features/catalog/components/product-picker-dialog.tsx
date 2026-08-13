@@ -124,7 +124,10 @@ export function ProductPickerDialog({
                     <div className="truncate text-sm font-medium">{p.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
                       {(p as { brand?: string | null }).brand ?? "—"} ·{" "}
-                      {formatCurrency(Number(p.price))}
+                      {formatCurrency(Number(p.price))} · {" "}
+                      <span className={(p as any).product_type === 'kit' ? "text-blue-500 font-bold" : ""}>
+                        Estoque: {p.stock} {(p as any).product_type === 'kit' ? "(Kit)" : ""}
+                      </span>
                     </div>
                   </div>
                 </label>
