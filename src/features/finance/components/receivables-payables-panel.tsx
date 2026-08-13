@@ -274,10 +274,18 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
               </select>
             </div>
 
-            <Tabs value={tab} onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}>
-              <TabsList>
+            <Tabs 
+              value={tab} 
+              onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}
+              className="w-auto"
+            >
+              <TabsList className="h-9 bg-muted/50 p-1">
                 {TABS.map((t) => (
-                  <TabsTrigger key={t.value} value={t.value} className="text-xs">
+                  <TabsTrigger 
+                    key={t.value} 
+                    value={t.value} 
+                    className="text-xs px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
                     {t.label}
                   </TabsTrigger>
                 ))}
@@ -361,17 +369,17 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       className="cursor-pointer hover:bg-muted/40"
                       onClick={() => openDetails(t)}
                     >
-                      <TableCell>
+                      <TableCell className="py-4">
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{t.description}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate font-semibold text-sm">{t.description}</p>
+                          <p className="truncate text-xs text-muted-foreground mt-0.5">
                             {[t.category_name, t.account_name]
                               .filter(Boolean)
                               .join(" · ") || "—"}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden text-sm md:table-cell">
+                      <TableCell className="hidden py-4 text-sm md:table-cell">
                         <div className="flex flex-col">
                           <span className="text-muted-foreground">
                             {t.due_date
@@ -387,7 +395,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "text-right font-medium tabular-nums",
+                          "py-4 text-right font-medium tabular-nums",
                           meta.tone,
                         )}
                       >
@@ -395,13 +403,13 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                         {formatCurrency(Number(t.amount ?? 0))}
                         {t.status === "paid" && meta.type === "income" ? " (+)" : t.status === "paid" && meta.type === "expense" ? " (-)" : ""}
                       </TableCell>
-                      <TableCell className="hidden text-sm lg:table-cell">
+                      <TableCell className="hidden py-4 text-sm lg:table-cell">
                         {t.payment_method
                           ? (FINANCE_PAYMENT_METHOD_LABEL[t.payment_method] ??
                             t.payment_method)
                           : "—"}
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell className="hidden py-4 sm:table-cell">
                         <div className="flex items-center gap-1.5">
                           <TransactionStatusBadge
                             status={display}
@@ -420,7 +428,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                         </div>
                       </TableCell>
                       <TableCell
-                        className="text-right"
+                        className="py-4 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <PrimaryAction
