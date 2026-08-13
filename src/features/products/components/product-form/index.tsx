@@ -136,9 +136,11 @@ function calculateKitStock(composition: any[], parentId?: string) {
     const componentStock = Number(componentProduct.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
+    // Cálculo do estoque proporcional arredondado para baixo
     return Math.floor(componentStock / safeQuantity);
   });
   
+  // O estoque do kit é o MENOR saldo entre os componentes (gargalo)
   return Math.min(...stocks);
 }
 
