@@ -35,7 +35,8 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateConsignmentDialog } from './create-consignment-dialog';
-import { generateConsignmentPDF } from '../lib/pdf.functions';
+import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { ConsignmentItem } from '../types';
 import { toast } from 'sonner';
 
 export function ConsignmentsList() {
@@ -152,17 +153,21 @@ export function ConsignmentsList() {
                         <DropdownMenuItem className="cursor-pointer">
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => {
-                          toast.promise(generateConsignmentPDF({ 
-                            data: { 
-                              consignmentId: c.id, 
-                              companyId: companyId 
-                            } 
-                          }), {
-                            loading: 'Gerando PDF...',
-                            success: (res: any) => res.message || 'Contrato gerado com sucesso!',
-                            error: 'Erro ao gerar PDF'
-                          });
+                        <DropdownMenuItem className="cursor-pointer" onClick={async () => {
+                          try {
+                            const { consignment, items } = await ConsignmentService.getConsignment(c.id);
+                            const blob = await generateConsignmentPDF(consignment, items, "Empresa NexOS");
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `contrato-consignacao-${c.id.split('-')[0]}.pdf`;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                            toast.success('Contrato gerado com sucesso!');
+                          } catch (error) {
+                            console.error(error);
+                            toast.error('Erro ao gerar PDF');
+                          }
                         }}>
                           <FileText className="h-4 w-4 mr-2" /> Gerar Contrato
                         </DropdownMenuItem>
