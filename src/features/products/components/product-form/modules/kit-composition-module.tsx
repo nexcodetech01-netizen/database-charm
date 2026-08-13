@@ -25,29 +25,37 @@ interface Props {
   companyId: string;
   composition: ComponentItem[];
   setComposition: (c: ComponentItem[]) => void;
+  currentProductId?: string;
 }
 
-export function KitCompositionModule({ companyId, composition, setComposition }: Props) {
+export function KitCompositionModule({ companyId, composition, setComposition, currentProductId }: Props) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
   const { data: searchResults = [] } = useQuery({
-    queryKey: ['product-search-kit', search],
+    queryKey: ['product-search-kit', search, companyId, currentProductId],
     queryFn: async () => {
-      if (!search.trim()) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
         .select('id, name, sku, cost, stock, created_at')
         .eq('company_id', companyId)
         .eq('product_type', 'simple')
-        .or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(20);
+
+      if (currentProductId) {
+        query = query.neq('id', currentProductId);
+      }
+
+      if (search.trim()) {
+        query = query.ilike('name', `%${search.trim()}%`);
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
       return data || [];
     },
-    enabled: search.length > 2
   });
 
   const addComponent = (product: any) => {
