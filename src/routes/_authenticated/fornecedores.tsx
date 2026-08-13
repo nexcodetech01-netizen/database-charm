@@ -16,6 +16,7 @@ import {
   useSupplierMetrics,
 } from "@/features/suppliers";
 import type { SupplierListFilters, SupplierWithMeta } from "@/features/suppliers";
+import { canDeleteSupplier } from "@/features/suppliers/lib/can-delete-supplier";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatNumber } from "@/lib/format";
 
@@ -70,10 +71,9 @@ function SuppliersPage() {
     }
   }
   async function handleDelete(s: SupplierWithMeta) {
-    if (s.products_count > 0) {
-      toast.error("Não é possível excluir", {
-        description: `Este fornecedor está vinculado a ${s.products_count} produto(s). Arquive em vez de excluir.`,
-      });
+    const check = canDeleteSupplier(s);
+    if (!check.allowed) {
+      toast.error("Não é possível excluir", { description: check.reason });
       return;
     }
     if (!confirm(`Excluir permanentemente "${s.name}"?`)) return;

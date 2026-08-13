@@ -5,7 +5,7 @@ import { useSupplierMetrics } from "../hooks/use-suppliers";
 
 export function SupplierMetrics({ companyId }: { companyId: string }) {
   const { data, isLoading } = useSupplierMetrics(companyId);
-  const items = [
+  const items: { label: string; value: number | undefined; icon: typeof Truck; tone?: string; hint?: string }[] = [
     { label: "Total de fornecedores", value: data?.total, icon: Truck },
     {
       label: "Fornecedores ativos",
@@ -18,7 +18,6 @@ export function SupplierMetrics({ companyId }: { companyId: string }) {
       label: "Compras vinculadas",
       value: data?.purchasesLinked,
       icon: ShoppingCart,
-      hint: "Em breve",
     },
   ];
   return (
