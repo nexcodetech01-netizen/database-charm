@@ -35,8 +35,22 @@ const LIST_SELECT = `
 const DETAIL_SELECT = `
   *,
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
-  supplier:product_suppliers(id, name)
+  supplier:product_suppliers(id, name),
+  composition:product_kit_components!product_kit_components_parent_id_fkey(
+    id, component_id, quantity,
+    product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+  )
 `;
+
+function calculateKitStock(composition: any[]) {
+  if (!composition || composition.length === 0) return 0;
+  const stocks = composition.map((c: any) => {
+    const componentStock = Number(c.product?.stock ?? 0);
+    const quantityInKit = Number(c.quantity || 1);
+    return Math.floor(componentStock / quantityInKit);
+  });
+  return Math.min(...stocks);
+}
 
 export const productsService = {
   async list(companyId: string, filters: ProductListFilters) {
@@ -72,7 +86,8 @@ export const productsService = {
     const { data, error, count } = await q;
     if (error) throw error;
 
-    let rows = (data ?? []) as unknown as Product[];
+    let rows = (data ?? []) as unknown as any[];
+    
     // "low" precisa comparar stock <= min_stock — filtro client-side pós query
     if (filters.stock === "low") {
       rows = rows.filter((r) => Number(r.stock) <= Number(r.min_stock));
@@ -116,6 +131,11 @@ export const productsService = {
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
+    
+    if (data && data.product_type === 'kit' && data.composition) {
+      data.stock = calculateKitStock(data.composition);
+    }
+    
     return data;
   },
 

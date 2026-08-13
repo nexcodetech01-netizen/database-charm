@@ -23,22 +23,38 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
         </Label>
         
         <div className="space-y-3">
-          <Input
-            id="stock"
-            type="number"
-            value={form.stock}
-            onChange={(e) => {
-              if (isKit) return;
-              setForm((s: any) => ({ ...s, stock: e.target.value }));
-            }}
-            className="text-lg font-bold tabular-nums"
-            disabled={isEdit || isKit}
-            readOnly={isEdit || isKit}
-          />
+          <div className="relative">
+            <Input
+              id="stock"
+              type="number"
+              value={form.stock}
+              onChange={(e) => {
+                if (isKit) return;
+                setForm((s: any) => ({ ...s, stock: e.target.value }));
+              }}
+              className={cn(
+                "text-lg font-bold tabular-nums pr-12",
+                isKit && "text-blue-600 bg-blue-50/30"
+              )}
+              disabled={isEdit || isKit}
+              readOnly={isEdit || isKit}
+            />
+            {isKit && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Package className="h-5 w-5 text-blue-500" />
+              </div>
+            )}
+          </div>
           {isKit ? (
-            <p className="text-[10px] text-muted-foreground bg-blue-50/50 p-2 rounded-sm border border-blue-100 italic">
-              O estoque de um kit é calculado automaticamente com base no menor saldo disponível entre seus componentes.
-            </p>
+            <div className="space-y-2">
+              <p className="text-[10px] text-blue-700 bg-blue-50/50 p-2 rounded-sm border border-blue-100 italic flex items-start gap-2">
+                <Boxes className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>
+                  Calculado via componentes: <strong>{form.stock} unid.</strong><br/>
+                  O estoque de um kit é o menor saldo disponível entre seus componentes.
+                </span>
+              </p>
+            </div>
           ) : isEdit && (
             <p className="text-[10px] text-muted-foreground">
               O saldo não pode ser editado direto aqui — o sistema bloqueia essa alteração no banco

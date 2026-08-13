@@ -175,16 +175,28 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
           const isKit = (p as any).product_type === "kit";
           const stock = Number(p.stock);
           const minStock = Number(p.min_stock);
+
+          // Lógica de Stock Virtual para Kits na Listagem
+          let displayStock = stock;
+          if (isKit && p.composition && p.composition.length > 0) {
+            const stocks = p.composition.map((c: any) => {
+              const componentStock = Number(c.product?.stock ?? 0);
+              const quantityInKit = Number(c.quantity || 1);
+              return Math.floor(componentStock / quantityInKit);
+            });
+            displayStock = Math.min(...stocks);
+          }
+
           return (
             <div className="flex flex-col items-end">
               <span
                 className={cn(
                   "tabular-nums",
-                  stock <= minStock && !isKit ? "font-medium text-warning" : undefined
+                  displayStock <= minStock && !isKit ? "font-medium text-warning" : undefined
                 )}
                 title={isKit ? "Estoque calculado (Mínimo dos componentes)" : undefined}
               >
-                {formatNumber(stock)} {p.unit}
+                {formatNumber(displayStock)} {p.unit}
               </span>
               {isKit && (
                 <span className="text-[9px] uppercase tracking-tighter text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-1 rounded-sm">
