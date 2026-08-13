@@ -279,8 +279,16 @@ export const productsService = {
 
       // Sync composition
       if (composition !== undefined) {
-        // Clear existing
-        await supabase.from("product_kit_components").delete().eq("parent_id", id);
+        // CORREÇÃO: Limpeza rigorosa por parent_id para evitar duplicidade
+        const { error: deleteError } = await supabase
+          .from("product_kit_components")
+          .delete()
+          .eq("parent_id", id);
+        
+        if (deleteError) {
+          console.error("Erro ao limpar composição antiga:", deleteError);
+          throw deleteError;
+        }
         
         if (composition.length > 0) {
           const companyId = updated?.company_id || (input as any)?.company_id;
@@ -289,9 +297,16 @@ export const productsService = {
               company_id: companyId,
               parent_id: id,
               component_id: c.component_id,
-              quantity: c.quantity
+              quantity: Number(c.quantity || 1)
             }));
-            await supabase.from("product_kit_components").insert(components);
+            const { error: insertError } = await supabase
+              .from("product_kit_components")
+              .insert(components);
+            
+            if (insertError) {
+              console.error("Erro ao inserir nova composição:", insertError);
+              throw insertError;
+            }
           }
         }
       }
