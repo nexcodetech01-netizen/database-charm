@@ -110,6 +110,8 @@ export class ConsignmentService {
     settlementData: {
       items_sold: Record<string, number>;
       items_returned: Record<string, number>;
+      items_extraviado: Record<string, number>;
+      extravio_notes: Record<string, string>;
       gross_amount: number;
       reseller_commission: number;
       net_receivable: number;
@@ -122,7 +124,9 @@ export class ConsignmentService {
         consignment_id: consignmentId,
         items_snapshot: {
           sold: settlementData.items_sold,
-          returned: settlementData.items_returned
+          returned: settlementData.items_returned,
+          extraviado: settlementData.items_extraviado,
+          notes: settlementData.extravio_notes
         },
         gross_amount: settlementData.gross_amount,
         reseller_commission: settlementData.reseller_commission,
@@ -141,10 +145,11 @@ export class ConsignmentService {
     for (const itemId of itemIds) {
       const sold = settlementData.items_sold[itemId] || 0;
       const returned = settlementData.items_returned[itemId] || 0;
+      const extraviado = settlementData.items_extraviado[itemId] || 0;
       
       const { data: currentItem } = await supabase
         .from('consignment_items')
-        .select('sold_quantity, returned_quantity')
+        .select('sold_quantity, returned_quantity, quantidade_extraviada')
         .eq('id', itemId)
         .single();
       
@@ -153,7 +158,8 @@ export class ConsignmentService {
           .from('consignment_items')
           .update({
             sold_quantity: (currentItem as any).sold_quantity + sold,
-            returned_quantity: (currentItem as any).returned_quantity + returned
+            returned_quantity: (currentItem as any).returned_quantity + returned,
+            quantidade_extraviada: ((currentItem as any).quantidade_extraviada || 0) + extraviado
           })
           .eq('id', itemId);
       }
