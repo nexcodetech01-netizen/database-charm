@@ -132,7 +132,8 @@ function calculateKitStock(composition: any[]) {
   const stocks = composition.map((c: any) => {
     const componentStock = Number(c.stock || c.product?.stock || 0);
     const quantityInKit = Number(c.quantity || 1);
-    return Math.floor(componentStock / quantityInKit);
+    const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
+    return Math.floor(componentStock / safeQuantity);
   });
   return Math.min(...stocks);
 }
