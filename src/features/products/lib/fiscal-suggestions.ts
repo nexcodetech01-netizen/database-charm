@@ -61,7 +61,7 @@ export const fiscalSuggestionService = {
     limit = 3,
   ): Promise<FiscalHistorySuggestion[]> {
     const term = name.trim();
-    if (!companyId || term.length < 3) return [];
+    if (!companyId || term.length < 2) return [];
 
     const { data, error } = await supabase.rpc("suggest_product_fiscal", {
       _company_id: companyId,
