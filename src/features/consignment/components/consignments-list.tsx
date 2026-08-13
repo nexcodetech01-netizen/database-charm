@@ -34,15 +34,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreateConsignmentDialog } from './create-consignment-dialog';
 
 export function ConsignmentsList() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+
+  const companyId = (user as any)?.company_id;
 
   const { data: consignments = [], isLoading } = useQuery({
-    queryKey: ['consignments', (user as any)?.company_id],
-    queryFn: () => ConsignmentService.listConsignments((user as any)!.company_id!),
-    enabled: !!(user as any)?.company_id,
+    queryKey: ['consignments', companyId],
+    queryFn: () => ConsignmentService.listConsignments(companyId!),
+    enabled: !!companyId,
   });
 
   const getStatusBadge = (status: string) => {
@@ -75,11 +79,17 @@ export function ConsignmentsList() {
           />
         </div>
         
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => setIsCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nova Consignação
         </Button>
       </div>
+
+      <CreateConsignmentDialog 
+        open={isCreateOpen} 
+        onOpenChange={setIsCreateOpen} 
+        companyId={companyId} 
+      />
 
       <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
         {isLoading ? (
