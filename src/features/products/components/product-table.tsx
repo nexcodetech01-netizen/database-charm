@@ -176,16 +176,6 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
           const stock = Number(p.stock);
           const minStock = Number(p.min_stock);
 
-          // Lógica de Stock Virtual para Kits na Listagem
-          let displayStock = stock;
-          if (isKit && p.composition && p.composition.length > 0) {
-            const stocks = p.composition.map((c: any) => {
-              const componentStock = Number(c.product?.stock ?? 0);
-              const quantityInKit = Number(c.quantity || 1);
-              return Math.floor(componentStock / quantityInKit);
-            });
-            displayStock = Math.min(...stocks);
-          }
 
           return (
             <div className="flex flex-col items-end">
