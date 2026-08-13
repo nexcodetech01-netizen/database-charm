@@ -13,6 +13,7 @@ interface StockFormProps {
 
 export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormProps) {
   const numValue = parseFloat(String(form.stock).replace(/[^\d.-]/g, "")) || 0;
+  const isKit = form.product_type === 'kit';
   
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -27,14 +28,18 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
             type="number"
             value={form.stock}
             onChange={(e) => {
-              if (form.product_type === 'kit') return;
+              if (isKit) return;
               setForm((s: any) => ({ ...s, stock: e.target.value }));
             }}
             className="text-lg font-bold tabular-nums"
-            disabled={isEdit}
-            readOnly={isEdit}
+            disabled={isEdit || isKit}
+            readOnly={isEdit || isKit}
           />
-          {isEdit && (
+          {isKit ? (
+            <p className="text-[10px] text-muted-foreground bg-blue-50/50 p-2 rounded-sm border border-blue-100 italic">
+              O estoque de um kit é calculado automaticamente com base no menor saldo disponível entre seus componentes.
+            </p>
+          ) : isEdit && (
             <p className="text-[10px] text-muted-foreground">
               O saldo não pode ser editado direto aqui — o sistema bloqueia essa alteração no banco
               de dados (o valor precisa passar por uma movimentação, para manter o histórico
