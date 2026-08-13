@@ -23,6 +23,7 @@ interface ComponentItem {
 
 interface Props {
   companyId: string;
+  currentProductId?: string;
   composition: ComponentItem[];
   setComposition: (c: ComponentItem[]) => void;
 }
