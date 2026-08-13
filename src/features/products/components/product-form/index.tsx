@@ -149,6 +149,7 @@ interface Props {
   initialPrice?: number;
 }
 
+
 export function ProductForm({ companyId, product, duplicateOf, initialPrice }: Props) {
   const navigate = useNavigate();
   const qc = useQueryClient();
