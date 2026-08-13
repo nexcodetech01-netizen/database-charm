@@ -170,15 +170,29 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
         header: "Estoque",
         align: "right",
         className: "tabular-nums",
-        cell: (p) => (
-          <span
-            className={
-              Number(p.stock) <= Number(p.min_stock) ? "font-medium text-warning" : undefined
-            }
-          >
-            {formatNumber(Number(p.stock))} {p.unit}
-          </span>
-        ),
+        cell: (p) => {
+          const isKit = (p as any).product_type === "kit";
+          const stock = Number(p.stock);
+          const minStock = Number(p.min_stock);
+          return (
+            <div className="flex flex-col items-end">
+              <span
+                className={cn(
+                  "tabular-nums",
+                  stock <= minStock && !isKit ? "font-medium text-warning" : undefined
+                )}
+                title={isKit ? "Estoque calculado (Mínimo dos componentes)" : undefined}
+              >
+                {formatNumber(stock)} {p.unit}
+              </span>
+              {isKit && (
+                <span className="text-[9px] uppercase tracking-tighter text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-1 rounded-sm">
+                  Kit / Virtual
+                </span>
+              )}
+            </div>
+          );
+        },
       },
       {
         id: "status",
