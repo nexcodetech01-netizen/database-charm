@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Package, 
@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CreateConsignmentDialog } from './create-consignment-dialog';
+import { generateConsignmentPDF } from '../lib/pdf.functions';
 
 export function ConsignmentsList() {
   const { user } = useAuth();
@@ -150,7 +150,18 @@ export function ConsignmentsList() {
                         <DropdownMenuItem className="cursor-pointer">
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => {
+                          toast.promise(generateConsignmentPDF({ 
+                            data: { 
+                              consignmentId: c.id, 
+                              companyId: companyId 
+                            } 
+                          }), {
+                            loading: 'Gerando PDF...',
+                            success: (res) => res.message || 'Contrato gerado com sucesso!',
+                            error: 'Erro ao gerar PDF'
+                          });
+                        }}>
                           <FileText className="h-4 w-4 mr-2" /> Gerar Contrato
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-800" />
