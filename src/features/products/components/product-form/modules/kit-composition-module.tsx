@@ -32,8 +32,13 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
+  const selectedProductIds = useMemo(() => 
+    composition.map(c => c.component_id),
+    [composition]
+  );
+
   const { data: searchResults = [] } = useQuery({
-    queryKey: ['product-search-kit', search, currentProductId],
+    queryKey: ['product-search-kit', search, currentProductId, selectedProductIds],
     queryFn: async () => {
       let query = supabase
         .from('products')
@@ -47,16 +52,26 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
         query = query.neq('id', currentProductId);
       }
 
+      // Filtrar produtos já selecionados no kit
+      if (selectedProductIds.length > 0) {
+        // Usamos uma string formatada de forma segura para o NOT IN
+        const filterStr = `(${selectedProductIds.map(id => id).join(',')})`;
+        query = query.not('id', 'in', filterStr);
+      }
+
       if (search.trim()) {
         query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
       }
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na busca de componentes do kit:", error);
+        throw error;
+      }
       return data || [];
     },
-    // We allow fetching even without search to show initial products
+    enabled: true,
   });
 
   const addComponent = (product: any) => {
@@ -109,7 +124,10 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
             </h3>
             <p className="text-sm text-slate-400">Gerencie as peças que formam este produto composto.</p>
           </div>
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (isOpen) setSearch(""); // Reset search when opening
+          }}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="bg-slate-950 border-slate-800 hover:bg-slate-900">
                 <Plus className="mr-2 h-4 w-4" />
