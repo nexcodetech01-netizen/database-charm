@@ -21,6 +21,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
 import { Route as AuthenticatedSaudePlataformaRouteImport } from './routes/_authenticated/saude-plataforma'
+import { Route as AuthenticatedRevendedoresRouteImport } from './routes/_authenticated/revendedores'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedProcessamentosRouteImport } from './routes/_authenticated/processamentos'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedConsignacoesRouteImport } from './routes/_authenticated/consignacoes'
 import { Route as AuthenticatedComprasRouteImport } from './routes/_authenticated/compras'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
@@ -164,6 +166,12 @@ const AuthenticatedSaudePlataformaRoute =
     path: '/saude-plataforma',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRevendedoresRoute =
+  AuthenticatedRevendedoresRouteImport.update({
+    id: '/revendedores',
+    path: '/revendedores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -239,6 +247,12 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConsignacoesRoute =
+  AuthenticatedConsignacoesRouteImport.update({
+    id: '/consignacoes',
+    path: '/consignacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedComprasRoute = AuthenticatedComprasRouteImport.update({
   id: '/compras',
   path: '/compras',
@@ -656,6 +670,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/compras': typeof AuthenticatedComprasRoute
+  '/consignacoes': typeof AuthenticatedConsignacoesRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
@@ -670,6 +685,7 @@ export interface FileRoutesByFullPath {
   '/processamentos': typeof AuthenticatedProcessamentosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/revendedores': typeof AuthenticatedRevendedoresRoute
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -751,6 +767,7 @@ export interface FileRoutesByTo {
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/compras': typeof AuthenticatedComprasRoute
+  '/consignacoes': typeof AuthenticatedConsignacoesRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
@@ -765,6 +782,7 @@ export interface FileRoutesByTo {
   '/processamentos': typeof AuthenticatedProcessamentosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/revendedores': typeof AuthenticatedRevendedoresRoute
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -847,6 +865,7 @@ export interface FileRoutesById {
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/compras': typeof AuthenticatedComprasRoute
+  '/_authenticated/consignacoes': typeof AuthenticatedConsignacoesRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documentos': typeof AuthenticatedDocumentosRoute
@@ -861,6 +880,7 @@ export interface FileRoutesById {
   '/_authenticated/processamentos': typeof AuthenticatedProcessamentosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/revendedores': typeof AuthenticatedRevendedoresRoute
   '/_authenticated/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
@@ -944,6 +964,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/clientes'
     | '/compras'
+    | '/consignacoes'
     | '/crm'
     | '/dashboard'
     | '/documentos'
@@ -958,6 +979,7 @@ export interface FileRouteTypes {
     | '/processamentos'
     | '/produtos'
     | '/relatorios'
+    | '/revendedores'
     | '/saude-plataforma'
     | '/vendas'
     | '/whatsapp'
@@ -1039,6 +1061,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/clientes'
     | '/compras'
+    | '/consignacoes'
     | '/crm'
     | '/dashboard'
     | '/documentos'
@@ -1053,6 +1076,7 @@ export interface FileRouteTypes {
     | '/processamentos'
     | '/produtos'
     | '/relatorios'
+    | '/revendedores'
     | '/saude-plataforma'
     | '/vendas'
     | '/whatsapp'
@@ -1134,6 +1158,7 @@ export interface FileRouteTypes {
     | '/_authenticated/categorias'
     | '/_authenticated/clientes'
     | '/_authenticated/compras'
+    | '/_authenticated/consignacoes'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/documentos'
@@ -1148,6 +1173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/processamentos'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
+    | '/_authenticated/revendedores'
     | '/_authenticated/saude-plataforma'
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
@@ -1320,6 +1346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSaudePlataformaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/revendedores': {
+      id: '/_authenticated/revendedores'
+      path: '/revendedores'
+      fullPath: '/revendedores'
+      preLoaderRoute: typeof AuthenticatedRevendedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
       path: '/relatorios'
@@ -1416,6 +1449,13 @@ declare module '@tanstack/react-router' {
       path: '/crm'
       fullPath: '/crm'
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consignacoes': {
+      id: '/_authenticated/consignacoes'
+      path: '/consignacoes'
+      fullPath: '/consignacoes'
+      preLoaderRoute: typeof AuthenticatedConsignacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/compras': {
@@ -2062,6 +2102,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedComprasRoute: typeof AuthenticatedComprasRoute
+  AuthenticatedConsignacoesRoute: typeof AuthenticatedConsignacoesRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentosRoute: typeof AuthenticatedDocumentosRoute
@@ -2076,6 +2117,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProcessamentosRoute: typeof AuthenticatedProcessamentosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedRevendedoresRoute: typeof AuthenticatedRevendedoresRoute
   AuthenticatedSaudePlataformaRoute: typeof AuthenticatedSaudePlataformaRoute
   AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
@@ -2123,6 +2165,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedComprasRoute: AuthenticatedComprasRoute,
+  AuthenticatedConsignacoesRoute: AuthenticatedConsignacoesRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentosRoute: AuthenticatedDocumentosRoute,
@@ -2137,6 +2180,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProcessamentosRoute: AuthenticatedProcessamentosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedRevendedoresRoute: AuthenticatedRevendedoresRoute,
   AuthenticatedSaudePlataformaRoute: AuthenticatedSaudePlataformaRoute,
   AuthenticatedVendasRoute: AuthenticatedVendasRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,

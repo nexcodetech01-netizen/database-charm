@@ -48,6 +48,8 @@ export const ROUTES = {
   commercialSimulator: "/inteligencia-comercial/simulador",
   commercialReview: "/inteligencia-comercial/revisao-precos",
   commercialRecalculate: "/inteligencia-comercial/recalcular-precos",
+  consignments: "/consignacoes",
+  resellers: "/revendedores",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
