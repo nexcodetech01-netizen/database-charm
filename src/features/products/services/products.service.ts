@@ -195,7 +195,7 @@ export const productsService = {
           product_id: duplicate.id,
           quantity: qty,
           type: "in",
-          source: "product_upsert",
+          source: "manual", // Fallback seguro conforme restrição do banco (enum: manual, purchase, sale, adjustment, etc)
           reason: "Entrada por cadastro/importação de produto existente",
           movement_date: new Date().toISOString(),
         });
@@ -221,7 +221,7 @@ export const productsService = {
         product_id: data.id,
         quantity: initialQty,
         type: "in",
-        source: "product_create",
+        source: "manual", // Fallback seguro conforme restrição do banco (enum: manual, purchase, sale, adjustment, etc)
         reason: "Saldo inicial no cadastro do produto",
         movement_date: new Date().toISOString(),
       });
