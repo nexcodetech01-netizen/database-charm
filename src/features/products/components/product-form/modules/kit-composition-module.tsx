@@ -109,7 +109,11 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
 
   const kitStock = useMemo(() => {
     if (composition.length === 0) return 0;
-    const stocks = composition.map(c => Math.floor(c.stock / c.quantity));
+    const stocks = composition.map(c => {
+      const qty = Number(c.quantity || 1);
+      const safeQty = qty > 0 ? qty : 1;
+      return Math.floor(Number(c.stock || 0) / safeQty);
+    });
     return Math.min(...stocks);
   }, [composition]);
 

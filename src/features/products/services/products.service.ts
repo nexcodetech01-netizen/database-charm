@@ -49,9 +49,16 @@ const DETAIL_SELECT = `
 function calculateKitStock(composition: any[]) {
   if (!composition || composition.length === 0) return 0;
   const stocks = composition.map((c: any) => {
+    // Para cada componente vinculado, pegamos o estoque individual do produto correspondente
+    // e dividimos pela quantidade necessária no kit. O saldo final do Kit é o menor valor.
     const componentStock = Number(c.product?.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
-    return Math.floor(componentStock / quantityInKit);
+    
+    // Se a quantidade no kit for zero (não deveria ocorrer por validação), tratamos como 1 para evitar divisão por zero
+    const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
+    
+    // Arredondamos para baixo, pois não existem meio kits.
+    return Math.floor(componentStock / safeQuantity);
   });
   return Math.min(...stocks);
 }
