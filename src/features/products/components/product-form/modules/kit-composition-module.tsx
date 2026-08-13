@@ -28,7 +28,7 @@ interface Props {
   setComposition: (c: ComponentItem[]) => void;
 }
 
-export function KitCompositionModule({ companyId, composition, setComposition }: Props) {
+export function KitCompositionModule({ companyId, currentProductId, composition, setComposition }: Props) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
