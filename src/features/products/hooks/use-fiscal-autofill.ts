@@ -149,7 +149,7 @@ export function useFiscalAutofill({
   const { data: masterSuggestions = [], isFetching: isSearchingMaster } = useQuery({
     queryKey: ["products", "ncm-master-search", debouncedName],
     queryFn: () => ncmMasterService.search(debouncedName),
-    enabled: debouncedName.length >= 3,
+    enabled: debouncedName.length >= 2,
     staleTime: 60_000,
   });
 
