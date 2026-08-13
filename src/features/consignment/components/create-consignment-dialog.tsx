@@ -35,6 +35,7 @@ import { ProductPickerDialog } from '@/features/catalog/components/product-picke
 import { Trash2, Plus, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { supabase } from '@/integrations/supabase/client';
+import { generateConsignmentPDF } from '../lib/pdf-generator';
 
 const consignmentFormSchema = z.object({
   reseller_id: z.string().uuid('Selecione um revendedor'),
@@ -103,9 +104,23 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
         }))
       );
     },
-    onSuccess: () => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['consignments'] });
       toast.success('Consignação criada com sucesso!');
+      
+      try {
+        const { consignment, items } = await ConsignmentService.getConsignment(data.id);
+        const blob = await generateConsignmentPDF(consignment, items, "Empresa NexOS");
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contrato-consignacao-${data.id.split('-')[0]}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Erro ao gerar PDF automático:", err);
+      }
+
       onOpenChange(false);
       form.reset();
       setSelectedItems([]);
