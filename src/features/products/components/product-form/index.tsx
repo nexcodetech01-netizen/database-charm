@@ -773,6 +773,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
             <TabsContent value="composicao" className="mt-0 space-y-8">
               <KitCompositionModule
                 companyId={companyId}
+                currentProductId={product?.id}
                 composition={form.composition}
                 setComposition={(composition) => setForm(s => ({ ...s, composition }))}
               />
