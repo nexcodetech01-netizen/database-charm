@@ -71,8 +71,11 @@ export function useUpdateProduct() {
       if (updated) {
         qc.setQueryData(productsKeys.detail(vars.id), updated);
       }
+      
+      // Invalidação instantânea do cache da listagem para refletir mudanças (ex: estoque de kit)
+      await qc.invalidateQueries({ queryKey: productsKeys.all });
+      
       await Promise.all([
-        qc.invalidateQueries({ queryKey: productsKeys.all, refetchType: "all" }),
         qc.invalidateQueries({
           queryKey: productsKeys.detail(vars.id),
           refetchType: "all",

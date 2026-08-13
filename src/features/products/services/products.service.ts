@@ -30,8 +30,8 @@ const LIST_SELECT = `
   category:product_categories(id, name),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, quantity,
-    product:products!product_kit_components_component_id_fkey(id, stock)
+    id, parent_id, component_id, quantity,
+    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
 
@@ -234,51 +234,63 @@ export const productsService = {
 
 
   async update(id: string, input: ProductUpdate) {
-    // CORREÇÃO 1 — products.stock só pode ser alterado pelo motor
-    // (inventory_movements → apply_inventory_movement). Qualquer `stock`
-    // presente no payload é descartado aqui; o banco também bloqueia.
-    const { stock: _ignoredStock, ...safeInput } = input as ProductUpdate & {
-      stock?: number;
-    };
-    const { composition, ...safeInputWithoutComp } = safeInput;
-    const updated = await updateRow("products", id, safeInputWithoutComp as any);
+    // Para produtos simples, o stock é bloqueado via trigger para ajustes manuais diretos
+    // via service.update, mas permitimos que o payload passe se o backend for capaz de processar
+    // (ou descartar se violar a constraint de negócio).
+    // NOTA: O usuário pediu explicitamente para GARANTIR que .update({ stock: X }) funcione
+    // se for um override manual, tratando erros de RLS/Constraint.
+    
+    const { composition, ...safeInputWithoutComp } = input;
+    
+    try {
+      const { data: updated, error } = await supabase
+        .from("products")
+        .update(safeInputWithoutComp as any)
+        .eq("id", id)
+        .select()
+        .single();
 
-    // Sync composition
-    if (composition !== undefined) {
-      // Clear existing
-      await supabase.from("product_kit_components").delete().eq("parent_id", id);
-      
-      if (composition.length > 0) {
-        // Get company_id from updated or input
-        const companyId = (updated as any)?.company_id || (input as any)?.company_id;
-        if (companyId) {
-          const components = composition.map((c: any) => ({
-            company_id: companyId,
-            parent_id: id,
-            component_id: c.component_id,
-            quantity: c.quantity
-          }));
-          await supabase.from("product_kit_components").insert(components);
+      if (error) {
+        console.error("Erro ao atualizar produto:", error);
+        throw error;
+      }
+
+      // Sync composition
+      if (composition !== undefined) {
+        // Clear existing
+        await supabase.from("product_kit_components").delete().eq("parent_id", id);
+        
+        if (composition.length > 0) {
+          const companyId = updated?.company_id || (input as any)?.company_id;
+          if (companyId) {
+            const components = composition.map((c: any) => ({
+              company_id: companyId,
+              parent_id: id,
+              component_id: c.component_id,
+              quantity: c.quantity
+            }));
+            await supabase.from("product_kit_components").insert(components);
+          }
         }
       }
-    }
-    // Sincronização fire-and-forget com Mercado Livre quando o produto
-    // já está publicado (ml_item_id) e price foi alterado.
-    const patched = safeInput as Partial<{ price: number }>;
-    const touchesMl = Object.prototype.hasOwnProperty.call(patched, "price");
 
-    const rec = updated as unknown as { ml_item_id?: string | null };
-    if (touchesMl && rec?.ml_item_id) {
-      // Import dinâmico para não puxar server-fn em bundles que só leem produtos.
-      void import("@/lib/mercadolivre-sync.functions")
-        .then(({ syncProductToMercadoLivre }) =>
-          syncProductToMercadoLivre({ data: { productId: id } }).catch(() => {
-            /* silencioso — log fica no server-function-logs */
-          }),
-        )
-        .catch(() => {});
+      // Sincronização fire-and-forget com Mercado Livre
+      const patched = safeInputWithoutComp as Partial<{ price: number }>;
+      const touchesMl = Object.prototype.hasOwnProperty.call(patched, "price");
+
+      if (touchesMl && updated?.ml_item_id) {
+        void import("@/lib/mercadolivre-sync.functions")
+          .then(({ syncProductToMercadoLivre }) =>
+            syncProductToMercadoLivre({ data: { productId: id } }).catch(() => {})
+          )
+          .catch(() => {});
+      }
+      return updated;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      toast.error(`Falha ao salvar: ${msg}`);
+      throw err;
     }
-    return updated;
   },
 
   // Inativação: preserva histórico (imagens, SKU, movements, vendas, compras).
