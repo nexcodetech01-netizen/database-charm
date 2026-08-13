@@ -14,13 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { useRegisterCashMovement, useCashSummary } from "../hooks/use-cash";
-import type { CashMovementType } from "../types";
+import type { CashMovementType, CashSession } from "../types";
 
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   type: CashMovementType;
-  sessionId: string;
+  session: CashSession;
   companyId: string;
   createdBy: string | null;
 }
@@ -29,14 +29,19 @@ export function MovementDialog({
   open,
   onOpenChange,
   type,
-  sessionId,
+  session,
   companyId,
   createdBy,
 }: Props) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
-  const { data: summary } = useCashSummary({ id: sessionId } as any);
+  // Precisa da sessão COMPLETA (não só o id): computeSummary usa
+  // opened_at/closed_at para casar recebimentos financeiros com esta
+  // sessão. Passar um objeto parcial ({id} só) quebrava esse filtro
+  // silenciosamente, tornando a trava de segurança da sangria (não deixar
+  // retirar mais do que tem na gaveta) pouco confiável.
+  const { data: summary } = useCashSummary(session);
   const { mutateAsync, isPending } = useRegisterCashMovement();
 
   const label = type === "cash_in" ? "Suprimento" : "Sangria";
@@ -64,7 +69,7 @@ export function MovementDialog({
     }
     try {
       await mutateAsync({
-        sessionId,
+        sessionId: session.id,
         companyId,
         createdBy,
         type,
