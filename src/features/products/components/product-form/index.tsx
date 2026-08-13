@@ -136,9 +136,11 @@ function calculateKitStock(composition: any[], parentId?: string) {
     const componentStock = Number(componentProduct.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
+    // Cálculo do estoque proporcional arredondado para baixo
     return Math.floor(componentStock / safeQuantity);
   });
   
+  // O estoque do kit é o MENOR saldo entre os componentes (gargalo)
   return Math.min(...stocks);
 }
 
@@ -377,12 +379,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     if (form.product_type === 'kit') {
       setForm(s => ({
         ...s,
-        cost: String(compositionCost)
-        // Removida a sincronização automática de stock: String(kitStockValue) 
-        // para permitir que o usuário digite e mantenha seu valor manual.
+        cost: String(compositionCost),
+        // O estoque do kit deve refletir o valor calculado pelo gargalo
+        stock: String(kitStockValue)
       }));
     }
-  }, [form.product_type, compositionCost, setForm]);
+  }, [form.product_type, compositionCost, kitStockValue, setForm]);
 
   // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL
   useEffect(() => {

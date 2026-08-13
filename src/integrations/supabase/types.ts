@@ -7396,6 +7396,7 @@ export type Database = {
         Args: { _company_id: string; _dry_run?: boolean }
         Returns: Json
       }
+      refresh_kit_stock: { Args: { p_parent_id: string }; Returns: undefined }
       reprocess_received_purchase: {
         Args: { _purchase_id: string }
         Returns: {

@@ -29,14 +29,17 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               type="number"
               value={form.stock}
               onChange={(e) => {
-                // Permitir edição manual mesmo se for Kit (opcional conforme solicitação)
-                setForm((s: any) => ({ ...s, stock: e.target.value }));
+                // Permitir edição manual apenas em produtos simples durante a criação.
+                // Kits têm estoque calculado/travado via componentes.
+                if (!isKit) {
+                  setForm((s: any) => ({ ...s, stock: e.target.value }));
+                }
               }}
               className={cn(
                 "text-lg font-bold tabular-nums pr-12",
-                isKit && "text-white bg-blue-950/40 border-blue-500/30"
+                isKit && "text-blue-400 bg-blue-950/20 border-blue-500/50 cursor-not-allowed"
               )}
-              disabled={false} // Liberado para edição manual conforme pedido (prioridade absoluta do usuário)
+              disabled={isKit} // Travado para Kits para garantir a integridade do cálculo automático
 
             />
             {isKit && (
