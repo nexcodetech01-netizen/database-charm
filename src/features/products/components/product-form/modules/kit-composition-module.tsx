@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Search, Package } from "lucide-react";
+import { Plus, Trash2, Search, Package, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
     [composition]
   );
 
-  const { data: searchResults = [] } = useQuery({
+  const { data: searchResults = [], isLoading } = useQuery({
     queryKey: ['product-search-kit', search, currentProductId, selectedProductIds],
     queryFn: async () => {
       let query = supabase
@@ -135,7 +135,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[400px] p-0 bg-slate-950 border-slate-800" align="end">
-              <Command className="bg-slate-950">
+              <Command className="bg-slate-950" shouldFilter={false}>
                 <CommandInput 
                   placeholder="Pesquisar por Nome, SKU ou EAN..." 
                   value={search}
@@ -143,24 +143,33 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
                   className="border-none focus:ring-0"
                 />
                 <CommandList>
-                  <CommandEmpty className="py-6 text-center text-sm text-slate-500">
-                    {search.length > 0 ? "Nenhum produto encontrado." : "Comece a digitar para filtrar..."}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    {searchResults.map((p) => (
-                      <CommandItem
-                        key={p.id}
-                        onSelect={() => addComponent(p)}
-                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-900 aria-selected:bg-slate-900"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium text-slate-200">{p.name}</span>
-                          <span className="text-xs text-slate-500">SKU: {p.sku} | Estoque: {p.stock}</span>
-                        </div>
-                        <span className="text-sm font-bold text-blue-400">{formatCurrency(p.cost || 0)}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  {isLoading ? (
+                    <div className="py-6 flex items-center justify-center text-sm text-slate-500">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Buscando componentes...
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty className="py-6 text-center text-sm text-slate-500">
+                        {search.length > 0 ? "Nenhum produto encontrado." : "Comece a digitar para filtrar..."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {searchResults.map((p) => (
+                          <CommandItem
+                            key={p.id}
+                            onSelect={() => addComponent(p)}
+                            className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-900 aria-selected:bg-slate-900"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium text-slate-200">{p.name}</span>
+                              <span className="text-xs text-slate-500">SKU: {p.sku} | Estoque: {p.stock}</span>
+                            </div>
+                            <span className="text-sm font-bold text-blue-400">{formatCurrency(p.cost || 0)}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </>
+                  )}
                 </CommandList>
               </Command>
             </PopoverContent>
