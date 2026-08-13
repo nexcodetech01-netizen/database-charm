@@ -54,16 +54,16 @@ export function ResellersList() {
   });
 
   const { data: resellers = [], isLoading } = useQuery({
-    queryKey: ['resellers', user?.company_id],
-    queryFn: () => ConsignmentService.listResellers(user!.company_id!),
-    enabled: !!user?.company_id,
+    queryKey: ['resellers', (user as any)?.company_id],
+    queryFn: () => ConsignmentService.listResellers((user as any)!.company_id!),
+    enabled: !!(user as any)?.company_id,
   });
 
   const createResellerMutation = useMutation({
     mutationFn: (values: ResellerFormValues) => 
       ConsignmentService.createReseller({
         ...values,
-        company_id: user!.company_id!,
+        company_id: (user as any)!.company_id!,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resellers'] });
