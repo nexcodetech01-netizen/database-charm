@@ -1,7 +1,7 @@
 /**
  * Hooks React Query + Supabase Realtime para o Console WhatsApp.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -104,6 +104,15 @@ export function useConversationDetail(conversationId: string | null) {
 
 export function useConsoleRealtime(companyId: string | null, onNewInbound?: (message: { conversation_id: string; text: string; contact_name?: string }) => void) {
   const qc = useQueryClient();
+  // `onNewInbound` costuma ser passado como arrow function inline pelo
+  // chamador (sem useCallback) — sem esta ref, o efeito abaixo desmontava
+  // e recriava o canal Supabase Realtime a CADA RENDER do console (toda
+  // vez que a conversa selecionada, filtros etc. mudavam), podendo perder
+  // eventos durante a janela de reconexão. A ref mantém a callback sempre
+  // atualizada sem precisar entrar no array de dependências do efeito.
+  const onNewInboundRef = useRef(onNewInbound);
+  onNewInboundRef.current = onNewInbound;
+
   useEffect(() => {
     if (!companyId) return;
     const channel = supabase
@@ -139,7 +148,7 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
             qc.invalidateQueries({ queryKey: KEY.detail(msg.conversation_id) });
             
             // Notificação apenas para mensagens recebidas (inbound) ou que não sejam do operador
-            if ((msg.direction === "inbound" || msg.sender !== "operator") && onNewInbound) {
+            if ((msg.direction === "inbound" || msg.sender !== "operator") && onNewInboundRef.current) {
               // Busca os dados da conversa para pegar o nome do contato
               const { data: conv } = await supabase
                 .from("whatsapp_conversations")
@@ -159,7 +168,7 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
                 if ((contact as any)?.name) contactName = (contact as any).name;
               }
               
-              onNewInbound({
+              onNewInboundRef.current({
                 conversation_id: msg.conversation_id as string,
                 text: msg.text || "",
                 contact_name: contactName,
@@ -172,7 +181,10 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [companyId, qc, onNewInbound]);
+    // onNewInbound é intencionalmente omitido: usamos onNewInboundRef para
+    // sempre chamar a versão mais recente sem recriar o canal a cada render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, qc]);
 }
 
 /* -------- Mutations -------- */
