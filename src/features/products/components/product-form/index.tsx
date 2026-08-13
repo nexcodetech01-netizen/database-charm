@@ -632,6 +632,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       // 1. Se houver imagem principal pendente, enviar ANTES de salvar o produto
       // para garantir que temos o path para o cover_image_path
       let cover_image_path = product?.cover_image_path || null;
+      let image_url = (product as any)?.image_url || null;
       
       if (mainImageFile) {
         setUploadingMainImage(true);
@@ -641,6 +642,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           const tempId = product?.id || crypto.randomUUID();
           const path = await productImagesService.upload(companyId, tempId, mainImageFile);
           cover_image_path = path;
+          
+          // CORREÇÃO: Gerar e salvar a URL pública explicitamente na coluna image_url
+          const { data: publicData } = supabase.storage
+            .from(productImagesService.bucket)
+            .getPublicUrl(path);
+          
+          image_url = publicData.publicUrl;
         } catch (err) {
           console.error("Erro no upload da imagem:", err);
           throw new Error("Erro no upload da imagem. Verifique o tamanho do arquivo.");
@@ -652,7 +660,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       const finalPayload: ProductUpdate = {
         ...payload,
         cover_image_path,
-      };
+        image_url, // Incluímos a URL pública no payload para salvar na products.image_url
+      } as any;
 
       // O banco bloqueia qualquer alteração direta de "stock" em produtos já
       // existentes (só é permitida via inventory_movements, para manter o

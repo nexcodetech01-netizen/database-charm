@@ -109,7 +109,18 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
 
   const kitStock = useMemo(() => {
     if (composition.length === 0) return 0;
-    const stocks = composition.map(c => {
+    
+    // CORREÇÃO: Limpeza e deduplicação para garantir cálculo preciso pelo gargalo
+    const uniqueComponentsMap = new Map();
+    composition.forEach(c => {
+      if (c.component_id && !uniqueComponentsMap.has(c.component_id)) {
+        uniqueComponentsMap.set(c.component_id, c);
+      }
+    });
+    
+    const uniqueItems = Array.from(uniqueComponentsMap.values());
+    
+    const stocks = uniqueItems.map(c => {
       const qty = Number(c.quantity || 1);
       const safeQty = qty > 0 ? qty : 1;
       return Math.floor(Number(c.stock || 0) / safeQty);
