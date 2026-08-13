@@ -265,8 +265,6 @@ export const purchasesService = {
       other_costs: Number(header.other_costs ?? 0),
     });
 
-    console.log("[PurchasesService.create] Status enviado:", header.status);
-
     const { data: created, error } = await supabase
       .from("purchases")
       .insert({ ...header, ...totals })
@@ -274,7 +272,6 @@ export const purchasesService = {
       .single();
     
     if (error) throw error;
-    console.log("[PurchasesService.create] Status salvo no banco:", created.status);
 
 
     if (items.length > 0) {
@@ -301,8 +298,26 @@ export const purchasesService = {
     input: PurchaseUpdate & { items?: PurchaseItemDraft[] },
   ) {
     const { items: rawItems, ...header } = input;
-    
-    console.log("[PurchasesService.update] Status enviado:", header.status);
+
+    // Trava de integridade de estoque: uma vez "recebida", o gatilho que dá
+    // entrada no estoque (apply_purchase_to_inventory) já rodou e só roda
+    // uma vez (guardado por stock_applied). Editar os itens depois disso
+    // deixaria a compra e o estoque real dessincronizados silenciosamente,
+    // sem nenhum aviso — por isso bloqueamos aqui, na camada de serviço,
+    // como segunda linha de defesa além do bloqueio na tela.
+    if (rawItems) {
+      const { data: currentStatus, error: statusErr } = await supabase
+        .from("purchases")
+        .select("status")
+        .eq("id", id)
+        .maybeSingle();
+      if (statusErr) throw statusErr;
+      if (currentStatus?.status === "received") {
+        throw new Error(
+          "Esta compra já foi recebida e o estoque já foi aplicado — os itens não podem mais ser editados. Use um ajuste de estoque para corrigir quantidades.",
+        );
+      }
+    }
 
     // Resolve produtos auto-criados apenas quando itens vieram no update.
     let items: PurchaseItemDraft[] | undefined = rawItems;
@@ -342,8 +357,6 @@ export const purchasesService = {
     };
 
     const updated = await updateRow("purchases", id, updatePayload);
-
-    console.log("[PurchasesService.update] Status retornado pela API:", updated.status);
 
 
     if (items) {

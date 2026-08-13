@@ -35,8 +35,10 @@ interface Props {
   companyId: string;
   items: PurchaseItemDraft[];
   onChange: (items: PurchaseItemDraft[]) => void;
-  /** Se falso, bloqueia a adição de produtos até o fornecedor ser escolhido. */
+  /** Se falso, bloqueia a adição/edição de produtos. */
   enabled?: boolean;
+  /** Título e descrição mostrados quando enabled=false. */
+  disabledReason?: { title: string; description: string };
 }
 
 function publicImageUrl(path: string | null): string | null {
@@ -50,6 +52,7 @@ export function PurchaseItemsEditor({
   items,
   onChange,
   enabled = true,
+  disabledReason,
 }: Props) {
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<ProductOption[]>([]);
@@ -164,9 +167,12 @@ export function PurchaseItemsEditor({
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-4 text-sm">
         <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
         <div>
-          <p className="font-medium">Selecione o fornecedor primeiro</p>
+          <p className="font-medium">
+            {disabledReason?.title ?? "Selecione o fornecedor primeiro"}
+          </p>
           <p className="text-xs text-muted-foreground">
-            A adição de produtos é liberada após a escolha do fornecedor.
+            {disabledReason?.description ??
+              "A adição de produtos é liberada após a escolha do fornecedor."}
           </p>
         </div>
       </div>
