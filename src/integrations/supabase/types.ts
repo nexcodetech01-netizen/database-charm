@@ -1731,6 +1731,184 @@ export type Database = {
           },
         ]
       }
+      consignment_items: {
+        Row: {
+          company_id: string
+          consignment_id: string
+          cost_price: number
+          created_at: string
+          id: string
+          product_id: string
+          returned_quantity: number
+          sent_quantity: number
+          sold_quantity: number
+          suggested_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          consignment_id: string
+          cost_price: number
+          created_at?: string
+          id?: string
+          product_id: string
+          returned_quantity?: number
+          sent_quantity: number
+          sold_quantity?: number
+          suggested_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          consignment_id?: string
+          cost_price?: number
+          created_at?: string
+          id?: string
+          product_id?: string
+          returned_quantity?: number
+          sent_quantity?: number
+          sold_quantity?: number
+          suggested_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignment_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignment_items_consignment_id_fkey"
+            columns: ["consignment_id"]
+            isOneToOne: false
+            referencedRelation: "consignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignment_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consignment_settlements: {
+        Row: {
+          company_id: string
+          consignment_id: string
+          created_at: string
+          gross_amount: number
+          id: string
+          items_snapshot: Json
+          net_receivable: number
+          paid_at: string | null
+          payment_status: string
+          reseller_commission: number
+          settled_at: string
+        }
+        Insert: {
+          company_id: string
+          consignment_id: string
+          created_at?: string
+          gross_amount: number
+          id?: string
+          items_snapshot: Json
+          net_receivable: number
+          paid_at?: string | null
+          payment_status?: string
+          reseller_commission: number
+          settled_at?: string
+        }
+        Update: {
+          company_id?: string
+          consignment_id?: string
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          items_snapshot?: Json
+          net_receivable?: number
+          paid_at?: string | null
+          payment_status?: string
+          reseller_commission?: number
+          settled_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignment_settlements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignment_settlements_consignment_id_fkey"
+            columns: ["consignment_id"]
+            isOneToOne: false
+            referencedRelation: "consignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consignments: {
+        Row: {
+          commission_type: string
+          commission_value: number
+          company_id: string
+          contract_pdf_url: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          reseller_id: string
+          sent_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commission_type: string
+          commission_value: number
+          company_id: string
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reseller_id: string
+          sent_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_type?: string
+          commission_value?: number
+          company_id?: string
+          contract_pdf_url?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reseller_id?: string
+          sent_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consignments_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_centers: {
         Row: {
           company_id: string
@@ -5400,6 +5578,47 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "product_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resellers: {
+        Row: {
+          address: string | null
+          company_id: string
+          created_at: string
+          document: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resellers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
