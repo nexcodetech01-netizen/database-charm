@@ -499,7 +499,16 @@ export function PurchaseForm({ companyId, purchase }: Props) {
               companyId={companyId}
               items={items}
               onChange={setItems}
-              enabled={supplierSelected}
+              enabled={supplierSelected && form.status !== "received"}
+              disabledReason={
+                form.status === "received"
+                  ? {
+                      title: "Compra já recebida — itens travados",
+                      description:
+                        "O estoque já foi aplicado com base nestes itens. Para corrigir quantidades, use um ajuste de estoque em vez de editar aqui.",
+                    }
+                  : undefined
+              }
             />
           </div>
 
