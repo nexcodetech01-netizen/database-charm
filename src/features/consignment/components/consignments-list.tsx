@@ -34,7 +34,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreateConsignmentDialog } from './create-consignment-dialog';
 import { generateConsignmentPDF } from '../lib/pdf.functions';
+import { toast } from 'sonner';
 
 export function ConsignmentsList() {
   const { user } = useAuth();
@@ -158,7 +160,7 @@ export function ConsignmentsList() {
                             } 
                           }), {
                             loading: 'Gerando PDF...',
-                            success: (res) => res.message || 'Contrato gerado com sucesso!',
+                            success: (res: any) => res.message || 'Contrato gerado com sucesso!',
                             error: 'Erro ao gerar PDF'
                           });
                         }}>
