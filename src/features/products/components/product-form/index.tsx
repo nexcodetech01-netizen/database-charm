@@ -666,8 +666,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       const finalPayload: ProductUpdate = {
         ...payload,
         cover_image_path,
-        image_url, // Incluímos a URL pública no payload para salvar na products.image_url
-      } as any;
+        image_url: image_url || undefined, // Incluímos a URL pública no payload para salvar na products.image_url
+      } as ProductUpdate;
 
       // O banco bloqueia qualquer alteração direta de "stock" em produtos já
       // existentes (só é permitida via inventory_movements, para manter o

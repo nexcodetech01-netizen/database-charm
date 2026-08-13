@@ -2,6 +2,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 
 export type Product = Omit<Tables<"products">, "product_type"> & {
   video_url?: string | null;
+  image_url?: string | null;
   product_type?: ProductType | null;
   composition?: any[];
 };
