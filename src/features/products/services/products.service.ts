@@ -49,10 +49,8 @@ const DETAIL_SELECT = `
 function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
   
-  // O estoque do kit deve ser calculado ITERANDO especificamente pelos componentes vinculados.
-  // Fórmula: Math.min(...componentesDoKit.map(item => Math.floor(item.produto_componente.stock / item.quantidade)))
   const components = parentId 
-    ? composition.filter(c => c.parent_id === parentId || !c.parent_id)
+    ? composition.filter(c => c.parent_id === parentId)
     : composition;
 
   const stocks = components.map((c: any) => {
