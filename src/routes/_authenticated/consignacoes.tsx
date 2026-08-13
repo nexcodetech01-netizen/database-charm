@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Package } from 'lucide-react';
+import { ConsignmentsList } from '@/features/consignment/components/consignments-list';
 
 export const Route = createFileRoute('/_authenticated/consignacoes')({
   component: ConsignmentsDashboard,
@@ -28,9 +29,7 @@ function ConsignmentsDashboard() {
         </div>
       </div>
 
-      <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-8 text-center text-slate-500">
-        Nenhuma consignação encontrada. Comece cadastrando um revendedor.
-      </div>
+      <ConsignmentsList />
     </div>
   );
 }

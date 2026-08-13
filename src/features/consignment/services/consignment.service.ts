@@ -32,7 +32,10 @@ export class ConsignmentService {
   static async listConsignments(companyId: string, resellerId?: string): Promise<Consignment[]> {
     let query = supabase
       .from('consignments')
-      .select('*, reseller:resellers(*)')
+      .select(`
+        *,
+        reseller:resellers(*)
+      `)
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
     
@@ -49,12 +52,18 @@ export class ConsignmentService {
     const [consignmentRes, itemsRes] = await Promise.all([
       supabase
         .from('consignments')
-        .select('*, reseller:resellers(*)')
+        .select(`
+          *,
+          reseller:resellers(*)
+        `)
         .eq('id', id)
         .single(),
       supabase
         .from('consignment_items')
-        .select('*, product:products(name, sku, barcode)')
+        .select(`
+          *,
+          product:products(name, sku, barcode)
+        `)
         .eq('consignment_id', id)
     ]);
 
