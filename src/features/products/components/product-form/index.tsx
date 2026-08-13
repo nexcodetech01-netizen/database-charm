@@ -175,6 +175,20 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
   
   const isEdit = !!product;
+
+  // "Saldo em Estoque" é somente leitura nesta tela (o usuário nunca digita
+  // nele — só muda via Entrada/Ajuste, que sempre passa pelo servidor). Por
+  // isso ele deve sempre refletir o valor mais recente do banco, mesmo que
+  // o formulário já esteja "sujo" por outra edição em andamento (o guard de
+  // useEntityForm existe pra proteger edições REAIS do usuário, e estoque
+  // nunca é uma delas). Sem isto, fazer uma Entrada/Ajuste com a tela de
+  // edição já aberta só refletia depois de sair e voltar.
+  const productStock = product?.stock;
+  useEffect(() => {
+    if (productStock == null) return;
+    if (form.product_type === "kit") return; // kit já tem sua própria sincronização (linha ~317)
+    setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
+  }, [productStock, form.product_type, setForm]);
   const currentCategory = categories.find(c => c.id === form.category_id);
   const categoryName = currentCategory?.name || null;
   const categoryMargin = (currentCategory as any)?.target_margin_pct ?? null;
@@ -692,6 +706,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
                 onOpenQuickCategory={() => setCategoryDialogOpen(true)}
                 onApplyCategoryMargin={applyCategoryMargin}
                 onFetchLastPurchase={handleFetchLastPurchase}
+                operationalDefaults={operationalDefaults}
               />
             </div>
           </TabsContent>
