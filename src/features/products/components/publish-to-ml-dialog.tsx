@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   DndContext,
   closestCenter,
@@ -277,6 +278,24 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [walletTarget, setWalletTarget] = useState<string>(rawProductPrice > 0 ? rawProductPrice.toString() : "");
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
+  
+  // Estados para dimensões com placeholders para produtos novos
+  const [weight, setWeight] = useState<string>(() => {
+    const val = (product as any)?.weight;
+    return val != null ? String(val) : "";
+  });
+  const [width, setWidth] = useState<string>(() => {
+    const val = (product as any)?.width;
+    return val != null ? String(val) : "";
+  });
+  const [height, setHeight] = useState<string>(() => {
+    const val = (product as any)?.height;
+    return val != null ? String(val) : "";
+  });
+  const [length, setLength] = useState<string>(() => {
+    const val = (product as any)?.length;
+    return val != null ? String(val) : "";
+  });
   const getSettingsFn = useServerFn(getMercadoLivreSettings);
   const { data: mlSettings } = useQuery({
     queryKey: ["mercadolivre-settings"],
@@ -445,6 +464,10 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
           extraAttributes: extraAttributes.length > 0 ? extraAttributes : undefined,
           videoUrl: videoUrl.trim() || undefined,
           variations: (product as any).variations,
+          weight: weight ? Number(weight) : undefined,
+          width: width ? Number(width) : undefined,
+          height: height ? Number(height) : undefined,
+          length: length ? Number(length) : undefined,
         },
       });
     },
@@ -540,13 +563,18 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   }, [open]); // Removido localImageUrls das dependências para evitar loop infinito
 
   // Sincronização automática do preço final com base no "No Bolso" e tipo de anúncio
-  // Protegido contra loop infinito comparando referências estáveis
+  // Protegido contra loop infinito usando debounce e comparando referências estáveis
+  const debouncedWalletTarget = useDebounce(walletTarget, 300);
+
   useEffect(() => {
     if (!open) return;
-    const desired = Number(walletTarget);
+    const desired = Number(debouncedWalletTarget);
     if (!(desired > 0)) return;
 
-    const isPremium = listingType === "gold_pro";
+    // Se o usuário tocou no preço final manualmente, não sobrescrevemos via fórmula automática
+    // a menos que ele clique em "Reverter à Fórmula"
+    if (priceTouched) return;
+
     const calculatedFinal = calculateMLFinalPrice(desired, listingType, settings);
     const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
 
@@ -554,7 +582,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
     if (Math.abs(price - roundedFinal) > 0.01) {
       setPrice(roundedFinal);
     }
-  }, [walletTarget, listingType, open]); // Removido price das dependências
+  }, [debouncedWalletTarget, listingType, open, settings, priceTouched]); 
+
 
   // Se o preço sugerido do ML estiver disponível e o usuário não tiver definido um alvo "No Bolso",
   // aplica como padrão (só se o usuário ainda não editou manualmente).
@@ -1033,8 +1062,12 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       model,
       listingType,
       walletTarget: Number(walletTarget),
+      weight: weight ? Number(weight) : undefined,
+      width: width ? Number(width) : undefined,
+      height: height ? Number(height) : undefined,
+      length: length ? Number(length) : undefined,
     } as any);
-  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model, listingType, walletTarget]);
+  }, [product, title, price, quantity, selectedPhotoPaths, categoryId, brand, model, listingType, walletTarget, weight, width, height, length]);
 
   const canPublish = validation.isReady && !publish.isPending && !isExpired;
 
@@ -1507,12 +1540,13 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                           }`}
                           value={price}
                           onChange={(e) => {
-                            const val = Number(e.target.value);
+                            const val = e.target.value === "" ? 0 : Number(e.target.value);
                             setPrice(val);
                             setPriceTouched(true);
                             setUsingMlSuggested(false);
                             
                             // Re-calcula o líquido reverso para exibição visual imediata
+                            // O debounce do useEffect cuidará da sincronização reversa sem loop
                             const calculatedNet = calculateMLNetValue(val, listingType, settings);
                             setWalletTarget(Math.max(0, calculatedNet).toFixed(2));
                           }}
@@ -1603,6 +1637,59 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  {/* Dimensões do Pacote */}
+                  <div className="grid gap-2 border-t border-border pt-4">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      Dimensões do Pacote
+                      <Badge variant="outline" className="text-[9px] py-0 h-4">Logística ME2</Badge>
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ml-weight" className="text-[10px] text-muted-foreground uppercase">Peso (kg)</Label>
+                        <Input 
+                          id="ml-weight" 
+                          type="number" 
+                          step="0.001" 
+                          placeholder="0.300"
+                          value={weight} 
+                          onChange={(e) => setWeight(e.target.value)} 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ml-width" className="text-[10px] text-muted-foreground uppercase">Largura (cm)</Label>
+                        <Input 
+                          id="ml-width" 
+                          type="number" 
+                          placeholder="15"
+                          value={width} 
+                          onChange={(e) => setWidth(e.target.value)} 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ml-height" className="text-[10px] text-muted-foreground uppercase">Altura (cm)</Label>
+                        <Input 
+                          id="ml-height" 
+                          type="number" 
+                          placeholder="15"
+                          value={height} 
+                          onChange={(e) => setHeight(e.target.value)} 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ml-length" className="text-[10px] text-muted-foreground uppercase">Comprimento (cm)</Label>
+                        <Input 
+                          id="ml-length" 
+                          type="number" 
+                          placeholder="15"
+                          value={length} 
+                          onChange={(e) => setLength(e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      * Se deixado vazio, o Mercado Livre usará os valores padrão da categoria.
+                    </p>
                   </div>
                 </div>
               </TabsContent>

@@ -91,7 +91,7 @@ const empty: FormState = {
   cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
   channel_fee_pct: "0", channel_fixed_fee: "0", tax_pct: "0",
-  tags: [], weight: "0.3", width: "15", height: "15", length: "15", video_url: "",
+  tags: [], weight: "", width: "", height: "", length: "", video_url: "",
   product_type: "simple", composition: [],
 };
 
@@ -111,9 +111,9 @@ function toState(p?: Product): FormState {
     channel_fixed_fee: String((p as any).channel_pricing_settings?.ml?.fixed_fee ?? 0),
     tax_pct: String((p as any).channel_pricing_settings?.ml?.tax_pct ?? 0),
     price: String(p.price), stock: String(p.stock), min_stock: String(p.min_stock),
-    tags: p.tags ?? [], weight: String((p as any).weight || ""),
-    width: String((p as any).width || ""), height: String((p as any).height || ""),
-    length: String((p as any).length || ""), video_url: (p as any).video_url ?? "",
+    tags: p.tags ?? [], weight: p.weight != null ? String(p.weight) : "",
+    width: p.width != null ? String(p.width) : "", height: p.height != null ? String(p.height) : "",
+    length: p.length != null ? String(p.length) : "", video_url: (p as any).video_url ?? "",
     product_type: (p as any).product_type ?? "simple",
     composition: ((p as any).composition || []).map((c: any) => ({
       id: c.id,

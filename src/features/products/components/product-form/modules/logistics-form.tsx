@@ -78,6 +78,7 @@ export function LogisticsForm({
             id="weight"
             type="number"
             step="0.001"
+            placeholder="0.300"
             value={form.weight}
             onChange={(e) => setForm((s: any) => ({ ...s, weight: e.target.value }))}
           />
@@ -87,6 +88,7 @@ export function LogisticsForm({
           <Input
             id="width"
             type="number"
+            placeholder="15"
             value={form.width}
             onChange={(e) => setForm((s: any) => ({ ...s, width: e.target.value }))}
           />
@@ -96,6 +98,7 @@ export function LogisticsForm({
           <Input
             id="height"
             type="number"
+            placeholder="15"
             value={form.height}
             onChange={(e: any) => setForm((s: any) => ({ ...s, height: e.target.value }))}
           />
@@ -105,6 +108,7 @@ export function LogisticsForm({
           <Input
             id="length"
             type="number"
+            placeholder="15"
             value={form.length}
             onChange={(e) => setForm((s: any) => ({ ...s, length: e.target.value }))}
           />
