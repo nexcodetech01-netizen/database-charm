@@ -76,7 +76,7 @@ export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
  * igual nos dois lançamentos mesmo quando `reference_id` diverge, então
  * usamos ele como chave de agrupamento preferencial.
  */
-function groupKey(t: TransactionWithMeta): string | null {
+export function groupKey(t: TransactionWithMeta): string | null {
   return (t as any).reference_number || t.reference_id || null;
 }
 
