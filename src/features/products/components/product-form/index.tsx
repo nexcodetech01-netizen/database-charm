@@ -154,6 +154,23 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState("geral");
+
+  // States para modais e utilitários
+  // Devem ser declarados ANTES de useEntityForm porque o initializer dele
+  // pode tentar chamá-los durante o mount (TDZ ReferenceError).
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [movementOpen, setMovementOpen] = useState(false);
+  const [movementType, setMovementType] = useState<ManualMovementType>("in");
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
+  const [uploadingMainImage, setUploadingMainImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [suggestingTags, setSuggestingTags] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
   const [form, setForm] = useEntityForm(product, (p) => {
     // "Duplicar produto": pré-preenche a partir do produto original, mas
     // continua sendo uma criação nova (product/id fica undefined) — por
@@ -173,20 +190,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     }
     return state;
   });
-  
-  // States para modais e utilitários
-  const [movementOpen, setMovementOpen] = useState(false);
-  const [movementType, setMovementType] = useState<ManualMovementType>("in");
-  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
-  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
-  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
-  const [uploadingMainImage, setUploadingMainImage] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [tagInput, setTagInput] = useState("");
-  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [suggestingTags, setSuggestingTags] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
 
   // Hooks de dados
   const { data: categories = [] } = useCategories(companyId);
