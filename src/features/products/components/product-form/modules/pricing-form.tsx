@@ -23,6 +23,11 @@ interface PricingFormProps {
   errors?: Record<string, string>;
   onOpenQuickCategory?: () => void;
   onFetchLastPurchase?: () => void;
+  /** Padrões operacionais da empresa — usado só para indicar visualmente
+   * quando um campo de custo está usando o valor padrão em vez de um
+   * valor específico deste produto (evita confusão quando a sugestão de
+   * preço muda entre edições por causa do padrão da empresa ter mudado). */
+  operationalDefaults?: { freight?: number; packaging?: number; insurance?: number; other_costs?: number } | null;
 }
 
 export function PricingForm({ 
@@ -33,7 +38,8 @@ export function PricingForm({
   onApplyCategoryMargin,
   errors = {},
   onOpenQuickCategory,
-  onFetchLastPurchase
+  onFetchLastPurchase,
+  operationalDefaults,
 }: PricingFormProps) {
   const num = (v: any) => {
     if (typeof v === "number") return v;
@@ -47,6 +53,16 @@ export function PricingForm({
   const packaging = num(form.packaging);
   const insurance = num(form.insurance);
   const other = num(form.other_costs);
+
+  // Indica campos cujo valor bate com o padrão atual da empresa — ajuda a
+  // entender por que a sugestão de preço pode variar entre edições (o
+  // padrão da empresa pode ter mudado desde a última vez).
+  const isFromDefault = (field: number, defaultValue: number | undefined) =>
+    defaultValue != null && field === defaultValue;
+  const freightIsDefault = isFromDefault(freight, operationalDefaults?.freight);
+  const packagingIsDefault = isFromDefault(packaging, operationalDefaults?.packaging);
+  const insuranceIsDefault = isFromDefault(insurance, operationalDefaults?.insurance);
+  const otherIsDefault = isFromDefault(other, operationalDefaults?.other_costs);
   
   // LÓGICA RÍGIDA: Custo Total Efetivo é a soma de todos os componentes
   const totalCost = cost + freight + packaging + insurance + other;
@@ -188,7 +204,14 @@ export function PricingForm({
                 <AccordionContent className="pt-2 space-y-3 pb-0">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label htmlFor="freight" className="text-[10px] uppercase font-bold text-slate-400">Frete</Label>
+                      <Label htmlFor="freight" className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                        Frete
+                        {freightIsDefault && (
+                          <span className="normal-case font-medium text-blue-400/80" title="Usando o valor padrão da empresa — configurável em Configurações → Custos Operacionais">
+                            · padrão da empresa
+                          </span>
+                        )}
+                      </Label>
                       <BRLCurrencyInput
                         id="freight"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
@@ -200,7 +223,14 @@ export function PricingForm({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="packaging" className="text-[10px] uppercase font-bold text-slate-400">Embalagem</Label>
+                      <Label htmlFor="packaging" className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                        Embalagem
+                        {packagingIsDefault && (
+                          <span className="normal-case font-medium text-blue-400/80" title="Usando o valor padrão da empresa — configurável em Configurações → Custos Operacionais">
+                            · padrão da empresa
+                          </span>
+                        )}
+                      </Label>
                       <BRLCurrencyInput
                         id="packaging"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
@@ -214,7 +244,14 @@ export function PricingForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3 pb-2">
                     <div className="space-y-2">
-                      <Label htmlFor="insurance" className="text-[10px] uppercase font-bold text-slate-400">Seguro</Label>
+                      <Label htmlFor="insurance" className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                        Seguro
+                        {insuranceIsDefault && (
+                          <span className="normal-case font-medium text-blue-400/80" title="Usando o valor padrão da empresa — configurável em Configurações → Custos Operacionais">
+                            · padrão da empresa
+                          </span>
+                        )}
+                      </Label>
                       <BRLCurrencyInput
                         id="insurance"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
@@ -226,7 +263,14 @@ export function PricingForm({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="other_costs" className="text-[10px] uppercase font-bold text-slate-400">Outros Custos</Label>
+                      <Label htmlFor="other_costs" className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                        Outros Custos
+                        {otherIsDefault && (
+                          <span className="normal-case font-medium text-blue-400/80" title="Usando o valor padrão da empresa — configurável em Configurações → Custos Operacionais">
+                            · padrão da empresa
+                          </span>
+                        )}
+                      </Label>
                       <BRLCurrencyInput
                         id="other_costs"
                         className="h-9 text-xs bg-slate-950 border-slate-700 text-white placeholder:text-slate-500"
@@ -242,9 +286,16 @@ export function PricingForm({
               </AccordionItem>
             </Accordion>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
-              <span className="text-[10px] font-bold uppercase text-slate-400 tracking-tight">Custo Total Efetivo</span>
-              <span className="text-base font-black text-white">{formatCurrency(totalCost)}</span>
+            <div className="pt-3 border-t border-slate-800">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-tight">Custo Total Efetivo</span>
+                <span className="text-base font-black text-white">{formatCurrency(totalCost)}</span>
+              </div>
+              {(freight + packaging + insurance + other) > 0 && (
+                <p className="text-[10px] text-slate-500 mt-1">
+                  {formatCurrency(cost)} de custo do produto + {formatCurrency(freight + packaging + insurance + other)} de custos operacionais (frete, embalagem, seguro e outros — veja acima)
+                </p>
+              )}
             </div>
           </div>
         </div>
