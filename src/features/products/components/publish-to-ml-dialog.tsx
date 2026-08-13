@@ -276,8 +276,20 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [walletTarget, setWalletTarget] = useState<string>(rawProductPrice > 0 ? rawProductPrice.toString() : "");
+  
+  // UseDebounce para evitar loops de re-renderização ao digitar o preço
+  const [priceInput, setPriceInput] = useState<string>(rawProductPrice.toString());
+  const debouncedPriceInput = useDebounce(priceInput, 500);
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
+
+  useEffect(() => {
+    if (debouncedPriceInput) {
+      const val = parseFloat(debouncedPriceInput.replace(/[^\d.-]/g, "")) || 0;
+      setPrice(val);
+    }
+  }, [debouncedPriceInput]);
+
   
   // Estados para dimensões com placeholders para produtos novos
   const [weight, setWeight] = useState<string>(() => {
@@ -306,6 +318,16 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const settings = mlSettings || DEFAULT_ML_SETTINGS;
 
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
+
+  // Sincroniza preço sugerido apenas uma vez ou sob demanda, não em loop
+  useEffect(() => {
+    if (mlSuggestedPrice && !priceTouched && !usingMlSuggested) {
+      setPrice(mlSuggestedPrice);
+      setPriceInput(mlSuggestedPrice.toFixed(2));
+      setUsingMlSuggested(true);
+    }
+  }, [mlSuggestedPrice, priceTouched, usingMlSuggested]);
+
   const [descCopied, setDescCopied] = useState(false);
 
   const [quantity, setQuantity] = useState<number>(
