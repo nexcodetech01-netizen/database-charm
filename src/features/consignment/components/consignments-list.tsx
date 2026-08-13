@@ -116,13 +116,13 @@ export function ConsignmentsList() {
                   <TableCell className="text-slate-400">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-slate-500" />
-                      {format(new Date(c.data_envio), 'dd/MM/yyyy', { locale: ptBR })}
+                      {format(new Date(c.sent_at), 'dd/MM/yyyy', { locale: ptBR })}
                     </div>
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {c.comissao_tipo === 'percentual' 
-                      ? `${c.comissao_valor}%` 
-                      : `R$ ${c.comissao_valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    {c.commission_type === 'percentual' 
+                      ? `${c.commission_value}%` 
+                      : `R$ ${c.commission_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                     }
                   </TableCell>
                   <TableCell>
