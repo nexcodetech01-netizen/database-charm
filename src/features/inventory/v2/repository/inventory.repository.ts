@@ -77,7 +77,7 @@ export class InventoryRepository {
         product_id: input.productId,
         quantity: input.quantity,
         type: input.type,
-        source: input.source,
+        source: ["manual", "purchase", "sale", "adjustment", "sale_return", "sale_cancellation", "system", "opening"].includes(input.source) ? input.source : "manual",
         reason: input.reason ?? null,
         notes: input.notes ?? null,
         reference_number: input.referenceNumber ?? null,
