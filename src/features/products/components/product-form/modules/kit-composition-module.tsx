@@ -33,22 +33,30 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
   const [open, setOpen] = useState(false);
 
   const { data: searchResults = [] } = useQuery({
-    queryKey: ['product-search-kit', search],
+    queryKey: ['product-search-kit', search, currentProductId],
     queryFn: async () => {
-      if (!search.trim()) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
         .select('id, name, sku, cost, stock, created_at')
         .eq('company_id', companyId)
         .eq('product_type', 'simple')
-        .or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(20);
+
+      if (currentProductId) {
+        query = query.neq('id', currentProductId);
+      }
+
+      if (search.trim()) {
+        query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
       return data || [];
     },
-    enabled: search.length > 2
+    // We allow fetching even without search to show initial products
   });
 
   const addComponent = (product: any) => {
