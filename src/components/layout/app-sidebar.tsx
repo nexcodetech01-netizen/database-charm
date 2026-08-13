@@ -84,6 +84,8 @@ const groups: NavGroup[] = [
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
       { title: "Compras", url: ROUTES.purchases, icon: ShoppingCart, status: "available", permission: "purchases.view" },
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
+      { title: "Consignações", url: ROUTES.consignments, icon: Layers, status: "available", permission: "sales.view" },
+      { title: "Revendedores", url: ROUTES.resellers, icon: Users, status: "available", permission: "customers.view" },
     ],
   },
 
