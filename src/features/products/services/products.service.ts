@@ -110,9 +110,16 @@ export const productsService = {
     let rows = (data ?? []) as unknown as any[];
     
     // Virtual Stock Calculation for Kits in List
+    // Simplificado: se o stock no banco for 0 ou nulo, usamos o cálculo do kit.
+    // Se o usuário gravou um override (ex: 2), respeitamos o valor do banco.
     rows = rows.map(r => {
       if (r.product_type === 'kit' && r.composition && r.composition.length > 0) {
-        r.stock = calculateKitStock(r.composition, r.id);
+        const calculated = calculateKitStock(r.composition, r.id);
+        // Se o stock gravado for diferente de 0, assumimos override manual.
+        // Caso contrário, usamos o calculado.
+        if (!r.stock || Number(r.stock) === 0) {
+          r.stock = calculated;
+        }
       }
       return r;
     });
@@ -162,7 +169,10 @@ export const productsService = {
     if (error) throw error;
     
     if (data && data.product_type === 'kit' && data.composition) {
-      data.stock = calculateKitStock(data.composition, data.id);
+      const calculated = calculateKitStock(data.composition, data.id);
+      if (!data.stock || Number(data.stock) === 0) {
+        data.stock = calculated;
+      }
     }
     
     return data;
@@ -237,11 +247,8 @@ export const productsService = {
 
 
   async update(id: string, input: ProductUpdate) {
-    // Para produtos simples, o stock é bloqueado via trigger para ajustes manuais diretos
-    // via service.update, mas permitimos que o payload passe se o backend for capaz de processar
-    // (ou descartar se violar a constraint de negócio).
-    // NOTA: O usuário pediu explicitamente para GARANTIR que .update({ stock: X }) funcione
-    // se for um override manual, tratando erros de RLS/Constraint.
+    // Override manual de estoque permitido para todos os tipos (incluindo Kits).
+    // O valor digitado pelo usuário tem prioridade absoluta e é gravado diretamente.
     
     const { composition, ...safeInputWithoutComp } = input;
     
