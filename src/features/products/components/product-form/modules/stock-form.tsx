@@ -29,15 +29,15 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               type="number"
               value={form.stock}
               onChange={(e) => {
-                if (isKit) return;
+                // Permitir edição manual mesmo se for Kit (opcional conforme solicitação)
                 setForm((s: any) => ({ ...s, stock: e.target.value }));
               }}
               className={cn(
                 "text-lg font-bold tabular-nums pr-12",
                 isKit && "text-white bg-blue-950/40 border-blue-500/30"
               )}
-              disabled={isEdit || isKit}
-              readOnly={isEdit || isKit}
+              disabled={isEdit && !isKit} // Se não for kit e for edit, desabilita (regra original)
+              // Se for Kit, permitimos a sobreposição manual conforme pedido
             />
             {isKit && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">

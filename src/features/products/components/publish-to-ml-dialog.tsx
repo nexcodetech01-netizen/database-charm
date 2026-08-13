@@ -276,8 +276,20 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const [title, setTitle] = useState(initialTitle);
   const [targetProfit, setTargetProfit] = useState<number | null>(null);
   const [walletTarget, setWalletTarget] = useState<string>(rawProductPrice > 0 ? rawProductPrice.toString() : "");
+  
+  // UseDebounce para evitar loops de re-renderização ao digitar o preço
+  const [priceInput, setPriceInput] = useState<string>(rawProductPrice.toString());
+  const debouncedPriceInput = useDebounce(priceInput, 500);
   const [price, setPrice] = useState<number>(rawProductPrice);
   const [priceTouched, setPriceTouched] = useState(false);
+
+  useEffect(() => {
+    if (debouncedPriceInput) {
+      const val = parseFloat(debouncedPriceInput.replace(/[^\d.-]/g, "")) || 0;
+      setPrice(val);
+    }
+  }, [debouncedPriceInput]);
+
   
   // Estados para dimensões com placeholders para produtos novos
   const [weight, setWeight] = useState<string>(() => {
@@ -306,6 +318,16 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const settings = mlSettings || DEFAULT_ML_SETTINGS;
 
   const [usingMlSuggested, setUsingMlSuggested] = useState(false);
+
+  // Sincroniza preço sugerido apenas uma vez ou sob demanda, não em loop
+  useEffect(() => {
+    if (mlSuggestedPrice && !priceTouched && !usingMlSuggested) {
+      setPrice(mlSuggestedPrice);
+      setPriceInput(mlSuggestedPrice.toFixed(2));
+      setUsingMlSuggested(true);
+    }
+  }, [mlSuggestedPrice, priceTouched, usingMlSuggested]);
+
   const [descCopied, setDescCopied] = useState(false);
 
   const [quantity, setQuantity] = useState<number>(
@@ -1538,13 +1560,14 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                             ? "border-destructive focus-visible:ring-destructive" 
                             : ""
                           }`}
-                          value={price}
+                          value={priceInput}
                           onChange={(e) => {
-                            const val = e.target.value === "" ? 0 : Number(e.target.value);
-                            setPrice(val);
+                            const valStr = e.target.value;
+                            setPriceInput(valStr);
                             setPriceTouched(true);
                             setUsingMlSuggested(false);
                             
+                            const val = valStr === "" ? 0 : Number(valStr);
                             // Re-calcula o líquido reverso para exibição visual imediata
                             // O debounce do useEffect cuidará da sincronização reversa sem loop
                             const calculatedNet = calculateMLNetValue(val, listingType, settings);
@@ -1573,6 +1596,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
                                 const calculatedFinal = calculateMLFinalPrice(desired, listingType, settings);
                                 const roundedFinal = Math.ceil(calculatedFinal * 100) / 100;
                                 setPrice(roundedFinal);
+                                setPriceInput(roundedFinal.toString());
                               }
                             }}
                           >
