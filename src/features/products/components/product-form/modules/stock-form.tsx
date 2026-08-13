@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Boxes, ArrowUpRight } from "lucide-react";
+import { Boxes, ArrowUpRight, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StockFormProps {
