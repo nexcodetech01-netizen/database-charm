@@ -127,6 +127,16 @@ function toState(p?: Product): FormState {
   };
 }
 
+function calculateKitStock(composition: any[]) {
+  if (!composition || composition.length === 0) return 0;
+  const stocks = composition.map((c: any) => {
+    const componentStock = Number(c.stock || c.product?.stock || 0);
+    const quantityInKit = Number(c.quantity || 1);
+    return Math.floor(componentStock / quantityInKit);
+  });
+  return Math.min(...stocks);
+}
+
 export function ProductForm({ companyId, product, duplicateOf, initialPrice }: Props) {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -184,11 +194,17 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   // nunca é uma delas). Sem isto, fazer uma Entrada/Ajuste com a tela de
   // edição já aberta só refletia depois de sair e voltar.
   const productStock = product?.stock;
+  const productComposition = (product as any)?.composition;
   useEffect(() => {
     if (productStock == null) return;
-    if (form.product_type === "kit") return; // kit já tem sua própria sincronização (linha ~317)
-    setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
-  }, [productStock, form.product_type, setForm]);
+    
+    if (form.product_type === "kit" && productComposition) {
+      const calculated = calculateKitStock(productComposition);
+      setForm((s: any) => (s.stock === String(calculated) ? s : { ...s, stock: String(calculated) }));
+    } else {
+      setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));
+    }
+  }, [productStock, productComposition, form.product_type, setForm]);
   const currentCategory = categories.find(c => c.id === form.category_id);
   const categoryName = currentCategory?.name || null;
   const categoryMargin = (currentCategory as any)?.target_margin_pct ?? null;
@@ -265,14 +281,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     return (form.composition || []).reduce((acc, item) => acc + (num(item.cost) * num(item.quantity)), 0);
   }, [form.product_type, form.composition]);
 
-  const kitStock = useMemo(() => {
+  const kitStockValue = useMemo(() => {
     if (form.product_type !== 'kit' || !form.composition?.length) return 0;
-    const stocks = form.composition.map(c => Math.floor(num(c.stock) / num(c.quantity)));
-    return Math.min(...stocks);
+    return calculateKitStock(form.composition);
   }, [form.product_type, form.composition]);
 
   const currentCost = form.product_type === 'kit' ? compositionCost : num(form.cost);
-  const currentStock = form.product_type === 'kit' ? kitStock : num(form.stock);
+  const currentStock = form.product_type === 'kit' ? kitStockValue : num(form.stock);
 
   const totalCost = currentCost + num(form.freight) + num(form.packaging) + num(form.insurance) + num(form.other_costs);
 
@@ -341,10 +356,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       setForm(s => ({
         ...s,
         cost: String(compositionCost),
-        stock: String(kitStock)
+        stock: String(kitStockValue)
       }));
     }
-  }, [form.product_type, compositionCost, kitStock, setForm]);
+  }, [form.product_type, compositionCost, kitStockValue, setForm]);
 
   // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL
   useEffect(() => {

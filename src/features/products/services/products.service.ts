@@ -22,21 +22,39 @@ const productCreateSchema = z
 
 
 
-// Projeção enxuta para listagem (evita jsonb, custo, tags e joins de política de preço).
+// Projeção enxuta para listagem.
 const LIST_SELECT = `
   id, sku, name, brand, price, stock, min_stock, unit, status,
   category_id, supplier_id, cover_image_path, ml_item_id, ml_permalink,
-  created_at, updated_at, company_id, description, sales_channels,
+  created_at, updated_at, company_id, description, sales_channels, product_type,
   category:product_categories(id, name),
-  supplier:product_suppliers(id, name)
+  supplier:product_suppliers(id, name),
+  composition:product_kit_components!product_kit_components_parent_id_fkey(
+    id, quantity,
+    product:products!product_kit_components_component_id_fkey(stock)
+  )
 `;
 
 // Projeção completa (detalhe/edição/duplicação).
 const DETAIL_SELECT = `
   *,
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
-  supplier:product_suppliers(id, name)
+  supplier:product_suppliers(id, name),
+  composition:product_kit_components!product_kit_components_parent_id_fkey(
+    id, component_id, quantity,
+    product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+  )
 `;
+
+function calculateKitStock(composition: any[]) {
+  if (!composition || composition.length === 0) return 0;
+  const stocks = composition.map((c: any) => {
+    const componentStock = Number(c.product?.stock ?? 0);
+    const quantityInKit = Number(c.quantity || 1);
+    return Math.floor(componentStock / quantityInKit);
+  });
+  return Math.min(...stocks);
+}
 
 export const productsService = {
   async list(companyId: string, filters: ProductListFilters) {
@@ -72,7 +90,16 @@ export const productsService = {
     const { data, error, count } = await q;
     if (error) throw error;
 
-    let rows = (data ?? []) as unknown as Product[];
+    let rows = (data ?? []) as unknown as any[];
+    
+    // Virtual Stock Calculation for Kits in List
+    rows = rows.map(r => {
+      if (r.product_type === 'kit' && r.composition && r.composition.length > 0) {
+        r.stock = calculateKitStock(r.composition);
+      }
+      return r;
+    });
+    
     // "low" precisa comparar stock <= min_stock — filtro client-side pós query
     if (filters.stock === "low") {
       rows = rows.filter((r) => Number(r.stock) <= Number(r.min_stock));
@@ -116,6 +143,11 @@ export const productsService = {
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
+    
+    if (data && data.product_type === 'kit' && data.composition) {
+      data.stock = calculateKitStock(data.composition);
+    }
+    
     return data;
   },
 

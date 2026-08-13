@@ -175,6 +175,8 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
           const isKit = (p as any).product_type === "kit";
           const stock = Number(p.stock);
           const minStock = Number(p.min_stock);
+
+
           return (
             <div className="flex flex-col items-end">
               <span
