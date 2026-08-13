@@ -17,7 +17,7 @@ export class ConsignmentService {
       .order('name');
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as Reseller[];
   }
 
   static async createReseller(reseller: Omit<Reseller, 'id' | 'created_at' | 'updated_at'>): Promise<Reseller> {
@@ -44,7 +44,7 @@ export class ConsignmentService {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data || []) as Consignment[];
   }
 
   static async getConsignment(id: string): Promise<{ consignment: Consignment; items: ConsignmentItem[] }> {
@@ -64,8 +64,8 @@ export class ConsignmentService {
     if (itemsRes.error) throw itemsRes.error;
 
     return {
-      consignment: consignmentRes.data,
-      items: itemsRes.data || []
+      consignment: consignmentRes.data as Consignment,
+      items: (itemsRes.data || []) as ConsignmentItem[]
     };
   }
 
@@ -73,9 +73,10 @@ export class ConsignmentService {
     consignment: Omit<Consignment, 'id' | 'created_at' | 'updated_at' | 'status'>,
     items: Array<{ product_id: string; sent_quantity: number; cost_price: number; suggested_price?: number }>
   ): Promise<Consignment> {
+    const { reseller, ...consignmentData } = consignment as any;
     const { data: newConsignment, error: cError } = await supabase
       .from('consignments')
-      .insert({ ...consignment, status: 'ativa' })
+      .insert({ ...consignmentData, status: 'ativa' })
       .select()
       .single();
 
@@ -93,7 +94,7 @@ export class ConsignmentService {
 
     if (iError) throw iError;
 
-    return newConsignment;
+    return newConsignment as Consignment;
   }
 
   static async registerSettlement(
@@ -162,6 +163,6 @@ export class ConsignmentService {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as ConsignmentSettlement[];
   }
 }

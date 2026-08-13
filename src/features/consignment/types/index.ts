@@ -49,9 +49,9 @@ export interface ConsignmentItem {
   updated_at: string;
   product?: {
     name: string;
-    sku: string;
+    sku: string | null;
     barcode?: string | null;
-  };
+  } | null;
 }
 
 export interface ConsignmentSettlement {
