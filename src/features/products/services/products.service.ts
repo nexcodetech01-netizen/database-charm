@@ -49,24 +49,23 @@ const DETAIL_SELECT = `
 function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
   
-  // Garantir que estamos calculando APENAS componentes vinculados ao parentId (ID do Kit)
-  // Se parentId for omitido, usamos todos os itens da lista de composição fornecida.
+  // O estoque do kit deve ser calculado ITERANDO especificamente pelos componentes vinculados.
+  // Fórmula: Math.min(...componentesDoKit.map(item => Math.floor(item.produto_componente.stock / item.quantidade)))
   const components = parentId 
-    ? composition.filter(c => c.parent_id === parentId || !c.parent_id) // Fallback caso o join não traga parent_id explicitamente
+    ? composition.filter(c => c.parent_id === parentId || !c.parent_id)
     : composition;
 
   const stocks = components.map((c: any) => {
-    // Para cada componente vinculado, pegamos o estoque individual do produto correspondente
-    // e dividimos pela quantidade necessária no kit. O saldo final do Kit é o menor valor.
-    const componentStock = Number(c.product?.stock ?? 0);
+    // Garantimos que estamos pegando o estoque do produto vinculado ao componente
+    const componentProduct = c.product || c.produto_componente;
+    const componentStock = Number(componentProduct?.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     
-    // Se a quantidade no kit for zero (não deveria ocorrer por validação), tratamos como 1 para evitar divisão por zero
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
-    
-    // Arredondamos para baixo, pois não existem meio kits.
     return Math.floor(componentStock / safeQuantity);
   });
+  
+  if (stocks.length === 0) return 0;
   return Math.min(...stocks);
 }
 
