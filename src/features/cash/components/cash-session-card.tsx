@@ -152,7 +152,7 @@ export function CashSessionCard({ companyId, companyName }: Props) {
         open={movement !== null}
         onOpenChange={(o) => !o && setMovement(null)}
         type={movement ?? "cash_in"}
-        sessionId={openSession.id}
+        session={openSession}
         companyId={companyId}
         createdBy={operatorId}
       />

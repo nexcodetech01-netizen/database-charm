@@ -129,7 +129,7 @@ export function PDVCashMenu({
             open={movement !== null}
             onOpenChange={(o) => !o && setMovement(null)}
             type={movement ?? "cash_in"}
-            sessionId={session.id}
+            session={session}
             companyId={companyId}
             createdBy={operatorId}
           />
