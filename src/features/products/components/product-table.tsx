@@ -192,11 +192,11 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
               <span
                 className={cn(
                   "tabular-nums",
-                  displayStock <= minStock && !isKit ? "font-medium text-warning" : undefined
+                  stock <= minStock && !isKit ? "font-medium text-warning" : undefined
                 )}
                 title={isKit ? "Estoque calculado (Mínimo dos componentes)" : undefined}
               >
-                {formatNumber(displayStock)} {p.unit}
+                {formatNumber(stock)} {p.unit}
               </span>
               {isKit && (
                 <span className="text-[9px] uppercase tracking-tighter text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-1 rounded-sm">
