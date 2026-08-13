@@ -5129,6 +5129,7 @@ export type Database = {
           freight: number
           height: number | null
           id: string
+          image_url: string | null
           insurance: number
           last_purchase_cost: number | null
           length: number | null
@@ -5174,6 +5175,7 @@ export type Database = {
           freight?: number
           height?: number | null
           id?: string
+          image_url?: string | null
           insurance?: number
           last_purchase_cost?: number | null
           length?: number | null
@@ -5219,6 +5221,7 @@ export type Database = {
           freight?: number
           height?: number | null
           id?: string
+          image_url?: string | null
           insurance?: number
           last_purchase_cost?: number | null
           length?: number | null
