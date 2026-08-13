@@ -127,9 +127,10 @@ function toState(p?: Product): FormState {
   };
 }
 
-function calculateKitStock(composition: any[]) {
+function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
   const stocks = composition.map((c: any) => {
+    // Para cálculo local no form, c.stock é o estoque atualizado do componente
     const componentStock = Number(c.stock || c.product?.stock || 0);
     const quantityInKit = Number(c.quantity || 1);
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
@@ -200,7 +201,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     if (productStock == null) return;
     
     if (form.product_type === "kit" && productComposition) {
-      const calculated = calculateKitStock(productComposition);
+      const calculated = calculateKitStock(productComposition, product?.id);
       setForm((s: any) => (s.stock === String(calculated) ? s : { ...s, stock: String(calculated) }));
     } else {
       setForm((s: any) => (s.stock === String(productStock) ? s : { ...s, stock: String(productStock) }));

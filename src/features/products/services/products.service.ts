@@ -31,7 +31,7 @@ const LIST_SELECT = `
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
     id, quantity,
-    product:products!product_kit_components_component_id_fkey(stock)
+    product:products!product_kit_components_component_id_fkey(id, stock)
   )
 `;
 
@@ -42,13 +42,20 @@ const DETAIL_SELECT = `
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
     id, component_id, quantity,
-    product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
 
-function calculateKitStock(composition: any[]) {
+function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
-  const stocks = composition.map((c: any) => {
+  
+  // Garantir que estamos calculando APENAS componentes vinculados ao parentId (ID do Kit)
+  // Se parentId for omitido, usamos todos os itens da lista de composição fornecida.
+  const components = parentId 
+    ? composition.filter(c => c.parent_id === parentId || !c.parent_id) // Fallback caso o join não traga parent_id explicitamente
+    : composition;
+
+  const stocks = components.map((c: any) => {
     // Para cada componente vinculado, pegamos o estoque individual do produto correspondente
     // e dividimos pela quantidade necessária no kit. O saldo final do Kit é o menor valor.
     const componentStock = Number(c.product?.stock ?? 0);
@@ -79,9 +86,10 @@ export const productsService = {
     if (filters.status) q = q.eq("status", filters.status);
     else if (!filters.includeInactive) q = q.eq("status", "active");
 
-    // Produtos inativados por mesclagem recebem sufixo -MERGED no SKU.
+    // Listagem total de produtos ativos (auditável).
+    // Filtros de exclusão por mesclagem removidos conforme solicitação Sprint RC2.
     if (!filters.includeInactive) {
-      q = q.or("sku.is.null,and(sku.not.ilike.%-MERGED,sku.not.ilike.%_MERGED)");
+      q = q.eq("status", "active");
     }
 
     if (filters.stock === "out") q = q.lte("stock", 0);
@@ -102,7 +110,7 @@ export const productsService = {
     // Virtual Stock Calculation for Kits in List
     rows = rows.map(r => {
       if (r.product_type === 'kit' && r.composition && r.composition.length > 0) {
-        r.stock = calculateKitStock(r.composition);
+        r.stock = calculateKitStock(r.composition, r.id);
       }
       return r;
     });
@@ -144,7 +152,7 @@ export const productsService = {
         images:product_images(id, path, position, focal_x, focal_y, zoom),
         composition:product_kit_components!product_kit_components_parent_id_fkey(
           id, component_id, quantity,
-          product:products!product_kit_components_component_id_fkey(name, sku, cost, stock)
+          product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
         )
       `)
       .eq("id", id)
@@ -152,7 +160,7 @@ export const productsService = {
     if (error) throw error;
     
     if (data && data.product_type === 'kit' && data.composition) {
-      data.stock = calculateKitStock(data.composition);
+      data.stock = calculateKitStock(data.composition, data.id);
     }
     
     return data;
@@ -174,74 +182,6 @@ export const productsService = {
     const parsed = productCreateSchema.safeParse(input);
     if (!parsed.success) {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
-    }
-
-    const { findDuplicateProduct } = await import("../lib/product-dedupe");
-    const duplicate = await findDuplicateProduct(input.company_id, {
-      name: input.name,
-      sku: input.sku ?? null,
-      barcode: (input as { barcode?: string | null }).barcode ?? null,
-    });
-
-    if (duplicate) {
-      const {
-        stock,
-        company_id: _companyId,
-        sku,
-        // Mesmo produto: a descrição já salva no banco nunca é sobrescrita.
-        description: _ignoredDescription,
-        price: incomingPrice,
-        cost: incomingCost,
-        ...rest
-      } = input as ProductInsert & {
-        stock?: number | null;
-        description?: string | null;
-        price?: number | null;
-        cost?: number | null;
-      };
-
-      const num = (v: unknown) => {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : 0;
-      };
-      // Só sobrescreve price/cost quando o novo lançamento traz valor > 0.
-      const nextPrice = num(incomingPrice) > 0 ? num(incomingPrice) : num(duplicate.price);
-      const nextCost = num(incomingCost) > 0 ? num(incomingCost) : num(duplicate.cost);
-
-      // Atualiza o registro existente com os dados do novo lançamento.
-      // O SKU original é preservado (não geramos SKU novo para o mesmo produto).
-      const patch = {
-        ...rest,
-        price: nextPrice,
-        cost: nextCost,
-        ...(duplicate.sku ? {} : { sku: sku ?? null }),
-      } as ProductUpdate;
-
-      const { composition: _composition, ...safePatch } = patch;
-      const { data: updated, error: updateError } = await supabase
-        .from("products")
-        .update(safePatch as any)
-        .eq("id", duplicate.id)
-        .select()
-        .single();
-      if (updateError) throw updateError;
-
-      // Estoque: sempre pelo motor oficial (inventory_movements).
-      const qty = Number(stock ?? 0);
-      if (Number.isFinite(qty) && qty > 0) {
-        const { error: movError } = await supabase.from("inventory_movements").insert({
-          company_id: input.company_id,
-          product_id: duplicate.id,
-          quantity: qty,
-          type: "in",
-          source: "manual", // Fallback seguro conforme restrição do banco (enum: manual, purchase, sale, adjustment, etc)
-          reason: "Entrada por cadastro/importação de produto existente",
-          movement_date: new Date().toISOString(),
-        });
-        if (movError) throw movError;
-      }
-
-      return { ...(updated as Record<string, unknown>), __merged: true, __matchedBy: duplicate.matchedBy } as unknown as typeof updated;
     }
 
     const { composition, stock, ...insertPayload } = input as ProductInsert & { stock?: number };
