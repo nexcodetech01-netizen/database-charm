@@ -96,6 +96,23 @@ export const customersService = {
     return this.update(id, { status: "active" });
   },
   async remove(id: string) {
+    // Trava de integridade: sales.customer_id, credit_accounts.customer_id
+    // e financial_transactions.customer_id usam ON DELETE SET NULL — sem
+    // esta checagem, excluir um cliente com histórico de vendas/crediário
+    // não dava erro nenhum, só apagava silenciosamente o cliente desses
+    // registros financeiros, perdendo a rastreabilidade de quem comprou o
+    // quê (mesma classe de bug encontrada e corrigida em Fornecedores).
+    const { count: salesCount, error: salesErr } = await supabase
+      .from("sales")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", id);
+    if (salesErr) throw salesErr;
+    if ((salesCount ?? 0) > 0) {
+      throw new Error(
+        `Este cliente tem ${salesCount} venda(s) no histórico. Excluir apagaria o cliente desses registros. Arquive em vez de excluir.`,
+      );
+    }
+
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) throw error;
   },

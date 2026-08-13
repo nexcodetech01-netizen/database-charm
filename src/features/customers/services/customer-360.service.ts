@@ -127,7 +127,12 @@ export const customer360Service = {
     if (sErr) throw sErr;
     const sales = salesData ?? [];
 
-    const paidSales = sales.filter((s) => s.status === "paid");
+    // Contam como "gasto" vendas pagas e parcialmente pagas — consistente
+    // com purchaseCount/activeSales, que já tratam parcialmente pagas como
+    // atividade real do cliente. (Não há campo de "valor já recebido" por
+    // venda; para vendas parciais, considera-se o valor total da venda,
+    // igual ao resto do sistema já faz para essas vendas.)
+    const paidSales = sales.filter((s) => s.status === "paid" || s.status === "partially_paid");
     const totalSpent = paidSales.reduce((sum, s) => sum + Number(s.grand_total ?? 0), 0);
     const purchaseCount = sales.filter((s) => s.status !== "cancelled").length;
     const paidCount = paidSales.length;
