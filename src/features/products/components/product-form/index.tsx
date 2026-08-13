@@ -153,11 +153,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     const seed = p ?? duplicateOf;
     if (!p && !duplicateOf) {
       setMainImageFile(null);
+      setSuggestedTags([]); // Reset suggested tags
       return empty;
     }
     const state = toState(seed);
     if (!p && duplicateOf) {
       setMainImageFile(null); // Reset preview on duplication
+      setSuggestedTags([]);
       return { ...state, sku: "", barcode: "SEM GTIN" };
     }
     return state;
