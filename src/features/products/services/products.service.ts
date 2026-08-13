@@ -30,8 +30,8 @@ const LIST_SELECT = `
   category:product_categories(id, name),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, quantity,
-    product:products!product_kit_components_component_id_fkey(id, stock)
+    id, parent_id, component_id, quantity,
+    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
 
