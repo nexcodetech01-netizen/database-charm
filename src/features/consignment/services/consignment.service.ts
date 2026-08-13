@@ -160,7 +160,7 @@ export class ConsignmentService {
             sold_quantity: (currentItem as any).sold_quantity + sold,
             returned_quantity: (currentItem as any).returned_quantity + returned,
             quantidade_extraviada: ((currentItem as any).quantidade_extraviada || 0) + extraviado
-          })
+          } as any)
           .eq('id', itemId);
       }
     }
