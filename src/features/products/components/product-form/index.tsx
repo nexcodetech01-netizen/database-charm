@@ -151,8 +151,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     // isso SKU e código de barras não são copiados, já que precisam ser
     // únicos por empresa (a geração automática de SKU cuida disso).
     const seed = p ?? duplicateOf;
+    if (!p && !duplicateOf) {
+      setMainImageFile(null);
+      return empty;
+    }
     const state = toState(seed);
     if (!p && duplicateOf) {
+      setMainImageFile(null); // Reset preview on duplication
       return { ...state, sku: "", barcode: "SEM GTIN" };
     }
     return state;
