@@ -95,6 +95,7 @@ export const fiscalSuggestionService = {
       .eq("company_id", companyId)
       .eq("barcode", code)
       .not("ncm", "is", null)
+      .neq("ncm", "")
       .limit(1)
       .maybeSingle();
     if (error) throw error;

@@ -56,13 +56,6 @@ import { MovementFormDialog } from "@/features/inventory/components/movement-for
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
 import type { ManualMovementType } from "@/features/inventory/types";
 
-interface Props {
-  companyId: string;
-  product?: Product;
-  duplicateOf?: Product;
-  initialPrice?: number;
-}
-
 const schema = z.object({
   name: z.string().trim().min(1, "Nome obrigatório").max(200),
   sku: z.string().trim().min(1, "SKU obrigatório").max(80),
@@ -147,6 +140,13 @@ function calculateKitStock(composition: any[], parentId?: string) {
   });
   
   return Math.min(...stocks);
+}
+
+interface Props {
+  companyId: string;
+  product?: Product;
+  duplicateOf?: Product;
+  initialPrice?: number;
 }
 
 export function ProductForm({ companyId, product, duplicateOf, initialPrice }: Props) {
