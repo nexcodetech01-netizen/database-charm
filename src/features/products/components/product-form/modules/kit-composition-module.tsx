@@ -125,7 +125,7 @@ export function KitCompositionModule({ companyId, composition, setComposition, c
                 />
                 <CommandList>
                   <CommandEmpty className="py-6 text-center text-sm text-slate-500">
-                    {search.length > 2 ? "Nenhum produto encontrado." : "Digite pelo menos 3 caracteres..."}
+                    {search.trim().length > 0 ? "Nenhum produto encontrado." : "Nenhum produto disponível."}
                   </CommandEmpty>
                   <CommandGroup>
                     {searchResults.map((p) => (
