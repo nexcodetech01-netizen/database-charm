@@ -50,15 +50,27 @@ function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
   
   // Garantir que a busca na tabela kit_components use estritamente o ID do produto do kit atual
-  const components = parentId 
+  let components = parentId 
     ? composition.filter(c => c.parent_id === parentId || c.parent_product_id === parentId)
     : composition;
 
   if (components.length === 0) return 0;
 
-  const stocks = components.map((c: any) => {
+  // CORREÇÃO: Limpeza e deduplicação de componentes para evitar contagem duplicada ou somas incorretas
+  // Mantemos apenas um registro por component_id (o primeiro que aparecer)
+  const uniqueComponentsMap = new Map();
+  components.forEach(c => {
+    const compId = c.component_id || c.id;
+    if (compId && !uniqueComponentsMap.has(compId)) {
+      uniqueComponentsMap.set(compId, c);
+    }
+  });
+  
+  const uniqueComponents = Array.from(uniqueComponentsMap.values());
+
+  const stocks = uniqueComponents.map((c: any) => {
     // Garantimos que estamos pegando o estoque do produto vinculado ao componente individualmente
-    const componentProduct = c.product || c.produto_componente;
+    const componentProduct = c.product || c.produto_componente || c;
     const componentStock = Number(componentProduct?.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     
@@ -68,7 +80,7 @@ function calculateKitStock(composition: any[], parentId?: string) {
     return Math.floor(componentStock / safeQuantity);
   });
   
-  // O estoque do kit é o valor MÍNIMO entre os componentes
+  // O estoque do kit é o valor MÍNIMO entre os componentes (gargalo)
   return Math.min(...stocks);
 }
 
