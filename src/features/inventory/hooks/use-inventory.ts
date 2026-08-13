@@ -105,7 +105,7 @@ export function useCreateMovement() {
         qc.invalidateQueries({ queryKey: ["inv-product-picker"], refetchType: "all" }),
         vars.product_id
           ? qc.invalidateQueries({
-              queryKey: inventoryKeys.byProduct(vars.product_id),
+              queryKey: ["products", "detail", vars.product_id],
               refetchType: "all",
             })
           : Promise.resolve(),

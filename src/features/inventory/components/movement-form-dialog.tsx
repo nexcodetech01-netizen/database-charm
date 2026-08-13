@@ -127,7 +127,7 @@ export function MovementFormDialog({
         quantity: Number(values.quantity),
         reason: values.reason || null,
         notes: values.notes || null,
-        source: (values.source as MovementSource) || "manual",
+        source: (["manual", "purchase", "sale", "adjustment", "sale_return", "sale_cancellation", "system", "opening"].includes(values.source || "") ? values.source : "manual") as MovementSource,
         reference_number: values.reference_number || null,
         movement_date: new Date(values.movement_date).toISOString(),
         user_id: user?.id ?? null,
