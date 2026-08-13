@@ -36,8 +36,8 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
                 "text-lg font-bold tabular-nums pr-12",
                 isKit && "text-white bg-blue-950/40 border-blue-500/30"
               )}
-              disabled={isEdit && !isKit} // Se não for kit e for edit, desabilita (regra original)
-              // Se for Kit, permitimos a sobreposição manual conforme pedido
+              disabled={isEdit && !isKit} // Permitimos a sobreposição manual mesmo em Kits no formulário de edição conforme pedido
+
             />
             {isKit && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">

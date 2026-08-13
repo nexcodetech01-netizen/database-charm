@@ -49,21 +49,26 @@ const DETAIL_SELECT = `
 function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
   
+  // Garantir que a busca na tabela kit_components use estritamente o ID do produto do kit atual
   const components = parentId 
-    ? composition.filter(c => c.parent_id === parentId)
+    ? composition.filter(c => c.parent_id === parentId || c.parent_product_id === parentId)
     : composition;
 
+  if (components.length === 0) return 0;
+
   const stocks = components.map((c: any) => {
-    // Garantimos que estamos pegando o estoque do produto vinculado ao componente
+    // Garantimos que estamos pegando o estoque do produto vinculado ao componente individualmente
     const componentProduct = c.product || c.produto_componente;
     const componentStock = Number(componentProduct?.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
     
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
+    // A conta do kit DEVE olhar o estoque de CADA componente individualmente. 
+    // Fórmula Math.floor(estoque / quantidade_necessaria)
     return Math.floor(componentStock / safeQuantity);
   });
   
-  if (stocks.length === 0) return 0;
+  // O estoque do kit é o valor MÍNIMO entre os componentes
   return Math.min(...stocks);
 }
 
