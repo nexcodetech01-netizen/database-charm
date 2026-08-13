@@ -198,7 +198,7 @@ export class ProductRepository {
         product_id: input.productId,
         quantity: input.quantity,
         type: input.type,
-        source: ["manual", "purchase", "sale", "adjustment", "sale_return", "sale_cancellation", "system", "opening"].includes(input.source) ? input.source : "manual",
+        source: ["manual", "purchase", "sale", "adjustment", "sale_return", "sale_cancellation", "system", "opening"].includes(input.source) ? (input.source as any) : "manual",
         reason: input.reason ?? null,
         notes: input.notes ?? null,
         user_id: input.userId,
