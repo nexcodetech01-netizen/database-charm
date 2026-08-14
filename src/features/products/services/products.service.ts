@@ -104,7 +104,8 @@ export const productsService = {
         q = q.eq("status", filters.status);
       } else if (!filters.includeInactive) {
         // Por padrão, mostra ativos apenas se não pedir inativos
-        q = q.eq("status", "active");
+        // Modificado para incluir nulos (status IS NULL OR status = 'active')
+        q = q.or('status.eq.active,status.is.null');
       }
 
       // Filtros de estoque
