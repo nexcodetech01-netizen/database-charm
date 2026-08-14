@@ -26,6 +26,7 @@ import {
   List,
   Filter,
   X,
+  ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, getInstallmentPlan, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
@@ -37,6 +38,8 @@ import type {
 } from "@/features/catalog/types";
 import { loadPublicCollection } from "@/features/catalog/lib/public-collection.functions";
 import { toCustomerReference } from "@/lib/customer-reference";
+import { useCatalogCart, buildCartWhatsAppUrl } from "@/features/catalog/hooks/use-catalog-cart";
+import { CatalogCartDrawer } from "@/features/catalog/components/catalog-cart-drawer";
 import {
   AvailabilityBadge,
   resolveAvailability,
@@ -192,6 +195,8 @@ function PublicCollectionPage() {
   const [q, setQ] = useState(search.q);
   const [quickViewId, setQuickViewId] = useState<string | null>(null);
   const [showPriceFilter, setShowPriceFilter] = useState(search.min > 0 || search.max > 0);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cart = useCatalogCart(slug);
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -632,20 +637,39 @@ function PublicCollectionPage() {
                             >
                               Visualizar
                             </Button>
-                            <Button
-                              asChild
-                              size="sm"
-                              className="flex-1 text-xs h-8"
-                              disabled={outOfStock}
-                            >
-                              <Link
-                                to="/catalogo/colecao/$slug/produto/$productId"
-                                params={{ slug: data.slug, productId: p.id }}
-                              search={(prev: any) => prev}
+                            {data.cta_mode === "whatsapp" ? (
+                              <Button
+                                size="sm"
+                                variant={cart.isInCart(p.id) ? "secondary" : "default"}
+                                className="flex-1 text-xs h-8"
+                                disabled={outOfStock}
+                                onClick={() =>
+                                  cart.addItem({
+                                    productId: p.id,
+                                    name: p.name,
+                                    price: p.price,
+                                    reference: toCustomerReference(p.sku ?? ""),
+                                  })
+                                }
                               >
-                                {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
-                              </Link>
-                            </Button>
+                                {cart.isInCart(p.id) ? "Adicionado ✓" : "Adicionar"}
+                              </Button>
+                            ) : (
+                              <Button
+                                asChild
+                                size="sm"
+                                className="flex-1 text-xs h-8"
+                                disabled={outOfStock}
+                              >
+                                <Link
+                                  to="/catalogo/colecao/$slug/produto/$productId"
+                                  params={{ slug: data.slug, productId: p.id }}
+                                  search={(prev: any) => prev}
+                                >
+                                  Comprar
+                                </Link>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -765,6 +789,43 @@ function PublicCollectionPage() {
         preview={isPreview}
         onOpenChange={(open) => !open && setQuickViewId(null)}
       />
+
+      {data.cta_mode === "whatsapp" && cart.totalItems > 0 && (
+        <button
+          type="button"
+          onClick={() => setCartOpen(true)}
+          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
+        >
+          <ShoppingCart className="h-5 w-5" />
+          <span className="text-sm font-semibold">
+            {cart.totalItems} {cart.totalItems === 1 ? "item" : "itens"} · {formatCurrency(cart.totalValue)}
+          </span>
+        </button>
+      )}
+
+      {data.cta_mode === "whatsapp" && (
+        <CatalogCartDrawer
+          open={cartOpen}
+          onOpenChange={setCartOpen}
+          items={cart.items}
+          updateQuantity={cart.updateQuantity}
+          removeItem={cart.removeItem}
+          totalValue={cart.totalValue}
+          whatsappAvailable={!!data.whatsapp_phone}
+          onSendWhatsApp={() => {
+            if (!data.whatsapp_phone) return;
+            const url = buildCartWhatsAppUrl(
+              data.whatsapp_phone,
+              cart.items,
+              window.location.href,
+              formatCurrency,
+            );
+            window.open(url, "_blank");
+            cart.clear();
+            setCartOpen(false);
+          }}
+        />
+      )}
 
       <footer className="border-t bg-card/50 py-10 text-center text-xs text-muted-foreground space-y-3">
         <p className="px-6 max-w-xl mx-auto leading-relaxed">{PAYMENT_CONDITIONS_LEGEND}</p>
