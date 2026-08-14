@@ -384,13 +384,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       if (compositionChanged) {
         setForm(s => ({
           ...s,
-          cost: String(compositionCost),
-          stock: String(kitStockValue)
+          cost: String(compositionCost)
         }));
         lastCompositionRef.current = form.composition;
       }
     }
-  }, [form.product_type, compositionCost, kitStockValue, form.composition, setForm]);
+  }, [form.product_type, compositionCost, form.composition, setForm]);
 
 
   // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL
