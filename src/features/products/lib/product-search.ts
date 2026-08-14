@@ -7,8 +7,7 @@
  *
  * - Normaliza acentos, caixa e espaços.
  * - Multi-palavra: cada palavra é um `.or(...)` (chained = AND).
- * - Colunas cobertas: name, sku, barcode, brand, description, category (join),
- *   tags (containment exato do elemento).
+ * - Colunas cobertas: name, sku, brand, description.
  */
 
 const TEXT_COLS = ["name", "sku", "brand", "description"] as const;
