@@ -7,11 +7,10 @@
  *
  * - Normaliza acentos, caixa e espaços.
  * - Multi-palavra: cada palavra é um `.or(...)` (chained = AND).
- * - Colunas cobertas: name, sku, barcode, brand, description, category (join),
- *   tags (containment exato do elemento).
+ * - Colunas cobertas: name, sku, brand, description.
  */
 
-const TEXT_COLS = ["name", "sku", "barcode", "brand", "description"] as const;
+const TEXT_COLS = ["name", "sku", "brand", "description"] as const;
 
 export function normalizeSearchTerm(input: string): string[] {
   if (!input) return [];
@@ -48,7 +47,6 @@ export function applyProductSearch<Q extends Filterable>(
   for (const w of words) {
     const like = `%${w}%`;
     const parts = TEXT_COLS.map((c) => `${c}.ilike.${like}`);
-    parts.push(`tags.cs.{${w}}`);
     q = q.or(parts.join(","));
   }
   return q as Q;

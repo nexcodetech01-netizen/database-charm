@@ -106,7 +106,7 @@ export const Route = createFileRoute(
             supabaseAdmin
               .from("products")
               .select(
-                "id, name, brand, description, price, stock, unit, status, cover_image_path, company_id",
+                "id, sku, name, brand, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type",
               )
               .eq("id", params.productId)
               .eq("company_id", col.company_id)
@@ -136,7 +136,7 @@ export const Route = createFileRoute(
               }>(),
           ]);
 
-        if (!prod || prod.status !== "active") {
+        if (!prod || prod.status !== "active" || (prod as any).sales_channels?.includes("catalog") === false) {
           return new Response(JSON.stringify({ error: "not_found" }), {
             status: 404,
             headers,
@@ -210,7 +210,7 @@ export const Route = createFileRoute(
         const { data: relatedItems } = await supabaseAdmin
           .from("product_collection_items")
           .select(
-            "position, product:products(id, name, brand, price, stock, status, cover_image_path)",
+            "position, product:products(id, sku, name, brand, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type)",
           )
           .eq("collection_id", col.id)
           .neq("product_id", params.productId)
@@ -228,7 +228,7 @@ export const Route = createFileRoute(
         };
         const relatedRaw = (relatedItems ?? [])
           .map((it) => it.product as RelProd | null)
-          .filter((p): p is RelProd => !!p && p.status === "active")
+          .filter((p): p is RelProd => !!p && p.status === "active" && Number(p.stock) > 0 && (p as any).sales_channels?.includes("catalog"))
           .slice(0, 4);
 
         const relatedPaths = relatedRaw

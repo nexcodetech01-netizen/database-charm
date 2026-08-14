@@ -27,7 +27,6 @@ type PublicItemProduct = {
   id: string;
   name: string;
   sku: string | null;
-  barcode: string | null;
   brand: string | null;
   description: string | null;
   price: number | string;
@@ -136,7 +135,7 @@ export const Route = createFileRoute("/api/public/catalog/$slug")({
             supabaseAdmin
               .from("product_collection_items")
               .select(
-                "position, product:products(id, name, sku, barcode, brand, description, price, stock, unit, status, cover_image_path, tags, category:product_categories(name))",
+                "position, product:products(id, sku, name, brand, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type, category:product_categories(id, name))",
               )
               .eq("collection_id", col.id)
               .order("position"),
@@ -144,7 +143,7 @@ export const Route = createFileRoute("/api/public/catalog/$slug")({
 
         const products = (items ?? [])
           .map((it) => it.product as PublicItemProduct | null)
-          .filter((p): p is PublicItemProduct => !!p && p.status === "active");
+          .filter((p): p is PublicItemProduct => !!p && p.status === "active" && Number(p.stock) > 0 && (p as any).sales_channels?.includes("catalog"));
 
         const paths = products
           .map((p) => p.cover_image_path)
@@ -197,10 +196,8 @@ export const Route = createFileRoute("/api/public/catalog/$slug")({
             id: p.id,
             name: p.name,
             sku: p.sku ?? null,
-            barcode: p.barcode ?? null,
             brand: p.brand,
-            category_name: p.category?.name ?? null,
-            tags: p.tags ?? [],
+            category_name: (p as any).category?.name ?? null,
             description: p.description,
             price: Number(p.price),
             stock: Number(p.stock),
