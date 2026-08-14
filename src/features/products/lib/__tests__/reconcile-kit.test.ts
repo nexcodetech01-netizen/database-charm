@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { reconcileKitWithFreshData } from "../reconcile-kit";
+import { reconcileKitWithFreshData, computeKitBottleneck } from "../reconcile-kit";
 
 describe("reconcileKitWithFreshData", () => {
   it("recalcula o gargalo de estoque usando dados frescos, não a foto antiga da composição", () => {
@@ -64,8 +64,7 @@ describe("reconcileKitWithFreshData", () => {
     expect(result.cost).toBe(0);
   });
 
-  describe("reserva de componente compartilhado entre kits", () => {
-    // Cenário real do usuário: 5 capinhas A15, duas variações de kit que
+  describe("reserva de componente compartilhado entre kits", () => {    // Cenário real do usuário: 5 capinhas A15, duas variações de kit que
     // as compartilham — "Kit Comum" reserva 3, "Kit Privacidade" reserva 2.
     it("respeita o teto de reserva mesmo com mais estoque físico disponível", () => {
       const composition = [
@@ -133,5 +132,37 @@ describe("reconcileKitWithFreshData", () => {
       const result = reconcileKitWithFreshData(composition, fresh);
       expect(result.stock).toBe(5);
     });
+  });
+});
+
+describe("computeKitBottleneck", () => {
+  // Bug real (2026-08-14): existiam DUAS implementações independentes
+  // desse cálculo — a de kit-composition-module.tsx (pré-visualização
+  // ao vivo, já respeitava a reserva) e a de product-form/index.tsx
+  // (calculateKitStock, usada para sincronizar form.stock — não sabia
+  // da reserva). O usuário definia "reservar até 2", mas o efeito de
+  // sincronização sobrescrevia com o valor da segunda implementação
+  // (5, sem reserva) assim que a composição mudava — parecendo que a
+  // edição "não pegava". Consolidado numa função só, usada nos 3
+  // lugares (as duas telas + o recálculo no momento de salvar).
+  it("respeita a reserva definida pelo usuário, não reverte pro estoque físico total", () => {
+    const composition = [
+      { component_id: "capinha", quantity: 1, stock: 5, cost: 4, reserved_quantity: 2 },
+      { component_id: "pelicula", quantity: 1, stock: 50, cost: 2 },
+    ];
+    expect(computeKitBottleneck(composition)).toBe(2);
+  });
+
+  it("um segundo kit com reserva diferente do mesmo componente compartilhado", () => {
+    const composition = [
+      { component_id: "capinha", quantity: 1, stock: 5, cost: 4, reserved_quantity: 3 },
+      { component_id: "cabo", quantity: 1, stock: 50, cost: 3 },
+    ];
+    expect(computeKitBottleneck(composition)).toBe(3);
+  });
+
+  it("sem reserva, usa o estoque físico total normalmente (comportamento padrão preservado)", () => {
+    const composition = [{ component_id: "capinha", quantity: 1, stock: 5, cost: 4 }];
+    expect(computeKitBottleneck(composition)).toBe(5);
   });
 });
