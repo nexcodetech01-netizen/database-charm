@@ -22,7 +22,9 @@ import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn } from "./checkout-session.server";
 import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
+import { getGreeting, parseCatalogProductIntent } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
+import { isCatalogIntent } from "./catalog-nav";
 
 
 type Any = Record<string, unknown>;
@@ -132,6 +134,10 @@ function parseInboundPayload(payload: Any): ParsedTextMessage[] {
 
 function formatBellaResponse(r: BellaActionResponse): string {
   const parts: string[] = [];
+  const greeting = getGreeting();
+  parts.push(greeting);
+  parts.push(""); // Linha em branco após saudação
+  
   if (r.title && r.title !== "Ação executada") parts.push(`*${r.title}*`);
   if (r.description) parts.push(r.description);
   if (r.metrics?.length) {
@@ -524,6 +530,46 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       }),
     );
     return;
+  }
+
+  // 3c-pre-ante) Interceptação de produto específico (Catálogo/SKU).
+  const productIntent = parseCatalogProductIntent(msg.text);
+  if (productIntent) {
+    const { data: product } = await db
+      .from("products")
+      .select("id, name, price, stock, description")
+      .eq("company_id", tenant.companyId)
+      .or(productIntent.sku ? `sku.eq.${productIntent.sku}` : `name.ilike.%${productIntent.name}%`)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (product) {
+      const greeting = getGreeting();
+      const isAvailable = (Number(product.stock) || 0) > 0;
+      let replyText = "";
+
+      if (isAvailable) {
+        replyText = `${greeting} Sim, a '${product.name}' está disponível em nosso estoque! 😃\n\n💰 Valor: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(product.price))}\n\nAceitamos cartões, PIX e realizamos entregas. Como gostaria de prosseguir com o pedido?`;
+      } else {
+        replyText = `${greeting} Poxa, a '${product.name}' está esgotada no momento. 😔\n\nMas não se preocupe! Posso te mostrar algumas opções semelhantes ou te avisar assim que chegar reposição. O que acha?`;
+      }
+
+      const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: sent.waMessageId,
+        text: replyText,
+        status: sent.ok ? "sent" : "failed",
+        error: sent.error,
+        processing_ms: Date.now() - startedAt,
+        provider: "catalog-nav",
+        skill_id: "catalog.direct_hit",
+      });
+      return;
+    }
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
