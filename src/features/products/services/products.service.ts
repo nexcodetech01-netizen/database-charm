@@ -24,9 +24,20 @@ const productCreateSchema = z
 
 // Projeção enxuta para listagem.
 const LIST_SELECT = `
-  *,
+  id, sku, name, brand, price, stock, min_stock, unit, status,
+  category_id, supplier_id, cover_image_path, image_url, ml_item_id, ml_permalink,
+  created_at, updated_at, company_id, description, sales_channels, product_type,
   category:product_categories(id, name),
   supplier:product_suppliers(id, name)
+`;
+
+// Projeção para o catálogo público (mínima e sem campos sensíveis/inexistentes).
+export const CATALOG_PRODUCT_SELECT = `
+  id, sku, name, brand, price, stock, unit, status,
+  category_id, cover_image_path, image_url,
+  created_at, updated_at, company_id, description,
+  sales_channels, product_type,
+  category:product_categories(id, name)
 `;
 
 // Projeção completa (detalhe/edição/duplicação).

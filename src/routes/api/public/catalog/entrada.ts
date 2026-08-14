@@ -86,11 +86,11 @@ export const Route = createFileRoute("/api/public/catalog/entrada")({
 
         const { data: prod } = await supabaseAdmin
           .from("products")
-          .select("id, name, price, status, company_id")
+          .select("id, name, price, status, company_id, sales_channels, stock")
           .eq("id", productId)
           .eq("company_id", col.company_id)
           .maybeSingle();
-        if (!prod || prod.status !== "active") {
+        if (!prod || prod.status !== "active" || Number(prod.stock) <= 0 || (prod as any).sales_channels?.includes("catalog") === false) {
           log("product_not_found", { productId });
           return jsonError(404, "product_not_found", headers);
         }
