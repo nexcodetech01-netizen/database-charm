@@ -19,6 +19,14 @@ interface ComponentItem {
   quantity: number;
   cost: number;
   stock: number;
+  /**
+   * Teto opcional de quantas unidades deste componente estão reservadas
+   * para este kit específico — use quando o mesmo componente é
+   * compartilhado por mais de um kit (ex.: "Capinha A15" usada em dois
+   * kits diferentes, cada um com sua própria reserva). Vazio = usa todo
+   * o estoque do componente, sem divisão.
+   */
+  reserved_quantity?: number | null;
 }
 
 interface Props {
@@ -103,6 +111,17 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
     setComposition(composition.map(c => c.id === id ? { ...c, quantity: Math.max(1, qty) } : c));
   };
 
+  const updateReservation = (id: string, value: string) => {
+    const trimmed = value.trim();
+    if (trimmed === "") {
+      setComposition(composition.map(c => c.id === id ? { ...c, reserved_quantity: null } : c));
+      return;
+    }
+    const parsed = parseInt(trimmed, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    setComposition(composition.map(c => c.id === id ? { ...c, reserved_quantity: parsed } : c));
+  };
+
   const totalCost = useMemo(() => 
     composition.reduce((acc, item) => acc + (item.cost * item.quantity), 0)
   , [composition]);
@@ -123,7 +142,10 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
     const stocks = uniqueItems.map(c => {
       const qty = Number(c.quantity || 1);
       const safeQty = qty > 0 ? qty : 1;
-      return Math.floor(Number(c.stock || 0) / safeQty);
+      const physicalMax = Math.floor(Number(c.stock || 0) / safeQty);
+      // Reserva nunca deixa passar do físico — só limita pra baixo.
+      if (c.reserved_quantity == null) return physicalMax;
+      return Math.min(physicalMax, Math.max(0, Number(c.reserved_quantity)));
     });
     return Math.min(...stocks);
   }, [composition]);
@@ -197,6 +219,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
               <TableRow className="hover:bg-transparent border-slate-800">
                 <TableHead className="text-slate-400">Item</TableHead>
                 <TableHead className="text-slate-400 text-center">Qtd no Kit</TableHead>
+                <TableHead className="text-slate-400 text-center">Reservar até</TableHead>
                 <TableHead className="text-slate-400">Custo Unit.</TableHead>
                 <TableHead className="text-slate-400">Subtotal</TableHead>
                 <TableHead className="text-slate-400 text-right w-[80px]">Ações</TableHead>
@@ -205,7 +228,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
             <TableBody>
               {composition.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                  <TableCell colSpan={6} className="h-24 text-center text-slate-500">
                     Nenhum componente adicionado.
                   </TableCell>
                 </TableRow>
@@ -230,6 +253,17 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
                           }}
                         />
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder={`até ${item.stock}`}
+                        className="w-20 h-8 text-center bg-slate-950 border-slate-800"
+                        value={item.reserved_quantity ?? ""}
+                        onChange={(e) => updateReservation(item.id, e.target.value)}
+                        title="Deixe em branco para usar todo o estoque deste item. Preencha só se este componente for compartilhado com outro kit e você quiser dividir a quantidade entre eles."
+                      />
                     </TableCell>
                     <TableCell className="text-slate-300">
                       {formatCurrency(item.cost)}
@@ -263,11 +297,20 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
         <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
           <div>
             <span className="text-sm text-slate-400 font-medium">Estoque Disponível do Kit:</span>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Baseado no gargalo</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+              {composition.some(c => c.reserved_quantity != null) ? "Baseado na reserva" : "Baseado no gargalo"}
+            </p>
           </div>
           <span className="text-xl font-bold text-blue-400">{kitStock} un</span>
         </div>
       </div>
+      {composition.some(c => c.reserved_quantity != null) && (
+        <p className="text-[11px] text-slate-500 leading-relaxed px-1">
+          💡 Alguns componentes têm reserva definida — use isso quando o mesmo item (ex.: uma capinha)
+          é compartilhado entre kits diferentes e você quer dividir a quantidade entre eles.
+          O sistema nunca deixa vender mais do que existe fisicamente, mesmo com reserva configurada.
+        </p>
+      )}
     </div>
   );
 }

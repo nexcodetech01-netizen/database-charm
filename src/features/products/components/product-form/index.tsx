@@ -591,9 +591,27 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         .from("products")
         .select("id, stock, cost")
         .in("id", componentIds);
+
+      // Unidades já vendidas DESTE kit — usadas para descontar da reserva
+      // de cada componente (ver reconcile-kit.ts), sem precisar de ajuste
+      // manual a cada venda. Só relevante para um kit já existente
+      // (produto novo ainda não tem vendas).
+      let unitsSoldOfThisKit = 0;
+      if (product?.id) {
+        const { data: soldItems } = await supabase
+          .from("sale_items")
+          .select("quantity, sale:sales!inner(status)")
+          .eq("product_id", product.id)
+          .in("sale.status", ["paid", "partially_paid"]);
+        unitsSoldOfThisKit = (soldItems ?? []).reduce(
+          (acc: number, it: any) => acc + num(it.quantity),
+          0,
+        );
+      }
+
       if (!freshErr && freshData) {
         const normalized = freshData.map((p: any) => ({ id: p.id, stock: num(p.stock), cost: num(p.cost) }));
-        const reconciled = reconcileKitWithFreshData(form.composition as any, normalized);
+        const reconciled = reconcileKitWithFreshData(form.composition as any, normalized, unitsSoldOfThisKit);
         finalComposition = reconciled.composition as any;
         finalStock = reconciled.stock;
         finalCost = reconciled.cost;

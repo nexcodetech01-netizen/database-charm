@@ -30,7 +30,7 @@ const LIST_SELECT = `
   category:product_categories(id, name),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, parent_id, component_id, quantity,
+    id, parent_id, component_id, quantity, reserved_quantity,
     product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
@@ -41,7 +41,7 @@ const DETAIL_SELECT = `
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, component_id, quantity,
+    id, component_id, quantity, reserved_quantity,
     product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
@@ -240,7 +240,8 @@ export const productsService = {
         company_id: (input as any).company_id,
         parent_id: data.id,
         component_id: c.component_id,
-        quantity: c.quantity
+        quantity: c.quantity,
+        reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
       }));
 
       const { error: compError } = await supabase
@@ -298,7 +299,8 @@ export const productsService = {
               company_id: companyId,
               parent_id: id,
               component_id: c.component_id,
-              quantity: Number(c.quantity || 1)
+              quantity: Number(c.quantity || 1),
+              reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
             }));
             // Usamos .insert() em vez de .upsert() após o delete prévio.
             const { error: insertError } = await supabase
