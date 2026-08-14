@@ -24,15 +24,9 @@ const productCreateSchema = z
 
 // Projeção enxuta para listagem.
 const LIST_SELECT = `
-  id, sku, name, brand, price, stock, min_stock, unit, status,
-  category_id, supplier_id, cover_image_path, image_url, ml_item_id, ml_permalink,
-  created_at, updated_at, company_id, description, sales_channels, product_type,
+  *,
   category:product_categories(id, name),
-  supplier:product_suppliers(id, name),
-  composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, parent_id, component_id, quantity, reserved_quantity,
-    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
-  )
+  supplier:product_suppliers(id, name)
 `;
 
 // Projeção completa (detalhe/edição/duplicação).
@@ -135,20 +129,8 @@ export const productsService = {
 
     let rows = (data ?? []) as unknown as any[];
     
-    // Virtual Stock Calculation for Kits in List
-    // Simplificado: se o stock no banco for 0 ou nulo, usamos o cálculo do kit.
-    // Se o usuário gravou um override (ex: 2), respeitamos o valor do banco.
-    rows = rows.map(r => {
-      if (r.product_type === 'kit' && r.composition && r.composition.length > 0) {
-        const calculated = calculateKitStock(r.composition, r.id);
-        // Se o stock gravado for diferente de 0, assumimos override manual.
-        // Caso contrário, usamos o calculado.
-        if (!r.stock || Number(r.stock) === 0) {
-          r.stock = calculated;
-        }
-      }
-      return r;
-    });
+    // Virtual Stock Calculation for Kits in List (removed because composition is not fetched in list anymore)
+    // Kit stock will be loaded/calculated only in details or manual override.
     
     // "low" precisa comparar stock <= min_stock — filtro client-side pós query
     if (filters.stock === "low") {
