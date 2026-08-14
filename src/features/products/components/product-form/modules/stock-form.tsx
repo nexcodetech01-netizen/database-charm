@@ -55,9 +55,7 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
             </div>
           ) : isEdit && (
             <p className="text-[10px] text-muted-foreground">
-              O saldo não pode ser editado direto aqui — o sistema bloqueia essa alteração no banco
-              de dados (o valor precisa passar por uma movimentação, para manter o histórico
-              correto). Use os botões <strong>Entrada</strong> ou <strong>Ajuste</strong> abaixo.
+              Para registrar entradas ou saídas rastreáveis no estoque, utilize os botões <strong>Entrada</strong> ou <strong>Ajuste</strong> abaixo.
             </p>
           )}
 
