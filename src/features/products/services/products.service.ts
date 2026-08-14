@@ -29,9 +29,9 @@ const LIST_SELECT = `
   created_at, updated_at, company_id, description, sales_channels, product_type,
   category:product_categories(id, name),
   supplier:product_suppliers(id, name),
-  composition:product_kit_components!product_kit_components_parent_id_fkey(
+  composition:product_kit_components(
     id, parent_id, component_id, quantity, reserved_quantity,
-    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
+    product:products(id, name, sku, cost, stock)
   )
 `;
 
@@ -40,9 +40,9 @@ const DETAIL_SELECT = `
   *,
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
   supplier:product_suppliers(id, name),
-  composition:product_kit_components!product_kit_components_parent_id_fkey(
+  composition:product_kit_components(
     id, component_id, quantity, reserved_quantity,
-    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
+    product:products(id, name, sku, cost, stock)
   )
 `;
 
@@ -182,21 +182,25 @@ export const productsService = {
   },
 
   async get(id: string) {
-    const { data, error } = await supabase
-      .from("products")
-      .select(`
-        *,
-        category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
-        supplier:product_suppliers(id, name),
-        images:product_images(id, path, position, focal_x, focal_y, zoom),
-        composition:product_kit_components!product_kit_components_parent_id_fkey(
-          id, component_id, quantity,
-          product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
-        )
-      `)
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          *,
+          category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
+          supplier:product_suppliers(id, name),
+          images:product_images(id, path, position, focal_x, focal_y, zoom),
+          composition:product_kit_components(
+            id, component_id, quantity,
+            product:products(id, name, sku, cost, stock)
+          )
+        `)
+        .eq("id", id)
+        .maybeSingle();
+      if (error) {
+        console.error("Erro ao buscar detalhe do produto:", error);
+        throw error;
+      }
     
     if (data && data.product_type === 'kit' && data.composition) {
       const calculated = calculateKitStock(data.composition, data.id);
@@ -205,7 +209,11 @@ export const productsService = {
       }
     }
     
-    return data;
+      return data;
+    } catch (error) {
+      console.error("Erro ao carregar produto:", error);
+      throw error;
+    }
   },
 
   /**
