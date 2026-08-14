@@ -22,7 +22,7 @@ import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn } from "./checkout-session.server";
 import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
-import { getGreeting, parseCatalogProductIntent } from "./intent-detector";
+import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
 import { isCatalogIntent } from "./catalog-nav";
 
@@ -532,7 +532,61 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
-  // 3c-pre-ante) Interceptação de produto específico (Catálogo/SKU).
+  // 3c-pre-ante) Interceptação de produto específico ou Intenção de Compra.
+  const purchaseIntent = isPurchaseIntent(msg.text);
+  const dataSubmission = isDataSubmissionIntent(msg.text);
+
+  if (purchaseIntent) {
+    const greeting = getGreeting();
+    const replyText = `${greeting} Perfeito! Já vou separar o seu produto. 📦\n\nPara adiantar o seu atendimento, por favor me informe:\n1. Seu Nome Completo\n2. Endereço completo com CEP para entrega\n3. Forma de pagamento de sua preferência (Pix, dinheiro ou Cartão)`;
+    
+    const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: sent.waMessageId,
+      text: replyText,
+      status: sent.ok ? "sent" : "failed",
+      error: sent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.purchase_pre_sale",
+    });
+    return;
+  }
+
+  if (dataSubmission) {
+    const replyText = `Excelente! Já recebi seus dados. Um de nossos atendentes vai te chamar aqui em instantes para enviar a chave Pix/link de pagamento e finalizar o seu pedido. Obrigado!`;
+    
+    const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: sent.waMessageId,
+      text: replyText,
+      status: sent.ok ? "sent" : "failed",
+      error: sent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.purchase_handoff",
+    });
+
+    // Altera status para 'human' (Aguardando Atendente) e pausa a Bella
+    await db
+      .from("whatsapp_conversations")
+      .update({ 
+        status: "human",
+        updated_at: new Date().toISOString() 
+      })
+      .eq("id", conversationId);
+    
+    return;
+  }
+
   const productIntent = parseCatalogProductIntent(msg.text);
   if (productIntent) {
     const { data: product } = await db

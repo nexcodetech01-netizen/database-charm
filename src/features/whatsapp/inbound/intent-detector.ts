@@ -1,6 +1,7 @@
 /**
  * Utilitários para detecção de intenções e formatação de saudações no WhatsApp.
  */
+import { normalize } from "./catalog-nav";
 
 /**
  * Retorna uma saudação cordial baseada no horário atual ou genérica.
@@ -30,3 +31,27 @@ export function parseCatalogProductIntent(text: string): { sku?: string; name?: 
 
   return null;
 }
+
+/**
+ * Detecta intenção de compra imediata.
+ */
+export function isPurchaseIntent(text: string): boolean {
+  const t = normalize(text ?? "");
+  const PURCHASE_RE = /\b(quero comprar|como faco para pagar|pode separar pra mim|vou levar|quero levar|como compro|qual o pix|quero o link)\b/;
+  return PURCHASE_RE.test(t);
+}
+
+/**
+ * Verifica se a mensagem contém um padrão que parece resposta aos dados de entrega/pagamento.
+ * Nome completo + CEP (8 dígitos) + Forma de pagamento (Pix/Dinheiro/Cartão)
+ */
+export function isDataSubmissionIntent(text: string): boolean {
+  const t = normalize(text ?? "");
+  // Busca por CEP (8 dígitos)
+  const hasZip = /\b\d{5}-?\d{3}\b/.test(t);
+  // Busca por formas de pagamento
+  const hasPayment = /\b(pix|dinheiro|cartao|credito|debito)\b/i.test(t);
+  // Se tiver CEP e forma de pagamento, assumimos que são os dados solicitados
+  return hasZip && hasPayment;
+}
+
