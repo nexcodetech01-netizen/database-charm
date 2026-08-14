@@ -55,3 +55,14 @@ export function isDataSubmissionIntent(text: string): boolean {
   return hasZip && hasPayment;
 }
 
+/**
+ * Detecta o método de pagamento específico na mensagem.
+ */
+export function detectPaymentMethod(text: string): 'money' | 'pix_card' | null {
+  const t = normalize(text ?? "");
+  if (/\b(dinheiro|especie|troco)\b/i.test(t)) return 'money';
+  if (/\b(pix|cartao|credito|debito|link)\b/i.test(t)) return 'pix_card';
+  return null;
+}
+
+

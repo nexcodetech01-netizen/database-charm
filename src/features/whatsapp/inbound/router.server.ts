@@ -22,7 +22,7 @@ import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn } from "./checkout-session.server";
 import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
-import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent } from "./intent-detector";
+import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
 import { isCatalogIntent } from "./catalog-nav";
 
@@ -558,7 +558,18 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
 
   if (dataSubmission) {
-    const replyText = `Excelente! Já recebi seus dados. Um de nossos atendentes vai te chamar aqui em instantes para enviar a chave Pix/link de pagamento e finalizar o seu pedido. Obrigado!`;
+    const paymentMethod = detectPaymentMethod(msg.text);
+    let replyText = "";
+    
+    if (paymentMethod === 'money') {
+      // Primeiro pergunta do troco
+      await sendWhatsAppText({ to: msg.phone, text: "Vai precisar de troco para quanto?" });
+      // Mensagem de confirmação para dinheiro
+      replyText = "Perfeito! Já anotamos. Um de nossos atendentes vai te chamar em instantes para confirmar a taxa de entrega e o horário do envio. Obrigado!";
+    } else {
+      // Mensagem padrão para PIX ou CARTÃO
+      replyText = "Excelente! Já recebi seus dados. Um de nossos atendentes vai te chamar aqui em instantes para enviar a chave Pix ou link de pagamento e finalizar o seu pedido. Obrigado!";
+    }
     
     const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
     await db.from("whatsapp_messages").insert({
@@ -586,6 +597,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     
     return;
   }
+
 
   const productIntent = parseCatalogProductIntent(msg.text);
   if (productIntent) {
