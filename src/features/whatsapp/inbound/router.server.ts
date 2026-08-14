@@ -538,7 +538,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
   if (purchaseIntent) {
     const greeting = getGreeting();
-    const replyText = `${greeting} Perfeito! Já vou separar o seu produto. 📦\n\nPara adiantar o seu atendimento, por favor me informe:\n1. Seu Nome Completo\n2. Endereço completo com CEP para entrega\n3. Forma de pagamento de sua preferência (Pix, dinheiro ou Cartão)`;
+    const replyText = `${greeting}\n\nPerfeito! Vou separar para você. 📦\n\nMe informa, por favor:\n1. Seu Nome Completo\n2. Endereço com CEP para entrega\n3. Forma de pagamento (Pix, Cartão ou Dinheiro)`;
     
     const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
     await db.from("whatsapp_messages").insert({
@@ -563,12 +563,12 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     
     if (paymentMethod === 'money') {
       // Primeiro pergunta do troco
-      await sendWhatsAppText({ to: msg.phone, text: "Vai precisar de troco para quanto?" });
+      await sendWhatsAppText({ to: msg.phone, text: "Perfeito! Vai precisar de troco para quanto?" });
       // Mensagem de confirmação para dinheiro
-      replyText = "Perfeito! Já anotamos. Um de nossos atendentes vai te chamar em instantes para confirmar a taxa de entrega e o horário do envio. Obrigado!";
+      replyText = "Anotado! Um de nossos atendentes vai te chamar em instantes para confirmar a taxa e o horário da entrega. Muito obrigado(a)!";
     } else {
       // Mensagem padrão para PIX ou CARTÃO
-      replyText = "Excelente! Já recebi seus dados. Um de nossos atendentes vai te chamar aqui em instantes para enviar a chave Pix ou link de pagamento e finalizar o seu pedido. Obrigado!";
+      replyText = "Ótimo! Já registrei aqui. Um de nossos atendentes vai te chamar em instantes para te enviar o Pix/link de pagamento e finalizar tudo. Muito obrigado(a)!";
     }
     
     const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
@@ -615,9 +615,9 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       let replyText = "";
 
       if (isAvailable) {
-        replyText = `${greeting} Sim, a '${product.name}' está disponível em nosso estoque! 😃\n\n💰 Valor: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(product.price))}\n\nAceitamos cartões, PIX e realizamos entregas. Como gostaria de prosseguir com o pedido?`;
+        replyText = `${greeting}\n\nTemos o item ${product.name} disponível em nosso estoque sim!\n\nEle está por ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(product.price))}.\n\nAceitamos Pix, Cartão e Dinheiro. Gostaria de já garantir o seu e organizar a entrega?`;
       } else {
-        replyText = `${greeting} Poxa, a '${product.name}' está esgotada no momento. 😔\n\nMas não se preocupe! Posso te mostrar algumas opções semelhantes ou te avisar assim que chegar reposição. O que acha?`;
+        replyText = `${greeting}\n\nPoxa, o item ${product.name} está esgotado no momento. 😔\n\nMas não se preocupe! Posso te mostrar algumas opções semelhantes ou te avisar assim que chegar reposição. O que acha?`;
       }
 
       const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });

@@ -8,10 +8,10 @@ import { normalize } from "./catalog-nav";
  */
 export function getGreeting(): string {
   const hour = new Date().getUTCHours() - 3; // Ajuste básico para BRT (UTC-3)
-  if (hour >= 5 && hour < 12) return "Olá, bom dia! 😃";
-  if (hour >= 12 && hour < 18) return "Olá, boa tarde! 😃";
-  if (hour >= 18 || hour < 5) return "Olá, boa noite! 😃";
-  return "Olá! Tudo bem? 😃";
+  if (hour >= 5 && hour < 12) return "Olá, bom dia! 😊";
+  if (hour >= 12 && hour < 18) return "Olá, boa tarde! 😊";
+  if (hour >= 18 || hour < 5) return "Olá, boa noite! 😊";
+  return "Olá! Tudo bem? 😊";
 }
 
 /**
