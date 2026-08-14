@@ -34,6 +34,24 @@ export async function fetchUserPermissions(
     companyId = profile?.current_company_id ?? null;
   }
 
+  // Membro de equipe sem "empresa atual" definida no perfil (ex.: convite
+  // recém-aceito, antes de escolher uma empresa ativa): sem este passo, a
+  // função pulava direto para o fallback de dono — e como o membro não é
+  // dono, o resultado final seria zero permissões, mesmo tendo vínculo
+  // real e permissões concedidas via user_roles. Mesma classe de bug já
+  // corrigida em 6 telas de Configurações; aqui o impacto é maior porque
+  // afeta o próprio sistema de autorização.
+  if (!companyId) {
+    const { data: membership } = await supabase
+      .from("user_roles")
+      .select("company_id")
+      .eq("user_id", userId)
+      .not("company_id", "is", null)
+      .limit(1)
+      .maybeSingle();
+    companyId = (membership?.company_id as string | undefined) ?? null;
+  }
+
   if (!companyId) {
     const { data: company } = await supabase
       .from("companies")
