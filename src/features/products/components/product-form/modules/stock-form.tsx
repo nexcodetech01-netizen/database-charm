@@ -29,23 +29,12 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               type="number"
               value={form.stock}
               onChange={(e) => {
-                // Kits: o estoque é sempre calculado a partir dos
-                // componentes (é o que o texto abaixo já explica) —
-                // nunca editável direto. Sem este guard, o campo aceitava
-                // digitação por um instante e revertia sozinho no
-                // próximo render (o efeito que recalcula kitStock a
-                // partir da composição sobrescreve o valor de qualquer
-                // jeito), o que parecia "não deixar atualizar" em vez de
-                // deixar claro que o campo é somente leitura.
-                if (isKit) return;
                 setForm((s: any) => ({ ...s, stock: e.target.value }));
               }}
               className={cn(
                 "text-lg font-bold tabular-nums pr-12",
                 isKit && "text-blue-400 bg-blue-950/20 border-blue-500/50"
               )}
-              disabled={isKit || isEdit}
-              readOnly={isKit || isEdit}
 
             />
             {isKit && (
