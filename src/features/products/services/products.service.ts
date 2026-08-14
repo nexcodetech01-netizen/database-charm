@@ -86,38 +86,52 @@ function calculateKitStock(composition: any[], parentId?: string) {
 
 export const productsService = {
   async list(companyId: string, filters: ProductListFilters) {
-    let q = supabase
-      .from("products")
-      .select(LIST_SELECT, { count: "exact" })
-      .eq("company_id", companyId);
+    try {
+      let q = supabase
+        .from("products")
+        .select(LIST_SELECT, { count: "exact" })
+        .eq("company_id", companyId);
 
-    if (filters.search.trim()) {
-      q = applyProductSearch(q, filters.search);
-    }
+      // Aplicação condicional de filtros
+      if (filters.search?.trim()) {
+        q = applyProductSearch(q, filters.search);
+      }
 
-    if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-    if (filters.supplierId) q = q.eq("supplier_id", filters.supplierId);
-    if (filters.status) q = q.eq("status", filters.status);
-    else if (!filters.includeInactive) q = q.eq("status", "active");
+      if (filters.categoryId) {
+        q = q.eq("category_id", filters.categoryId);
+      }
 
-    // Listagem total de produtos ativos (auditável).
-    // Filtros de exclusão por mesclagem removidos conforme solicitação Sprint RC2.
-    if (!filters.includeInactive) {
-      q = q.eq("status", "active");
-    }
+      if (filters.supplierId) {
+        q = q.eq("supplier_id", filters.supplierId);
+      }
 
-    if (filters.stock === "out") q = q.lte("stock", 0);
-    else if (filters.stock === "low") q = q.gt("stock", 0);
-    else if (filters.stock === "in_stock") q = q.gt("stock", 0);
+      // Status: Simplificado para evitar bloqueios indevidos
+      if (filters.status) {
+        q = q.eq("status", filters.status);
+      } else if (!filters.includeInactive) {
+        // Por padrão, mostra ativos apenas se não pedir inativos
+        q = q.eq("status", "active");
+      }
 
-    q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
+      // Filtros de estoque
+      if (filters.stock === "out") {
+        q = q.lte("stock", 0);
+      } else if (filters.stock === "in_stock") {
+        q = q.gt("stock", 0);
+      }
+      // "low" é tratado via filter client-side abaixo
 
-    const from = (filters.page - 1) * filters.pageSize;
-    const to = from + filters.pageSize - 1;
-    q = q.range(from, to);
+      q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
 
-    const { data, error, count } = await q;
-    if (error) throw error;
+      const from = (filters.page - 1) * filters.pageSize;
+      const to = from + filters.pageSize - 1;
+      q = q.range(from, to);
+
+      const { data, error, count } = await q;
+      if (error) {
+        console.error("Erro ao buscar produtos (Supabase):", error);
+        throw error;
+      }
 
     let rows = (data ?? []) as unknown as any[];
     
@@ -141,7 +155,11 @@ export const productsService = {
       rows = rows.filter((r) => Number(r.stock) <= Number(r.min_stock));
     }
 
-    return { rows, total: count ?? 0 };
+      return { rows, total: count ?? 0 };
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+      throw error;
+    }
   },
 
   async metrics(companyId: string) {
