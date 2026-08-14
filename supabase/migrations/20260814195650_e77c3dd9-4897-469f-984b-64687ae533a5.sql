@@ -1,0 +1,1 @@
+ALTER TABLE public.product_kit_components ADD COLUMN IF NOT EXISTS reserved_quantity NUMERIC DEFAULT NULL;

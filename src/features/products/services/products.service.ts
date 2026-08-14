@@ -46,7 +46,7 @@ const DETAIL_SELECT = `
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, component_id, quantity,
+    id, component_id, quantity, reserved_quantity,
     product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
@@ -78,11 +78,17 @@ function calculateKitStock(composition: any[], parentId?: string) {
     const componentProduct = c.product || c.produto_componente || c;
     const componentStock = Number(componentProduct?.stock ?? 0);
     const quantityInKit = Number(c.quantity || 1);
+    const reservedQuantity = c.reserved_quantity != null ? Number(c.reserved_quantity) : null;
     
     const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
-    // A conta do kit DEVE olhar o estoque de CADA componente individualmente. 
-    // Fórmula Math.floor(estoque / quantidade_necessaria)
-    return Math.floor(componentStock / safeQuantity);
+    const physicalMax = Math.floor(componentStock / safeQuantity);
+    
+    // Se houver reserva, ela é o teto, mas nunca ultrapassa o físico
+    if (reservedQuantity !== null) {
+      return Math.min(physicalMax, reservedQuantity);
+    }
+    
+    return physicalMax;
   });
   
   // O estoque do kit é o valor MÍNIMO entre os componentes (gargalo)
@@ -185,7 +191,7 @@ export const productsService = {
           supplier:product_suppliers(id, name),
           images:product_images(id, path, position, focal_x, focal_y, zoom),
           composition:product_kit_components!product_kit_components_parent_id_fkey(
-            id, component_id, quantity,
+            id, component_id, quantity, reserved_quantity,
             product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
           )
         `)
@@ -261,6 +267,7 @@ export const productsService = {
         parent_id: data.id,
         component_id: c.component_id,
         quantity: c.quantity,
+        reserved_quantity: c.reserved_quantity,
       }));
 
       const { error: compError } = await supabase
@@ -319,6 +326,7 @@ export const productsService = {
               parent_id: id,
               component_id: c.component_id,
               quantity: Number(c.quantity || 1),
+              reserved_quantity: c.reserved_quantity != null ? Number(c.reserved_quantity) : null,
             }));
             // Usamos .insert() em vez de .upsert() após o delete prévio.
             const { error: insertError } = await supabase
