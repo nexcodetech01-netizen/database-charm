@@ -27,7 +27,6 @@ type PublicItemProduct = {
   id: string;
   name: string;
   sku: string | null;
-  barcode: string | null;
   brand: string | null;
   description: string | null;
   price: number | string;
