@@ -445,6 +445,7 @@ function PublicCollectionPage() {
                     </span>
                   </div>
                   <Slider
+                    key={`price-${search.min ?? "min"}-${search.max ?? "max"}`}
                     defaultValue={[search.min || priceRange.min, search.max || priceRange.max]}
                     min={priceRange.min}
                     max={priceRange.max}
