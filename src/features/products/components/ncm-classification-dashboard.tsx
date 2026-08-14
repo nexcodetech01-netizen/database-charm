@@ -27,7 +27,7 @@ export function NcmClassificationDashboard({ companyId }: Props) {
         .eq("company_id", companyId);
 
       if (onlyWithoutNcm) {
-        query = query.or("ncm.is.null");
+        query = query.is("ncm", null);
       }
 
       const { data, error } = await query;

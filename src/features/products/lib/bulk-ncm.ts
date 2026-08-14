@@ -96,7 +96,7 @@ export const bulkNcmService = {
           .from("products")
           .select("id, name, sku, cest, category_id")
           .eq("company_id", companyId)
-          .or("ncm.is.null")
+          .is("ncm", null)
           .order("name", { ascending: true })
           .limit(2000),
         supabase
@@ -243,7 +243,7 @@ export const bulkNcmService = {
         .update(patch)
         .eq("id", candidate.id)
         .eq("company_id", companyId)
-        .or("ncm.is.null");
+        .is("ncm", null);
 
       if (error) failed += 1;
       else updated += 1;
