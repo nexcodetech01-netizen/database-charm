@@ -279,7 +279,8 @@ export const productsService = {
 
       // Sync composition
       if (composition !== undefined) {
-        // CORREÇÃO: Limpeza rigorosa por parent_id para evitar duplicidade
+        // CORREÇÃO: Executa um DELETE prévio da composição do kit para evitar erro de restrição única (upsert)
+        // e garantir uma inserção limpa da nova lista de componentes.
         const { error: deleteError } = await supabase
           .from("product_kit_components")
           .delete()
@@ -299,6 +300,7 @@ export const productsService = {
               component_id: c.component_id,
               quantity: Number(c.quantity || 1)
             }));
+            // Usamos .insert() em vez de .upsert() após o delete prévio.
             const { error: insertError } = await supabase
               .from("product_kit_components")
               .insert(components);
