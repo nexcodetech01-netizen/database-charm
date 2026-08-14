@@ -16,14 +16,14 @@ interface Props {
 
 export function NcmClassificationDashboard({ companyId }: Props) {
   const [onlyWithoutNcm, setOnlyWithoutNcm] = useState(true);
-  const [groupBy, setGroupBy] = useState<"category" | "material" | "brand">("category");
+  const [groupBy, setGroupBy] = useState<"category" | "brand">("category");
 
   const { data: stats = [], isLoading } = useQuery({
     queryKey: ["products", "ncm-stats", companyId, onlyWithoutNcm, groupBy],
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("id, category_id, material, brand, ncm, product_categories(name)")
+        .select("id, category_id, brand, ncm, category:product_categories(name)")
         .eq("company_id", companyId);
 
       if (onlyWithoutNcm) {
@@ -36,8 +36,7 @@ export function NcmClassificationDashboard({ companyId }: Props) {
       const groups: Record<string, number> = {};
       data.forEach((p: any) => {
         let key = "Não informado";
-        if (groupBy === "category") key = p.product_categories?.name || "Sem categoria";
-        else if (groupBy === "material") key = p.material || "Sem material";
+        if (groupBy === "category") key = p.category?.name || "Sem categoria";
         else if (groupBy === "brand") key = p.brand || "Sem marca";
         
         groups[key] = (groups[key] || 0) + 1;
@@ -76,10 +75,6 @@ export function NcmClassificationDashboard({ companyId }: Props) {
               <Label htmlFor="group-category">Categoria</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="material" id="group-material" />
-              <Label htmlFor="group-material">Material</Label>
-            </div>
-            <div className="flex items-center space-x-2">
               <RadioGroupItem value="brand" id="group-brand" />
               <Label htmlFor="group-brand">Marca</Label>
             </div>
@@ -90,7 +85,7 @@ export function NcmClassificationDashboard({ companyId }: Props) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{groupBy === "category" ? "Categoria" : groupBy === "material" ? "Material" : "Marca"}</TableHead>
+                <TableHead>{groupBy === "category" ? "Categoria" : "Marca"}</TableHead>
                 <TableHead className="text-right">Produtos</TableHead>
               </TableRow>
             </TableHeader>

@@ -35,7 +35,7 @@ const DETAIL_SELECT = `
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
   supplier:product_suppliers(id, name),
   composition:product_kit_components!product_kit_components_parent_id_fkey(
-    id, component_id, quantity, reserved_quantity,
+    id, component_id, quantity,
     product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
@@ -91,11 +91,11 @@ export const productsService = {
         q = applyProductSearch(q, filters.search);
       }
 
-      if (filters.categoryId) {
+      if (filters.categoryId && filters.categoryId !== "all") {
         q = q.eq("category_id", filters.categoryId);
       }
 
-      if (filters.supplierId) {
+      if (filters.supplierId && filters.supplierId !== "all") {
         q = q.eq("supplier_id", filters.supplierId);
       }
 
