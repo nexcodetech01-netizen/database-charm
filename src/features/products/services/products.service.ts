@@ -29,9 +29,9 @@ const LIST_SELECT = `
   created_at, updated_at, company_id, description, sales_channels, product_type,
   category:product_categories(id, name),
   supplier:product_suppliers(id, name),
-  composition:product_kit_components(
+  composition:product_kit_components!product_kit_components_parent_id_fkey(
     id, parent_id, component_id, quantity, reserved_quantity,
-    product:products(id, name, sku, cost, stock)
+    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
 
@@ -40,9 +40,9 @@ const DETAIL_SELECT = `
   *,
   category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
   supplier:product_suppliers(id, name),
-  composition:product_kit_components(
+  composition:product_kit_components!product_kit_components_parent_id_fkey(
     id, component_id, quantity, reserved_quantity,
-    product:products(id, name, sku, cost, stock)
+    product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
   )
 `;
 
@@ -190,9 +190,9 @@ export const productsService = {
           category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
           supplier:product_suppliers(id, name),
           images:product_images(id, path, position, focal_x, focal_y, zoom),
-          composition:product_kit_components(
+          composition:product_kit_components!product_kit_components_parent_id_fkey(
             id, component_id, quantity,
-            product:products(id, name, sku, cost, stock)
+            product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
           )
         `)
         .eq("id", id)
