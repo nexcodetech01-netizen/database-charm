@@ -86,38 +86,52 @@ function calculateKitStock(composition: any[], parentId?: string) {
 
 export const productsService = {
   async list(companyId: string, filters: ProductListFilters) {
-    let q = supabase
-      .from("products")
-      .select(LIST_SELECT, { count: "exact" })
-      .eq("company_id", companyId);
+    try {
+      let q = supabase
+        .from("products")
+        .select(LIST_SELECT, { count: "exact" })
+        .eq("company_id", companyId);
 
-    if (filters.search.trim()) {
-      q = applyProductSearch(q, filters.search);
-    }
+      // Aplicação condicional de filtros
+      if (filters.search?.trim()) {
+        q = applyProductSearch(q, filters.search);
+      }
 
-    if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-    if (filters.supplierId) q = q.eq("supplier_id", filters.supplierId);
-    if (filters.status) q = q.eq("status", filters.status);
-    else if (!filters.includeInactive) q = q.eq("status", "active");
+      if (filters.categoryId) {
+        q = q.eq("category_id", filters.categoryId);
+      }
 
-    // Listagem total de produtos ativos (auditável).
-    // Filtros de exclusão por mesclagem removidos conforme solicitação Sprint RC2.
-    if (!filters.includeInactive) {
-      q = q.eq("status", "active");
-    }
+      if (filters.supplierId) {
+        q = q.eq("supplier_id", filters.supplierId);
+      }
 
-    if (filters.stock === "out") q = q.lte("stock", 0);
-    else if (filters.stock === "low") q = q.gt("stock", 0);
-    else if (filters.stock === "in_stock") q = q.gt("stock", 0);
+      // Status: Simplificado para evitar bloqueios indevidos
+      if (filters.status) {
+        q = q.eq("status", filters.status);
+      } else if (!filters.includeInactive) {
+        // Por padrão, mostra ativos apenas se não pedir inativos
+        q = q.eq("status", "active");
+      }
 
-    q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
+      // Filtros de estoque
+      if (filters.stock === "out") {
+        q = q.lte("stock", 0);
+      } else if (filters.stock === "in_stock") {
+        q = q.gt("stock", 0);
+      }
+      // "low" é tratado via filter client-side abaixo
 
-    const from = (filters.page - 1) * filters.pageSize;
-    const to = from + filters.pageSize - 1;
-    q = q.range(from, to);
+      q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
 
-    const { data, error, count } = await q;
-    if (error) throw error;
+      const from = (filters.page - 1) * filters.pageSize;
+      const to = from + filters.pageSize - 1;
+      q = q.range(from, to);
+
+      const { data, error, count } = await q;
+      if (error) {
+        console.error("Erro ao buscar produtos (Supabase):", error);
+        throw error;
+      }
 
     let rows = (data ?? []) as unknown as any[];
     
@@ -141,7 +155,11 @@ export const productsService = {
       rows = rows.filter((r) => Number(r.stock) <= Number(r.min_stock));
     }
 
-    return { rows, total: count ?? 0 };
+      return { rows, total: count ?? 0 };
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+      throw error;
+    }
   },
 
   async metrics(companyId: string) {
@@ -164,21 +182,25 @@ export const productsService = {
   },
 
   async get(id: string) {
-    const { data, error } = await supabase
-      .from("products")
-      .select(`
-        *,
-        category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
-        supplier:product_suppliers(id, name),
-        images:product_images(id, path, position, focal_x, focal_y, zoom),
-        composition:product_kit_components!product_kit_components_parent_id_fkey(
-          id, component_id, quantity,
-          product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
-        )
-      `)
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          *,
+          category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
+          supplier:product_suppliers(id, name),
+          images:product_images(id, path, position, focal_x, focal_y, zoom),
+          composition:product_kit_components!product_kit_components_parent_id_fkey(
+            id, component_id, quantity,
+            product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
+          )
+        `)
+        .eq("id", id)
+        .maybeSingle();
+      if (error) {
+        console.error("Erro ao buscar detalhe do produto:", error);
+        throw error;
+      }
     
     if (data && data.product_type === 'kit' && data.composition) {
       const calculated = calculateKitStock(data.composition, data.id);
@@ -187,7 +209,11 @@ export const productsService = {
       }
     }
     
-    return data;
+      return data;
+    } catch (error) {
+      console.error("Erro ao carregar produto:", error);
+      throw error;
+    }
   },
 
   /**
@@ -241,12 +267,11 @@ export const productsService = {
         parent_id: data.id,
         component_id: c.component_id,
         quantity: c.quantity,
-        reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
       }));
 
       const { error: compError } = await supabase
         .from("product_kit_components")
-        .insert(components);
+        .insert(components as any);
       
       if (compError) {
         console.error("Erro ao salvar composição:", compError);
@@ -300,12 +325,11 @@ export const productsService = {
               parent_id: id,
               component_id: c.component_id,
               quantity: Number(c.quantity || 1),
-              reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
             }));
             // Usamos .insert() em vez de .upsert() após o delete prévio.
             const { error: insertError } = await supabase
               .from("product_kit_components")
-              .insert(components);
+              .insert(components as any);
             
             if (insertError) {
               console.error("Erro ao inserir nova composição:", insertError);
