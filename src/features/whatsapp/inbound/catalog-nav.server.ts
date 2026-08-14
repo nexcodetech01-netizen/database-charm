@@ -149,8 +149,9 @@ export async function handleCatalogTurn(args: {
     }
   }
 
-  const wantsCategories =
-    isCatalogIntent(text) || (inCatalog && isBackIntent(text));
+  // O menu de categorias deve ser exibido APENAS para intenções genéricas.
+  const isGenericCatalogRequest = isCatalogIntent(text);
+  const wantsCategories = isGenericCatalogRequest || (inCatalog && isBackIntent(text));
 
   if (wantsCategories) {
     const categories = await listCategoriesWithActiveProducts(db, companyId);
