@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireServerPermission } from "@/features/rbac/guards/server-guards";
 import type { Database } from "@/integrations/supabase/types";
 import { integrationFetch } from "@/lib/http-client.server";
+import { buildRevokeInviteFilter } from "./invite-filters";
 
 const createInviteSchema = z.object({
   name: z.string().trim().min(1).max(120).optional().nullable(),
@@ -93,22 +94,27 @@ export const createInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
-    await requireServerPermission(context, "settings.create", {
+    const { companyId } = await requireServerPermission(context, "settings.create", {
       action: "settings.invite.create",
       module: "settings",
     });
     const { supabase, userId } = context;
 
+    // FIX (auditoria 2026-08-14): antes, buscava a empresa de novo aqui só
+    // por owner_id, ignorando o companyId já resolvido corretamente acima
+    // (que respeita permissão delegada, não só o dono). Um gerente/membro
+    // de equipe com a permissão "settings.create" concedida passava na
+    // checagem de permissão, mas era barrado aqui mesmo assim, porque não
+    // era literalmente o owner_id — contradizendo a permissão que acabara
+    // de ser confirmada. Agora usa o companyId já resolvido.
     const { data: company, error: companyErr } = await supabase
       .from("companies")
       .select("id, name, owner_id")
-      .eq("owner_id", userId)
-      .order("created_at", { ascending: true })
-      .limit(1)
+      .eq("id", companyId)
       .maybeSingle();
 
     if (companyErr) throw companyErr;
-    if (!company) throw new Error("Apenas o proprietário da empresa pode enviar convites.");
+    if (!company) throw new Error("Empresa não encontrada.");
 
     const { data: role, error: roleErr } = await supabase
       .from("roles")
@@ -172,23 +178,24 @@ export const createInvite = createServerFn({ method: "POST" })
     };
   });
 
-/** List invites for the current owner's company. */
+/** List invites for the user's active company. */
 export const listInvites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data: company } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("owner_id", userId)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (!company) return [];
+    // FIX (auditoria 2026-08-14): mesmos dois problemas dos outros —
+    // buscava a empresa só por owner_id (bloqueando gerentes/membros com
+    // permissão real), e não tinha checagem de permissão nenhuma (só
+    // "funcionava" por acidente, porque a busca por owner_id retornava
+    // vazio pra quem não fosse dono).
+    const { companyId } = await requireServerPermission(context, "settings.view", {
+      action: "settings.invite.list",
+      module: "settings",
+    });
+    const { supabase } = context;
     const { data, error } = await supabase
       .from("company_invites")
       .select("id, email, name, status, expires_at, created_at, accepted_at, role:roles(id, name)")
-      .eq("company_id", company.id)
+      .eq("company_id", companyId)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -201,16 +208,23 @@ export const revokeInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // Hardening RBAC server-side (a UI não é barreira de segurança).
-    await requireServerPermission(context, "settings.delete", {
+    const { companyId } = await requireServerPermission(context, "settings.delete", {
       action: "settings.invite.revoke",
       module: "settings",
     });
     const { supabase } = context;
+    // FIX (auditoria 2026-08-14): faltava restringir por company_id — a
+    // checagem de permissão confirma que o usuário TEM a permissão em SUA
+    // empresa, mas sem esse filtro aqui, ele poderia revogar um convite de
+    // QUALQUER empresa só sabendo o ID do convite (UUID). Agora a
+    // atualização só afeta convites da própria empresa do usuário.
+    const filter = buildRevokeInviteFilter(data.inviteId, companyId);
     const { error } = await supabase
       .from("company_invites")
       .update({ status: "revoked" })
-      .eq("id", data.inviteId)
-      .eq("status", "pending");
+      .eq("id", filter.id)
+      .eq("company_id", filter.company_id)
+      .eq("status", filter.status);
     if (error) throw error;
     return { ok: true };
   });
