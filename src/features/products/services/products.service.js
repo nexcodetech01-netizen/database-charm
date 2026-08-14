@@ -152,29 +152,37 @@ export const productsService = {
         };
     },
     async get(id) {
-        const { data, error } = await supabase
-            .from("products")
-            .select(`
-        *,
-        category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
-        supplier:product_suppliers(id, name),
-        images:product_images(id, path, position, focal_x, focal_y, zoom),
-        composition:product_kit_components!product_kit_components_parent_id_fkey(
-          id, component_id, quantity,
-          product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
-        )
-      `)
-            .eq("id", id)
-            .maybeSingle();
-        if (error)
-            throw error;
-        if (data && data.product_type === 'kit' && data.composition) {
-            const calculated = calculateKitStock(data.composition, data.id);
-            if (!data.stock || Number(data.stock) === 0) {
-                data.stock = calculated;
+        try {
+            const { data, error } = await supabase
+                .from("products")
+                .select(`
+          *,
+          category:product_categories(id, name, target_margin_pct, min_margin_pct, default_discount_pct),
+          supplier:product_suppliers(id, name),
+          images:product_images(id, path, position, focal_x, focal_y, zoom),
+          composition:product_kit_components!product_kit_components_parent_id_fkey(
+            id, component_id, quantity,
+            product:products!product_kit_components_component_id_fkey(id, name, sku, cost, stock)
+          )
+        `)
+                .eq("id", id)
+                .maybeSingle();
+            if (error) {
+                console.error("Erro ao buscar detalhe do produto:", error);
+                throw error;
             }
+            if (data && data.product_type === 'kit' && data.composition) {
+                const calculated = calculateKitStock(data.composition, data.id);
+                if (!data.stock || Number(data.stock) === 0) {
+                    data.stock = calculated;
+                }
+            }
+            return data;
         }
-        return data;
+        catch (error) {
+            console.error("Erro ao carregar produto:", error);
+            throw error;
+        }
     },
     /**
      * Criação com UPSERT: se já existir produto com o mesmo Nome, SKU ou
