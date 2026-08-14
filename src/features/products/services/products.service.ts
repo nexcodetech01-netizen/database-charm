@@ -259,12 +259,11 @@ export const productsService = {
         parent_id: data.id,
         component_id: c.component_id,
         quantity: c.quantity,
-        reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
       }));
 
       const { error: compError } = await supabase
         .from("product_kit_components")
-        .insert(components);
+        .insert(components as any);
       
       if (compError) {
         console.error("Erro ao salvar composição:", compError);
@@ -318,12 +317,11 @@ export const productsService = {
               parent_id: id,
               component_id: c.component_id,
               quantity: Number(c.quantity || 1),
-              reserved_quantity: c.reserved_quantity == null ? null : Number(c.reserved_quantity),
             }));
             // Usamos .insert() em vez de .upsert() após o delete prévio.
             const { error: insertError } = await supabase
               .from("product_kit_components")
-              .insert(components);
+              .insert(components as any);
             
             if (insertError) {
               console.error("Erro ao inserir nova composição:", insertError);
