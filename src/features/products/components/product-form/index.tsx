@@ -21,6 +21,7 @@ import { suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
 import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCaseFee } from "@/features/pricing/official";
+import { reconcileKitWithFreshData } from "@/features/products/lib/reconcile-kit";
 import { productImagesService } from "../../services/product-images.service";
 import { productMediaService } from "../../services/product-media.service";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
@@ -573,6 +574,32 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       return toast.error("Verifique os campos obrigatórios");
     }
 
+    // Para kits: o estoque E o custo de cada componente exibidos em tela
+    // são uma "foto" tirada no momento em que o componente foi
+    // adicionado ao kit (ou no carregamento da edição) — podem ficar
+    // desatualizados se o estoque/custo real mudar durante a sessão de
+    // edição (ex.: uma venda ou uma compra de um componente em outra aba
+    // enquanto você monta o kit). Buscamos os valores atuais ANTES do
+    // recálculo de preço abaixo, para que o preço (quando "usar margem
+    // da categoria" está ligado) seja calculado sobre o custo certo.
+    let finalStock = num(form.stock);
+    let finalCost = num(form.cost);
+    let finalComposition = form.composition;
+    if (form.product_type === "kit" && form.composition?.length) {
+      const componentIds = form.composition.map((c: any) => c.component_id);
+      const { data: freshData, error: freshErr } = await supabase
+        .from("products")
+        .select("id, stock, cost")
+        .in("id", componentIds);
+      if (!freshErr && freshData) {
+        const normalized = freshData.map((p: any) => ({ id: p.id, stock: num(p.stock), cost: num(p.cost) }));
+        const reconciled = reconcileKitWithFreshData(form.composition as any, normalized);
+        finalComposition = reconciled.composition as any;
+        finalStock = reconciled.stock;
+        finalCost = reconciled.cost;
+      }
+    }
+
     // Se "usar margem da categoria" estiver ligado, forçamos o recálculo do
     // preço no motor oficial NESSE MOMENTO para garantir que o que for pro
     // banco seja o preço exato da categoria, mesmo que a UI mostre algo
@@ -587,7 +614,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         categoryId: form.category_id,
         categoryName: categoryName ?? undefined,
         costs: {
-          acquisition: num(form.cost),
+          acquisition: finalCost,
           freight: num(form.freight),
           packaging: num(form.packaging),
           insurance: num(form.insurance),
@@ -616,7 +643,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       status: form.status as any,
       unit: form.unit,
       price: finalPrice,
-      cost: num(form.cost),
+      cost: finalCost,
       freight: num(form.freight),
       packaging: num(form.packaging),
       insurance: num(form.insurance),
@@ -631,7 +658,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           tax_pct: num(form.tax_pct)
         }
       } as any,
-      stock: num(form.stock),
+      stock: finalStock,
       min_stock: num(form.min_stock),
       weight: num(form.weight),
       width: num(form.width),
@@ -639,7 +666,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       length: num(form.length),
       sales_channels: form.sales_channels,
       product_type: form.product_type,
-      composition: form.composition,
+      composition: finalComposition,
     };
 
     try {

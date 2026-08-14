@@ -38,7 +38,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
   );
 
   const { data: searchResults = [], isLoading } = useQuery({
-    queryKey: ['product-search-kit', search, currentProductId, selectedProductIds],
+    queryKey: ['product-search-kit', companyId, search, currentProductId, selectedProductIds],
     queryFn: async () => {
       let query = supabase
         .from('products')
