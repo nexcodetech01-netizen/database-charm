@@ -65,7 +65,7 @@ export interface BellaContadoraDashboardProps {
 export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardProps) {
   // Sprint 7.2.1: uma única leitura resolve summary + tributário + auditoria
   // em paralelo (Promise.all no BellaContext), sem waterfalls entre blocos.
-  const { summary, tax, audit, isLoading } = useBellaDashboard(companyId);
+  const { summary, tax, audit, isLoading, refetch } = useBellaDashboard(companyId);
   const { data: financialAccounts } = useAccounts(companyId);
   const availableCash = (financialAccounts || [])
     .filter((a: any) => a.status === 'active')
@@ -251,7 +251,12 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
 
           <BellaChatPanel companyId={companyId} />
 
-          <AdvisorCard advice={advice} loading={isLoading} />
+          <AdvisorCard
+            advice={advice}
+            loading={isLoading}
+            companyId={companyId}
+            onWithdrawalCompleted={() => refetch()}
+          />
 
 
           <InsightsPanel insights={insights} loading={isLoading} />

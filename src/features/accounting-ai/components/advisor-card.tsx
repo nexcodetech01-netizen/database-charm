@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { HandCoins, ShieldCheck, Wallet, TriangleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FinancialAdvice } from "../advisor";
+import { ProlaboreWithdrawalDialog } from "./prolabore-withdrawal-dialog";
 
 export interface AdvisorCardProps {
   advice: FinancialAdvice | null;
   loading?: boolean;
+  companyId?: string;
+  onWithdrawalCompleted?: () => void;
 }
 
 const RISK_TONE: Record<string, string> = {
@@ -21,8 +26,9 @@ const RISK_TONE: Record<string, string> = {
  * Card "Consultoria Financeira" — apresentação pura do `FinancialAdvice`.
  * Não calcula nada e não dispara nenhuma ação.
  */
-export function AdvisorCard({ advice, loading = false }: AdvisorCardProps) {
+export function AdvisorCard({ advice, loading = false, companyId, onWithdrawalCompleted }: AdvisorCardProps) {
   const unavailable = !advice || !advice.available;
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const items = [
     {
@@ -65,6 +71,15 @@ export function AdvisorCard({ advice, loading = false }: AdvisorCardProps) {
               Quanto pode ser retirado do caixa com segurança hoje.
             </p>
           </div>
+          {companyId && (
+            <Button
+              size="sm"
+              disabled={unavailable || loading}
+              onClick={() => setDialogOpen(true)}
+            >
+              <HandCoins className="mr-1.5 h-4 w-4" /> Registrar retirada
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -101,6 +116,15 @@ export function AdvisorCard({ advice, loading = false }: AdvisorCardProps) {
               : advice.message}
         </p>
       </CardContent>
+      {companyId && (
+        <ProlaboreWithdrawalDialog
+          companyId={companyId}
+          advice={advice}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onCompleted={onWithdrawalCompleted}
+        />
+      )}
     </Card>
   );
 }
