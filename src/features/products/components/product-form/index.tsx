@@ -22,6 +22,7 @@ import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.f
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
 import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCaseFee } from "@/features/pricing/official";
 import { reconcileKitWithFreshData, computeKitBottleneck } from "@/features/products/lib/reconcile-kit";
+import { shouldStripStockFromPayload } from "@/features/products/lib/stock-payload";
 import { productImagesService } from "../../services/product-images.service";
 import { productMediaService } from "../../services/product-media.service";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
@@ -700,11 +701,19 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         image_url: image_url || undefined, // Incluímos a URL pública no payload para salvar na products.image_url
       } as ProductUpdate;
 
-      // O banco bloqueia qualquer alteração direta de "stock" em produtos já
+      // O banco bloqueia alteração direta de "stock" em produtos SIMPLES já
       // existentes (só é permitida via inventory_movements, para manter o
       // histórico correto). Removemos aqui por segurança para nunca disparar
       // esse erro ao salvar edições.
-      if (isEdit) {
+      //
+      // Kits são a exceção: eles não têm estoque físico próprio — o valor
+      // é sempre calculado (gargalo dos componentes, com reserva opcional)
+      // e PRECISA ser gravado diretamente ao salvar. Um gatilho no banco
+      // (guard_product_stock_engine) já sabe dessa exceção também — ver
+      // migration 20260814233326. Sem esta condição aqui, definir uma
+      // reserva mudava a pré-visualização na tela mas nunca era salvo de
+      // verdade no banco.
+      if (shouldStripStockFromPayload(isEdit, form.product_type)) {
         delete (finalPayload as any).stock;
       }
 
