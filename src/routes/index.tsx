@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/features/auth";
-import { LoadingScreen } from "@/components/design";
+import { useAuth } from "@/providers/auth-provider";
+import { LoadingSurface } from "@/components/design";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -9,17 +9,17 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   useEffect(() => {
-    if (!isLoading) {
+    if (!authLoading) {
       if (user) {
         navigate({ to: "/dashboard", replace: true });
       } else {
         navigate({ to: "/auth", replace: true });
       }
     }
-  }, [user, isLoading, navigate]);
+  }, [user, authLoading, navigate]);
 
-  return <LoadingScreen />;
+  return <LoadingSurface variant="page" />;
 }
