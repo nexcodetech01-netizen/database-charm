@@ -4934,6 +4934,7 @@ export type Database = {
           id: string
           parent_id: string
           quantity: number
+          reserved_quantity: number | null
           updated_at: string
         }
         Insert: {
@@ -4943,6 +4944,7 @@ export type Database = {
           id?: string
           parent_id: string
           quantity?: number
+          reserved_quantity?: number | null
           updated_at?: string
         }
         Update: {
@@ -4952,6 +4954,7 @@ export type Database = {
           id?: string
           parent_id?: string
           quantity?: number
+          reserved_quantity?: number | null
           updated_at?: string
         }
         Relationships: [
