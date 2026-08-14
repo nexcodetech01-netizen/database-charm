@@ -21,7 +21,7 @@ import { suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
 import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCaseFee } from "@/features/pricing/official";
-import { reconcileKitWithFreshData } from "@/features/products/lib/reconcile-kit";
+import { reconcileKitWithFreshData, computeKitBottleneck } from "@/features/products/lib/reconcile-kit";
 import { productImagesService } from "../../services/product-images.service";
 import { productMediaService } from "../../services/product-media.service";
 import { lookupProductByEan } from "../../lib/ean-lookup.functions";
@@ -117,32 +117,10 @@ function toState(p?: Product): FormState {
       name: c.product?.name || "",
       sku: c.product?.sku || "",
       cost: c.product?.cost || 0,
-      stock: c.product?.stock || 0
+      stock: c.product?.stock || 0,
+      reserved_quantity: c.reserved_quantity ?? null,
     })),
   };
-}
-
-function calculateKitStock(composition: any[], parentId?: string) {
-  if (!composition || composition.length === 0) return 0;
-
-  const components = parentId
-    ? composition.filter((c: any) => c.parent_id === parentId || c.parent_product_id === parentId)
-    : composition;
-
-  if (components.length === 0) return 0;
-
-  const stocks = components.map((c: any) => {
-    // Garantimos que estamos pegando o estoque do produto vinculado ao componente individualmente
-    const componentProduct = c.product || c.produto_componente || c;
-    const componentStock = Number(componentProduct.stock ?? 0);
-    const quantityInKit = Number(c.quantity || 1);
-    const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
-    // Cálculo do estoque proporcional arredondado para baixo
-    return Math.floor(componentStock / safeQuantity);
-  });
-  
-  // O estoque do kit é o MENOR saldo entre os componentes (gargalo)
-  return Math.min(...stocks);
 }
 
 interface Props {
@@ -308,7 +286,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
 
   const kitStockValue = useMemo(() => {
     if (form.product_type !== 'kit' || !form.composition?.length) return 0;
-    return calculateKitStock(form.composition);
+    return computeKitBottleneck(form.composition as any);
   }, [form.product_type, form.composition]);
 
   const currentCost = form.product_type === 'kit' ? compositionCost : num(form.cost);
@@ -384,12 +362,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       if (compositionChanged) {
         setForm(s => ({
           ...s,
-          cost: String(compositionCost)
+          cost: String(compositionCost),
+          stock: String(kitStockValue)
         }));
         lastCompositionRef.current = form.composition;
       }
     }
-  }, [form.product_type, compositionCost, form.composition, setForm]);
+  }, [form.product_type, compositionCost, kitStockValue, form.composition, setForm]);
 
 
   // CARREGAMENTO DOS CUSTOS PADRÃO E SOMA DO CUSTO TOTAL

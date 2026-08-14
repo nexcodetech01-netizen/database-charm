@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
+import { computeKitBottleneck } from "@/features/products/lib/reconcile-kit";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
@@ -138,16 +139,7 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
     });
     
     const uniqueItems = Array.from(uniqueComponentsMap.values());
-    
-    const stocks = uniqueItems.map(c => {
-      const qty = Number(c.quantity || 1);
-      const safeQty = qty > 0 ? qty : 1;
-      const physicalMax = Math.floor(Number(c.stock || 0) / safeQty);
-      // Reserva nunca deixa passar do físico — só limita pra baixo.
-      if (c.reserved_quantity == null) return physicalMax;
-      return Math.min(physicalMax, Math.max(0, Number(c.reserved_quantity)));
-    });
-    return Math.min(...stocks);
+    return computeKitBottleneck(uniqueItems as any);
   }, [composition]);
 
   return (

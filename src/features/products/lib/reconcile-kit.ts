@@ -33,6 +33,35 @@ export interface FreshComponentData {
   cost: number;
 }
 
+/**
+ * Calcula o "gargalo" de estoque do kit a partir da composição — a
+ * MESMA fórmula usada em `reconcileKitWithFreshData`, extraída aqui para
+ * poder ser reaproveitada também na pré-visualização ao vivo (antes de
+ * salvar), sem duplicar a lógica.
+ *
+ * Bug real (2026-08-14): existiam DUAS implementações independentes
+ * desse cálculo — uma em `kit-composition-module.tsx` (que já
+ * respeitava `reserved_quantity`) e outra em `product-form/index.tsx`
+ * (`calculateKitStock`, que não sabia da reserva). Toda vez que a
+ * composição mudava, um efeito sincronizava `form.stock` usando a
+ * segunda — sobrescrevendo silenciosamente a reserva que o usuário
+ * acabara de definir, revertendo pro valor "cheio" (sem reserva).
+ */
+export function computeKitBottleneck(
+  composition: KitComponentItem[],
+  unitsSoldOfThisKit = 0,
+): number {
+  if (!composition || composition.length === 0) return 0;
+  const bottlenecks = composition.map((item) => {
+    const quantity = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+    const physicalMax = Math.floor(Number(item.stock ?? 0) / quantity);
+    if (item.reserved_quantity == null) return physicalMax;
+    const remainingReservation = Math.max(0, Number(item.reserved_quantity) - unitsSoldOfThisKit);
+    return Math.min(physicalMax, remainingReservation);
+  });
+  return Math.min(...bottlenecks);
+}
+
 export function reconcileKitWithFreshData(
   composition: KitComponentItem[],
   freshData: FreshComponentData[],
@@ -57,20 +86,7 @@ export function reconcileKitWithFreshData(
     return { stock: 0, cost: 0, composition: reconciled };
   }
 
-  const bottlenecks = reconciled.map((item) => {
-    // Estoque real do componente é sempre o teto absoluto — reserva nunca
-    // permite "inventar" quantidade que não existe fisicamente.
-    const physicalMax = item.quantity > 0 ? Math.floor(item.stock / item.quantity) : 0;
-
-    if (item.reserved_quantity == null) {
-      return physicalMax;
-    }
-    // O que resta da reserva deste kit para este componente, descontando
-    // o que este kit específico já vendeu.
-    const remainingReservation = Math.max(0, item.reserved_quantity - unitsSoldOfThisKit);
-    return Math.min(physicalMax, remainingReservation);
-  });
-  const stock = Math.min(...bottlenecks);
+  const stock = computeKitBottleneck(reconciled, unitsSoldOfThisKit);
   const cost = reconciled.reduce((acc, item) => acc + item.cost * item.quantity, 0);
 
   return { stock, cost, composition: reconciled };
