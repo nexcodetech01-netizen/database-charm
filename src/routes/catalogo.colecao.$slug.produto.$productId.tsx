@@ -26,14 +26,11 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, getInstallmentPlan } from "@/lib/format";
 import type { PublicProductDetail } from "@/features/catalog/types";
 import { loadPublicProduct } from "@/features/catalog/lib/public-product.functions";
-import { useCatalogCart, buildCartWhatsAppUrl } from "@/features/catalog/hooks/use-catalog-cart";
-import { CatalogCartDrawer } from "@/features/catalog/components/catalog-cart-drawer";
 import {
   AvailabilityBadge,
   resolveAvailability,
@@ -223,8 +220,6 @@ function PublicProductPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [entradaOpen, setEntradaOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
-  const cart = useCatalogCart(slug);
 
   const url = typeof window !== "undefined" ? window.location.href : "";
 
@@ -496,15 +491,6 @@ function PublicProductPage() {
             outOfStock={outOfStock}
             currentUrl={url}
             onOpenEntrada={() => setEntradaOpen(true)}
-            onAddToCart={() =>
-              cart.addItem({
-                productId: data.id,
-                name: data.name,
-                price: data.price,
-                reference: "",
-              })
-            }
-            inCart={cart.isInCart(data.id)}
           />
         </div>
       </div>
@@ -514,43 +500,6 @@ function PublicProductPage() {
         onOpenChange={setEntradaOpen}
         product={data}
       />
-
-      {data.cta === "whatsapp" && cart.totalItems > 0 && (
-        <button
-          type="button"
-          onClick={() => setCartOpen(true)}
-          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
-        >
-          <ShoppingCart className="h-5 w-5" />
-          <span className="text-sm font-semibold">
-            {cart.totalItems} {cart.totalItems === 1 ? "item" : "itens"} · {formatCurrency(cart.totalValue)}
-          </span>
-        </button>
-      )}
-
-      {data.cta === "whatsapp" && (
-        <CatalogCartDrawer
-          open={cartOpen}
-          onOpenChange={setCartOpen}
-          items={cart.items}
-          updateQuantity={cart.updateQuantity}
-          removeItem={cart.removeItem}
-          totalValue={cart.totalValue}
-          whatsappAvailable={!!data.whatsapp_phone}
-          onSendWhatsApp={() => {
-            if (!data.whatsapp_phone) return;
-            const orderUrl = buildCartWhatsAppUrl(
-              data.whatsapp_phone,
-              cart.items,
-              url,
-              formatCurrency,
-            );
-            window.open(orderUrl, "_blank");
-            cart.clear();
-            setCartOpen(false);
-          }}
-        />
-      )}
 
       <ProductLightbox
         open={lightboxOpen}
@@ -569,15 +518,11 @@ function PrimaryCta({
   outOfStock,
   currentUrl,
   onOpenEntrada,
-  onAddToCart,
-  inCart,
 }: {
   data: PublicProductDetail;
   outOfStock: boolean;
   currentUrl: string;
   onOpenEntrada: () => void;
-  onAddToCart: () => void;
-  inCart: boolean;
 }) {
   if (outOfStock) {
     return (
@@ -594,22 +539,12 @@ function PrimaryCta({
       currentUrl,
     );
     return (
-      <div className="flex w-full gap-2">
-        <Button
-          variant={inCart ? "secondary" : "outline"}
-          size="lg"
-          className="flex-1"
-          onClick={onAddToCart}
-        >
-          {inCart ? "Adicionado ✓" : "Adicionar ao pedido"}
-        </Button>
-        <Button asChild size="lg" className="flex-1">
-          <a href={href} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-2 h-5 w-5" />
-            Só este
-          </a>
-        </Button>
-      </div>
+      <Button asChild size="lg" className="w-full">
+        <a href={href} target="_blank" rel="noopener noreferrer">
+          <MessageCircle className="mr-2 h-5 w-5" />
+          Comprar pelo WhatsApp
+        </a>
+      </Button>
     );
   }
   if (data.cta === "entrada") {
