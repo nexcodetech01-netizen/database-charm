@@ -15,6 +15,60 @@ export function getGreeting(): string {
 }
 
 /**
+ * Detecta e interpreta o resumo de pedido gerado pelo botão "Finalizar
+ * pedido" de um catálogo Lovable (ex: tg-style-catalogue). Formato:
+ * "[PEDIDO-CATALOGO]" + itens no padrão "• Nome — N un. — R$ X,XX" +
+ * "Total dos produtos:" + "Forma de recebimento:".
+ *
+ * Sem esse detector a mensagem cai direto no fallback genérico de
+ * navegação do catálogo (menu de categorias), ignorando o pedido já
+ * montado que o cliente colou.
+ */
+export interface WebsiteCatalogOrderItem {
+  name: string;
+  quantity: number;
+  price: string;
+}
+
+export interface WebsiteCatalogOrder {
+  items: WebsiteCatalogOrderItem[];
+  total: string;
+  deliveryMethod: "tupa" | "other" | "unknown";
+  cep?: string;
+}
+
+export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | null {
+  const t = text ?? "";
+  const isOrder =
+    t.includes("[PEDIDO-CATALOGO]") ||
+    t.includes("Gostaria de fazer um pedido") ||
+    (t.includes("Total dos produtos:") && t.includes("Forma de recebimento:"));
+
+  if (!isOrder) return null;
+
+  const items: WebsiteCatalogOrderItem[] = [];
+  const itemRegex = /• (.*?) — (\d+) un\. — (R\$ [\d,.]+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = itemRegex.exec(t)) !== null) {
+    if (match[1] && match[2] && match[3]) {
+      items.push({ name: match[1].trim(), quantity: parseInt(match[2], 10), price: match[3] });
+    }
+  }
+
+  const totalMatch = t.match(/Total dos produtos: (R\$ [\d,.]+)/);
+  const total = totalMatch ? totalMatch[1] : "";
+
+  let deliveryMethod: WebsiteCatalogOrder["deliveryMethod"] = "unknown";
+  if (t.includes("Entrega em Tupã")) deliveryMethod = "tupa";
+  else if (t.includes("Envio para outra cidade")) deliveryMethod = "other";
+
+  const cepMatch = t.match(/CEP: (\d{5}-\d{3})/);
+  const cep = cepMatch ? cepMatch[1] : undefined;
+
+  return { items, total, deliveryMethod, cep };
+}
+
+/**
  * Detecta se uma mensagem contém um SKU ou nome de produto vindo do catálogo.
  * O padrão comum do catálogo da Meta inclui "SKU: " ou links específicos.
  */
