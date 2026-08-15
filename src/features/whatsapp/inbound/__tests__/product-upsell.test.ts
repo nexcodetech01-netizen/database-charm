@@ -1,3 +1,10 @@
+import { vi } from "vitest";
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 /**
  * Sprint 6.7 — Etapa 6: sugestões complementares (upsell).
  * Testes puros + servidor com stubs. Nada é gravado, vendido ou movimentado.
@@ -198,7 +205,7 @@ describe("handleUpsellTurn", () => {
     };
   }
 
-  beforeEach(() => resetCartSessions());
+  beforeEach(async () => await resetCartSessions());
 
   it("sugere complementares após adicionar", async () => {
     const out = await handleUpsellTurn({
@@ -246,8 +253,8 @@ describe("handleUpsellTurn", () => {
   });
 
   it("não repete itens já no carrinho", async () => {
-    const session = getCartSession("co", "5511");
-    saveCartSession(
+    const session = await getCartSession("co", "5511");
+    await saveCartSession(
       addProduct(session, {
         id: "b",
         name: "Carteira Premium",

@@ -1,3 +1,10 @@
+import { vi } from "vitest";
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   formatAfterPhotosMessage,
@@ -64,14 +71,14 @@ describe("product-photos — seleção", () => {
 });
 
 describe("product-photos — contexto", () => {
-  beforeEach(() => resetCartSessions());
+  beforeEach(async () => await resetCartSessions());
 
   it("usa o último produto exibido", () => {
     expect(resolveContextProductId({ state })).toBe("p1");
   });
 
-  it("cai para o último item do carrinho", () => {
-    const s = addProduct(getCartSession("c1", "551199"), {
+  it("cai para o último item do carrinho", async () => {
+    const s = addProduct(await getCartSession("c1", "551199"), {
       id: "p9",
       name: "Bolsa",
       price: 10,
@@ -83,9 +90,9 @@ describe("product-photos — contexto", () => {
     expect(resolveContextProductId({ state: null, session: null })).toBeNull();
   });
 
-  it("contexto expirado é ignorado", () => {
+  it("contexto expirado é ignorado", async () => {
     const now = Date.now();
-    const s = addProduct(getCartSession("c1", "551199", now), {
+    const s = addProduct(await getCartSession("c1", "551199", now), {
       id: "p9",
       name: "Bolsa",
       price: 10,
@@ -97,7 +104,7 @@ describe("product-photos — contexto", () => {
 });
 
 describe("handlePhotoTurn", () => {
-  beforeEach(() => resetCartSessions());
+  beforeEach(async () => await resetCartSessions());
 
   const base = {
     companyId: "c1",
@@ -155,8 +162,8 @@ describe("handlePhotoTurn", () => {
 
   it("contexto expirado devolve null", async () => {
     const now = Date.now();
-    saveCartSession(
-      addProduct(getCartSession("c1", "551199", now), {
+    await saveCartSession(
+      addProduct(await getCartSession("c1", "551199", now), {
         id: "p9",
         name: "Bolsa",
         price: 10,

@@ -94,7 +94,7 @@ export async function handleUpsellTurn(args: {
 }): Promise<UpsellTurnResult | null> {
   if (!isUpsellTriggerIntent(args.text)) return null;
 
-  const session = getCartSession(args.companyId, args.phone, args.now ?? Date.now());
+  const session = await getCartSession(args.companyId, args.phone, args.now ?? Date.now());
   const productId = resolveUpsellProductId({
     lastProductIds: args.lastProductIds ?? null,
     session,
