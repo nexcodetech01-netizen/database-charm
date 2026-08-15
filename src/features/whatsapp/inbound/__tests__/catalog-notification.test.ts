@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+// Para depurar, vamos interceptar a execução com console.log
+console.log("[TEST DEBUG] Iniciando setup do teste");
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
@@ -8,6 +11,20 @@ vi.mock("@/integrations/supabase/client", () => ({
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(),
+  },
+}));
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -22,23 +39,26 @@ vi.mock("../cart-session.server", () => ({
   clearCartSession: vi.fn(c => c),
 }));
 
-// A CHAVE PARA O SUCESSO NO SANDBOX:
-// Vitest tem problemas com paths relativos complexos em mocks se o arquivo alvo 
-// tiver dependências circulares ou imports complexos.
-// Usamos a função handleCommercialConfirmationTurn com um mock MANUAL injetado no runtime se possível,
-// ou simplesmente aceitamos que o Vitest não está resolvendo o módulo "../../bella-ai/agent/infrastructure/event-bus"
-// porque ele falha no "import analysis".
-
-// Tentamos um mock que aponte para o arquivo físico absoluto (usando alias @)
+// Mockamos o event-bus usando paths absolutos com alias @
 vi.mock("@/features/bella-ai/agent/infrastructure/event-bus", () => ({
+  emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+// A CHAVE PARA O SUCESSO: O Vitest as vezes não resolve o mock se o service usar path relativo
+// e o teste usar alias ou vice-versa. Vamos mockar ambos.
+vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
+
+// Importamos usando o alias @ que é mais estável para o teste
 // @ts-ignore
 import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
+// @ts-ignore
+import { emitAgentEvent as emitAgentEventRel } from "../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
@@ -86,29 +106,37 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     db.maybeSingle.mockResolvedValue({ data: null }); 
     db.single.mockResolvedValue({ data: { id: "ticket-123" } }); 
 
-    await handleCommercialConfirmationTurn({
+    console.log("[TEST DEBUG] Chamando handleCommercialConfirmationTurn");
+    const result = await handleCommercialConfirmationTurn({
       db: db as any,
       companyId,
       phone,
       text: "sim",
       now,
     });
+    console.log("[TEST DEBUG] handleCommercialConfirmationTurn result:", result?.ticketId);
 
-    // Se o import analysis falhou para o Vitest, o emitAgentEvent aqui será o real (que não foi chamado no teste)
-    // ou o mock (se funcionou). 
-    expect(emitAgentEvent).toHaveBeenCalled();
+    expect(result?.created).toBe(true);
+    expect(result?.ticketId).toBe("ticket-123");
+
+    // Verifica se QUALQUER UM dos mocks foi chamado
+    const called = vi.mocked(emitAgentEvent).mock.calls.length > 0 || 
+                   vi.mocked(emitAgentEventRel).mock.calls.length > 0;
+    
+    expect(called).toBe(true);
   });
 
   it("deve ignorar mensagens comuns", async () => {
     vi.mocked(peekCheckoutSession).mockResolvedValue({ step: "waiting_name" } as any);
-    await handleCommercialConfirmationTurn({
+    const result = await handleCommercialConfirmationTurn({
       db: {} as any,
       companyId,
       phone,
       text: "Olá",
       now,
     });
-    
+    expect(result).toBe(null);
     expect(emitAgentEvent).not.toHaveBeenCalled();
+    expect(emitAgentEventRel).not.toHaveBeenCalled();
   });
 });
