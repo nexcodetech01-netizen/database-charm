@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Para evitar problemas de resolução no Vitest sandbox, mockamos a nível de módulo global
-// O service usa "../../bella-ai/agent/infrastructure/event-bus"
-// Precisamos garantir que o Vitest intercepte essa exata string.
+// Para depurar, vamos interceptar a execução com console.log
+console.log("[TEST DEBUG] Iniciando setup do teste");
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -12,6 +11,20 @@ vi.mock("@/integrations/supabase/client", () => ({
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(),
+  },
+}));
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -25,15 +38,21 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// MOCK AGGRESSIVO: Mockamos o path exato que o service usa
+// O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
+// Mockamos o módulo, MAS usamos vi.importActual no service se necessário, ou apenas mockamos tudo.
 vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
-  emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
+  emitAgentEvent: vi.fn().mockImplementation(async (args) => {
+    console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
+    return { success: true };
+  })
 }));
 
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-// Importamos o mock usando o MESMO path que o service
+
+// Importamos o emitAgentEvent do MESMO módulo que o service usa
+// @ts-ignore
 import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
@@ -82,6 +101,7 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     db.maybeSingle.mockResolvedValue({ data: null }); 
     db.single.mockResolvedValue({ data: { id: "ticket-123" } }); 
 
+    console.log("[TEST DEBUG] Chamando handleCommercialConfirmationTurn");
     const result = await handleCommercialConfirmationTurn({
       db: db as any,
       companyId,
@@ -89,6 +109,7 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
       text: "sim",
       now,
     });
+    console.log("[TEST DEBUG] handleCommercialConfirmationTurn result:", result?.ticketId);
 
     expect(result?.created).toBe(true);
     expect(result?.ticketId).toBe("ticket-123");
