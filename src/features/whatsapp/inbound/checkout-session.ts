@@ -105,9 +105,9 @@ const RESTART_RE = /\b(recomecar|comecar de novo|reiniciar|refazer|do inicio)\b/
 const PICKUP_RE = /\b(retirar|retirada|retiro|buscar|loja|pegar na loja)\b/;
 const DELIVERY_RE = /\b(entrega|entregar|delivery|receber em casa|envio|enviar)\b/;
 
-const PIX_RE = /\bpix\b/;
-const CARD_RE = /\b(cartao|credito|debito|card|maquininha)\b/;
-const CASH_RE = /\b(dinheiro|especie|cash|a vista)\b/;
+const PIX_RE = /\bpix\b/i;
+const CARD_RE = /\b(cartao|cartão|credito|crédito|debito|débito|card|maquininha)\b/i;
+const CASH_RE = /\b(dinheiro|em dinheiro|especie|espécie|cash|a vista|à vista)\b/i;
 
 const PF_RE = /\b(pessoa fisica|fisica|pf|cpf)\b/;
 const PJ_RE = /\b(pessoa juridica|juridica|pj|cnpj|empresa)\b/;
@@ -189,14 +189,25 @@ export function parseFulfillment(text: string): FulfillmentKind | null {
 }
 
 export function parsePayment(text: string): PaymentKind | null {
-  const t = normalize(text ?? "");
+  const t = (text ?? "").trim().toLowerCase();
   if (!t) return null;
+  
+  // Normalização para lidar com acentos antes de testar com regex
+  const normalized = normalize(t);
+
   if (t === "1") return "pix";
   if (t === "2") return "card";
   if (t === "3") return "cash";
-  if (PIX_RE.test(t)) return "pix";
-  if (CARD_RE.test(t)) return "card";
-  if (CASH_RE.test(t)) return "cash";
+
+  if (PIX_RE.test(t) || PIX_RE.test(normalized)) return "pix";
+  
+  // Ordem importa: "cartão de crédito" deve ser capturado antes de "cartão"
+  if (/\b(cartao|cartão) de (credito|crédito)\b/i.test(t)) return "card";
+  if (/\b(cartao|cartão) de (debito|débito)\b/i.test(t)) return "card";
+  
+  if (CARD_RE.test(t) || CARD_RE.test(normalized)) return "card";
+  if (CASH_RE.test(t) || CASH_RE.test(normalized)) return "cash";
+  
   return null;
 }
 
@@ -475,18 +486,28 @@ export async function advanceCheckout(args: {
     case "WAITING_PAYMENT_METHOD":
     case "payment": {
       const payment = parsePayment(text);
-      if (!payment) return { session, text: PROMPTS.payment, aborted: false };
+      if (!payment) {
+        return { 
+          session, 
+          text: "Não consegui identificar a forma de pagamento. Você prefere Pix, cartão ou dinheiro? 😊", 
+          aborted: false 
+        };
+      }
       
       const updated = next(session, { payment }, now);
       
-      // Order: Payment -> Name
-      if (updated.buyerName) {
-         return advanceCheckout({ ...args, session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now), text: updated.buyerName });
+      // Se já temos o nome (veio do catálogo), pula para o endereço
+      if (updated.buyerName || updated.customer.fullName) {
+         return {
+           session: next(updated, { step: "WAITING_ADDRESS" }, now),
+           text: `Perfeito! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+           aborted: false
+         };
       }
 
       return {
         session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
-        text: `Perfeito! Pagamento via ${PAYMENT_LABEL[payment]}. 😊\n\n${PROMPTS.buyer_name}`,
+        text: `Perfeito! 😊 Qual é o seu nome completo?`,
         aborted: false,
       };
     }
