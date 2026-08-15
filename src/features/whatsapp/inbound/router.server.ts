@@ -692,7 +692,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       skillId = "catalog.website_order_unmatched";
     } else {
       const session = createCheckoutSession(tenant.companyId, msg.phone);
-      session.step = "payment";
+      session.step = "WAITING_PAYMENT_METHOD";
       
       if (websiteOrder.deliveryMethod === "tupa") {
         session.fulfillment = "delivery";
@@ -716,11 +716,11 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
       
       if (websiteOrder.deliveryMethod === "tupa") {
-        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nA entrega em Tupã tem taxa fixa de R$ 5,00.\nTotal com entrega: ${money(cart.total + 5.0)}\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+        replyText = `Olá! 😊\n\nRecebi seu pedido.\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\nTaxa de entrega em Tupã: R$ 5,00\nTotal com entrega: ${money(cart.total + 5.0)}\n\nQual forma de pagamento você prefere?`;
       } else if (websiteOrder.deliveryMethod === "other") {
-        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nPara envio para outra cidade, o valor do frete precisa ser calculado conforme o CEP de destino.\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+        replyText = `Olá! 😊\n\nRecebi seu pedido.\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\nFrete: A calcular\n\nQual forma de pagamento você prefere?`;
       } else {
-        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+        replyText = `Olá! 😊\n\nRecebi seu pedido.\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nQual forma de pagamento você prefere?`;
       }
       
       skillId = "catalog.website_order_checkout_start";

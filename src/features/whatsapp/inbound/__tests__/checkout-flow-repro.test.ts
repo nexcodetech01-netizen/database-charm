@@ -16,7 +16,7 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
 
   it("Teste 1: Pedido com Entrega em Tupã deve seguir a ordem correta", async () => {
     let session = createCheckoutSession("comp-1", "5511999999999");
-    session.step = "payment";
+    session.step = "WAITING_PAYMENT_METHOD";
     session.fulfillment = "delivery";
     session.deliveryFee = 5.0;
     session.totalWithFreight = 15.0;
@@ -28,7 +28,7 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       text: "Pix"
     });
     expect(res1.session.payment).toBe("pix");
-    expect(res1.session.step).toBe("buyer_name");
+    expect(res1.session.step).toBe("WAITING_CUSTOMER_NAME");
     expect(res1.text).toContain("nome completo");
 
     // Etapa 3: Nome
@@ -38,8 +38,8 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       text: "João Silva"
     });
     expect(res2.session.buyerName).toBe("João Silva");
-    expect(res2.session.step).toBe("zip_code");
-    expect(res2.text).toContain("Agora preciso do endereço");
+    expect(res2.session.step).toBe("WAITING_ADDRESS");
+    expect(res2.text).toContain("informe seu endereço completo");
 
     // Etapa 4: CEP
     const mockResolveCep = vi.fn().mockResolvedValue({
@@ -56,43 +56,27 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       resolveCep: mockResolveCep
     });
     expect(res3.session.customer.zipCode).toBe("17600000");
-    expect(res3.session.step).toBe("address_number");
-    expect(res3.text).toContain("Qual é o número");
-
-    // Etapa 4.1: Número
-    const res4 = await advanceCheckout({
-      session: res3.session,
-      cart: mockCart,
-      text: "123"
-    });
-    expect(res4.session.customer.number).toBe("123");
-    expect(res4.session.step).toBe("address_complement");
-
-    // Etapa 4.2: Complemento
-    const res5 = await advanceCheckout({
-      session: res4.session,
-      cart: mockCart,
-      text: "Casa"
-    });
-    expect(res5.session.step).toBe("summary");
-    expect(res5.text).toContain("Seu pedido ficou assim");
+    expect(res3.session.step).toBe("WAITING_CONFIRMATION");
+    expect(res3.text).toContain("Seu pedido ficou assim");
     // Usamos regex ou substring que ignore espaços não-quebráveis (U+00A0)
-    expect(res5.text).toMatch(/Frete:\s*R\$\s*5,00/);
-    expect(res5.text).toMatch(/Total:\s*R\$\s*15,00/);
+    expect(res3.text).toMatch(/Frete:\s*R\$\s*5,00/);
+    expect(res3.text).toMatch(/Total:\s*R\$\s*15,00/);
 
     // Etapa 7: Confirmação Final
     const res6 = await advanceCheckout({
-      session: res5.session,
+      session: res3.session,
       cart: mockCart,
       text: "Sim"
     });
+    expect(res6.session.step).toBe("done");
+    expect(res6.text).toContain("confirmado");
     expect(res6.session.step).toBe("done");
     expect(res6.text).toContain("confirmado");
   });
 
   it("Teste 4: Deve pular nome se já fornecido", async () => {
     let session = createCheckoutSession("comp-1", "5511999999999");
-    session.step = "payment";
+    session.step = "WAITING_PAYMENT_METHOD";
     session.buyerName = "Maria Oliveira";
     session.customer.fullName = "Maria Oliveira";
 
@@ -105,6 +89,6 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     // Deve pular o step buyer_name e ir direto para o próximo
     expect(res1.session.payment).toBe("card");
     expect(res1.session.buyerName).toBe("Maria Oliveira");
-    expect(res1.session.step).toBe("zip_code");
+    expect(res1.session.step).toBe("WAITING_ADDRESS");
   });
 });
