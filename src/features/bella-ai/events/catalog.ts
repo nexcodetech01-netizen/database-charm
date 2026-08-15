@@ -245,4 +245,13 @@ export const BELLA_EVENT_CATALOG: Record<BellaEventType, BellaEventTypeMeta> = {
     title: "NF-e cancelada",
     description: "A NF-e autorizada foi cancelada dentro do prazo.",
   },
+
+  // ============ Comercial / Catálogo ============
+  "catalog.order.received": {
+    module: "sales",
+    defaultSeverity: "success",
+    title: "Novo pedido do catálogo",
+    description: "Um novo pedido foi finalizado pelo catálogo do WhatsApp.",
+    defaultRecommendation: "Abrir o Inbox Comercial para processar o pedido.",
+  },
 };

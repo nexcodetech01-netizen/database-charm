@@ -59,4 +59,6 @@ export type BellaEventType =
   | "fiscal.nfe.sent"
   | "fiscal.nfe.authorized"
   | "fiscal.nfe.rejected"
-  | "fiscal.nfe.cancelled";
+  | "fiscal.nfe.cancelled"
+  // ============ Comercial / Catálogo ============
+  | "catalog.order.received";

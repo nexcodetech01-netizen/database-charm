@@ -18,6 +18,10 @@ import {
   isConfirmationIntent,
   type CommercialTicketDraft,
 } from "./commercial-inbox";
+import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+import { formatCurrency } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
+import { makeSecurityContext } from "../../bella-ai/agent/infrastructure/context";
 
 type Db = { from: (t: string) => any };
 
@@ -118,6 +122,37 @@ export async function handleCommercialConfirmationTurn(args: {
 
   const draft = buildCommercialTicketDraft({ session, cart, now });
   const { id, created } = await upsertCommercialTicket(args.db, draft);
+
+  // Sprint 8.4 — Notificação de novo pedido
+  if (created && id) {
+    // emitAgentEvent é robusto e cuida do sanitizing. 
+    // Usamos o requestId e contexto básico.
+    await emitAgentEvent({
+      type: "catalog.order.received",
+      ctx: {
+        companyId: args.companyId,
+        userId: "system",
+        conversationId: session.phone, // Usamos o telefone como ID de conversa estável no bot
+        request: {
+          requestId: `catalog-${id}`,
+          channel: "whatsapp",
+          startedAt: new Date(now),
+        },
+        security: makeSecurityContext(new Set(["*"]), true), // System context
+        supabase: supabase as any,
+      },
+      payload: {
+        entityId: id,
+        ticketId: id,
+        buyerName: draft.buyerName,
+        phone: draft.phone,
+        total: draft.total,
+        itemCount: draft.itemCount,
+      },
+      title: "Novo pedido do catálogo",
+      description: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+    });
+  }
 
   // Conversa encerrada: sessão e carrinho efêmeros são descartados.
   await dropCheckoutSession(args.companyId, args.phone);

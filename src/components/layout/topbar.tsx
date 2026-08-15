@@ -1,5 +1,5 @@
-import { Bell, Search, LogOut, User, Menu } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX } from "lucide-react";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,12 +14,74 @@ import { useAuth } from "@/providers/auth-provider";
 import { authService } from "@/features/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMobileNav } from "./mobile-nav-context";
+import { useEffect, useState, useRef } from "react";
+import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
+import { toast } from "sonner";
 
 export function Topbar() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toggle: toggleMobileNav } = useMobileNav();
+  
+  const [catalogOrdersCount, setCatalogOrdersCount] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("nexos:catalog-sound") !== "false";
+  });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    // Inicia o registry se ainda não estiver (singleton)
+    bellaEventRegistry.start();
+
+    const updateCount = () => {
+      const active = bellaEventRegistry.listActive({ 
+        tenantId: user?.user_metadata?.company_id 
+      });
+      const catalogOrders = active.filter(e => e.type === "catalog.order.received");
+      setCatalogOrdersCount(catalogOrders.length);
+    };
+
+    updateCount();
+
+    const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
+      if (entry.action === "created" && event.type === "catalog.order.received") {
+        updateCount();
+        
+        // Notificação sonora
+        if (soundEnabled && audioRef.current) {
+          audioRef.current.play().catch(() => {
+            // Browsers bloqueiam autoplay sem interação
+          });
+        }
+
+        // Notificação visual Toast
+        const payload = event.payload as any;
+        toast.success("Novo pedido do catálogo", {
+          description: `${payload.buyerName || "Cliente"}: ${formatCurrency(payload.total)}`,
+          action: {
+            label: "Ver Inbox",
+            onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }),
+          }
+        });
+      } else if (entry.action === "resolved" || entry.action === "expired") {
+        updateCount();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user?.user_metadata?.company_id, soundEnabled, navigate]);
+
+  const toggleSound = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    localStorage.setItem("nexos:catalog-sound", String(newVal));
+  };
 
 
   const displayName =
@@ -73,10 +135,53 @@ export function Topbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        <ThemeToggle />
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
-          <Bell className="h-4 w-4" />
+        <audio ref={audioRef} src="/notification-alert.mp3" preload="auto" />
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleSound}
+          title={soundEnabled ? "Som ativado" : "Som desativado"}
+        >
+          {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </Button>
+
+        <ThemeToggle />
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
+              <Bell className="h-4 w-4" />
+              {catalogOrdersCount > 0 && (
+                <Badge 
+                  className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center rounded-full px-1 text-[10px]"
+                  variant="destructive"
+                >
+                  {catalogOrdersCount}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {catalogOrdersCount > 0 ? (
+              <DropdownMenuItem asChild>
+                <Link to="/comercial/inbox-whatsapp" className="flex flex-col items-start gap-1 p-3">
+                  <span className="font-semibold text-sm">Pedidos Pendentes</span>
+                  <span className="text-xs text-muted-foreground">
+                    Você tem {catalogOrdersCount} novo(s) pedido(s) no catálogo.
+                  </span>
+                  <span className="text-xs text-primary font-medium mt-1">Ver Inbox Comercial →</span>
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Nenhuma notificação nova.
+              </div>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
