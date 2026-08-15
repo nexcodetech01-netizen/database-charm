@@ -39,8 +39,8 @@ vi.mock("../cart-session.server", () => ({
 }));
 
 // O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
-// Mockamos o módulo, MAS usamos vi.importActual no service se necessário, ou apenas mockamos tudo.
-vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
+// Tentamos usar o alias @ se as strings relativas estão falhando no import analysis.
+vi.mock("@/features/bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockImplementation(async (args) => {
     console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
     return { success: true };
@@ -51,9 +51,9 @@ import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
 
-// Importamos o emitAgentEvent do MESMO módulo que o service usa
+// Importamos usando o alias @ que é mais estável
 // @ts-ignore
-import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
