@@ -693,7 +693,11 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     } else {
       saveCheckoutSession(createCheckoutSession(tenant.companyId, msg.phone));
       const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
-      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal: ${money(cart.total)}\n\nPara finalizar, só preciso confirmar mais alguns dados.\n\n${PROMPTS.buyer_name}`;
+      const freightNote =
+        websiteOrder.deliveryMethod === "tupa"
+          ? "A entrega local em Tupã tem taxa fixa de R$ 5,00."
+          : "Vou calcular o valor exato do frete assim que você me confirmar o CEP, no próximo passo.";
+      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal: ${money(cart.total)}\n\n${freightNote}\n\nPara finalizar, só preciso confirmar mais alguns dados.\n\n${PROMPTS.buyer_name}`;
       skillId = "catalog.website_order_checkout_start";
     }
 
