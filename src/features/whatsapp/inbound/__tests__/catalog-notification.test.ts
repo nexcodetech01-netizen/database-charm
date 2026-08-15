@@ -39,10 +39,14 @@ vi.mock("../cart-session.server", () => ({
 }));
 
 // O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
-// Mockamos o módulo usando a string exata que o service usa
+// NÓS NÃO IMPORTAMOS O EVENT-BUS NO TESTE PARA EVITAR O ERRO DE RESOLUÇÃO.
+// Mas precisamos mockar para o service poder importar.
 vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockImplementation(async (args) => {
-    console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
+    // Acessamos o singleton via path absoluto que funciona melhor no import analysis do Vite
+    // @ts-ignore
+    const { bellaEventEngine } = await import("../../../bella-ai/events/BellaEventEngine");
+    bellaEventEngine.emit(args);
     return { success: true };
   })
 }));
@@ -50,8 +54,6 @@ vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-
-// Importamos do motor de eventos REAL que é um singleton
 import { bellaEventEngine } from "../../../bella-ai/events/BellaEventEngine";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
@@ -115,7 +117,6 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     expect(result?.ticketId).toBe("ticket-123");
 
     // Verificamos o motor de eventos real
-    // Como emitAgentEvent chama bellaEventEngine.emit(), o evento deve estar lá.
     const events = bellaEventEngine.list({ tenantId: companyId, type: "catalog.order.received" });
     expect(events).toHaveLength(1);
     expect(events[0].payload.entityId).toBe("ticket-123");
