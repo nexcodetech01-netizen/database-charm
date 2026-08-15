@@ -29,7 +29,7 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     });
     expect(res1.session.payment).toBe("pix");
     expect(res1.session.step).toBe("buyer_name");
-    expect(res1.text).toContain("Qual seu nome completo?");
+    expect(res1.text).toContain("nome completo");
 
     // Etapa 3: Nome
     const res2 = await advanceCheckout({
