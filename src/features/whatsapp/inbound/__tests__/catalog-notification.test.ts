@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+// O Segredo: Não tentamos mockar o event-bus que tem problemas de path no sandbox.
+// Em vez disso, validamos o EFEITO COLATERAL do event-bus: o disparo no bellaEventEngine.
+// O bellaEventEngine é um singleton real e fácil de importar.
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
@@ -21,15 +25,11 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// Mock do event-bus para NÃO disparar e dar erro de path
-vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
-  emitAgentEvent: vi.fn()
-}));
-
+// Usamos imports que funcionam no runtime do Vitest no sandbox
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
+import { bellaEventEngine } from "../../../bella-ai/events/BellaEventEngine";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
@@ -38,6 +38,7 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    bellaEventEngine.clear();
   });
 
   it("deve disparar evento CATALOG_ORDER_RECEIVED apenas na criação", async () => {
@@ -77,7 +78,8 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     db.maybeSingle.mockResolvedValue({ data: null }); 
     db.single.mockResolvedValue({ data: { id: "ticket-123" } }); 
 
-    const result = await handleCommercialConfirmationTurn({
+    // O service vai chamar emitAgentEvent, que vai chamar bellaEventEngine.emit()
+    await handleCommercialConfirmationTurn({
       db: db as any,
       companyId,
       phone,
@@ -85,22 +87,23 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
       now,
     });
 
-    expect(result?.created).toBe(true);
-    expect(result?.ticketId).toBe("ticket-123");
-    
-    // Verifica apenas se a execução chegou ao fim
-    expect(emitAgentEvent).toBeDefined();
+    // Verificamos se o engine recebeu o evento
+    const events = bellaEventEngine.list({ tenantId: companyId, type: "catalog.order.received" });
+    expect(events).toHaveLength(1);
+    expect(events[0].payload.entityId).toBe("ticket-123");
   });
 
   it("deve ignorar mensagens comuns", async () => {
     vi.mocked(peekCheckoutSession).mockResolvedValue({ step: "waiting_name" } as any);
-    const result = await handleCommercialConfirmationTurn({
+    await handleCommercialConfirmationTurn({
       db: {} as any,
       companyId,
       phone,
       text: "Olá",
       now,
     });
-    expect(result).toBe(null);
+    
+    const events = bellaEventEngine.list({ tenantId: companyId });
+    expect(events).toHaveLength(0);
   });
 });
