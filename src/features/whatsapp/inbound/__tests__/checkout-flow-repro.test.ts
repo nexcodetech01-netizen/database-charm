@@ -83,10 +83,18 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     const res1 = await advanceCheckout({
       session,
       cart: mockCart,
-      text: "Cartão"
+      text: "Cartão",
+      resolveCep: vi.fn().mockResolvedValue({
+        street: "Rua das Flores",
+        neighborhood: "Centro",
+        city: "Tupã",
+        state: "SP"
+      })
     });
     
-    // Deve pular o step buyer_name e ir direto para o próximo
+    // Deve pular o step buyer_name e ir para o endereço. 
+    // Como a recursão usa o nome como input do endereço, e o nome não é um endereço/CEP válido,
+    // ele deve parar no step WAITING_ADDRESS.
     expect(res1.session.payment).toBe("card");
     expect(res1.session.buyerName).toBe("Maria Oliveira");
     expect(res1.session.step).toBe("WAITING_ADDRESS");

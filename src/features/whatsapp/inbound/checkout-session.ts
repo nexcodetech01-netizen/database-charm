@@ -498,11 +498,11 @@ export async function advanceCheckout(args: {
       
       // Se já temos o nome (veio do catálogo), pula para o endereço
       if (updated.buyerName || updated.customer.fullName) {
-         return advanceCheckout({ 
-           ...args, 
-           session: next(updated, { step: "WAITING_ADDRESS" }, now), 
-           text: updated.buyerName || updated.customer.fullName || "" 
-         });
+         return {
+           session: next(updated, { step: "WAITING_ADDRESS" }, now),
+           text: `Perfeito! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+           aborted: false
+         };
       }
 
       return {
