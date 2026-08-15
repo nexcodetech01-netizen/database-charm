@@ -38,9 +38,17 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// A CHAVE: O service importa de "../../bella-ai/agent/infrastructure/event-bus"
-// Vitest às vezes precisa que o mock use o MESMO identificador exato.
-vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
+// O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
+// O arquivo real está em: src/features/bella-ai/agent/infrastructure/event-bus.ts
+// O teste está em: src/features/whatsapp/inbound/__tests__/catalog-notification.test.ts
+// Do teste para o event-bus:
+// 1. .. (inbound)
+// 2. .. (whatsapp)
+// 3. .. (features)
+// 4. bella-ai/agent/infrastructure/event-bus
+// Então o path relativo do teste é: "../../../bella-ai/agent/infrastructure/event-bus"
+
+vi.mock("../../../bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockImplementation(async (args) => {
     console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
     return { success: true };
@@ -50,7 +58,7 @@ vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+import { emitAgentEvent } from "../../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
