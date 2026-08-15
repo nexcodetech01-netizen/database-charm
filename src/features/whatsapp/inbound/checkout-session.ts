@@ -268,6 +268,22 @@ export function formatBirthDate(iso: string | null): string {
 }
 
 export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> = {
+  WAITING_RECEIPT_METHOD: [
+    "Como você prefere receber o seu pedido? 😊",
+    "",
+    "1. 🏪 Retirada na loja",
+    "2. 🚚 Entrega no meu endereço",
+  ].join("\n"),
+  WAITING_PAYMENT_METHOD: [
+    "Qual forma de pagamento você prefere?",
+    "",
+    "1. • PIX",
+    "2. • Cartão",
+    "3. • Dinheiro",
+  ].join("\n"),
+  WAITING_CUSTOMER_NAME: "Qual é o seu nome completo? 😊",
+  WAITING_ADDRESS: "Por favor, me informe seu endereço completo com CEP para entrega. 😊",
+  WAITING_CONFIRMATION: SUMMARY_CONFIRM_MESSAGE,
   buyer_name: "Qual é o seu nome completo? 😊",
   person_type: [
     "Perfeito! E você está comprando como:",
@@ -503,13 +519,10 @@ export async function advanceCheckout(args: {
               session,
               { 
                 zipCode: zip,
-                street: info.street,
+                street: text.length > 20 ? text : info.street,
                 district: info.neighborhood,
                 city: info.city,
-                state: info.state,
-                // If the user sent "Rua X, 123...", we can try to extract number if we were smarter, 
-                // but for now we'll just store the full text as part of the address notes if it's longer
-                street: text.length > 20 ? text : info.street
+                state: info.state
               },
               { step: "WAITING_CONFIRMATION" },
               now
