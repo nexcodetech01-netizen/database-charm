@@ -75,7 +75,7 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       text: "Casa"
     });
     expect(res5.session.step).toBe("summary");
-    expect(res5.text).toContain("Resumo do seu Pedido");
+    expect(res5.text).toContain("Seu pedido ficou assim");
     expect(res5.text).toContain("Frete: R$ 5,00");
     expect(res5.text).toContain("Total: R$ 15,00");
 
