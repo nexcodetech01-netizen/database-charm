@@ -76,8 +76,9 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     });
     expect(res5.session.step).toBe("summary");
     expect(res5.text).toContain("Seu pedido ficou assim");
-    expect(res5.text).toContain("Frete: R$ 5,00");
-    expect(res5.text).toContain("Total: R$ 15,00");
+    // Usamos regex ou substring que ignore espaços não-quebráveis (U+00A0)
+    expect(res5.text).toMatch(/Frete:\s*R\$\s*5,00/);
+    expect(res5.text).toMatch(/Total:\s*R\$\s*15,00/);
 
     // Etapa 7: Confirmação Final
     const res6 = await advanceCheckout({
