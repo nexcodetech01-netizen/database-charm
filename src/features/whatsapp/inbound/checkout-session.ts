@@ -65,6 +65,8 @@ export interface CheckoutSession {
   fulfillment: FulfillmentKind | null;
   delivery: CheckoutDelivery;
   payment: PaymentKind | null;
+  deliveryFee: number;
+  totalWithFreight: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -138,6 +140,8 @@ export function createCheckoutSession(
     fulfillment: null,
     delivery: { city: null, neighborhood: null, address: null, complement: null },
     payment: null,
+    deliveryFee: 0,
+    totalWithFreight: 0,
     createdAt: now,
     updatedAt: now,
   };
@@ -258,7 +262,7 @@ export function formatBirthDate(iso: string | null): string {
 }
 
 export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> = {
-  buyer_name: "Com certeza! Para começar, qual é o seu nome completo? 😊",
+  buyer_name: "Qual é o seu nome completo? 😊",
   person_type: [
     "Perfeito! E você está comprando como:",
     "",
@@ -277,7 +281,7 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "2. 🚚 Entrega no meu endereço",
   ].join("\n"),
   payment: [
-    "E qual seria a melhor forma de pagamento para você? 😊",
+    "Qual forma de pagamento você prefere?",
     "",
     "1. • PIX",
     "2. • Cartão",
@@ -329,33 +333,31 @@ export function formatCheckoutSummary(
 ): string {
   const c = session.customer;
   const items = cart.items.map(
-    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`,
+    (i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`,
   );
+  
+  const subtotal = cart.total;
+  const freight = session.deliveryFee;
+  const total = subtotal + freight;
+
   const lines = [
-    "🛍️ *Resumo do seu Pedido*",
+    `Perfeito, ${c.fullName ?? session.buyerName ?? "!"}! Seu pedido ficou assim:`,
     "",
-    `*Cliente:* ${c.fullName ?? session.buyerName ?? "-"}`,
-    `*${c.personType === "pj" ? "CNPJ" : "CPF"}:* ${formatDocument(c)}`,
-  ];
-  if (c.personType === "pf") {
-    lines.push(`*Nascimento:* ${formatBirthDate(c.birthDate)}`);
-  }
-  lines.push(`*Endereço:* ${formatCustomerAddress(c) || "-"}`);
-  lines.push(
-    "",
-    "*Entrega:*",
-    formatFulfillmentLine(session),
-    "",
-    "*Pagamento:*",
-    session.payment ? PAYMENT_LABEL[session.payment] : "-",
-    "",
-    "*Itens do pedido:*",
+    "Produtos:",
     ...items,
     "",
-    `*Total: ${money(cart.total)}*`,
+    `Subtotal: ${money(subtotal)}`,
+    `Frete: ${money(freight)}`,
+    `Total: ${money(total)}`,
+    "",
+    `Forma de recebimento: ${session.fulfillment === "pickup" ? "Retirada" : "Entrega"}`,
+    `Forma de pagamento: ${session.payment ? PAYMENT_LABEL[session.payment] : "-"}`,
+    "",
+    "Endereço:",
+    formatCustomerAddress(c) || "-",
     "",
     SUMMARY_CONFIRM_MESSAGE,
-  );
+  ];
   return lines.join("\n");
 }
 
@@ -448,47 +450,49 @@ export async function advanceCheckout(args: {
   }
 
   switch (session.step) {
+    case "payment": {
+      const payment = parsePayment(text);
+      if (!payment) return { session, text: PROMPTS.payment, aborted: false };
+      
+      const updated = next(session, { payment }, now);
+      
+      // Se já tem o nome (ex: vindo do payload do catálogo), pula
+      if (updated.buyerName) {
+         return advanceCheckout({ ...args, session: next(updated, { step: "buyer_name" }, now), text: updated.buyerName });
+      }
+
+      return {
+        session: next(updated, { step: "buyer_name" }, now),
+        text: `Perfeito! Pagamento via ${PAYMENT_LABEL[payment]}. 😊\n\n${PROMPTS.buyer_name}`,
+        aborted: false,
+      };
+    }
     case "buyer_name": {
       if (!text) return { session, text: PROMPTS.buyer_name, aborted: false };
-      return {
-        session: withCustomer(
-          session,
-          { fullName: text },
-          { buyerName: text, step: "person_type" },
-          now,
-        ),
-        text: PROMPTS.person_type,
-        aborted: false,
-      };
-    }
-    case "person_type": {
-      const personType = parsePersonType(text);
-      if (!personType) return { session, text: PROMPTS.person_type, aborted: false };
-      return {
-        session: withCustomer(session, { personType }, { step: "document" }, now),
-        text: documentPrompt(personType),
-        aborted: false,
-      };
-    }
-    case "document": {
-      const isPj = session.customer.personType === "pj";
-      const d = digits(text);
-      if (isPj) {
-        if (!isValidCNPJ(d)) {
-          return { session, text: INVALID_CNPJ_MESSAGE, aborted: false };
-        }
+      
+      const updated = withCustomer(
+        session,
+        { fullName: text },
+        { buyerName: text, step: "zip_code" },
+        now
+      );
+
+      // Se for entrega em Tupã e o CEP já for conhecido (do payload), ou se não for pickup
+      // A ordem obrigatória para Tupã: NOME -> ENDEREÇO (Rua, Num, Bairro, CEP)
+      // Mas o checkout-session atual usa zip_code como gatilho de busca.
+      
+      // Se o CEP já estiver no customer (injetado pelo roteador), vamos direto para address_number?
+      if (updated.customer.zipCode) {
         return {
-          session: withCustomer(session, { cnpj: d, cpf: null }, { step: "zip_code" }, now),
-          text: PROMPTS.zip_code,
-          aborted: false,
+          session: next(updated, { step: "address_number" }, now),
+          text: `Obrigada, ${text}! 😊\n\nAgora preciso do endereço completo para a entrega.\n\n${PROMPTS.address_number}`,
+          aborted: false
         };
       }
-      if (!isValidCPF(d)) {
-        return { session, text: INVALID_CPF_MESSAGE, aborted: false };
-      }
+
       return {
-        session: withCustomer(session, { cpf: d, cnpj: null }, { step: "zip_code" }, now),
-        text: PROMPTS.zip_code,
+        session: updated,
+        text: `Obrigada, ${text}! 😊\n\nAgora preciso do endereço completo para a entrega.\n\n${PROMPTS.zip_code}`,
         aborted: false,
       };
     }
@@ -509,6 +513,7 @@ export async function advanceCheckout(args: {
         { step: "address_number" },
         now,
       );
+      
       const found_line = [
         "Encontrei este endereço:",
         "",
@@ -537,48 +542,32 @@ export async function advanceCheckout(args: {
     }
     case "address_complement": {
       const skip = !text || SKIP_RE.test(normalize(text));
-      const isPf = session.customer.personType !== "pj";
       const updated = withCustomer(
         session,
         { complement: skip ? null : text },
-        { step: isPf ? "birth_date" : "fulfillment" },
+        { step: "summary" },
         now,
       );
       return {
         session: syncDelivery(updated),
-        text: isPf ? PROMPTS.birth_date : PROMPTS.fulfillment,
+        text: formatCheckoutSummary(updated, args.cart),
         aborted: false,
       };
     }
-    case "birth_date": {
-      const iso = parseBirthDate(text);
-      if (!iso) return { session, text: INVALID_BIRTH_DATE_MESSAGE, aborted: false };
+    case "summary": {
+      if (normalize(text).includes("sim") || normalize(text).includes("ok") || normalize(text).includes("correto")) {
+         return {
+           session: next(session, { step: "done" }, now),
+           text: "Perfeito! Seu pedido foi confirmado. Um de nossos atendentes entrará em contato em instantes. 😊",
+           aborted: false
+         };
+      }
       return {
-        session: withCustomer(session, { birthDate: iso }, { step: "fulfillment" }, now),
-        text: PROMPTS.fulfillment,
-        aborted: false,
+        session,
+        text: "Pode me confirmar se está tudo correto? (Responda *Sim* para confirmar)",
+        aborted: false
       };
     }
-    case "fulfillment": {
-      const kind = parseFulfillment(text);
-      if (!kind) return { session, text: PROMPTS.fulfillment, aborted: false };
-      return {
-        session: next(session, { fulfillment: kind, step: "payment" }, now),
-        text: PROMPTS.payment,
-        aborted: false,
-      };
-    }
-    case "payment": {
-      const payment = parsePayment(text);
-      if (!payment) return { session, text: PROMPTS.payment, aborted: false };
-      const withPayment = next(session, { payment, step: "summary" }, now);
-      return {
-        session: withPayment,
-        text: formatCheckoutSummary(withPayment, args.cart),
-        aborted: false,
-      };
-    }
-    case "summary":
     case "done":
     default:
       return {

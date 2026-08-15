@@ -691,13 +691,38 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       replyText = `${greeting}\n\nRecebi seu pedido, mas não consegui localizar os itens no nosso catálogo atual. Um de nossos atendentes vai te chamar em instantes para confirmar tudo. Muito obrigado(a)!`;
       skillId = "catalog.website_order_unmatched";
     } else {
-      saveCheckoutSession(createCheckoutSession(tenant.companyId, msg.phone));
+      const session = createCheckoutSession(tenant.companyId, msg.phone);
+      session.step = "payment";
+      
+      if (websiteOrder.deliveryMethod === "tupa") {
+        session.fulfillment = "delivery";
+        session.deliveryFee = 5.0;
+        session.totalWithFreight = cart.total + 5.0;
+      } else if (websiteOrder.deliveryMethod === "other") {
+        session.fulfillment = "delivery";
+        // CEP pode vir no payload
+        if (websiteOrder.cep) {
+          session.customer.zipCode = websiteOrder.cep;
+        }
+      }
+      
+      if (websiteOrder.name) {
+        session.buyerName = websiteOrder.name;
+        session.customer.fullName = websiteOrder.name;
+      }
+
+      saveCheckoutSession(session);
+
       const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
-      const freightNote =
-        websiteOrder.deliveryMethod === "tupa"
-          ? "A entrega local em Tupã tem taxa fixa de R$ 5,00."
-          : "Vou calcular o valor exato do frete assim que você me confirmar o CEP, no próximo passo.";
-      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal: ${money(cart.total)}\n\n${freightNote}\n\nPara finalizar, só preciso confirmar mais alguns dados.\n\n${PROMPTS.buyer_name}`;
+      
+      if (websiteOrder.deliveryMethod === "tupa") {
+        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nA entrega em Tupã tem taxa fixa de R$ 5,00.\nTotal com entrega: ${money(cart.total + 5.0)}\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+      } else if (websiteOrder.deliveryMethod === "other") {
+        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nPara envio para outra cidade, o valor do frete precisa ser calculado conforme o CEP de destino.\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+      } else {
+        replyText = `Perfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${money(cart.total)}\n\nAgora vamos finalizar seu pedido. Qual forma de pagamento você prefere?`;
+      }
+      
       skillId = "catalog.website_order_checkout_start";
     }
 

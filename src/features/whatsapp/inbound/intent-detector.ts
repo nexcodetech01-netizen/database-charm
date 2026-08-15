@@ -69,7 +69,18 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   const cepMatch = t.match(/CEP: (\d{5}-\d{3})/);
   const cep = cepMatch ? cepMatch[1] : undefined;
 
-  return { items, total, deliveryMethod, cep };
+  const nameMatch = t.match(/Nome: (.*)/);
+  const name = nameMatch ? nameMatch[1].trim() : undefined;
+
+  return { items, total, deliveryMethod, cep, name };
+}
+
+export interface WebsiteCatalogOrder {
+  items: WebsiteCatalogOrderItem[];
+  total: string;
+  deliveryMethod: "tupa" | "other" | "unknown";
+  cep?: string;
+  name?: string;
 }
 
 /**
