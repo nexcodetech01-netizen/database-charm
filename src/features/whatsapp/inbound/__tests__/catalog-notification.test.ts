@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+// Para depurar, vamos interceptar a execução com console.log
+console.log("[TEST DEBUG] Iniciando setup do teste");
+
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
@@ -8,6 +11,20 @@ vi.mock("@/integrations/supabase/client", () => ({
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(),
+  },
+}));
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -21,11 +38,13 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// Mock do event-bus usando a string EXATA que está no service (src/features/whatsapp/inbound/commercial-inbox.server.ts)
-// No service: import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
-// Para o teste na mesma pasta, o path é o mesmo.
+// A CHAVE: O service importa de "../../bella-ai/agent/infrastructure/event-bus"
+// Vitest às vezes precisa que o mock use o MESMO identificador exato.
 vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
-  emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
+  emitAgentEvent: vi.fn().mockImplementation(async (args) => {
+    console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
+    return { success: true };
+  })
 }));
 
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
@@ -79,6 +98,7 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     db.maybeSingle.mockResolvedValue({ data: null }); 
     db.single.mockResolvedValue({ data: { id: "ticket-123" } }); 
 
+    console.log("[TEST DEBUG] Chamando handleCommercialConfirmationTurn");
     const result = await handleCommercialConfirmationTurn({
       db: db as any,
       companyId,
@@ -86,6 +106,7 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
       text: "sim",
       now,
     });
+    console.log("[TEST DEBUG] handleCommercialConfirmationTurn result:", result?.ticketId);
 
     expect(result?.created).toBe(true);
     expect(result?.ticketId).toBe("ticket-123");
