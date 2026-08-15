@@ -7541,6 +7541,65 @@ export type Database = {
         Args: { _base_url: string; _secret: string }
         Returns: Json
       }
+      search_products_unaccent: {
+        Args: {
+          company_id_param: string
+          limit_param?: number
+          search_term: string
+        }
+        Returns: {
+          barcode: string | null
+          brand: string | null
+          category_id: string | null
+          cest: string | null
+          channel_pricing_settings: Json
+          company_id: string
+          cost: number
+          cover_image_path: string | null
+          created_at: string
+          description: string | null
+          freight: number
+          height: number | null
+          id: string
+          image_url: string | null
+          insurance: number
+          last_purchase_cost: number | null
+          length: number | null
+          margin: number
+          margin_mode: string
+          min_stock: number
+          ml_item_id: string | null
+          ml_permalink: string | null
+          ml_published_at: string | null
+          ml_status: string | null
+          model: string | null
+          name: string
+          ncm: string | null
+          other_costs: number
+          packaging: number
+          price: number
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          sales_channel: string | null
+          sales_channels: string[] | null
+          sku: string | null
+          status: string
+          stock: number
+          supplier_id: string | null
+          tags: string[]
+          unit: string
+          updated_at: string
+          use_category_margin: boolean
+          video_url: string | null
+          weight: number | null
+          width: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       settle_financial_transaction: {
         Args: {
           _account_id: string
@@ -7600,6 +7659,7 @@ export type Database = {
           usage_count: number
         }[]
       }
+      unaccent: { Args: { "": string }; Returns: string }
       user_has_company_access: {
         Args: { _company_id: string }
         Returns: boolean
