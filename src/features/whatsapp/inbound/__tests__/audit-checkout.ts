@@ -37,17 +37,35 @@ async function runAudit() {
     cart
   });
 
-  console.log("\n[CATALOG CHECKOUT DEBUG]");
-  console.log("conversationId: simulated-conv");
-  console.log("checkoutState (Peek):", peekCheckoutSession(companyId, phone)?.step);
+  console.log("\n[TESTE 1: DINHEIRO]");
   console.log("incomingMessage:", incomingMessage);
-  console.log("handlerSelected: handleCheckoutTurn");
   console.log("Bella Response:", checkoutTurn?.text);
+  console.log("Next Step:", checkoutTurn?.step);
   
-  if (checkoutTurn?.text.includes("nome completo")) {
-    console.log("\nSUCCESS: O checkout interceptou e avançou corretamente.");
-  } else {
-    console.log("\nFAILURE: O checkout NÃO avançou como esperado.");
+  // Teste 2: Nome
+  const nameMessage = "Tiele Thais M Andriani";
+  const nameTurn = await handleCheckoutTurn({
+    companyId,
+    phone,
+    text: nameMessage,
+    cart
+  });
+  console.log("\n[TESTE 2: NOME]");
+  console.log("incomingMessage:", nameMessage);
+  console.log("Bella Response:", nameTurn?.text);
+  console.log("Next Step:", nameTurn?.step);
+
+  // Teste 3: Outros pagamentos
+  const otherPayments = ["Pix", "Cartão", "cartao", "credito"];
+  console.log("\n[TESTE 3: OUTROS PAGAMENTOS]");
+  for (const p of otherPayments) {
+    resetCheckoutSessions();
+    const s = createCheckoutSession(companyId, phone);
+    s.step = "WAITING_PAYMENT_METHOD";
+    saveCheckoutSession(s);
+    
+    const turn = await handleCheckoutTurn({ companyId, phone, text: p, cart });
+    console.log(`Input: "${p}" -> Next Step: ${turn?.step}`);
   }
 
   console.log("\n[CATALOG CHECKOUT AUDIT - END]");
