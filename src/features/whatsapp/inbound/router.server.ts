@@ -705,6 +705,11 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
           session.customer.zipCode = websiteOrder.cep;
         }
       }
+      
+      if (websiteOrder.name) {
+        session.buyerName = websiteOrder.name;
+        session.customer.fullName = websiteOrder.name;
+      }
 
       saveCheckoutSession(session);
 
