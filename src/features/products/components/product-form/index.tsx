@@ -594,18 +594,6 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         finalComposition = reconciled.composition as any;
         finalStock = reconciled.stock;
         finalCost = reconciled.cost;
-        // DIAGNÓSTICO TEMPORÁRIO — remover depois de confirmar a causa do
-        // bug de reserva não persistindo. Mostra exatamente o que a
-        // composição continha e o que foi calculado, no momento de salvar.
-        console.log("[DIAGNÓSTICO KIT]", {
-          composicaoAntesDoRecalculo: form.composition,
-          dadosFrescosDosComponentes: normalized,
-          unidadesJaVendidasDesteKit: unitsSoldOfThisKit,
-          composicaoReconciliada: reconciled.composition,
-          estoqueFinalCalculado: reconciled.stock,
-        });
-      } else if (freshErr) {
-        console.log("[DIAGNÓSTICO KIT] Erro ao buscar dados frescos dos componentes:", freshErr);
       }
     }
 
