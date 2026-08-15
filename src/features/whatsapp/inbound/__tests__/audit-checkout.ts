@@ -17,7 +17,7 @@ async function runAudit() {
   // 1. Simula início de pedido (como se viesse do catálogo do site)
   console.log("\n1. Simulando início de pedido via [PEDIDO-CATALOGO]...");
   let cart = getCartSession(companyId, phone);
-  cart = addProduct(cart, { id: "p1", name: "Produto Teste", price: 100 }, 1);
+  cart = addProduct(cart, { id: "p1", name: "Produto Teste", price: 100, brand: null, categoryId: null, unit: null }, 1);
   saveCartSession(cart);
 
   const session = createCheckoutSession(companyId, phone);
