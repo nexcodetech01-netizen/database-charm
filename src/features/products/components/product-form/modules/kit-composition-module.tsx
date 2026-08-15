@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 import { computeKitBottleneck } from "@/features/products/lib/reconcile-kit";
+import { QuickProductFormDialog } from "../quick-product-form-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
@@ -40,6 +41,7 @@ interface Props {
 export function KitCompositionModule({ companyId, currentProductId, composition, setComposition }: Props) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
   const selectedProductIds = useMemo(() => 
     composition.map(c => c.component_id),
@@ -197,6 +199,23 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
                           </CommandItem>
                         ))}
                       </CommandGroup>
+                      <div className="border-t border-slate-800 p-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start gap-2 text-blue-400 hover:text-blue-300 hover:bg-slate-900"
+                          onClick={() => {
+                            setOpen(false);
+                            setQuickCreateOpen(true);
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          {search.trim()
+                            ? `Criar "${search.trim()}" como produto novo`
+                            : "Criar produto novo"}
+                        </Button>
+                      </div>
                     </>
                   )}
                 </CommandList>
@@ -303,6 +322,21 @@ export function KitCompositionModule({ companyId, currentProductId, composition,
           O sistema nunca deixa vender mais do que existe fisicamente, mesmo com reserva configurada.
         </p>
       )}
+
+      <QuickProductFormDialog
+        companyId={companyId}
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={(created) => {
+          addComponent({
+            id: created.id,
+            name: created.name,
+            sku: created.sku,
+            cost: created.cost,
+            stock: created.stock,
+          });
+        }}
+      />
     </div>
   );
 }
