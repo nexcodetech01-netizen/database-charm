@@ -706,7 +706,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     const greeting = getGreeting();
     const money = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-    let cart = getCartSession(tenant.companyId, msg.phone);
+    let cart = await getCartSession(tenant.companyId, msg.phone);
     for (const item of websiteOrder.items) {
       const { data: matches } = await db
         .from("products")
@@ -731,7 +731,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         );
       }
     }
-    saveCartSession(cart);
+    await saveCartSession(cart);
 
     let replyText: string;
     let skillId: string;
@@ -762,7 +762,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         session.customer.fullName = websiteOrder.name;
       }
 
-      saveCheckoutSession(session);
+      await saveCheckoutSession(session);
 
       const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
       
