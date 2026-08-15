@@ -20,7 +20,10 @@ import { handleCatalogTurn } from "./catalog-nav.server";
 import { handlePhotoTurn } from "./product-photos.server";
 import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
-import { handleCheckoutTurn } from "./checkout-session.server";
+import { handleCheckoutTurn, saveCheckoutSession } from "./checkout-session.server";
+import { createCheckoutSession, PROMPTS } from "./checkout-session";
+import { getCartSession, saveCartSession } from "./cart-session.server";
+import { addProduct } from "./cart-session";
 import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
 import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod, parseWebsiteCatalogOrder } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
@@ -639,28 +642,59 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
 
   // 3c-pre-bis) Resumo de pedido colado a partir do catálogo do site
-  // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
+  // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]). Em vez de
+  // responder na mão, populamos o carrinho efêmero com os itens
+  // reconhecidos e disparamos o MESMO fechamento conversacional completo
+  // (nome, CPF/CNPJ, endereço via CEP, pagamento) que já existe para quem
+  // fecha pedido conversando com a Bella — assim a coleta de dados fica
+  // completa e consistente nos dois caminhos, terminando no mesmo
+  // atendimento comercial (handleCommercialConfirmationTurn / checkoutTurn
+  // logo abaixo, que já sabem lidar com uma sessão de checkout ativa).
   const websiteOrder = parseWebsiteCatalogOrder(msg.text);
   if (websiteOrder) {
     const greeting = getGreeting();
-    let replyText: string;
-    // Marca que a próxima mensagem curta do cliente (ex.: "pix") deve ser
-    // lida como resposta à pergunta de forma de pagamento — sem isso, uma
-    // resposta de uma palavra não bate com nenhuma regra específica e cai
-    // no motor de IA genérico, que fica em silêncio quando está offline.
-    const awaitingPayment = websiteOrder.deliveryMethod === "tupa" || websiteOrder.deliveryMethod === "unknown";
+    const money = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-    if (websiteOrder.deliveryMethod === "tupa") {
-      const itemsList = websiteOrder.items
-        .map((i) => `• ${i.name}\nQuantidade: ${i.quantity}\nValor: ${i.price}`)
-        .join("\n\n");
-      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${websiteOrder.total}\nRecebimento: Entrega em Tupã\n\nA entrega local tem taxa de R$ 5,00.\n\nAgora só preciso confirmar a forma de pagamento. Você pode pagar por Pix, cartão ou dinheiro. Qual prefere?`;
-    } else if (websiteOrder.deliveryMethod === "other") {
-      replyText = websiteOrder.cep
-        ? `${greeting}\n\nPerfeito! Recebi seu pedido. Para calcular o envio para o CEP ${websiteOrder.cep}, aguarde um momento enquanto verifico as opções de frete.`
-        : `${greeting}\n\nPerfeito! Recebi seu pedido. Para calcular o frete, me informa o CEP de destino?`;
+    let cart = getCartSession(tenant.companyId, msg.phone);
+    for (const item of websiteOrder.items) {
+      const { data: matches } = await db
+        .from("products")
+        .select("id, name, price, brand, category_id, unit")
+        .eq("company_id", tenant.companyId)
+        .eq("status", "active")
+        .ilike("name", `%${item.name}%`)
+        .limit(1);
+      const product = Array.isArray(matches) ? matches[0] : null;
+      if (product) {
+        cart = addProduct(
+          cart,
+          {
+            id: product.id as string,
+            name: product.name as string,
+            price: Number(product.price),
+            brand: (product.brand as string | null) ?? null,
+            categoryId: (product.category_id as string | null) ?? null,
+            unit: (product.unit as string | null) ?? null,
+          },
+          item.quantity,
+        );
+      }
+    }
+    saveCartSession(cart);
+
+    let replyText: string;
+    let skillId: string;
+
+    if (cart.items.length === 0) {
+      // Nenhum item do pedido colado bateu com o catálogo atual — não dá
+      // pra montar o carrinho automaticamente, encaminha direto pra humano.
+      replyText = `${greeting}\n\nRecebi seu pedido, mas não consegui localizar os itens no nosso catálogo atual. Um de nossos atendentes vai te chamar em instantes para confirmar tudo. Muito obrigado(a)!`;
+      skillId = "catalog.website_order_unmatched";
     } else {
-      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido. Como você prefere seguir com o pagamento e a entrega?`;
+      saveCheckoutSession(createCheckoutSession(tenant.companyId, msg.phone));
+      const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
+      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal: ${money(cart.total)}\n\nPara finalizar, só preciso confirmar mais alguns dados.\n\n${PROMPTS.buyer_name}`;
+      skillId = "catalog.website_order_checkout_start";
     }
 
     const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
@@ -675,65 +709,15 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       error: sent.error,
       processing_ms: Date.now() - startedAt,
       provider: "catalog-nav",
-      skill_id: "catalog.website_order",
+      skill_id: skillId,
     });
-    if (sent.ok) {
-      await db
-        .from("whatsapp_conversations")
-        .update({
-          bella_state: awaitingPayment ? { ...savedState, websiteOrderAwaitingPayment: true } : savedState,
-          last_outbound_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", conversationId);
-    }
+    const convUpdate: Record<string, unknown> = {
+      status: cart.items.length === 0 ? "human" : conversationStatus,
+      updated_at: new Date().toISOString(),
+    };
+    if (sent.ok) convUpdate.last_outbound_at = new Date().toISOString();
+    await db.from("whatsapp_conversations").update(convUpdate).eq("id", conversationId);
     return;
-  }
-
-  // 3c-pre-ter) Resposta curta de forma de pagamento (ex.: "pix", "cartão",
-  // "dinheiro") depois de um pedido do site — sem CEP, então
-  // isDataSubmissionIntent (que exige CEP + pagamento juntos) não cobre.
-  if ((savedState as Record<string, unknown>).websiteOrderAwaitingPayment) {
-    const paymentMethod = detectPaymentMethod(msg.text);
-    if (paymentMethod) {
-      let replyText: string;
-      if (paymentMethod === "money") {
-        await sendWhatsAppText({ to: msg.phone, text: "Perfeito! Vai precisar de troco para quanto?" });
-        replyText =
-          "Anotado! Um de nossos atendentes vai te chamar em instantes para confirmar a taxa e o horário da entrega. Muito obrigado(a)!";
-      } else {
-        replyText =
-          "Ótimo! Já registrei aqui. Um de nossos atendentes vai te chamar em instantes para te enviar o Pix/link de pagamento e finalizar tudo. Muito obrigado(a)!";
-      }
-
-      const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
-      await db.from("whatsapp_messages").insert({
-        company_id: tenant.companyId,
-        conversation_id: conversationId,
-        contact_id: contactId,
-        direction: "outbound",
-        wa_message_id: sent.waMessageId,
-        text: replyText,
-        status: sent.ok ? "sent" : "failed",
-        error: sent.error,
-        processing_ms: Date.now() - startedAt,
-        provider: "catalog-nav",
-        skill_id: "catalog.website_order_payment",
-      });
-
-      const { websiteOrderAwaitingPayment: _drop, ...restState } = savedState as Record<string, unknown>;
-      await db
-        .from("whatsapp_conversations")
-        .update({
-          status: "human",
-          bella_state: restState,
-          last_outbound_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", conversationId);
-
-      return;
-    }
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
