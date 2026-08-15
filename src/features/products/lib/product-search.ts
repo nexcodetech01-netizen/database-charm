@@ -15,14 +15,13 @@ const TEXT_COLS = ["name", "sku", "brand", "description"] as const;
 export function normalizeSearchTerm(input: string): string[] {
   if (!input) return [];
   return input
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[(),*"']/g, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean);
 }
+
 
 type Filterable = {
   or: (filter: string, options?: { referencedTable?: string }) => Filterable;

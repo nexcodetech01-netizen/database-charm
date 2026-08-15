@@ -58,13 +58,18 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
       return;
     }
     const timer = setTimeout(async () => {
-      let q = supabase
-        .from("products")
-        .select("id,name,sku,price,cost,stock,unit,cover_image_path,category:product_categories(min_margin_pct,target_margin_pct,default_discount_pct)")
-        .eq("company_id", companyId)
-        .eq("status", "active");
-      q = applyProductSearch(q, query, { salesChannel: "loja_fisica" });
-      const { data } = await q.limit(10);
+      const { data, error } = await supabase.rpc("search_products_unaccent", {
+        search_term: query.trim(),
+        company_id_param: companyId,
+        limit_param: 10,
+      });
+
+      if (error) {
+        console.error("SaleItemsEditor Search Error:", error);
+        setOptions([]);
+        return;
+      }
+
 
       const mapped: ProductOption[] = (data ?? []).map((p) => {
         const cat = (p as {

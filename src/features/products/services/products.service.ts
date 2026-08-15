@@ -105,8 +105,30 @@ export const productsService = {
 
       // Aplicação condicional de filtros
       if (filters.search?.trim()) {
-        q = applyProductSearch(q, filters.search);
+        const { data: searchResults, error: searchError } = await supabase.rpc(
+          "search_products_unaccent",
+          {
+            search_term: filters.search.trim(),
+            company_id_param: companyId,
+            limit_param: filters.pageSize * filters.page, // Garantir o range
+          },
+        );
+
+        if (searchError) {
+          console.error("Erro na busca unaccent:", searchError);
+          // Fallback para a busca legada se falhar
+          q = applyProductSearch(q, filters.search);
+        } else if (searchResults) {
+          const ids = searchResults.map((p: any) => p.id);
+          if (ids.length > 0) {
+            q = q.in("id", ids);
+          } else {
+            // Nenhum resultado
+            q = q.eq("id", "00000000-0000-0000-0000-000000000000");
+          }
+        }
       }
+
 
       if (filters.categoryId && filters.categoryId !== "all") {
         q = q.eq("category_id", filters.categoryId);

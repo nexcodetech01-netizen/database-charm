@@ -16,13 +16,13 @@ async function runAudit() {
 
   // 1. Simula início de pedido (como se viesse do catálogo do site)
   console.log("\n1. Simulando início de pedido via [PEDIDO-CATALOGO]...");
-  let cart = getCartSession(companyId, phone);
+  let cart = await getCartSession(companyId, phone);
   cart = addProduct(cart, { id: "p1", name: "Produto Teste", price: 100, brand: null, categoryId: null, unit: null }, 1);
-  saveCartSession(cart);
+  await saveCartSession(cart);
 
   const session = createCheckoutSession(companyId, phone);
   session.step = "WAITING_PAYMENT_METHOD";
-  saveCheckoutSession(session);
+  await saveCheckoutSession(session);
   
   console.log("[DEBUG] CheckoutState INICIAL:", session.step);
 
@@ -60,7 +60,7 @@ async function runAudit() {
     resetCheckoutSessions();
     const s = createCheckoutSession(companyId, phone);
     s.step = "WAITING_PAYMENT_METHOD";
-    saveCheckoutSession(s);
+    await saveCheckoutSession(s);
     
     const turn = await handleCheckoutTurn({ companyId, phone, text: p, cart });
     console.log(`Input: "${p}" -> Next Step: ${turn?.step}`);
