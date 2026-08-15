@@ -6433,6 +6433,64 @@ export type Database = {
           },
         ]
       }
+      whatsapp_cart_sessions: {
+        Row: {
+          company_id: string
+          phone: string
+          session_data: Json
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          phone: string
+          session_data: Json
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          phone?: string
+          session_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_cart_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_checkout_sessions: {
+        Row: {
+          company_id: string
+          phone: string
+          session_data: Json
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          phone: string
+          session_data: Json
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          phone?: string
+          session_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_checkout_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_commercial_inbox: {
         Row: {
           birth_date: string | null

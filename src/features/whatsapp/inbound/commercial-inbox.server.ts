@@ -109,19 +109,19 @@ export async function handleCommercialConfirmationTurn(args: {
 }): Promise<CommercialConfirmationResult | null> {
   const now = args.now ?? Date.now();
   const session =
-    args.session ?? peekCheckoutSession(args.companyId, args.phone, now);
+    args.session ?? (await peekCheckoutSession(args.companyId, args.phone, now));
   if (!session || session.step !== "summary") return null;
   if (!isConfirmationIntent(args.text)) return null;
 
-  const cart = args.cart ?? getCartSession(args.companyId, args.phone, now);
+  const cart = args.cart ?? (await getCartSession(args.companyId, args.phone, now));
   if (cart.items.length === 0) return null;
 
   const draft = buildCommercialTicketDraft({ session, cart, now });
   const { id, created } = await upsertCommercialTicket(args.db, draft);
 
   // Conversa encerrada: sessão e carrinho efêmeros são descartados.
-  dropCheckoutSession(args.companyId, args.phone);
-  saveCartSession(clearCartSession(cart, now));
+  await dropCheckoutSession(args.companyId, args.phone);
+  await saveCartSession(clearCartSession(cart, now));
 
   return { text: COMMERCIAL_HANDOFF_MESSAGE, ticketId: id, created, draft };
 }

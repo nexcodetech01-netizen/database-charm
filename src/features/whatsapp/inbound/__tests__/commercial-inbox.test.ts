@@ -1,3 +1,9 @@
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 /**
  * Sprint 6.8 — Etapa 2: Inbox Comercial.
  * Nenhum motor oficial é chamado: sem venda, orçamento, estoque,
@@ -184,16 +190,16 @@ describe("upsertCommercialTicket", () => {
 });
 
 describe("handleCommercialConfirmationTurn", () => {
-  beforeEach(() => {
-    resetCheckoutSessions();
-    resetCartSessions();
+  beforeEach(async () => {
+    await resetCheckoutSessions();
+    await resetCartSessions();
   });
 
-  function prepare(now = Date.now()) {
-    saveCheckoutSession(summarySession({ createdAt: now, updatedAt: now }));
-    saveCartSession(
+  async function prepare(now = Date.now()) {
+    await saveCheckoutSession(summarySession({ createdAt: now, updatedAt: now }));
+    await saveCartSession(
       addProduct(
-        getCartSession("co", "5511", now),
+        await getCartSession("co", "5511", now),
         { id: "p1", name: "Bolsa", price: 200, brand: null, categoryId: null, unit: "un" },
         2,
         now,
@@ -202,7 +208,7 @@ describe("handleCommercialConfirmationTurn", () => {
   }
 
   it("encaminha o pedido e responde a mensagem oficial", async () => {
-    prepare();
+    await prepare();
     const db = makeDb();
     const out = await handleCommercialConfirmationTurn({
       db: db as never,
@@ -216,11 +222,11 @@ describe("handleCommercialConfirmationTurn", () => {
     // nenhum motor oficial: só a tabela do inbox foi tocada
     expect(db.calls.every((t) => t === "whatsapp_commercial_inbox")).toBe(true);
     // carrinho efêmero é limpo após o encaminhamento
-    expect(getCartSession("co", "5511").items).toHaveLength(0);
+    expect((await getCartSession("co", "5511")).items).toHaveLength(0);
   });
 
   it("não duplica quando já existe atendimento aberto", async () => {
-    prepare();
+    await prepare();
     const db = makeDb([
       {
         id: "t1",
@@ -240,7 +246,7 @@ describe("handleCommercialConfirmationTurn", () => {
   });
 
   it("ignora mensagens que não são confirmação", async () => {
-    prepare();
+    await prepare();
     const db = makeDb();
     const out = await handleCommercialConfirmationTurn({
       db: db as never,
@@ -264,7 +270,7 @@ describe("handleCommercialConfirmationTurn", () => {
   });
 
   it("ignora carrinho vazio", async () => {
-    saveCheckoutSession(summarySession());
+    await saveCheckoutSession(summarySession());
     const db = makeDb();
     const out = await handleCommercialConfirmationTurn({
       db: db as never,
@@ -277,7 +283,7 @@ describe("handleCommercialConfirmationTurn", () => {
   });
 
   it("nunca chama create_sale nem outra tabela do ERP", async () => {
-    prepare();
+    await prepare();
     const db = makeDb();
     const rpc = vi.fn();
     await handleCommercialConfirmationTurn({

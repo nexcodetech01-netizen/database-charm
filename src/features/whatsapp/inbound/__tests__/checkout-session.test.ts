@@ -1,3 +1,9 @@
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 /**
  * Sprint 6.8 — Etapas 1 e 3: fechamento conversacional + dados do cliente.
  * Somente memória: nenhuma venda, orçamento, cliente, estoque, financeiro
@@ -316,14 +322,14 @@ describe("expiração", () => {
 });
 
 describe("handleCheckoutTurn", () => {
-  beforeEach(() => {
-    resetCheckoutSessions();
-    resetCartSessions();
+  beforeEach(async () => {
+    await resetCheckoutSessions();
+    await resetCartSessions();
   });
 
-  function fillCart(now = Date.now()) {
-    const session = getCartSession("co", "5511", now);
-    saveCartSession(
+  async function fillCart(now = Date.now()) {
+    const session = await getCartSession("co", "5511", now);
+    await saveCartSession(
       addProduct(
         session,
         { id: "p1", name: "Bolsa", price: 200, brand: null, categoryId: null, unit: "un" },
@@ -343,11 +349,11 @@ describe("handleCheckoutTurn", () => {
   it("avisa quando o carrinho está vazio", async () => {
     const out = await turn("fechar pedido");
     expect(out?.text).toBe(EMPTY_CART_MESSAGE);
-    expect(peekCheckoutSession("co", "5511")).toBeNull();
+    expect(await peekCheckoutSession("co", "5511")).toBeNull();
   });
 
   it("executa o fluxo completo com retirada", async () => {
-    fillCart();
+    await fillCart();
     expect((await turn("quero finalizar"))?.text).toBe(PROMPTS.buyer_name);
     expect((await turn("Maria"))?.text).toBe(PROMPTS.person_type);
     expect((await turn("pessoa física"))?.text).toBe(PROMPTS.document);
@@ -364,33 +370,33 @@ describe("handleCheckoutTurn", () => {
   });
 
   it("abandona o fluxo mantendo o carrinho", async () => {
-    fillCart();
+    await fillCart();
     await turn("fechar");
     const out = await turn("cancelar");
     expect(out?.text).toBe(CHECKOUT_ABORTED_MESSAGE);
-    expect(peekCheckoutSession("co", "5511")).toBeNull();
-    expect(getCartSession("co", "5511").items).toHaveLength(1);
+    expect(await peekCheckoutSession("co", "5511")).toBeNull();
+    expect((await getCartSession("co", "5511")).items).toHaveLength(1);
   });
 
   it("reinicia o checkout quando pedido", async () => {
-    fillCart();
+    await fillCart();
     await turn("fechar");
     await turn("Maria");
     const out = await turn("recomeçar");
     expect(out?.text).toBe(PROMPTS.buyer_name);
-    expect(peekCheckoutSession("co", "5511")?.customer.fullName).toBeNull();
+    expect((await peekCheckoutSession("co", "5511"))?.customer.fullName).toBeNull();
   });
 
   it("descarta a sessão expirada e recomeça do zero", async () => {
     const t0 = 1_000_000;
-    fillCart(t0);
-    saveCheckoutSession({
+    await fillCart(t0);
+    await saveCheckoutSession({
       ...createCheckoutSession("co", "5511", t0),
       step: "payment",
       buyerName: "Maria",
     });
     const later = t0 + CHECKOUT_SESSION_TTL_MS + 1;
-    saveCartSession({ ...getCartSession("co", "5511", t0), updatedAt: later });
+    await saveCartSession({ ...await getCartSession("co", "5511", t0), updatedAt: later });
     const out = await turn("quero finalizar", later);
     expect(out?.step).toBe("buyer_name");
   });

@@ -113,7 +113,7 @@ export async function handleRecommendationTurn(args: {
   if (!isAlternativeRequestIntent(args.text)) return null;
 
   const state = args.state ?? null;
-  const session = getCartSession(args.companyId, args.phone, args.now ?? Date.now());
+  const session = await getCartSession(args.companyId, args.phone, args.now ?? Date.now());
   const productId = resolveContextProductId({ state, session, now: args.now });
   if (!productId) return null;
 

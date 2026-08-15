@@ -1,3 +1,10 @@
+import { vi } from "vitest";
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   MAX_RECOMMENDATIONS,
@@ -169,7 +176,7 @@ describe("product-recommendations — mensagens", () => {
 });
 
 describe("product-recommendations — turno", () => {
-  beforeEach(() => resetCartSessions());
+  beforeEach(async () => await resetCartSessions());
 
   const rows = [
     { id: "p1", name: "Atual", price: 100, brand: "Acme", category_id: "c1", unit: "un", cover_image_path: "p1.jpg" },

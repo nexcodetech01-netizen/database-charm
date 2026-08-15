@@ -112,7 +112,7 @@ export async function handleCatalogTurn(args: {
   const state = args.state ?? null;
   const inCatalog = Boolean(state);
   const phone = args.phone ?? "unknown";
-  const session: CartSession = getCartSession(companyId, phone);
+  const session: CartSession = await getCartSession(companyId, phone);
 
   // Comandos do pedido conversacional (ver / limpar / remover).
   const command = parseCartCommand(text);
@@ -121,7 +121,7 @@ export async function handleCatalogTurn(args: {
       return { text: formatCartMessage(session), state: { ...(state ?? {}), step: "cart" } };
     }
     if (command.kind === "clear") {
-      saveCartSession(clearCartSession(session));
+      await saveCartSession(clearCartSession(session));
       return {
         text: formatClearedMessage(),
         state: { ...(state ?? {}), step: "cart" },
@@ -135,7 +135,7 @@ export async function handleCatalogTurn(args: {
           : -1;
     const { session: next, removed } = removeAt(session, index);
     if (removed) {
-      saveCartSession(next);
+      await saveCartSession(next);
       return {
         text: formatRemovedMessage(removed, next),
         state: { ...(state ?? {}), step: "cart" },
@@ -186,7 +186,7 @@ export async function handleCatalogTurn(args: {
   }
 
   if (productHit && (inCatalog || hasAddIntent(text))) {
-    const next = saveCartSession(addProduct(session, productHit, parseQuantity(text)));
+    const next = await saveCartSession(addProduct(session, productHit, parseQuantity(text)));
     return {
       text: formatCartUpdatedMessage(next),
       state: {

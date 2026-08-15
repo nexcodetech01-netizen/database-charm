@@ -1,3 +1,10 @@
+import { vi } from "vitest";
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   CART_SESSION_TTL_MS,
@@ -61,7 +68,7 @@ function makeDb() {
   };
 }
 
-beforeEach(() => resetCartSessions());
+beforeEach(async () => await resetCartSessions());
 
 // ------------------------------------------------------------------ parsing
 
@@ -162,9 +169,9 @@ describe("carrinho — sessão temporária", () => {
     expect(isCartSessionExpired(null)).toBe(true);
   });
 
-  it("descarta a sessão expirada no store e devolve carrinho vazio", () => {
-    saveCartSession(addProduct(createCartSession("c1", "5511", 0), products[0]!, 1, 0));
-    const revived = getCartSession("c1", "5511", CART_SESSION_TTL_MS + 5000);
+  it("descarta a sessão expirada no store e devolve carrinho vazio", async () => {
+    await saveCartSession(addProduct(createCartSession("c1", "5511", 0), products[0]!, 1, 0));
+    const revived = await getCartSession("c1", "5511", CART_SESSION_TTL_MS + 5000);
     expect(revived.items).toEqual([]);
     expect(revived.total).toBe(0);
   });
@@ -209,7 +216,7 @@ describe("carrinho — turno conversacional", () => {
     const r = await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
     expect(r!.text).toContain("🛍️ *Pedido atualizado!*");
     expect(r!.text).toContain("(x1)");
-    expect(getCartSession("c1", "5511999").total).toBe(189.9);
+    expect((await getCartSession("c1", "5511999")).total).toBe(189.9);
   });
 
   it("adiciona quantidade sobre o item já existente", async () => {
@@ -220,7 +227,7 @@ describe("carrinho — turno conversacional", () => {
       state: { step: "cart" },
     });
     expect(r!.text).toContain("(x3)");
-    expect(getCartSession("c1", "5511999").total).toBe(569.7);
+    expect((await getCartSession("c1", "5511999")).total).toBe(569.7);
   });
 
   it('entende "Quero essa" após mostrar um único produto', async () => {
@@ -230,7 +237,7 @@ describe("carrinho — turno conversacional", () => {
       state: { step: "products", lastProductIds: ["p1"] },
     });
     expect(r!.text).toContain("• *Bolsa Helena*");
-    expect(getCartSession("c1", "5511999").items).toHaveLength(1);
+    expect((await getCartSession("c1", "5511999")).items).toHaveLength(1);
   });
 
   it("remove item pela posição citada", async () => {
@@ -246,7 +253,7 @@ describe("carrinho — turno conversacional", () => {
       state: { step: "cart" },
     });
     expect(r!.text).toContain("Removi *Perfume Floral 100ml*");
-    expect(getCartSession("c1", "5511999").total).toBe(189.9);
+    expect((await getCartSession("c1", "5511999")).total).toBe(189.9);
   });
 
   it("mostra e limpa o pedido", async () => {
@@ -264,11 +271,11 @@ describe("carrinho — turno conversacional", () => {
       state: { step: "cart" },
     });
     expect(cleared!.text).toContain("Esvaziei o seu pedido");
-    expect(getCartSession("c1", "5511999").items).toEqual([]);
+    expect((await getCartSession("c1", "5511999")).items).toEqual([]);
   });
 
   it("isola carrinhos de telefones diferentes", async () => {
     await handleCatalogTurn({ ...base, text: "Quero a Bolsa Helena.", state: null });
-    expect(getCartSession("c1", "5522888").items).toEqual([]);
+    expect((await getCartSession("c1", "5522888")).items).toEqual([]);
   });
 });
