@@ -535,15 +535,30 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+
   // 3c-pre) Fechamento conversacional (ESTADO DO CHECKOUT - PRIORIDADE MÁXIMA).
   // Se existir um checkout ativo, ele consome a mensagem e impede que o Intent Router
   // ou qualquer Skill Geral (como Financeiro) "roube" a interação.
+  
+  // DEBUG LOGS
+  console.log(`[CATALOG CHECKOUT DEBUG]
+conversationId: ${conversationId}
+activeOrderId: N/A
+incomingMessage: ${msg.text}
+routerSelected: router.server.ts
+handlerSelected: handleCheckoutTurn (Checking...)`);
+
   const checkoutTurn = await handleCheckoutTurn({
     companyId: tenant.companyId,
     phone: msg.phone,
     text: msg.text,
   });
+
   if (checkoutTurn) {
+    console.log(`[CATALOG CHECKOUT DEBUG]
+checkoutState: ${checkoutTurn.step ?? 'done'}
+result: INTERCEPTED BY CHECKOUT`);
+
     const checkoutSent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
     await db.from("whatsapp_messages").insert({
       company_id: tenant.companyId,
@@ -566,6 +581,10 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     }
     return;
   }
+  
+  console.log(`[CATALOG CHECKOUT DEBUG]
+result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
+
 
   // 3c-pre-ante) Interceptação de produto específico ou Intenção de Compra.
   const purchaseIntent = isPurchaseIntent(msg.text);
