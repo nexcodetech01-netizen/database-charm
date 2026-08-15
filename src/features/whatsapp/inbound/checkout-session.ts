@@ -16,7 +16,12 @@ import { digits } from "@/lib/masks";
 import { isValidCNPJ, isValidCPF } from "@/lib/validators";
 
 export type CheckoutStep =
-  | "buyer_name"
+  | "WAITING_RECEIPT_METHOD"
+  | "WAITING_PAYMENT_METHOD"
+  | "WAITING_CUSTOMER_NAME"
+  | "WAITING_ADDRESS"
+  | "WAITING_CONFIRMATION"
+  | "buyer_name" // Keep for backward compatibility/internal mapping if needed
   | "person_type"
   | "document"
   | "zip_code"
@@ -232,10 +237,11 @@ export function parseBirthDate(text: string): string | null {
 }
 
 function money(value: number): string {
+  // Use space instead of non-breaking space (U+00A0) for regex compatibility
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(Number.isFinite(value) ? value : 0);
+  }).format(Number.isFinite(value) ? value : 0).replace(/\u00A0/g, " ");
 }
 
 export function formatZipCode(zip: string | null): string {
@@ -450,54 +456,103 @@ export async function advanceCheckout(args: {
   }
 
   switch (session.step) {
+    case "WAITING_PAYMENT_METHOD":
     case "payment": {
       const payment = parsePayment(text);
       if (!payment) return { session, text: PROMPTS.payment, aborted: false };
       
       const updated = next(session, { payment }, now);
       
-      // Se já tem o nome (ex: vindo do payload do catálogo), pula
+      // Order: Payment -> Name
       if (updated.buyerName) {
-         return advanceCheckout({ ...args, session: next(updated, { step: "buyer_name" }, now), text: updated.buyerName });
+         return advanceCheckout({ ...args, session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now), text: updated.buyerName });
       }
 
       return {
-        session: next(updated, { step: "buyer_name" }, now),
+        session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
         text: `Perfeito! Pagamento via ${PAYMENT_LABEL[payment]}. 😊\n\n${PROMPTS.buyer_name}`,
         aborted: false,
       };
     }
+    case "WAITING_CUSTOMER_NAME":
     case "buyer_name": {
       if (!text) return { session, text: PROMPTS.buyer_name, aborted: false };
       
       const updated = withCustomer(
         session,
         { fullName: text },
-        { buyerName: text, step: "zip_code" },
+        { buyerName: text, step: "WAITING_ADDRESS" },
         now
       );
 
-      // Se for entrega em Tupã e o CEP já for conhecido (do payload), ou se não for pickup
-      // A ordem obrigatória para Tupã: NOME -> ENDEREÇO (Rua, Num, Bairro, CEP)
-      // Mas o checkout-session atual usa zip_code como gatilho de busca.
+      return {
+        session: updated,
+        text: `Obrigada, ${text}! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+        aborted: false,
+      };
+    }
+    case "WAITING_ADDRESS":
+    case "zip_code": {
+      // Try to extract zip code from the full address text
+      const zip = parseZipCode(text) || (text.match(/\d{5}-?\d{3}/) ? digits(text.match(/\d{5}-?\d{3}/)![0]) : null);
       
-      // Se o CEP já estiver no customer (injetado pelo roteador), vamos direto para address_number?
-      if (updated.customer.zipCode) {
+      if (zip && args.resolveCep) {
+         const info = await args.resolveCep(zip);
+         if (info) {
+            const updated = withCustomer(
+              session,
+              { 
+                zipCode: zip,
+                street: info.street,
+                district: info.neighborhood,
+                city: info.city,
+                state: info.state,
+                // If the user sent "Rua X, 123...", we can try to extract number if we were smarter, 
+                // but for now we'll just store the full text as part of the address notes if it's longer
+                street: text.length > 20 ? text : info.street
+              },
+              { step: "WAITING_CONFIRMATION" },
+              now
+            );
+            return {
+              session: syncDelivery(updated),
+              text: formatCheckoutSummary(updated, args.cart),
+              aborted: false
+            };
+         }
+      }
+
+      // If we couldn't resolve or didn't get a clear address/zip, we can still proceed if the text looks like an address
+      if (text.length > 10) {
+        const updated = withCustomer(
+          session,
+          { street: text },
+          { step: "WAITING_CONFIRMATION" },
+          now
+        );
         return {
-          session: next(updated, { step: "address_number" }, now),
-          text: `Obrigada, ${text}! 😊\n\nAgora preciso do endereço completo para a entrega.\n\n${PROMPTS.address_number}`,
+          session: syncDelivery(updated),
+          text: formatCheckoutSummary(updated, args.cart),
           aborted: false
         };
       }
 
-      return {
-        session: updated,
-        text: `Obrigada, ${text}! 😊\n\nAgora preciso do endereço completo para a entrega.\n\n${PROMPTS.zip_code}`,
-        aborted: false,
-      };
+      return { session, text: "Não entendi o endereço. Pode me enviar o endereço completo com CEP? 😊", aborted: false };
     }
-    case "zip_code": {
-      const zip = parseZipCode(text);
+    case "WAITING_CONFIRMATION":
+    case "summary": {
+      const t = normalize(text);
+      const isYes = /\b(sim|ok|pode|confirmar|confirmo|certo|correto|esta correto)\b/.test(t);
+      if (isYes) {
+        return {
+          session: next(session, { step: "done" }, now),
+          text: "Perfeito! Seu pedido foi confirmado e nossa equipe já foi avisada. 😊",
+          aborted: false,
+        };
+      }
+      return { session, text: SUMMARY_CONFIRM_MESSAGE, aborted: false };
+    }
+
       if (!zip) return { session, text: INVALID_CEP_MESSAGE, aborted: false };
       const found = args.resolveCep ? await args.resolveCep(zip) : null;
       if (!found) return { session, text: CEP_NOT_FOUND_MESSAGE, aborted: false };
