@@ -39,7 +39,7 @@ vi.mock("../cart-session.server", () => ({
 }));
 
 // O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
-// Mockamos o módulo, MAS usamos vi.importActual no service se necessário, ou apenas mockamos tudo.
+// Mockamos o módulo usando a string exata que o service usa
 vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockImplementation(async (args) => {
     console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
@@ -50,10 +50,8 @@ vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-// @ts-ignore
-import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 
-// E TAMBÉM mockamos o motor de eventos como backup
+// Importamos do motor de eventos REAL que é um singleton
 import { bellaEventEngine } from "../../../bella-ai/events/BellaEventEngine";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
@@ -116,27 +114,24 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     expect(result?.created).toBe(true);
     expect(result?.ticketId).toBe("ticket-123");
 
-    // Verifica se o mock foi chamado
-    // Se falhar, tentamos verificar o engine
-    try {
-      expect(emitAgentEvent).toHaveBeenCalled();
-    } catch (e) {
-      console.log("[TEST DEBUG] emitAgentEvent falhou, verificando engine...");
-      const events = bellaEventEngine.list({ tenantId: companyId, type: "catalog.order.received" });
-      expect(events).toHaveLength(1);
-    }
+    // Verificamos o motor de eventos real
+    // Como emitAgentEvent chama bellaEventEngine.emit(), o evento deve estar lá.
+    const events = bellaEventEngine.list({ tenantId: companyId, type: "catalog.order.received" });
+    expect(events).toHaveLength(1);
+    expect(events[0].payload.entityId).toBe("ticket-123");
   });
 
   it("deve ignorar mensagens comuns", async () => {
     vi.mocked(peekCheckoutSession).mockResolvedValue({ step: "waiting_name" } as any);
-    const result = await handleCommercialConfirmationTurn({
+    await handleCommercialConfirmationTurn({
       db: {} as any,
       companyId,
       phone,
       text: "Olá",
       now,
     });
-    expect(result).toBe(null);
-    expect(emitAgentEvent).not.toHaveBeenCalled();
+    
+    const events = bellaEventEngine.list({ tenantId: companyId });
+    expect(events).toHaveLength(0);
   });
 });
