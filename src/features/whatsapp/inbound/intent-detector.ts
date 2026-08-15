@@ -38,7 +38,11 @@ export interface WebsiteCatalogOrder {
 }
 
 export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | null {
-  const t = text ?? "";
+  // Intl.NumberFormat('pt-BR', { style: 'currency' }) insere um espaço fino
+  // (U+00A0, non-breaking space) entre "R$" e o valor — não um espaço comum.
+  // Normalizamos aqui para que os regexes abaixo (que usam espaço normal)
+  // funcionem com o preço real gerado pelo site, não só com texto digitado.
+  const t = (text ?? "").replace(/\u00A0/g, " ");
   const isOrder =
     t.includes("[PEDIDO-CATALOGO]") ||
     t.includes("Gostaria de fazer um pedido") ||
