@@ -28,8 +28,6 @@ async function runAudit() {
 
   // 2. Simula resposta "Dinheiro"
   const incomingMessage = "Dinheiro";
-  console.log("\n2. Mensagem recebida:", incomingMessage);
-  
   const checkoutTurn = await handleCheckoutTurn({
     companyId,
     phone,
@@ -42,7 +40,7 @@ async function runAudit() {
   console.log("Bella Response:", checkoutTurn?.text);
   console.log("Next Step:", checkoutTurn?.step);
   
-  // Teste 2: Nome
+  // 3. Simula resposta "Nome"
   const nameMessage = "Tiele Thais M Andriani";
   const nameTurn = await handleCheckoutTurn({
     companyId,
@@ -55,7 +53,7 @@ async function runAudit() {
   console.log("Bella Response:", nameTurn?.text);
   console.log("Next Step:", nameTurn?.step);
 
-  // Teste 3: Outros pagamentos
+  // 4. Teste outros pagamentos
   const otherPayments = ["Pix", "Cartão", "cartao", "credito"];
   console.log("\n[TESTE 3: OUTROS PAGAMENTOS]");
   for (const p of otherPayments) {
