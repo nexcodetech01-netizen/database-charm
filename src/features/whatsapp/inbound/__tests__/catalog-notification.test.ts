@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Para depurar, vamos interceptar a execução com console.log
-console.log("[TEST DEBUG] Iniciando setup do teste");
+// Para evitar problemas de resolução no Vitest sandbox, mockamos a nível de módulo global
+// O service usa "../../bella-ai/agent/infrastructure/event-bus"
+// Precisamos garantir que o Vitest intercepte essa exata string.
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -11,20 +12,6 @@ vi.mock("@/integrations/supabase/client", () => ({
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(),
-  },
-}));
-
-vi.mock("@/integrations/supabase/client.server", () => ({
-  supabaseAdmin: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn(),
-    delete: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -38,27 +25,16 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
-// O arquivo real está em: src/features/bella-ai/agent/infrastructure/event-bus.ts
-// O teste está em: src/features/whatsapp/inbound/__tests__/catalog-notification.test.ts
-// Do teste para o event-bus:
-// 1. .. (inbound)
-// 2. .. (whatsapp)
-// 3. .. (features)
-// 4. bella-ai/agent/infrastructure/event-bus
-// Então o path relativo do teste é: "../../../bella-ai/agent/infrastructure/event-bus"
-
-vi.mock("../../../bella-ai/agent/infrastructure/event-bus", () => ({
-  emitAgentEvent: vi.fn().mockImplementation(async (args) => {
-    console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
-    return { success: true };
-  })
+// MOCK AGGRESSIVO: Mockamos o path exato que o service usa
+vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
+  emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-import { emitAgentEvent } from "../../../bella-ai/agent/infrastructure/event-bus";
+// Importamos o mock usando o MESMO path que o service
+import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
@@ -106,7 +82,6 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
     db.maybeSingle.mockResolvedValue({ data: null }); 
     db.single.mockResolvedValue({ data: { id: "ticket-123" } }); 
 
-    console.log("[TEST DEBUG] Chamando handleCommercialConfirmationTurn");
     const result = await handleCommercialConfirmationTurn({
       db: db as any,
       companyId,
@@ -114,7 +89,6 @@ describe("Catalog Order Notification (Sprint 8.4)", () => {
       text: "sim",
       now,
     });
-    console.log("[TEST DEBUG] handleCommercialConfirmationTurn result:", result?.ticketId);
 
     expect(result?.created).toBe(true);
     expect(result?.ticketId).toBe("ticket-123");
