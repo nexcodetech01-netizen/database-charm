@@ -14,6 +14,20 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+  },
+}));
+
 vi.mock("../checkout-session.server", () => ({
   peekCheckoutSession: vi.fn(),
   dropCheckoutSession: vi.fn(),
@@ -24,8 +38,8 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// Mock do event-bus usando a string EXATA que o service usa
-vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => {
+// Mock do event-bus usando paths absolutos com alias @
+vi.mock("@/features/bella-ai/agent/infrastructure/event-bus", () => {
   return {
     emitAgentEvent: vi.fn().mockImplementation(async () => {
       return { success: true };
@@ -36,8 +50,7 @@ vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => {
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-// Importamos o mock explicitamente para o expect
-import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
