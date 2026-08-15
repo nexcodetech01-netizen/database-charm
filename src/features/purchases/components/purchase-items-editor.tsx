@@ -69,13 +69,18 @@ export function PurchaseItemsEditor({
       return;
     }
     const timer = setTimeout(async () => {
-      let q = supabase
-        .from("products")
-        .select("id,name,sku,cost,stock,unit,cover_image_path")
-        .eq("company_id", companyId)
-        .eq("status", "active");
-      q = applyProductSearch(q, query);
-      const { data } = await q.limit(10);
+      const { data, error } = await supabase.rpc("search_products_unaccent", {
+        search_term: query.trim(),
+        company_id_param: companyId,
+        limit_param: 10,
+      });
+
+      if (error) {
+        console.error("PurchaseItemsEditor Search Error:", error);
+        setOptions([]);
+        return;
+      }
+
 
       setOptions(
         (data ?? []).map((p) => ({
