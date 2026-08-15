@@ -22,7 +22,7 @@ import { handleRecommendationTurn } from "./product-recommendations.server";
 import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn } from "./checkout-session.server";
 import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
-import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod } from "./intent-detector";
+import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod, parseWebsiteCatalogOrder } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
 import { isCatalogIntent } from "./catalog-nav";
 
@@ -636,6 +636,49 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       });
       return;
     }
+  }
+
+  // 3c-pre-bis) Resumo de pedido colado a partir do catálogo do site
+  // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
+  const websiteOrder = parseWebsiteCatalogOrder(msg.text);
+  if (websiteOrder) {
+    const greeting = getGreeting();
+    let replyText: string;
+
+    if (websiteOrder.deliveryMethod === "tupa") {
+      const itemsList = websiteOrder.items
+        .map((i) => `• ${i.name}\nQuantidade: ${i.quantity}\nValor: ${i.price}`)
+        .join("\n\n");
+      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido:\n\n${itemsList}\n\nTotal dos produtos: ${websiteOrder.total}\nRecebimento: Entrega em Tupã\n\nA entrega local tem taxa de R$ 5,00.\n\nAgora só preciso confirmar a forma de pagamento. Você pode pagar por Pix, cartão ou dinheiro. Qual prefere?`;
+    } else if (websiteOrder.deliveryMethod === "other") {
+      replyText = websiteOrder.cep
+        ? `${greeting}\n\nPerfeito! Recebi seu pedido. Para calcular o envio para o CEP ${websiteOrder.cep}, aguarde um momento enquanto verifico as opções de frete.`
+        : `${greeting}\n\nPerfeito! Recebi seu pedido. Para calcular o frete, me informa o CEP de destino?`;
+    } else {
+      replyText = `${greeting}\n\nPerfeito! Recebi seu pedido. Como você prefere seguir com o pagamento e a entrega?`;
+    }
+
+    const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: sent.waMessageId,
+      text: replyText,
+      status: sent.ok ? "sent" : "failed",
+      error: sent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.website_order",
+    });
+    if (sent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
