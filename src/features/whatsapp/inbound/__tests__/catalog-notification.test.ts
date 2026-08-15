@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// Para depurar, vamos interceptar a execução com console.log
-console.log("[TEST DEBUG] Iniciando setup do teste");
-
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
@@ -11,20 +8,6 @@ vi.mock("@/integrations/supabase/client", () => ({
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(),
-  },
-}));
-
-vi.mock("@/integrations/supabase/client.server", () => ({
-  supabaseAdmin: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn(),
-    delete: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -38,19 +21,17 @@ vi.mock("../cart-session.server", () => ({
   saveCartSession: vi.fn(),
 }));
 
-// Mock do event-bus usando paths absolutos com alias @
-vi.mock("@/features/bella-ai/agent/infrastructure/event-bus", () => {
-  return {
-    emitAgentEvent: vi.fn().mockImplementation(async () => {
-      return { success: true };
-    })
-  };
-});
+// Mock do event-bus usando a string EXATA que está no service (src/features/whatsapp/inbound/commercial-inbox.server.ts)
+// No service: import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+// Para o teste na mesma pasta, o path é o mesmo.
+vi.mock("../../bella-ai/agent/infrastructure/event-bus", () => ({
+  emitAgentEvent: vi.fn().mockResolvedValue({ success: true }),
+}));
 
 import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
-import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
+import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
