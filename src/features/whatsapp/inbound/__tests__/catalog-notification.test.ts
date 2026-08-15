@@ -39,8 +39,10 @@ vi.mock("../cart-session.server", () => ({
 }));
 
 // O Service importa de: "../../bella-ai/agent/infrastructure/event-bus"
-// Tentamos usar o alias @ se as strings relativas estão falhando no import analysis.
-vi.mock("@/features/bella-ai/agent/infrastructure/event-bus", () => ({
+// O teste está em: src/features/whatsapp/inbound/__tests__/catalog-notification.test.ts
+// Relativo ao TESTE, o service (../commercial-inbox.server) importa de "../../..."
+// Então do teste para o event-bus é ../../../bella-ai/agent/infrastructure/event-bus
+vi.mock("../../../bella-ai/agent/infrastructure/event-bus", () => ({
   emitAgentEvent: vi.fn().mockImplementation(async (args) => {
     console.log("[TEST DEBUG] emitAgentEvent MOCK CHAMADO com:", args.type);
     return { success: true };
@@ -51,9 +53,8 @@ import { handleCommercialConfirmationTurn } from "../commercial-inbox.server";
 import { peekCheckoutSession } from "../checkout-session.server";
 import { getCartSession } from "../cart-session.server";
 
-// Importamos usando o alias @ que é mais estável
-// @ts-ignore
-import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
+// USAR MOCK IMPORTADO VIA require PARA CONTORNAR O IMPORT ANALYSIS
+const { emitAgentEvent } = require("../../../bella-ai/agent/infrastructure/event-bus");
 
 describe("Catalog Order Notification (Sprint 8.4)", () => {
   const companyId = "test-company";
