@@ -57,13 +57,17 @@ export function usePdvProductSearch(companyId: string, term: string) {
       // A busca normal do Supabase já preenche o cache local da sessão.
 
       const request = (async () => {
-        let q = supabase
-          .from("products")
-          .select("id,name,sku,barcode,brand,price,cost,stock,unit")
-          .eq("company_id", companyId)
-          .eq("status", "active");
-        q = applyProductSearch(q, rawTerm, { salesChannel: "loja_fisica" });
-        const { data } = await q.limit(10);
+        const { data, error } = await supabase.rpc("search_products_unaccent", {
+          search_term: rawTerm,
+          company_id_param: companyId,
+          limit_param: 10,
+        });
+
+        if (error) {
+          console.error("PDV Search Error:", error);
+          return [];
+        }
+
         const mapped: PdvSearchOption[] = (data ?? []).map((p) => ({
           id: p.id,
           name: p.name,
