@@ -91,4 +91,73 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     expect(res1.session.buyerName).toBe("Maria Oliveira");
     expect(res1.session.step).toBe("WAITING_ADDRESS");
   });
+
+  it("BUG REPORT: Deve aceitar 'dinheiro' e avançar para o nome", async () => {
+    let session = createCheckoutSession("comp-1", "5511999999999");
+    session.step = "WAITING_PAYMENT_METHOD";
+    session.fulfillment = "delivery";
+
+    const res1 = await advanceCheckout({
+      session,
+      cart: mockCart,
+      text: "dinheiro"
+    });
+    
+    expect(res1.session.payment).toBe("cash");
+    expect(res1.session.step).toBe("WAITING_CUSTOMER_NAME");
+    expect(res1.text).toContain("Qual é o seu nome completo?");
+    
+    const res2 = await advanceCheckout({
+      session: res1.session,
+      cart: mockCart,
+      text: "Tiele Thais M Andriani"
+    });
+    
+    expect(res2.session.customer.fullName).toBe("Tiele Thais M Andriani");
+    expect(res2.session.step).toBe("WAITING_ADDRESS");
+    expect(res2.text).toContain("informe seu endereço completo com CEP");
+  });
+
+  it("Normalização: Deve aceitar variações de formas de pagamento", async () => {
+    const cases = [
+      { input: "em dinheiro", expected: "cash" },
+      { input: "espécie", expected: "cash" },
+      { input: "especie", expected: "cash" },
+      { input: "pix", expected: "pix" },
+      { input: "PIX", expected: "pix" },
+      { input: "cartão", expected: "card" },
+      { input: "cartao", expected: "card" },
+      { input: "débito", expected: "card" },
+      { input: "cartão de crédito", expected: "card" },
+      { input: "cartao de credito", expected: "card" },
+    ];
+
+    for (const c of cases) {
+      let session = createCheckoutSession("comp-1", "5511999999999");
+      session.step = "WAITING_PAYMENT_METHOD";
+      
+      const res = await advanceCheckout({
+        session,
+        cart: mockCart,
+        text: c.input
+      });
+      
+      expect(res.session.payment, `Failed for input: ${c.input}`).toBe(c.expected);
+    }
+  });
+
+  it("Resposta para pagamento não reconhecido", async () => {
+    let session = createCheckoutSession("comp-1", "5511999999999");
+    session.step = "WAITING_PAYMENT_METHOD";
+
+    const res = await advanceCheckout({
+      session,
+      cart: mockCart,
+      text: "quero pagar com abraço"
+    });
+    
+    expect(res.session.payment).toBeNull();
+    expect(res.session.step).toBe("WAITING_PAYMENT_METHOD");
+    expect(res.text).toContain("Não consegui identificar a forma de pagamento");
+  });
 });
