@@ -644,6 +644,11 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   if (websiteOrder) {
     const greeting = getGreeting();
     let replyText: string;
+    // Marca que a próxima mensagem curta do cliente (ex.: "pix") deve ser
+    // lida como resposta à pergunta de forma de pagamento — sem isso, uma
+    // resposta de uma palavra não bate com nenhuma regra específica e cai
+    // no motor de IA genérico, que fica em silêncio quando está offline.
+    const awaitingPayment = websiteOrder.deliveryMethod === "tupa" || websiteOrder.deliveryMethod === "unknown";
 
     if (websiteOrder.deliveryMethod === "tupa") {
       const itemsList = websiteOrder.items
@@ -675,10 +680,60 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     if (sent.ok) {
       await db
         .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({
+          bella_state: awaitingPayment ? { ...savedState, websiteOrderAwaitingPayment: true } : savedState,
+          last_outbound_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", conversationId);
     }
     return;
+  }
+
+  // 3c-pre-ter) Resposta curta de forma de pagamento (ex.: "pix", "cartão",
+  // "dinheiro") depois de um pedido do site — sem CEP, então
+  // isDataSubmissionIntent (que exige CEP + pagamento juntos) não cobre.
+  if ((savedState as Record<string, unknown>).websiteOrderAwaitingPayment) {
+    const paymentMethod = detectPaymentMethod(msg.text);
+    if (paymentMethod) {
+      let replyText: string;
+      if (paymentMethod === "money") {
+        await sendWhatsAppText({ to: msg.phone, text: "Perfeito! Vai precisar de troco para quanto?" });
+        replyText =
+          "Anotado! Um de nossos atendentes vai te chamar em instantes para confirmar a taxa e o horário da entrega. Muito obrigado(a)!";
+      } else {
+        replyText =
+          "Ótimo! Já registrei aqui. Um de nossos atendentes vai te chamar em instantes para te enviar o Pix/link de pagamento e finalizar tudo. Muito obrigado(a)!";
+      }
+
+      const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: sent.waMessageId,
+        text: replyText,
+        status: sent.ok ? "sent" : "failed",
+        error: sent.error,
+        processing_ms: Date.now() - startedAt,
+        provider: "catalog-nav",
+        skill_id: "catalog.website_order_payment",
+      });
+
+      const { websiteOrderAwaitingPayment: _drop, ...restState } = savedState as Record<string, unknown>;
+      await db
+        .from("whatsapp_conversations")
+        .update({
+          status: "human",
+          bella_state: restState,
+          last_outbound_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", conversationId);
+
+      return;
+    }
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
