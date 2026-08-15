@@ -189,24 +189,27 @@ export function parseFulfillment(text: string): FulfillmentKind | null {
 }
 
 export function parsePayment(text: string): PaymentKind | null {
-  const t = (text ?? "").trim().toLowerCase();
-  if (!t) return null;
+  const raw = (text ?? "").trim().toLowerCase();
+  if (!raw) return null;
   
-  // Normalização para lidar com acentos antes de testar com regex
-  const normalized = normalize(t);
+  // Normalização agressiva: remove acentos e caracteres especiais
+  const t = normalize(raw);
 
-  if (t === "1") return "pix";
-  if (t === "2") return "card";
-  if (t === "3") return "cash";
+  // Mapeamento direto de números (opções do menu)
+  if (raw === "1") return "pix";
+  if (raw === "2") return "card";
+  if (raw === "3") return "cash";
 
-  if (PIX_RE.test(t) || PIX_RE.test(normalized)) return "pix";
+  // PIX
+  if (/\b(pix|pagamento via pix)\b/i.test(t) || /\bpix\b/i.test(raw)) return "pix";
   
-  // Ordem importa: "cartão de crédito" deve ser capturado antes de "cartão"
-  if (/\b(cartao|cartão) de (credito|crédito)\b/i.test(t)) return "card";
-  if (/\b(cartao|cartão) de (debito|débito)\b/i.test(t)) return "card";
-  
-  if (CARD_RE.test(t) || CARD_RE.test(normalized)) return "card";
-  if (CASH_RE.test(t) || CASH_RE.test(normalized)) return "cash";
+  // DINHEIRO / ESPÉCIE
+  if (/\b(dinheiro|em dinheiro|especie|especie|cash|a vista|ao vivo)\b/i.test(t) || 
+      /\b(dinheiro|espécie)\b/i.test(raw)) return "cash";
+
+  // CARTÃO (CRÉDITO/DÉBITO)
+  if (/\b(cartao|credito|debito|card|maquininha)\b/i.test(t) ||
+      /\b(cartão|crédito|débito)\b/i.test(raw)) return "card";
   
   return null;
 }

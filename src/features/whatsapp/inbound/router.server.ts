@@ -535,6 +535,38 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  // 3c-pre) Fechamento conversacional (ESTADO DO CHECKOUT - PRIORIDADE MÁXIMA).
+  // Se existir um checkout ativo, ele consome a mensagem e impede que o Intent Router
+  // ou qualquer Skill Geral (como Financeiro) "roube" a interação.
+  const checkoutTurn = await handleCheckoutTurn({
+    companyId: tenant.companyId,
+    phone: msg.phone,
+    text: msg.text,
+  });
+  if (checkoutTurn) {
+    const checkoutSent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: checkoutSent.waMessageId,
+      text: checkoutTurn.text,
+      status: checkoutSent.ok ? "sent" : "failed",
+      error: checkoutSent.error,
+      processing_ms: Date.now() - startedAt,
+      provider: "catalog-nav",
+      skill_id: "catalog.checkout",
+    });
+    if (checkoutSent.ok) {
+      await db
+        .from("whatsapp_conversations")
+        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    }
+    return;
+  }
+
   // 3c-pre-ante) Interceptação de produto específico ou Intenção de Compra.
   const purchaseIntent = isPurchaseIntent(msg.text);
   const dataSubmission = isDataSubmissionIntent(msg.text);
@@ -772,36 +804,6 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
       skill_id: "catalog.commercial_inbox",
     });
     if (sent.ok) {
-      await db
-        .from("whatsapp_conversations")
-        .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", conversationId);
-    }
-    return;
-  }
-
-  // 3c-pre) Fechamento conversacional (somente memória: sem venda/estoque/ERP).
-  const checkoutTurn = await handleCheckoutTurn({
-    companyId: tenant.companyId,
-    phone: msg.phone,
-    text: msg.text,
-  });
-  if (checkoutTurn) {
-    const checkoutSent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
-    await db.from("whatsapp_messages").insert({
-      company_id: tenant.companyId,
-      conversation_id: conversationId,
-      contact_id: contactId,
-      direction: "outbound",
-      wa_message_id: checkoutSent.waMessageId,
-      text: checkoutTurn.text,
-      status: checkoutSent.ok ? "sent" : "failed",
-      error: checkoutSent.error,
-      processing_ms: Date.now() - startedAt,
-      provider: "catalog-nav",
-      skill_id: "catalog.checkout",
-    });
-    if (checkoutSent.ok) {
       await db
         .from("whatsapp_conversations")
         .update({ last_outbound_at: new Date().toISOString(), updated_at: new Date().toISOString() })
