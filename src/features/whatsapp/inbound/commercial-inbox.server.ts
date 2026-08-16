@@ -20,7 +20,7 @@ import {
 } from "./commercial-inbox";
 import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 import { formatCurrency } from "@/lib/format";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { makeSecurityContext } from "../../bella-ai/agent/infrastructure/context";
 
 type Db = { from: (t: string) => any };
@@ -83,10 +83,20 @@ export async function upsertCommercialTicket(
 ): Promise<UpsertTicketResult> {
   const existing = await findOpenTicket(db, draft.companyId, draft.phone);
   if (existing) {
-    await db.from(TABLE).update(toRow(draft)).eq("id", existing.id);
+    const { error: updErr } = await db.from(TABLE).update(toRow(draft)).eq("id", existing.id);
+    if (updErr) {
+      console.error("[INBOX COMERCIAL] Falha ao atualizar ticket existente:", updErr);
+      throw new Error(`Falha ao atualizar ticket: ${updErr.message}`);
+    }
     return { id: existing.id, created: false };
   }
-  const { data } = await db.from(TABLE).insert(toRow(draft)).select("id").single();
+  
+  const { data, error: insErr } = await db.from(TABLE).insert(toRow(draft)).select("id").single();
+  if (insErr) {
+    console.error("[INBOX COMERCIAL] Falha ao inserir novo ticket:", insErr);
+    throw new Error(`Falha ao inserir ticket: ${insErr.message}`);
+  }
+  
   return { id: (data as { id: string } | null)?.id ?? null, created: true };
 }
 
@@ -129,7 +139,7 @@ export async function recordConfirmedOrder(args: {
           startedAt: new Date(now),
         },
         security: makeSecurityContext(new Set(["*"]), true),
-        supabase: supabase as any,
+        supabase: supabaseAdmin as any,
       },
       payload: {
         entityId: id,
