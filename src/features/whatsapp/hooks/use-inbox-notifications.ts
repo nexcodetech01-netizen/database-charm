@@ -109,6 +109,10 @@ export function useBrowserNotifications() {
     showNativeNotification(title, options);
   }, [showNativeNotification]);
 
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+  }, []);
+
   const markAsRead = useCallback((id: string) => {
     setHistory(prev => prev.map(item => item.id === id ? { ...item, read: true } : item));
   }, []);
@@ -116,6 +120,7 @@ export function useBrowserNotifications() {
   const markAllAsRead = useCallback(() => {
     setHistory(prev => prev.map(item => ({ ...item, read: true })));
   }, []);
+
 
   // Lógica de filtragem e paginação calculada via useMemo
   const filteredHistory = useMemo(() => {
