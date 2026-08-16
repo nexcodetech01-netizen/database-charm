@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { ShippingCalculatorSchema, ShippingOption } from "../types";
+import { ShippingCalculatorSchema, ShippingOption, GenerateLabelSchema, LabelResult } from "../types";
 
 export const calculateShipping = createServerFn({ method: "POST" })
   .validator((data: unknown) => ShippingCalculatorSchema.parse(data))
