@@ -27,3 +27,26 @@ export const calculateShipping = createServerFn({ method: "POST" })
 
     return (await response.json()) as ShippingOption[];
   });
+
+export const generateLabel = createServerFn({ method: "POST" })
+  .validator((data: unknown) => GenerateLabelSchema.parse(data))
+  .handler(async ({ data }) => {
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.VERCEL_URL || 'localhost:8080'}` 
+      : 'http://localhost:8080';
+
+    const response = await fetch(`${baseUrl}/api/public/shipping/labels`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Erro ao emitir etiqueta");
+    }
+
+    return (await response.json()) as LabelResult;
+  });
