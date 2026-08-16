@@ -557,6 +557,8 @@ handlerSelected: handleCheckoutTurn (Checking...)`);
   if (checkoutTurn) {
     console.log(`[CATALOG CHECKOUT DEBUG]
 checkoutState: ${checkoutTurn.step ?? 'done'}
+confirmed: ${checkoutTurn.confirmed}
+hasCompletedSession: ${!!checkoutTurn.completedSession}
 result: INTERCEPTED BY CHECKOUT`);
 
     // Pedido confirmado agora (transição pra "done" pela resposta do
