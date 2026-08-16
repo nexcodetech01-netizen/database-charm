@@ -108,7 +108,11 @@ export function useUpdateCommercialInboxStatus() {
       if (error) throw error;
 
       // Sincroniza a resolução com outras abas
-      if (input.status === "attended" || input.status === "converted" || input.status === "cancelled") {
+      if (
+        input.status === COMMERCIAL_INBOX_STATUS.attended ||
+        input.status === COMMERCIAL_INBOX_STATUS.converted ||
+        input.status === COMMERCIAL_INBOX_STATUS.cancelled
+      ) {
         broadcastInboxEvent({
           type: "CATALOG_ORDER_RESOLVED",
           payload: { ticketId: input.id }
