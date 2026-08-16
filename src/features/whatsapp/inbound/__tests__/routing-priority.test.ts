@@ -62,7 +62,7 @@ describe('Contextual Routing Priority (Checkout vs Financial)', () => {
     };
 
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    (supabaseAdmin.maybeSingle as any).mockResolvedValue({ data: { session_data: mockSession } });
+    (supabaseAdmin.from('whatsapp_checkout_sessions').maybeSingle as any).mockResolvedValue({ data: { session_data: mockSession } });
     
     // 2. Simulate message "dinheiro"
     const result = await handleCheckoutTurn({
@@ -89,7 +89,7 @@ describe('Contextual Routing Priority (Checkout vs Financial)', () => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     // Setup Mocks for router
-    (supabaseAdmin.maybeSingle as any).mockImplementation((query: any) => {
+    (supabaseAdmin.from('companies').maybeSingle as any).mockImplementation((query: any) => {
       // Return company
       return Promise.resolve({ data: { id: companyId, name: 'Test Co' } });
     });
