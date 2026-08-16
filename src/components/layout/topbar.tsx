@@ -21,6 +21,10 @@ import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 import { getInboxChannel, broadcastInboxEvent } from "@/features/whatsapp/lib/inbox-sync";
 import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-notifications";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { History, Trash2, ExternalLink } from "lucide-react";
 
 export function Topbar() {
   const { user } = useAuth();
@@ -34,7 +38,7 @@ export function Topbar() {
     return localStorage.getItem("nexos:catalog-sound") !== "false";
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { permission, requestPermission, notify } = useBrowserNotifications();
+  const { permission, requestPermission, notify, history: notificationHistory, clearHistory } = useBrowserNotifications();
   const lastNotifiedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -202,6 +206,63 @@ export function Topbar() {
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
         </div>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" title="Histórico de Alertas">
+              <History className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0" align="end">
+            <div className="flex items-center justify-between border-b p-3">
+              <h4 className="text-sm font-semibold">Histórico de Alertas</h4>
+              {notificationHistory.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearHistory}
+                  className="h-8 px-2 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+            <div className="max-h-[300px] overflow-y-auto">
+              {notificationHistory.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">
+                  Nenhum alerta recente.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {notificationHistory.map((item) => (
+                    <div key={item.id} className="p-3 hover:bg-accent/50 transition-colors group">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{item.title}</p>
+                          <p className="text-[10px] text-muted-foreground line-clamp-2">{item.body}</p>
+                          <p className="text-[9px] text-muted-foreground mt-1">
+                            {format(item.at, "HH:mm 'de' d/MM", { locale: ptBR })}
+                          </p>
+                        </div>
+                        {item.ticketId && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            onClick={() => navigate({ to: "/comercial/inbox-whatsapp" })}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <ThemeToggle />
         
