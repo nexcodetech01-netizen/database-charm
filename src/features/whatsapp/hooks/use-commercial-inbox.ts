@@ -5,6 +5,7 @@
  * estoque, financeiro ou CRM é criado/alterado aqui.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   COMMERCIAL_INBOX_STATUS,
@@ -50,7 +51,7 @@ export interface CommercialInboxTicket {
 const KEY = ["whatsapp-commercial-inbox"] as const;
 
 export function useCommercialInbox(companyId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: [...KEY, companyId],
     enabled: Boolean(companyId),
     queryFn: async (): Promise<CommercialInboxTicket[]> => {
@@ -64,6 +65,35 @@ export function useCommercialInbox(companyId: string | null) {
       return (data ?? []) as unknown as CommercialInboxTicket[];
     },
   });
+
+  const qc = useQueryClient();
+
+  // Ativa o Realtime para invalidar o cache do TanStack Query
+  useEffect(() => {
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel("inbox-query-refresh")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // INSERT, UPDATE, DELETE
+          schema: "public",
+          table: "whatsapp_commercial_inbox",
+          filter: `company_id=eq.${companyId}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: [...KEY, companyId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [companyId, qc]);
+
+  return query;
 }
 
 export function useUpdateCommercialInboxStatus() {
