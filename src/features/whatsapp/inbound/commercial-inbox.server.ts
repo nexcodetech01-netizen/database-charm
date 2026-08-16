@@ -129,7 +129,7 @@ export async function recordConfirmedOrder(args: {
           startedAt: new Date(now),
         },
         security: makeSecurityContext(new Set(["*"]), true),
-        supabase: supabase as any,
+        supabase: supabaseAdmin as any,
       },
       payload: {
         entityId: id,
