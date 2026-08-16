@@ -84,6 +84,7 @@ import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from 
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
+import { Route as ApiPublicShippingLabelsRouteImport } from './routes/api/public/shipping/labels'
 import { Route as ApiPublicShippingCalculateRouteImport } from './routes/api/public/shipping/calculate'
 import { Route as ApiPublicNotificationsTriggerRouteImport } from './routes/api/public/notifications/trigger'
 import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
@@ -527,6 +528,11 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicShippingLabelsRoute = ApiPublicShippingLabelsRouteImport.update({
+  id: '/api/public/shipping/labels',
+  path: '/api/public/shipping/labels',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicShippingCalculateRoute =
   ApiPublicShippingCalculateRouteImport.update({
     id: '/api/public/shipping/calculate',
@@ -759,6 +765,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
+  '/api/public/shipping/labels': typeof ApiPublicShippingLabelsRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -858,6 +865,7 @@ export interface FileRoutesByTo {
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
+  '/api/public/shipping/labels': typeof ApiPublicShippingLabelsRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -960,6 +968,7 @@ export interface FileRoutesById {
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
+  '/api/public/shipping/labels': typeof ApiPublicShippingLabelsRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/_authenticated/compras_/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/_authenticated/produtos_/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -1062,6 +1071,7 @@ export interface FileRouteTypes {
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
     | '/api/public/shipping/calculate'
+    | '/api/public/shipping/labels'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId/'
     | '/produtos/$productId/'
@@ -1161,6 +1171,7 @@ export interface FileRouteTypes {
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
     | '/api/public/shipping/calculate'
+    | '/api/public/shipping/labels'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId'
     | '/produtos/$productId'
@@ -1262,6 +1273,7 @@ export interface FileRouteTypes {
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
     | '/api/public/shipping/calculate'
+    | '/api/public/shipping/labels'
     | '/api/public/whatsapp/webhook'
     | '/_authenticated/compras_/$purchaseId/'
     | '/_authenticated/produtos_/$productId/'
@@ -1294,6 +1306,7 @@ export interface RootRouteChildren {
   ApiPublicMercadolivreWebhookRoute: typeof ApiPublicMercadolivreWebhookRoute
   ApiPublicNotificationsTriggerRoute: typeof ApiPublicNotificationsTriggerRoute
   ApiPublicShippingCalculateRoute: typeof ApiPublicShippingCalculateRoute
+  ApiPublicShippingLabelsRoute: typeof ApiPublicShippingLabelsRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicBellaPayQrChargeIdRoute: typeof ApiPublicBellaPayQrChargeIdRoute
   ApiPublicBellaPayWebhookTokenRoute: typeof ApiPublicBellaPayWebhookTokenRoute
@@ -1828,6 +1841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/shipping/labels': {
+      id: '/api/public/shipping/labels'
+      path: '/api/public/shipping/labels'
+      fullPath: '/api/public/shipping/labels'
+      preLoaderRoute: typeof ApiPublicShippingLabelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/shipping/calculate': {
       id: '/api/public/shipping/calculate'
       path: '/api/public/shipping/calculate'
@@ -2342,6 +2362,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMercadolivreWebhookRoute: ApiPublicMercadolivreWebhookRoute,
   ApiPublicNotificationsTriggerRoute: ApiPublicNotificationsTriggerRoute,
   ApiPublicShippingCalculateRoute: ApiPublicShippingCalculateRoute,
+  ApiPublicShippingLabelsRoute: ApiPublicShippingLabelsRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicBellaPayQrChargeIdRoute: ApiPublicBellaPayQrChargeIdRoute,
   ApiPublicBellaPayWebhookTokenRoute: ApiPublicBellaPayWebhookTokenRoute,

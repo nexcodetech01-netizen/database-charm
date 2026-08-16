@@ -77,6 +77,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
           const normalized = (Array.isArray(data) ? data : [data])
             .filter((option: any) => !option.error)
             .map((option: any) => ({
+              id: String(option.id || option.service || ""),
               servico: option.name || option.service_name,
               transportadora: "Correios",
               preco: parseFloat(option.price || option.discount_price || 0),
