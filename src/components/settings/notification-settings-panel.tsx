@@ -90,7 +90,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-sound`}
                     checked={config.sound}
                     onCheckedChange={() => toggleSetting(type, "sound")}
-                    className="scale-[0.75] origin-right"
+                    className="scale-[0.8] origin-right pointer-events-auto"
                   />
                 </div>
 
