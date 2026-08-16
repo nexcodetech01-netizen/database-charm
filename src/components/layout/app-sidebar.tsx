@@ -112,8 +112,9 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Sistema & Gestão",
+    label: "Ferramentas",
     items: [
+      { title: "Calculadora de Frete", url: ROUTES.shippingCalculator, icon: Calculator, status: "available" },
       { title: "Relatórios", url: ROUTES.reports, icon: BarChart3, status: "available", permission: "reports.view" },
       { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view" },
       { title: "Configurações", url: ROUTES.settings, icon: Settings, status: "available", permission: "settings.view" },
