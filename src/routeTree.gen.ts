@@ -83,6 +83,7 @@ import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from 
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
+import { Route as ApiPublicNotificationsTriggerRouteImport } from './routes/api/public/notifications/trigger'
 import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
 import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
 import { Route as ApiPublicJobsMercadolivreReconcileRouteImport } from './routes/api/public/jobs/mercadolivre-reconcile'
@@ -518,6 +519,12 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicNotificationsTriggerRoute =
+  ApiPublicNotificationsTriggerRouteImport.update({
+    id: '/api/public/notifications/trigger',
+    path: '/api/public/notifications/trigger',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMercadolivreWebhookRoute =
   ApiPublicMercadolivreWebhookRouteImport.update({
     id: '/api/public/mercadolivre/webhook',
@@ -735,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
+  '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -831,6 +839,7 @@ export interface FileRoutesByTo {
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
+  '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -930,6 +939,7 @@ export interface FileRoutesById {
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
+  '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/_authenticated/compras_/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/_authenticated/produtos_/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -1029,6 +1039,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
+    | '/api/public/notifications/trigger'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId/'
     | '/produtos/$productId/'
@@ -1125,6 +1136,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
+    | '/api/public/notifications/trigger'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId'
     | '/produtos/$productId'
@@ -1223,6 +1235,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-reconcile'
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
+    | '/api/public/notifications/trigger'
     | '/api/public/whatsapp/webhook'
     | '/_authenticated/compras_/$purchaseId/'
     | '/_authenticated/produtos_/$productId/'
@@ -1253,6 +1266,7 @@ export interface RootRouteChildren {
   ApiPublicJobsMercadolivreReconcileRoute: typeof ApiPublicJobsMercadolivreReconcileRoute
   ApiPublicJobsMercadolivreRefreshRoute: typeof ApiPublicJobsMercadolivreRefreshRoute
   ApiPublicMercadolivreWebhookRoute: typeof ApiPublicMercadolivreWebhookRoute
+  ApiPublicNotificationsTriggerRoute: typeof ApiPublicNotificationsTriggerRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicBellaPayQrChargeIdRoute: typeof ApiPublicBellaPayQrChargeIdRoute
   ApiPublicBellaPayWebhookTokenRoute: typeof ApiPublicBellaPayWebhookTokenRoute
@@ -1780,6 +1794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/notifications/trigger': {
+      id: '/api/public/notifications/trigger'
+      path: '/api/public/notifications/trigger'
+      fullPath: '/api/public/notifications/trigger'
+      preLoaderRoute: typeof ApiPublicNotificationsTriggerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mercadolivre/webhook': {
       id: '/api/public/mercadolivre/webhook'
       path: '/api/public/mercadolivre/webhook'
@@ -2275,6 +2296,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicJobsMercadolivreReconcileRoute,
   ApiPublicJobsMercadolivreRefreshRoute: ApiPublicJobsMercadolivreRefreshRoute,
   ApiPublicMercadolivreWebhookRoute: ApiPublicMercadolivreWebhookRoute,
+  ApiPublicNotificationsTriggerRoute: ApiPublicNotificationsTriggerRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicBellaPayQrChargeIdRoute: ApiPublicBellaPayQrChargeIdRoute,
   ApiPublicBellaPayWebhookTokenRoute: ApiPublicBellaPayWebhookTokenRoute,
