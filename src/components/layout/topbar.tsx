@@ -19,9 +19,8 @@ import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistr
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
-22: import { getInboxChannel, broadcastInboxEvent } from "@/features/whatsapp/lib/inbox-sync";
-23: import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-notifications";
-
+import { getInboxChannel, broadcastInboxEvent } from "@/features/whatsapp/lib/inbox-sync";
+import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-notifications";
 
 export function Topbar() {
   const { user } = useAuth();
@@ -35,6 +34,8 @@ export function Topbar() {
     return localStorage.getItem("nexos:catalog-sound") !== "false";
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { permission, requestPermission, notify } = useBrowserNotifications();
+  const lastNotifiedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -56,6 +57,10 @@ export function Topbar() {
       if (entry.action === "created" && event.type === "catalog.order.received") {
         updateCount();
         
+        const ticketId = (event.payload as any)?.ticketId;
+        if (ticketId && lastNotifiedRef.current === ticketId) return;
+        if (ticketId) lastNotifiedRef.current = ticketId;
+
         // Notificação sonora
         if (soundEnabled && audioRef.current) {
           audioRef.current.play().catch(() => {
@@ -72,13 +77,48 @@ export function Topbar() {
             onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }),
           }
         });
+
+        // Notificação do Navegador
+        notify("Novo pedido do catálogo", {
+          body: `${payload.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(payload.total)}`,
+          tag: ticketId || undefined,
+        });
       } else if (entry.action === "resolved" || entry.action === "expired") {
         updateCount();
       }
     });
 
-    return () => unsubscribe();
-  }, [user?.user_metadata?.company_id, soundEnabled, navigate]);
+    // Listener para BroadcastChannel (Sincronização entre abas)
+    const channel = getInboxChannel();
+    const handleMessage = (event: MessageEvent) => {
+      const msg = event.data;
+      if (msg.type === "CATALOG_ORDER_RECEIVED") {
+        updateCount();
+      } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
+        // Quando resolvido em outra aba, removemos do registry local se existir
+        bellaEventRegistry.resolveByPayload({
+          tenantId: user?.user_metadata?.company_id,
+          type: "catalog.order.received",
+          payload: { entityId: msg.payload.ticketId }
+        });
+        updateCount();
+      } else if (msg.type === "SYNC_COUNT") {
+        setCatalogOrdersCount(msg.payload.count);
+      }
+    };
+
+    channel?.addEventListener("message", handleMessage);
+
+    return () => {
+      unsubscribe();
+      channel?.removeEventListener("message", handleMessage);
+    };
+  }, [user?.user_metadata?.company_id, soundEnabled, navigate, notify]);
+
+  // Propaga o contador local para outras abas quando ele muda
+  useEffect(() => {
+    broadcastInboxEvent({ type: "SYNC_COUNT", payload: { count: catalogOrdersCount } });
+  }, [catalogOrdersCount]);
 
   const toggleSound = () => {
     const newVal = !soundEnabled;
@@ -140,14 +180,28 @@ export function Topbar() {
       <div className="ml-auto flex items-center gap-1">
         <audio ref={audioRef} src="/notification-alert.mp3" preload="auto" />
         
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleSound}
-          title={soundEnabled ? "Som ativado" : "Som desativado"}
-        >
-          {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-        </Button>
+        <div className="flex items-center gap-1 border-r border-border pr-2 mr-1">
+          {permission !== "granted" && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => requestPermission()}
+              title="Ativar notificações do navegador"
+              className="text-warning animate-pulse"
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          )}
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSound}
+            title={soundEnabled ? "Som ativado" : "Som desativado"}
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+        </div>
 
         <ThemeToggle />
         

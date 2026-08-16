@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import type { CommercialInboxTicket } from "@/features/whatsapp/hooks/use-commercial-inbox";
 import { formatCurrency } from "@/lib/format";
+import { broadcastInboxEvent } from "../lib/inbox-sync";
 
 /**
  * Hook para ativar o listener em tempo real da tabela `whatsapp_commercial_inbox`.
@@ -44,6 +45,16 @@ export function useCommercialInboxRealtime(companyId: string | null) {
             title: "Novo pedido do catálogo",
             description: `${ticket.buyer_name || "Cliente"} enviou um pedido de ${formatCurrency(Number(ticket.total))} (${ticket.item_count} itens).`,
             source: "realtime:whatsapp_commercial_inbox",
+          });
+
+          // Sincroniza com outras abas
+          broadcastInboxEvent({
+            type: "CATALOG_ORDER_RECEIVED",
+            payload: {
+              ticketId: ticket.id,
+              buyerName: ticket.buyer_name || "Cliente",
+              total: Number(ticket.total)
+            }
           });
         },
       )

@@ -13,8 +13,7 @@ import {
   type CommercialTicketItem,
 } from "@/features/whatsapp/inbound/commercial-inbox";
 import { buildConversionPatch } from "@/features/whatsapp/inbound/inbox-conversion";
-16: import { broadcastInboxEvent } from "../lib/inbox-sync";
-
+import { broadcastInboxEvent } from "../lib/inbox-sync";
 
 export interface CommercialInboxTicket {
   id: string;
@@ -107,6 +106,15 @@ export function useUpdateCommercialInboxStatus() {
         .update({ status: input.status })
         .eq("id", input.id);
       if (error) throw error;
+
+      // Sincroniza a resolução com outras abas
+      if (input.status === "attended" || input.status === "converted" || input.status === "cancelled") {
+        broadcastInboxEvent({
+          type: "CATALOG_ORDER_RESOLVED",
+          payload: { ticketId: input.id }
+        });
+      }
+
       return input;
     },
     onSuccess: () => {
@@ -169,6 +177,13 @@ export function useMarkInboxConverted() {
         // Idempotência: um atendimento já convertido não é reescrito.
         .is("sale_id", null);
       if (error) throw error;
+
+      // Sincroniza a resolução com outras abas
+      broadcastInboxEvent({
+        type: "CATALOG_ORDER_RESOLVED",
+        payload: { ticketId: input.id }
+      });
+
       return input;
     },
     onSuccess: () => {
