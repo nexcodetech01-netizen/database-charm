@@ -38,8 +38,17 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       text: "João Silva"
     });
     expect(res2.session.buyerName).toBe("João Silva");
-    expect(res2.session.step).toBe("WAITING_ADDRESS");
-    expect(res2.text).toContain("informe seu endereço completo");
+    expect(res2.session.step).toBe("WAITING_DOCUMENT");
+    expect(res2.text).toContain("CPF");
+
+    // Etapa 3b: CPF
+    const res2b = await advanceCheckout({
+      session: res2.session,
+      cart: mockCart,
+      text: "529.982.247-25"
+    });
+    expect(res2b.session.customer.cpf).toBe("52998224725");
+    expect(res2b.session.step).toBe("WAITING_ADDRESS");
 
     // Etapa 4: CEP
     const mockResolveCep = vi.fn().mockResolvedValue({
@@ -50,7 +59,7 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     });
 
     const res3 = await advanceCheckout({
-      session: res2.session,
+      session: res2b.session,
       cart: mockCart,
       text: "17600-000",
       resolveCep: mockResolveCep
@@ -92,12 +101,10 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       })
     });
     
-    // Deve pular o step buyer_name e ir para o endereço. 
-    // Como a recursão usa o nome como input do endereço, e o nome não é um endereço/CEP válido,
-    // ele deve parar no step WAITING_ADDRESS.
+    // Deve pular o step buyer_name e ir direto para o CPF (nome já veio do catálogo).
     expect(res1.session.payment).toBe("card");
     expect(res1.session.buyerName).toBe("Maria Oliveira");
-    expect(res1.session.step).toBe("WAITING_ADDRESS");
+    expect(res1.session.step).toBe("WAITING_DOCUMENT");
   });
 
   it("BUG REPORT: Deve aceitar 'dinheiro' e avançar para o nome", async () => {
@@ -122,8 +129,8 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     });
     
     expect(res2.session.customer.fullName).toBe("Tiele Thais M Andriani");
-    expect(res2.session.step).toBe("WAITING_ADDRESS");
-    expect(res2.text).toContain("informe seu endereço completo com CEP");
+    expect(res2.session.step).toBe("WAITING_DOCUMENT");
+    expect(res2.text).toContain("CPF");
   });
 
   it("Normalização: Deve aceitar variações de formas de pagamento", async () => {
