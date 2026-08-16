@@ -6509,6 +6509,7 @@ export type Database = {
           id: string
           item_count: number
           items: Json
+          notification_id: string | null
           number: string | null
           origin: string
           payment: string | null
@@ -6539,6 +6540,7 @@ export type Database = {
           id?: string
           item_count?: number
           items?: Json
+          notification_id?: string | null
           number?: string | null
           origin?: string
           payment?: string | null
@@ -6569,6 +6571,7 @@ export type Database = {
           id?: string
           item_count?: number
           items?: Json
+          notification_id?: string | null
           number?: string | null
           origin?: string
           payment?: string | null
