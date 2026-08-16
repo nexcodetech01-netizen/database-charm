@@ -19,6 +19,7 @@ export type CheckoutStep =
   | "WAITING_RECEIPT_METHOD"
   | "WAITING_PAYMENT_METHOD"
   | "WAITING_CUSTOMER_NAME"
+  | "WAITING_DOCUMENT"
   | "WAITING_ADDRESS"
   | "WAITING_CONFIRMATION"
   | "buyer_name" // Keep for backward compatibility/internal mapping if needed
@@ -296,6 +297,7 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "3. • Dinheiro",
   ].join("\n"),
   WAITING_CUSTOMER_NAME: "Qual é o seu nome completo? 😊",
+  WAITING_DOCUMENT: "Qual o seu CPF? (só os números, ou com pontos e traço) 😊",
   WAITING_ADDRESS: "Por favor, me informe seu endereço completo com CEP para entrega. 😊",
   WAITING_CONFIRMATION: SUMMARY_CONFIRM_MESSAGE,
   buyer_name: "Qual é o seu nome completo? 😊",
@@ -363,7 +365,11 @@ export function formatFulfillmentLine(session: CheckoutSession): string {
   return `🚚 Entrega — ${parts.join(", ")}`;
 }
 
-export function formatCheckoutSummary(
+/**
+ * Resumo do pedido — fluxo simplificado (iniciado pelo botão "Finalizar
+ * pedido" do catálogo do site, mensagem "[PEDIDO-CATALOGO]").
+ */
+export function formatWebsiteOrderSummary(
   session: CheckoutSession,
   cart: CartSession,
 ): string {
@@ -389,11 +395,53 @@ export function formatCheckoutSummary(
     `Forma de recebimento: ${session.fulfillment === "pickup" ? "Retirada" : "Entrega"}`,
     `Forma de pagamento: ${session.payment ? PAYMENT_LABEL[session.payment] : "-"}`,
     "",
+    `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
     "Endereço:",
     formatCustomerAddress(c) || "-",
     "",
     SUMMARY_CONFIRM_MESSAGE,
   ];
+  return lines.join("\n");
+}
+
+/**
+ * Resumo do pedido — fluxo conversacional completo (quando o cliente
+ * digita "quero finalizar"/"fechar pedido" direto na conversa com a
+ * Bella, sem vir do botão do catálogo do site).
+ */
+export function formatCheckoutSummary(
+  session: CheckoutSession,
+  cart: CartSession,
+): string {
+  const c = session.customer;
+  const items = cart.items.map(
+    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`,
+  );
+  const lines = [
+    "🛍️ *Resumo do seu Pedido*",
+    "",
+    `*Cliente:* ${c.fullName ?? session.buyerName ?? "-"}`,
+    `*${c.personType === "pj" ? "CNPJ" : "CPF"}:* ${formatDocument(c)}`,
+  ];
+  if (c.personType === "pf") {
+    lines.push(`*Nascimento:* ${formatBirthDate(c.birthDate)}`);
+  }
+  lines.push(`*Endereço:* ${formatCustomerAddress(c) || "-"}`);
+  lines.push(
+    "",
+    "*Entrega:*",
+    formatFulfillmentLine(session),
+    "",
+    "*Pagamento:*",
+    session.payment ? PAYMENT_LABEL[session.payment] : "-",
+    "",
+    "*Itens do pedido:*",
+    ...items,
+    "",
+    `*Total: ${money(cart.total)}*`,
+    "",
+    SUMMARY_CONFIRM_MESSAGE,
+  );
   return lines.join("\n");
 }
 
@@ -486,8 +534,7 @@ export async function advanceCheckout(args: {
   }
 
   switch (session.step) {
-    case "WAITING_PAYMENT_METHOD":
-    case "payment": {
+    case "WAITING_PAYMENT_METHOD": {
       const payment = parsePayment(text);
       if (!payment) {
         return { 
@@ -499,11 +546,11 @@ export async function advanceCheckout(args: {
       
       const updated = next(session, { payment }, now);
       
-      // Se já temos o nome (veio do catálogo), pula para o endereço
+      // Se já temos o nome (veio do catálogo), pula para o CPF
       if (updated.buyerName || updated.customer.fullName) {
          return {
-           session: next(updated, { step: "WAITING_ADDRESS" }, now),
-           text: `Perfeito! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+           session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+           text: `Perfeito! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
            aborted: false
          };
       }
@@ -514,25 +561,94 @@ export async function advanceCheckout(args: {
         aborted: false,
       };
     }
-    case "WAITING_CUSTOMER_NAME":
-    case "buyer_name": {
-      if (!text) return { session, text: PROMPTS.buyer_name, aborted: false };
+    case "payment": {
+      const payment = parsePayment(text);
+      if (!payment) return { session, text: PROMPTS.payment, aborted: false };
+      const withPayment = next(session, { payment, step: "summary" }, now);
+      return {
+        session: withPayment,
+        text: formatCheckoutSummary(withPayment, args.cart),
+        aborted: false,
+      };
+    }
+    case "WAITING_CUSTOMER_NAME": {
+      if (!text) return { session, text: `Perfeito! 😊 Qual é o seu nome completo?`, aborted: false };
       
       const updated = withCustomer(
         session,
         { fullName: text },
-        { buyerName: text, step: "WAITING_ADDRESS" },
+        { buyerName: text, step: "WAITING_DOCUMENT" },
         now
       );
 
       return {
         session: updated,
-        text: `Obrigada, ${text}! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+        text: `Obrigada, ${text}! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
         aborted: false,
       };
     }
-    case "WAITING_ADDRESS":
-    case "zip_code": {
+    case "buyer_name": {
+      if (!text) return { session, text: PROMPTS.buyer_name, aborted: false };
+      return {
+        session: withCustomer(
+          session,
+          { fullName: text },
+          { buyerName: text, step: "person_type" },
+          now,
+        ),
+        text: PROMPTS.person_type,
+        aborted: false,
+      };
+    }
+    case "person_type": {
+      const personType = parsePersonType(text);
+      if (!personType) return { session, text: PROMPTS.person_type, aborted: false };
+      return {
+        session: withCustomer(session, { personType }, { step: "document" }, now),
+        text: documentPrompt(personType),
+        aborted: false,
+      };
+    }
+    case "document": {
+      const isPj = session.customer.personType === "pj";
+      const d = digits(text);
+      if (isPj) {
+        if (!isValidCNPJ(d)) {
+          return { session, text: INVALID_CNPJ_MESSAGE, aborted: false };
+        }
+        return {
+          session: withCustomer(session, { cnpj: d, cpf: null }, { step: "zip_code" }, now),
+          text: PROMPTS.zip_code,
+          aborted: false,
+        };
+      }
+      if (!isValidCPF(d)) {
+        return { session, text: INVALID_CPF_MESSAGE, aborted: false };
+      }
+      return {
+        session: withCustomer(session, { cpf: d, cnpj: null }, { step: "zip_code" }, now),
+        text: PROMPTS.zip_code,
+        aborted: false,
+      };
+    }
+    case "WAITING_DOCUMENT": {
+      const d = digits(text);
+      if (!isValidCPF(d)) {
+        return { session, text: INVALID_CPF_MESSAGE, aborted: false };
+      }
+      const updated = withCustomer(
+        session,
+        { cpf: d, personType: "pf" },
+        { step: "WAITING_ADDRESS" },
+        now,
+      );
+      return {
+        session: updated,
+        text: `Perfeito! 😊 Agora me informe seu endereço completo com CEP para entrega.`,
+        aborted: false,
+      };
+    }
+    case "WAITING_ADDRESS": {
       // Try to extract zip code from the full address text
       const zip = parseZipCode(text) || (text.match(/\d{5}-?\d{3}/) ? digits(text.match(/\d{5}-?\d{3}/)![0]) : null);
       
@@ -553,7 +669,7 @@ export async function advanceCheckout(args: {
             );
             return {
               session: syncDelivery(updated),
-              text: formatCheckoutSummary(updated, args.cart),
+              text: formatWebsiteOrderSummary(updated, args.cart),
               aborted: false
             };
          }
@@ -569,12 +685,88 @@ export async function advanceCheckout(args: {
         );
         return {
           session: syncDelivery(updated),
-          text: formatCheckoutSummary(updated, args.cart),
+          text: formatWebsiteOrderSummary(updated, args.cart),
           aborted: false
         };
       }
 
       return { session, text: "Não entendi o endereço. Pode me enviar o endereço completo com CEP? 😊", aborted: false };
+    }
+    case "zip_code": {
+      const zip = parseZipCode(text);
+      if (!zip) return { session, text: INVALID_CEP_MESSAGE, aborted: false };
+      const found = args.resolveCep ? await args.resolveCep(zip) : null;
+      if (!found) return { session, text: CEP_NOT_FOUND_MESSAGE, aborted: false };
+      const updated = withCustomer(
+        session,
+        {
+          zipCode: zip,
+          street: found.street || null,
+          district: found.neighborhood || null,
+          city: found.city || null,
+          state: found.state || null,
+        },
+        { step: "address_number" },
+        now,
+      );
+      const found_line = [
+        "Encontrei este endereço:",
+        "",
+        [found.street, found.neighborhood].filter(Boolean).join(", "),
+        [found.city, found.state].filter(Boolean).join("/"),
+        "",
+        PROMPTS.address_number,
+      ]
+        .filter((l) => l !== undefined)
+        .join("\n");
+      return { session: syncDelivery(updated), text: found_line, aborted: false };
+    }
+    case "address_number": {
+      if (!text) return { session, text: PROMPTS.address_number, aborted: false };
+      const updated = withCustomer(
+        session,
+        { number: text },
+        { step: "address_complement" },
+        now,
+      );
+      return {
+        session: syncDelivery(updated),
+        text: PROMPTS.address_complement,
+        aborted: false,
+      };
+    }
+    case "address_complement": {
+      const skip = !text || SKIP_RE.test(normalize(text));
+      const isPf = session.customer.personType !== "pj";
+      const updated = withCustomer(
+        session,
+        { complement: skip ? null : text },
+        { step: isPf ? "birth_date" : "fulfillment" },
+        now,
+      );
+      return {
+        session: syncDelivery(updated),
+        text: isPf ? PROMPTS.birth_date : PROMPTS.fulfillment,
+        aborted: false,
+      };
+    }
+    case "birth_date": {
+      const iso = parseBirthDate(text);
+      if (!iso) return { session, text: INVALID_BIRTH_DATE_MESSAGE, aborted: false };
+      return {
+        session: withCustomer(session, { birthDate: iso }, { step: "fulfillment" }, now),
+        text: PROMPTS.fulfillment,
+        aborted: false,
+      };
+    }
+    case "fulfillment": {
+      const kind = parseFulfillment(text);
+      if (!kind) return { session, text: PROMPTS.fulfillment, aborted: false };
+      return {
+        session: next(session, { fulfillment: kind, step: "payment" }, now),
+        text: PROMPTS.payment,
+        aborted: false,
+      };
     }
     case "WAITING_CONFIRMATION":
     case "summary": {

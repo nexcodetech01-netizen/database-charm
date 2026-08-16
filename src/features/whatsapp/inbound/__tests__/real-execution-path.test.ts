@@ -1,3 +1,9 @@
+import { supabaseAdminMock } from "./session-store.mock";
+
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: supabaseAdminMock,
+}));
+
 
 import { describe, it, expect, vi } from "vitest";
 import { handleCheckoutTurn, saveCheckoutSession, resetCheckoutSessions } from "../checkout-session.server";
@@ -56,10 +62,10 @@ describe("Real Execution Path - Pedido Catálogo", () => {
       cart: mockCart
     });
     
-    expect(nameTurn?.step).toBe("WAITING_ADDRESS");
-    expect(nameTurn?.text).toContain("informe seu endereço completo");
+    expect(nameTurn?.step).toBe("WAITING_DOCUMENT");
+    expect(nameTurn?.text).toContain("CPF");
     
-    console.log("[CATALOG CHECKOUT TEST] Fluxo avançou para WAITING_ADDRESS");
+    console.log("[CATALOG CHECKOUT TEST] Fluxo avançou para WAITING_DOCUMENT");
   });
 
   it("Garantir que variantes de pagamento sejam sempre tratadas pelo checkout", async () => {
