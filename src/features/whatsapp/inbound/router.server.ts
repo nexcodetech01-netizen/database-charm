@@ -570,15 +570,27 @@ result: INTERCEPTED BY CHECKOUT`);
     if (checkoutTurn.confirmed && checkoutTurn.completedSession) {
       try {
         const cartForTicket = await getCartSession(tenant.companyId, msg.phone);
-        await recordConfirmedOrder({
+        console.log(`[CATALOG CHECKOUT] Iniciando registro de pedido: companyId=${tenant.companyId}, phone=${msg.phone}, items=${cartForTicket.items.length}`);
+        
+        const orderResult = await recordConfirmedOrder({
           db,
           companyId: tenant.companyId,
           session: checkoutTurn.completedSession,
           cart: cartForTicket,
         });
+
+        console.log(`[CATALOG CHECKOUT] Pedido registrado com sucesso: ticketId=${orderResult.ticketId}, created=${orderResult.created}`);
+        
         await saveCartSession(clearCartSession(cartForTicket));
       } catch (err) {
         console.error("[CATALOG CHECKOUT] Falha ao registrar pedido confirmado:", err);
+        if (err instanceof Error) {
+          console.error("[CATALOG CHECKOUT] Detalhes do erro:", {
+            message: err.message,
+            stack: err.stack,
+            cause: err.cause
+          });
+        }
       }
     }
 
