@@ -42,8 +42,6 @@ function ShippingCalculatorPage() {
     setIsLoading(true);
     setResults(null);
     try {
-      // In TanStack Start components, use the function directly or wrap with useServerFn if needed
-      // calculateShipping is a server function
       const response = await calculateShipping({ data });
       setResults(response);
       if (response.length === 0) {
@@ -58,7 +56,7 @@ function ShippingCalculatorPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title="Calculadora de Frete">
       <PageHeader
         title="Calculadora de Frete"
         description="Consulte preços e prazos de entrega via SuperFrete."

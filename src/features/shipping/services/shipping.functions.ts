@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { ShippingCalculatorSchema, ShippingOption } from "../types";
 
 export const calculateShipping = createServerFn({ method: "POST" })
@@ -6,8 +6,6 @@ export const calculateShipping = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // We call our internal API route
     // Note: In TanStack Start, server functions can call external APIs or internal routes via fetch
-    // But since it's the same server, we could also move logic to a .server.ts file.
-    // However, to satisfy the user's "proxy" requirement and stay clean, we'll call the server route.
     
     // Using absolute URL for SSR compatibility
     const baseUrl = process.env.NODE_ENV === 'production' 

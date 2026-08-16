@@ -7,7 +7,7 @@ export const ShippingCalculatorSchema = z.object({
   altura_cm: z.number().min(2, "Altura mínima 2cm"),
   largura_cm: z.number().min(11, "Largura mínima 11cm"),
   comprimento_cm: z.number().min(16, "Comprimento mínimo 16cm"),
-  valor_declarado: z.number().optional().default(0),
+  valor_declarado: z.number().default(0),
 });
 
 export type ShippingCalculatorInput = z.infer<typeof ShippingCalculatorSchema>;
