@@ -40,18 +40,8 @@ export function NotificationSettingsPanel() {
   const eventTypes = Object.keys(DEFAULT_SETTINGS);
 
   return (
-    <div className="space-y-4 max-w-xl mx-auto md:mx-0">
-      <div className="flex flex-col gap-1 mb-6">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Bell className="h-5 w-5 text-primary" />
-          Configurações de Alertas
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Personalize como você deseja ser notificado para cada tipo de evento.
-        </p>
-      </div>
-
-      <div className="grid gap-3">
+    <div className="space-y-4 w-full">
+      <div className="grid gap-2.5">
         {eventTypes.map((type) => {
           const config = settings[type] || { sound: false, browser: false };
           const label = EVENT_LABELS[type] || { title: type, description: "" };
@@ -69,31 +59,29 @@ export function NotificationSettingsPanel() {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
               )}
               
-              <div className="p-3 pb-2 flex items-start justify-between">
+              <div className="p-3 pb-1.5 flex items-start justify-between">
                 <div className="flex flex-col gap-0.5">
                   <h4 className={cn(
-                    "text-sm font-bold tracking-tight",
+                    "text-xs font-bold tracking-tight uppercase opacity-90",
                     isCatalog ? "text-primary" : "text-foreground"
                   )}>
                     {label.title}
                   </h4>
-                  <p className="text-[11px] leading-tight text-muted-foreground/80 line-clamp-1">
+                  <p className="text-[10px] leading-tight text-muted-foreground/70 line-clamp-1">
                     {label.description}
                   </p>
                 </div>
               </div>
 
-              <div className="px-3 pb-3 space-y-1">
-                <div className="h-[1px] bg-border/40 w-full mb-2" />
+              <div className="px-3 pb-2.5 space-y-0.5">
+                <div className="h-[1px] bg-border/30 w-full mb-1.5" />
                 
-                <div className="flex items-center justify-between group/row">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1 rounded-md bg-muted/40 group-hover/row:bg-muted transition-colors">
-                      <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
+                <div className="flex items-center justify-between group/row py-0.5">
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="h-3 w-3 text-muted-foreground/70" />
                     <Label 
                       htmlFor={`${type}-sound`} 
-                      className="text-xs font-medium cursor-pointer text-foreground/90"
+                      className="text-[11px] font-medium cursor-pointer text-foreground/80"
                     >
                       Som de Alerta
                     </Label>
@@ -102,18 +90,16 @@ export function NotificationSettingsPanel() {
                     id={`${type}-sound`}
                     checked={config.sound}
                     onCheckedChange={() => toggleSetting(type, "sound")}
-                    className="scale-[0.85] origin-right"
+                    className="scale-[0.75] origin-right"
                   />
                 </div>
 
-                <div className="flex items-center justify-between group/row">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1 rounded-md bg-muted/40 group-hover/row:bg-muted transition-colors">
-                      <Smartphone className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
+                <div className="flex items-center justify-between group/row py-0.5">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-3 w-3 text-muted-foreground/70" />
                     <Label 
                       htmlFor={`${type}-browser`} 
-                      className="text-xs font-medium cursor-pointer text-foreground/90"
+                      className="text-[11px] font-medium cursor-pointer text-foreground/80"
                     >
                       Notificação Push
                     </Label>
@@ -122,7 +108,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-browser`}
                     checked={config.browser}
                     onCheckedChange={() => toggleSetting(type, "browser")}
-                    className="scale-[0.85] origin-right"
+                    className="scale-[0.75] origin-right"
                   />
                 </div>
               </div>
