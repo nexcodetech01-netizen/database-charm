@@ -50,6 +50,7 @@ export const ROUTES = {
   commercialRecalculate: "/inteligencia-comercial/recalcular-precos",
   consignments: "/consignacoes",
   resellers: "/revendedores",
+  shippingCalculator: "/ferramentas/calculadora-frete",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
