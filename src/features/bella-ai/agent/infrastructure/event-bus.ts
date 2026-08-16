@@ -23,6 +23,8 @@ export async function emitAgentEvent(input: EmitAgentEventInput): Promise<void> 
     const safePayload = sanitizeForAudit({
       ...input.payload,
       requestId: input.ctx.request.requestId,
+      event_id: input.ctx.request.requestId, // Injeta event_id explicitamente
+      company_id: input.ctx.companyId, // Injeta company_id explicitamente
       channel: input.ctx.request.channel,
       userId: input.ctx.userId,
     }) as Record<string, unknown>;
