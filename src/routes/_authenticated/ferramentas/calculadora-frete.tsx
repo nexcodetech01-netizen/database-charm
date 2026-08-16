@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingSurface } from "@/components/design";
 import { MoneyValue } from "@/components/layout/money-value";
 
-export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-frete" as any)({
+export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-frete")({
   component: ShippingCalculatorPage,
 });
 
