@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX } from "lucide-react";
+import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone } from "lucide-react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,9 @@ import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistr
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
+22: import { getInboxChannel, broadcastInboxEvent } from "@/features/whatsapp/lib/inbox-sync";
+23: import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-notifications";
+
 
 export function Topbar() {
   const { user } = useAuth();

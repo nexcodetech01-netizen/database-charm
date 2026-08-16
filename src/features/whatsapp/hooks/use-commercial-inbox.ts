@@ -13,6 +13,8 @@ import {
   type CommercialTicketItem,
 } from "@/features/whatsapp/inbound/commercial-inbox";
 import { buildConversionPatch } from "@/features/whatsapp/inbound/inbox-conversion";
+16: import { broadcastInboxEvent } from "../lib/inbox-sync";
+
 
 export interface CommercialInboxTicket {
   id: string;
