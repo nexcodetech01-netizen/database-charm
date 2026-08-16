@@ -129,6 +129,7 @@ export function isDataSubmissionIntent(text: string): boolean {
  */
 export function detectPaymentMethod(text: string): 'money' | 'pix_card' | null {
   const t = normalize(text ?? "");
+  // Prioritize money over card/pix in ambiguous cases within commercial context
   if (/\b(dinheiro|especie|troco)\b/i.test(t)) return 'money';
   if (/\b(pix|cartao|credito|debito|link)\b/i.test(t)) return 'pix_card';
   return null;

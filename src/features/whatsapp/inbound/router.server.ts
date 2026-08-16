@@ -608,6 +608,8 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
 
 
   // 3c-pre-ante) Interceptação de produto específico ou Intenção de Compra.
+  // IMPORTANTE: Se o Intent Detector capturar uma intenção de compra, ele deve 
+  // prevalecer sobre o Engine Geral, pois estamos em um fluxo de vendas.
   const purchaseIntent = isPurchaseIntent(msg.text);
   const dataSubmission = isDataSubmissionIntent(msg.text);
 
