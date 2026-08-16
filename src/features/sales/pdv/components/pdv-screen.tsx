@@ -44,6 +44,7 @@ import {
   PDV_DISCOUNT_INPUT_ID,
 } from "../hooks/use-pdv-shortcuts";
 import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
+import { pdvCashBlockedAction } from "../lib/cash-access";
 
 // Componentes pesados ou utilizados apenas após eventos carregados sob demanda (Sprint RC.1.3).
 const PDVCustomerSelect = lazy(() =>
@@ -430,18 +431,26 @@ export function PDVScreen({
   }
 
   if (!access.canOperate) {
+    const blockedAction = pdvCashBlockedAction(access.state);
     return (
       <>
         <div className="space-y-4">
-          <PDVHeader />
+          <PDVHeader openedAt={session?.opened_at} />
           <Card className="flex flex-col items-center gap-3 p-10 text-center">
             <Wallet className="h-6 w-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">{access.message}</p>
-            {access.state === "blocked" && (
+            {blockedAction === "open" && (
               <Button onClick={requestOpenCash}>Abrir Caixa</Button>
+            )}
+            {blockedAction === "close" && (
+              <Button onClick={requestCloseCash}>Fechar Caixa</Button>
             )}
           </Card>
         </div>
+        {/* Monta o menu de caixa escondido (só o gatilho visual fica oculto)
+            para que o CloseSessionDialog dentro dele exista na árvore e
+            abra corretamente ao chamar requestCloseCash() acima. */}
+        <div className="hidden">{cashMenu}</div>
         {cashDialogs}
       </>
     );

@@ -45,3 +45,20 @@ export function resolvePdvCashAccess(input: {
 
   return { state: "ready", canOperate: true, message: null };
 }
+
+/**
+ * Ação disponível na tela de bloqueio do PDV, para cada estado.
+ *
+ * Bug real (2026-08-16): a tela só oferecia "Abrir Caixa" quando
+ * `state === "blocked"` (sem nenhuma sessão) — quando `state === "stale"`
+ * (sessão aberta de um dia anterior, pendente de fechamento), nenhum
+ * botão aparecia, deixando o operador sem nenhuma forma de resolver o
+ * bloqueio pela tela do PDV.
+ */
+export type PdvCashBlockedAction = "open" | "close" | null;
+
+export function pdvCashBlockedAction(state: PdvCashState): PdvCashBlockedAction {
+  if (state === "blocked") return "open";
+  if (state === "stale") return "close";
+  return null;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePdvCashAccess } from "../lib/cash-access";
+import { resolvePdvCashAccess, pdvCashBlockedAction } from "../lib/cash-access";
 
 const now = new Date("2026-07-31T15:00:00");
 
@@ -37,5 +37,27 @@ describe("resolvePdvCashAccess", () => {
     expect(r.state).toBe("stale");
     expect(r.canOperate).toBe(false);
     expect(r.message).toMatch(/fechar esse caixa/i);
+  });
+});
+
+describe("pdvCashBlockedAction", () => {
+  // Bug real (2026-08-16): a tela de bloqueio do PDV só oferecia "Abrir
+  // Caixa" (para state="blocked", sem sessão nenhuma) — quando
+  // state="stale" (sessão de dia anterior, pendente de fechamento),
+  // nenhum botão aparecia, e o operador ficava sem forma de resolver.
+  it("oferece 'abrir' quando não há nenhuma sessão", () => {
+    expect(pdvCashBlockedAction("blocked")).toBe("open");
+  });
+
+  it("oferece 'fechar' quando a sessão é de um dia anterior (regressão do bug real)", () => {
+    expect(pdvCashBlockedAction("stale")).toBe("close");
+  });
+
+  it("não oferece ação quando o caixa já está pronto pra uso", () => {
+    expect(pdvCashBlockedAction("ready")).toBeNull();
+  });
+
+  it("não oferece ação durante o carregamento", () => {
+    expect(pdvCashBlockedAction("loading")).toBeNull();
   });
 });
