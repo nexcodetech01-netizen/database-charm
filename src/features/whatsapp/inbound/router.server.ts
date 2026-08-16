@@ -23,8 +23,8 @@ import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn, saveCheckoutSession } from "./checkout-session.server";
 import { createCheckoutSession, PROMPTS } from "./checkout-session";
 import { getCartSession, saveCartSession } from "./cart-session.server";
-import { addProduct } from "./cart-session";
-import { handleCommercialConfirmationTurn } from "./commercial-inbox.server";
+import { addProduct, clearCartSession } from "./cart-session";
+import { handleCommercialConfirmationTurn, recordConfirmedOrder } from "./commercial-inbox.server";
 import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod, parseWebsiteCatalogOrder } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
 import { isCatalogIntent } from "./catalog-nav";
@@ -558,6 +558,27 @@ handlerSelected: handleCheckoutTurn (Checking...)`);
     console.log(`[CATALOG CHECKOUT DEBUG]
 checkoutState: ${checkoutTurn.step ?? 'done'}
 result: INTERCEPTED BY CHECKOUT`);
+
+    // Pedido confirmado agora (transição pra "done" pela resposta do
+    // cliente): cria o ticket no inbox comercial e dispara a
+    // notificação (sino + som no topo do app). Precisa acontecer aqui —
+    // ver nota em handleCommercialConfirmationTurn sobre por que essa
+    // etapa nunca era alcançada antes (o bloco de checkout intercepta e
+    // responde primeiro, sempre).
+    if (checkoutTurn.confirmed && checkoutTurn.completedSession) {
+      try {
+        const cartForTicket = await getCartSession(tenant.companyId, msg.phone);
+        await recordConfirmedOrder({
+          db,
+          companyId: tenant.companyId,
+          session: checkoutTurn.completedSession,
+          cart: cartForTicket,
+        });
+        await saveCartSession(clearCartSession(cartForTicket));
+      } catch (err) {
+        console.error("[CATALOG CHECKOUT] Falha ao registrar pedido confirmado:", err);
+      }
+    }
 
     const checkoutSent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
     await db.from("whatsapp_messages").insert({

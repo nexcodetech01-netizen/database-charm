@@ -90,6 +90,24 @@ export interface CheckoutTurnResult {
   session: CheckoutSession | null;
   /** Passo atual após o turno (null quando o fluxo terminou/abortou). */
   step: CheckoutSession["step"] | null;
+  /**
+   * true quando o pedido acabou de ser confirmado pelo cliente neste
+   * turno (transição para "done" através da confirmação — "sim"/"ok"),
+   * diferente de outros caminhos que também zeram a sessão (ex.:
+   * carrinho vazio). Usado para saber quando criar o ticket no inbox
+   * comercial e disparar a notificação — sem isso, não há como
+   * distinguir "pedido confirmado" de "sessão encerrada por outro
+   * motivo" a partir de fora desta função.
+   */
+  confirmed: boolean;
+  /**
+   * Sessão completa no momento da confirmação (nome, documento,
+   * endereço, pagamento) — só preenchida quando `confirmed` é true.
+   * `session` já vem `null` nesse caso (sessão encerrada), então isto é
+   * o único jeito de quem chamou esta função acessar os dados do
+   * cliente para montar o ticket do inbox comercial.
+   */
+  completedSession: CheckoutSession | null;
 }
 
 /**
@@ -112,12 +130,12 @@ export async function handleCheckoutTurn(args: {
   if (!active) {
     if (!isCheckoutIntent(args.text)) return null;
     if (cart.items.length === 0) {
-      return { text: EMPTY_CART_MESSAGE, session: null, step: null };
+      return { text: EMPTY_CART_MESSAGE, session: null, step: null, confirmed: false, completedSession: null };
     }
     const fresh = await saveCheckoutSession(
       createCheckoutSession(args.companyId, args.phone, now),
     );
-    return { text: PROMPTS.buyer_name, session: fresh, step: fresh.step };
+    return { text: PROMPTS.buyer_name, session: fresh, step: fresh.step, confirmed: false, completedSession: null };
   }
 
   const result = await advanceCheckout({
@@ -128,9 +146,26 @@ export async function handleCheckoutTurn(args: {
     resolveCep: args.resolveCep ?? defaultCepResolver,
   });
   if (result.session.step === "done") {
+    // Confirmado de verdade só quando a sessão VEIO de um passo diferente
+    // de "done" (ou seja, a transição aconteceu agora, pela resposta
+    // "sim"/"ok" do cliente) — não por outro caminho que também zera a
+    // sessão.
+    const confirmed = active.step !== "done";
     await dropCheckoutSession(args.companyId, args.phone);
-    return { text: result.text, session: null, step: null };
+    return {
+      text: result.text,
+      session: null,
+      step: null,
+      confirmed,
+      completedSession: confirmed ? result.session : null,
+    };
   }
   await saveCheckoutSession(result.session);
-  return { text: result.text, session: result.session, step: result.session.step };
+  return {
+    text: result.text,
+    session: result.session,
+    step: result.session.step,
+    confirmed: false,
+    completedSession: null,
+  };
 }
