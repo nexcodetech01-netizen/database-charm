@@ -20,7 +20,7 @@ import {
 } from "./commercial-inbox";
 import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 import { formatCurrency } from "@/lib/format";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { makeSecurityContext } from "../../bella-ai/agent/infrastructure/context";
 
 type Db = { from: (t: string) => any };
