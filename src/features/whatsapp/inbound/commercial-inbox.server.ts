@@ -27,7 +27,7 @@ type Db = { from: (t: string) => any };
 
 const TABLE = "whatsapp_commercial_inbox";
 
-function toRow(draft: CommercialTicketDraft & { notificationId?: string }) {
+function toRow(draft: CommercialTicketDraft) {
   return {
     company_id: draft.companyId,
     phone: draft.phone,
@@ -52,7 +52,6 @@ function toRow(draft: CommercialTicketDraft & { notificationId?: string }) {
     street: draft.customer.street,
     number: draft.customer.number,
     complement: draft.customer.complement,
-    notification_id: draft.notificationId,
   };
 }
 
@@ -80,40 +79,14 @@ export interface UpsertTicketResult {
 /** Cria o atendimento ou atualiza o que já está aberto (sem duplicar). */
 export async function upsertCommercialTicket(
   db: Db,
-  draft: CommercialTicketDraft & { notificationId?: string },
+  draft: CommercialTicketDraft,
 ): Promise<UpsertTicketResult> {
   const existing = await findOpenTicket(db, draft.companyId, draft.phone);
   if (existing) {
     await db.from(TABLE).update(toRow(draft)).eq("id", existing.id);
     return { id: existing.id, created: false };
   }
-
-  // Idempotency check para o caso de retry do webhook (se houver notificationId)
-  if (draft.notificationId) {
-    const { data: duplicate } = await db
-      .from(TABLE)
-      .select("id")
-      .eq("notification_id", draft.notificationId)
-      .maybeSingle();
-    
-    if (duplicate) {
-      return { id: (duplicate as { id: string }).id, created: false };
-    }
-  }
-
-  const { data, error } = await db.from(TABLE).insert(toRow(draft)).select("id").single();
-  if (error) {
-    // Se falhar por unique constraint de notification_id (corrida), tenta recuperar o ID
-    if (error.code === "23505" && draft.notificationId) {
-       const { data: retryData } = await db
-        .from(TABLE)
-        .select("id")
-        .eq("notification_id", draft.notificationId)
-        .maybeSingle();
-       return { id: (retryData as { id: string })?.id ?? null, created: false };
-    }
-    throw error;
-  }
+  const { data } = await db.from(TABLE).insert(toRow(draft)).select("id").single();
   return { id: (data as { id: string } | null)?.id ?? null, created: true };
 }
 
@@ -125,9 +98,67 @@ export interface CommercialConfirmationResult {
 }
 
 /**
+ * Cria o ticket no inbox comercial e dispara a notificação de "novo
+ * pedido" (sino + som no topo do app). Extraído de
+ * `handleCommercialConfirmationTurn` para ser chamado diretamente pelo
+ * roteador assim que um pedido é confirmado — ver comentário em
+ * `handleCommercialConfirmationTurn` sobre por que essa função sozinha
+ * não é mais alcançada na prática.
+ */
+export async function recordConfirmedOrder(args: {
+  db: Db;
+  companyId: string;
+  session: CheckoutSession;
+  cart: CartSession;
+  now?: number;
+}): Promise<{ ticketId: string | null; created: boolean; draft: CommercialTicketDraft }> {
+  const now = args.now ?? Date.now();
+  const draft = buildCommercialTicketDraft({ session: args.session, cart: args.cart, now });
+  const { id, created } = await upsertCommercialTicket(args.db, draft);
+
+  if (created && id) {
+    await emitAgentEvent({
+      type: "catalog.order.received",
+      ctx: {
+        companyId: args.companyId,
+        userId: "system",
+        conversationId: args.session.phone,
+        request: {
+          requestId: `catalog-${id}`,
+          channel: "whatsapp",
+          startedAt: new Date(now),
+        },
+        security: makeSecurityContext(new Set(["*"]), true),
+        supabase: supabase as any,
+      },
+      payload: {
+        entityId: id,
+        ticketId: id,
+        buyerName: draft.buyerName,
+        phone: draft.phone,
+        total: draft.total,
+        itemCount: draft.itemCount,
+      },
+      title: "Novo pedido do catálogo",
+      description: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+    });
+  }
+
+  return { ticketId: id, created, draft };
+}
+
+/**
  * Confirmação do resumo → encaminha para a equipe.
  * Retorna `null` quando não há resumo aguardando confirmação
  * (ou a mensagem não é uma confirmação) — o fluxo normal segue.
+ *
+ * NOTA (2026-08-16): na prática, o roteador intercepta e responde a
+ * qualquer confirmação de checkout ANTES de chegar aqui (bloco
+ * "3c-pre" — prioridade máxima), então esta função dificilmente é
+ * alcançada. A criação do ticket + notificação para o fluxo real
+ * agora acontece via `recordConfirmedOrder`, chamada diretamente pelo
+ * roteador quando `handleCheckoutTurn` retorna `confirmed: true`.
+ * Mantida por compatibilidade, caso algum outro caminho a invoque.
  */
 export async function handleCommercialConfirmationTurn(args: {
   db: Db;
@@ -147,40 +178,13 @@ export async function handleCommercialConfirmationTurn(args: {
   const cart = args.cart ?? (await getCartSession(args.companyId, args.phone, now));
   if (cart.items.length === 0) return null;
 
-  const notificationId = `catalog-${session.companyId}-${session.phone}-${Math.floor(now / 10000)}`; // Idempotência de 10s
-  const draft = buildCommercialTicketDraft({ session, cart, now });
-  const { id, created } = await upsertCommercialTicket(args.db, { ...draft, notificationId });
-
-  // Sprint 8.4 — Notificação de novo pedido
-  if (created && id) {
-    // emitAgentEvent é robusto e cuida do sanitizing. 
-    // Usamos o requestId e contexto básico.
-    await emitAgentEvent({
-      type: "catalog.order.received",
-      ctx: {
-        companyId: args.companyId,
-        userId: "system",
-        conversationId: session.phone, // Usamos o telefone como ID de conversa estável no bot
-        request: {
-          requestId: `catalog-${id}`,
-          channel: "whatsapp",
-          startedAt: new Date(now),
-        },
-        security: makeSecurityContext(new Set(["*"]), true), // System context
-        supabase: supabase as any,
-      },
-      payload: {
-        entityId: id,
-        ticketId: id,
-        buyerName: draft.buyerName,
-        phone: draft.phone,
-        total: draft.total,
-        itemCount: draft.itemCount,
-      },
-      title: "Novo pedido do catálogo",
-      description: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
-    });
-  }
+  const { ticketId: id, created, draft } = await recordConfirmedOrder({
+    db: args.db,
+    companyId: args.companyId,
+    session,
+    cart,
+    now,
+  });
 
   // Conversa encerrada: sessão e carrinho efêmeros são descartados.
   await dropCheckoutSession(args.companyId, args.phone);

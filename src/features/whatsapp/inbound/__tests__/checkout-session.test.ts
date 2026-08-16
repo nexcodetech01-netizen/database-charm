@@ -400,4 +400,57 @@ describe("handleCheckoutTurn", () => {
     const out = await turn("quero finalizar", later);
     expect(out?.step).toBe("buyer_name");
   });
+
+  // Bug real (2026-08-16): o roteador intercepta e responde qualquer
+  // confirmação de checkout ANTES de conseguir criar o ticket no inbox
+  // comercial / disparar a notificação de "novo pedido" — resultado:
+  // nenhum alerta (sino/som) aparecia quando um pedido chegava pelo
+  // WhatsApp, em nenhum dos dois fluxos. A correção usa o campo
+  // `confirmed` (e `completedSession`) devolvido aqui para o roteador
+  // saber exatamente quando criar o ticket, sem depender de uma função
+  // que nunca era alcançada.
+  describe("confirmed — sinaliza quando o pedido acabou de ser fechado", () => {
+    it("fluxo completo (produto→pagamento): confirmed=true só na resposta que fecha o pedido", async () => {
+      await fillCart();
+      await turn("quero finalizar");
+      await turn("Maria");
+      await turn("pessoa física");
+      await turn(VALID_CPF);
+      await turn("50000-000");
+      await turn("100");
+      await turn("não");
+      await turn("05/03/1990");
+      await turn("retirada");
+      const beforeConfirm = await turn("dinheiro"); // chega no resumo, ainda não confirmou
+      expect(beforeConfirm?.confirmed).toBe(false);
+
+      const confirmTurn = await turn("sim");
+      expect(confirmTurn?.confirmed).toBe(true);
+      expect(confirmTurn?.completedSession?.buyerName).toBe("Maria");
+      expect(confirmTurn?.step).toBeNull();
+    });
+
+    it("fluxo simplificado do catálogo do site: confirmed=true na etapa final", async () => {
+      await fillCart();
+      let session = createCheckoutSession("co", "5511");
+      session.step = "WAITING_PAYMENT_METHOD";
+      await saveCheckoutSession(session);
+
+      await turn("dinheiro");
+      await turn("Tiele");
+      await turn("52998224725");
+      const addressTurn = await turn("Rua A, 100, 17600-000", undefined);
+      expect(addressTurn?.confirmed).toBe(false);
+
+      const confirmTurn = await turn("sim");
+      expect(confirmTurn?.confirmed).toBe(true);
+      expect(confirmTurn?.completedSession?.customer.fullName).toBe("Tiele");
+    });
+
+    it("não marca confirmed quando a sessão termina por outro motivo (carrinho vazio)", async () => {
+      const out = await turn("fechar pedido");
+      expect(out?.confirmed).toBe(false);
+      expect(out?.completedSession).toBeNull();
+    });
+  });
 });

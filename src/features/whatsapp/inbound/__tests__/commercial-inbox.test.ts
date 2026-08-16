@@ -20,6 +20,7 @@ import {
 import {
   findOpenTicket,
   handleCommercialConfirmationTurn,
+  recordConfirmedOrder,
   upsertCommercialTicket,
 } from "../commercial-inbox.server";
 import { createCheckoutSession, type CheckoutSession } from "../checkout-session";
@@ -295,6 +296,61 @@ describe("handleCommercialConfirmationTurn", () => {
     expect(rpc).not.toHaveBeenCalled();
     expect(db.calls).not.toContain("sales");
     expect(db.calls).not.toContain("inventory_movements");
+    expect(db.calls).not.toContain("financial_transactions");
+  });
+});
+
+describe("recordConfirmedOrder", () => {
+  // Bug real (2026-08-16): o roteador intercepta e responde a
+  // confirmação de checkout antes de handleCommercialConfirmationTurn
+  // ser alcançado — então nenhum ticket era criado e nenhuma
+  // notificação disparava, em nenhum dos dois fluxos. Corrigido
+  // extraindo essa lógica para uma função chamada diretamente pelo
+  // roteador assim que `handleCheckoutTurn` sinaliza `confirmed: true`.
+  it("cria o ticket no inbox comercial", async () => {
+    const db = makeDb();
+    const { ticketId, created, draft } = await recordConfirmedOrder({
+      db: db as never,
+      companyId: "co",
+      session: summarySession(),
+      cart: cartWith(2),
+    });
+    expect(created).toBe(true);
+    expect(ticketId).not.toBeNull();
+    expect(draft.buyerName).toBe("Maria");
+    expect(db.rows).toHaveLength(1);
+    expect(db.rows[0].status).toBe(COMMERCIAL_INBOX_STATUS.waiting);
+  });
+
+  it("não duplica ticket quando já existe atendimento aberto pro mesmo telefone", async () => {
+    const db = makeDb();
+    await recordConfirmedOrder({
+      db: db as never,
+      companyId: "co",
+      session: summarySession(),
+      cart: cartWith(2),
+    });
+    const second = await recordConfirmedOrder({
+      db: db as never,
+      companyId: "co",
+      session: summarySession(),
+      cart: cartWith(1),
+    });
+    expect(second.created).toBe(false);
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it("nunca chama create_sale nem outra tabela do ERP", async () => {
+    const db = makeDb();
+    const rpc = vi.fn();
+    await recordConfirmedOrder({
+      db: { ...db, rpc } as never,
+      companyId: "co",
+      session: summarySession(),
+      cart: cartWith(1),
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(db.calls).not.toContain("sales");
     expect(db.calls).not.toContain("financial_transactions");
   });
 });
