@@ -36,6 +36,7 @@ import {
   useUpdateCommercialInboxStatus,
   type CommercialInboxTicket,
 } from "@/features/whatsapp/hooks/use-commercial-inbox";
+import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import {
   canConvert,
   isConverted,
@@ -81,6 +82,7 @@ function CommercialInboxPage() {
   const perms = usePermissions();
   const companyId = perms.companyId ?? null;
   const { data, isLoading } = useCommercialInbox(companyId);
+  useCommercialInboxRealtime(companyId);
   const updateStatus = useUpdateCommercialInboxStatus();
   const [selected, setSelected] = useState<CommercialInboxTicket | null>(null);
 
