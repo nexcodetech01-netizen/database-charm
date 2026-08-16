@@ -144,6 +144,7 @@ export async function recordConfirmedOrder(args: {
       payload: {
         entityId: id,
         ticketId: id,
+        companyId: args.companyId,
         buyerName: draft.buyerName,
         phone: draft.phone,
         total: draft.total,

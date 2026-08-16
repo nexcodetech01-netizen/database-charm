@@ -106,6 +106,7 @@ export const Route = createFileRoute("/api/public/notifications/trigger")({
             payload: {
               entityId: data.event_id,
               ticketId: data.event_id,
+              companyId: data.company_id,
               buyerName: data.buyer_name || "Cliente (n8n)",
               total: data.total || 0,
               itemCount: data.item_count || 0,
