@@ -434,7 +434,7 @@ export function Topbar() {
         </DropdownMenu>
       </div>
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Configurações do Usuário</DialogTitle>
           </DialogHeader>

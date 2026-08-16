@@ -40,7 +40,7 @@ export function NotificationSettingsPanel() {
   const eventTypes = Object.keys(DEFAULT_SETTINGS);
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-4 w-full pb-6">
       <div className="grid gap-2.5">
         {eventTypes.map((type) => {
           const config = settings[type] || { sound: false, browser: false };
@@ -90,7 +90,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-sound`}
                     checked={config.sound}
                     onCheckedChange={() => toggleSetting(type, "sound")}
-                    className="scale-[0.75] origin-right"
+                    className="scale-[0.8] origin-right pointer-events-auto"
                   />
                 </div>
 
@@ -108,7 +108,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-browser`}
                     checked={config.browser}
                     onCheckedChange={() => toggleSetting(type, "browser")}
-                    className="scale-[0.75] origin-right"
+                    className="scale-[0.8] origin-right pointer-events-auto"
                   />
                 </div>
               </div>
