@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone } from "lucide-react";
+import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone, Settings, ChevronLeft, ChevronRight, CheckCircle, Filter } from "lucide-react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { History, Trash2, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NotificationSettingsPanel } from "@/components/settings/notification-settings-panel";
+import { useNotificationSettings } from "@/hooks/use-notification-settings";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
 
 export function Topbar() {
   const { user } = useAuth();
@@ -33,13 +39,28 @@ export function Topbar() {
   const { toggle: toggleMobileNav } = useMobileNav();
   
   const [catalogOrdersCount, setCatalogOrdersCount] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem("nexos:catalog-sound") !== "false";
-  });
+  const { settings, isLoading: settingsLoading } = useNotificationSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { permission, requestPermission, notify, history: notificationHistory, clearHistory } = useBrowserNotifications();
+  const { 
+    permission, 
+    requestPermission, 
+    notify, 
+    history: notificationHistory, 
+    clearHistory,
+    markAsRead,
+    markAllAsRead,
+    filterType,
+    setFilterType,
+    filterRead,
+    setFilterRead,
+    page,
+    setPage,
+    totalPages,
+    filteredCount
+  } = useBrowserNotifications();
   const lastNotifiedRef = useRef<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -58,36 +79,46 @@ export function Topbar() {
     updateCount();
 
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
-      if (entry.action === "created" && event.type === "catalog.order.received") {
+      if (entry.action === "created") {
         updateCount();
         
+        const config = settings[event.type];
+        if (!config) return;
+
         const ticketId = (event.payload as any)?.ticketId;
         if (ticketId && lastNotifiedRef.current === ticketId) return;
         if (ticketId) lastNotifiedRef.current = ticketId;
 
         // Notificação sonora
-        if (soundEnabled && audioRef.current) {
+        if (config.sound && audioRef.current) {
           audioRef.current.play().catch(() => {
             // Browsers bloqueiam autoplay sem interação
           });
         }
 
-        // Notificação visual Toast
         const payload = event.payload as any;
-        toast.success("Novo pedido do catálogo", {
-          description: `${payload.buyerName || "Cliente"}: ${formatCurrency(payload.total)}`,
-          action: {
-            label: "Ver Inbox",
+        const title = event.title || "Nova notificação";
+        const description = event.description || "";
+
+        // Notificação visual Toast (sempre mostramos se estiver na aba ativa)
+        toast.success(title, {
+          description,
+          action: ticketId ? {
+            label: "Ver",
             onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }),
-          }
+          } : undefined
         });
 
-        // Notificação do Navegador
-        notify("Novo pedido do catálogo", {
-          body: `${payload.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(payload.total)}`,
-          tag: ticketId || undefined,
-        });
+        // Notificação do Navegador (respeita preferência)
+        if (config.browser) {
+          notify(title, {
+            body: description,
+            tag: ticketId || undefined,
+            type: event.type
+          } as any);
+        }
       } else if (entry.action === "resolved" || entry.action === "expired") {
+
         updateCount();
       }
     });
@@ -117,18 +148,8 @@ export function Topbar() {
       unsubscribe();
       channel?.removeEventListener("message", handleMessage);
     };
-  }, [user?.user_metadata?.company_id, soundEnabled, navigate, notify]);
+  }, [user?.user_metadata?.company_id, settings, navigate, notify]);
 
-  // Propaga o contador local para outras abas quando ele muda
-  useEffect(() => {
-    broadcastInboxEvent({ type: "SYNC_COUNT", payload: { count: catalogOrdersCount } });
-  }, [catalogOrdersCount]);
-
-  const toggleSound = () => {
-    const newVal = !soundEnabled;
-    setSoundEnabled(newVal);
-    localStorage.setItem("nexos:catalog-sound", String(newVal));
-  };
 
 
   const displayName =
@@ -200,12 +221,13 @@ export function Topbar() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={toggleSound}
-            title={soundEnabled ? "Som ativado" : "Som desativado"}
+            onClick={() => setShowSettings(true)}
+            title="Configurações de Notificação"
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            <Settings className="h-4 w-4" />
           </Button>
         </div>
+
 
         <Popover>
           <PopoverTrigger asChild>
@@ -214,42 +236,97 @@ export function Topbar() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-0" align="end">
-            <div className="flex items-center justify-between border-b p-3">
-              <h4 className="text-sm font-semibold">Histórico de Alertas</h4>
-              {notificationHistory.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearHistory}
-                  className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  Limpar
-                </Button>
-              )}
+            <div className="flex flex-col border-b p-3 gap-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Alertas Recentes</h4>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8" 
+                    onClick={markAllAsRead}
+                    title="Marcar todos como lidos"
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                  </Button>
+                  {notificationHistory.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={clearHistory}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      title="Limpar Histórico"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="h-7 text-[10px] py-0 px-2">
+                    <Filter className="h-3 w-3 mr-1" />
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Tipos</SelectItem>
+                    <SelectItem value="catalog.order.received">Catálogo</SelectItem>
+                    <SelectItem value="sale.created">Vendas</SelectItem>
+                    <SelectItem value="finance.invoice.overdue">Financeiro</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={String(filterRead)} onValueChange={(v) => setFilterRead(v === "all" ? "all" : v === "true")}>
+                  <SelectTrigger className="h-7 text-[10px] py-0 px-2">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="false">Não Lidos</SelectItem>
+                    <SelectItem value="true">Lidos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+
+            <div className="max-h-[350px] overflow-y-auto">
               {notificationHistory.length === 0 ? (
-                <div className="p-4 text-center text-xs text-muted-foreground">
-                  Nenhum alerta recente.
+                <div className="p-8 text-center flex flex-col items-center gap-2">
+                  <Bell className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">Nenhum alerta encontrado.</p>
                 </div>
               ) : (
                 <div className="divide-y">
                   {notificationHistory.map((item) => (
-                    <div key={item.id} className="p-3 hover:bg-accent/50 transition-colors group">
+                    <div 
+                      key={item.id} 
+                      className={cn(
+                        "p-3 hover:bg-accent/50 transition-colors group relative cursor-default",
+                        !item.read && "bg-primary/5 border-l-2 border-l-primary"
+                      )}
+                      onMouseEnter={() => !item.read && markAsRead(item.id)}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{item.title}</p>
                           <p className="text-[10px] text-muted-foreground line-clamp-2">{item.body}</p>
-                          <p className="text-[9px] text-muted-foreground mt-1">
-                            {format(item.at, "HH:mm 'de' d/MM", { locale: ptBR })}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[9px] text-muted-foreground">
+                              {format(item.at, "HH:mm", { locale: ptBR })}
+                            </span>
+                            {item.type && (
+                              <span className="text-[8px] bg-muted px-1 rounded text-muted-foreground uppercase tracking-wider">
+                                {item.type.split('.')[0]}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {item.ticketId && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
                             onClick={() => navigate({ to: "/comercial/inbox-whatsapp" })}
                           >
                             <ExternalLink className="h-3 w-3" />
@@ -261,7 +338,34 @@ export function Topbar() {
                 </div>
               )}
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t p-2 bg-muted/20">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-[10px] text-muted-foreground">
+                  Página {page} de {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </PopoverContent>
+
         </Popover>
 
         <ThemeToggle />
@@ -329,6 +433,15 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configurações do Usuário</DialogTitle>
+          </DialogHeader>
+          <NotificationSettingsPanel />
+        </DialogContent>
+      </Dialog>
     </header>
+
   );
 }

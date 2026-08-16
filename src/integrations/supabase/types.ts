@@ -5383,6 +5383,7 @@ export type Database = {
           current_company_id: string | null
           full_name: string | null
           id: string
+          notification_settings: Json | null
           onboarded_at: string | null
           updated_at: string
         }
@@ -5392,6 +5393,7 @@ export type Database = {
           current_company_id?: string | null
           full_name?: string | null
           id: string
+          notification_settings?: Json | null
           onboarded_at?: string | null
           updated_at?: string
         }
@@ -5401,6 +5403,7 @@ export type Database = {
           current_company_id?: string | null
           full_name?: string | null
           id?: string
+          notification_settings?: Json | null
           onboarded_at?: string | null
           updated_at?: string
         }
