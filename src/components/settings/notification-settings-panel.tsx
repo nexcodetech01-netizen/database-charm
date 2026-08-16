@@ -108,7 +108,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-browser`}
                     checked={config.browser}
                     onCheckedChange={() => toggleSetting(type, "browser")}
-                    className="scale-[0.75] origin-right"
+                    className="scale-[0.8] origin-right pointer-events-auto"
                   />
                 </div>
               </div>
