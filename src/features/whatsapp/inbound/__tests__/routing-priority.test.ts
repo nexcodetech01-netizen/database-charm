@@ -1,24 +1,30 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { handleCheckoutTurn, peekCheckoutSession, saveCheckoutSession } from '../checkout-session.server';
+import { handleCheckoutTurn } from '../checkout-session.server';
 import { BellaActionEngine } from '../../../bella-ai/actions';
 import { handleWhatsAppInboundPayload } from '../router.server';
 
 // Mocking dependencies
+const mockSupabase = {
+  from: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  in: vi.fn().mockReturnThis(),
+  maybeSingle: vi.fn(),
+  single: vi.fn(),
+  upsert: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis(),
+  delete: vi.fn().mockReturnThis(),
+  neq: vi.fn().mockReturnThis(),
+  order: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+  or: vi.fn().mockReturnThis(),
+  ilike: vi.fn().mockReturnThis(),
+};
+
 vi.mock('@/integrations/supabase/client.server', () => ({
-  supabaseAdmin: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn(),
-    single: vi.fn(),
-    upsert: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-  },
+  supabaseAdmin: mockSupabase,
 }));
 
 vi.mock('../../../bella-ai/actions', () => ({
@@ -30,7 +36,15 @@ vi.mock('../../../bella-ai/actions', () => ({
 
 vi.mock('../../../bella-ai/ai/gateway', () => ({
   bellaAIGateway: {
-    ask: vi.fn(),
+    chat: vi.fn(),
+  },
+}));
+
+vi.mock('../../../bella-ai/context', () => ({
+  bellaConversationManager: {
+    clear: vi.fn(),
+    update: vi.fn(),
+    get: vi.fn(),
   },
 }));
 
@@ -61,8 +75,7 @@ describe('Contextual Routing Priority (Checkout vs Financial)', () => {
       updatedAt: Date.now(),
     };
 
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    (supabaseAdmin.from('whatsapp_checkout_sessions').maybeSingle as any).mockResolvedValue({ data: { session_data: mockSession } });
+    mockSupabase.maybeSingle.mockResolvedValue({ data: { session_data: mockSession } });
     
     // 2. Simulate message "dinheiro"
     const result = await handleCheckoutTurn({
@@ -75,49 +88,38 @@ describe('Contextual Routing Priority (Checkout vs Financial)', () => {
     expect(result).not.toBeNull();
     expect(result?.step).toBe('WAITING_DOCUMENT');
     expect(result?.text).toContain('CPF');
-    
-    // 4. Ensure Financial Engine was NOT even considered in the router context
-    // This part of the test would happen in router.server.ts
   });
 
   it('should NOT allow Financial Intent to steal "dinheiro" when checkout is active', async () => {
-    // This is the core of the bug: if the router calls handleCheckoutTurn and it returns a result,
-    // the router must return immediately and NOT proceed to BellaActionEngine.
-    
-    // We'll simulate the router's logic for this message
-    const { handleWhatsAppInboundPayload } = await import('../router.server');
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    
-    // Setup Mocks for router
-    (supabaseAdmin.from('companies').maybeSingle as any).mockImplementation((query: any) => {
-      // Return company
-      return Promise.resolve({ data: { id: companyId, name: 'Test Co' } });
+    // Mock the session lookup
+    mockSupabase.maybeSingle.mockImplementation(() => {
+        // Return company first, then session
+        const calls = mockSupabase.from.mock.calls;
+        const lastTable = calls[calls.length - 1][0];
+        if (lastTable === 'companies') {
+          return Promise.resolve({ data: { id: companyId, name: 'Test Co' } });
+        }
+        if (lastTable === 'whatsapp_checkout_sessions') {
+          return Promise.resolve({ data: { session_data: { step: 'WAITING_PAYMENT_METHOD', phone, companyId, updatedAt: Date.now() } } });
+        }
+        return Promise.resolve({ data: null });
     });
-    
-    // Mock the session lookup specifically
-    (supabaseAdmin.from as any).mockImplementation((table: string) => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            maybeSingle: () => {
-              if (table === 'whatsapp_checkout_sessions') {
-                return Promise.resolve({ data: { session_data: { step: 'WAITING_PAYMENT_METHOD', phone, companyId, updatedAt: Date.now() } } });
-              }
-              if (table === 'companies') {
-                return Promise.resolve({ data: { id: companyId } });
-              }
-              return Promise.resolve({ data: null });
-            }
-          }),
-          maybeSingle: () => Promise.resolve({ data: null }),
-          single: () => Promise.resolve({ data: { id: 'conv_123' } }),
-          in: () => ({ limit: () => Promise.resolve({ data: [{ id: 'cont_123', wa_id: phone }] }) })
-        })
-      }),
-      insert: () => Promise.resolve({ error: null }),
-      update: () => Promise.resolve({ error: null }),
-      upsert: () => Promise.resolve({ data: { id: 'id' } })
-    }));
+
+    mockSupabase.single.mockImplementation(() => {
+        const calls = mockSupabase.from.mock.calls;
+        const lastTable = calls[calls.length - 1][0];
+        if (lastTable === 'whatsapp_conversations') {
+            return Promise.resolve({ data: { id: 'conv_123', status: 'open' } });
+        }
+        if (lastTable === 'whatsapp_contacts') {
+            return Promise.resolve({ data: { id: 'cont_123' } });
+        }
+        return Promise.resolve({ data: null });
+    });
+
+    mockSupabase.in.mockReturnThis();
+    mockSupabase.limit.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
 
     // Trigger the inbound handler
     await handleWhatsAppInboundPayload({
