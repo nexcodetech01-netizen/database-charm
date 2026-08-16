@@ -212,7 +212,7 @@ function ShippingCalculatorPage() {
         <div className="lg:col-span-7">
           {isLoading ? (
             <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-sidebar-border bg-sidebar/10">
-              <LoadingSurface variant="component" />
+              <LoadingSurface variant="cards" metrics={1} />
             </div>
           ) : results ? (
             <div className="space-y-4">
