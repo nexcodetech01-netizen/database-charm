@@ -121,7 +121,7 @@ function CommercialInboxPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tickets.map((t) => (
+              {tickets.map((t: CommercialInboxTicket) => (
                 <TableRow key={t.id}>
                   <TableCell className="font-medium">
                     {t.buyer_name ?? "—"}
@@ -134,7 +134,7 @@ function CommercialInboxPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(t.status)}>
-                      {COMMERCIAL_STATUS_LABEL[t.status] ?? t.status}
+                      {(COMMERCIAL_STATUS_LABEL as Record<string, string>)[t.status] ?? t.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="uppercase text-xs text-muted-foreground">

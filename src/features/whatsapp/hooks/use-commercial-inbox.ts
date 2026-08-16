@@ -51,7 +51,7 @@ export interface CommercialInboxTicket {
 const KEY = ["whatsapp-commercial-inbox"] as const;
 
 export function useCommercialInbox(companyId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: [...KEY, companyId],
     enabled: Boolean(companyId),
     queryFn: async (): Promise<CommercialInboxTicket[]> => {
