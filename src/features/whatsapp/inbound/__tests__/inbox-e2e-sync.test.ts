@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getInboxChannel, broadcastInboxEvent } from "../inbox-sync";
+import { getInboxChannel, broadcastInboxEvent } from "../../lib/inbox-sync";
 
 // Mock do BroadcastChannel
 class BroadcastChannelMock {
