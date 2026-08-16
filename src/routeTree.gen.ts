@@ -70,6 +70,7 @@ import { Route as AuthenticatedFornecedoresSupplierIdRouteImport } from './route
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
 import { Route as AuthenticatedFiscalConfiguracaoRouteImport } from './routes/_authenticated/fiscal.configuracao'
 import { Route as AuthenticatedFinanceiroSaudeFiscalRouteImport } from './routes/_authenticated/financeiro.saude-fiscal'
+import { Route as AuthenticatedFerramentasCalculadoraFreteRouteImport } from './routes/_authenticated/ferramentas.calculadora-frete'
 import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/_authenticated/estoque.reconciliacao'
 import { Route as AuthenticatedConfiguracoesPrecificacaoRouteImport } from './routes/_authenticated/configuracoes.precificacao'
 import { Route as AuthenticatedComprasNovoRouteImport } from './routes/_authenticated/compras_.novo'
@@ -83,6 +84,7 @@ import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from 
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
+import { Route as ApiPublicShippingCalculateRouteImport } from './routes/api/public/shipping/calculate'
 import { Route as ApiPublicNotificationsTriggerRouteImport } from './routes/api/public/notifications/trigger'
 import { Route as ApiPublicMercadolivreWebhookRouteImport } from './routes/api/public/mercadolivre.webhook'
 import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/api/public/jobs/mercadolivre-refresh'
@@ -441,6 +443,12 @@ const AuthenticatedFinanceiroSaudeFiscalRoute =
     path: '/saude-fiscal',
     getParentRoute: () => AuthenticatedFinanceiroRoute,
   } as any)
+const AuthenticatedFerramentasCalculadoraFreteRoute =
+  AuthenticatedFerramentasCalculadoraFreteRouteImport.update({
+    id: '/ferramentas/calculadora-frete',
+    path: '/ferramentas/calculadora-frete',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEstoqueReconciliacaoRoute =
   AuthenticatedEstoqueReconciliacaoRouteImport.update({
     id: '/reconciliacao',
@@ -517,6 +525,12 @@ const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
     path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicShippingCalculateRoute =
+  ApiPublicShippingCalculateRouteImport.update({
+    id: '/api/public/shipping/calculate',
+    path: '/api/public/shipping/calculate',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicNotificationsTriggerRoute =
@@ -707,6 +721,7 @@ export interface FileRoutesByFullPath {
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
+  '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -743,6 +758,7 @@ export interface FileRoutesByFullPath {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
+  '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -804,6 +820,7 @@ export interface FileRoutesByTo {
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
+  '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -840,6 +857,7 @@ export interface FileRoutesByTo {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
+  '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/produtos/$productId': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -904,6 +922,7 @@ export interface FileRoutesById {
   '/_authenticated/compras_/novo': typeof AuthenticatedComprasNovoRoute
   '/_authenticated/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
   '/_authenticated/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
+  '/_authenticated/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/_authenticated/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/_authenticated/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -940,6 +959,7 @@ export interface FileRoutesById {
   '/api/public/jobs/mercadolivre-refresh': typeof ApiPublicJobsMercadolivreRefreshRoute
   '/api/public/mercadolivre/webhook': typeof ApiPublicMercadolivreWebhookRoute
   '/api/public/notifications/trigger': typeof ApiPublicNotificationsTriggerRoute
+  '/api/public/shipping/calculate': typeof ApiPublicShippingCalculateRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/_authenticated/compras_/$purchaseId/': typeof AuthenticatedComprasPurchaseIdIndexRoute
   '/_authenticated/produtos_/$productId/': typeof AuthenticatedProdutosProductIdIndexRoute
@@ -1004,6 +1024,7 @@ export interface FileRouteTypes {
     | '/compras/novo'
     | '/configuracoes/precificacao'
     | '/estoque/reconciliacao'
+    | '/ferramentas/calculadora-frete'
     | '/financeiro/saude-fiscal'
     | '/fiscal/configuracao'
     | '/fiscal/notas'
@@ -1040,6 +1061,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
+    | '/api/public/shipping/calculate'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId/'
     | '/produtos/$productId/'
@@ -1101,6 +1123,7 @@ export interface FileRouteTypes {
     | '/compras/novo'
     | '/configuracoes/precificacao'
     | '/estoque/reconciliacao'
+    | '/ferramentas/calculadora-frete'
     | '/financeiro/saude-fiscal'
     | '/fiscal/configuracao'
     | '/fiscal/notas'
@@ -1137,6 +1160,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
+    | '/api/public/shipping/calculate'
     | '/api/public/whatsapp/webhook'
     | '/compras/$purchaseId'
     | '/produtos/$productId'
@@ -1200,6 +1224,7 @@ export interface FileRouteTypes {
     | '/_authenticated/compras_/novo'
     | '/_authenticated/configuracoes/precificacao'
     | '/_authenticated/estoque/reconciliacao'
+    | '/_authenticated/ferramentas/calculadora-frete'
     | '/_authenticated/financeiro/saude-fiscal'
     | '/_authenticated/fiscal/configuracao'
     | '/_authenticated/fiscal/notas'
@@ -1236,6 +1261,7 @@ export interface FileRouteTypes {
     | '/api/public/jobs/mercadolivre-refresh'
     | '/api/public/mercadolivre/webhook'
     | '/api/public/notifications/trigger'
+    | '/api/public/shipping/calculate'
     | '/api/public/whatsapp/webhook'
     | '/_authenticated/compras_/$purchaseId/'
     | '/_authenticated/produtos_/$productId/'
@@ -1267,6 +1293,7 @@ export interface RootRouteChildren {
   ApiPublicJobsMercadolivreRefreshRoute: typeof ApiPublicJobsMercadolivreRefreshRoute
   ApiPublicMercadolivreWebhookRoute: typeof ApiPublicMercadolivreWebhookRoute
   ApiPublicNotificationsTriggerRoute: typeof ApiPublicNotificationsTriggerRoute
+  ApiPublicShippingCalculateRoute: typeof ApiPublicShippingCalculateRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   ApiPublicBellaPayQrChargeIdRoute: typeof ApiPublicBellaPayQrChargeIdRoute
   ApiPublicBellaPayWebhookTokenRoute: typeof ApiPublicBellaPayWebhookTokenRoute
@@ -1703,6 +1730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroSaudeFiscalRouteImport
       parentRoute: typeof AuthenticatedFinanceiroRoute
     }
+    '/_authenticated/ferramentas/calculadora-frete': {
+      id: '/_authenticated/ferramentas/calculadora-frete'
+      path: '/ferramentas/calculadora-frete'
+      fullPath: '/ferramentas/calculadora-frete'
+      preLoaderRoute: typeof AuthenticatedFerramentasCalculadoraFreteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/estoque/reconciliacao': {
       id: '/_authenticated/estoque/reconciliacao'
       path: '/reconciliacao'
@@ -1792,6 +1826,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/whatsapp/webhook'
       fullPath: '/api/public/whatsapp/webhook'
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/shipping/calculate': {
+      id: '/api/public/shipping/calculate'
+      path: '/api/public/shipping/calculate'
+      fullPath: '/api/public/shipping/calculate'
+      preLoaderRoute: typeof ApiPublicShippingCalculateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/notifications/trigger': {
@@ -2149,6 +2190,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedComprasPurchaseIdRoute: typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   AuthenticatedComprasNovoRoute: typeof AuthenticatedComprasNovoRoute
   AuthenticatedConfiguracoesPrecificacaoRoute: typeof AuthenticatedConfiguracoesPrecificacaoRoute
+  AuthenticatedFerramentasCalculadoraFreteRoute: typeof AuthenticatedFerramentasCalculadoraFreteRoute
   AuthenticatedFiscalConfiguracaoRoute: typeof AuthenticatedFiscalConfiguracaoRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRouteWithChildren
   AuthenticatedFornecedoresSupplierIdRoute: typeof AuthenticatedFornecedoresSupplierIdRouteWithChildren
@@ -2217,6 +2259,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedComprasNovoRoute: AuthenticatedComprasNovoRoute,
   AuthenticatedConfiguracoesPrecificacaoRoute:
     AuthenticatedConfiguracoesPrecificacaoRoute,
+  AuthenticatedFerramentasCalculadoraFreteRoute:
+    AuthenticatedFerramentasCalculadoraFreteRoute,
   AuthenticatedFiscalConfiguracaoRoute: AuthenticatedFiscalConfiguracaoRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRouteWithChildren,
   AuthenticatedFornecedoresSupplierIdRoute:
@@ -2297,6 +2341,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicJobsMercadolivreRefreshRoute: ApiPublicJobsMercadolivreRefreshRoute,
   ApiPublicMercadolivreWebhookRoute: ApiPublicMercadolivreWebhookRoute,
   ApiPublicNotificationsTriggerRoute: ApiPublicNotificationsTriggerRoute,
+  ApiPublicShippingCalculateRoute: ApiPublicShippingCalculateRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   ApiPublicBellaPayQrChargeIdRoute: ApiPublicBellaPayQrChargeIdRoute,
   ApiPublicBellaPayWebhookTokenRoute: ApiPublicBellaPayWebhookTokenRoute,
