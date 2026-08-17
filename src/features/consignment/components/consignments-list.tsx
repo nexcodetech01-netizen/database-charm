@@ -40,7 +40,7 @@ import { ConsignmentItem } from '../types';
 import { toast } from 'sonner';
 
 export function ConsignmentsList() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
@@ -68,6 +68,16 @@ export function ConsignmentsList() {
   const filteredConsignments = consignments.filter(c => 
     c.reseller?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (authLoading) return null;
+
+  if (!companyId) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Empresa não identificada. Tente recarregar a página.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

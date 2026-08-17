@@ -38,7 +38,7 @@ const resellerSchema = z.object({
 type ResellerFormValues = z.infer<typeof resellerSchema>;
 
 export function ResellersList() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const companyId = (user as any)?.company_id;
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -86,6 +86,16 @@ export function ResellersList() {
 
   function onSubmit(values: ResellerFormValues) {
     createResellerMutation.mutate(values);
+  }
+
+  if (authLoading) return null;
+
+  if (!companyId) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Empresa não identificada. Tente recarregar a página.
+      </div>
+    );
   }
 
   return (

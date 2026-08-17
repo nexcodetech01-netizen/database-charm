@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ConsignmentService } from '@/features/consignment/services/consignment.service';
 import { toast } from 'sonner';
+import { useAuth } from '@/providers/auth-provider';
 import { ProductPickerDialog } from '@/features/catalog/components/product-picker-dialog';
 import { Trash2, Plus, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
@@ -63,6 +64,7 @@ interface SelectedItem {
 }
 
 export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props) {
+  const { loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [isProductPickerOpen, setIsProductPickerOpen] = React.useState(false);
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([]);
@@ -169,6 +171,8 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
   };
 
   const totalValue = selectedItems.reduce((acc, it) => acc + (it.sent_quantity * it.suggested_price), 0);
+
+  if (authLoading || !open) return null;
 
   return (
     <>
