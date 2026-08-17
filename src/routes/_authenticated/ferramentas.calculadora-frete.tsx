@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink } from "lucide-react";
+import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { 
@@ -35,6 +35,7 @@ function ShippingCalculatorPage() {
   const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
 
   const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
@@ -133,6 +134,30 @@ function ShippingCalculatorPage() {
       setIsLoading(false);
     }
   }
+
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+
+    setIsFetchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (!data.erro) {
+        labelForm.setValue("address", data.logradouro || "");
+        labelForm.setValue("district", data.bairro || "");
+        labelForm.setValue("city", data.localidade || "");
+        labelForm.setValue("state", data.uf || "");
+        // Focus on number field if possible or just let user continue
+        toast.info("Endereço preenchido automaticamente.");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
 
   const handleSelectOption = (option: ShippingOption) => {
     setSelectedOption(option);
@@ -502,9 +527,26 @@ function ShippingCalculatorPage() {
                         name="postal_code"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>CEP</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              CEP
+                              {isFetchingCep && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="00000-000" {...field} />
+                              <Input 
+                                placeholder="00000-000" 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  if (e.target.value.replace(/\D/g, "").length === 8) {
+                                    handleCepBlur(e.target.value);
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  field.onBlur();
+                                  handleCepBlur(e.target.value);
+                                }}
+                                disabled={isFetchingCep}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
