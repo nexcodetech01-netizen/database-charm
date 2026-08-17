@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+// Force rebuild 4
+
 // Versão com tratamento de erro e logs detalhados v3
 
 // Versão com tratamento de erro e logs detalhados
