@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-// Versão Final v5 - Diagnóstico Completo
 
-// Force rebuild 4
-
-// Versão com tratamento de erro e logs detalhados v3
-
-// Versão com tratamento de erro e logs detalhados
-
-
+// Force absolute fresh build v6 - Testing routing isolation
+console.log('[SHIPPING_LABELS] Module loaded at ' + new Date().toISOString());
 
 export const Route = createFileRoute("/api/public/shipping/labels")({
+
   server: {
     handlers: {
       POST: async ({ request }) => {
