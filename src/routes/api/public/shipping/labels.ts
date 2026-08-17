@@ -15,8 +15,6 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          console.log('[SHIPPING_LABELS] Payload recebido:', JSON.stringify(body, null, 2));
-
           const { 
             quote_id,
             sender,
@@ -24,6 +22,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             package_details,
             service_code
           } = body;
+
 
           const SUPERFRETE_TOKEN = process.env['SUPERFRETE_TOKEN'];
           const SUPERFRETE_ENV = process.env['SUPERFRETE_ENV'] || 'sandbox';
@@ -53,7 +52,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               complement: sender?.complement || "",
               district: sender?.district || "",
               city: sender?.city || "",
-              state: sender?.state || "",
+              state_abbr: sender?.state || "", // API expects state_abbr
               email: sender?.email || null,
               phone: (sender?.phone || "").replace(/\D/g, ''),
             },
@@ -66,18 +65,18 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               complement: recipient?.complement || "",
               district: recipient?.district || "",
               city: recipient?.city || "",
-              state: recipient?.state || "",
+              state_abbr: recipient?.state || "", // API expects state_abbr
               email: recipient?.email || null,
               phone: (recipient?.phone || "").replace(/\D/g, ''),
             },
-            package: {
+            service: service_code, // Uses the exact ID/value from calculator
+            volumes: [{ // API expects volumes array
               format: parseInt(package_details?.format || "3"),
               weight: package_details?.peso_kg || 0.1,
               width: package_details?.largura_cm || 0,
               height: package_details?.altura_cm || 0,
               length: package_details?.comprimento_cm || 0,
-            },
-            service: parseInt(service_code),
+            }],
             options: {
               insurance_value: package_details?.valor_declarado || 0,
               receipt: false,

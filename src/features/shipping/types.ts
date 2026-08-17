@@ -47,7 +47,7 @@ export type ShippingCalculatorInput = {
 };
 
 export interface ShippingOption {
-  id: string; // The service ID for SuperFrete
+  id: string | number; // The service ID for SuperFrete
   servico: string;
   transportadora: string;
   preco: number;
@@ -73,7 +73,7 @@ export type AddressInfo = z.infer<typeof AddressSchema>;
 
 export const GenerateLabelSchema = z.object({
   quote_id: z.string().optional(),
-  service_code: z.string(),
+  service_code: z.union([z.string(), z.number()]),
   sender: AddressSchema,
   recipient: AddressSchema,
   package_details: ShippingCalculatorSchema,
