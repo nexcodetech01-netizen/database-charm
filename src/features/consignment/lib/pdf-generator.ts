@@ -1,17 +1,12 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/format";
 import { Consignment, ConsignmentItem } from "../types";
 
-// Extensão de tipos para o jsPDF com autoTable
-interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
-}
-
 export const generateConsignmentPDF = async (consignment: Consignment, items: ConsignmentItem[], companyName: string = "NexOS ERP") => {
-  const doc = new jsPDF() as jsPDFWithAutoTable;
+  const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
 
@@ -72,7 +67,7 @@ export const generateConsignmentPDF = async (consignment: Consignment, items: Co
 
   const totalValue = items.reduce((acc, item) => acc + (item.sent_quantity * (item.suggested_price || 0)), 0);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 85,
     head: [["SKU", "Descricao do Produto", "Qtd", "Preco Sug.", "Total"]],
     body: tableData,
