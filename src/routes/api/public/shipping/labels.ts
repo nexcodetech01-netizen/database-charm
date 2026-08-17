@@ -14,7 +14,18 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
+          const bodyText = await request.text();
+          let body;
+          try {
+            body = JSON.parse(bodyText);
+          } catch (e) {
+            console.error('[SHIPPING_LABELS] Erro ao parsear JSON:', bodyText);
+            return new Response(
+              JSON.stringify({ error: 'Payload JSON inválido' }),
+              { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+
           const { 
             quote_id,
             sender,
@@ -193,13 +204,19 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           const labelResult = {
             success: true,
             order_id: orderId,
-            tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
+            tracking_code: checkoutData?.tracking_code || 
+                          (checkoutData?.packages && checkoutData.packages[0]?.tracking) || 
+                          (checkoutData?.orders && checkoutData.orders[0]?.packages?.[0]?.tracking) || 
+                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.tracking),
             label_url: labelUrl,
             raw: checkoutData
           };
 
           console.log('[SHIPPING_LABELS] Resultado Final:', JSON.stringify(labelResult, null, 2));
-          return Response.json(labelResult);
+          return new Response(JSON.stringify(labelResult), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
 
         } catch (error: any) {
           console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
