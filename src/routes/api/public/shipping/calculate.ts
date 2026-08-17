@@ -12,6 +12,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             altura_cm, 
             largura_cm, 
             comprimento_cm, 
+            format,
             valor_declarado 
           } = await request.json();
 
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             },
             services: "1,2,17",
             package: {
+              format: parseInt(format || "3"),
               weight: peso_kg,
               width: largura_cm,
               height: altura_cm,

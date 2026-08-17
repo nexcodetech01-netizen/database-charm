@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import { 
@@ -19,6 +19,7 @@ import { PageLayout, PageHeader } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingSurface } from "@/components/design";
@@ -40,10 +41,11 @@ function ShippingCalculatorPage() {
   const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
     defaultValues: {
+      format: "3",
       cep_origem: "01001-000",
       cep_destino: "",
       peso_kg: "0.3",
-      altura_cm: "11",
+      altura_cm: "2",
       largura_cm: "16",
       comprimento_cm: "20",
       valor_declarado: "0",
@@ -82,6 +84,7 @@ function ShippingCalculatorPage() {
         largura_cm: parseFloat(String(data.largura_cm).replace(',', '.')),
         comprimento_cm: parseFloat(String(data.comprimento_cm).replace(',', '.')),
         valor_declarado: parseFloat(String(data.valor_declarado).replace(',', '.')),
+        format: String(data.format),
       };
       
       const response = await calculateShipping({ data: sanitizedData as any });
@@ -257,6 +260,31 @@ function ShippingCalculatorPage() {
               <CardContent>
                 <Form {...calcForm}>
                   <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <FormField
+                        control={calcForm.control}
+                        name="format"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Formato</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o formato" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="1">Caixa / Pacote</SelectItem>
+                                <SelectItem value="2">Rolo / Cilindro</SelectItem>
+                                <SelectItem value="3">Envelope</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={calcForm.control}
@@ -325,7 +353,10 @@ function ShippingCalculatorPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className={cn(
+                      "grid gap-3",
+                      calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
+                    )}>
                       <FormField
                         control={calcForm.control}
                         name="altura_cm"
@@ -362,24 +393,26 @@ function ShippingCalculatorPage() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={calcForm.control}
-                        name="comprimento_cm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Comp. (cm)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="20"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {calcForm.watch("format") !== "3" && (
+                        <FormField
+                          control={calcForm.control}
+                          name="comprimento_cm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Comp. (cm)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="20"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isLoading}>

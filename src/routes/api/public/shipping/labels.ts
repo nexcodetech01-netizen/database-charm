@@ -57,6 +57,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               phone: recipient.phone.replace(/\D/g, ''),
             },
             package: {
+              format: parseInt(package_details.format || "3"),
               weight: package_details.peso_kg,
               width: package_details.largura_cm,
               height: package_details.altura_cm,
