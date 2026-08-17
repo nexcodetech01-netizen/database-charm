@@ -172,7 +172,7 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
 
   const totalValue = selectedItems.reduce((acc, it) => acc + (it.sent_quantity * it.suggested_price), 0);
 
-  if (authLoading) return null;
+  if (authLoading || !open) return null;
 
   return (
     <>

@@ -71,6 +71,14 @@ export function ConsignmentsList() {
 
   if (authLoading) return null;
 
+  if (!companyId) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Empresa não identificada. Tente recarregar a página.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
