@@ -113,14 +113,19 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
 
         } catch (error: any) {
           console.error('[SHIPPING_CALCULATE] Server Route Error:', error);
+          if (error.stack) {
+            console.error('[SHIPPING_CALCULATE] Stack Trace:', error.stack);
+          }
           return new Response(
             JSON.stringify({ 
               error: error.message || 'Erro interno na cotação',
-              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+              stack: error.stack,
+              module: 'calculate.ts'
             }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
           );
         }
+
       }
     }
   }
