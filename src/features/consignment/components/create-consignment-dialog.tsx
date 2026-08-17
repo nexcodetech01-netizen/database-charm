@@ -63,6 +63,7 @@ interface SelectedItem {
 }
 
 export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props) {
+  const { loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [isProductPickerOpen, setIsProductPickerOpen] = React.useState(false);
   const [selectedItems, setSelectedItems] = React.useState<SelectedItem[]>([]);
@@ -169,6 +170,8 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
   };
 
   const totalValue = selectedItems.reduce((acc, it) => acc + (it.sent_quantity * it.suggested_price), 0);
+
+  if (authLoading) return null;
 
   return (
     <>
