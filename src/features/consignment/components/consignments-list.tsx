@@ -199,29 +199,30 @@ export function ConsignmentsList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-slate-950 border-slate-800">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem className="cursor-pointer">
+                        <DropdownMenuItem 
+                          className="cursor-pointer"
+                          onClick={() => navigate({ to: '/consignacoes/$id', params: { id: c.id } })}
+                        >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer" onClick={async () => {
-                          try {
-                            const { consignment, items } = await ConsignmentService.getConsignment(c.id);
-                            const blob = await generateConsignmentPDF(consignment, items, "Empresa NexOS");
-                            const url = URL.createObjectURL(blob);
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.download = `contrato-consignacao-${c.id.split('-')[0]}.pdf`;
-                            link.click();
-                            URL.revokeObjectURL(url);
-                            toast.success('Contrato gerado com sucesso!');
-                          } catch (error) {
-                            console.error(error);
-                            toast.error('Erro ao gerar PDF');
-                          }
-                        }}>
-                          <FileText className="h-4 w-4 mr-2" /> Gerar Contrato
+                        <DropdownMenuItem 
+                          className="cursor-pointer" 
+                          disabled={generatingPdfId === c.id}
+                          onClick={() => handleGeneratePdf(c.id)}
+                        >
+                          {generatingPdfId === c.id ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <FileText className="h-4 w-4 mr-2" />
+                          )}
+                          Gerar Contrato
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-800" />
-                        <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+                        <DropdownMenuItem 
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                          onClick={() => handleCancel(c.id)}
+                          disabled={c.status === 'cancelada' || cancelMutation.isPending}
+                        >
                           <AlertCircle className="h-4 w-4 mr-2" /> Cancelar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
