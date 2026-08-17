@@ -207,6 +207,7 @@ export function ConsignmentsList() {
                       <DropdownMenuContent align="end" className="bg-slate-950 border-slate-800">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer"
                           onSelect={(e) => {
                             e.preventDefault();
