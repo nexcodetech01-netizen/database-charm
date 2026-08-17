@@ -19,6 +19,10 @@ export class ConsignmentService {
   }
 
   static async createReseller(reseller: Omit<Reseller, 'id' | 'created_at' | 'updated_at'>): Promise<Reseller> {
+    if (!reseller.company_id) {
+      throw new Error('company_id is required to create a reseller');
+    }
+
     const { data, error } = await supabase
       .from('resellers')
       .insert(reseller)
