@@ -36,6 +36,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             to: {
               postal_code: cep_destino.replace(/\D/g, ''),
             },
+            services: "1,2,17",
             package: {
               weight: peso_kg,
               width: largura_cm,
@@ -46,7 +47,6 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
               insurance_value: valor_declarado,
               receipt: false,
               own_hand: false,
-              services: "1,2,17"
             }
           };
 
