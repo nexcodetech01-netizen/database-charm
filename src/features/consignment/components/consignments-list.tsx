@@ -223,7 +223,7 @@ export function ConsignmentsList() {
                         <DropdownMenuSeparator className="bg-slate-800" />
                         <DropdownMenuItem 
                           className="cursor-pointer text-destructive focus:text-destructive"
-                          onClick={() => handleCancel(c.id)}
+                          onSelect={() => handleCancel(c.id)}
                           disabled={c.status === 'cancelada' || cancelMutation.isPending}
                         >
                           <AlertCircle className="h-4 w-4 mr-2" /> Cancelar
