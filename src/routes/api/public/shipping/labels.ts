@@ -121,13 +121,14 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             }
           });
 
-          const checkoutData = await checkoutResponse.json();
+          const checkoutData = await checkoutResponse.json().catch(() => ({}));
           console.log(`[SHIPPING_LABELS] Resposta /api/v0/checkout (Status ${checkoutResponse.status}):`, JSON.stringify(checkoutData, null, 2));
 
           if (!checkoutResponse.ok) {
+             console.error('[SHIPPING_LABELS] Erro no Checkout:', checkoutData.message || checkoutData.error || 'Erro desconhecido');
              return new Response(
               JSON.stringify({ 
-                error: checkoutData.message || 'Falha no checkout (saldo insuficiente?)',
+                error: checkoutData.message || checkoutData.error || 'Falha no checkout (saldo insuficiente?)',
                 details: checkoutData 
               }),
               { status: checkoutResponse.status, headers: { 'Content-Type': 'application/json' } }
