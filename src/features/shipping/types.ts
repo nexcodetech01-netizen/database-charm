@@ -15,19 +15,20 @@ export const ShippingCalculatorSchema = z.object({
   peso_kg: z.preprocess(preprocessNumeric, z.number({ 
     required_error: "Peso é obrigatório",
     invalid_type_error: "Peso deve ser um número" 
-  }).min(0.1, "Peso mínimo 0.1kg")),
+  }).min(0.01, "Peso mínimo 0.01kg")),
   altura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Altura é obrigatória",
     invalid_type_error: "Altura deve ser um número"
-  }).min(2, "Altura mínima 2cm")),
+  }).min(0, "Altura mínima 0cm")),
   largura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Largura é obrigatória",
     invalid_type_error: "Largura deve ser um número"
-  }).min(11, "Largura mínima 11cm")),
+  }).min(0, "Largura mínima 0cm")),
   comprimento_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Comprimento é obrigatório",
     invalid_type_error: "Comprimento deve ser um número"
-  }).min(16, "Comprimento mínimo 16cm")),
+  }).min(0, "Comprimento mínimo 0cm")),
+  format: z.string().default("3"),
   valor_declarado: z.preprocess(preprocessNumeric, z.number({
     required_error: "Valor seguro é obrigatório",
     invalid_type_error: "Valor seguro deve ser um número"
@@ -41,6 +42,7 @@ export type ShippingCalculatorInput = {
   altura_cm: number;
   largura_cm: number;
   comprimento_cm: number;
+  format: string;
   valor_declarado: number;
 };
 
