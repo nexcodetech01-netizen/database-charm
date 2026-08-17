@@ -39,6 +39,7 @@ type ResellerFormValues = z.infer<typeof resellerSchema>;
 
 export function ResellersList() {
   const { user } = useAuth();
+  const companyId = (user as any)?.company_id;
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
@@ -54,17 +55,19 @@ export function ResellersList() {
   });
 
   const { data: resellers = [], isLoading } = useQuery({
-    queryKey: ['resellers', (user as any)?.company_id],
-    queryFn: () => ConsignmentService.listResellers((user as any)!.company_id!),
-    enabled: !!(user as any)?.company_id,
+    queryKey: ['resellers', companyId],
+    queryFn: () => ConsignmentService.listResellers(companyId!),
+    enabled: !!companyId,
   });
 
   const createResellerMutation = useMutation({
-    mutationFn: (values: ResellerFormValues) => 
-      ConsignmentService.createReseller({
+    mutationFn: (values: ResellerFormValues) => {
+      if (!companyId) throw new Error('Empresa não identificada. Tente recarregar a página.');
+      return ConsignmentService.createReseller({
         ...values,
-        company_id: (user as any)!.company_id!,
-      }),
+        company_id: companyId,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resellers'] });
       setIsCreateDialogOpen(false);

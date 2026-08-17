@@ -86,6 +86,7 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
   const createMutation = useMutation({
     mutationFn: async (values: ConsignmentFormValues) => {
       if (selectedItems.length === 0) throw new Error('Selecione ao menos um produto');
+      if (!companyId) throw new Error('Empresa não identificada. Tente recarregar a página.');
       
       return ConsignmentService.createConsignment(
         {
