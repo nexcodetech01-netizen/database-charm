@@ -38,6 +38,8 @@ function toRow(draft: CommercialTicketDraft) {
     fulfillment: draft.fulfillment,
     delivery: draft.delivery,
     payment: draft.payment,
+    change_needed: draft.changeNeeded,
+    change_amount: draft.changeAmount,
     origin: draft.origin,
     status: draft.status,
     full_name: draft.customer.fullName,
@@ -77,7 +79,9 @@ async function notifyN8NConfirmedOrder(ticketId: string, draft: CommercialTicket
     total: draft.total,
     item_count: draft.itemCount,
     items: draft.items,
-    mensagem: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+    change_needed: draft.changeNeeded,
+    change_amount: draft.changeAmount,
+    mensagem: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).${draft.payment === 'cash' ? (draft.changeNeeded ? ` Troco para ${formatCurrency(draft.changeAmount || 0)}.` : ' Não precisa de troco.') : ''}`,
     source: "nexos",
   };
 
