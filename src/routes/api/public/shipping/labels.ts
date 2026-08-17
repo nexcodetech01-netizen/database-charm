@@ -6,6 +6,8 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
+          console.log('[SHIPPING_LABELS] Payload recebido:', JSON.stringify(body, null, 2));
+
           const { 
             quote_id,
             sender,
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           const SUPERFRETE_ENV = process.env['SUPERFRETE_ENV'] || 'sandbox';
 
           if (!SUPERFRETE_TOKEN) {
+            console.error('[SHIPPING_LABELS] Erro: SUPERFRETE_TOKEN não configurado');
             return new Response(
               JSON.stringify({ error: 'SUPERFRETE_TOKEN not configured' }),
               { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -27,6 +30,8 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           const baseUrl = SUPERFRETE_ENV === 'production' 
             ? 'https://api.superfrete.com' 
             : 'https://sandbox.superfrete.com';
+
+          console.log(`[SHIPPING_LABELS] Usando ambiente: ${SUPERFRETE_ENV} (${baseUrl})`);
 
           // 1. Add to cart
           const cartPayload = {
@@ -74,6 +79,8 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             }
           };
 
+          console.log('[SHIPPING_LABELS] Enviando para /api/v0/cart:', JSON.stringify(cartPayload, null, 2));
+
           const cartResponse = await fetch(`${baseUrl}/api/v0/cart`, {
             method: 'POST',
             headers: {
@@ -86,6 +93,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           });
 
           const cartData = await cartResponse.json();
+          console.log(`[SHIPPING_LABELS] Resposta /api/v0/cart (Status ${cartResponse.status}):`, JSON.stringify(cartData, null, 2));
 
           if (!cartResponse.ok) {
             return new Response(
@@ -98,6 +106,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           }
 
           // 2. Checkout (Pay for everything in cart)
+          console.log('[SHIPPING_LABELS] Iniciando /api/v0/checkout...');
           const checkoutResponse = await fetch(`${baseUrl}/api/v0/checkout`, {
             method: 'POST',
             headers: {
@@ -109,6 +118,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           });
 
           const checkoutData = await checkoutResponse.json();
+          console.log(`[SHIPPING_LABELS] Resposta /api/v0/checkout (Status ${checkoutResponse.status}):`, JSON.stringify(checkoutData, null, 2));
 
           if (!checkoutResponse.ok) {
              return new Response(
@@ -120,10 +130,6 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             );
           }
 
-          // 3. Generate Label
-          // Usually checkout returns order identifiers. 
-          // SuperFrete documentation notes checkout generates the label if everything is fine.
-          
           return Response.json({
             success: true,
             order_id: checkoutData.order_id || cartData.id,
@@ -133,10 +139,13 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           });
 
         } catch (error: any) {
-          console.error('Label Route Error:', error);
+          console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
           return new Response(
-            JSON.stringify({ error: error.message }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+            JSON.stringify({ 
+              error: error.message || 'Erro interno inesperado',
+              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
           );
         }
       }
