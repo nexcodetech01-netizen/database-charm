@@ -120,18 +120,23 @@ function ShippingCalculatorPage() {
         phone: "11999999999",
       };
 
+      const payload = {
+        service_code: selectedOption.id,
+        sender: senderData,
+        recipient: recipientData,
+        package_details: calcForm.getValues(),
+      };
+      
+      console.log("SHIPPING_DEBUG: Sending label payload:", payload);
+
       const result = await generateLabel({
-        data: {
-          service_code: selectedOption.id,
-          sender: senderData,
-          recipient: recipientData,
-          package_details: calcForm.getValues() as any,
-        }
+        data: payload as any
       });
 
       setLabelResult(result);
       toast.success("Etiqueta gerada com sucesso!");
     } catch (error: any) {
+      console.error("SHIPPING_DEBUG: Label error:", error);
       toast.error(error.message || "Erro ao emitir etiqueta. Verifique o saldo.");
     } finally {
       setIsLoading(false);

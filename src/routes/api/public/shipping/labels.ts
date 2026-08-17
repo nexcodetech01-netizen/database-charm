@@ -130,13 +130,20 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             );
           }
 
-          return Response.json({
+          // 3. Generate Label
+          // Usually checkout returns order identifiers. 
+          // SuperFrete documentation notes checkout generates the label if everything is fine.
+          
+          const labelResult = {
             success: true,
             order_id: checkoutData.order_id || cartData.id,
             tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking),
             label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label),
             raw: checkoutData
-          });
+          };
+
+          console.log('[SHIPPING_LABELS] Resultado Final:', JSON.stringify(labelResult, null, 2));
+          return Response.json(labelResult);
 
         } catch (error: any) {
           console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
