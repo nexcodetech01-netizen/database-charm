@@ -201,7 +201,7 @@ export function ConsignmentsList() {
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem 
                           className="cursor-pointer"
-                          onClick={() => toast.info('Funcionalidade Ver Detalhes em desenvolvimento')}
+                          onClick={() => navigate({ to: `/consignacoes/${c.id}` })}
                         >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>

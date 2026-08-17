@@ -200,4 +200,20 @@ export class ConsignmentService {
     
     if (error) throw error;
   }
+
+  static async updateSettlementStatus(id: string, status: SettlementStatus): Promise<void> {
+    const updateData: any = { payment_status: status };
+    if (status === 'pago') {
+      updateData.paid_at = new Date().toISOString();
+    } else {
+      updateData.paid_at = null;
+    }
+
+    const { error } = await supabase
+      .from('consignment_settlements')
+      .update(updateData)
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
 }
