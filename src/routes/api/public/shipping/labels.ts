@@ -77,6 +77,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               height: package_details?.altura_cm || 0,
               length: package_details?.comprimento_cm || 0,
             },
+            service: parseInt(service_code),
             options: {
               insurance_value: package_details?.valor_declarado || 0,
               receipt: false,
@@ -84,11 +85,11 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               reverse: false,
               non_commercial: false,
               invoice_number: recipient?.invoice_number || null,
-              service: parseInt(service_code)
             }
           };
 
-          console.log('[SHIPPING_LABELS] Enviando para /api/v0/cart:', JSON.stringify(cartPayload, null, 2));
+          const rawCartPayload = JSON.stringify(cartPayload);
+          console.log('[SHIPPING_LABELS] RAW_PAYLOAD_START' + rawCartPayload + 'RAW_PAYLOAD_END');
 
           const cartResponse = await fetch(`${baseUrl}/api/v0/cart`, {
             method: 'POST',
@@ -101,8 +102,9 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             body: JSON.stringify(cartPayload),
           });
 
-          const cartData = await cartResponse.json().catch(() => ({}));
-          console.log(`[SHIPPING_LABELS] Resposta /api/v0/cart (Status ${cartResponse.status}):`, JSON.stringify(cartData, null, 2));
+          const cartText = await cartResponse.text();
+          console.log(`[SHIPPING_LABELS] Resposta BRUTA /api/v0/cart: ${cartText}`);
+          const cartData = JSON.parse(cartText || '{}');
 
           if (!cartResponse.ok) {
             console.error('[SHIPPING_LABELS] Erro no Carrinho:', cartData.message || cartData.error || 'Erro desconhecido');
