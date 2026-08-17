@@ -222,14 +222,21 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
 
         } catch (error: any) {
           console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
+          // Adicionando log de stack trace completo para depuração
+          if (error.stack) {
+            console.error('[SHIPPING_LABELS] Stack Trace:', error.stack);
+          }
+          
           return new Response(
             JSON.stringify({ 
               error: error.message || 'Erro interno inesperado',
-              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+              stack: error.stack,
+              module: 'labels.ts'
             }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
           );
         }
+
       }
     }
   }
