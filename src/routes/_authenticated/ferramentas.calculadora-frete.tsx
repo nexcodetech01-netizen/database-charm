@@ -353,7 +353,10 @@ function ShippingCalculatorPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className={cn(
+                      "grid gap-3",
+                      calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
+                    )}>
                       <FormField
                         control={calcForm.control}
                         name="altura_cm"
@@ -390,24 +393,26 @@ function ShippingCalculatorPage() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={calcForm.control}
-                        name="comprimento_cm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Comp. (cm)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="20"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {calcForm.watch("format") !== "3" && (
+                        <FormField
+                          control={calcForm.control}
+                          name="comprimento_cm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Comp. (cm)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="20"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isLoading}>
