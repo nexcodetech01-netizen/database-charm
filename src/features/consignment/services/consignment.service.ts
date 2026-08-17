@@ -19,6 +19,10 @@ export class ConsignmentService {
   }
 
   static async createReseller(reseller: Omit<Reseller, 'id' | 'created_at' | 'updated_at'>): Promise<Reseller> {
+    if (!reseller.company_id) {
+      throw new Error('company_id is required to create a reseller');
+    }
+
     const { data, error } = await supabase
       .from('resellers')
       .insert(reseller)
@@ -81,6 +85,11 @@ export class ConsignmentService {
     items: Array<{ product_id: string; sent_quantity: number; cost_price: number; suggested_price?: number }>
   ): Promise<Consignment> {
     const { reseller, ...consignmentData } = consignment as any;
+    
+    if (!consignmentData.company_id) {
+      throw new Error('company_id is required to create a consignment');
+    }
+
     const { data: newConsignment, error: cError } = await supabase
       .from('consignacoes')
       .insert({ ...consignmentData, status: 'ativa' })
@@ -117,6 +126,10 @@ export class ConsignmentService {
       net_receivable: number;
     }
   ): Promise<ConsignmentSettlement> {
+    if (!companyId) {
+      throw new Error('companyId is required to register a settlement');
+    }
+
     const { data: settlement, error: sError } = await supabase
       .from('consignment_settlements')
       .insert({
