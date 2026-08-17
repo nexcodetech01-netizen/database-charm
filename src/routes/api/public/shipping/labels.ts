@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               district: sender.district,
               city: sender.city,
               state: sender.state,
-              email: sender.email,
+              email: sender.email || null,
               phone: sender.phone.replace(/\D/g, ''),
             },
             to: {
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               district: recipient.district,
               city: recipient.city,
               state: recipient.state,
-              email: recipient.email,
+              email: recipient.email || null,
               phone: recipient.phone.replace(/\D/g, ''),
             },
             package: {
