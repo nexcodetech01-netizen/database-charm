@@ -50,6 +50,8 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             }
           };
 
+          console.log('SuperFrete Request Payload:', JSON.stringify(payload, null, 2));
+
           const response = await fetch(`${baseUrl}/api/v0/calculator`, {
             method: 'POST',
             headers: {
