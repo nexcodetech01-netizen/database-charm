@@ -126,6 +126,10 @@ export class ConsignmentService {
       net_receivable: number;
     }
   ): Promise<ConsignmentSettlement> {
+    if (!companyId) {
+      throw new Error('companyId is required to register a settlement');
+    }
+
     const { data: settlement, error: sError } = await supabase
       .from('consignment_settlements')
       .insert({
