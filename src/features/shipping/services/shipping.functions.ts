@@ -12,7 +12,6 @@ export const calculateShipping = createServerFn({ method: "POST" })
       ? `https://${process.env.VERCEL_URL || 'nexos.nexxcode.com.br'}` 
       : 'http://localhost:8080';
 
-    console.log("FUNCTIONS_DEBUG: Calling endpoint with data:", JSON.stringify(data));
     const response = await fetch(`${baseUrl}/api/public/shipping/calculate`, {
       method: "POST",
       headers: {
@@ -21,19 +20,12 @@ export const calculateShipping = createServerFn({ method: "POST" })
       body: JSON.stringify(data),
     });
 
-    console.log("FUNCTIONS_DEBUG: Response status:", response.status);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("FUNCTIONS_DEBUG: Error response body:", errorText);
-      let errorData = {};
-      try { errorData = JSON.parse(errorText); } catch(e) {}
-      throw new Error((errorData as any).error || "Erro ao calcular frete");
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Erro ao calcular frete");
     }
 
-    const result = await response.json();
-    console.log("FUNCTIONS_DEBUG: Success result:", result);
-    return result as ShippingOption[];
+    return (await response.json()) as ShippingOption[];
   });
 
 export const generateLabel = createServerFn({ method: "POST" })

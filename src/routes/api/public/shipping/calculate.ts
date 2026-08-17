@@ -5,17 +5,6 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const rawBody = await request.text();
-          console.log('SHIPPING_API: Raw Request Body:', rawBody);
-          
-          let body;
-          try {
-            body = JSON.parse(rawBody);
-          } catch (e) {
-            console.error('SHIPPING_API: Failed to parse JSON:', e);
-            return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
-          }
-
           const { 
             cep_origem, 
             cep_destino, 
@@ -24,7 +13,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             largura_cm, 
             comprimento_cm, 
             valor_declarado 
-          } = body;
+          } = await request.json();
 
           const SUPERFRETE_TOKEN = process.env['SUPERFRETE_TOKEN'];
           const SUPERFRETE_ENV = process.env['SUPERFRETE_ENV'] || 'sandbox';
