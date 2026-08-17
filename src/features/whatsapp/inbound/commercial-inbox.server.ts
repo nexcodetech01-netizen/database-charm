@@ -55,6 +55,56 @@ function toRow(draft: CommercialTicketDraft) {
   };
 }
 
+/**
+ * Envia o pedido confirmado para o n8n via webhook.
+ * Implementado como integração secundária e robusta.
+ */
+async function notifyN8NConfirmedOrder(ticketId: string, draft: CommercialTicketDraft): Promise<void> {
+  const secret = process.env.N8N_WEBHOOK_SECRET;
+  if (!secret) {
+    console.warn("[INBOX COMERCIAL] N8N_WEBHOOK_SECRET não configurado. Pulando integração.");
+    return;
+  }
+
+  const url = "https://ugc.nexxcode.com.br/webhook/f273ba04-bb25-47bf-bfd3-51cfb7526223";
+  const eventId = `catalog-${ticketId}`;
+
+  const payload = {
+    company_id: draft.companyId,
+    event_id: eventId,
+    buyer_name: draft.buyerName || "Cliente",
+    phone: draft.phone,
+    total: draft.total,
+    item_count: draft.itemCount,
+    items: draft.items,
+    mensagem: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+    source: "nexos",
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${secret}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      console.error(`[INBOX COMERCIAL] Webhook n8n falhou com status ${response.status}`);
+    }
+  } catch (err: any) {
+    console.error(`[INBOX COMERCIAL] Erro ao chamar webhook n8n: ${err.message}`);
+  }
+}
+
 /** Atendimento aberto (aguardando) para o telefone, se existir. */
 export async function findOpenTicket(
   db: Db,
@@ -125,34 +175,42 @@ export async function recordConfirmedOrder(args: {
   const now = args.now ?? Date.now();
   const draft = buildCommercialTicketDraft({ session: args.session, cart: args.cart, now });
   const { id, created } = await upsertCommercialTicket(args.db, draft);
-
-  if (created && id) {
-    await emitAgentEvent({
-      type: "catalog.order.received",
-      ctx: {
-        companyId: args.companyId,
-        userId: "system",
-        conversationId: args.session.phone,
-        request: {
-          requestId: `catalog-${id}`,
-          channel: "whatsapp",
-          startedAt: new Date(now),
-        },
-        security: makeSecurityContext(new Set(["*"]), true),
-        supabase: supabaseAdmin as any,
-      },
-      payload: {
-        entityId: id,
-        ticketId: id,
-        companyId: args.companyId,
-        buyerName: draft.buyerName,
-        phone: draft.phone,
-        total: draft.total,
-        itemCount: draft.itemCount,
-      },
-      title: "Novo pedido do catálogo",
-      description: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+  
+  if (id) {
+    // Integração n8n (Egress) - Requisito Sprint 6.9
+    // Executado de forma assíncrona (best-effort) para não bloquear o fluxo principal.
+    notifyN8NConfirmedOrder(id, draft).catch((err) => {
+      console.warn("[INBOX COMERCIAL] Falha silenciosa na integração n8n:", err.message);
     });
+
+    if (created) {
+      await emitAgentEvent({
+        type: "catalog.order.received",
+        ctx: {
+          companyId: args.companyId,
+          userId: "system",
+          conversationId: args.session.phone,
+          request: {
+            requestId: `catalog-${id}`,
+            channel: "whatsapp",
+            startedAt: new Date(now),
+          },
+          security: makeSecurityContext(new Set(["*"]), true),
+          supabase: supabaseAdmin as any,
+        },
+        payload: {
+          entityId: id,
+          ticketId: id,
+          companyId: args.companyId,
+          buyerName: draft.buyerName,
+          phone: draft.phone,
+          total: draft.total,
+          itemCount: draft.itemCount,
+        },
+        title: "Novo pedido do catálogo",
+        description: `${draft.buyerName || "Cliente"} enviou um pedido de ${formatCurrency(draft.total)} (${draft.itemCount} itens).`,
+      });
+    }
   }
 
   return { ticketId: id, created, draft };
