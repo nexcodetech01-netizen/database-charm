@@ -238,7 +238,9 @@ export function ConsignmentsList() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-800" />
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer text-destructive focus:text-destructive"
+
                           onSelect={() => handleCancel(c.id)}
                           disabled={c.status === 'cancelada' || cancelMutation.isPending}
                         >
