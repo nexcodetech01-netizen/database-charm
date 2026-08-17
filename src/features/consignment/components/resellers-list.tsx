@@ -38,8 +38,7 @@ const resellerSchema = z.object({
 type ResellerFormValues = z.infer<typeof resellerSchema>;
 
 export function ResellersList() {
-  const { user, loading: authLoading } = useAuth();
-  const companyId = (user as any)?.company_id;
+  const { companyId, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);

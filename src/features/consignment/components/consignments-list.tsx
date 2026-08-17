@@ -40,11 +40,9 @@ import { ConsignmentItem } from '../types';
 import { toast } from 'sonner';
 
 export function ConsignmentsList() {
-  const { user, loading: authLoading } = useAuth();
+  const { companyId, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-
-  const companyId = (user as any)?.company_id;
 
   const { data: consignments = [], isLoading } = useQuery({
     queryKey: ['consignments', companyId],
