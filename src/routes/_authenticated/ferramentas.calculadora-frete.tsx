@@ -75,19 +75,19 @@ function ShippingCalculatorPage() {
     try {
       console.log("CALCULATOR_DEBUG: Form data before fetch:", data);
       
-      // Manually trigger server function call with sanitized data to ensure consistency
+      // Sanitização manual para garantir tipos numéricos antes de enviar para a Server Function
       const sanitizedData = {
         ...data,
-        peso_kg: typeof data.peso_kg === 'string' ? parseFloat((data.peso_kg as string).replace(',', '.')) : data.peso_kg,
-        altura_cm: typeof data.altura_cm === 'string' ? parseFloat((data.altura_cm as string).replace(',', '.')) : data.altura_cm,
-        largura_cm: typeof data.largura_cm === 'string' ? parseFloat((data.largura_cm as string).replace(',', '.')) : data.largura_cm,
-        comprimento_cm: typeof data.comprimento_cm === 'string' ? parseFloat((data.comprimento_cm as string).replace(',', '.')) : data.comprimento_cm,
-        valor_declarado: typeof data.valor_declarado === 'string' ? parseFloat((data.valor_declarado as string).replace(',', '.')) : data.valor_declarado,
+        peso_kg: parseFloat(String(data.peso_kg).replace(',', '.')),
+        altura_cm: parseFloat(String(data.altura_cm).replace(',', '.')),
+        largura_cm: parseFloat(String(data.largura_cm).replace(',', '.')),
+        comprimento_cm: parseFloat(String(data.comprimento_cm).replace(',', '.')),
+        valor_declarado: parseFloat(String(data.valor_declarado).replace(',', '.')),
       };
       
       console.log("CALCULATOR_DEBUG: Sanitized data for server function:", sanitizedData);
       
-      const response = await calculateShipping({ data: sanitizedData });
+      const response = await calculateShipping({ data: sanitizedData as any });
       console.log("CALCULATOR_DEBUG: Response from calculateShipping:", response);
       setResults(response);
       if (response.length === 0) {
