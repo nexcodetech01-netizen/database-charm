@@ -412,7 +412,7 @@ export function formatWebsiteOrderSummary(
     `Forma de pagamento: ${session.payment ? PAYMENT_LABEL[session.payment] : "-"}`,
     session.payment === "cash" 
       ? `Troco: ${session.changeNeeded ? `para ${money(session.changeAmount ?? 0)}` : "Não precisa"}`
-      : null,
+      : "",
     "",
     `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
     "Endereço:",
@@ -455,7 +455,7 @@ export function formatCheckoutSummary(
     session.payment ? PAYMENT_LABEL[session.payment] : "-",
     session.payment === "cash"
       ? `*Troco:* ${session.changeNeeded ? `para ${money(session.changeAmount ?? 0)}` : "Não precisa"}`
-      : null,
+      : "",
     "",
     "*Itens do pedido:*",
     ...items,
