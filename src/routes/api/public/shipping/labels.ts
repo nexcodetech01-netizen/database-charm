@@ -84,7 +84,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               reverse: false,
               non_commercial: false,
               invoice_number: recipient?.invoice_number || null,
-              services: [service_code]
+              service: parseInt(service_code)
             }
           };
 
