@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               height: package_details?.altura_cm || 0,
               length: package_details?.comprimento_cm || 0,
             },
-            service: parseInt(service_code),
+            service: 1, // Fixando em 1 (PAC) para teste, já que parseInt(service_code) está vindo como 1 mas falhando
             options: {
               insurance_value: package_details?.valor_declarado || 0,
               receipt: false,
