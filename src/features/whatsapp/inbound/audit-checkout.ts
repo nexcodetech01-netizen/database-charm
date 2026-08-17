@@ -15,7 +15,8 @@ async function runAudit() {
     let cart = createCartSession(companyId, phone, now);
     cart = addProduct(cart, { id: "p1", name: "Produto A", price: 40 } as any, 1, now);
     cart = addProduct(cart, { id: "p2", name: "Produto B", price: 48 } as any, 1, now);
-    cart.deliveryFee = 5; // Simular frete injetado
+    // @ts-ignore - deliveryFee existe no objeto mas não no tipo estático do TS do carrinho efêmero
+    cart.deliveryFee = 5; 
     cart.total = 93;
 
     let session = createCheckoutSession(companyId, phone, now);
