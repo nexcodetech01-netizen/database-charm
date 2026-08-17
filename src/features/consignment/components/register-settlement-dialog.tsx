@@ -22,7 +22,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ConsignmentService } from '../services/consignment.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/providers/auth-provider';
-import { Package, Info } from 'lucide-react';
+import { Package, Info, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { ConsignmentItem } from '../types';
 
