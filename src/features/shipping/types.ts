@@ -47,7 +47,7 @@ export type ShippingCalculatorInput = {
 };
 
 export interface ShippingOption {
-  id: string; // The service ID for SuperFrete
+  id: string | number; // The service ID for SuperFrete
   servico: string;
   transportadora: string;
   preco: number;

@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
         try {
           const body = await request.json();
           console.log('[SHIPPING_LABELS] Payload recebido:', JSON.stringify(body, null, 2));
+          console.log('[SHIPPING_LABELS] DEBUG service_code type:', typeof service_code, 'value:', service_code);
 
           const { 
             quote_id,
