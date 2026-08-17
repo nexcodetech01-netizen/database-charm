@@ -149,14 +149,15 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           }
 
           // 3. Generate Label
-          // Usually checkout returns order identifiers. 
-          // SuperFrete documentation notes checkout generates the label if everything is fine.
+          // SuperFrete endpoint for printing is usually /api/v0/checkout/print
+          const printUrl = `${baseUrl}/api/v0/checkout/print?orders[]=${checkoutData.order_id || cartData.id}`;
           
           const labelResult = {
             success: true,
             order_id: checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id,
             tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
-            label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.label),
+            // Prefer checkoutData.label_url, otherwise use the constructed print URL
+            label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.label) || printUrl,
             raw: checkoutData
           };
 
