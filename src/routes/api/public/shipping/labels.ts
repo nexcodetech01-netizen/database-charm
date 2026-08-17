@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             }
           };
 
-          console.log('[SHIPPING_LABELS] Enviando para /api/v0/cart:', JSON.stringify(cartPayload, null, 2));
+          console.log('[SHIPPING_LABELS] Enviando para /api/v0/cart:', JSON.stringify(cartPayload));
 
           const cartResponse = await fetch(`${baseUrl}/api/v0/cart`, {
             method: 'POST',
