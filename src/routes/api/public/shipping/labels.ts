@@ -6,6 +6,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
+          console.log('LABEL_PAYLOAD_DEBUG:', JSON.stringify(body, null, 2));
           const { 
             quote_id,
             sender,
