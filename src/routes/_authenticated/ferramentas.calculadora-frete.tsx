@@ -36,7 +36,7 @@ function ShippingCalculatorPage() {
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const calcForm = useForm<ShippingCalculatorInput>({
+  const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
     defaultValues: {
       cep_origem: "01001-000",

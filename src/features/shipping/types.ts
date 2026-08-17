@@ -34,7 +34,15 @@ export const ShippingCalculatorSchema = z.object({
   }).min(0, "Valor mínimo R$ 0")),
 });
 
-export type ShippingCalculatorInput = z.infer<typeof ShippingCalculatorSchema>;
+export type ShippingCalculatorInput = {
+  cep_origem: string;
+  cep_destino: string;
+  peso_kg: number;
+  altura_cm: number;
+  largura_cm: number;
+  comprimento_cm: number;
+  valor_declarado: number;
+};
 
 export interface ShippingOption {
   id: string; // The service ID for SuperFrete
