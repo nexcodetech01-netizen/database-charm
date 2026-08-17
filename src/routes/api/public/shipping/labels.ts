@@ -95,13 +95,14 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             body: JSON.stringify(cartPayload),
           });
 
-          const cartData = await cartResponse.json();
+          const cartData = await cartResponse.json().catch(() => ({}));
           console.log(`[SHIPPING_LABELS] Resposta /api/v0/cart (Status ${cartResponse.status}):`, JSON.stringify(cartData, null, 2));
 
           if (!cartResponse.ok) {
+            console.error('[SHIPPING_LABELS] Erro no Carrinho:', cartData.message || cartData.error || 'Erro desconhecido');
             return new Response(
               JSON.stringify({ 
-                error: cartData.message || 'Falha ao adicionar ao carrinho',
+                error: cartData.message || cartData.error || 'Falha ao adicionar ao carrinho',
                 details: cartData 
               }),
               { status: cartResponse.status, headers: { 'Content-Type': 'application/json' } }
