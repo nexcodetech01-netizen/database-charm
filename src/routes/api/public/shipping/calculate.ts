@@ -5,8 +5,16 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
-          console.log('SHIPPING_API: Received payload:', JSON.stringify(body));
+          const rawBody = await request.text();
+          console.log('SHIPPING_API: Raw Request Body:', rawBody);
+          
+          let body;
+          try {
+            body = JSON.parse(rawBody);
+          } catch (e) {
+            console.error('SHIPPING_API: Failed to parse JSON:', e);
+            return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
+          }
 
           const { 
             cep_origem, 
