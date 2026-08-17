@@ -1,16 +1,48 @@
 import { z } from "zod";
 
+const preprocessNumeric = (val: unknown) => {
+  if (typeof val === "string") {
+    const normalized = val.replace(",", ".");
+    const parsed = parseFloat(normalized);
+    return isNaN(parsed) ? val : parsed;
+  }
+  return val;
+};
+
 export const ShippingCalculatorSchema = z.object({
   cep_origem: z.string().min(8, "CEP de origem inválido"),
   cep_destino: z.string().min(8, "CEP de destino inválido"),
-  peso_kg: z.number().min(0.1, "Peso mínimo 0.1kg"),
-  altura_cm: z.number().min(2, "Altura mínima 2cm"),
-  largura_cm: z.number().min(11, "Largura mínima 11cm"),
-  comprimento_cm: z.number().min(16, "Comprimento mínimo 16cm"),
-  valor_declarado: z.number().min(0, "Valor mínimo R$ 0"),
+  peso_kg: z.preprocess(preprocessNumeric, z.number({ 
+    required_error: "Peso é obrigatório",
+    invalid_type_error: "Peso deve ser um número" 
+  }).min(0.1, "Peso mínimo 0.1kg")),
+  altura_cm: z.preprocess(preprocessNumeric, z.number({
+    required_error: "Altura é obrigatória",
+    invalid_type_error: "Altura deve ser um número"
+  }).min(2, "Altura mínima 2cm")),
+  largura_cm: z.preprocess(preprocessNumeric, z.number({
+    required_error: "Largura é obrigatória",
+    invalid_type_error: "Largura deve ser um número"
+  }).min(11, "Largura mínima 11cm")),
+  comprimento_cm: z.preprocess(preprocessNumeric, z.number({
+    required_error: "Comprimento é obrigatório",
+    invalid_type_error: "Comprimento deve ser um número"
+  }).min(16, "Comprimento mínimo 16cm")),
+  valor_declarado: z.preprocess(preprocessNumeric, z.number({
+    required_error: "Valor seguro é obrigatório",
+    invalid_type_error: "Valor seguro deve ser um número"
+  }).min(0, "Valor mínimo R$ 0")),
 });
 
-export type ShippingCalculatorInput = z.infer<typeof ShippingCalculatorSchema>;
+export type ShippingCalculatorInput = {
+  cep_origem: string;
+  cep_destino: string;
+  peso_kg: number;
+  altura_cm: number;
+  largura_cm: number;
+  comprimento_cm: number;
+  valor_declarado: number;
+};
 
 export interface ShippingOption {
   id: string; // The service ID for SuperFrete
