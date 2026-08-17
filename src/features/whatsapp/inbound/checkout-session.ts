@@ -568,7 +568,7 @@ export async function advanceCheckout(args: {
       
       const updated = next(session, { payment }, now);
       
-      // Se for dinheiro, pergunta do troco
+      // Se for dinheiro, pergunta do troco obrigatoriamente
       if (payment === "cash") {
         return {
           session: next(updated, { step: "WAITING_CHANGE_INFO" }, now),
@@ -577,7 +577,8 @@ export async function advanceCheckout(args: {
         };
       }
 
-      // Se já temos o nome (veio do catálogo), pula para o CPF
+      // Se NÃO for dinheiro, o fluxo DEVE seguir para CPF mesmo se tiver nome
+      // Requisito: O CPF é obrigatório mesmo quando o nome do comprador já estiver disponível
       if (updated.buyerName || updated.customer.fullName) {
          return {
            session: next(updated, { step: "WAITING_DOCUMENT" }, now),
@@ -599,7 +600,7 @@ export async function advanceCheckout(args: {
       if (isNo) {
         const updated = next(session, { changeNeeded: false, changeAmount: null }, now);
         
-        // Pula para o próximo passo (Nome ou CPF)
+        // Depois do troco, SEMPRE pedir CPF (mesmo se tiver nome)
         if (updated.buyerName || updated.customer.fullName) {
           return {
             session: next(updated, { step: "WAITING_DOCUMENT" }, now),
@@ -620,9 +621,11 @@ export async function advanceCheckout(args: {
         return { session, text: "Não entendi o valor. Se você precisar de troco, me informe para quanto (ex: R$ 50,00). Se não precisar, responda 'não'. 😊", aborted: false };
       }
 
+      // Converte para float considerando centavos se houver separador
       const amount = parseFloat(valueDigits) / (text.includes(",") || text.includes(".") ? 100 : 1);
       const total = args.cart.total;
 
+      // Validação: valor do troco >= total
       if (amount < total) {
         return {
           session,
@@ -633,6 +636,7 @@ export async function advanceCheckout(args: {
 
       const updated = next(session, { changeNeeded: true, changeAmount: amount }, now);
       
+      // Depois do troco, SEMPRE pedir CPF (mesmo se tiver nome)
       if (updated.buyerName || updated.customer.fullName) {
         return {
           session: next(updated, { step: "WAITING_DOCUMENT" }, now),
