@@ -161,7 +161,12 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
 
           // 3. Generate Label Real PDF URL
           // Based on SuperFrete documentation, /api/v0/tag/print returns the real PDF URL
-          const orderId = checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id;
+          const orderId = checkoutData?.order_id || 
+                          (checkoutData?.orders && checkoutData.orders[0]?.id) || 
+                          (checkoutData?.purchase?.id) ||
+                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.id) ||
+                          cartData?.id;
+
           
           console.log(`[SHIPPING_LABELS] Obtendo URL real do PDF para order_id: ${orderId}`);
           
