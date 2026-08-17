@@ -536,23 +536,31 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
 
 
-  // 3c-pre) Fechamento conversacional (ESTADO DO CHECKOUT - PRIORIDADE MÁXIMA).
-  // Se existir um checkout ativo, ele consome a mensagem e impede que o Intent Router
-  // ou qualquer Skill Geral (como Financeiro) "roube" a interação.
-  
-  // DEBUG LOGS
-  console.log(`[CATALOG CHECKOUT DEBUG]
+  // 3c-pre-ante) Resumo de pedido colado a partir do catálogo do site
+  // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
+  // PRIORIDADE MÁXIMA: Detectar novos pedidos de catálogo ANTES de processar
+  // turnos de checkout existentes para evitar que o [PEDIDO-CATALOGO] seja
+  // interpretado como resposta a uma etapa de uma sessão anterior.
+  const websiteOrder = parseWebsiteCatalogOrder(msg.text);
+
+  // Se for um novo pedido do catálogo, não executamos handleCheckoutTurn
+  // para esta mensagem. A sessão anterior será invalidada e uma nova será
+  // criada dentro do bloco if (websiteOrder) abaixo.
+  let checkoutTurn = null;
+  if (!websiteOrder) {
+    console.log(`[CATALOG CHECKOUT DEBUG]
 conversationId: ${conversationId}
 activeOrderId: N/A
 incomingMessage: ${msg.text}
 routerSelected: router.server.ts
 handlerSelected: handleCheckoutTurn (Checking...)`);
 
-  const checkoutTurn = await handleCheckoutTurn({
-    companyId: tenant.companyId,
-    phone: msg.phone,
-    text: msg.text,
-  });
+    checkoutTurn = await handleCheckoutTurn({
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      text: msg.text,
+    });
+  }
 
   if (checkoutTurn) {
     console.log(`[CATALOG CHECKOUT DEBUG]
@@ -729,21 +737,16 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     }
   }
 
-  // 3c-pre-bis) Resumo de pedido colado a partir do catálogo do site
-  // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]). Em vez de
-  // responder na mão, populamos o carrinho efêmero com os itens
-  // reconhecidos e disparamos o MESMO fechamento conversacional completo
-  // (nome, CPF/CNPJ, endereço via CEP, pagamento) que já existe para quem
-  // fecha pedido conversando com a Bella — assim a coleta de dados fica
-  // completa e consistente nos dois caminhos, terminando no mesmo
-  // atendimento comercial (handleCommercialConfirmationTurn / checkoutTurn
-  // logo abaixo, que já sabem lidar com uma sessão de checkout ativa).
-  const websiteOrder = parseWebsiteCatalogOrder(msg.text);
+  // 3c-pre-bis) Processamento do novo pedido de catálogo detectado anteriormente.
   if (websiteOrder) {
     const greeting = getGreeting();
     const money = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
+    // 1) Limpa/Prepara o carrinho
     let cart = await getCartSession(tenant.companyId, msg.phone);
+    // IMPORTANTE: Embora não solicitado limpar o carrinho todo, a lógica de sincronização
+    // abaixo com setProductQuantity garante que os itens do catálogo sejam soberanos.
+    
     for (const item of websiteOrder.items) {
       const { data: matches } = await db
         .from("products")
@@ -774,12 +777,14 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     let skillId: string;
 
     if (cart.items.length === 0) {
-      // Nenhum item do pedido colado bateu com o catálogo atual — não dá
-      // pra montar o carrinho automaticamente, encaminha direto pra humano.
       replyText = `${greeting}\n\nRecebi seu pedido, mas não consegui localizar os itens no nosso catálogo atual. Um de nossos atendentes vai te chamar em instantes para confirmar tudo. Muito obrigado(a)!`;
       skillId = "catalog.website_order_unmatched";
     } else {
+      // 2) Cria uma NOVA sessão limpa, invalidando qualquer anterior (upsert por phone/company)
       const session = createCheckoutSession(tenant.companyId, msg.phone);
+      
+      // 3) Define o estado inicial para Pagamento (pulando Nome/Endereço se vierem do site, 
+      // ou apenas seguindo o fluxo solicitado de iniciar em Pagamento para [PEDIDO-CATALOGO])
       session.step = "WAITING_PAYMENT_METHOD";
       
       if (websiteOrder.deliveryMethod === "tupa") {
@@ -788,7 +793,6 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         session.totalWithFreight = cart.total + 5.0;
       } else if (websiteOrder.deliveryMethod === "other") {
         session.fulfillment = "delivery";
-        // CEP pode vir no payload
         if (websiteOrder.cep) {
           session.customer.zipCode = websiteOrder.cep;
         }
@@ -799,6 +803,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         session.customer.fullName = websiteOrder.name;
       }
 
+      // Persiste a nova sessão (sobrescrevendo a anterior)
       await saveCheckoutSession(session);
 
       const itemsList = cart.items.map((i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`).join("\n");
@@ -834,6 +839,8 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     };
     if (sent.ok) convUpdate.last_outbound_at = new Date().toISOString();
     await db.from("whatsapp_conversations").update(convUpdate).eq("id", conversationId);
+    
+    // 4) RETORNO ANTECIPADO para garantir que esta mensagem não continue sendo processada.
     return;
   }
 
