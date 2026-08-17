@@ -74,7 +74,20 @@ function ShippingCalculatorPage() {
     console.log("CALCULATOR_DEBUG: Submitting form data:", data);
     try {
       console.log("CALCULATOR_DEBUG: Form data before fetch:", data);
-      const response = await calculateShipping({ data });
+      
+      // Manually trigger server function call with sanitized data to ensure consistency
+      const sanitizedData = {
+        ...data,
+        peso_kg: typeof data.peso_kg === 'string' ? parseFloat((data.peso_kg as string).replace(',', '.')) : data.peso_kg,
+        altura_cm: typeof data.altura_cm === 'string' ? parseFloat((data.altura_cm as string).replace(',', '.')) : data.altura_cm,
+        largura_cm: typeof data.largura_cm === 'string' ? parseFloat((data.largura_cm as string).replace(',', '.')) : data.largura_cm,
+        comprimento_cm: typeof data.comprimento_cm === 'string' ? parseFloat((data.comprimento_cm as string).replace(',', '.')) : data.comprimento_cm,
+        valor_declarado: typeof data.valor_declarado === 'string' ? parseFloat((data.valor_declarado as string).replace(',', '.')) : data.valor_declarado,
+      };
+      
+      console.log("CALCULATOR_DEBUG: Sanitized data for server function:", sanitizedData);
+      
+      const response = await calculateShipping({ data: sanitizedData });
       console.log("CALCULATOR_DEBUG: Response from calculateShipping:", response);
       setResults(response);
       if (response.length === 0) {
