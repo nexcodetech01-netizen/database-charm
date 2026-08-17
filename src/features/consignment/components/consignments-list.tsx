@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { 
   Package, 
   Plus, 
@@ -9,7 +10,8 @@ import {
   ChevronRight, 
   MoreHorizontal,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { ConsignmentService } from '@/features/consignment/services/consignment.service';
 import { useAuth } from '@/providers/auth-provider';
