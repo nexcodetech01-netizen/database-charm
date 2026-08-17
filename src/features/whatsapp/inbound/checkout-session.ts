@@ -18,6 +18,7 @@ import { isValidCNPJ, isValidCPF } from "@/lib/validators";
 export type CheckoutStep =
   | "WAITING_RECEIPT_METHOD"
   | "WAITING_PAYMENT_METHOD"
+  | "WAITING_CHANGE_INFO"
   | "WAITING_CUSTOMER_NAME"
   | "WAITING_DOCUMENT"
   | "WAITING_ADDRESS"
@@ -31,6 +32,7 @@ export type CheckoutStep =
   | "birth_date"
   | "fulfillment"
   | "payment"
+  | "change_info"
   | "summary"
   | "done";
 
@@ -73,6 +75,8 @@ export interface CheckoutSession {
   payment: PaymentKind | null;
   deliveryFee: number;
   totalWithFreight: number;
+  changeNeeded: boolean | null;
+  changeAmount: number | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -148,6 +152,8 @@ export function createCheckoutSession(
     payment: null,
     deliveryFee: 0,
     totalWithFreight: 0,
+    changeNeeded: null,
+    changeAmount: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -296,6 +302,11 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "2. • Cartão",
     "3. • Dinheiro",
   ].join("\n"),
+  WAITING_CHANGE_INFO: [
+    "💵 Você vai precisar de troco?",
+    "Se sim, me informe para quanto. Ex.: R$ 50,00",
+    "Se não precisar, responda 'não'.",
+  ].join("\n"),
   WAITING_CUSTOMER_NAME: "Qual é o seu nome completo? 😊",
   WAITING_DOCUMENT: "Qual o seu CPF? (só os números, ou com pontos e traço) 😊",
   WAITING_ADDRESS: "Por favor, me informe seu endereço completo com CEP para entrega. 😊",
@@ -324,6 +335,11 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "1. • PIX",
     "2. • Cartão",
     "3. • Dinheiro",
+  ].join("\n"),
+  change_info: [
+    "💵 Você vai precisar de troco?",
+    "Se sim, me informe para quanto. Ex.: R$ 50,00",
+    "Se não precisar, responda 'não'.",
   ].join("\n"),
 };
 
@@ -394,6 +410,9 @@ export function formatWebsiteOrderSummary(
     "",
     `Forma de recebimento: ${session.fulfillment === "pickup" ? "Retirada" : "Entrega"}`,
     `Forma de pagamento: ${session.payment ? PAYMENT_LABEL[session.payment] : "-"}`,
+    session.payment === "cash" 
+      ? `Troco: ${session.changeNeeded ? `para ${money(session.changeAmount ?? 0)}` : "Não precisa"}`
+      : "",
     "",
     `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
     "Endereço:",
@@ -434,6 +453,9 @@ export function formatCheckoutSummary(
     "",
     "*Pagamento:*",
     session.payment ? PAYMENT_LABEL[session.payment] : "-",
+    session.payment === "cash"
+      ? `*Troco:* ${session.changeNeeded ? `para ${money(session.changeAmount ?? 0)}` : "Não precisa"}`
+      : "",
     "",
     "*Itens do pedido:*",
     ...items,
@@ -546,6 +568,15 @@ export async function advanceCheckout(args: {
       
       const updated = next(session, { payment }, now);
       
+      // Se for dinheiro, pergunta do troco
+      if (payment === "cash") {
+        return {
+          session: next(updated, { step: "WAITING_CHANGE_INFO" }, now),
+          text: PROMPTS.WAITING_CHANGE_INFO,
+          aborted: false
+        };
+      }
+
       // Se já temos o nome (veio do catálogo), pula para o CPF
       if (updated.buyerName || updated.customer.fullName) {
          return {
@@ -561,14 +592,115 @@ export async function advanceCheckout(args: {
         aborted: false,
       };
     }
+    case "WAITING_CHANGE_INFO": {
+      const t = normalize(text);
+      const isNo = SKIP_RE.test(t) || t === "nao";
+      
+      if (isNo) {
+        const updated = next(session, { changeNeeded: false, changeAmount: null }, now);
+        
+        // Pula para o próximo passo (Nome ou CPF)
+        if (updated.buyerName || updated.customer.fullName) {
+          return {
+            session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+            text: `Entendido, sem troco! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+            aborted: false
+          };
+        }
+        return {
+          session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
+          text: `Entendido, sem troco! 😊 Qual é o seu nome completo?`,
+          aborted: false
+        };
+      }
+
+      // Tenta extrair valor monetário
+      const valueDigits = digits(text);
+      if (!valueDigits) {
+        return { session, text: "Não entendi o valor. Se você precisar de troco, me informe para quanto (ex: R$ 50,00). Se não precisar, responda 'não'. 😊", aborted: false };
+      }
+
+      const amount = parseFloat(valueDigits) / (text.includes(",") || text.includes(".") ? 100 : 1);
+      const total = args.cart.total;
+
+      if (amount < total) {
+        return {
+          session,
+          text: `⚠️ O valor informado para o troco (${money(amount)}) precisa ser igual ou maior que o total do pedido de ${money(total)}. Para quanto você vai precisar de troco?`,
+          aborted: false
+        };
+      }
+
+      const updated = next(session, { changeNeeded: true, changeAmount: amount }, now);
+      
+      if (updated.buyerName || updated.customer.fullName) {
+        return {
+          session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+          text: `Combinado, troco para ${money(amount)}! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+          aborted: false
+        };
+      }
+      return {
+        session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
+        text: `Combinado, troco para ${money(amount)}! 😊 Qual é o seu nome completo?`,
+        aborted: false
+      };
+    }
     case "payment": {
       const payment = parsePayment(text);
       if (!payment) return { session, text: PROMPTS.payment, aborted: false };
+      
+      const updated = next(session, { payment }, now);
+      
+      if (payment === "cash") {
+        return {
+          session: next(updated, { step: "change_info" }, now),
+          text: PROMPTS.change_info,
+          aborted: false
+        };
+      }
+
       const withPayment = next(session, { payment, step: "summary" }, now);
       return {
         session: withPayment,
         text: formatCheckoutSummary(withPayment, args.cart),
         aborted: false,
+      };
+    }
+    case "change_info": {
+      const t = normalize(text);
+      const isNo = SKIP_RE.test(t) || t === "nao";
+      
+      if (isNo) {
+        const withNoChange = next(session, { changeNeeded: false, changeAmount: null, step: "summary" }, now);
+        return {
+          session: withNoChange,
+          text: formatCheckoutSummary(withNoChange, args.cart),
+          aborted: false
+        };
+      }
+
+      const valueDigits = digits(text);
+      if (!valueDigits) {
+        return { session, text: "Não entendi o valor. Se você precisar de troco, me informe para quanto (ex: R$ 50,00). Se não precisar, responda 'não'. 😊", aborted: false };
+      }
+
+      const amount = parseFloat(valueDigits) / (text.includes(",") || text.includes(".") ? 100 : 1);
+      const total = args.cart.total;
+
+      if (amount < total) {
+        return {
+          session,
+          text: `⚠️ O valor informado para o troco (${money(amount)}) precisa ser igual ou maior que o total do pedido de ${money(total)}. Para quanto você vai precisar de troco?`,
+          aborted: false
+        };
+      }
+
+      const withChange = next(session, { changeNeeded: true, changeAmount: amount, step: "summary" }, now);
+      return {
+        session: withChange,
+        text: formatCheckoutSummary(withChange, args.cart),
+        aborted: false
       };
     }
     case "WAITING_CUSTOMER_NAME": {

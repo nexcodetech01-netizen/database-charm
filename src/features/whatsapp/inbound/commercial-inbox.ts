@@ -80,6 +80,8 @@ export interface CommercialTicketDraft {
     complement: string | null;
   };
   payment: string | null;
+  changeNeeded: boolean | null;
+  changeAmount: number | null;
   origin: typeof COMMERCIAL_INBOX_ORIGIN;
   status: CommercialInboxStatus;
   createdAt: string;
@@ -124,6 +126,8 @@ export function buildCommercialTicketDraft(args: {
     fulfillment: session.fulfillment ?? "pickup",
     delivery: { ...session.delivery },
     payment: session.payment,
+    changeNeeded: session.changeNeeded,
+    changeAmount: session.changeAmount,
     origin: COMMERCIAL_INBOX_ORIGIN,
     status: COMMERCIAL_INBOX_STATUS.waiting,
     createdAt: new Date(args.now ?? Date.now()).toISOString(),
