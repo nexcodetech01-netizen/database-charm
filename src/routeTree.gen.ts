@@ -72,6 +72,7 @@ import { Route as AuthenticatedFiscalConfiguracaoRouteImport } from './routes/_a
 import { Route as AuthenticatedFinanceiroSaudeFiscalRouteImport } from './routes/_authenticated/financeiro.saude-fiscal'
 import { Route as AuthenticatedFerramentasCalculadoraFreteRouteImport } from './routes/_authenticated/ferramentas.calculadora-frete'
 import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/_authenticated/estoque.reconciliacao'
+import { Route as AuthenticatedConsignacoesIdRouteImport } from './routes/_authenticated/consignacoes.$id'
 import { Route as AuthenticatedConfiguracoesPrecificacaoRouteImport } from './routes/_authenticated/configuracoes.precificacao'
 import { Route as AuthenticatedComprasNovoRouteImport } from './routes/_authenticated/compras_.novo'
 import { Route as AuthenticatedComprasPurchaseIdRouteImport } from './routes/_authenticated/compras_.$purchaseId'
@@ -456,6 +457,12 @@ const AuthenticatedEstoqueReconciliacaoRoute =
     path: '/reconciliacao',
     getParentRoute: () => AuthenticatedEstoqueRoute,
   } as any)
+const AuthenticatedConsignacoesIdRoute =
+  AuthenticatedConsignacoesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedConsignacoesRoute,
+  } as any)
 const AuthenticatedConfiguracoesPrecificacaoRoute =
   AuthenticatedConfiguracoesPrecificacaoRouteImport.update({
     id: '/configuracoes/precificacao',
@@ -697,7 +704,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/compras': typeof AuthenticatedComprasRoute
-  '/consignacoes': typeof AuthenticatedConsignacoesRoute
+  '/consignacoes': typeof AuthenticatedConsignacoesRouteWithChildren
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
@@ -726,6 +733,7 @@ export interface FileRoutesByFullPath {
   '/compras/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
+  '/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
@@ -798,7 +806,7 @@ export interface FileRoutesByTo {
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/compras': typeof AuthenticatedComprasRoute
-  '/consignacoes': typeof AuthenticatedConsignacoesRoute
+  '/consignacoes': typeof AuthenticatedConsignacoesRouteWithChildren
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
@@ -826,6 +834,7 @@ export interface FileRoutesByTo {
   '/comercial/lista-interesse': typeof AuthenticatedComercialListaInteresseRoute
   '/compras/novo': typeof AuthenticatedComprasNovoRoute
   '/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
+  '/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
@@ -900,7 +909,7 @@ export interface FileRoutesById {
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/compras': typeof AuthenticatedComprasRoute
-  '/_authenticated/consignacoes': typeof AuthenticatedConsignacoesRoute
+  '/_authenticated/consignacoes': typeof AuthenticatedConsignacoesRouteWithChildren
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documentos': typeof AuthenticatedDocumentosRoute
@@ -929,6 +938,7 @@ export interface FileRoutesById {
   '/_authenticated/compras_/$purchaseId': typeof AuthenticatedComprasPurchaseIdRouteWithChildren
   '/_authenticated/compras_/novo': typeof AuthenticatedComprasNovoRoute
   '/_authenticated/configuracoes/precificacao': typeof AuthenticatedConfiguracoesPrecificacaoRoute
+  '/_authenticated/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/_authenticated/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/_authenticated/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
   '/_authenticated/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
@@ -1032,6 +1042,7 @@ export interface FileRouteTypes {
     | '/compras/$purchaseId'
     | '/compras/novo'
     | '/configuracoes/precificacao'
+    | '/consignacoes/$id'
     | '/estoque/reconciliacao'
     | '/ferramentas/calculadora-frete'
     | '/financeiro/saude-fiscal'
@@ -1132,6 +1143,7 @@ export interface FileRouteTypes {
     | '/comercial/lista-interesse'
     | '/compras/novo'
     | '/configuracoes/precificacao'
+    | '/consignacoes/$id'
     | '/estoque/reconciliacao'
     | '/ferramentas/calculadora-frete'
     | '/financeiro/saude-fiscal'
@@ -1234,6 +1246,7 @@ export interface FileRouteTypes {
     | '/_authenticated/compras_/$purchaseId'
     | '/_authenticated/compras_/novo'
     | '/_authenticated/configuracoes/precificacao'
+    | '/_authenticated/consignacoes/$id'
     | '/_authenticated/estoque/reconciliacao'
     | '/_authenticated/ferramentas/calculadora-frete'
     | '/_authenticated/financeiro/saude-fiscal'
@@ -1757,6 +1770,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstoqueReconciliacaoRouteImport
       parentRoute: typeof AuthenticatedEstoqueRoute
     }
+    '/_authenticated/consignacoes/$id': {
+      id: '/_authenticated/consignacoes/$id'
+      path: '/$id'
+      fullPath: '/consignacoes/$id'
+      preLoaderRoute: typeof AuthenticatedConsignacoesIdRouteImport
+      parentRoute: typeof AuthenticatedConsignacoesRoute
+    }
     '/_authenticated/configuracoes/precificacao': {
       id: '/_authenticated/configuracoes/precificacao'
       path: '/configuracoes/precificacao'
@@ -2047,6 +2067,20 @@ const AuthenticatedBellaPayRouteWithChildren =
     AuthenticatedBellaPayRouteChildren,
   )
 
+interface AuthenticatedConsignacoesRouteChildren {
+  AuthenticatedConsignacoesIdRoute: typeof AuthenticatedConsignacoesIdRoute
+}
+
+const AuthenticatedConsignacoesRouteChildren: AuthenticatedConsignacoesRouteChildren =
+  {
+    AuthenticatedConsignacoesIdRoute: AuthenticatedConsignacoesIdRoute,
+  }
+
+const AuthenticatedConsignacoesRouteWithChildren =
+  AuthenticatedConsignacoesRoute._addFileChildren(
+    AuthenticatedConsignacoesRouteChildren,
+  )
+
 interface AuthenticatedEstoqueRouteChildren {
   AuthenticatedEstoqueReconciliacaoRoute: typeof AuthenticatedEstoqueReconciliacaoRoute
   AuthenticatedEstoqueProdutoProductIdRoute: typeof AuthenticatedEstoqueProdutoProductIdRoute
@@ -2184,7 +2218,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedComprasRoute: typeof AuthenticatedComprasRoute
-  AuthenticatedConsignacoesRoute: typeof AuthenticatedConsignacoesRoute
+  AuthenticatedConsignacoesRoute: typeof AuthenticatedConsignacoesRouteWithChildren
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentosRoute: typeof AuthenticatedDocumentosRoute
@@ -2248,7 +2282,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedComprasRoute: AuthenticatedComprasRoute,
-  AuthenticatedConsignacoesRoute: AuthenticatedConsignacoesRoute,
+  AuthenticatedConsignacoesRoute: AuthenticatedConsignacoesRouteWithChildren,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentosRoute: AuthenticatedDocumentosRoute,
