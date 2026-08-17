@@ -754,7 +754,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         .limit(1);
       const product = Array.isArray(matches) ? matches[0] : null;
       if (product) {
-        cart = addProduct(
+        cart = setProductQuantity(
           cart,
           {
             id: product.id as string,
