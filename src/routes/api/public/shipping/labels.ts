@@ -148,16 +148,34 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             );
           }
 
-          // 3. Generate Label
-          // SuperFrete endpoint for printing is usually /api/v0/checkout/print
-          const printUrl = `${baseUrl}/api/v0/checkout/print?orders[]=${checkoutData.order_id || cartData.id}`;
+          // 3. Generate Label Real PDF URL
+          // Based on SuperFrete documentation, /api/v0/tag/print returns the real PDF URL
+          const orderId = checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id;
           
+          console.log(`[SHIPPING_LABELS] Obtendo URL real do PDF para order_id: ${orderId}`);
+          
+          const printResponse = await fetch(`${baseUrl}/api/v0/tag/print`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
+              'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orders: [orderId]
+            }),
+          });
+
+          const printData = await printResponse.json().catch(() => ({}));
+          console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print (Status ${printResponse.status}):`, JSON.stringify(printData, null, 2));
+
           const labelResult = {
             success: true,
-            order_id: checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id,
+            order_id: orderId,
             tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
-            // Prefer checkoutData.label_url, otherwise use the constructed print URL
-            label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.label) || printUrl,
+            // Use the URL from /api/v0/tag/print which is the direct PDF
+            label_url: printData.url || checkoutData.label_url || `${baseUrl}/api/v0/checkout/print?orders[]=${orderId}`,
             raw: checkoutData
           };
 
