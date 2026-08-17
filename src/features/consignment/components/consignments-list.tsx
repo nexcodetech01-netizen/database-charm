@@ -171,7 +171,14 @@ export function ConsignmentsList() {
             </TableHeader>
             <TableBody>
               {filteredConsignments.map((c) => (
-                <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                <TableRow 
+                  key={c.id} 
+                  className="border-slate-800 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                  onClick={() => {
+                    console.log('Linha clicada', c.id);
+                    navigate({ to: `/consignacoes/${c.id}` });
+                  }}
+                >
                   <TableCell className="font-medium text-white">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-slate-500" />
@@ -193,22 +200,34 @@ export function ConsignmentsList() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-800">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 hover:bg-slate-800"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-slate-950 border-slate-800">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer"
-                          onClick={() => navigate({ to: `/consignacoes/${c.id}` })}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            console.log('Ver Detalhes selecionado (onSelect)', c.id);
+                            navigate({ to: `/consignacoes/${c.id}` });
+                          }}
                         >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer" 
+
                           disabled={generatingPdfId === c.id}
-                          onClick={() => handleGeneratePdf(c.id)}
+                          onSelect={() => handleGeneratePdf(c.id)}
                         >
                           {generatingPdfId === c.id ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -219,8 +238,10 @@ export function ConsignmentsList() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-800" />
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer text-destructive focus:text-destructive"
-                          onClick={() => handleCancel(c.id)}
+
+                          onSelect={() => handleCancel(c.id)}
                           disabled={c.status === 'cancelada' || cancelMutation.isPending}
                         >
                           <AlertCircle className="h-4 w-4 mr-2" /> Cancelar
