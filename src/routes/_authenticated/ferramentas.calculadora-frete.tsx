@@ -41,11 +41,11 @@ function ShippingCalculatorPage() {
     defaultValues: {
       cep_origem: "01001-000",
       cep_destino: "",
-      peso_kg: 0.3,
-      altura_cm: 11,
-      largura_cm: 16,
-      comprimento_cm: 20,
-      valor_declarado: 0,
+      peso_kg: "0.3",
+      altura_cm: "11",
+      largura_cm: "16",
+      comprimento_cm: "20",
+      valor_declarado: "0",
     },
   });
 
@@ -71,8 +71,19 @@ function ShippingCalculatorPage() {
     setIsLoading(true);
     setResults(null);
     setSelectedOption(null);
+    console.log("CALCULATOR_DEBUG: Submitting form data:", data);
     try {
-      const response = await calculateShipping({ data });
+      // Sanitização manual para garantir tipos numéricos antes de enviar para a Server Function
+      const sanitizedData = {
+        ...data,
+        peso_kg: parseFloat(String(data.peso_kg).replace(',', '.')),
+        altura_cm: parseFloat(String(data.altura_cm).replace(',', '.')),
+        largura_cm: parseFloat(String(data.largura_cm).replace(',', '.')),
+        comprimento_cm: parseFloat(String(data.comprimento_cm).replace(',', '.')),
+        valor_declarado: parseFloat(String(data.valor_declarado).replace(',', '.')),
+      };
+      
+      const response = await calculateShipping({ data: sanitizedData as any });
       setResults(response);
       if (response.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
