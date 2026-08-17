@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Force absolute fresh build v7 - Timestamp for verification
-const BUILD_TS = '2026-08-17T14:43:00.000Z';
+// Force absolute fresh build v8 - Timestamp for verification
+const BUILD_TS = '2026-08-17T14:46:00.000Z';
 console.log('[SHIPPING_LABELS] Module loaded at ' + new Date().toISOString() + ' (BUILD: ' + BUILD_TS + ')');
 
 export const Route = createFileRoute("/api/public/shipping/labels")({
@@ -9,8 +9,9 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const handlerVersion = 'TESTE_' + Date.now();
-        console.log(`[SHIPPING_LABELS] LABELS_HANDLER_VERSION: ${handlerVersion}`);
+        const handlerVersion = 'TESTE_CONFIRMACAO_' + Date.now();
+        console.log(`[SHIPPING_LABELS] VERSION_CHECK: ${handlerVersion}`);
+        console.log(`[SHIPPING_LABELS] Request details - Method: ${request.method}, URL: ${request.url}`);
         
         try {
           const bodyText = await request.text();
