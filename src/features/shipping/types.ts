@@ -73,7 +73,7 @@ export type AddressInfo = z.infer<typeof AddressSchema>;
 
 export const GenerateLabelSchema = z.object({
   quote_id: z.string().optional(),
-  service_code: z.string(),
+  service_code: z.union([z.string(), z.number()]),
   sender: AddressSchema,
   recipient: AddressSchema,
   package_details: ShippingCalculatorSchema,

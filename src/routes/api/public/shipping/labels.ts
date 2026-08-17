@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               height: package_details?.altura_cm || 0,
               length: package_details?.comprimento_cm || 0,
             },
-            service: parseInt(service_code),
+            service: service_code,
             options: {
               insurance_value: package_details?.valor_declarado || 0,
               receipt: false,
