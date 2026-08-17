@@ -14,7 +14,18 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
+          const bodyText = await request.text();
+          let body;
+          try {
+            body = JSON.parse(bodyText);
+          } catch (e) {
+            console.error('[SHIPPING_LABELS] Erro ao parsear JSON:', bodyText);
+            return new Response(
+              JSON.stringify({ error: 'Payload JSON inválido' }),
+              { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+
           const { 
             quote_id,
             sender,
@@ -134,7 +145,9 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             body: JSON.stringify(checkoutPayload),
           });
 
-          const checkoutData = await checkoutResponse.json().catch(() => ({}));
+          const checkoutText = await checkoutResponse.text();
+          const checkoutData = JSON.parse(checkoutText || '{}');
+
           console.log(`[SHIPPING_LABELS] Resposta /api/v0/checkout (Status ${checkoutResponse.status}):`, JSON.stringify(checkoutData, null, 2));
 
           if (!checkoutResponse.ok) {
@@ -150,7 +163,12 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
 
           // 3. Generate Label Real PDF URL
           // Based on SuperFrete documentation, /api/v0/tag/print returns the real PDF URL
-          const orderId = checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id;
+          const orderId = checkoutData?.order_id || 
+                          (checkoutData?.orders && checkoutData.orders[0]?.id) || 
+                          (checkoutData?.purchase?.id) ||
+                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.id) ||
+                          cartData?.id;
+
           
           console.log(`[SHIPPING_LABELS] Obtendo URL real do PDF para order_id: ${orderId}`);
           
@@ -193,13 +211,19 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           const labelResult = {
             success: true,
             order_id: orderId,
-            tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
+            tracking_code: checkoutData?.tracking_code || 
+                          (checkoutData?.packages && checkoutData.packages[0]?.tracking) || 
+                          (checkoutData?.orders && checkoutData.orders[0]?.packages?.[0]?.tracking) || 
+                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.tracking),
             label_url: labelUrl,
             raw: checkoutData
           };
 
           console.log('[SHIPPING_LABELS] Resultado Final:', JSON.stringify(labelResult, null, 2));
-          return Response.json(labelResult);
+          return new Response(JSON.stringify(labelResult), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
 
         } catch (error: any) {
           console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
