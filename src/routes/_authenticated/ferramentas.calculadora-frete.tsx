@@ -676,7 +676,7 @@ function ShippingCalculatorPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>E-mail</FormLabel>
+                            <FormLabel>E-mail (Opcional)</FormLabel>
                             <FormControl>
                               <Input type="email" placeholder="cliente@email.com" {...field} />
                             </FormControl>

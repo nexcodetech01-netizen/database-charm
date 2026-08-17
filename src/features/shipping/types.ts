@@ -64,7 +64,7 @@ export const AddressSchema = z.object({
   district: z.string().min(2, "Bairro inválido"),
   city: z.string().min(2, "Cidade inválida"),
   state: z.string().length(2, "UF deve ter 2 caracteres"),
-  email: z.string().email("E-mail inválido"),
+  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().min(10, "Telefone inválido"),
   invoice_number: z.string().optional(),
 });
