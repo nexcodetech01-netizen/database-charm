@@ -201,8 +201,9 @@ export function ConsignmentsList() {
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem 
                           className="cursor-pointer"
-                          onSelect={() => {
-                            console.log('Ver Detalhes clicado', c.id);
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            console.log('Ver Detalhes selecionado (onSelect)', c.id);
                             navigate({ to: `/consignacoes/${c.id}` });
                           }}
                         >
