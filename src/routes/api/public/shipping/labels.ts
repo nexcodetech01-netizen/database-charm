@@ -145,7 +145,9 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
             body: JSON.stringify(checkoutPayload),
           });
 
-          const checkoutData = await checkoutResponse.json().catch(() => ({}));
+          const checkoutText = await checkoutResponse.text();
+          const checkoutData = JSON.parse(checkoutText || '{}');
+
           console.log(`[SHIPPING_LABELS] Resposta /api/v0/checkout (Status ${checkoutResponse.status}):`, JSON.stringify(checkoutData, null, 2));
 
           if (!checkoutResponse.ok) {
