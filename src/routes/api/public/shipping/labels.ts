@@ -75,7 +75,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               email: recipient?.email || null,
               phone: (recipient?.phone || "").replace(/\D/g, ''),
             },
-            service: service_code, // Uses the exact ID/value from calculator
+            service: parseInt(String(service_code)), // Garante que seja um inteiro singular
             volumes: [{ // API expects volumes array
               format: parseInt(package_details?.format || "3"),
               weight: package_details?.peso_kg || 0.1,
@@ -162,6 +162,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
                           (checkoutData?.orders && checkoutData.orders[0]?.id) || 
                           (checkoutData?.purchase?.id) ||
                           (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.id) ||
+                          (checkoutData?.id) || // Fallback direto se o checkout retornar o ID na raiz
                           cartData?.id;
 
           
