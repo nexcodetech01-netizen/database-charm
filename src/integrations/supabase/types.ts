@@ -7207,6 +7207,14 @@ export type Database = {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
       }
+      debug_auth_info: {
+        Args: never
+        Returns: {
+          jwt_company_id: string
+          profile_company_id: string
+          uid: string
+        }[]
+      }
       delete_sale: { Args: { _sale_id: string }; Returns: boolean }
       ensure_sale_receivable: {
         Args: { _sale_id: string }
