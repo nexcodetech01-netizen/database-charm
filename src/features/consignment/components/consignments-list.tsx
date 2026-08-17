@@ -211,7 +211,7 @@ export function ConsignmentsList() {
                         <DropdownMenuItem 
                           className="cursor-pointer" 
                           disabled={generatingPdfId === c.id}
-                          onClick={() => handleGeneratePdf(c.id)}
+                          onSelect={() => handleGeneratePdf(c.id)}
                         >
                           {generatingPdfId === c.id ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
