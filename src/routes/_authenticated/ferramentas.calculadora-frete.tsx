@@ -259,10 +259,10 @@ function ShippingCalculatorPage() {
                             <FormLabel>Peso (kg)</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="0.1"
+                                placeholder="0,3"
                                 {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -277,10 +277,10 @@ function ShippingCalculatorPage() {
                             <FormLabel>Valor Seguro (R$)</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="0.01"
+                                placeholder="0,00"
                                 {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -298,9 +298,10 @@ function ShippingCalculatorPage() {
                             <FormLabel className="text-xs">Altura (cm)</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
+                                placeholder="11"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -315,9 +316,10 @@ function ShippingCalculatorPage() {
                             <FormLabel className="text-xs">Largura (cm)</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
+                                placeholder="16"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -332,9 +334,10 @@ function ShippingCalculatorPage() {
                             <FormLabel className="text-xs">Comp. (cm)</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
+                                placeholder="20"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
                               />
                             </FormControl>
                             <FormMessage />
