@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+// Versão com tratamento de erro e logs detalhados v3
+
 // Versão com tratamento de erro e logs detalhados
 
 
