@@ -41,8 +41,6 @@ import { generateConsignmentPDF } from '../lib/pdf-generator';
 const consignmentFormSchema = z.object({
   reseller_id: z.string().uuid('Selecione um revendedor'),
   sent_at: z.string().min(1, 'Selecione a data de envio'),
-  commission_type: z.enum(['percentual', 'valor_fixo']),
-  commission_value: z.coerce.number().min(0, 'O valor deve ser maior ou igual a zero'),
   notes: z.string().optional(),
 });
 
@@ -79,8 +77,6 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
     resolver: zodResolver(consignmentFormSchema),
     defaultValues: {
       sent_at: new Date().toISOString().split('T')[0],
-      commission_type: 'percentual',
-      commission_value: 0,
       notes: '',
     },
   });
@@ -95,8 +91,6 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
           company_id: companyId,
           reseller_id: values.reseller_id,
           sent_at: values.sent_at,
-          commission_type: values.commission_type,
-          commission_value: values.commission_value,
           notes: values.notes,
         },
         selectedItems.map(it => ({
@@ -218,42 +212,6 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
                       <FormLabel className="text-slate-300">Data de Envio</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} className="bg-slate-900 border-slate-800" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="commission_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">Tipo de Comissão</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-slate-900 border-slate-800">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-slate-900 border-slate-800">
-                          <SelectItem value="percentual">Percentual (%)</SelectItem>
-                          <SelectItem value="valor_fixo">Valor Fixo (R$)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="commission_value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">
-                        {form.watch('commission_type') === 'percentual' ? 'Porcentagem' : 'Valor unitário fixo'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" step="any" {...field} className="bg-slate-900 border-slate-800" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -94,7 +94,7 @@ export const generateConsignmentPDF = async (consignment: Consignment, items: Co
   doc.setFont("helvetica", "normal");
   const clauses = [
     `3.1. O prazo para acerto de contas inicia-se em ${format(new Date(consignment.sent_at), "dd/MM/yyyy", { locale: ptBR })}.`,
-    `3.2. A comissao acordada para o CONSIGNATARIO e de ${consignment.commission_type === 'percentual' ? consignment.commission_value + '%' : formatCurrency(consignment.commission_value)} por item vendido.`,
+    `3.2. O valor devido ao CONSIGNANTE e calculado com base no preco de custo unitario combinado por item vendido.`,
     "3.3. O CONSIGNATARIO assume total responsabilidade pela guarda e conservacao das mercadorias, respondendo por eventuais danos ou extravios.",
     "3.4. As mercadorias nao vendidas deverao ser devolvidas em perfeito estado no momento do acerto.",
     "3.5. O pagamento das mercadorias vendidas devera ser realizado imediatamente apos o encerramento do periodo de consignacao."

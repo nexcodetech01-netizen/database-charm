@@ -25,8 +25,8 @@ export interface Consignment {
   company_id: string;
   reseller_id: string;
   sent_at: string;
-  commission_type: CommissionType;
-  commission_value: number;
+  commission_type?: CommissionType | null;
+  commission_value?: number | null;
   status: ConsignmentStatus;
   contract_pdf_url?: string | null;
   notes?: string | null;

@@ -120,7 +120,7 @@ export function ConsignmentsList() {
               <TableRow className="border-slate-800 hover:bg-transparent">
                 <TableHead className="text-slate-400">Revendedor</TableHead>
                 <TableHead className="text-slate-400">Data Envio</TableHead>
-                <TableHead className="text-slate-400">Comissão</TableHead>
+                <TableHead className="text-slate-400">Total Consignado</TableHead>
                 <TableHead className="text-slate-400">Status</TableHead>
                 <TableHead className="text-right text-slate-400">Ações</TableHead>
               </TableRow>
@@ -141,10 +141,7 @@ export function ConsignmentsList() {
                     </div>
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {c.commission_type === 'percentual' 
-                      ? `${c.commission_value}%` 
-                      : `R$ ${c.commission_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    }
+                    -
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(c.status)}
