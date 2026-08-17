@@ -201,7 +201,10 @@ export function ConsignmentsList() {
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem 
                           className="cursor-pointer"
-                          onClick={() => navigate({ to: `/consignacoes/${c.id}` })}
+                          onSelect={() => {
+                            console.log('Ver Detalhes clicado', c.id);
+                            navigate({ to: `/consignacoes/${c.id}` });
+                          }}
                         >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
