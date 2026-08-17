@@ -23,7 +23,7 @@ import { handleUpsellTurn } from "./product-upsell.server";
 import { handleCheckoutTurn, saveCheckoutSession } from "./checkout-session.server";
 import { createCheckoutSession, PROMPTS } from "./checkout-session";
 import { getCartSession, saveCartSession } from "./cart-session.server";
-import { addProduct, clearCartSession } from "./cart-session";
+import { addProduct, setProductQuantity, clearCartSession } from "./cart-session";
 import { handleCommercialConfirmationTurn, recordConfirmedOrder } from "./commercial-inbox.server";
 import { getGreeting, parseCatalogProductIntent, isPurchaseIntent, isDataSubmissionIntent, detectPaymentMethod, parseWebsiteCatalogOrder } from "./intent-detector";
 import type { CatalogNavState } from "./catalog-nav";
@@ -754,7 +754,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
         .limit(1);
       const product = Array.isArray(matches) ? matches[0] : null;
       if (product) {
-        cart = addProduct(
+        cart = setProductQuantity(
           cart,
           {
             id: product.id as string,

@@ -81,6 +81,37 @@ export function addProduct(
   return recalc(session, items, now);
 }
 
+/**
+ * Define a quantidade absoluta de um produto no carrinho (sobrescreve a anterior).
+ */
+export function setProductQuantity(
+  session: CartSession,
+  product: ProductSearchItem,
+  qty: number,
+  now: number = Date.now(),
+): CartSession {
+  const items = [...session.items];
+  const idx = items.findIndex((i) => i.productId === product.id);
+  
+  if (qty <= 0) {
+    if (idx >= 0) items.splice(idx, 1);
+    return recalc(session, items, now);
+  }
+
+  if (idx >= 0) {
+    items[idx] = { ...items[idx]!, qty };
+  } else {
+    items.push({
+      productId: product.id,
+      name: product.name,
+      qty,
+      unitPrice: product.price,
+      subtotal: product.price * qty,
+    });
+  }
+  return recalc(session, items, now);
+}
+
 export function removeAt(
   session: CartSession,
   index: number,
