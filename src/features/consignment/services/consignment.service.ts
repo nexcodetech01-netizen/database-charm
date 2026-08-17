@@ -5,6 +5,7 @@ import {
   ConsignmentItem, 
   ConsignmentSettlement,
   ConsignmentStatus,
+  SettlementStatus,
 } from "../types";
 
 export class ConsignmentService {
