@@ -560,7 +560,7 @@ function ShippingCalculatorPage() {
                             <FormItem>
                               <FormLabel>Endereço</FormLabel>
                               <FormControl>
-                                <Input placeholder="Rua, Av..." {...field} />
+                                <Input placeholder="Rua, Av..." {...field} disabled={isFetchingCep} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -603,7 +603,7 @@ function ShippingCalculatorPage() {
                           <FormItem>
                             <FormLabel>Bairro</FormLabel>
                             <FormControl>
-                              <Input placeholder="Bairro" {...field} />
+                              <Input placeholder="Bairro" {...field} disabled={isFetchingCep} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -616,7 +616,7 @@ function ShippingCalculatorPage() {
                           <FormItem>
                             <FormLabel>UF</FormLabel>
                             <FormControl>
-                              <Input placeholder="SP" maxLength={2} {...field} />
+                              <Input placeholder="SP" maxLength={2} {...field} disabled={isFetchingCep} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -632,7 +632,7 @@ function ShippingCalculatorPage() {
                           <FormItem>
                             <FormLabel>Cidade</FormLabel>
                             <FormControl>
-                              <Input placeholder="Cidade" {...field} />
+                              <Input placeholder="Cidade" {...field} disabled={isFetchingCep} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
