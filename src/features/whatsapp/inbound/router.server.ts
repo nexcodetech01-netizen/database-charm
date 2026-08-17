@@ -543,10 +543,10 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   // interpretado como resposta a uma etapa de uma sessão anterior.
   const websiteOrder = parseWebsiteCatalogOrder(msg.text);
 
-  // Se for um novo pedido do catálogo, não executamos handleCheckoutTurn
-  // para esta mensagem. A sessão anterior será invalidada e uma nova será
-  // criada dentro do bloco if (websiteOrder) abaixo.
   let checkoutTurn = null;
+  // Se for um novo pedido do catálogo (websiteOrder), NÃO executamos handleCheckoutTurn
+  // para esta mensagem. A sessão anterior será invalidada e uma nova será
+  // criada dentro do bloco if (websiteOrder) que vem adiante.
   if (!websiteOrder) {
     console.log(`[CATALOG CHECKOUT DEBUG]
 conversationId: ${conversationId}
