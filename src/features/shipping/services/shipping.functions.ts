@@ -12,6 +12,7 @@ export const calculateShipping = createServerFn({ method: "POST" })
       ? `https://${process.env.VERCEL_URL || 'localhost:8080'}` 
       : 'http://localhost:8080';
 
+    console.log("FUNCTIONS_DEBUG: Calling endpoint with data:", JSON.stringify(data));
     const response = await fetch(`${baseUrl}/api/public/shipping/calculate`, {
       method: "POST",
       headers: {
