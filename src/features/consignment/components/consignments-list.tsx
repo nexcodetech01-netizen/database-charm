@@ -45,12 +45,54 @@ export function ConsignmentsList() {
   const { companyId, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
+  
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: consignments = [], isLoading } = useQuery({
     queryKey: ['consignments', companyId],
     queryFn: () => ConsignmentService.listConsignments(companyId!),
     enabled: !!companyId,
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => ConsignmentService.updateConsignmentStatus(id, 'cancelada'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['consignments'] });
+      toast.success('Consignação cancelada com sucesso');
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error('Erro ao cancelar consignação');
+    }
+  });
+
+  const handleGeneratePdf = async (id: string) => {
+    setGeneratingPdfId(id);
+    try {
+      const { consignment, items } = await ConsignmentService.getConsignment(id);
+      const blob = await generateConsignmentPDF(consignment, items, "Empresa NexOS");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrato-consignacao-${id.split('-')[0]}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Contrato gerado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao gerar PDF');
+    } finally {
+      setGeneratingPdfId(null);
+    }
+  };
+
+  const handleCancel = (id: string) => {
+    if (window.confirm('Tem certeza que deseja cancelar esta consignação? Esta ação não pode ser desfeita.')) {
+      cancelMutation.mutate(id);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
