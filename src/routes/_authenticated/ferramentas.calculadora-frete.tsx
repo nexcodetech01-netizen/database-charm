@@ -73,14 +73,15 @@ function ShippingCalculatorPage() {
     setSelectedOption(null);
     console.log("CALCULATOR_DEBUG: Submitting form data:", data);
     try {
+      console.log("CALCULATOR_DEBUG: Form data before fetch:", data);
       const response = await calculateShipping({ data });
-      console.log("CALCULATOR_DEBUG: Received response:", response);
+      console.log("CALCULATOR_DEBUG: Response from calculateShipping:", response);
       setResults(response);
       if (response.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
       }
     } catch (error: any) {
-      console.error("CALCULATOR_DEBUG: Error caught:", error);
+      console.error("CALCULATOR_DEBUG: Error caught in onCalcSubmit:", error);
       toast.error(error.message || "Erro ao calcular frete.");
     } finally {
       setIsLoading(false);
