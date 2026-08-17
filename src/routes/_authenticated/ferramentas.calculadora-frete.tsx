@@ -202,14 +202,14 @@ function ShippingCalculatorPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground uppercase font-semibold">Código de Rastreio</p>
                   <p className="text-2xl font-mono font-bold tracking-wider">{labelResult.tracking_code || "Aguardando..."}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground uppercase font-semibold">ID do Pedido</p>
-                  <p className="text-xl font-bold">{labelResult.order_id}</p>
+                  <p className="text-xl font-bold">{labelResult.order_id || "N/A"}</p>
                 </div>
               </div>
 
