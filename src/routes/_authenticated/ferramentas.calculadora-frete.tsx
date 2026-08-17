@@ -125,7 +125,7 @@ function ShippingCalculatorPage() {
           service_code: selectedOption.id,
           sender: senderData,
           recipient: recipientData,
-          package_details: calcForm.getValues(),
+          package_details: calcForm.getValues() as any,
         }
       });
 
