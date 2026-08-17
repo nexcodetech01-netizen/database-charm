@@ -1733,8 +1733,8 @@ export type Database = {
       }
       consignacoes: {
         Row: {
-          commission_type: string
-          commission_value: number
+          commission_type: string | null
+          commission_value: number | null
           company_id: string
           contract_pdf_url: string | null
           created_at: string
@@ -1746,8 +1746,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          commission_type: string
-          commission_value: number
+          commission_type?: string | null
+          commission_value?: number | null
           company_id: string
           contract_pdf_url?: string | null
           created_at?: string
@@ -1759,8 +1759,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          commission_type?: string
-          commission_value?: number
+          commission_type?: string | null
+          commission_value?: number | null
           company_id?: string
           contract_pdf_url?: string | null
           created_at?: string
