@@ -223,7 +223,9 @@ export function ConsignmentsList() {
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
                         </DropdownMenuItem>
                         <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
                           className="cursor-pointer" 
+
                           disabled={generatingPdfId === c.id}
                           onSelect={() => handleGeneratePdf(c.id)}
                         >
