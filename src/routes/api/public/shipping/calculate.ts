@@ -5,8 +5,28 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const bodyText = await request.text();
+          let body;
+          try {
+            body = JSON.parse(bodyText);
+          } catch (e) {
+            return new Response(
+              JSON.stringify({ error: 'Payload JSON inválido' }),
+              { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+
           const { 
             cep_origem, 
+            cep_destino, 
+            peso_kg, 
+            altura_cm, 
+            largura_cm, 
+            comprimento_cm, 
+            format,
+            valor_declarado 
+          } = body;
+
             cep_destino, 
             peso_kg, 
             altura_cm, 
@@ -32,10 +52,11 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
 
           const payload = {
             from: {
-              postal_code: cep_origem.replace(/\D/g, ''),
+              postal_code: (cep_origem || "").replace(/\D/g, ''),
             },
             to: {
-              postal_code: cep_destino.replace(/\D/g, ''),
+              postal_code: (cep_destino || "").replace(/\D/g, ''),
+
             },
             services: "1,2,17",
             package: {
@@ -63,7 +84,9 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             body: JSON.stringify(payload),
           });
 
-          const data = await response.json();
+          const responseText = await response.text();
+          const data = JSON.parse(responseText || '{}');
+
 
           if (!response.ok) {
             console.error('SuperFrete API Error:', data);
@@ -86,13 +109,16 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
               prazo_dias: parseInt(option.delivery_time || 0),
             }));
 
-          return Response.json(normalized);
+          return new Response(JSON.stringify(normalized), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
 
         } catch (error: any) {
-          console.error('Server Route Error:', error);
+          console.error('[SHIPPING_CALCULATE] Server Route Error:', error);
           return new Response(
-            JSON.stringify({ error: error.message }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: error.message || 'Erro interno na cotação' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
           );
         }
       }
