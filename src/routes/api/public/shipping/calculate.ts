@@ -30,8 +30,12 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             : 'https://sandbox.superfrete.com';
 
           const payload = {
-            from: cep_origem.replace(/\D/g, ''),
-            to: cep_destino.replace(/\D/g, ''),
+            from: {
+              postal_code: cep_origem.replace(/\D/g, ''),
+            },
+            to: {
+              postal_code: cep_destino.replace(/\D/g, ''),
+            },
             services: "1,2,17",
             package: {
               weight: peso_kg,
@@ -46,7 +50,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             }
           };
 
-          console.log('SuperFrete Request Payload (FLATTENED):', JSON.stringify(payload, null, 2));
+          console.log('SuperFrete Request Payload (NESTED + SERVICES ROOT):', JSON.stringify(payload, null, 2));
 
           const response = await fetch(`${baseUrl}/api/v0/calculator`, {
             method: 'POST',
