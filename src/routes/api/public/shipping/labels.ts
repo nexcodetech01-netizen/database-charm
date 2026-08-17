@@ -84,7 +84,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               reverse: false,
               non_commercial: false,
               invoice_number: recipient?.invoice_number || null,
-              services: service_code
+              services: [service_code]
             }
           };
 
@@ -147,9 +147,9 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           
           const labelResult = {
             success: true,
-            order_id: checkoutData.order_id || cartData.id,
-            tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking),
-            label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label),
+            order_id: checkoutData.order_id || (checkoutData.orders && checkoutData.orders[0]?.id) || cartData.id,
+            tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
+            label_url: checkoutData.label_url || (checkoutData.packages && checkoutData.packages[0]?.label) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.label),
             raw: checkoutData
           };
 
