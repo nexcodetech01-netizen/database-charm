@@ -154,28 +154,47 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
           
           console.log(`[SHIPPING_LABELS] Obtendo URL real do PDF para order_id: ${orderId}`);
           
-          const printResponse = await fetch(`${baseUrl}/api/v0/tag/print`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
-              'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orders: [orderId]
-            }),
-          });
+          let labelUrl = `${baseUrl}/api/v0/checkout/print?orders[]=${orderId}`;
+          
+          try {
+            const printResponse = await fetch(`${baseUrl}/api/v0/tag/print`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
+                'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orders: [orderId]
+              }),
+            });
 
-          const printData = await printResponse.json().catch(() => ({}));
-          console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print (Status ${printResponse.status}):`, JSON.stringify(printData, null, 2));
+            if (printResponse.ok) {
+              const contentType = printResponse.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const printData = await printResponse.json();
+                console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print:`, JSON.stringify(printData, null, 2));
+                if (printData.url) {
+                  labelUrl = printData.url;
+                }
+              } else {
+                const printText = await printResponse.text();
+                console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print NÃO é JSON (Status ${printResponse.status}): ${printText.substring(0, 100)}...`);
+              }
+            } else {
+              console.warn(`[SHIPPING_LABELS] Falha ao obter PDF via /api/v0/tag/print (Status ${printResponse.status}). Usando fallback.`);
+            }
+          } catch (printError) {
+            console.error('[SHIPPING_LABELS] Erro na chamada /api/v0/tag/print:', printError);
+            // Segue com o fallback definido acima
+          }
 
           const labelResult = {
             success: true,
             order_id: orderId,
             tracking_code: checkoutData.tracking_code || (checkoutData.packages && checkoutData.packages[0]?.tracking) || (checkoutData.orders && checkoutData.orders[0]?.packages?.[0]?.tracking),
-            // Use the URL from /api/v0/tag/print which is the direct PDF
-            label_url: printData.url || checkoutData.label_url || `${baseUrl}/api/v0/checkout/print?orders[]=${orderId}`,
+            label_url: labelUrl,
             raw: checkoutData
           };
 
