@@ -141,9 +141,9 @@ export class ConsignmentService {
           extraviado: settlementData.items_extraviado,
           notes: settlementData.extravio_notes
         },
-        gross_amount: settlementData.gross_amount,
-        reseller_commission: settlementData.reseller_commission,
-        net_receivable: settlementData.net_receivable,
+      gross_amount: settlementData.gross_amount,
+      reseller_commission: 0,
+      net_receivable: settlementData.gross_amount,
         payment_status: 'pendente'
       } as any)
       .select()
