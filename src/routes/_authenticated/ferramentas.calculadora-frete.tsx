@@ -36,17 +36,17 @@ function ShippingCalculatorPage() {
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const calcForm = useForm<ShippingCalculatorInput>({
+  const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
     defaultValues: {
       cep_origem: "01001-000",
       cep_destino: "",
-      peso_kg: 0.3,
-      altura_cm: 11,
-      largura_cm: 16,
-      comprimento_cm: 20,
-      valor_declarado: 0,
-    } as any,
+      peso_kg: "0.3",
+      altura_cm: "11",
+      largura_cm: "16",
+      comprimento_cm: "20",
+      valor_declarado: "0",
+    },
   });
 
   const labelForm = useForm<AddressInfo>({
