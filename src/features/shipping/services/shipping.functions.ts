@@ -9,7 +9,7 @@ export const calculateShipping = createServerFn({ method: "POST" })
     
     // Using absolute URL for SSR compatibility
     const baseUrl = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.VERCEL_URL || 'localhost:8080'}` 
+      ? `https://${process.env.VERCEL_URL || 'nexos.nexxcode.com.br'}` 
       : 'http://localhost:8080';
 
     console.log("FUNCTIONS_DEBUG: Calling endpoint with data:", JSON.stringify(data));
@@ -40,7 +40,7 @@ export const generateLabel = createServerFn({ method: "POST" })
   .validator((data: unknown) => GenerateLabelSchema.parse(data))
   .handler(async ({ data }) => {
     const baseUrl = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.VERCEL_URL || 'localhost:8080'}` 
+      ? `https://${process.env.VERCEL_URL || 'nexos.nexxcode.com.br'}` 
       : 'http://localhost:8080';
 
     const response = await fetch(`${baseUrl}/api/public/shipping/labels`, {
