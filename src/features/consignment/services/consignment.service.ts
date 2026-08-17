@@ -190,4 +190,13 @@ export class ConsignmentService {
     if (error) throw error;
     return (data || []) as ConsignmentSettlement[];
   }
+
+  static async updateConsignmentStatus(id: string, status: ConsignmentStatus): Promise<void> {
+    const { error } = await supabase
+      .from('consignacoes')
+      .update({ status } as any)
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
 }
