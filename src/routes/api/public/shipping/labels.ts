@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-// Versão com logs estendidos para diagnóstico profundo
+// Versão com tratamento de erro e logs detalhados
+
 
 
 export const Route = createFileRoute("/api/public/shipping/labels")({
