@@ -85,6 +85,11 @@ export class ConsignmentService {
     items: Array<{ product_id: string; sent_quantity: number; cost_price: number; suggested_price?: number }>
   ): Promise<Consignment> {
     const { reseller, ...consignmentData } = consignment as any;
+    
+    if (!consignmentData.company_id) {
+      throw new Error('company_id is required to create a consignment');
+    }
+
     const { data: newConsignment, error: cError } = await supabase
       .from('consignacoes')
       .insert({ ...consignmentData, status: 'ativa' })
