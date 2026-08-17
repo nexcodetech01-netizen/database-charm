@@ -577,20 +577,12 @@ export async function advanceCheckout(args: {
         };
       }
 
-      // Se NÃO for dinheiro, o fluxo DEVE seguir para CPF mesmo se tiver nome
-      // Requisito: O CPF é obrigatório mesmo quando o nome do comprador já estiver disponível
-      if (updated.buyerName || updated.customer.fullName) {
-         return {
-           session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-           text: `Perfeito! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
-           aborted: false
-         };
-      }
-
+      // Se NÃO for dinheiro, o fluxo DEVE seguir linearmente para CPF (WAITING_DOCUMENT)
+      // NUNCA pular o CPF, mesmo que o nome já exista.
       return {
-        session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
-        text: `Perfeito! 😊 Qual é o seu nome completo?`,
-        aborted: false,
+        session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+        text: `Perfeito! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+        aborted: false
       };
     }
     case "WAITING_CHANGE_INFO": {
@@ -600,17 +592,10 @@ export async function advanceCheckout(args: {
       if (isNo) {
         const updated = next(session, { changeNeeded: false, changeAmount: null }, now);
         
-        // Depois do troco, SEMPRE pedir CPF (mesmo se tiver nome)
-        if (updated.buyerName || updated.customer.fullName) {
-          return {
-            session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-            text: `Entendido, sem troco! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
-            aborted: false
-          };
-        }
+        // Fluxo linear: Após o troco, SEMPRE ir para CPF
         return {
-          session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
-          text: `Entendido, sem troco! 😊 Qual é o seu nome completo?`,
+          session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+          text: `Entendido, sem troco! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
           aborted: false
         };
       }
@@ -636,17 +621,10 @@ export async function advanceCheckout(args: {
 
       const updated = next(session, { changeNeeded: true, changeAmount: amount }, now);
       
-      // Depois do troco, SEMPRE pedir CPF (mesmo se tiver nome)
-      if (updated.buyerName || updated.customer.fullName) {
-        return {
-          session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-          text: `Combinado, troco para ${money(amount)}! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
-          aborted: false
-        };
-      }
+      // Fluxo linear: Após o troco, SEMPRE ir para CPF
       return {
-        session: next(updated, { step: "WAITING_CUSTOMER_NAME" }, now),
-        text: `Combinado, troco para ${money(amount)}! 😊 Qual é o seu nome completo?`,
+        session: next(updated, { step: "WAITING_DOCUMENT" }, now),
+        text: `Combinado, troco para ${money(amount)}! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
         aborted: false
       };
     }
