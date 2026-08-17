@@ -4,15 +4,21 @@ import { ShippingCalculatorSchema, ShippingOption, GenerateLabelSchema, LabelRes
 export const calculateShipping = createServerFn({ method: "POST" })
   .validator((data: unknown) => ShippingCalculatorSchema.parse(data))
   .handler(async ({ data }) => {
-    // We call our internal API route
-    // Note: In TanStack Start, server functions can call external APIs or internal routes via fetch
-    
-    // Using absolute URL for SSR compatibility
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.VERCEL_URL || 'nexos.nexxcode.com.br'}` 
-      : 'http://localhost:8080';
+    let origin = "";
+    if (typeof window !== "undefined") {
+      origin = window.location.origin;
+    } else {
+      const vercelUrl = process.env.VERCEL_URL;
+      if (vercelUrl) {
+        origin = vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
+      } else {
+        origin = process.env.NODE_ENV === 'production' 
+          ? 'https://nexos.nexxcode.com.br' 
+          : 'http://localhost:8080';
+      }
+    }
 
-    const response = await fetch(`${baseUrl}/api/public/shipping/calculate`, {
+    const response = await fetch(`${origin}/api/public/shipping/calculate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,6 +33,7 @@ export const calculateShipping = createServerFn({ method: "POST" })
 
     return (await response.json()) as ShippingOption[];
   });
+
 
 export const generateLabel = createServerFn({ method: "POST" })
   .validator((data: unknown) => GenerateLabelSchema.parse(data))
