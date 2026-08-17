@@ -118,6 +118,11 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
 
           // 2. Checkout (Pay for everything in cart)
           console.log('[SHIPPING_LABELS] Iniciando /api/v0/checkout...');
+          const checkoutPayload = {
+            orders: [cartData.id]
+          };
+          console.log(`[SHIPPING_LABELS] Enviando para /api/v0/checkout: ${JSON.stringify(checkoutPayload)}`);
+
           const checkoutResponse = await fetch(`${baseUrl}/api/v0/checkout`, {
             method: 'POST',
             headers: {
@@ -125,7 +130,8 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
               'Accept': 'application/json',
               'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(checkoutPayload),
           });
 
           const checkoutData = await checkoutResponse.json().catch(() => ({}));
