@@ -36,7 +36,7 @@ function ShippingCalculatorPage() {
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const calcForm = useForm<any>({
+  const calcForm = useForm<ShippingCalculatorInput>({
     resolver: zodResolver(ShippingCalculatorSchema),
     defaultValues: {
       cep_origem: "01001-000",
@@ -46,7 +46,7 @@ function ShippingCalculatorPage() {
       largura_cm: 16,
       comprimento_cm: 20,
       valor_declarado: 0,
-    },
+    } as any,
   });
 
   const labelForm = useForm<AddressInfo>({
