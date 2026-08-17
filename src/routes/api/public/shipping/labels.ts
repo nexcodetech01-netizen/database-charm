@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-// Versão Final v5 - Diagnóstico Completo
 
-// Force rebuild 4
-
-// Versão com tratamento de erro e logs detalhados v3
-
-// Versão com tratamento de erro e logs detalhados
-
-
+// Force absolute fresh build v6 - Testing routing isolation
+console.log('[SHIPPING_LABELS] Module loaded at ' + new Date().toISOString());
 
 export const Route = createFileRoute("/api/public/shipping/labels")({
+
   server: {
     handlers: {
       POST: async ({ request }) => {
@@ -80,7 +75,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
               email: recipient?.email || null,
               phone: (recipient?.phone || "").replace(/\D/g, ''),
             },
-            service: service_code, // Uses the exact ID/value from calculator
+            service: parseInt(String(service_code)), // Garante que seja um inteiro singular
             volumes: [{ // API expects volumes array
               format: parseInt(package_details?.format || "3"),
               weight: package_details?.peso_kg || 0.1,
@@ -167,6 +162,7 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
                           (checkoutData?.orders && checkoutData.orders[0]?.id) || 
                           (checkoutData?.purchase?.id) ||
                           (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.id) ||
+                          (checkoutData?.id) || // Fallback direto se o checkout retornar o ID na raiz
                           cartData?.id;
 
           
@@ -227,14 +223,21 @@ export const Route = createFileRoute("/api/public/shipping/labels")({
 
         } catch (error: any) {
           console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
+          // Adicionando log de stack trace completo para depuração
+          if (error.stack) {
+            console.error('[SHIPPING_LABELS] Stack Trace:', error.stack);
+          }
+          
           return new Response(
             JSON.stringify({ 
               error: error.message || 'Erro interno inesperado',
-              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+              stack: error.stack,
+              module: 'labels.ts'
             }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
           );
         }
+
       }
     }
   }
