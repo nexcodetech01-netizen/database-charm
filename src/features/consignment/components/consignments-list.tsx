@@ -171,7 +171,14 @@ export function ConsignmentsList() {
             </TableHeader>
             <TableBody>
               {filteredConsignments.map((c) => (
-                <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                <TableRow 
+                  key={c.id} 
+                  className="border-slate-800 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                  onClick={() => {
+                    console.log('Linha clicada', c.id);
+                    navigate({ to: `/consignacoes/${c.id}` });
+                  }}
+                >
                   <TableCell className="font-medium text-white">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-slate-500" />
