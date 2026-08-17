@@ -5,6 +5,9 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const body = await request.json();
+          console.log('SHIPPING_API: Received payload:', JSON.stringify(body));
+
           const { 
             cep_origem, 
             cep_destino, 
@@ -13,7 +16,7 @@ export const Route = createFileRoute("/api/public/shipping/calculate")({
             largura_cm, 
             comprimento_cm, 
             valor_declarado 
-          } = await request.json();
+          } = body;
 
           const SUPERFRETE_TOKEN = process.env['SUPERFRETE_TOKEN'];
           const SUPERFRETE_ENV = process.env['SUPERFRETE_ENV'] || 'sandbox';
