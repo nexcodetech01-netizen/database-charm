@@ -74,6 +74,18 @@ export function ConsignmentsList() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => ConsignmentService.deleteConsignment(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['consignments'] });
+      toast.success('Consignação excluída permanentemente');
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error('Erro ao excluir consignação');
+    }
+  });
+
   const handleGeneratePdf = async (id: string) => {
     setGeneratingPdfId(id);
     try {
@@ -98,6 +110,13 @@ export function ConsignmentsList() {
     setMenuOpenId(null);
     if (window.confirm('Tem certeza que deseja cancelar esta consignação? Esta ação não pode ser desfeita.')) {
       cancelMutation.mutate(id);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    setMenuOpenId(null);
+    if (window.confirm('Tem certeza que deseja excluir permanentemente esta consignação? Essa ação não pode ser desfeita.')) {
+      deleteMutation.mutate(id);
     }
   };
 
@@ -268,6 +287,20 @@ export function ConsignmentsList() {
                           disabled={c.status === 'cancelada' || cancelMutation.isPending}
                         >
                           <AlertCircle className="h-4 w-4 mr-2" /> Cancelar
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuItem 
+                          onClick={(e) => e.stopPropagation()}
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                          onSelect={() => handleDelete(c.id)}
+                          disabled={c.status !== 'cancelada' || deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 mr-2" />
+                          )}
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
