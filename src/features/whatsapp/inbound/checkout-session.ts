@@ -868,7 +868,9 @@ export async function advanceCheckout(args: {
             );
             return {
               session: syncDelivery(updated),
-              text: PROMPTS[updated.step as keyof typeof PROMPTS],
+              text: updated.step === "WAITING_CONFIRMATION" 
+                ? formatWebsiteOrderSummary(updated, args.cart)
+                : PROMPTS[updated.step as keyof typeof PROMPTS],
               aborted: false
             };
          }
@@ -888,7 +890,9 @@ export async function advanceCheckout(args: {
         );
         return {
           session: syncDelivery(updated),
-          text: PROMPTS[updated.step as keyof typeof PROMPTS],
+          text: updated.step === "WAITING_CONFIRMATION"
+            ? formatWebsiteOrderSummary(updated, args.cart)
+            : PROMPTS[updated.step as keyof typeof PROMPTS],
           aborted: false
         };
       }
