@@ -50,6 +50,10 @@ export function ConsignmentsList() {
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { pathname } = window.location;
+  const isListView = pathname === '/consignacoes' || pathname === '/consignacoes/';
+
+  if (!isListView) return null;
 
   const { data: consignments = [], isLoading } = useQuery({
     queryKey: ['consignments', companyId],

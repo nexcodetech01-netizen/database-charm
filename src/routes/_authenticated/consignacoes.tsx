@@ -1,6 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { ConsignmentsList } from '@/features/consignment/components/consignments-list';
 
 export const Route = createFileRoute('/_authenticated/consignacoes')({
-  component: ConsignmentsList,
+  component: ConsignmentsLayout,
 });
+
+function ConsignmentsLayout() {
+  return (
+    <>
+      <ConsignmentsList />
+      <Outlet />
+    </>
+  );
+}
