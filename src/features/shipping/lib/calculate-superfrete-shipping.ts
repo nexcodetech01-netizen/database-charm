@@ -83,6 +83,20 @@ export async function calculateSuperfreteShipping(
   }
 
   if (!response.ok) {
+    // FIX (2026-08-18): antes lançava só a mensagem genérica da raiz
+    // ("Ocorreu um ou mais erros."), escondendo o motivo real — a
+    // Superfrete devolve as mensagens específicas dentro de um objeto
+    // `errors` aninhado (ex.: { "freight.calculator.no_result":
+    // ["Nenhum frete válido encontrado para esse serviço."] }).
+    // Quando é esse tipo de erro (nenhuma opção válida — geralmente
+    // por dimensão abaixo do mínimo aceito), tratamos como "zero
+    // opções encontradas" com o motivo detalhado, em vez de travar a
+    // tela inteira com uma exceção genérica.
+    const nestedErrors = data?.errors && typeof data.errors === "object" ? data.errors : null;
+    if (nestedErrors) {
+      const messages = Object.values(nestedErrors).flat().map(String);
+      return { options: [], errors: messages.length > 0 ? messages : [data.message || "Nenhuma opção de frete encontrada."] };
+    }
     throw new Error(data.message || "Falha ao calcular frete na SuperFrete");
   }
 

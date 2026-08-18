@@ -45,6 +45,58 @@ describe("calculateSuperfreteShipping", () => {
     expect(result.errors).toEqual(["Largura mínima 11 cm."]);
   });
 
+  // Bug real (2026-08-18): a estrutura REAL de erro da Superfrete pra
+  // "nenhuma opção válida encontrada" (geralmente dimensão abaixo do
+  // mínimo) é um 400 com um objeto `errors` aninhado, chave por tipo
+  // de erro — não um item individual com campo `error` como eu tinha
+  // suposto antes. A versão anterior mostrava só a mensagem genérica
+  // da raiz ("Ocorreu um ou mais erros."), escondendo o motivo real.
+  it("extrai as mensagens específicas de dentro do objeto 'errors' aninhado (formato real da Superfrete)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          errors: {
+            "freight.calculator.no_result": ["Nenhum frete válido encontrado para esse serviço."],
+          },
+          message: "Ocorreu um ou mais erros.",
+        }),
+    } as any);
+
+    const result = await calculateSuperfreteShipping(baseInput);
+    expect(result.options).toEqual([]);
+    expect(result.errors).toEqual(["Nenhum frete válido encontrado para esse serviço."]);
+  });
+
+  it("junta mensagens de múltiplas chaves do objeto 'errors' aninhado", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          errors: {
+            "freight.calculator.no_result": ["Largura mínima 11 cm."],
+            "freight.calculator.weight": ["Peso mínimo 0.3kg."],
+          },
+          message: "Ocorreu um ou mais erros.",
+        }),
+    } as any);
+
+    const result = await calculateSuperfreteShipping(baseInput);
+    expect(result.errors).toEqual(["Largura mínima 11 cm.", "Peso mínimo 0.3kg."]);
+  });
+
+  it("continua lançando exceção pra erros que não têm o objeto 'errors' aninhado (ex.: token inválido)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => JSON.stringify({ message: "Token inválido." }),
+    } as any);
+
+    await expect(calculateSuperfreteShipping(baseInput)).rejects.toThrow("Token inválido.");
+  });
+
   it("não trava a lista de transportadoras (não envia 'services' fixo)", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
