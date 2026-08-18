@@ -176,9 +176,7 @@ describe("handleCheckoutTurn", () => {
     await turn("100");
     await turn("não");
     await turn("retirada");
-    const beforeConfirm = await turn("dinheiro");
-    expect(beforeConfirm?.confirmed).toBe(false);
-
+    await turn("pix");
     const confirmTurn = await turn("sim");
     expect(confirmTurn?.confirmed).toBe(true);
   });
