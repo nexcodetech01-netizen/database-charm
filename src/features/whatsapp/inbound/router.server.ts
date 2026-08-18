@@ -211,7 +211,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     // O router apenas inicializa a sessão e envia o prompt inicial.
     // NÃO chamamos handleCheckoutTurn aqui para evitar o bug de processamento de texto vazio.
-    const paymentPrompt = PROMPTS.payment_method;
+    const paymentPrompt = PROMPTS.WAITING_PAYMENT_METHOD;
     const sent = await sendWhatsAppText({ to: msg.phone, text: paymentPrompt });
     
     await db.from("whatsapp_messages").insert({
