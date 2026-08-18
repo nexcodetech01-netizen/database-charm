@@ -782,9 +782,35 @@ export async function advanceCheckout(args: {
       };
     }
     case "WAITING_ADDRESS": {
-      // Try to extract zip code from the full address text
-      const zip = parseZipCode(text) || (text.match(/\d{5}-?\d{3}/) ? digits(text.match(/\d{5}-?\d{3}/)![0]) : null);
+      // 1. Tentar extrair CEP do texto (qualquer sequência de 8 dígitos ou 5-3)
+      const zipMatch = text.match(/\d{5}-?\d{3}/);
+      const zip = zipMatch ? digits(zipMatch[0]) : null;
       
+      // 2. Tentar extrair número (procurar por números isolados após a rua)
+      // Se o texto tiver vírgula, o que vem depois costuma ser o número
+      let extractedStreet = text;
+      let extractedNumber = "";
+      
+      if (text.includes(",")) {
+        const parts = text.split(",");
+        extractedStreet = parts[0].trim();
+        // O segundo pedaço pode ter número e CEP
+        const rest = parts.slice(1).join(",").trim();
+        const numMatch = rest.match(/^\d+/);
+        if (numMatch) {
+          extractedNumber = numMatch[0];
+        }
+      } else {
+        // Sem vírgula, procura por espaço seguido de número no final (antes do CEP se houver)
+        const streetWithoutZip = zipMatch ? text.replace(zipMatch[0], "").trim() : text;
+        const numMatch = streetWithoutZip.match(/\s(\d+)(\s|$)/);
+        if (numMatch) {
+          extractedNumber = numMatch[1];
+          extractedStreet = streetWithoutZip.replace(numMatch[0], " ").trim();
+        }
+      }
+
+      // 3. Se temos um CEP, tentamos resolver via API
       if (zip && args.resolveCep) {
          const info = await args.resolveCep(zip);
          if (info) {
@@ -792,7 +818,8 @@ export async function advanceCheckout(args: {
               session,
               { 
                 zipCode: zip,
-                street: text.length > 20 ? text : info.street,
+                street: extractedStreet.length > 3 ? extractedStreet : info.street,
+                number: extractedNumber || null,
                 district: info.neighborhood,
                 city: info.city,
                 state: info.state
@@ -808,11 +835,15 @@ export async function advanceCheckout(args: {
          }
       }
 
-      // If we couldn't resolve or didn't get a clear address/zip, we can still proceed if the text looks like an address
+      // 4. Fallback: se o texto for longo o suficiente, aceitamos como endereço livre
       if (text.length > 10) {
         const updated = withCustomer(
           session,
-          { street: text },
+          { 
+            street: extractedStreet,
+            number: extractedNumber || null,
+            zipCode: zip
+          },
           { step: "WAITING_CONFIRMATION" },
           now
         );
