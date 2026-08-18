@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { advanceCheckout, createCheckoutSession, type CheckoutSession, type CartSession, formatCustomerAddress } from "../checkout-session";
+import { advanceCheckout, createCheckoutSession, type CheckoutSession, formatCustomerAddress } from "../checkout-session";
+import type { CartSession } from "../cart-session";
 
 describe("Checkout Endereço (Correção Genérica)", () => {
   const companyId = "test-company";
