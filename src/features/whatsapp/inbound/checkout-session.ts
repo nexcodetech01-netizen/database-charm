@@ -21,6 +21,7 @@ export type CheckoutStep =
   | "WAITING_CUSTOMER_NAME"
   | "WAITING_DOCUMENT"
   | "WAITING_ADDRESS"
+  | "WAITING_SHIPPING_FEE"
   | "WAITING_CONFIRMATION"
   | "buyer_name" // Keep for backward compatibility/internal mapping if needed
   | "person_type"
@@ -302,6 +303,7 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
   WAITING_CUSTOMER_NAME: "Qual é o seu nome completo? 😊",
   WAITING_DOCUMENT: "Qual o seu CPF? (só os números, ou com pontos e traço) 😊",
   WAITING_ADDRESS: "Por favor, me informe seu endereço completo com CEP para entrega. 😊",
+  WAITING_SHIPPING_FEE: "Aguarde um momentinho! ⏳ Ainda estou calculando o frete para o seu endereço. Assim que tiver o valor, eu te aviso para confirmarmos o pedido final. 😊",
   WAITING_CONFIRMATION: SUMMARY_CONFIRM_MESSAGE,
   buyer_name: "Qual é o seu nome completo? 😊",
   person_type: [
@@ -838,7 +840,7 @@ export async function advanceCheckout(args: {
                 city: info.city,
                 state: info.state
               },
-              { step: "WAITING_CONFIRMATION" },
+               { step: session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION" },
               now
             );
             return {
@@ -858,7 +860,7 @@ export async function advanceCheckout(args: {
             number: extractedNumber || null,
             zipCode: zip
           },
-          { step: "WAITING_CONFIRMATION" },
+           { step: session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION" },
           now
         );
         return {
@@ -869,6 +871,23 @@ export async function advanceCheckout(args: {
       }
 
       return { session, text: "Não entendi o endereço. Pode me enviar o endereço completo com CEP? 😊", aborted: false };
+    }
+    case "WAITING_SHIPPING_FEE": {
+      const amount = parseCurrency(text);
+      if (amount <= 0) {
+        return { 
+          session, 
+          text: "Poxa, não consegui identificar um valor de frete válido. 😕 Pode me informar o valor (ex: R$ 18,00)?", 
+          aborted: false 
+        };
+      }
+      
+      const updated = next(session, { deliveryFee: amount, step: "WAITING_CONFIRMATION" }, now);
+      return {
+        session: updated,
+        text: formatWebsiteOrderSummary(updated, args.cart),
+        aborted: false
+      };
     }
     case "zip_code": {
       const zip = parseZipCode(text);
