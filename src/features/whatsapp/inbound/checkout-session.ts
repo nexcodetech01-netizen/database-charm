@@ -615,7 +615,7 @@ export async function advanceCheckout(args: {
 
       const updated = next(session, { changeNeeded: true, changeAmount: amount }, now);
       
-      // Fluxo linear: Após o troco, ir para NOME ou CPF
+      // Fluxo linear: Após o troco, DEVE ir para CPF (WAITING_DOCUMENT) ou NOME
       const hasName = !!session.customer.fullName;
       const nextStep = hasName ? "WAITING_DOCUMENT" : "WAITING_CUSTOMER_NAME";
       return {
