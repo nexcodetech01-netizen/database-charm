@@ -127,6 +127,7 @@ describe("advanceCheckout — pessoa física", () => {
     expect(c.zipCode).toBe("50000000");
     expect(r.session.step).toBe("summary");
     expect(r.text).toContain("🛍️ *Resumo do seu Pedido*");
+    expect(r.text).toContain("PIX");
   });
 });
 
@@ -160,10 +161,9 @@ describe("handleCheckoutTurn", () => {
     expect((await turn("50000-000"))?.text).toContain(PROMPTS.address_number);
     expect((await turn("100"))?.text).toBe(PROMPTS.address_complement);
     expect((await turn("não"))?.text).toBe(PROMPTS.fulfillment);
-    expect((await turn("retirada"))?.text).toContain("🛍️ *Resumo do seu Pedido*");
-    const summary = await turn("pix");
+    const summary = await turn("retirada");
     expect(summary?.step).toBe("summary");
-    expect(summary?.text).toContain("PIX");
+    expect(summary?.text).toContain("🛍️ *Resumo do seu Pedido*");
   });
 
   it("confirmado — sinaliza quando o pedido acabou de ser fechado", async () => {
