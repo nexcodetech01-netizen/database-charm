@@ -200,7 +200,6 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     companyId: tenant.companyId,
     phone: msg.phone,
     text: msg.text,
-    waMessageId: msg.waMessageId // Pass id if possible for internal logs
   });
 
   if (checkoutTurn) {
