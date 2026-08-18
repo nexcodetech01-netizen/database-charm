@@ -41,7 +41,7 @@ export function ProductPickerDialog({
     categoryId: "",
     supplierId: "",
     status: "active",
-    stock: "all",
+    stock: "in_stock",
     sortBy: "name",
     sortDir: "asc",
     page: 1,
