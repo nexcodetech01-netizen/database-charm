@@ -4,12 +4,9 @@ function testRouterLogic(text: string) {
   const isCatalogOrderMessage = text.trimStart().startsWith("[PEDIDO-CATALOGO]");
   const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(text) : null;
   
-  console.log(`Input starts with [PEDIDO-CATALOGO]: ${isCatalogOrderMessage}`);
-  console.log(`Parsed order success: ${!!websiteOrder}`);
-  
-  // Simulation of the precedence logic
-  if (isCatalogOrderMessage && !websiteOrder) {
-    return "HANDLED_AS_PARSING_ERROR";
+  // Simulation of the new precedence logic
+  if (isCatalogOrderMessage && (!websiteOrder || websiteOrder.items.length === 0)) {
+    return "HANDLED_AS_PARSING_ERROR_OR_EMPTY";
   }
   
   if (isCatalogOrderMessage && websiteOrder) {
@@ -28,7 +25,7 @@ const tests = [
   {
     name: "Malformed Catalog Order (Missing items)",
     text: "[PEDIDO-CATALOGO]\nInvalid format here",
-    expected: "HANDLED_AS_PARSING_ERROR"
+    expected: "HANDLED_AS_PARSING_ERROR_OR_EMPTY"
   },
   {
     name: "Normal message (pix)",
@@ -42,7 +39,7 @@ const tests = [
   }
 ];
 
-console.log("=== AUDITORIA DA LÓGICA DE PRECEDÊNCIA DO ROTEADOR ===");
+console.log("=== AUDITORIA FINAL DA LÓGICA DE PRECEDÊNCIA DO ROTEADOR ===");
 tests.forEach(t => {
   const result = testRouterLogic(t.text);
   console.log(`${t.name}: [${result === t.expected ? "PASS" : "FAIL"}] (Got: ${result})`);
