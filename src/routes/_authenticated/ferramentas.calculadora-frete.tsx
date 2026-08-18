@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown } from "lucide-react";
+import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { 
@@ -14,6 +14,8 @@ import {
   type LabelResult
 } from "@/features/shipping/types";
 import { calculateShipping, generateLabel } from "@/features/shipping/services/shipping.functions";
+import { printManager } from "@/features/printing/services/print.service";
+import type { Printer as PrinterInfo } from "@/features/printing/types/printing.types";
 
 import { PageLayout, PageHeader } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,6 +37,37 @@ function ShippingCalculatorPage() {
   const [results, setResults] = useState<ShippingOption[] | null>(null);
   const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
+  const [printing, setPrinting] = useState(false);
+
+  async function handlePrintThermal() {
+    if (!labelResult?.label_url) return;
+    setPrinting(true);
+    try {
+      const printers = await printManager.getPrinters();
+      const defaultPrinter =
+        printers.find((p: PrinterInfo) => p.isDefault) ??
+        printers.find((p: PrinterInfo) => p.name === "LABEL TERMICA");
+      if (!defaultPrinter) {
+        toast.error("Impressora térmica não encontrada. Confira se o Print Bridge está conectado.");
+        return;
+      }
+      const result = await printManager.print(
+        { id: `superfrete-${labelResult.order_id}`, pdf: labelResult.label_url },
+        { strategy: "PDF", printerId: defaultPrinter.id, type: "LABEL" },
+      );
+      if (result.success) {
+        toast.success("Etiqueta enviada pra impressão.");
+      } else {
+        toast.error(result.message || "Falha ao imprimir.");
+      }
+    } catch (err) {
+      toast.error("Não foi possível imprimir.", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setPrinting(false);
+    }
+  }
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
 
@@ -215,12 +248,26 @@ function ShippingCalculatorPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 {labelResult.label_url && (
-                  <Button asChild className="flex-1 h-14 text-lg">
-                    <a href={labelResult.label_url} target="_blank" rel="noopener noreferrer">
-                      <Download className="mr-2 h-5 w-5" />
-                      Baixar Etiqueta (PDF)
-                    </a>
-                  </Button>
+                  <>
+                    <Button
+                      className="flex-1 h-14 text-lg"
+                      onClick={handlePrintThermal}
+                      disabled={printing}
+                    >
+                      {printing ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        <Printer className="mr-2 h-5 w-5" />
+                      )}
+                      Imprimir na Térmica
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1 h-14 text-lg">
+                      <a href={labelResult.label_url} target="_blank" rel="noopener noreferrer">
+                        <Download className="mr-2 h-5 w-5" />
+                        Baixar Etiqueta (PDF)
+                      </a>
+                    </Button>
+                  </>
                 )}
                 <Button variant="outline" className="flex-1 h-14 text-lg" onClick={() => {
                   setLabelResult(null);
