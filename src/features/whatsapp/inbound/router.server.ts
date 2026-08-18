@@ -1,7 +1,7 @@
 import { parseWebsiteCatalogOrder } from "./intent-detector";
 import { getCartSession, saveCartSession } from "./cart-session.server";
 import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheckoutSession } from "./checkout-session.server";
-import { createCheckoutSession } from "./checkout-session";
+import { createCheckoutSession, PROMPTS } from "./checkout-session";
 import { parseCurrency } from "@/lib/masks";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
@@ -209,28 +209,22 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       await saveCheckoutSession(freshSession);
     }
 
-    // O router apenas inicializa a sessão e delega o primeiro prompt ao motor de checkout.
-    // O CheckoutSession gerencia a pergunta de pagamento de forma única.
-    const checkoutTurn = await handleCheckoutTurn({
-      companyId: tenant.companyId,
-      phone: msg.phone,
-      text: "", // Texto vazio para disparar o prompt inicial do estado atual (WAITING_PAYMENT_METHOD)
+    // O router apenas inicializa a sessão e envia o prompt inicial.
+    // NÃO chamamos handleCheckoutTurn aqui para evitar o bug de processamento de texto vazio.
+    const paymentPrompt = PROMPTS.payment_method;
+    const sent = await sendWhatsAppText({ to: msg.phone, text: paymentPrompt });
+    
+    await db.from("whatsapp_messages").insert({
+      company_id: tenant.companyId,
+      conversation_id: conversationId,
+      contact_id: contactId,
+      direction: "outbound",
+      wa_message_id: sent.waMessageId,
+      text: paymentPrompt,
+      status: sent.ok ? "sent" : "failed",
+      provider: "catalog-nav",
+      skill_id: "catalog.new_order"
     });
-
-    if (checkoutTurn) {
-      const sent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
-      await db.from("whatsapp_messages").insert({
-        company_id: tenant.companyId,
-        conversation_id: conversationId,
-        contact_id: contactId,
-        direction: "outbound",
-        wa_message_id: sent.waMessageId,
-        text: checkoutTurn.text,
-        status: sent.ok ? "sent" : "failed",
-        provider: "catalog-nav",
-        skill_id: "catalog.new_order"
-      });
-    }
 
     console.log(`[AUDIT] CATALOG_EARLY_RETURN: success`);
     return;

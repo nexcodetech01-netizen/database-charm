@@ -42,14 +42,14 @@ vi.mock("../checkout-session.server", async (importOriginal) => {
   };
 });
 
-describe("Bug Reproducer: [PEDIDO-CATALOGO] Double Prompt / Wrong Turn", () => {
+describe("Bug Fix Verification: [PEDIDO-CATALOGO] Flow", () => {
   const tenant = { companyId: "comp-1" };
   const msg = {
     waContactId: "5511999999999@s.whatsapp.net",
     waMessageId: "catalog-msg-id",
     phone: "5511999999999",
     profileName: "Test User",
-    text: "[PEDIDO-CATALOGO] Total: R$ 40,00 | Itens: 1x Camisa (R$ 40,00)",
+    text: "[PEDIDO-CATALOGO] Total: R$ 40,00 | Itens: 1x Camisa (R$ 40,00) | Nome: Test User",
     timestamp: Date.now(),
   };
 
@@ -57,20 +57,28 @@ describe("Bug Reproducer: [PEDIDO-CATALOGO] Double Prompt / Wrong Turn", () => {
     vi.clearAllMocks();
   });
 
-  it("REPRODUCE BUG: [PEDIDO-CATALOGO] deve enviar PROMPTS.payment_method e NÃO chamar handleCheckoutTurn com texto vazio", async () => {
-    // 1. Executar o webhook
+  it("FIXED: [PEDIDO-CATALOGO] deve enviar PROMPTS.payment_method e NÃO chamar handleCheckoutTurn", async () => {
     await handleWhatsAppInboundPayload({ db, msg, tenant });
 
-    // 2. Verificar se handleCheckoutTurn foi chamado (O BUG é que ele É chamado com text: "")
     const calls = (handleCheckoutTurn as any).mock.calls;
     
-    // Verificamos se ele foi chamado. Se o bug existe, calls.length > 0.
-    // Assim que corrigirmos, mudaremos para .toBe(0)
-    expect(calls.length, "O BUG EXISTE: handleCheckoutTurn foi chamado indevidamente para mensagem de catálogo").toBe(0);
+    // VERIFICAÇÃO PRINCIPAL: handleCheckoutTurn não deve ser chamado no processamento inicial do catálogo
+    expect(calls.length, "FIXED: handleCheckoutTurn não deve ser chamado para mensagem de catálogo").toBe(0);
     
-    // E a mensagem enviada deve ser exatamente o prompt de pagamento
+    // VERIFICAÇÃO DO PROMPT: deve ser enviado o prompt de pagamento correto
     expect(whatsappServer.sendWhatsAppText).toHaveBeenCalledWith(expect.objectContaining({
       text: expect.stringContaining("Qual forma de pagamento você prefere?")
     }));
+  });
+
+  it("DEFESA: handleCheckoutTurn deve ignorar mensagens de catálogo se chamadas por engano", async () => {
+    // Chamada direta simulando erro de roteamento
+    const result = await handleCheckoutTurn({
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      text: msg.text
+    });
+
+    expect(result).toBeNull();
   });
 });

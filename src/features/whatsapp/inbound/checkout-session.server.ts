@@ -124,6 +124,13 @@ export async function handleCheckoutTurn(args: {
   resolveCep?: CepResolver;
 }): Promise<CheckoutTurnResult | null> {
   console.log(`[AUDIT] HANDLE_CHECKOUT_ENTERED: phone=${args.phone}, text=${args.text}`);
+  
+  // Defesa: se o texto for um pedido de catálogo, não processar como turno de checkout humano
+  if (args.text.trim().startsWith("[PEDIDO-CATALOGO]")) {
+    console.log(`[AUDIT] HANDLE_CHECKOUT_ABORTED: catalog message in checkout turn`);
+    return null;
+  }
+
   const now = args.now ?? Date.now();
   const cart = args.cart ?? (await getCartSession(args.companyId, args.phone, now));
   const active = await peekCheckoutSession(args.companyId, args.phone, now);
