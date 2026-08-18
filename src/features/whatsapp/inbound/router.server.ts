@@ -946,7 +946,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   }
 
   // 3c-bis) Fotos do produto em contexto (imagens já cadastradas).
-  const photoTurn = await handlePhotoTurn({
+  const photoTurn = isCatalogOrderMessage ? null : await handlePhotoTurn({
     db,
     storage: (
       await import("@/integrations/supabase/client.server")
