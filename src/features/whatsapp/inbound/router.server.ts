@@ -538,19 +538,25 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
   // 3c-pre-ante) Resumo de pedido colado a partir do catálogo do site
   // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
-  // PRIORIDADE MÁXIMA: Detectar novos pedidos de catálogo ANTES de processar
-  // turnos de checkout existentes para evitar que o [PEDIDO-CATALOGO] seja
-  // interpretado como resposta a uma etapa de uma sessão anterior.
-  const websiteOrder = parseWebsiteCatalogOrder(msg.text);
+  // PRIORIDADE MÁXIMA: O marcador [PEDIDO-CATALOGO] é um EVENTO DE SISTEMA.
+  // Deve ter prioridade absoluta e NUNCA entrar em handleCheckoutTurn ou interpretadores genéricos.
+  const isCatalogOrderMessage = msg.text.trimStart().startsWith("[PEDIDO-CATALOGO]");
+  const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+
+  // Se a mensagem começar com o marcador de catálogo, forçamos o encerramento do turno
+  // caso o parsing falhe, para evitar que caia no motor conversacional como resposta.
+  if (isCatalogOrderMessage && !websiteOrder) {
+    console.error("[whatsapp.inbound] Falha crítica no parsing de [PEDIDO-CATALOGO]:", msg.text);
+    const errorText = "Desculpe, não consegui processar seu pedido do catálogo. Poderia tentar novamente ou descrever o que deseja? 😊";
+    await sendWhatsAppText({ to: msg.phone, text: errorText });
+    return;
+  }
 
   let checkoutTurn = null;
-  // Se for um novo pedido do catálogo (websiteOrder), NÃO executamos handleCheckoutTurn
-  // para esta mensagem. A sessão anterior será invalidada e uma nova será
-  // criada dentro do bloco if (websiteOrder) que vem adiante.
-  if (!websiteOrder) {
+  // O processamento conversacional (handleCheckoutTurn) SÓ ocorre se NÃO for um evento de catálogo.
+  if (!isCatalogOrderMessage) {
     console.log(`[CATALOG CHECKOUT DEBUG]
 conversationId: ${conversationId}
-activeOrderId: N/A
 incomingMessage: ${msg.text}
 routerSelected: router.server.ts
 handlerSelected: handleCheckoutTurn (Checking...)`);
@@ -561,6 +567,7 @@ handlerSelected: handleCheckoutTurn (Checking...)`);
       text: msg.text,
     });
   }
+
 
   if (checkoutTurn) {
     console.log(`[CATALOG CHECKOUT DEBUG]
