@@ -76,6 +76,7 @@
     "lucide-react": "^0.575.0",
     "node-forge": "^1.4.0",
     "papaparse": "^5.5.4",
+    "pdfjs-dist": "3.4.120",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
