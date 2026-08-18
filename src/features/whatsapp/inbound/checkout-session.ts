@@ -373,10 +373,6 @@ export function formatCustomerAddress(customer: CheckoutCustomer): string {
     }
   }
 
-  // Ajuste cirúrgico: Frederico Melle -> Rua Frederico Melle
-  if (street === "Frederico Melle") {
-    street = `Rua ${street}`;
-  }
 
   // 2. Montar a linha
   const addressLine = [street, number].filter(Boolean).join(", ");
@@ -823,7 +819,9 @@ export async function advanceCheckout(args: {
               session,
               { 
                 zipCode: zip,
-                street: extractedStreet.length > 3 ? extractedStreet : info.street,
+                // SOLUÇÃO GENÉRICA: Se a API retornou logradouro, ele é a fonte de verdade
+                // Se não retornou (estrada sem nome, etc), usamos o que o cliente digitou
+                street: info.street || (extractedStreet.length > 3 ? extractedStreet : ""),
                 number: extractedNumber || null,
                 district: info.neighborhood,
                 city: info.city,
