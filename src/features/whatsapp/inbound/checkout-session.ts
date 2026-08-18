@@ -296,6 +296,13 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "2. Cartão",
     "3. Dinheiro",
   ].join("\n"),
+  WAITING_PAYMENT_METHOD_OTHER_CITY: [
+    "Qual forma de pagamento você prefere? 😊",
+    "",
+    "1. PIX",
+    "2. Cartão",
+  ].join("\n"),
+
   WAITING_CHANGE_INFO: [
     "💵 Você vai precisar de troco?",
     "Se sim, me informe para quanto. Ex.: R$ 50,00",
