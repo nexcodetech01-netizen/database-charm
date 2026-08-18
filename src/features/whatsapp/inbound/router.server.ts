@@ -123,7 +123,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
   console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
   console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map(c => c.charCodeAt(0)).join(",")}`);
 
-  const isCatalogOrderMessage = msg.text.trimStart().startsWith("[PEDIDO-CATALOGO]");
+  const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
   console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
 
   // PRIORIDADE MÁXIMA: Evento de sistema [PEDIDO-CATALOGO]
