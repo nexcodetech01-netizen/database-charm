@@ -18,10 +18,10 @@ import { isValidCNPJ, isValidCPF } from "/dev-server/src/lib/validators";
 export type CheckoutStep =
   | "WAITING_PAYMENT_METHOD"
   | "WAITING_CHANGE_INFO"
+  | "WAITING_SHIPPING_FEE"
   | "WAITING_CUSTOMER_NAME"
   | "WAITING_DOCUMENT"
   | "WAITING_ADDRESS"
-  | "WAITING_SHIPPING_FEE"
   | "WAITING_CONFIRMATION"
   | "buyer_name" // Keep for backward compatibility/internal mapping if needed
   | "person_type"
@@ -303,7 +303,7 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
   WAITING_CUSTOMER_NAME: "Qual é o seu nome completo? 😊",
   WAITING_DOCUMENT: "Qual o seu CPF? (só os números, ou com pontos e traço) 😊",
   WAITING_ADDRESS: "Por favor, me informe seu endereço completo com CEP para entrega. 😊",
-  WAITING_SHIPPING_FEE: "Aguarde um momentinho! ⏳ Ainda estou calculando o frete para o seu endereço. Assim que tiver o valor, eu te aviso para confirmarmos o pedido final. 😊",
+  WAITING_SHIPPING_FEE: "Aguarde um momentinho! ⏳ Ainda estou calculando o frete para o seu endereço. Qual o valor do frete informado?",
   WAITING_CONFIRMATION: SUMMARY_CONFIRM_MESSAGE,
   buyer_name: "Qual é o seu nome completo? 😊",
   person_type: [
@@ -419,7 +419,7 @@ export function formatWebsiteOrderSummary(
   const subtotal = cart.total;
   const freight = session.deliveryFee;
   const isFreightPending = freight === null;
-  const total = isFreightPending ? null : subtotal + (freight || 0);
+  const total = isFreightPending ? null : subtotal + (freight ?? 0);
 
   const lines = [
     `Perfeito, ${c.fullName || "!"}! Seu pedido ficou assim:`,
@@ -428,7 +428,7 @@ export function formatWebsiteOrderSummary(
     ...items,
     "",
     `Subtotal: ${money(subtotal)}`,
-    `Frete: ${isFreightPending ? "Será calculado para envio" : money(freight || 0)}`,
+    `Frete: ${isFreightPending ? "Será calculado para envio" : money(freight ?? 0)}`,
     `Total: ${total === null ? "A calcular" : money(total)}`,
   ];
 
@@ -826,47 +826,52 @@ export async function advanceCheckout(args: {
 
       // 3. Se temos um CEP, tentamos resolver via API
       if (zip && args.resolveCep) {
-         const info = await args.resolveCep(zip);
-         if (info) {
-            const updated = withCustomer(
-              session,
-              { 
-                zipCode: zip,
-                // SOLUÇÃO GENÉRICA: Se a API retornou logradouro, ele é a fonte de verdade
-                // Se não retornou (estrada sem nome, etc), usamos o que o cliente digitou
-                street: info.street || (extractedStreet.length > 3 ? extractedStreet : ""),
-                number: extractedNumber || null,
-                district: info.neighborhood,
-                city: info.city,
-                state: info.state
-              },
-               { step: session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION" },
-              now
-            );
-            return {
-              session: syncDelivery(updated),
-              text: PROMPTS[updated.step as keyof typeof PROMPTS],
-              aborted: false
-            };
-         }
+        const info = await args.resolveCep(zip);
+        if (info) {
+          const nextStep = session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION";
+          const updated = withCustomer(
+            session,
+            {
+              zipCode: zip,
+              street: info.street || (extractedStreet.length > 3 ? extractedStreet : ""),
+              number: extractedNumber || null,
+              district: info.neighborhood,
+              city: info.city,
+              state: info.state,
+            },
+            { step: nextStep },
+            now,
+          );
+
+          return {
+            session: syncDelivery(updated),
+            text: nextStep === "WAITING_SHIPPING_FEE" 
+              ? PROMPTS.WAITING_SHIPPING_FEE 
+              : formatWebsiteOrderSummary(updated, args.cart),
+            aborted: false,
+          };
+        }
       }
 
       // 4. Fallback: se o texto for longo o suficiente, aceitamos como endereço livre
       if (text.length > 10) {
+        const nextStep = session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION";
         const updated = withCustomer(
           session,
-          { 
+          {
             street: extractedStreet,
             number: extractedNumber || null,
-            zipCode: zip
+            zipCode: zip,
           },
-           { step: session.deliveryFee === null ? "WAITING_SHIPPING_FEE" : "WAITING_CONFIRMATION" },
-          now
+          { step: nextStep },
+          now,
         );
         return {
           session: syncDelivery(updated),
-          text: PROMPTS[updated.step as keyof typeof PROMPTS],
-          aborted: false
+          text: nextStep === "WAITING_SHIPPING_FEE" 
+            ? PROMPTS.WAITING_SHIPPING_FEE 
+            : formatWebsiteOrderSummary(updated, args.cart),
+          aborted: false,
         };
       }
 
@@ -874,19 +879,20 @@ export async function advanceCheckout(args: {
     }
     case "WAITING_SHIPPING_FEE": {
       const amount = parseCurrency(text);
-      if (amount <= 0) {
-        return { 
-          session, 
-          text: "Poxa, não consegui identificar um valor de frete válido. 😕 Pode me informar o valor (ex: R$ 18,00)?", 
-          aborted: false 
+      if (amount === null || amount <= 0 || !Number.isFinite(amount)) {
+        return {
+          session,
+          text: "Não entendi o valor do frete. Por favor, me informe o valor numérico (ex: 18,00 ou R$ 18,00). 😊",
+          aborted: false,
         };
       }
-      
+
       const updated = next(session, { deliveryFee: amount, step: "WAITING_CONFIRMATION" }, now);
+
       return {
         session: updated,
         text: formatWebsiteOrderSummary(updated, args.cart),
-        aborted: false
+        aborted: false,
       };
     }
     case "zip_code": {
