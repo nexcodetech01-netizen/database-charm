@@ -121,9 +121,12 @@ function ShippingCalculatorPage() {
       };
       
       const response = await calculateShipping({ data: sanitizedData as any });
-      setResults(response);
-      if (response.length === 0) {
+      setResults(response.options);
+      if (response.options.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
+      }
+      if (response.errors.length > 0) {
+        response.errors.forEach((msg) => toast.warning(msg));
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao calcular frete.");
