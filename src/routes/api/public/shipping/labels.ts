@@ -1,249 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { generateSuperfreteLabel } from "@/features/shipping/lib/generate-superfrete-label";
+import type { GenerateLabelInput } from "@/features/shipping/types";
 
-// Force absolute fresh build v8 - Timestamp for verification
-const BUILD_TS = '2026-08-17T14:46:00.000Z';
-console.log('[SHIPPING_LABELS] Module loaded at ' + new Date().toISOString() + ' (BUILD: ' + BUILD_TS + ')');
-
+/**
+ * Rota pública mantida por compatibilidade (ex.: chamadas externas
+ * diretas). A tela do NexOS usa a server function `generateLabel`
+ * (features/shipping/services/shipping.functions.ts), que chama
+ * `generateSuperfreteLabel` diretamente — sem passar por aqui — desde
+ * a correção de 2026-08-18 (ver comentário lá para o porquê).
+ */
 export const Route = createFileRoute("/api/public/shipping/labels")({
-
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const handlerVersion = 'TESTE_CONFIRMACAO_' + Date.now();
-        console.log(`[SHIPPING_LABELS] VERSION_CHECK: ${handlerVersion}`);
-        console.log(`[SHIPPING_LABELS] Request details - Method: ${request.method}, URL: ${request.url}`);
-        
         try {
-          const bodyText = await request.text();
-          let body;
-          try {
-            body = JSON.parse(bodyText);
-          } catch (e) {
-            console.error('[SHIPPING_LABELS] Erro ao parsear JSON:', bodyText);
-            return new Response(
-              JSON.stringify({ error: 'Payload JSON inválido' }),
-              { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-
-          const { 
-            quote_id,
-            sender,
-            recipient,
-            package_details,
-            service_code
-          } = body;
-
-
-          const SUPERFRETE_TOKEN = process.env['SUPERFRETE_TOKEN'];
-          const SUPERFRETE_ENV = process.env['SUPERFRETE_ENV'] || 'sandbox';
-
-          if (!SUPERFRETE_TOKEN) {
-            console.error('[SHIPPING_LABELS] Erro: SUPERFRETE_TOKEN não configurado');
-            return new Response(
-              JSON.stringify({ error: 'SUPERFRETE_TOKEN not configured' }),
-              { status: 500, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-
-          const baseUrl = SUPERFRETE_ENV === 'production' 
-            ? 'https://api.superfrete.com' 
-            : 'https://sandbox.superfrete.com';
-
-          console.log(`[SHIPPING_LABELS] Usando ambiente: ${SUPERFRETE_ENV} (${baseUrl})`);
-
-          // 1. Add to cart
-          const cartPayload = {
-            from: {
-              name: sender?.name || "NexOS Fashion",
-              cpf_cnpj: (sender?.document || "").replace(/\D/g, ''),
-              postal_code: (sender?.postal_code || "").replace(/\D/g, ''),
-              address: sender?.address || "",
-              number: sender?.number || "",
-              complement: sender?.complement || "",
-              district: sender?.district || "",
-              city: sender?.city || "",
-              state_abbr: sender?.state || "", // API expects state_abbr
-              email: sender?.email || null,
-              phone: (sender?.phone || "").replace(/\D/g, ''),
-            },
-            to: {
-              name: recipient?.name || "",
-              cpf_cnpj: (recipient?.document || "").replace(/\D/g, ''),
-              postal_code: (recipient?.postal_code || "").replace(/\D/g, ''),
-              address: recipient?.address || "",
-              number: recipient?.number || "",
-              complement: recipient?.complement || "",
-              district: recipient?.district || "",
-              city: recipient?.city || "",
-              state_abbr: recipient?.state || "", // API expects state_abbr
-              email: recipient?.email || null,
-              phone: (recipient?.phone || "").replace(/\D/g, ''),
-            },
-            service: parseInt(String(service_code)), // Garante que seja um inteiro singular
-            volumes: [{ // API expects volumes array
-              format: parseInt(package_details?.format || "3"),
-              weight: package_details?.peso_kg || 0.1,
-              width: package_details?.largura_cm || 0,
-              height: package_details?.altura_cm || 0,
-              length: package_details?.comprimento_cm || 0,
-            }],
-            options: {
-              insurance_value: package_details?.valor_declarado || 0,
-              receipt: false,
-              own_hand: false,
-              reverse: false,
-              non_commercial: false,
-              invoice_number: recipient?.invoice_number || null,
-            }
-          };
-
-          const rawCartPayload = JSON.stringify(cartPayload);
-          console.log('[SHIPPING_LABELS] RAW_PAYLOAD_START' + rawCartPayload + 'RAW_PAYLOAD_END');
-
-          const cartResponse = await fetch(`${baseUrl}/api/v0/cart`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
-              'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(cartPayload),
-          });
-
-          const cartText = await cartResponse.text();
-          console.log(`[SHIPPING_LABELS] Resposta BRUTA /api/v0/cart: ${cartText}`);
-          const cartData = JSON.parse(cartText || '{}');
-
-          if (!cartResponse.ok) {
-            console.error('[SHIPPING_LABELS] Erro no Carrinho:', cartData.message || cartData.error || 'Erro desconhecido');
-            return new Response(
-              JSON.stringify({ 
-                error: cartData.message || cartData.error || 'Falha ao adicionar ao carrinho',
-                details: cartData 
-              }),
-              { status: cartResponse.status, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-
-          // 2. Checkout (Pay for everything in cart)
-          console.log('[SHIPPING_LABELS] Iniciando /api/v0/checkout...');
-          const checkoutPayload = {
-            orders: [cartData.id]
-          };
-          console.log(`[SHIPPING_LABELS] Enviando para /api/v0/checkout: ${JSON.stringify(checkoutPayload)}`);
-
-          const checkoutResponse = await fetch(`${baseUrl}/api/v0/checkout`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
-              'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(checkoutPayload),
-          });
-
-          const checkoutText = await checkoutResponse.text();
-          const checkoutData = JSON.parse(checkoutText || '{}');
-
-          console.log(`[SHIPPING_LABELS] Resposta /api/v0/checkout (Status ${checkoutResponse.status}):`, JSON.stringify(checkoutData, null, 2));
-
-          if (!checkoutResponse.ok) {
-             console.error('[SHIPPING_LABELS] Erro no Checkout:', checkoutData.message || checkoutData.error || 'Erro desconhecido');
-             return new Response(
-              JSON.stringify({ 
-                error: checkoutData.message || checkoutData.error || 'Falha no checkout (saldo insuficiente?)',
-                details: checkoutData 
-              }),
-              { status: checkoutResponse.status, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-
-          // 3. Generate Label Real PDF URL
-          // Based on SuperFrete documentation, /api/v0/tag/print returns the real PDF URL
-          const orderId = checkoutData?.order_id || 
-                          (checkoutData?.orders && checkoutData.orders[0]?.id) || 
-                          (checkoutData?.purchase?.id) ||
-                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.id) ||
-                          (checkoutData?.id) || // Fallback direto se o checkout retornar o ID na raiz
-                          cartData?.id;
-
-          
-          console.log(`[SHIPPING_LABELS] Obtendo URL real do PDF para order_id: ${orderId}`);
-          
-          let labelUrl = `${baseUrl}/api/v0/checkout/print?orders[]=${orderId}`;
-          
-          try {
-            const printResponse = await fetch(`${baseUrl}/api/v0/tag/print`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${SUPERFRETE_TOKEN}`,
-                'User-Agent': 'NexOS Fashion (admin@nexxcode.com.br)',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                orders: [orderId]
-              }),
-            });
-
-            if (printResponse.ok) {
-              const contentType = printResponse.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const printData = await printResponse.json();
-                console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print:`, JSON.stringify(printData, null, 2));
-                if (printData.url) {
-                  labelUrl = printData.url;
-                }
-              } else {
-                const printText = await printResponse.text();
-                console.log(`[SHIPPING_LABELS] Resposta /api/v0/tag/print NÃO é JSON (Status ${printResponse.status}): ${printText.substring(0, 100)}...`);
-              }
-            } else {
-              console.warn(`[SHIPPING_LABELS] Falha ao obter PDF via /api/v0/tag/print (Status ${printResponse.status}). Usando fallback.`);
-            }
-          } catch (printError) {
-            console.error('[SHIPPING_LABELS] Erro na chamada /api/v0/tag/print:', printError);
-            // Segue com o fallback definido acima
-          }
-
-          const labelResult = {
-            success: true,
-            order_id: orderId,
-            tracking_code: checkoutData?.tracking_code || 
-                          (checkoutData?.packages && checkoutData.packages[0]?.tracking) || 
-                          (checkoutData?.orders && checkoutData.orders[0]?.packages?.[0]?.tracking) || 
-                          (checkoutData?.purchase?.orders && checkoutData.purchase.orders[0]?.tracking),
-            label_url: labelUrl,
-            raw: checkoutData
-          };
-
-          console.log('[SHIPPING_LABELS] Resultado Final:', JSON.stringify(labelResult, null, 2));
-          return new Response(JSON.stringify(labelResult), {
+          const body = (await request.json()) as GenerateLabelInput;
+          const result = await generateSuperfreteLabel(body);
+          return new Response(JSON.stringify(result), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" },
           });
-
         } catch (error: any) {
-          console.error('[SHIPPING_LABELS] Erro Crítico na Rota:', error);
-          // Adicionando log de stack trace completo para depuração
-          if (error.stack) {
-            console.error('[SHIPPING_LABELS] Stack Trace:', error.stack);
-          }
-          
+          console.error("[SHIPPING_LABELS] Erro:", error);
           return new Response(
-            JSON.stringify({ 
-              error: error.message || 'Erro interno inesperado',
-              stack: error.stack,
-              module: 'labels.ts'
-            }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: error?.message || "Erro interno inesperado" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
-
-      }
-    }
-  }
+      },
+    },
+  },
 });
