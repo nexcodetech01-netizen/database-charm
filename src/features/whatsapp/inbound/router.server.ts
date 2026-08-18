@@ -540,6 +540,10 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
   // PRIORIDADE MÁXIMA: O marcador [PEDIDO-CATALOGO] é um EVENTO DE SISTEMA.
   // Deve ter prioridade absoluta e NUNCA entrar em handleCheckoutTurn ou interpretadores genéricos.
+  console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
+  console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
+  console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map(c => c.charCodeAt(0)).join(",")}`);
+  console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
   const isCatalogOrderMessage = msg.text.trimStart().startsWith("[PEDIDO-CATALOGO]");
   const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
 
@@ -558,6 +562,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     
     return;
   }
+  console.log(`[AUDIT-LOG] Chamando handleCheckoutTurn? ${!isCatalogOrderMessage}`);
 
 
   let checkoutTurn = null;

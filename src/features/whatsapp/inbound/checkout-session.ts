@@ -561,6 +561,7 @@ export async function advanceCheckout(args: {
       if (!payment) {
         return { 
           session, 
+    console.log(`[AUDIT-LOG] advanceCheckout step: ${session.step}, input: "${text}"`);
           text: "Não consegui identificar a forma de pagamento. Você prefere Pix, cartão ou dinheiro? 😊", 
           aborted: false 
         };
