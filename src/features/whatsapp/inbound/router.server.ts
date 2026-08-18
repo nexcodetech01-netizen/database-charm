@@ -1,4 +1,4 @@
-import { parseWebsiteCatalogOrder } from "./intent-detector";
+import { parseWebsiteCatalogOrder, getGreeting } from "./intent-detector";
 import { getCartSession, saveCartSession } from "./cart-session.server";
 import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheckoutSession } from "./checkout-session.server";
 import { createCheckoutSession, PROMPTS } from "./checkout-session";
@@ -12,23 +12,6 @@ import { sendWhatsAppText } from "@/lib/whatsapp.server";
  * When you change the logic below, update this ID to match the deployment intent.
  */
 export const NEXOS_ROUTER_BUILD_ID = "CFzzUNqT";
-
-
-// Função para formatar saudações baseada na hora (America/Sao_Paulo)
-const getGreeting = () => {
-  const now = new Date();
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone: "America/Sao_Paulo",
-    hour: "numeric",
-    hour12: false,
-  };
-  const hourString = new Intl.DateTimeFormat("en-US", options).format(now);
-  const hour = parseInt(hourString, 10);
-
-  if (hour >= 5 && hour < 12) return "Bom dia!";
-  if (hour >= 12 && hour < 18) return "Boa tarde!";
-  return "Boa noite!";
-};
 
 const phoneVariants = (waId: string) => [waId, waId.replace("@s.whatsapp.net", "")];
 
@@ -170,6 +153,18 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     // Inicia nova sessão limpa no estado de pagamento
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
     freshSession.step = "WAITING_PAYMENT_METHOD";
+    
+    // Preservar o frete do catálogo
+    if (websiteOrder.deliveryFee) {
+      const fee = parseCurrency(websiteOrder.deliveryFee);
+      freshSession.deliveryFee = fee;
+      console.log(`[AUDIT] CATALOG_FREIGHT_PRESERVED: fee=${fee}`);
+    } else if (websiteOrder.deliveryMethod === "tupa") {
+      // Se não houver taxa explícita mas for entrega em Tupã, 
+      // podemos ter uma regra de negócio, mas o pedido diz R$ 5,00 no exemplo.
+      // O parser agora pega a taxa se existir.
+    }
+    
     await saveCheckoutSession(freshSession);
     
     // Sincroniza itens
@@ -211,8 +206,10 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     // O router apenas inicializa a sessão e envia o prompt inicial.
     // NÃO chamamos handleCheckoutTurn aqui para evitar o bug de processamento de texto vazio.
-    const paymentPrompt = PROMPTS.WAITING_PAYMENT_METHOD;
-    const sent = await sendWhatsAppText({ to: msg.phone, text: paymentPrompt });
+    const greeting = getGreeting();
+    const welcomePrompt = `${greeting}\n\nRecebi seu pedido do catálogo! 🛍️\n\n${PROMPTS.WAITING_PAYMENT_METHOD}`;
+    
+    const sent = await sendWhatsAppText({ to: msg.phone, text: welcomePrompt });
     
     await db.from("whatsapp_messages").insert({
       company_id: tenant.companyId,
@@ -220,7 +217,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       contact_id: contactId,
       direction: "outbound",
       wa_message_id: sent.waMessageId,
-      text: paymentPrompt,
+      text: welcomePrompt,
       status: sent.ok ? "sent" : "failed",
       provider: "catalog-nav",
       skill_id: "catalog.new_order"

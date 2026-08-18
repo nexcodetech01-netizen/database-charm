@@ -42,6 +42,7 @@ export interface WebsiteCatalogOrder {
   items: WebsiteCatalogOrderItem[];
   total: string;
   deliveryMethod: "tupa" | "other" | "unknown";
+  deliveryFee?: string;
   cep?: string;
   name?: string;
   buyerName?: string;
@@ -76,6 +77,9 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   const totalMatch = t.match(/Total dos produtos: (R\$ [\d,.]+)/);
   const total = totalMatch ? totalMatch[1] : "";
 
+  const feeMatch = t.match(/Taxa de entrega: (R\$ [\d,.]+)/);
+  const deliveryFee = feeMatch ? feeMatch[1] : undefined;
+
   let deliveryMethod: WebsiteCatalogOrder["deliveryMethod"] = "unknown";
   if (t.includes("Entrega em Tupã")) deliveryMethod = "tupa";
   else if (t.includes("Envio para outra cidade")) deliveryMethod = "other";
@@ -87,16 +91,7 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   const name = nameMatch ? nameMatch[1].trim() : undefined;
   const buyerName = name;
 
-  return { items, total, deliveryMethod, cep, name, buyerName };
-}
-
-export interface WebsiteCatalogOrder {
-  items: WebsiteCatalogOrderItem[];
-  total: string;
-  deliveryMethod: "tupa" | "other" | "unknown";
-  cep?: string;
-  name?: string;
-  buyerName?: string;
+  return { items, total, deliveryMethod, deliveryFee, cep, name, buyerName };
 }
 
 /**
