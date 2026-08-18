@@ -159,10 +159,9 @@ describe("handleCheckoutTurn", () => {
     expect((await turn("50000-000"))?.text).toContain(PROMPTS.address_number);
     expect((await turn("100"))?.text).toBe(PROMPTS.address_complement);
     expect((await turn("não"))?.text).toBe(PROMPTS.fulfillment);
-    const summary = await turn("retirada");
-    expect(summary?.step).toBe("payment");
-    const summary2 = await turn("dinheiro");
-    expect(summary2?.step).toBe("summary");
+    expect((await turn("retirada"))?.text).toBe(PROMPTS.payment);
+    const summary = await turn("dinheiro");
+    expect(summary?.step).toBe("summary");
     expect(summary?.text).toContain("Dinheiro");
   });
 
