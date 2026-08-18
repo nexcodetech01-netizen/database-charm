@@ -126,24 +126,24 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
   }
 
   // Logs de Auditoria para o Problema do [PEDIDO-CATALOGO]
-  console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
-  console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
-  console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map((c: any) => c.charCodeAt(0)).join(",")}`);
+  console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, phone=${msg.phone}, text=${JSON.stringify(msg.text)}`);
 
   const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
-  console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
+  const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+  console.log(`[AUDIT] CATALOG_DETECTION: isCatalogOrderMessage=${isCatalogOrderMessage}, websiteOrder=${!!websiteOrder}, item_count=${websiteOrder?.items?.length ?? 0}`);
 
   // PRIORIDADE MÁXIMA: Evento de sistema [PEDIDO-CATALOGO]
   if (isCatalogOrderMessage) {
-    const websiteOrder = parseWebsiteCatalogOrder(msg.text);
-
     if (!websiteOrder || websiteOrder.items.length === 0) {
       console.error("[whatsapp.inbound] Falha ou pedido vazio em [PEDIDO-CATALOGO]:", msg.text);
       const errorText = "Recebi seu pedido do catálogo, mas não consegui identificar os itens. Por favor, tente enviar novamente ou aguarde um atendente. 😊";
       await sendWhatsAppText({ to: msg.phone, text: errorText });
       await db.from("whatsapp_conversations").update({ status: "human", updated_at: new Date().toISOString() }).eq("id", conversationId);
+      console.log(`[AUDIT] CATALOG_EARLY_RETURN: failed_parse_or_empty`);
       return;
     }
+
+    console.log(`[AUDIT] CATALOG_ORDER_PROCESSED: id=${msg.waMessageId}, phone=${msg.phone}`);
 
     // Inicia nova sessão limpa
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
@@ -186,6 +186,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       skill_id: "catalog.new_order"
     });
 
+    console.log(`[AUDIT] CATALOG_EARLY_RETURN: success`);
     return;
   }
 
@@ -194,7 +195,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     return;
   }
 
-  console.log(`[AUDIT-LOG] Chamando handleCheckoutTurn para: "${msg.text}"`);
+  console.log(`[AUDIT] BEFORE_HANDLE_CHECKOUT: id=${msg.waMessageId}, isCatalogOrderMessage=${isCatalogOrderMessage}, text=${msg.text}`);
   const checkoutTurn = await handleCheckoutTurn({
     companyId: tenant.companyId,
     phone: msg.phone,

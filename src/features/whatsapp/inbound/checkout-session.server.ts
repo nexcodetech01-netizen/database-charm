@@ -123,6 +123,7 @@ export async function handleCheckoutTurn(args: {
   /** Consulta de CEP (padrão: ViaCEP). Injetável nos testes. */
   resolveCep?: CepResolver;
 }): Promise<CheckoutTurnResult | null> {
+  console.log(`[AUDIT] HANDLE_CHECKOUT_ENTERED: phone=${args.phone}, text=${args.text}`);
   const now = args.now ?? Date.now();
   const cart = args.cart ?? (await getCartSession(args.companyId, args.phone, now));
   const active = await peekCheckoutSession(args.companyId, args.phone, now);
