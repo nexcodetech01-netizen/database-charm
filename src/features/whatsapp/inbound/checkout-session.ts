@@ -555,14 +555,13 @@ export async function advanceCheckout(args: {
     };
   }
 
+  console.log(`[AUDIT-LOG] advanceCheckout step: ${session.step}, text: "${text}"`);
   switch (session.step) {
     case "WAITING_PAYMENT_METHOD": {
       const payment = parsePayment(text);
       if (!payment) {
         return { 
           session, 
-    console.log(`[AUDIT-LOG] advanceCheckout step: ${session.step}, text: "${text}"`);
-    console.log(`[AUDIT-LOG] advanceCheckout step: ${session.step}, input: "${text}"`);
           text: "Não consegui identificar a forma de pagamento. Você prefere Pix, cartão ou dinheiro? 😊", 
           aborted: false 
         };
