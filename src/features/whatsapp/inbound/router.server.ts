@@ -535,9 +535,14 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
     return;
   }
 
+  console.log(`[AUDIT-LOG] Versão: ${process.env.VITE_APP_VERSION || "N/A"} - Commit: 49d18947`);
+  console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
+  console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
+  console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map(c => c.charCodeAt(0)).join(",")}`);
 
   // 3c-pre-ante) Resumo de pedido colado a partir do catálogo do site
   // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
+  console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
   // PRIORIDADE MÁXIMA: O marcador [PEDIDO-CATALOGO] é um EVENTO DE SISTEMA.
   // Deve ter prioridade absoluta e NUNCA entrar em handleCheckoutTurn ou interpretadores genéricos.
   console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
@@ -564,6 +569,7 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   }
   console.log(`[AUDIT-LOG] Chamando handleCheckoutTurn? ${!isCatalogOrderMessage}`);
 
+    console.log(`[AUDIT-LOG] Chamando handleCheckoutTurn para: "${msg.text}"`);
 
   let checkoutTurn = null;
   // O processamento conversacional (handleCheckoutTurn) SÓ ocorre se NÃO for um evento de catálogo.
