@@ -188,7 +188,7 @@ export function ConsignmentsList() {
       <CreateConsignmentDialog 
         open={isCreateOpen} 
         onOpenChange={setIsCreateOpen} 
-        companyId={companyId} 
+        companyId={companyId!} 
       />
 
       <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">

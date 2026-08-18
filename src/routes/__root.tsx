@@ -197,14 +197,21 @@ function RootComponent() {
       const body = document.body;
       const html = document.documentElement;
       
+      let changed = false;
       if (body.style.pointerEvents || body.hasAttribute("data-scroll-locked")) {
         body.style.pointerEvents = "";
         body.removeAttribute("data-scroll-locked");
+        changed = true;
       }
       
       if (html.style.pointerEvents || html.style.overflow === "hidden") {
         html.style.pointerEvents = "";
         html.style.overflow = "";
+        changed = true;
+      }
+      
+      if (changed) {
+        console.log("[RootComponent] Failsafe: DOM attributes cleaned up for", location.pathname);
       }
     };
 
