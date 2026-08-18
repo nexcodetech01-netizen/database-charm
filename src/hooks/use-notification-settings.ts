@@ -12,6 +12,7 @@ export type NotificationSettings = Record<string, NotificationPreference>;
 
 export const DEFAULT_SETTINGS: NotificationSettings = {
   "catalog.order.received": { sound: true, browser: true },
+  "whatsapp.message.received": { sound: true, browser: false },
   "sale.created": { sound: false, browser: true },
   "finance.invoice.overdue": { sound: true, browser: true },
   "inventory.min_stock_reached": { sound: false, browser: true },

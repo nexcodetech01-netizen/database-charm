@@ -254,4 +254,11 @@ export const BELLA_EVENT_CATALOG: Record<BellaEventType, BellaEventTypeMeta> = {
     description: "Um novo pedido foi finalizado pelo catálogo do WhatsApp.",
     defaultRecommendation: "Abrir o Inbox Comercial para processar o pedido.",
   },
+  "whatsapp.message.received": {
+    module: "sales",
+    defaultSeverity: "info",
+    title: "Nova mensagem no WhatsApp",
+    description: "Uma nova mensagem chegou de um cliente pelo WhatsApp.",
+    defaultRecommendation: "Abrir a conversa pra responder.",
+  },
 };

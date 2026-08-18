@@ -61,4 +61,5 @@ export type BellaEventType =
   | "fiscal.nfe.rejected"
   | "fiscal.nfe.cancelled"
   // ============ Comercial / Catálogo ============
-  | "catalog.order.received";
+  | "catalog.order.received"
+  | "whatsapp.message.received";
