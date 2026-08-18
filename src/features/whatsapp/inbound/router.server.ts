@@ -6,6 +6,8 @@ import { parseCurrency } from "@/lib/masks";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
+import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
+import { makeSecurityContext } from "../../bella-ai/agent/infrastructure/context";
 
 /**
  * NEXOS_ROUTER_BUILD_ID is used for runtime validation of the deployed bundle.
@@ -117,6 +119,40 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     return;
   }
 
+  // Aviso de nova mensagem (sino + som no topo do app) — dispara pra
+  // QUALQUER mensagem nova recebida, não só pedidos confirmados (esse
+  // já tinha o próprio evento "catalog.order.received"). Fica de fora
+  // as mensagens duplicadas (já filtradas acima) para não repetir
+  // aviso da mesma mensagem em novas tentativas de entrega do webhook.
+  try {
+    await emitAgentEvent({
+      type: "whatsapp.message.received",
+      ctx: {
+        companyId: tenant.companyId,
+        userId: "system",
+        conversationId,
+        request: {
+          requestId: `whatsapp-msg-${msg.waMessageId ?? Date.now()}`,
+          channel: "whatsapp",
+          startedAt: new Date(msg.timestamp),
+        },
+        security: makeSecurityContext(new Set(["*"]), true),
+        supabase: db as any,
+      },
+      payload: {
+        entityId: conversationId,
+        conversationId,
+        contactId,
+        phone: canonical,
+        preview: (msg.text ?? "").slice(0, 140),
+      },
+      title: msg.profileName ? `Nova mensagem de ${msg.profileName}` : "Nova mensagem no WhatsApp",
+      description: (msg.text ?? "").slice(0, 140),
+    });
+  } catch (err) {
+    console.error("[whatsapp.inbound] falha ao emitir aviso de nova mensagem:", err);
+  }
+
   // Logs de Auditoria para o Problema do [PEDIDO-CATALOGO]
   console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, phone=${msg.phone}, text=${JSON.stringify(msg.text)}`);
 
@@ -152,19 +188,18 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     // Inicia nova sessão limpa no estado de pagamento
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
-    const isOtherCity = websiteOrder.deliveryMethod === "other";
-    freshSession.isOtherCity = isOtherCity;
-    freshSession.step = isOtherCity ? "WAITING_PAYMENT_METHOD_OTHER_CITY" : "WAITING_PAYMENT_METHOD";
+    freshSession.step = "WAITING_PAYMENT_METHOD";
     
     // Preservar o frete do catálogo
     if (websiteOrder.deliveryFee) {
       const fee = parseCurrency(websiteOrder.deliveryFee);
       freshSession.deliveryFee = fee;
       console.log(`[AUDIT] CATALOG_FREIGHT_PRESERVED: fee=${fee}`);
-    } else {
-      freshSession.deliveryFee = null;
+    } else if (websiteOrder.deliveryMethod === "tupa") {
+      // Se não houver taxa explícita mas for entrega em Tupã, 
+      // podemos ter uma regra de negócio, mas o pedido diz R$ 5,00 no exemplo.
+      // O parser agora pega a taxa se existir.
     }
-
     
     await saveCheckoutSession(freshSession);
     
@@ -208,9 +243,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     // O router apenas inicializa a sessão e envia o prompt inicial.
     // NÃO chamamos handleCheckoutTurn aqui para evitar o bug de processamento de texto vazio.
     const greeting = getGreeting();
-    const promptKey = freshSession.step as keyof typeof PROMPTS;
-    const welcomePrompt = `${greeting}\n\nRecebi seu pedido do catálogo! 🛍️\n\n${PROMPTS[promptKey]}`;
-
+    const welcomePrompt = `${greeting}\n\nRecebi seu pedido do catálogo! 🛍️\n\n${PROMPTS.WAITING_PAYMENT_METHOD}`;
     
     const sent = await sendWhatsAppText({ to: msg.phone, text: welcomePrompt });
     

@@ -103,10 +103,11 @@ export function Topbar() {
         // Notificação visual Toast (sempre mostramos se estiver na aba ativa)
         toast.success(title, {
           description,
-          action: ticketId ? {
-            label: "Ver",
-            onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }),
-          } : undefined
+          action: ticketId
+            ? { label: "Ver", onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }) }
+            : event.type === "whatsapp.message.received"
+              ? { label: "Ver", onClick: () => navigate({ to: "/whatsapp" }) }
+              : undefined
         });
 
         // Notificação do Navegador (respeita preferência)
@@ -272,6 +273,7 @@ export function Topbar() {
                   <SelectContent>
                     <SelectItem value="all">Todos Tipos</SelectItem>
                     <SelectItem value="catalog.order.received">Catálogo</SelectItem>
+                    <SelectItem value="whatsapp.message.received">Mensagens WhatsApp</SelectItem>
                     <SelectItem value="sale.created">Vendas</SelectItem>
                     <SelectItem value="finance.invoice.overdue">Financeiro</SelectItem>
                   </SelectContent>
