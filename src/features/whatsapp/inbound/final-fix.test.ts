@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { handleWhatsAppInboundPayload } from "../router.server";
-import { handleCheckoutTurn } from "../checkout-session.server";
+import { handleWhatsAppInboundPayload } from "./router.server";
+import { handleCheckoutTurn } from "./checkout-session.server";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import * as whatsappServer from "@/lib/whatsapp.server";
-import { getCartSession } from "../cart-session.server";
-import { peekCheckoutSession } from "../checkout-session.server";
+import { getCartSession } from "./cart-session.server";
+import { peekCheckoutSession } from "./checkout-session.server";
 
 // Mock das dependências
 vi.mock("@/integrations/supabase/client.server", () => {
