@@ -12,7 +12,7 @@
  */
 import { normalize } from "./catalog-nav";
 import type { CartSession } from "./cart-session";
-import { digits } from "@/lib/masks";
+import { digits, parseCurrency } from "@/lib/masks";
 import { isValidCNPJ, isValidCPF } from "@/lib/validators";
 
 export type CheckoutStep =
@@ -256,11 +256,11 @@ export function parseBirthDate(text: string): string | null {
 }
 
 function money(value: number): string {
-  // Use space instead of non-breaking space (U+00A0) for regex compatibility
+  const safeValue = Number.isFinite(value) ? value : 0;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(Number.isFinite(value) ? value : 0).replace(/\u00A0/g, " ");
+  }).format(safeValue).replace(/\u00A0/g, " ");
 }
 
 export function formatZipCode(zip: string | null): string {
@@ -288,11 +288,11 @@ export function formatBirthDate(iso: string | null): string {
 
 export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> = {
   WAITING_PAYMENT_METHOD: [
-    "Qual forma de pagamento você prefere?",
+    "Qual forma de pagamento você prefere? 😊",
     "",
-    "1. • PIX",
-    "2. • Cartão",
-    "3. • Dinheiro",
+    "1. PIX",
+    "2. Cartão",
+    "3. Dinheiro",
   ].join("\n"),
   WAITING_CHANGE_INFO: [
     "💵 Você vai precisar de troco?",
@@ -594,14 +594,11 @@ export async function advanceCheckout(args: {
         };
       }
 
-      // Tenta extrair valor monetário
-      const valueDigits = digits(text);
-      if (!valueDigits) {
+      // Tenta extrair valor monetário de forma centralizada usando parseCurrency
+      const amount = parseCurrency(text);
+      if (amount <= 0 && !isNo) {
         return { session, text: "Não entendi o valor. Se você precisar de troco, me informe para quanto (ex: R$ 50,00). Se não precisar, responda 'não'. 😊", aborted: false };
       }
-
-      // Converte para float considerando centavos se houver separador
-      const amount = parseFloat(valueDigits) / (text.includes(",") || text.includes(".") ? 100 : 1);
       const total = args.cart.total;
 
       // Validação: valor do troco >= total
@@ -658,12 +655,10 @@ export async function advanceCheckout(args: {
         };
       }
 
-      const valueDigits = digits(text);
-      if (!valueDigits) {
+      const amount = parseCurrency(text);
+      if (amount <= 0 && !isNo) {
         return { session, text: "Não entendi o valor. Se você precisar de troco, me informe para quanto (ex: R$ 50,00). Se não precisar, responda 'não'. 😊", aborted: false };
       }
-
-      const amount = parseFloat(valueDigits) / (text.includes(",") || text.includes(".") ? 100 : 1);
       const total = args.cart.total;
 
       if (amount < total) {

@@ -153,14 +153,14 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     console.log(`[AUDIT] CATALOG_ORDER_PROCESSED: id=${msg.waMessageId}, phone=${msg.phone}`);
 
-    // Inicia nova sessão limpa
+    // Inicia nova sessão limpa no estado de pagamento
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
+    freshSession.step = "WAITING_PAYMENT_METHOD";
     await saveCheckoutSession(freshSession);
     
     // Sincroniza itens
     const cartItems = websiteOrder.items.map(item => {
-      const priceStr = String(item.price || "0").replace("R$ ", "").replace(".", "").replace(",", ".");
-      const unitPrice = parseFloat(priceStr);
+      const unitPrice = parseCurrency(item.price);
       return {
         productId: `catalog-${item.name}`,
         name: item.name,
@@ -195,21 +195,28 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       await saveCheckoutSession(freshSession);
     }
 
-    // Pergunta Pagamento imediatamente
-    const replyText = `${getGreeting()}\n\nRecebi seu pedido do catálogo! 🛍️\n\nComo você prefere pagar: Pix, Cartão ou Dinheiro?`;
-    const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
-
-    await db.from("whatsapp_messages").insert({
-      company_id: tenant.companyId,
-      conversation_id: conversationId,
-      contact_id: contactId,
-      direction: "outbound",
-      wa_message_id: sent.waMessageId,
-      text: replyText,
-      status: sent.ok ? "sent" : "failed",
-      provider: "catalog-nav",
-      skill_id: "catalog.new_order"
+    // O router apenas inicializa a sessão e delega o primeiro prompt ao motor de checkout.
+    // O CheckoutSession gerencia a pergunta de pagamento de forma única.
+    const checkoutTurn = await handleCheckoutTurn({
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      text: "", // Texto vazio para disparar o prompt inicial do estado atual (WAITING_PAYMENT_METHOD)
     });
+
+    if (checkoutTurn) {
+      const sent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: sent.waMessageId,
+        text: checkoutTurn.text,
+        status: sent.ok ? "sent" : "failed",
+        provider: "catalog-nav",
+        skill_id: "catalog.new_order"
+      });
+    }
 
     console.log(`[AUDIT] CATALOG_EARLY_RETURN: success`);
     return;
