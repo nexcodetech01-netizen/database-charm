@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { AppProviders } from "@/providers/app-providers";
@@ -16,9 +17,6 @@ import { runPwaBoot } from "@/lib/pwa-boot";
 import appCss from "../styles.css?url";
 // build: republish to reinject managed Supabase env vars (2026-07-19)
 import { reportLovableError } from "../lib/lovable-error-reporting";
-
-
-
 
 function NotFoundComponent() {
   return (
@@ -139,6 +137,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "192x192" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "512x512" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "apple-touch-icon", href: "/favicon.ico", sizes: "180x180" }, // Added to ensure icon shows correctly
       { rel: "manifest", href: "/manifest.webmanifest" },
       // Apple splash screens (portrait) — iOS uses these for the launch splash
       { rel: "apple-touch-startup-image", href: "/splash/apple-splash-1290-2796.png", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
@@ -185,9 +184,28 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+
   useEffect(() => {
     void runPwaBoot();
   }, []);
+
+  // Failsafe: force clear scroll locks and pointer events on every route change
+  useEffect(() => {
+    // Small delay to ensure Radix/other libs have finished their cleanup cycles
+    const cleanup = () => {
+      document.body.style.pointerEvents = "";
+      document.body.removeAttribute("data-scroll-locked");
+      // Radix UI Dialog/Dropdown often use these
+      document.documentElement.style.pointerEvents = "";
+      document.documentElement.style.overflow = "";
+    };
+
+    cleanup();
+    // Second pass to be absolutely sure after potential microtasks
+    const timeoutId = setTimeout(cleanup, 0);
+    return () => clearTimeout(timeoutId);
+  }, [location.pathname]);
 
   return (
     <AppProviders queryClient={queryClient}>
@@ -198,4 +216,3 @@ function RootComponent() {
     </AppProviders>
   );
 }
-
