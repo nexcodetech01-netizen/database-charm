@@ -11,7 +11,8 @@ import {
   MoreHorizontal,
   FileText,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { ConsignmentService } from '@/features/consignment/services/consignment.service';
 import { useAuth } from '@/providers/auth-provider';
