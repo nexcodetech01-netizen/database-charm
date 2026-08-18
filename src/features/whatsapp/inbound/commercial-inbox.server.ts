@@ -62,7 +62,7 @@ function toRow(draft: CommercialTicketDraft) {
  * Implementado como integração secundária e robusta.
  */
 async function notifyN8NConfirmedOrder(ticketId: string, draft: CommercialTicketDraft): Promise<void> {
-  const secret = process.env.N8N_WEBHOOK_SECRET;
+  const secret = process.env.NEXOS_N8N_WEBHOOK_SECRET || process.env.N8N_WEBHOOK_SECRET;
   if (!secret) {
     console.warn("[INBOX COMERCIAL] N8N_WEBHOOK_SECRET não configurado. Pulando integração.");
     return;
