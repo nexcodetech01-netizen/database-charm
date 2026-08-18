@@ -884,7 +884,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
 
   // 3c-ante) Recomendação de produtos semelhantes (rejeição / pedido de alternativa).
 
-  const recommendationTurn = await handleRecommendationTurn({
+  const recommendationTurn = isCatalogOrderMessage ? null : await handleRecommendationTurn({
     db,
     storage: (
       await import("@/integrations/supabase/client.server")
