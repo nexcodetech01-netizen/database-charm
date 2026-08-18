@@ -101,12 +101,17 @@ export function setProductQuantity(
   if (idx >= 0) {
     items[idx] = { ...items[idx]!, qty };
   } else {
+    // Se o produto não existe e não temos o preço, não podemos adicionar com preço 0
+    if (!product.price || product.price <= 0) {
+      console.error(`[CART] Tentativa de adicionar produto sem preço: ${product.name}`);
+      throw new Error(`Não é possível adicionar o produto "${product.name}" pois o preço não foi informado.`);
+    }
     items.push({
       productId: product.id,
       name: product.name,
       qty,
       unitPrice: product.price,
-      subtotal: product.price * qty,
+      subtotal: round(product.price * qty),
     });
   }
   return recalc(session, items, now);

@@ -7,11 +7,18 @@ import { normalize } from "./catalog-nav";
  * Retorna uma saudação cordial baseada no horário atual ou genérica.
  */
 export function getGreeting(): string {
-  const hour = new Date().getUTCHours() - 3; // Ajuste básico para BRT (UTC-3)
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: "America/Sao_Paulo",
+    hour: "numeric",
+    hour12: false,
+  };
+  const hourString = new Intl.DateTimeFormat("en-US", options).format(now);
+  const hour = parseInt(hourString, 10);
+
   if (hour >= 5 && hour < 12) return "Olá, bom dia! 😊";
   if (hour >= 12 && hour < 18) return "Olá, boa tarde! 😊";
-  if (hour >= 18 || hour < 5) return "Olá, boa noite! 😊";
-  return "Olá! Tudo bem? 😊";
+  return "Olá, boa noite! 😊";
 }
 
 /**
@@ -35,6 +42,8 @@ export interface WebsiteCatalogOrder {
   total: string;
   deliveryMethod: "tupa" | "other" | "unknown";
   cep?: string;
+  name?: string;
+  buyerName?: string;
 }
 
 export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | null {
@@ -55,7 +64,12 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   let match: RegExpExecArray | null;
   while ((match = itemRegex.exec(t)) !== null) {
     if (match[1] && match[2] && match[3]) {
-      items.push({ name: match[1].trim(), quantity: parseInt(match[2], 10), price: match[3] });
+      const priceStr = match[3].replace("R$ ", "").replace(".", "").replace(",", ".");
+      items.push({ 
+        name: match[1].trim(), 
+        quantity: parseInt(match[2], 10), 
+        price: priceStr
+      });
     }
   }
 
@@ -71,8 +85,9 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
 
   const nameMatch = t.match(/Nome:\s*(.*)/i);
   const name = nameMatch ? nameMatch[1].trim() : undefined;
+  const buyerName = name;
 
-  return { items, total, deliveryMethod, cep, name };
+  return { items, total, deliveryMethod, cep, name, buyerName };
 }
 
 export interface WebsiteCatalogOrder {
@@ -81,6 +96,7 @@ export interface WebsiteCatalogOrder {
   deliveryMethod: "tupa" | "other" | "unknown";
   cep?: string;
   name?: string;
+  buyerName?: string;
 }
 
 /**

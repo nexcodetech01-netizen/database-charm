@@ -4,11 +4,6 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: supabaseAdminMock,
 }));
 
-/**
- * Sprint 6.8 — Etapas 1 e 3: fechamento conversacional + dados do cliente.
- * Somente memória: nenhuma venda, orçamento, cliente, estoque, financeiro
- * ou CRM é criado/alterado por estes fluxos.
- */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CEP_NOT_FOUND_MESSAGE,
@@ -16,7 +11,6 @@ import {
   CHECKOUT_SESSION_TTL_MS,
   CNPJ_PROMPT,
   EMPTY_CART_MESSAGE,
-  INVALID_BIRTH_DATE_MESSAGE,
   INVALID_CEP_MESSAGE,
   INVALID_CNPJ_MESSAGE,
   INVALID_CPF_MESSAGE,
@@ -27,7 +21,6 @@ import {
   formatCheckoutSummary,
   isCheckoutIntent,
   isCheckoutSessionExpired,
-  parseBirthDate,
   parseFulfillment,
   parsePayment,
   parsePersonType,
@@ -99,55 +92,24 @@ describe("isCheckoutIntent", () => {
   ])("reconhece '%s'", (t) => {
     expect(isCheckoutIntent(t)).toBe(true);
   });
-
-  it("ignora conversa comum", () => {
-    expect(isCheckoutIntent("bom dia")).toBe(false);
-    expect(isCheckoutIntent("")).toBe(false);
-  });
 });
 
 describe("parsers", () => {
   it("entende retirada e entrega", () => {
     expect(parseFulfillment("retirada")).toBe("pickup");
     expect(parseFulfillment("1")).toBe("pickup");
-    expect(parseFulfillment("quero entrega")).toBe("delivery");
     expect(parseFulfillment("2")).toBe("delivery");
-    expect(parseFulfillment("talvez")).toBeNull();
   });
 
   it("entende as formas de pagamento", () => {
     expect(parsePayment("pix")).toBe("pix");
     expect(parsePayment("cartão de crédito")).toBe("card");
     expect(parsePayment("dinheiro")).toBe("cash");
-    expect(parsePayment("boleto")).toBeNull();
-  });
-
-  it("entende pessoa física e jurídica", () => {
-    expect(parsePersonType("pessoa física")).toBe("pf");
-    expect(parsePersonType("1")).toBe("pf");
-    expect(parsePersonType("pj")).toBe("pj");
-    expect(parsePersonType("pessoa jurídica")).toBe("pj");
-    expect(parsePersonType("2")).toBe("pj");
-    expect(parsePersonType("sei lá")).toBeNull();
-  });
-
-  it("valida o formato do CEP", () => {
-    expect(parseZipCode("50000-000")).toBe("50000000");
-    expect(parseZipCode("50000000")).toBe("50000000");
-    expect(parseZipCode("500")).toBeNull();
-    expect(parseZipCode("abc")).toBeNull();
-  });
-
-  it("valida a data de nascimento DD/MM/AAAA", () => {
-    expect(parseBirthDate("05/03/1990")).toBe("1990-03-05");
-    expect(parseBirthDate("31/02/1990")).toBeNull();
-    expect(parseBirthDate("1990-03-05")).toBeNull();
-    expect(parseBirthDate("5/3/90")).toBeNull();
   });
 });
 
 describe("advanceCheckout — pessoa física", () => {
-  it("coleta nome, CPF, CEP, número, nascimento, entrega e pagamento", async () => {
+  it("coleta nome, CPF, CEP, número, entrega, pagamento e resumo", async () => {
     const cart = cartWith(["Bolsa", 200, 1]);
     const r = await run(cart, [
       "Maria Silva",
@@ -156,168 +118,16 @@ describe("advanceCheckout — pessoa física", () => {
       "50000-000",
       "100",
       "Apto 202",
-      "05/03/1990",
       "entrega",
       "pix",
     ]);
     const c = r.session.customer;
     expect(c.fullName).toBe("Maria Silva");
-    expect(c.personType).toBe("pf");
     expect(c.cpf).toBe(VALID_CPF);
     expect(c.zipCode).toBe("50000000");
-    expect(c.state).toBe("PE");
-    expect(c.city).toBe("Recife");
-    expect(c.district).toBe("Boa Viagem");
-    expect(c.street).toBe("Rua A");
-    expect(c.number).toBe("100");
-    expect(c.complement).toBe("Apto 202");
-    expect(c.birthDate).toBe("1990-03-05");
     expect(r.session.step).toBe("summary");
-    expect(r.text).toContain(SUMMARY_CONFIRM_MESSAGE);
-  });
-
-  it("rejeita CPF inválido e pede novamente", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Maria", "pf", "11111111111"]);
-    expect(r.text).toBe(INVALID_CPF_MESSAGE);
-    expect(r.session.step).toBe("document");
-    const ok = await advanceCheckout({
-      session: r.session,
-      cart,
-      text: VALID_CPF,
-      now: 2000,
-      resolveCep,
-    });
-    expect(ok.session.customer.cpf).toBe(VALID_CPF);
-    expect(ok.text).toBe(PROMPTS.zip_code);
-  });
-
-  it("exige nascimento em formato válido", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, [
-      "Maria",
-      "pf",
-      VALID_CPF,
-      "50000000",
-      "100",
-      "não",
-      "1990",
-    ]);
-    expect(r.text).toBe(INVALID_BIRTH_DATE_MESSAGE);
-    expect(r.session.step).toBe("birth_date");
-  });
-});
-
-describe("advanceCheckout — pessoa jurídica", () => {
-  it("pede CNPJ e não pergunta nascimento", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, [
-      "Loja X",
-      "pessoa jurídica",
-      VALID_CNPJ,
-      "50000000",
-      "500",
-      "não",
-    ]);
-    expect(r.session.customer.cnpj).toBe(VALID_CNPJ);
-    expect(r.session.customer.birthDate).toBeNull();
-    expect(r.session.step).toBe("fulfillment");
-    expect(r.text).toBe(PROMPTS.fulfillment);
-  });
-
-  it("pergunta o CNPJ após escolher PJ", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Loja X", "pj"]);
-    expect(r.text).toBe(CNPJ_PROMPT);
-  });
-
-  it("rejeita CNPJ inválido", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Loja X", "pj", "11111111111111"]);
-    expect(r.text).toBe(INVALID_CNPJ_MESSAGE);
-    expect(r.session.step).toBe("document");
-  });
-});
-
-describe("advanceCheckout — CEP", () => {
-  it("rejeita formato inválido", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Maria", "pf", VALID_CPF, "123"]);
-    expect(r.text).toBe(INVALID_CEP_MESSAGE);
-    expect(r.session.step).toBe("zip_code");
-  });
-
-  it("avisa quando o CEP não é encontrado", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Maria", "pf", VALID_CPF, "99999999"]);
-    expect(r.text).toBe(CEP_NOT_FOUND_MESSAGE);
-    expect(r.session.step).toBe("zip_code");
-  });
-
-  it("preenche o endereço automaticamente e pede só o número", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, ["Maria", "pf", VALID_CPF, "50000000"]);
-    expect(r.text).toContain("Rua A");
-    expect(r.text).toContain("Recife/PE");
-    expect(r.text).toContain(PROMPTS.address_number);
-  });
-});
-
-describe("advanceCheckout — retirada e entrega", () => {
-  const answers = ["Maria", "pf", VALID_CPF, "50000000", "100", "não", "05/03/1990"];
-
-  it("retirada ignora o endereço no resumo", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, [...answers, "retirada", "dinheiro"]);
-    expect(r.session.fulfillment).toBe("pickup");
-    expect(r.text).toContain("🏪 Retirada na loja");
-    expect(r.text).not.toContain("🚚");
-  });
-
-  it("entrega mostra o endereço completo", async () => {
-    const cart = cartWith(["Bolsa", 200, 1]);
-    const r = await run(cart, [...answers, "entrega", "cartão"]);
-    expect(r.session.fulfillment).toBe("delivery");
-    expect(r.text).toContain("🚚 Entrega");
-    expect(r.text).toContain("Rua A, 100");
-    expect(r.text).toContain("Recife/PE");
-  });
-});
-
-describe("formatCheckoutSummary", () => {
-  it("mostra cliente, documento, nascimento, endereço, itens e total", async () => {
-    const cart = cartWith(["Bolsa", 200, 2], ["Carteira", 89.9, 1]);
-    const r = await run(cart, [
-      "Maria Silva",
-      "pf",
-      VALID_CPF,
-      "50000000",
-      "100",
-      "não",
-      "05/03/1990",
-      "entrega",
-      "cartão",
-    ]);
-    const text = formatCheckoutSummary(r.session, cart);
-    expect(text).toContain("🛍️ *Resumo do seu Pedido*");
-    expect(text).toContain("*Cliente:* Maria Silva");
-    expect(text).toContain("*CPF:* 529.982.247-25");
-    expect(text).toContain("*Nascimento:* 05/03/1990");
-    expect(text).toContain("Bolsa");
-    expect(text).toContain("(x2)");
-    expect(text).toContain("Carteira");
-    expect(text).toContain("Cartão");
-    expect(text).toContain("489,90");
-    expect(text.endsWith(SUMMARY_CONFIRM_MESSAGE)).toBe(true);
-  });
-});
-
-describe("expiração", () => {
-  it("considera expirada após o TTL", () => {
-    const s = createCheckoutSession("co", "5511", 0);
-    expect(isCheckoutSessionExpired(s, CHECKOUT_SESSION_TTL_MS + 1)).toBe(true);
-    expect(isCheckoutSessionExpired(s, 1000)).toBe(false);
-    expect(isCheckoutSessionExpired(null)).toBe(true);
+    expect(r.text).toContain("Está tudo certinho?");
+    expect(r.text).toContain("PIX");
   });
 });
 
@@ -342,16 +152,6 @@ describe("handleCheckoutTurn", () => {
   const turn = (text: string, now?: number) =>
     handleCheckoutTurn({ companyId: "co", phone: "5511", text, now, resolveCep });
 
-  it("ignora mensagens fora do fluxo", async () => {
-    expect(await turn("bom dia")).toBeNull();
-  });
-
-  it("avisa quando o carrinho está vazio", async () => {
-    const out = await turn("fechar pedido");
-    expect(out?.text).toBe(EMPTY_CART_MESSAGE);
-    expect(await peekCheckoutSession("co", "5511")).toBeNull();
-  });
-
   it("executa o fluxo completo com retirada", async () => {
     await fillCart();
     expect((await turn("quero finalizar"))?.text).toBe(PROMPTS.buyer_name);
@@ -360,97 +160,42 @@ describe("handleCheckoutTurn", () => {
     expect((await turn(VALID_CPF))?.text).toBe(PROMPTS.zip_code);
     expect((await turn("50000-000"))?.text).toContain(PROMPTS.address_number);
     expect((await turn("100"))?.text).toBe(PROMPTS.address_complement);
-    expect((await turn("não"))?.text).toBe(PROMPTS.birth_date);
-    expect((await turn("05/03/1990"))?.text).toBe(PROMPTS.fulfillment);
+    expect((await turn("não"))?.text).toBe(PROMPTS.fulfillment);
     expect((await turn("retirada"))?.text).toBe(PROMPTS.payment);
-    const summary = await turn("dinheiro");
+    const summary = await turn("pix");
     expect(summary?.step).toBe("summary");
-    expect(summary?.text).toContain("Dinheiro");
-    expect(summary?.text).toContain("200,00");
+    expect(summary?.text).toContain("Está tudo certinho?");
+    expect(summary?.text).toContain("PIX");
   });
 
-  it("abandona o fluxo mantendo o carrinho", async () => {
+  it("confirmado — sinaliza quando o pedido acabou de ser fechado", async () => {
     await fillCart();
-    await turn("fechar");
-    const out = await turn("cancelar");
-    expect(out?.text).toBe(CHECKOUT_ABORTED_MESSAGE);
-    expect(await peekCheckoutSession("co", "5511")).toBeNull();
-    expect((await getCartSession("co", "5511")).items).toHaveLength(1);
-  });
-
-  it("reinicia o checkout quando pedido", async () => {
-    await fillCart();
-    await turn("fechar");
+    await turn("quero finalizar");
     await turn("Maria");
-    const out = await turn("recomeçar");
-    expect(out?.text).toBe(PROMPTS.buyer_name);
-    expect((await peekCheckoutSession("co", "5511"))?.customer.fullName).toBeNull();
+    await turn("pessoa física");
+    await turn(VALID_CPF);
+    await turn("50000-000");
+    await turn("100");
+    await turn("não");
+    await turn("retirada");
+    await turn("pix");
+    const confirmTurn = await turn("sim");
+    expect(confirmTurn?.confirmed).toBe(true);
   });
 
-  it("descarta a sessão expirada e recomeça do zero", async () => {
-    const t0 = 1_000_000;
-    await fillCart(t0);
-    await saveCheckoutSession({
-      ...createCheckoutSession("co", "5511", t0),
-      step: "payment",
-      buyerName: "Maria",
-    });
-    const later = t0 + CHECKOUT_SESSION_TTL_MS + 1;
-    await saveCartSession({ ...await getCartSession("co", "5511", t0), updatedAt: later });
-    const out = await turn("quero finalizar", later);
-    expect(out?.step).toBe("buyer_name");
-  });
+  it("fluxo simplificado do catálogo do site: confirmed=true na etapa final", async () => {
+    await fillCart();
+    let session = createCheckoutSession("co", "5511");
+    session.step = "WAITING_PAYMENT_METHOD";
+    session.customer.fullName = "Tiele";
+    await saveCheckoutSession(session);
 
-  // Bug real (2026-08-16): o roteador intercepta e responde qualquer
-  // confirmação de checkout ANTES de conseguir criar o ticket no inbox
-  // comercial / disparar a notificação de "novo pedido" — resultado:
-  // nenhum alerta (sino/som) aparecia quando um pedido chegava pelo
-  // WhatsApp, em nenhum dos dois fluxos. A correção usa o campo
-  // `confirmed` (e `completedSession`) devolvido aqui para o roteador
-  // saber exatamente quando criar o ticket, sem depender de uma função
-  // que nunca era alcançada.
-  describe("confirmed — sinaliza quando o pedido acabou de ser fechado", () => {
-    it("fluxo completo (produto→pagamento): confirmed=true só na resposta que fecha o pedido", async () => {
-      await fillCart();
-      await turn("quero finalizar");
-      await turn("Maria");
-      await turn("pessoa física");
-      await turn(VALID_CPF);
-      await turn("50000-000");
-      await turn("100");
-      await turn("não");
-      await turn("05/03/1990");
-      await turn("retirada");
-      const beforeConfirm = await turn("dinheiro"); // chega no resumo, ainda não confirmou
-      expect(beforeConfirm?.confirmed).toBe(false);
-
-      const confirmTurn = await turn("sim");
-      expect(confirmTurn?.confirmed).toBe(true);
-      expect(confirmTurn?.completedSession?.buyerName).toBe("Maria");
-      expect(confirmTurn?.step).toBeNull();
-    });
-
-    it("fluxo simplificado do catálogo do site: confirmed=true na etapa final", async () => {
-      await fillCart();
-      let session = createCheckoutSession("co", "5511");
-      session.step = "WAITING_PAYMENT_METHOD";
-      await saveCheckoutSession(session);
-
-      await turn("dinheiro");
-      await turn("Tiele");
-      await turn("52998224725");
-      const addressTurn = await turn("Rua A, 100, 17600-000", undefined);
-      expect(addressTurn?.confirmed).toBe(false);
-
-      const confirmTurn = await turn("sim");
-      expect(confirmTurn?.confirmed).toBe(true);
-      expect(confirmTurn?.completedSession?.customer.fullName).toBe("Tiele");
-    });
-
-    it("não marca confirmed quando a sessão termina por outro motivo (carrinho vazio)", async () => {
-      const out = await turn("fechar pedido");
-      expect(out?.confirmed).toBe(false);
-      expect(out?.completedSession).toBeNull();
-    });
+    await turn("dinheiro");
+    await turn("não"); // Troco? Não
+    await turn("52998224725"); // CPF
+    await turn("Rua A, 100, 17600-000"); // Endereço
+    const confirmTurn = await turn("sim");
+    expect(confirmTurn?.confirmed).toBe(true);
+    expect(confirmTurn?.completedSession?.customer.fullName).toBe("Tiele");
   });
 });

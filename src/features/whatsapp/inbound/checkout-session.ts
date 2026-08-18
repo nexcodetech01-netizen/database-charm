@@ -16,7 +16,6 @@ import { digits } from "@/lib/masks";
 import { isValidCNPJ, isValidCPF } from "@/lib/validators";
 
 export type CheckoutStep =
-  | "WAITING_RECEIPT_METHOD"
   | "WAITING_PAYMENT_METHOD"
   | "WAITING_CHANGE_INFO"
   | "WAITING_CUSTOMER_NAME"
@@ -29,7 +28,6 @@ export type CheckoutStep =
   | "zip_code"
   | "address_number"
   | "address_complement"
-  | "birth_date"
   | "fulfillment"
   | "payment"
   | "change_info"
@@ -289,12 +287,6 @@ export function formatBirthDate(iso: string | null): string {
 }
 
 export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> = {
-  WAITING_RECEIPT_METHOD: [
-    "Como você prefere receber o seu pedido? 😊",
-    "",
-    "1. 🏪 Retirada na loja",
-    "2. 🚚 Entrega no meu endereço",
-  ].join("\n"),
   WAITING_PAYMENT_METHOD: [
     "Qual forma de pagamento você prefere?",
     "",
@@ -316,13 +308,12 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "Perfeito! E você está comprando como:",
     "",
     "1. Pessoa Física (CPF)",
-    "2. Pessoa Jurídica (CNPJ)",
+    "2. Pessoa Juriddica (CNPJ)",
   ].join("\n"),
   document: "Entendido! E qual é o seu CPF? 😊",
   zip_code: "Certo! Agora me conta o seu CEP para a entrega. 🚚",
   address_number: "Qual é o número do endereço? 😊",
   address_complement: "Temos algum complemento por lá? (Apto, bloco, etc. Se não tiver, é só responder *não*! 😊)",
-  birth_date: "E para completar, qual a sua data de nascimento? (No formato DD/MM/AAAA) 😊",
   fulfillment: [
     "Como você prefere receber o seu pedido? 😊",
     "",
@@ -391,7 +382,7 @@ export function formatWebsiteOrderSummary(
 ): string {
   const c = session.customer;
   const items = cart.items.map(
-    (i) => `• ${i.name} — ${i.qty} un. — ${money(i.subtotal)}`,
+    (i) => `• ${i.name} — ${i.qty} un. — ${money(i.unitPrice)} (Subtotal: ${money(i.subtotal)})`,
   );
   
   const subtotal = cart.total;
@@ -399,7 +390,7 @@ export function formatWebsiteOrderSummary(
   const total = subtotal + freight;
 
   const lines = [
-    `Perfeito, ${c.fullName ?? session.buyerName ?? "!"}! Seu pedido ficou assim:`,
+    `Perfeito, ${c.fullName || "!"}! Seu pedido ficou assim:`,
     "",
     "Produtos:",
     ...items,
@@ -408,15 +399,15 @@ export function formatWebsiteOrderSummary(
     `Frete: ${money(freight)}`,
     `Total: ${money(total)}`,
     "",
+    `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
+    "Endereço:",
+    formatCustomerAddress(c) || "-",
+    "",
     `Forma de recebimento: ${session.fulfillment === "pickup" ? "Retirada" : "Entrega"}`,
     `Forma de pagamento: ${session.payment ? PAYMENT_LABEL[session.payment] : "-"}`,
     session.payment === "cash" 
       ? `Troco: ${session.changeNeeded ? `para ${money(session.changeAmount ?? 0)}` : "Não precisa"}`
       : "",
-    "",
-    `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
-    "Endereço:",
-    formatCustomerAddress(c) || "-",
     "",
     SUMMARY_CONFIRM_MESSAGE,
   ];
@@ -434,17 +425,14 @@ export function formatCheckoutSummary(
 ): string {
   const c = session.customer;
   const items = cart.items.map(
-    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.subtotal)}*`,
+    (i) => `• *${i.name}* (x${i.qty}) — *${money(i.unitPrice)}* (Subtotal: ${money(i.subtotal)})`,
   );
   const lines = [
     "🛍️ *Resumo do seu Pedido*",
     "",
-    `*Cliente:* ${c.fullName ?? session.buyerName ?? "-"}`,
+    `*Cliente:* ${c.fullName || "-"}`,
     `*${c.personType === "pj" ? "CNPJ" : "CPF"}:* ${formatDocument(c)}`,
   ];
-  if (c.personType === "pf") {
-    lines.push(`*Nascimento:* ${formatBirthDate(c.birthDate)}`);
-  }
   lines.push(`*Endereço:* ${formatCustomerAddress(c) || "-"}`);
   lines.push(
     "",
@@ -460,7 +448,9 @@ export function formatCheckoutSummary(
     "*Itens do pedido:*",
     ...items,
     "",
-    `*Total: ${money(cart.total)}*`,
+    `*Subtotal: ${money(cart.total)}*`,
+    `*Frete: ${money(session.deliveryFee)}*`,
+    `*Total: ${money(cart.total + session.deliveryFee)}*`,
     "",
     SUMMARY_CONFIRM_MESSAGE,
   );
@@ -578,11 +568,12 @@ export async function advanceCheckout(args: {
         };
       }
 
-      // Se NÃO for dinheiro, o fluxo DEVE seguir linearmente para CPF (WAITING_DOCUMENT)
-      // NUNCA pular o CPF, mesmo que o nome já exista.
+      // Se NÃO for dinheiro, o fluxo DEVE seguir linearmente para NOME (WAITING_CUSTOMER_NAME) se não tiver nome
+      const hasName = !!session.customer.fullName;
+      const nextStep = hasName ? "WAITING_DOCUMENT" : "WAITING_CUSTOMER_NAME";
       return {
-        session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-        text: `Perfeito! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+        session: next(updated, { step: nextStep }, now),
+        text: PROMPTS[nextStep],
         aborted: false
       };
     }
@@ -593,10 +584,12 @@ export async function advanceCheckout(args: {
       if (isNo) {
         const updated = next(session, { changeNeeded: false, changeAmount: null }, now);
         
-        // Fluxo linear: Após o troco, SEMPRE ir para CPF
+        // Fluxo linear: Após o troco, ir para NOME ou CPF
+        const hasName = !!session.customer.fullName;
+        const nextStep = hasName ? "WAITING_DOCUMENT" : "WAITING_CUSTOMER_NAME";
         return {
-          session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-          text: `Entendido, sem troco! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+          session: next(updated, { step: nextStep }, now),
+          text: PROMPTS[nextStep],
           aborted: false
         };
       }
@@ -622,10 +615,12 @@ export async function advanceCheckout(args: {
 
       const updated = next(session, { changeNeeded: true, changeAmount: amount }, now);
       
-      // Fluxo linear: Após o troco, SEMPRE ir para CPF
+      // Fluxo linear: Após o troco, DEVE ir para CPF (WAITING_DOCUMENT) ou NOME
+      const hasName = !!session.customer.fullName;
+      const nextStep = hasName ? "WAITING_DOCUMENT" : "WAITING_CUSTOMER_NAME";
       return {
-        session: next(updated, { step: "WAITING_DOCUMENT" }, now),
-        text: `Combinado, troco para ${money(amount)}! 😊 Agora, qual o seu CPF? (só os números, ou com pontos e traço)`,
+        session: next(updated, { step: nextStep }, now),
+        text: `Combinado, troco para ${money(amount)}! 😊 ${PROMPTS[nextStep]}`,
         aborted: false
       };
     }
@@ -692,7 +687,7 @@ export async function advanceCheckout(args: {
       const updated = withCustomer(
         session,
         { fullName: text },
-        { buyerName: text, step: "WAITING_DOCUMENT" },
+        { step: "WAITING_DOCUMENT" },
         now
       );
 
@@ -708,7 +703,7 @@ export async function advanceCheckout(args: {
         session: withCustomer(
           session,
           { fullName: text },
-          { buyerName: text, step: "person_type" },
+          { step: "person_type" },
           now,
         ),
         text: PROMPTS.person_type,
@@ -852,24 +847,14 @@ export async function advanceCheckout(args: {
     }
     case "address_complement": {
       const skip = !text || SKIP_RE.test(normalize(text));
-      const isPf = session.customer.personType !== "pj";
       const updated = withCustomer(
         session,
         { complement: skip ? null : text },
-        { step: isPf ? "birth_date" : "fulfillment" },
+        { step: "fulfillment" },
         now,
       );
       return {
         session: syncDelivery(updated),
-        text: isPf ? PROMPTS.birth_date : PROMPTS.fulfillment,
-        aborted: false,
-      };
-    }
-    case "birth_date": {
-      const iso = parseBirthDate(text);
-      if (!iso) return { session, text: INVALID_BIRTH_DATE_MESSAGE, aborted: false };
-      return {
-        session: withCustomer(session, { birthDate: iso }, { step: "fulfillment" }, now),
         text: PROMPTS.fulfillment,
         aborted: false,
       };
@@ -877,8 +862,9 @@ export async function advanceCheckout(args: {
     case "fulfillment": {
       const kind = parseFulfillment(text);
       if (!kind) return { session, text: PROMPTS.fulfillment, aborted: false };
+      const updated = next(session, { fulfillment: kind, step: "payment" }, now);
       return {
-        session: next(session, { fulfillment: kind, step: "payment" }, now),
+        session: updated,
         text: PROMPTS.payment,
         aborted: false,
       };
