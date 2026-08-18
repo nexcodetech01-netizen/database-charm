@@ -865,7 +865,7 @@ export async function advanceCheckout(args: {
         );
         return {
           session: syncDelivery(updated),
-          text: formatWebsiteOrderSummary(updated, args.cart),
+          text: PROMPTS[updated.step as keyof typeof PROMPTS],
           aborted: false
         };
       }
