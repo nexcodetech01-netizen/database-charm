@@ -78,6 +78,7 @@ export interface CheckoutSession {
   changeAmount: number | null;
   createdAt: number;
   updatedAt: number;
+  isOtherCity?: boolean; // New flag for city distinction
 }
 
 /** Tempo de vida do fechamento conversacional (30 min sem interação). */
