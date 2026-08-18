@@ -1836,7 +1836,7 @@ export type Database = {
             foreignKeyName: "consignment_items_consignment_id_fkey"
             columns: ["consignment_id"]
             isOneToOne: false
-            referencedRelation: "consignments"
+            referencedRelation: "consignacoes"
             referencedColumns: ["id"]
           },
           {
@@ -1900,64 +1900,7 @@ export type Database = {
             foreignKeyName: "consignment_settlements_consignment_id_fkey"
             columns: ["consignment_id"]
             isOneToOne: false
-            referencedRelation: "consignments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      consignments: {
-        Row: {
-          commission_type: string
-          commission_value: number
-          company_id: string
-          contract_pdf_url: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          reseller_id: string
-          sent_at: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          commission_type: string
-          commission_value: number
-          company_id: string
-          contract_pdf_url?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reseller_id: string
-          sent_at?: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          commission_type?: string
-          commission_value?: number
-          company_id?: string
-          contract_pdf_url?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reseller_id?: string
-          sent_at?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consignments_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consignments_reseller_id_fkey"
-            columns: ["reseller_id"]
-            isOneToOne: false
-            referencedRelation: "resellers"
+            referencedRelation: "consignacoes"
             referencedColumns: ["id"]
           },
         ]
