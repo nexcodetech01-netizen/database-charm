@@ -79,13 +79,18 @@ export const Route = createFileRoute("/api/public/notifications/trigger")({
         // 4. Disparo do Evento
         try {
           // Registrar o evento para evitar duplicidade futura
-          await supabaseAdmin.from("whatsapp_message_events").insert({
+          const { error } = await supabaseAdmin.from("whatsapp_message_events").insert({
             company_id: data.company_id,
             direction: "inbound",
             wa_message_id: requestId,
             status: "processed",
             sent_at: new Date().toISOString(),
           });
+
+          if (error) {
+            console.error("[NOTIFICATIONS] Falha ao persistir evento n8n:", error);
+            throw error;
+          }
 
           const now = new Date();
           
