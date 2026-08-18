@@ -1,38 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { ShippingCalculatorSchema, ShippingOption, GenerateLabelSchema, LabelResult } from "../types";
 import { generateSuperfreteLabel } from "../lib/generate-superfrete-label";
+import { calculateSuperfreteShipping, type ShippingCalculationResult } from "../lib/calculate-superfrete-shipping";
 
 export const calculateShipping = createServerFn({ method: "POST" })
   .validator((data: unknown) => ShippingCalculatorSchema.parse(data))
-  .handler(async ({ data }) => {
-    let origin = "";
-    if (typeof window !== "undefined") {
-      origin = window.location.origin;
-    } else {
-      const vercelUrl = process.env.VERCEL_URL;
-      if (vercelUrl) {
-        origin = vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
-      } else {
-        origin = process.env.NODE_ENV === 'production' 
-          ? 'https://nexos.nexxcode.com.br' 
-          : 'http://localhost:8080';
-      }
+  .handler(async ({ data }): Promise<ShippingCalculationResult> => {
+    // FIX (2026-08-18): antes fazia um fetch HTTP da própria aplicação
+    // pra ela mesma — mesmo motivo/correção documentado em
+    // `generate-superfrete-label.ts`. Chama a lógica direto agora.
+    try {
+      return await calculateSuperfreteShipping(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao calcular frete";
+      console.error("[calculateShipping] Erro ao calcular frete:", error);
+      throw new Error(message);
     }
-
-    const response = await fetch(`${origin}/api/public/shipping/calculate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Erro ao calcular frete");
-    }
-
-    return (await response.json()) as ShippingOption[];
   });
 
 
