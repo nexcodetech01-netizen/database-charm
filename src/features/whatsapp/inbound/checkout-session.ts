@@ -894,6 +894,7 @@ export async function advanceCheckout(args: {
         text: formatWebsiteOrderSummary(updated, args.cart),
         aborted: false,
       };
+    }
     case "zip_code": {
       const zip = parseZipCode(text);
       if (!zip) return { session, text: INVALID_CEP_MESSAGE, aborted: false };
