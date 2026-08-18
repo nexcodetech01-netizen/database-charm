@@ -73,8 +73,8 @@ export const generateConsignmentPDF = async (consignment: Consignment, items: Co
     body: tableData,
     foot: [["", "VALOR TOTAL CONSIGNADO", "", "", formatCurrency(totalValue)]],
     theme: "striped",
-    headStyles: { fillStyle: [40, 40, 40], textColor: 255 },
-    footStyles: { fillStyle: [240, 240, 240], textColor: 40, fontStyle: "bold" },
+    headStyles: { fillColor: [40, 40, 40], textColor: 255 },
+    footStyles: { fillColor: [240, 240, 240], textColor: 40, fontStyle: "bold" },
     margin: { left: margin, right: margin }
   });
 
