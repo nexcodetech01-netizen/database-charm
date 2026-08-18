@@ -49,7 +49,7 @@ describe("Bug Fix Verification: [PEDIDO-CATALOGO] Flow", () => {
     waMessageId: "catalog-msg-id",
     phone: "5511999999999",
     profileName: "Test User",
-    text: "[PEDIDO-CATALOGO] Total: R$ 40,00 | Itens: 1x Camisa (R$ 40,00) | Nome: Test User",
+    text: "[PEDIDO-CATALOGO]\n• Camisa — 1 un. — R$ 40,00\nTotal dos produtos: R$ 40,00\nForma de recebimento: Entrega\nNome: Test User",
     timestamp: Date.now(),
   };
 
