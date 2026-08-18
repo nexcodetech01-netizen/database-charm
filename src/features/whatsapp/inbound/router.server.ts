@@ -852,7 +852,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
-  const commercialTurn = await handleCommercialConfirmationTurn({
+  const commercialTurn = isCatalogOrderMessage ? null : await handleCommercialConfirmationTurn({
     db,
     companyId: tenant.companyId,
     phone: msg.phone,
