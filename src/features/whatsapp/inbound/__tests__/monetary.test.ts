@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCurrency } from "../../../lib/masks";
+import { parseCurrency } from "@/lib/masks";
 
 describe("Monetary Consistency and Parsing", () => {
   it("TESTE F — FORMATAÇÃO BRASILEIRA", () => {
