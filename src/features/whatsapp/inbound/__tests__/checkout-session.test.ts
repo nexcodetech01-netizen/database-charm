@@ -109,7 +109,7 @@ describe("parsers", () => {
 });
 
 describe("advanceCheckout — pessoa física", () => {
-  it("coleta nome, CPF, CEP, número, entrega e pagamento", async () => {
+  it("coleta nome, CPF, CEP, número, entrega, pagamento e resumo", async () => {
     const cart = cartWith(["Bolsa", 200, 1]);
     const r = await run(cart, [
       "Maria Silva",
@@ -126,6 +126,7 @@ describe("advanceCheckout — pessoa física", () => {
     expect(c.cpf).toBe(VALID_CPF);
     expect(c.zipCode).toBe("50000000");
     expect(r.session.step).toBe("summary");
+    expect(r.text).toContain("🛍️ *Resumo do seu Pedido*");
   });
 });
 
