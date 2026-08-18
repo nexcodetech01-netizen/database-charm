@@ -6444,6 +6444,8 @@ export type Database = {
         Row: {
           birth_date: string | null
           buyer_name: string | null
+          change_amount: number | null
+          change_needed: boolean | null
           city: string | null
           cnpj: string | null
           company_id: string
@@ -6475,6 +6477,8 @@ export type Database = {
         Insert: {
           birth_date?: string | null
           buyer_name?: string | null
+          change_amount?: number | null
+          change_needed?: boolean | null
           city?: string | null
           cnpj?: string | null
           company_id: string
@@ -6506,6 +6510,8 @@ export type Database = {
         Update: {
           birth_date?: string | null
           buyer_name?: string | null
+          change_amount?: number | null
+          change_needed?: boolean | null
           city?: string | null
           cnpj?: string | null
           company_id?: string
