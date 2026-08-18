@@ -4,7 +4,7 @@ import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheck
 import { createCheckoutSession } from "./checkout-session";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
-import { sendWhatsAppText } from "./whatsapp.server-C84o1Tlj";
+import { sendWhatsAppText } from "@/lib/whatsapp.server";
 
 // Função para formatar saudações baseada na hora
 const getGreeting = () => {
