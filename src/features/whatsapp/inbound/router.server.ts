@@ -663,7 +663,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     return;
   }
 
-  if (dataSubmission) {
+  if (dataSubmission && !isCatalogOrderMessage) {
     const paymentMethod = detectPaymentMethod(msg.text);
     let replyText = "";
     
