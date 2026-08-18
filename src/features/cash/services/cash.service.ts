@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import { emptyByMethod } from "../types";
 import { isSessionStale, staleSessionMessage } from "../lib/session-day";
+import { isSettlementReason } from "../lib/settlement-reason";
 
 
 const METHOD_KEYS: CashPaymentMethodKey[] = [
@@ -66,15 +67,10 @@ function isPhysicalCash(raw: string | null): boolean {
  * `settle_financial_transaction`, `reverse_financial_transaction` e
  * `complete_settlement_data`. São informativos para a conferência de caixa —
  * aparecem no histórico, mas não alteram dinheiro esperado, suprimentos ou
- * sangrias.
+ * sangrias. Ver detecção em `../lib/settlement-reason.ts`.
  */
-const SETTLEMENT_REASONS = new Set<string>([
-  "baixa financeira",
-  "saneamento de baixa",
-  "estorno de baixa financeira",
-]);
 function isSettlementMovement(m: CashMovement): boolean {
-  return SETTLEMENT_REASONS.has((m.reason ?? "").trim().toLowerCase());
+  return isSettlementReason(m.reason);
 }
 
 
