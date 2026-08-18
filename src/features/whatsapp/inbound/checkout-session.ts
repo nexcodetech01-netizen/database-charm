@@ -599,19 +599,31 @@ export async function advanceCheckout(args: {
 
   console.log(`[AUDIT] ADVANCE_CHECKOUT: step=${session.step}, payment=${session.payment}, text=${JSON.stringify(text)}`);
   switch (session.step) {
-    case "WAITING_PAYMENT_METHOD": {
+    case "WAITING_PAYMENT_METHOD":
+    case "WAITING_PAYMENT_METHOD_OTHER_CITY": {
       const payment = parsePayment(text);
+      
+      // Rejeição explícita de dinheiro para outra cidade
+      if (payment === "cash" && session.isOtherCity) {
+        return {
+          session,
+          text: "Poxa, para envios para outra cidade aceitamos apenas PIX ou Cartão. 😊 Qual das duas você prefere? \n\n1. PIX\n2. Cartão",
+          aborted: false
+        };
+      }
+
       if (!payment) {
+        const optionsText = session.isOtherCity ? "Pix ou cartão? 😊" : "Pix, cartão ou dinheiro? 😊";
         return { 
           session, 
-          text: "Não consegui identificar a forma de pagamento. Você prefere Pix, cartão ou dinheiro? 😊", 
+          text: `Não consegui identificar a forma de pagamento. Você prefere ${optionsText}`, 
           aborted: false 
         };
       }
       
       const updated = next(session, { payment }, now);
       
-      // Se for dinheiro, pergunta do troco obrigatoriamente
+      // Se for dinheiro, pergunta do troco obrigatoriamente (só chega aqui se não for isOtherCity)
       if (payment === "cash") {
         return {
           session: next(updated, { step: "WAITING_CHANGE_INFO" }, now),
@@ -629,6 +641,7 @@ export async function advanceCheckout(args: {
         aborted: false
       };
     }
+
     case "WAITING_CHANGE_INFO": {
       const t = normalize(text);
       const isNo = SKIP_RE.test(t) || t === "nao";
