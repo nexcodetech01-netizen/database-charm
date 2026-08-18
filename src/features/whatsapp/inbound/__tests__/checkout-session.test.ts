@@ -159,11 +159,10 @@ describe("handleCheckoutTurn", () => {
     expect((await turn("50000-000"))?.text).toContain(PROMPTS.address_number);
     expect((await turn("100"))?.text).toBe(PROMPTS.address_complement);
     expect((await turn("não"))?.text).toBe(PROMPTS.fulfillment);
-    const summary = await turn("retirada");
+    expect((await turn("retirada"))?.text).toContain("🛍️ *Resumo do seu Pedido*");
+    const summary = await turn("pix");
     expect(summary?.step).toBe("summary");
-    const confirm = await turn("dinheiro");
-    expect(confirm?.step).toBe("summary"); // In this flow it might still be in summary because it was already there, just updating payment
-    expect(summary?.text).toContain("Dinheiro");
+    expect(summary?.text).toContain("PIX");
   });
 
   it("confirmado — sinaliza quando o pedido acabou de ser fechado", async () => {
