@@ -706,7 +706,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
 
 
   const productIntent = parseCatalogProductIntent(msg.text);
-  if (productIntent) {
+  if (productIntent && !isCatalogOrderMessage) {
     const { data: product } = await db
       .from("products")
       .select("id, name, price, stock, description")
