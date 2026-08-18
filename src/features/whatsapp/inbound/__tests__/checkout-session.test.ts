@@ -126,7 +126,7 @@ describe("advanceCheckout — pessoa física", () => {
     expect(c.cpf).toBe(VALID_CPF);
     expect(c.zipCode).toBe("50000000");
     expect(r.session.step).toBe("summary");
-    expect(r.text).toContain("🛍️ *Resumo do seu Pedido*");
+    expect(r.text).toContain("Está tudo certinho?");
     expect(r.text).toContain("PIX");
   });
 });
@@ -163,7 +163,9 @@ describe("handleCheckoutTurn", () => {
     expect((await turn("não"))?.text).toBe(PROMPTS.fulfillment);
     const summary = await turn("retirada");
     expect(summary?.step).toBe("summary");
-    expect(summary?.text).toContain("🛍️ *Resumo do seu Pedido*");
+    expect(summary?.text).toContain("Está tudo certinho?");
+    const summary2 = await turn("pix");
+    expect(summary2?.text).toContain("PIX");
   });
 
   it("confirmado — sinaliza quando o pedido acabou de ser fechado", async () => {
