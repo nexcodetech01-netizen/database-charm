@@ -49,8 +49,8 @@ describe("Real Execution Path - Pedido Catálogo", () => {
 
     // Verificações do caminho real
     expect(turn).not.toBeNull();
-    expect(turn?.step).toBe("WAITING_CUSTOMER_NAME");
-    expect(turn?.text).toContain("Qual é o seu nome completo?");
+    expect(turn?.step).toBe("WAITING_CHANGE_INFO");
+    expect(turn?.text).toContain("Você vai precisar de troco?");
     
     console.log("[CATALOG CHECKOUT TEST] Resposta interceptada com sucesso pelo checkout-session");
     
@@ -84,7 +84,7 @@ describe("Real Execution Path - Pedido Catálogo", () => {
         cart: mockCart
       });
       
-      expect(turn?.step, `Falhou para a variante: ${v}`).toBe("WAITING_CUSTOMER_NAME");
+      expect(turn?.step, `Falhou para a variante: ${v}`).toBe(v.toLowerCase().includes("dinheiro") ? "WAITING_CHANGE_INFO" : "WAITING_CUSTOMER_NAME");
     }
   });
 });

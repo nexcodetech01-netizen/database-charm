@@ -2,6 +2,7 @@ import { parseWebsiteCatalogOrder } from "./intent-detector";
 import { getCartSession, saveCartSession } from "./cart-session.server";
 import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheckoutSession } from "./checkout-session.server";
 import { createCheckoutSession } from "./checkout-session";
+import { parseCurrency } from "@/lib/masks";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
@@ -137,7 +138,20 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
   console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, phone=${msg.phone}, text=${JSON.stringify(msg.text)}`);
 
   const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
-  const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+    const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+    
+    // Proteção de Integridade do Total (Recálculo)
+    if (websiteOrder && websiteOrder.items.length > 0) {
+      const calculatedSubtotal = websiteOrder.items.reduce((sum, item) => {
+        return sum + (parseCurrency(item.price) * item.quantity);
+      }, 0);
+      
+      const declaredTotal = parseCurrency(websiteOrder.total);
+      
+      if (Math.abs(declaredTotal - calculatedSubtotal) > 0.01) {
+        console.warn(`[AUDIT] CATALOG_TOTAL_MISMATCH: declared=${declaredTotal}, calculated=${calculatedSubtotal}, items=${websiteOrder.items.length}`);
+      }
+    }
   console.log(`[AUDIT] CATALOG_DETECTION: isCatalogOrderMessage=${isCatalogOrderMessage}, websiteOrder=${!!websiteOrder}, item_count=${websiteOrder?.items?.length ?? 0}`);
 
   // PRIORIDADE MÁXIMA: Evento de sistema [PEDIDO-CATALOGO]
