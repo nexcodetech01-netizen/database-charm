@@ -16,6 +16,7 @@ import {
 import { calculateShipping, generateLabel } from "@/features/shipping/services/shipping.functions";
 import { printManager } from "@/features/printing/services/print.service";
 import type { Printer as PrinterInfo } from "@/features/printing/types/printing.types";
+import { convertPdfToImage } from "@/features/shipping/lib/pdf-to-image";
 
 import { PageLayout, PageHeader } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -51,8 +52,11 @@ function ShippingCalculatorPage() {
         toast.error("Impressora térmica não encontrada. Confira se o Print Bridge está conectado.");
         return;
       }
+      // Converte o PDF pra imagem antes de mandar — mesma estratégia
+      // que funcionou pra etiqueta do Mercado Livre nessa impressora.
+      const image = await convertPdfToImage(labelResult.label_url);
       const result = await printManager.print(
-        { id: `superfrete-${labelResult.order_id}`, pdf: labelResult.label_url },
+        { id: `superfrete-${labelResult.order_id}`, image },
         { strategy: "PDF", printerId: defaultPrinter.id, type: "LABEL" },
       );
       if (result.success) {
