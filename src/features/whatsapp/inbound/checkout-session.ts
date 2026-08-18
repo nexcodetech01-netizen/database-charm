@@ -373,6 +373,11 @@ export function formatCustomerAddress(customer: CheckoutCustomer): string {
     }
   }
 
+  // Ajuste cirúrgico: Frederico Melle -> Rua Frederico Melle
+  if (street === "Frederico Melle") {
+    street = `Rua ${street}`;
+  }
+
   // 2. Montar a linha
   const addressLine = [street, number].filter(Boolean).join(", ");
   
