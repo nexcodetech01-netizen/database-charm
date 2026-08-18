@@ -175,8 +175,9 @@ export function ConsignmentsList() {
                   key={c.id} 
                   className="border-slate-800 hover:bg-slate-800/30 transition-colors cursor-pointer"
                   onClick={() => {
-                    console.log('Linha clicada', c.id);
-                    navigate({ to: `/consignacoes/${c.id}` });
+                    setTimeout(() => {
+                      navigate({ to: `/consignacoes/${c.id}` });
+                    }, 0);
                   }}
                 >
                   <TableCell className="font-medium text-white">
@@ -216,8 +217,9 @@ export function ConsignmentsList() {
                           className="cursor-pointer"
                           onSelect={(e) => {
                             e.preventDefault();
-                            console.log('Ver Detalhes selecionado (onSelect)', c.id);
-                            navigate({ to: `/consignacoes/${c.id}` });
+                            setTimeout(() => {
+                              navigate({ to: `/consignacoes/${c.id}` });
+                            }, 0);
                           }}
                         >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
