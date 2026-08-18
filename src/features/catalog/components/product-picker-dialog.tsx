@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -36,12 +36,19 @@ export function ProductPickerDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
 
+  // Reset search when dialog opens to ensure fresh list
+  useEffect(() => {
+    if (open) {
+      setSearch("");
+    }
+  }, [open]);
+
   const { data } = useProductsList(companyId, {
     search,
     categoryId: "",
     supplierId: "",
     status: "active",
-    stock: "in_stock",
+    stock: "in_stock", // This filters stock > 0 in productsService.list
     sortBy: "name",
     sortDir: "asc",
     page: 1,
