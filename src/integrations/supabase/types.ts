@@ -1789,6 +1789,7 @@ export type Database = {
           created_at: string
           id: string
           product_id: string
+          quantidade_extraviada: number
           returned_quantity: number
           sent_quantity: number
           sold_quantity: number
@@ -1802,6 +1803,7 @@ export type Database = {
           created_at?: string
           id?: string
           product_id: string
+          quantidade_extraviada?: number
           returned_quantity?: number
           sent_quantity: number
           sold_quantity?: number
@@ -1815,6 +1817,7 @@ export type Database = {
           created_at?: string
           id?: string
           product_id?: string
+          quantidade_extraviada?: number
           returned_quantity?: number
           sent_quantity?: number
           sold_quantity?: number
