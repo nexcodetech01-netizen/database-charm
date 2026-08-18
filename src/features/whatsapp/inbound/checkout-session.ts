@@ -71,7 +71,7 @@ export interface CheckoutSession {
   fulfillment: FulfillmentKind | null;
   delivery: CheckoutDelivery;
   payment: PaymentKind | null;
-  deliveryFee: number;
+  deliveryFee: number | null; // null means "to be calculated"
   totalWithFreight: number;
   changeNeeded: boolean | null;
   changeAmount: number | null;
@@ -148,7 +148,7 @@ export function createCheckoutSession(
     fulfillment: null,
     delivery: { city: null, neighborhood: null, address: null, complement: null },
     payment: null,
-    deliveryFee: 0,
+    deliveryFee: null,
     totalWithFreight: 0,
     changeNeeded: null,
     changeAmount: null,
@@ -416,7 +416,8 @@ export function formatWebsiteOrderSummary(
   
   const subtotal = cart.total;
   const freight = session.deliveryFee;
-  const total = subtotal + freight;
+  const isFreightPending = freight === null;
+  const total = isFreightPending ? null : subtotal + (freight || 0);
 
   const lines = [
     `Perfeito, ${c.fullName || "!"}! Seu pedido ficou assim:`,
@@ -425,8 +426,18 @@ export function formatWebsiteOrderSummary(
     ...items,
     "",
     `Subtotal: ${money(subtotal)}`,
-    `Frete: ${money(freight)}`,
-    `Total: ${money(total)}`,
+    `Frete: ${isFreightPending ? "Será calculado para envio" : money(freight || 0)}`,
+    `Total: ${total === null ? "A calcular" : money(total)}`,
+  ];
+
+  if (isFreightPending) {
+    lines.push(
+      "",
+      "📦 A taxa de envio para sua cidade será calculada conforme o CEP e informada antes da confirmação do pedido."
+    );
+  }
+
+  lines.push(
     "",
     `CPF: ${c.cpf ? formatDocument(c) : "-"}`,
     "Endereço:",
@@ -439,7 +450,7 @@ export function formatWebsiteOrderSummary(
       : "",
     "",
     SUMMARY_CONFIRM_MESSAGE,
-  ];
+  );
   return lines.join("\n");
 }
 
@@ -478,8 +489,8 @@ export function formatCheckoutSummary(
     ...items,
     "",
     `*Subtotal: ${money(cart.total)}*`,
-    `*Frete: ${money(session.deliveryFee)}*`,
-    `*Total: ${money(cart.total + session.deliveryFee)}*`,
+    `*Frete: ${session.deliveryFee === null ? "Será calculado para envio" : money(session.deliveryFee)}*`,
+    `*Total: ${session.deliveryFee === null ? "A calcular" : money(cart.total + session.deliveryFee)}*`,
     "",
     SUMMARY_CONFIRM_MESSAGE,
   );
@@ -931,6 +942,15 @@ export async function advanceCheckout(args: {
       const t = normalize(text);
       const isYes = /\b(sim|ok|pode|confirmar|confirmo|certo|correto|esta correto)\b/.test(t);
       if (isYes) {
+        // A confirmação final SOMENTE pode acontecer se o frete estiver definido (não null)
+        if (session.deliveryFee === null) {
+           return { 
+             session, 
+             text: "Aguarde um momentinho! ⏳ Ainda estou calculando o frete para o seu endereço. Assim que tiver o valor, eu te aviso para confirmarmos o pedido final. 😊", 
+             aborted: false 
+           };
+        }
+
         return {
           session: next(session, { step: "done" }, now),
           text: "Perfeito! Seu pedido foi confirmado e nossa equipe já foi avisada. 😊",
