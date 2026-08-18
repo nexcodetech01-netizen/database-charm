@@ -544,13 +544,21 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
   const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
 
   // Se a mensagem começar com o marcador de catálogo, forçamos o encerramento do turno
-  // caso o parsing falhe, para evitar que caia no motor conversacional como resposta.
-  if (isCatalogOrderMessage && !websiteOrder) {
-    console.error("[whatsapp.inbound] Falha crítica no parsing de [PEDIDO-CATALOGO]:", msg.text);
-    const errorText = "Desculpe, não consegui processar seu pedido do catálogo. Poderia tentar novamente ou descrever o que deseja? 😊";
+  // caso o parsing falhe ou o pedido venha vazio, para evitar que caia no motor conversacional.
+  if (isCatalogOrderMessage && (!websiteOrder || websiteOrder.items.length === 0)) {
+    console.error("[whatsapp.inbound] Falha ou pedido vazio em [PEDIDO-CATALOGO]:", msg.text);
+    const errorText = "Recebi seu pedido do catálogo, mas não consegui identificar os itens. Por favor, tente enviar novamente ou aguarde um atendente. 😊";
     await sendWhatsAppText({ to: msg.phone, text: errorText });
+    
+    // Altera status para 'human' para que o atendente possa intervir.
+    await db.from("whatsapp_conversations").update({ 
+      status: "human",
+      updated_at: new Date().toISOString() 
+    }).eq("id", conversationId);
+    
     return;
   }
+
 
   let checkoutTurn = null;
   // O processamento conversacional (handleCheckoutTurn) SÓ ocorre se NÃO for um evento de catálogo.
