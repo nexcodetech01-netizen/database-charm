@@ -120,7 +120,54 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
           try {
             const { handleWhatsAppInboundPayload } =
               await import("@/features/whatsapp/inbound/router.server");
-            await handleWhatsAppInboundPayload(payload);
+            
+            // NORMALIZAÇÃO: O router espera { db, msg, tenant, startedAt }.
+            // A Meta envia um payload que contém 'entry'. Pegamos a primeira mensagem/status.
+            const entry = payload?.entry as any[];
+            const changes = entry?.[0]?.changes as any[];
+            const value = changes?.[0]?.value;
+            
+            if (value) {
+              const msg = value.messages?.[0];
+              const status = value.statuses?.[0];
+              const metadata = value.metadata;
+              const contact = value.contacts?.[0];
+
+              // Resolve o tenant (company_id) baseado no telefone da Meta (WHATSAPP_PHONE_NUMBER_ID)
+              // ou pelo display_phone_number. Aqui usamos o supabaseAdmin já importado.
+              const phoneNumberId = metadata?.phone_number_id;
+              
+              const { data: company } = await (supabaseAdmin as any)
+                .from("companies")
+                .select("id")
+                .eq("whatsapp_phone_number_id", phoneNumberId)
+                .maybeSingle();
+
+              if (company?.id) {
+                const normalizedMsg = msg ? {
+                  waMessageId: msg.id,
+                  waContactId: msg.from,
+                  phone: msg.from,
+                  text: msg.text?.body || "",
+                  timestamp: parseInt(msg.timestamp) * 1000,
+                  profileName: contact?.profile?.name || "Cliente",
+                  type: msg.type,
+                  raw: msg
+                } : null;
+
+                if (normalizedMsg || status) {
+                  await handleWhatsAppInboundPayload({
+                    db: supabaseAdmin,
+                    msg: normalizedMsg,
+                    status: status,
+                    tenant: { companyId: company.id },
+                    startedAt: Date.now()
+                  });
+                }
+              } else {
+                console.warn("[whatsapp.webhook] Nenhuma empresa encontrada para o phone_number_id:", phoneNumberId);
+              }
+            }
           } catch (err) {
             console.error("Erro ao processar mensagem do Webhook:", err);
           }
