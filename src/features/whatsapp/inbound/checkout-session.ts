@@ -12,8 +12,8 @@
  */
 import { normalize } from "./catalog-nav";
 import type { CartSession } from "./cart-session";
-import { digits, parseCurrency } from "@/lib/masks";
-import { isValidCNPJ, isValidCPF } from "@/lib/validators";
+import { digits, parseCurrency } from "/dev-server/src/lib/masks";
+import { isValidCNPJ, isValidCPF } from "/dev-server/src/lib/validators";
 
 export type CheckoutStep =
   | "WAITING_PAYMENT_METHOD"
