@@ -792,6 +792,8 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     let skillId: string;
 
     if (cart.items.length === 0) {
+      // Esta condição agora é tratada preventivamente na detecção inicial, 
+      // mas mantemos como redundância de segurança.
       console.warn("[whatsapp.inbound] Pedido de catálogo sem itens reconhecidos:", msg.text);
       replyText = `${greeting}\n\nRecebi seu pedido, mas não consegui localizar os itens no nosso catálogo atual. Um de nossos atendentes vai te chamar em instantes para confirmar tudo. Muito obrigado(a)!`;
       skillId = "catalog.website_order_unmatched";
