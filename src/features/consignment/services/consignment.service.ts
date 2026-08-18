@@ -237,4 +237,25 @@ export class ConsignmentService {
     
     if (error) throw error;
   }
+
+  static async deleteConsignment(id: string): Promise<void> {
+    // Apagar primeiro os registros relacionados para evitar violação de FK
+    const { error: sError } = await supabase
+      .from('consignment_settlements')
+      .delete()
+      .eq('consignment_id', id);
+    if (sError) throw sError;
+
+    const { error: iError } = await supabase
+      .from('consignment_items')
+      .delete()
+      .eq('consignment_id', id);
+    if (iError) throw iError;
+
+    const { error: cError } = await supabase
+      .from('consignacoes')
+      .delete()
+      .eq('id', id);
+    if (cError) throw cError;
+  }
 }
