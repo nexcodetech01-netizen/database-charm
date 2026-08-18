@@ -92,25 +92,45 @@ export class ConsignmentService {
       throw new Error('company_id is required to create a consignment');
     }
 
+    // Use a transaction-like approach by checking errors carefully
     const { data: newConsignment, error: cError } = await supabase
       .from('consignacoes')
-      .insert({ ...consignmentData, status: 'ativa' })
+      .insert({ 
+        ...consignmentData, 
+        status: 'ativa',
+        // Ensure required fields for the table are present based on migration
+        commission_type: 'percentual', // Defaulting since it's required in schema but not in form
+        commission_value: 0
+      })
       .select()
       .single();
 
-    if (cError) throw cError;
+    if (cError) {
+      console.error('Error creating consignment header:', cError);
+      throw new Error(`Erro ao criar cabeçalho da consignação: ${cError.message}`);
+    }
 
     const itemsToInsert = items.map(item => ({
       ...item,
-      company_id: consignment.company_id,
-      consignment_id: (newConsignment as any).id
+      company_id: consignmentData.company_id,
+      consignment_id: newConsignment.id,
+      sold_quantity: 0,
+      returned_quantity: 0,
+      quantidade_extraviada: 0
     }));
+
+    console.log('Inserting consignment items:', itemsToInsert);
 
     const { error: iError } = await supabase
       .from('consignment_items')
       .insert(itemsToInsert as any);
 
-    if (iError) throw iError;
+    if (iError) {
+      console.error('Error creating consignment items:', iError);
+      // Attempt to delete the header if items fail to maintain integrity
+      await supabase.from('consignacoes').delete().eq('id', newConsignment.id);
+      throw new Error(`Erro ao salvar itens da consignação: ${iError.message}`);
+    }
 
     return newConsignment as Consignment;
   }
