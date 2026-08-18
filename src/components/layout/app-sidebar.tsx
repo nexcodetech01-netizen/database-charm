@@ -25,6 +25,7 @@ import {
   HeartHandshake,
   Zap,
   Layers,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/rbac";
@@ -94,6 +95,7 @@ const groups: NavGroup[] = [
     label: "Financeiro & Fiscal",
     items: [
       { title: "Financeiro", url: ROUTES.finance, icon: Wallet, status: "available", permission: "finance.view" },
+      { title: "Caixa", url: ROUTES.cash, icon: Banknote, status: "available", permission: "finance.view" },
       { title: "Fiscal", url: ROUTES.fiscal, icon: FileCheck, status: "available", permission: "fiscal.view" },
       { title: "Saúde Fiscal", url: ROUTES.fiscalHealth, icon: HeartPulse, status: "available", permission: "fiscal.view" },
       { title: "Recalcular Preços", url: ROUTES.commercialRecalculate, icon: Calculator, status: "available", permission: "products.view" },
@@ -112,9 +114,8 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Ferramentas",
+    label: "Sistema & Gestão",
     items: [
-      { title: "Calculadora de Frete", url: ROUTES.shippingCalculator, icon: Calculator, status: "available" },
       { title: "Relatórios", url: ROUTES.reports, icon: BarChart3, status: "available", permission: "reports.view" },
       { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view" },
       { title: "Configurações", url: ROUTES.settings, icon: Settings, status: "available", permission: "settings.view" },
