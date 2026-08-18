@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { 
@@ -46,6 +46,7 @@ export function ConsignmentsList() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -89,10 +90,19 @@ export function ConsignmentsList() {
   };
 
   const handleCancel = (id: string) => {
+    setMenuOpenId(null);
     if (window.confirm('Tem certeza que deseja cancelar esta consignação? Esta ação não pode ser desfeita.')) {
       cancelMutation.mutate(id);
     }
   };
+
+  const handleNavigateToDetails = useCallback((id: string) => {
+    setMenuOpenId(null);
+    // Pequeno atraso para garantir que o estado do menu seja processado antes da navegação
+    setTimeout(() => {
+      navigate({ to: `/consignacoes/${id}` });
+    }, 50);
+  }, [navigate]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -199,13 +209,18 @@ export function ConsignmentsList() {
                     {getStatusBadge(c.status)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
+                    <DropdownMenu 
+                      open={menuOpenId === c.id} 
+                      onOpenChange={(open) => setMenuOpenId(open ? c.id : null)}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 hover:bg-slate-800"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -217,9 +232,7 @@ export function ConsignmentsList() {
                           className="cursor-pointer"
                           onSelect={(e) => {
                             e.preventDefault();
-                            setTimeout(() => {
-                              navigate({ to: `/consignacoes/${c.id}` });
-                            }, 0);
+                            handleNavigateToDetails(c.id);
                           }}
                         >
                           <ChevronRight className="h-4 w-4 mr-2" /> Ver Detalhes
@@ -229,7 +242,10 @@ export function ConsignmentsList() {
                           className="cursor-pointer" 
 
                           disabled={generatingPdfId === c.id}
-                          onSelect={() => handleGeneratePdf(c.id)}
+                          onSelect={() => {
+                            setMenuOpenId(null);
+                            handleGeneratePdf(c.id);
+                          }}
                         >
                           {generatingPdfId === c.id ? (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
