@@ -145,12 +145,23 @@ export function ConsignmentsList() {
     c.reseller?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (authLoading) return null;
+  if (authLoading || (isLoading && consignments.length === 0)) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-slate-500 animate-pulse">Carregando consignações...</p>
+      </div>
+    );
+  }
 
-  if (!companyId) {
+  if (!companyId && !authLoading) {
     return (
       <div className="p-8 text-center text-slate-500">
-        Empresa não identificada. Tente recarregar a página.
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-20" />
+        <p>Sessão da empresa não identificada. Tente recarregar a página.</p>
+        <Button variant="link" onClick={() => window.location.reload()}>
+          Recarregar
+        </Button>
       </div>
     );
   }
