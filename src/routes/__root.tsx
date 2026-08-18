@@ -192,18 +192,24 @@ function RootComponent() {
 
   // Failsafe: force clear scroll locks and pointer events on every route change
   useEffect(() => {
-    // Small delay to ensure Radix/other libs have finished their cleanup cycles
+    // Failsafe: force clear scroll locks and pointer events on every route change
     const cleanup = () => {
-      document.body.style.pointerEvents = "";
-      document.body.removeAttribute("data-scroll-locked");
-      // Radix UI Dialog/Dropdown often use these
-      document.documentElement.style.pointerEvents = "";
-      document.documentElement.style.overflow = "";
+      const body = document.body;
+      const html = document.documentElement;
+      
+      if (body.style.pointerEvents || body.hasAttribute("data-scroll-locked")) {
+        body.style.pointerEvents = "";
+        body.removeAttribute("data-scroll-locked");
+      }
+      
+      if (html.style.pointerEvents || html.style.overflow === "hidden") {
+        html.style.pointerEvents = "";
+        html.style.overflow = "";
+      }
     };
 
     cleanup();
-    // Second pass to be absolutely sure after potential microtasks
-    const timeoutId = setTimeout(cleanup, 0);
+    const timeoutId = setTimeout(cleanup, 50);
     return () => clearTimeout(timeoutId);
   }, [location.pathname]);
 

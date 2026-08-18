@@ -54,8 +54,12 @@ export class ConsignmentService {
     return (data || []) as Consignment[];
   }
 
-  static async getConsignment(id: string): Promise<{ consignment: Consignment; items: ConsignmentItem[] }> {
-    const [consignmentRes, itemsRes] = await Promise.all([
+  static async getConsignment(id: string): Promise<{ 
+    consignment: Consignment; 
+    items: ConsignmentItem[];
+    settlements: ConsignmentSettlement[];
+  }> {
+    const [consignmentRes, itemsRes, settlementsRes] = await Promise.all([
       supabase
         .from('consignacoes')
         .select(`
@@ -70,15 +74,22 @@ export class ConsignmentService {
           *,
           product:products(name, sku, barcode)
         `)
+        .eq('consignment_id', id),
+      supabase
+        .from('consignment_settlements')
+        .select('*')
         .eq('consignment_id', id)
+        .order('created_at', { ascending: false })
     ]);
 
     if (consignmentRes.error) throw consignmentRes.error;
     if (itemsRes.error) throw itemsRes.error;
+    if (settlementsRes.error) throw settlementsRes.error;
 
     return {
       consignment: consignmentRes.data as Consignment,
-      items: (itemsRes.data || []) as ConsignmentItem[]
+      items: (itemsRes.data || []) as ConsignmentItem[],
+      settlements: (settlementsRes.data || []) as ConsignmentSettlement[]
     };
   }
 

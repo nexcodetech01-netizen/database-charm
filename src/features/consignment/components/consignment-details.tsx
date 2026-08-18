@@ -45,16 +45,14 @@ export function ConsignmentDetails() {
     queryFn: () => ConsignmentService.getConsignment(id),
   });
 
-  const { data: settlements = [], isLoading: isLoadingSettlements } = useQuery({
-    queryKey: ['consignment-settlements', id],
-    queryFn: () => ConsignmentService.listSettlements(id),
-  });
+  const settlements = data?.settlements || [];
+  const isLoadingSettlements = isLoading;
 
   const updateSettlementStatusMutation = useMutation({
     mutationFn: ({ settlementId, status }: { settlementId: string, status: 'pendente' | 'pago' }) => 
       ConsignmentService.updateSettlementStatus(settlementId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consignment-settlements', id] });
+      queryClient.invalidateQueries({ queryKey: ['consignment', id] });
       toast.success('Status do pagamento atualizado!');
     },
     onError: (err: any) => {
