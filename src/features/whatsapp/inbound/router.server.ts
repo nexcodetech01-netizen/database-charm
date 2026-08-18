@@ -121,7 +121,7 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
   // Logs de Auditoria para o Problema do [PEDIDO-CATALOGO]
   console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
   console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
-  console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map(c => c.charCodeAt(0)).join(",")}`);
+  console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map((c: any) => c.charCodeAt(0)).join(",")}`);
 
   const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
   console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
