@@ -5,22 +5,29 @@ import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import * as whatsappServer from "@/lib/whatsapp.server";
 
 // Mock das dependências
-vi.mock("@/integrations/supabase/client.server", () => ({
-  supabaseAdmin: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockReturnThis(),
-    single: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-  },
-}));
+vi.mock("@/integrations/supabase/client.server", () => {
+  const mockChain = () => {
+    const chain: any = {
+      from: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: { id: "conv-1", status: "open" } })),
+      single: vi.fn().mockImplementation(() => Promise.resolve({ data: { id: "id-1", status: "open" } })),
+      neq: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+    };
+    return chain;
+  };
+  
+  return {
+    supabaseAdmin: mockChain(),
+  };
+});
 
 vi.mock("@/lib/whatsapp.server", () => ({
   sendWhatsAppText: vi.fn().mockResolvedValue({ ok: true, waMessageId: "msg-123" }),
@@ -48,16 +55,6 @@ describe("Bug Reproducer: [PEDIDO-CATALOGO] Double Prompt / Wrong Turn", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup mock DB responses
-    (db.from as any).mockImplementation(() => ({
-      select: () => ({
-        eq: () => ({ in: () => ({ limit: () => ({ data: [{ id: "contact-1", wa_id: msg.waContactId }] }) }) }),
-        maybeSingle: () => ({ data: { id: "conv-1", status: "open" } }),
-      }),
-      upsert: () => ({ select: () => ({ single: () => ({ data: { id: "id-1", status: "open" } }) }) }),
-      insert: () => ({ error: null }),
-      update: () => ({ eq: () => ({}) }),
-    }));
   });
 
   it("REPRODUCE BUG: [PEDIDO-CATALOGO] deve enviar PROMPTS.payment_method e NÃO chamar handleCheckoutTurn com texto vazio", async () => {
@@ -68,7 +65,6 @@ describe("Bug Reproducer: [PEDIDO-CATALOGO] Double Prompt / Wrong Turn", () => {
     const calls = (handleCheckoutTurn as any).mock.calls;
     
     // Verificamos se ele foi chamado. Se o bug existe, calls.length > 0.
-    // O usuário disse que o bug existe, então vamos confirmar a falha aqui.
     // Assim que corrigirmos, mudaremos para .toBe(0)
     expect(calls.length, "O BUG EXISTE: handleCheckoutTurn foi chamado indevidamente para mensagem de catálogo").toBe(0);
     
