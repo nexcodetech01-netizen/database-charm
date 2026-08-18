@@ -46,7 +46,7 @@ function toRow(draft: CommercialTicketDraft) {
     person_type: draft.customer.personType,
     cpf: draft.customer.cpf,
     cnpj: draft.customer.cnpj,
-    birth_date: draft.customer.birthDate,
+    birth_date: null,
     zip_code: draft.customer.zipCode,
     state: draft.customer.state,
     city: draft.customer.city,

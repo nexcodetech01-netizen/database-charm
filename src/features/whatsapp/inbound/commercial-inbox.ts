@@ -53,7 +53,7 @@ export interface CommercialCustomerData {
   personType: "pf" | "pj" | null;
   cpf: string | null;
   cnpj: string | null;
-  birthDate: string | null;
+  birthDate: null;
   zipCode: string | null;
   state: string | null;
   city: string | null;
@@ -111,7 +111,7 @@ export function buildCommercialTicketDraft(args: {
       personType: c.personType,
       cpf: c.cpf,
       cnpj: c.cnpj,
-      birthDate: c.birthDate,
+      birthDate: null,
       zipCode: c.zipCode,
       state: c.state,
       city: c.city,

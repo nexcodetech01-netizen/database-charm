@@ -13,9 +13,17 @@ import { sendWhatsAppText } from "@/lib/whatsapp.server";
 export const NEXOS_ROUTER_BUILD_ID = "CFzzUNqT";
 
 
-// Função para formatar saudações baseada na hora
+// Função para formatar saudações baseada na hora (America/Sao_Paulo)
 const getGreeting = () => {
-  const hour = new Date().getHours();
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: "America/Sao_Paulo",
+    hour: "numeric",
+    hour12: false,
+  };
+  const hourString = new Intl.DateTimeFormat("en-US", options).format(now);
+  const hour = parseInt(hourString, 10);
+
   if (hour >= 5 && hour < 12) return "Bom dia!";
   if (hour >= 12 && hour < 18) return "Boa tarde!";
   return "Boa noite!";
@@ -151,15 +159,24 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     
     // Sincroniza itens
     const cartItems = websiteOrder.items.map(item => {
-      const unitPrice = typeof item.price === 'number' ? item.price : parseFloat(String(item.price || 0));
+      const priceStr = String(item.price || "0").replace("R$ ", "").replace(".", "").replace(",", ".");
+      const unitPrice = parseFloat(priceStr);
       return {
-        productId: 'catalog-item',
+        productId: `catalog-${item.name}`,
         name: item.name,
         qty: item.quantity,
         unitPrice,
         subtotal: unitPrice * item.quantity
       };
     });
+    
+    // Validar preços
+    if (cartItems.some(i => i.unitPrice <= 0)) {
+      console.error("[AUDIT] Erro: Pedido com item sem preço detectado no catálogo", websiteOrder.items);
+      const errorText = "Desculpe, não consegui processar o preço de alguns itens. Por favor, tente enviar novamente o pedido do catálogo. 😊";
+      await sendWhatsAppText({ to: msg.phone, text: errorText });
+      return;
+    }
     const cart = {
       companyId: tenant.companyId,
       phone: msg.phone,
@@ -169,6 +186,14 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       updatedAt: Date.now()
     };
     await saveCartSession(cart);
+
+    // Preencher nome se disponível no pedido do catálogo
+    if (websiteOrder.buyerName) {
+      freshSession.customer.fullName = websiteOrder.buyerName;
+      // sync buyerName to session root as well for legacy compatibility
+      freshSession.buyerName = websiteOrder.buyerName;
+      await saveCheckoutSession(freshSession);
+    }
 
     // Pergunta Pagamento imediatamente
     const replyText = `${getGreeting()}\n\nRecebi seu pedido do catálogo! 🛍️\n\nComo você prefere pagar: Pix, Cartão ou Dinheiro?`;
