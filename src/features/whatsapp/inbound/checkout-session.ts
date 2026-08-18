@@ -17,6 +17,7 @@ import { isValidCNPJ, isValidCPF } from "/dev-server/src/lib/validators";
 
 export type CheckoutStep =
   | "WAITING_PAYMENT_METHOD"
+  | "WAITING_PAYMENT_METHOD_OTHER_CITY"
   | "WAITING_CHANGE_INFO"
   | "WAITING_CUSTOMER_NAME"
   | "WAITING_DOCUMENT"
@@ -34,6 +35,7 @@ export type CheckoutStep =
   | "change_info"
   | "summary"
   | "done";
+
 
 export type FulfillmentKind = "pickup" | "delivery";
 export type PaymentKind = "pix" | "card" | "cash";
