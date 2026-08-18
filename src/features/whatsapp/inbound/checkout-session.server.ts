@@ -129,14 +129,16 @@ export async function handleCheckoutTurn(args: {
   const active = await peekCheckoutSession(args.companyId, args.phone, now);
 
   if (!active) {
-    if (!isCheckoutIntent(args.text)) return null;
+    if (!isCheckoutIntent(args.text) && args.text !== "") return null;
     if (cart.items.length === 0) {
       return { text: EMPTY_CART_MESSAGE, session: null, step: null, confirmed: false, completedSession: null };
     }
     const fresh = await saveCheckoutSession(
       createCheckoutSession(args.companyId, args.phone, now),
     );
-    return { text: PROMPTS.buyer_name, session: fresh, step: fresh.step, confirmed: false, completedSession: null };
+    // Use the session step's prompt or buyer_name
+    const prompt = PROMPTS[fresh.step as keyof typeof PROMPTS] || PROMPTS.buyer_name;
+    return { text: prompt, session: fresh, step: fresh.step, confirmed: false, completedSession: null };
   }
 
   const result = await advanceCheckout({

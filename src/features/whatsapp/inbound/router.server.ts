@@ -2,6 +2,7 @@ import { parseWebsiteCatalogOrder } from "./intent-detector";
 import { getCartSession, saveCartSession } from "./cart-session.server";
 import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheckoutSession } from "./checkout-session.server";
 import { createCheckoutSession } from "./checkout-session";
+import { parseCurrency } from "@/lib/masks";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
@@ -137,7 +138,20 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
   console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, phone=${msg.phone}, text=${JSON.stringify(msg.text)}`);
 
   const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
-  const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+    const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+    
+    // Proteção de Integridade do Total (Recálculo)
+    if (websiteOrder && websiteOrder.items.length > 0) {
+      const calculatedSubtotal = websiteOrder.items.reduce((sum, item) => {
+        return sum + (parseCurrency(item.price) * item.quantity);
+      }, 0);
+      
+      const declaredTotal = parseCurrency(websiteOrder.total);
+      
+      if (Math.abs(declaredTotal - calculatedSubtotal) > 0.01) {
+        console.warn(`[AUDIT] CATALOG_TOTAL_MISMATCH: declared=${declaredTotal}, calculated=${calculatedSubtotal}, items=${websiteOrder.items.length}`);
+      }
+    }
   console.log(`[AUDIT] CATALOG_DETECTION: isCatalogOrderMessage=${isCatalogOrderMessage}, websiteOrder=${!!websiteOrder}, item_count=${websiteOrder?.items?.length ?? 0}`);
 
   // PRIORIDADE MÁXIMA: Evento de sistema [PEDIDO-CATALOGO]
@@ -153,14 +167,14 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     console.log(`[AUDIT] CATALOG_ORDER_PROCESSED: id=${msg.waMessageId}, phone=${msg.phone}`);
 
-    // Inicia nova sessão limpa
+    // Inicia nova sessão limpa no estado de pagamento
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
+    freshSession.step = "WAITING_PAYMENT_METHOD";
     await saveCheckoutSession(freshSession);
     
     // Sincroniza itens
     const cartItems = websiteOrder.items.map(item => {
-      const priceStr = String(item.price || "0").replace("R$ ", "").replace(".", "").replace(",", ".");
-      const unitPrice = parseFloat(priceStr);
+      const unitPrice = parseCurrency(item.price);
       return {
         productId: `catalog-${item.name}`,
         name: item.name,
@@ -195,21 +209,28 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       await saveCheckoutSession(freshSession);
     }
 
-    // Pergunta Pagamento imediatamente
-    const replyText = `${getGreeting()}\n\nRecebi seu pedido do catálogo! 🛍️\n\nComo você prefere pagar: Pix, Cartão ou Dinheiro?`;
-    const sent = await sendWhatsAppText({ to: msg.phone, text: replyText });
-
-    await db.from("whatsapp_messages").insert({
-      company_id: tenant.companyId,
-      conversation_id: conversationId,
-      contact_id: contactId,
-      direction: "outbound",
-      wa_message_id: sent.waMessageId,
-      text: replyText,
-      status: sent.ok ? "sent" : "failed",
-      provider: "catalog-nav",
-      skill_id: "catalog.new_order"
+    // O router apenas inicializa a sessão e delega o primeiro prompt ao motor de checkout.
+    // O CheckoutSession gerencia a pergunta de pagamento de forma única.
+    const checkoutTurn = await handleCheckoutTurn({
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      text: "", // Texto vazio para disparar o prompt inicial do estado atual (WAITING_PAYMENT_METHOD)
     });
+
+    if (checkoutTurn) {
+      const sent = await sendWhatsAppText({ to: msg.phone, text: checkoutTurn.text });
+      await db.from("whatsapp_messages").insert({
+        company_id: tenant.companyId,
+        conversation_id: conversationId,
+        contact_id: contactId,
+        direction: "outbound",
+        wa_message_id: sent.waMessageId,
+        text: checkoutTurn.text,
+        status: sent.ok ? "sent" : "failed",
+        provider: "catalog-nav",
+        skill_id: "catalog.new_order"
+      });
+    }
 
     console.log(`[AUDIT] CATALOG_EARLY_RETURN: success`);
     return;

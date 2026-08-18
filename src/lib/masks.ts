@@ -77,14 +77,36 @@ export function parseCurrency(v: string | number | null | undefined): number {
   if (!v) return 0;
   const s = String(v).trim();
   if (!s) return 0;
+  
   // Remove tudo exceto dígitos, vírgula, ponto e sinal.
   const cleaned = s.replace(/[^\d,.-]/g, "");
-  // Se tem vírgula, assume padrão pt-BR (ponto = milhar, vírgula = decimal).
+  
+  // Se tem vírgula, tratamos como padrão pt-BR (ponto milhar, vírgula decimal)
   if (cleaned.includes(",")) {
     const normalized = cleaned.replace(/\./g, "").replace(",", ".");
     const n = Number(normalized);
     return Number.isFinite(n) ? n : 0;
   }
+  
+  // Se tem apenas ponto(s), decidimos se é milhar ou decimal
+  if (cleaned.includes(".")) {
+    const parts = cleaned.split(".");
+    // Se tem mais de um ponto, é certamente milhar
+    if (parts.length > 2) {
+      const n = Number(cleaned.replace(/\./g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+    // Se tem um ponto e o que vem depois tem 3 dígitos, tratamos como milhar no contexto brasileiro
+    // (ex: 1.000 ou 4.000)
+    if (parts[1].length === 3) {
+      const n = Number(cleaned.replace(/\./g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+    // Caso contrário (ex: 10.50), é decimal
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+  
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : 0;
 }

@@ -2,6 +2,7 @@
  * Utilitários para detecção de intenções e formatação de saudações no WhatsApp.
  */
 import { normalize } from "./catalog-nav";
+import { parseCurrency } from "@/lib/masks";
 
 /**
  * Retorna uma saudação cordial baseada no horário atual ou genérica.
@@ -64,11 +65,10 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   let match: RegExpExecArray | null;
   while ((match = itemRegex.exec(t)) !== null) {
     if (match[1] && match[2] && match[3]) {
-      const priceStr = match[3].replace("R$ ", "").replace(".", "").replace(",", ".");
       items.push({ 
         name: match[1].trim(), 
         quantity: parseInt(match[2], 10), 
-        price: priceStr
+        price: match[3] // Manter o texto original com R$ para o parseCurrency lidar depois
       });
     }
   }

@@ -27,15 +27,16 @@ describe("Real Execution Path - Pedido Catálogo", () => {
   };
 
   it("whatsapp inbound → handleCheckoutTurn → handlerSelected: scenario [PEDIDO-CATALOGO] com pagamento em dinheiro", async () => {
-    resetCheckoutSessions();
-    resetCartSessions();
+    await resetCheckoutSessions();
+    await resetCartSessions();
     
     // Simula o estado após o usuário colar o [PEDIDO-CATALOGO] no WhatsApp
     // No router.server.ts, isso cria a sessão e define o step como WAITING_PAYMENT_METHOD
-    saveCartSession(mockCart);
+    await saveCartSession(mockCart);
     const session = createCheckoutSession(companyId, phone);
     session.step = "WAITING_PAYMENT_METHOD";
-    saveCheckoutSession(session);
+    session.customer.fullName = "Test User"; // Simula nome já presente (comum em catálogo)
+    await saveCheckoutSession(session);
     
     console.log("[CATALOG CHECKOUT TEST] Início do fluxo real");
     
@@ -49,21 +50,21 @@ describe("Real Execution Path - Pedido Catálogo", () => {
 
     // Verificações do caminho real
     expect(turn).not.toBeNull();
-    expect(turn?.step).toBe("WAITING_CUSTOMER_NAME");
-    expect(turn?.text).toContain("Qual é o seu nome completo?");
+    expect(turn?.step).toBe("WAITING_CHANGE_INFO");
+    expect(turn?.text).toContain("Você vai precisar de troco?");
     
     console.log("[CATALOG CHECKOUT TEST] Resposta interceptada com sucesso pelo checkout-session");
     
-    // Próximo passo: Nome
-    const nameTurn = await handleCheckoutTurn({
-      companyId,
-      phone,
-      text: "Tiele Andriani",
-      cart: mockCart
+    // Responde "não" para troco
+    const turn2 = await handleCheckoutTurn({
+        companyId,
+        phone,
+        text: "não",
+        cart: mockCart
     });
-    
-    expect(nameTurn?.step).toBe("WAITING_DOCUMENT");
-    expect(nameTurn?.text).toContain("CPF");
+
+    expect(turn2?.step).toBe("WAITING_DOCUMENT");
+    expect(turn2?.text).toContain("CPF");
     
     console.log("[CATALOG CHECKOUT TEST] Fluxo avançou para WAITING_DOCUMENT");
   });
@@ -72,10 +73,11 @@ describe("Real Execution Path - Pedido Catálogo", () => {
     const variants = ["Dinheiro", "Pix", "Cartão", "cartao", "credito"];
     
     for (const v of variants) {
-      resetCheckoutSessions();
+      await resetCheckoutSessions();
       const session = createCheckoutSession(companyId, phone);
       session.step = "WAITING_PAYMENT_METHOD";
-      saveCheckoutSession(session);
+      session.customer.fullName = "Test User";
+      await saveCheckoutSession(session);
       
       const turn = await handleCheckoutTurn({
         companyId,
@@ -84,7 +86,8 @@ describe("Real Execution Path - Pedido Catálogo", () => {
         cart: mockCart
       });
       
-      expect(turn?.step, `Falhou para a variante: ${v}`).toBe("WAITING_CUSTOMER_NAME");
+      const isCash = v.toLowerCase().includes("dinheiro");
+      expect(turn?.step, `Falhou para a variante: ${v}`).toBe(isCash ? "WAITING_CHANGE_INFO" : "WAITING_DOCUMENT");
     }
   });
 });
