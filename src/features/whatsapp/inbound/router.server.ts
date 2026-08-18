@@ -152,23 +152,19 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
 
     // Inicia nova sessão limpa no estado de pagamento
     const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
-    freshSession.step = "WAITING_PAYMENT_METHOD";
+    const isOtherCity = websiteOrder.deliveryMethod === "other";
+    freshSession.isOtherCity = isOtherCity;
+    freshSession.step = isOtherCity ? "WAITING_PAYMENT_METHOD_OTHER_CITY" : "WAITING_PAYMENT_METHOD";
     
     // Preservar o frete do catálogo
     if (websiteOrder.deliveryFee) {
       const fee = parseCurrency(websiteOrder.deliveryFee);
       freshSession.deliveryFee = fee;
       console.log(`[AUDIT] CATALOG_FREIGHT_PRESERVED: fee=${fee}`);
-    } else if (websiteOrder.deliveryMethod === "tupa") {
-      // Se for entrega em Tupã e não tiver taxa no catálogo, 
-      // podemos assumir 0 se a política da loja for essa, mas para Tupã 
-      // o usuário mencionou frete R$ 5,00 no Teste A.
-      // Vou deixar nulo para ser explícito, ou 0 se for a regra.
-      // A instrução diz "Não inventar valor de frete... Usar somente o valor realmente calculado".
-      freshSession.deliveryFee = null;
     } else {
       freshSession.deliveryFee = null;
     }
+
     
     await saveCheckoutSession(freshSession);
     
