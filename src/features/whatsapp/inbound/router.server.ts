@@ -6,6 +6,13 @@ import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
 
+/**
+ * NEXOS_ROUTER_BUILD_ID is used for runtime validation of the deployed bundle.
+ * When you change the logic below, update this ID to match the deployment intent.
+ */
+export const NEXOS_ROUTER_BUILD_ID = "CFzzUNqT";
+
+
 // Função para formatar saudações baseada na hora
 const getGreeting = () => {
   const hour = new Date().getHours();
