@@ -349,16 +349,44 @@ const PAYMENT_LABEL: Record<PaymentKind, string> = {
 
 /** Endereço completo em uma linha (a partir dos dados do cliente). */
 export function formatCustomerAddress(customer: CheckoutCustomer): string {
-  const line = [
-    [customer.street, customer.number].filter(Boolean).join(", "),
+  // 1. Extrair CEP se ele estiver grudado no logradouro ou número
+  let street = customer.street || "";
+  let number = customer.number || "";
+  let zip = customer.zipCode || "";
+
+  // Se o street ou number contiverem um padrão de CEP (8 dígitos), removemos
+  const zipPattern = /\d{5}-?\d{3}/;
+  
+  if (zipPattern.test(street)) {
+    const match = street.match(zipPattern);
+    if (match) {
+      if (!zip) zip = digits(match[0]);
+      street = street.replace(match[0], "").replace(/,\s*$/, "").trim();
+    }
+  }
+
+  if (zipPattern.test(number)) {
+    const match = number.match(zipPattern);
+    if (match) {
+      if (!zip) zip = digits(match[0]);
+      number = number.replace(match[0], "").trim();
+    }
+  }
+
+  // 2. Montar a linha
+  const addressLine = [street, number].filter(Boolean).join(", ");
+  
+  const parts = [
+    addressLine || null,
     customer.complement,
     customer.district,
     [customer.city, customer.state].filter(Boolean).join("/"),
-    formatZipCode(customer.zipCode) || null,
+    formatZipCode(zip) || null,
   ]
     .filter((v): v is string => Boolean(v && String(v).trim()))
     .join(" — ");
-  return line;
+    
+  return parts;
 }
 
 export function formatFulfillmentLine(session: CheckoutSession): string {
