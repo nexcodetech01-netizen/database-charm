@@ -160,9 +160,14 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
       freshSession.deliveryFee = fee;
       console.log(`[AUDIT] CATALOG_FREIGHT_PRESERVED: fee=${fee}`);
     } else if (websiteOrder.deliveryMethod === "tupa") {
-      // Se não houver taxa explícita mas for entrega em Tupã, 
-      // podemos ter uma regra de negócio, mas o pedido diz R$ 5,00 no exemplo.
-      // O parser agora pega a taxa se existir.
+      // Se for entrega em Tupã e não tiver taxa no catálogo, 
+      // podemos assumir 0 se a política da loja for essa, mas para Tupã 
+      // o usuário mencionou frete R$ 5,00 no Teste A.
+      // Vou deixar nulo para ser explícito, ou 0 se for a regra.
+      // A instrução diz "Não inventar valor de frete... Usar somente o valor realmente calculado".
+      freshSession.deliveryFee = null;
+    } else {
+      freshSession.deliveryFee = null;
     }
     
     await saveCheckoutSession(freshSession);
