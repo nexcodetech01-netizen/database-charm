@@ -538,19 +538,33 @@ async function processOneMessage({ db, msg, tenant, startedAt }: ProcessArgs): P
 
   // 3c-pre-ante) Resumo de pedido colado a partir do catálogo do site
   // (botão "Finalizar pedido" — formato [PEDIDO-CATALOGO]).
-  // PRIORIDADE MÁXIMA: Detectar novos pedidos de catálogo ANTES de processar
-  // turnos de checkout existentes para evitar que o [PEDIDO-CATALOGO] seja
-  // interpretado como resposta a uma etapa de uma sessão anterior.
-  const websiteOrder = parseWebsiteCatalogOrder(msg.text);
+  // PRIORIDADE MÁXIMA: O marcador [PEDIDO-CATALOGO] é um EVENTO DE SISTEMA.
+  // Deve ter prioridade absoluta e NUNCA entrar em handleCheckoutTurn ou interpretadores genéricos.
+  const isCatalogOrderMessage = msg.text.trimStart().startsWith("[PEDIDO-CATALOGO]");
+  const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;
+
+  // Se a mensagem começar com o marcador de catálogo, forçamos o encerramento do turno
+  // caso o parsing falhe ou o pedido venha vazio, para evitar que caia no motor conversacional.
+  if (isCatalogOrderMessage && (!websiteOrder || websiteOrder.items.length === 0)) {
+    console.error("[whatsapp.inbound] Falha ou pedido vazio em [PEDIDO-CATALOGO]:", msg.text);
+    const errorText = "Recebi seu pedido do catálogo, mas não consegui identificar os itens. Por favor, tente enviar novamente ou aguarde um atendente. 😊";
+    await sendWhatsAppText({ to: msg.phone, text: errorText });
+    
+    // Altera status para 'human' para que o atendente possa intervir.
+    await db.from("whatsapp_conversations").update({ 
+      status: "human",
+      updated_at: new Date().toISOString() 
+    }).eq("id", conversationId);
+    
+    return;
+  }
+
 
   let checkoutTurn = null;
-  // Se for um novo pedido do catálogo (websiteOrder), NÃO executamos handleCheckoutTurn
-  // para esta mensagem. A sessão anterior será invalidada e uma nova será
-  // criada dentro do bloco if (websiteOrder) que vem adiante.
-  if (!websiteOrder) {
+  // O processamento conversacional (handleCheckoutTurn) SÓ ocorre se NÃO for um evento de catálogo.
+  if (!isCatalogOrderMessage) {
     console.log(`[CATALOG CHECKOUT DEBUG]
 conversationId: ${conversationId}
-activeOrderId: N/A
 incomingMessage: ${msg.text}
 routerSelected: router.server.ts
 handlerSelected: handleCheckoutTurn (Checking...)`);
@@ -561,6 +575,7 @@ handlerSelected: handleCheckoutTurn (Checking...)`);
       text: msg.text,
     });
   }
+
 
   if (checkoutTurn) {
     console.log(`[CATALOG CHECKOUT DEBUG]
@@ -635,7 +650,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   const purchaseIntent = isPurchaseIntent(msg.text);
   const dataSubmission = isDataSubmissionIntent(msg.text);
 
-  if (purchaseIntent) {
+  if (purchaseIntent && !isCatalogOrderMessage) {
     const greeting = getGreeting();
     const replyText = `${greeting}\n\nPerfeito! Vou separar para você. 📦\n\nMe informa, por favor:\n1. Seu Nome Completo\n2. Endereço com CEP para entrega\n3. Forma de pagamento (Pix, Cartão ou Dinheiro)`;
     
@@ -656,7 +671,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     return;
   }
 
-  if (dataSubmission) {
+  if (dataSubmission && !isCatalogOrderMessage) {
     const paymentMethod = detectPaymentMethod(msg.text);
     let replyText = "";
     
@@ -699,7 +714,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
 
 
   const productIntent = parseCatalogProductIntent(msg.text);
-  if (productIntent) {
+  if (productIntent && !isCatalogOrderMessage) {
     const { data: product } = await db
       .from("products")
       .select("id, name, price, stock, description")
@@ -777,6 +792,9 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
     let skillId: string;
 
     if (cart.items.length === 0) {
+      // Esta condição agora é tratada preventivamente na detecção inicial, 
+      // mas mantemos como redundância de segurança.
+      console.warn("[whatsapp.inbound] Pedido de catálogo sem itens reconhecidos:", msg.text);
       replyText = `${greeting}\n\nRecebi seu pedido, mas não consegui localizar os itens no nosso catálogo atual. Um de nossos atendentes vai te chamar em instantes para confirmar tudo. Muito obrigado(a)!`;
       skillId = "catalog.website_order_unmatched";
     } else {
@@ -845,7 +863,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   }
 
   // 3c-pre0) Confirmação do resumo → atendimento comercial (sem venda/ERP).
-  const commercialTurn = await handleCommercialConfirmationTurn({
+  const commercialTurn = isCatalogOrderMessage ? null : await handleCommercialConfirmationTurn({
     db,
     companyId: tenant.companyId,
     phone: msg.phone,
@@ -877,7 +895,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
 
   // 3c-ante) Recomendação de produtos semelhantes (rejeição / pedido de alternativa).
 
-  const recommendationTurn = await handleRecommendationTurn({
+  const recommendationTurn = isCatalogOrderMessage ? null : await handleRecommendationTurn({
     db,
     storage: (
       await import("@/integrations/supabase/client.server")
@@ -939,7 +957,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   }
 
   // 3c-bis) Fotos do produto em contexto (imagens já cadastradas).
-  const photoTurn = await handlePhotoTurn({
+  const photoTurn = isCatalogOrderMessage ? null : await handlePhotoTurn({
     db,
     storage: (
       await import("@/integrations/supabase/client.server")
