@@ -143,14 +143,21 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     await saveCheckoutSession(freshSession);
     
     // Sincroniza itens
+    const cartItems = websiteOrder.items.map(item => {
+      const unitPrice = typeof item.price === 'number' ? item.price : parseFloat(String(item.price || 0));
+      return {
+        productId: 'catalog-item',
+        name: item.name,
+        qty: item.quantity,
+        unitPrice,
+        subtotal: unitPrice * item.quantity
+      };
+    });
     const cart = {
       companyId: tenant.companyId,
       phone: msg.phone,
-      items: websiteOrder.items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price || 0
-      })),
+      items: cartItems,
+      total: cartItems.reduce((sum, i) => sum + i.subtotal, 0),
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
