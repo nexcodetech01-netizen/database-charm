@@ -23,6 +23,8 @@ export type ProductThumbSize = keyof typeof SIZE_CLASS;
 interface Props {
   /** URL já assinada (preferido em listas — evita queries duplicadas). */
   signedUrl?: string | null;
+  /** URL externa direta (ex: hospedagem externa ou legado). */
+  image_url?: string | null;
   /** Caminho no storage. Só use quando NÃO houver forma de agregar em lote. */
   path?: string | null;
   alt?: string;
@@ -41,6 +43,7 @@ interface Props {
  */
 export function ProductThumb({
   signedUrl,
+  image_url,
   path,
   alt = "Produto",
   size = "sm",
@@ -48,7 +51,7 @@ export function ProductThumb({
 }: Props) {
   const shouldFetch = signedUrl === undefined && !!path;
   const { data: signed = [] } = useSignedImageUrls(shouldFetch ? [path!] : []);
-  const url = signedUrl ?? signed[0]?.signedUrl ?? null;
+  const url = signedUrl ?? signed[0]?.signedUrl ?? image_url ?? null;
 
   return (
     <div

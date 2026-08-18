@@ -126,7 +126,7 @@ export function ProductPickerDialog({
                     checked={isSel}
                     onCheckedChange={() => toggle(p.id)}
                   />
-                  <ProductThumb signedUrl={url} size="sm" alt={p.name} />
+                  <ProductThumb signedUrl={url} image_url={p.image_url} size="sm" alt={p.name} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{p.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
