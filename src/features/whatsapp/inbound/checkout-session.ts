@@ -862,10 +862,10 @@ export async function advanceCheckout(args: {
     case "fulfillment": {
       const kind = parseFulfillment(text);
       if (!kind) return { session, text: PROMPTS.fulfillment, aborted: false };
-      const updated = next(session, { fulfillment: kind, step: "payment" }, now);
+      const updated = next(session, { fulfillment: kind, step: "summary" }, now);
       return {
         session: updated,
-        text: PROMPTS.payment,
+        text: formatCheckoutSummary(updated, args.cart),
         aborted: false,
       };
     }
