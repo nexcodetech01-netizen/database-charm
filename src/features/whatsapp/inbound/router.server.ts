@@ -1,9 +1,10 @@
 import { parseWebsiteCatalogOrder } from "./intent-detector";
-import { getCartSession, setProductQuantity } from "./cart-session.server";
-import { createCheckoutSession, handleCheckoutTurn } from "./checkout-session.server";
-import { sendWhatsAppText } from "./whatsapp.server";
+import { getCartSession, saveCartSession } from "./cart-session.server";
+import { peekCheckoutSession, saveCheckoutSession, handleCheckoutTurn, dropCheckoutSession } from "./checkout-session.server";
+import { createCheckoutSession } from "./checkout-session";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { recordConfirmedOrder } from "./commercial-inbox.server";
+import { sendWhatsAppText } from "./whatsapp.server-C84o1Tlj";
 
 // Função para formatar saudações baseada na hora
 const getGreeting = () => {
@@ -13,30 +14,9 @@ const getGreeting = () => {
   return "Boa noite!";
 };
 
-// Detecção simples de intenção de compra e dados (conforme router.server.ts)
-const isPurchaseIntent = (text: string) => /quero|comprar|gostei|valor|preço|quanto/i.test(text);
-const isDataSubmissionIntent = (text: string) => /cpf|endereço|cep|rua|pix|cartão|dinheiro/i.test(text);
-const detectPaymentMethod = (text: string) => {
-  if (/pix/i.test(text)) return "pix";
-  if (/cartão|cartao/i.test(text)) return "card";
-  if (/dinheiro/i.test(text)) return "money";
-  return null;
-};
-
-// Mock de phoneVariants
 const phoneVariants = (waId: string) => [waId, waId.replace("@s.whatsapp.net", "")];
 
-/**
- * Roteador Inbound Principal para WhatsApp
- * 
- * Este arquivo centraliza a lógica de decisão para mensagens recebidas.
- * Prioridade:
- * 1. Eventos de sistema ([PEDIDO-CATALOGO])
- * 2. Fluxo de Checkout Ativo
- * 3. Detecção de Intenções (Compra, Dúvidas, etc)
- * 4. Bella AI (Fallback)
- */
-export async function processOneMessage({ db, msg, tenant, startedAt }) {
+export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt }: any) {
   const variants = phoneVariants(msg.waContactId);
   const canonical = variants.find((v) => v.startsWith("55") && v.length === 13) ?? msg.waContactId;
 
@@ -122,16 +102,6 @@ export async function processOneMessage({ db, msg, tenant, startedAt }) {
   const conversationId = conversation.id;
   const conversationStatus = String(conversation.status ?? "open");
 
-  console.log("[whatsapp.inbound] conversa resolvida", {
-    from: msg.phone,
-    canonical,
-    companyId: tenant.companyId,
-    contactId,
-    conversationId,
-    status: conversationStatus,
-    body: msg.text,
-  });
-
   // 3. Persistir Mensagem e Dedup
   const { error: dedupErr } = await db.from("whatsapp_messages").insert({
     company_id: tenant.companyId,
@@ -145,24 +115,14 @@ export async function processOneMessage({ db, msg, tenant, startedAt }) {
   });
 
   if (dedupErr && (dedupErr.code === "23505" || String(dedupErr.message ?? "").includes("duplicate"))) {
-    console.log(
-      JSON.stringify({
-        scope: "whatsapp.inbound",
-        level: "info",
-        msg: "duplicado ignorado",
-        waMessageId: msg.waMessageId,
-      }),
-    );
     return;
   }
 
   // Logs de Auditoria para o Problema do [PEDIDO-CATALOGO]
-  console.log(`[AUDIT-LOG] Versão: ${process.env.VITE_APP_VERSION || "N/A"} - Commit: 49d18947`);
   console.log(`[AUDIT-LOG] Mensagem bruta: "${msg.text}"`);
   console.log(`[AUDIT-LOG] JSON: ${JSON.stringify(msg.text)}`);
   console.log(`[AUDIT-LOG] CharCodes: ${Array.from(msg.text.slice(0, 20)).map(c => c.charCodeAt(0)).join(",")}`);
 
-  // 3c-pre-ante) Resumo de pedido colado a partir do catálogo do site
   const isCatalogOrderMessage = msg.text.trimStart().startsWith("[PEDIDO-CATALOGO]");
   console.log(`[AUDIT-LOG] isCatalogOrderMessage: ${isCatalogOrderMessage}`);
 
@@ -179,12 +139,22 @@ export async function processOneMessage({ db, msg, tenant, startedAt }) {
     }
 
     // Inicia nova sessão limpa
-    await createCheckoutSession(tenant.companyId, msg.phone);
+    const freshSession = createCheckoutSession(tenant.companyId, msg.phone);
+    await saveCheckoutSession(freshSession);
     
     // Sincroniza itens
-    for (const item of websiteOrder.items) {
-      await setProductQuantity(tenant.companyId, msg.phone, item.name, item.quantity);
-    }
+    const cart = {
+      companyId: tenant.companyId,
+      phone: msg.phone,
+      items: websiteOrder.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price || 0
+      })),
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    await saveCartSession(cart);
 
     // Pergunta Pagamento imediatamente
     const replyText = `${getGreeting()}\n\nRecebi seu pedido do catálogo! 🛍️\n\nComo você prefere pagar: Pix, Cartão ou Dinheiro?`;
@@ -206,7 +176,6 @@ export async function processOneMessage({ db, msg, tenant, startedAt }) {
   }
 
   // 4. Fluxo de Checkout (Conversacional)
-  // Se a conversa estiver sob operador, Bella pausa.
   if (conversationStatus === "human" || conversationStatus === "resolved" || conversationStatus === "archived") {
     return;
   }
@@ -231,9 +200,15 @@ export async function processOneMessage({ db, msg, tenant, startedAt }) {
       provider: "catalog-nav",
       skill_id: "catalog.checkout"
     });
+    
+    if (checkoutTurn.confirmed && checkoutTurn.completedSession) {
+      await recordConfirmedOrder({
+        db,
+        companyId: tenant.companyId,
+        phone: msg.phone,
+        session: checkoutTurn.completedSession
+      });
+    }
     return;
   }
-
-  // 5. Handlers Legados e IA (Simplificado para o audit)
-  // ... resto da lógica de intents ...
 }
