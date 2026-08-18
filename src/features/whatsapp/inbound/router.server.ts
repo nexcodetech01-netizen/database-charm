@@ -642,7 +642,7 @@ result: NOT INTERCEPTED (NO ACTIVE CHECKOUT)`);
   const purchaseIntent = isPurchaseIntent(msg.text);
   const dataSubmission = isDataSubmissionIntent(msg.text);
 
-  if (purchaseIntent) {
+  if (purchaseIntent && !isCatalogOrderMessage) {
     const greeting = getGreeting();
     const replyText = `${greeting}\n\nPerfeito! Vou separar para você. 📦\n\nMe informa, por favor:\n1. Seu Nome Completo\n2. Endereço com CEP para entrega\n3. Forma de pagamento (Pix, Cartão ou Dinheiro)`;
     
