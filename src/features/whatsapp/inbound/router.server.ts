@@ -209,11 +209,12 @@ export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt 
     });
     
     if (checkoutTurn.confirmed && checkoutTurn.completedSession) {
+      const currentCart = await getCartSession(tenant.companyId, msg.phone);
       await recordConfirmedOrder({
         db,
         companyId: tenant.companyId,
-        phone: msg.phone,
-        session: checkoutTurn.completedSession
+        session: checkoutTurn.completedSession,
+        cart: currentCart
       });
     }
     return;
