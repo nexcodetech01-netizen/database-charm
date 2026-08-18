@@ -17,6 +17,7 @@ import { isValidCNPJ, isValidCPF } from "/dev-server/src/lib/validators";
 
 export type CheckoutStep =
   | "WAITING_PAYMENT_METHOD"
+  | "WAITING_PAYMENT_METHOD_OTHER_CITY"
   | "WAITING_CHANGE_INFO"
   | "WAITING_CUSTOMER_NAME"
   | "WAITING_DOCUMENT"
@@ -34,6 +35,7 @@ export type CheckoutStep =
   | "change_info"
   | "summary"
   | "done";
+
 
 export type FulfillmentKind = "pickup" | "delivery";
 export type PaymentKind = "pix" | "card" | "cash";
@@ -78,6 +80,7 @@ export interface CheckoutSession {
   changeAmount: number | null;
   createdAt: number;
   updatedAt: number;
+  isOtherCity?: boolean; // New flag for city distinction
 }
 
 /** Tempo de vida do fechamento conversacional (30 min sem interação). */
@@ -295,6 +298,13 @@ export const PROMPTS: Record<Exclude<CheckoutStep, "summary" | "done">, string> 
     "2. Cartão",
     "3. Dinheiro",
   ].join("\n"),
+  WAITING_PAYMENT_METHOD_OTHER_CITY: [
+    "Qual forma de pagamento você prefere? 😊",
+    "",
+    "1. PIX",
+    "2. Cartão",
+  ].join("\n"),
+
   WAITING_CHANGE_INFO: [
     "💵 Você vai precisar de troco?",
     "Se sim, me informe para quanto. Ex.: R$ 50,00",
@@ -589,19 +599,31 @@ export async function advanceCheckout(args: {
 
   console.log(`[AUDIT] ADVANCE_CHECKOUT: step=${session.step}, payment=${session.payment}, text=${JSON.stringify(text)}`);
   switch (session.step) {
-    case "WAITING_PAYMENT_METHOD": {
+    case "WAITING_PAYMENT_METHOD":
+    case "WAITING_PAYMENT_METHOD_OTHER_CITY": {
       const payment = parsePayment(text);
+      
+      // Rejeição explícita de dinheiro para outra cidade
+      if (payment === "cash" && session.isOtherCity) {
+        return {
+          session,
+          text: "Poxa, para envios para outra cidade aceitamos apenas PIX ou Cartão. 😊 Qual das duas você prefere? \n\n1. PIX\n2. Cartão",
+          aborted: false
+        };
+      }
+
       if (!payment) {
+        const optionsText = session.isOtherCity ? "Pix ou cartão? 😊" : "Pix, cartão ou dinheiro? 😊";
         return { 
           session, 
-          text: "Não consegui identificar a forma de pagamento. Você prefere Pix, cartão ou dinheiro? 😊", 
+          text: `Não consegui identificar a forma de pagamento. Você prefere ${optionsText}`, 
           aborted: false 
         };
       }
       
       const updated = next(session, { payment }, now);
       
-      // Se for dinheiro, pergunta do troco obrigatoriamente
+      // Se for dinheiro, pergunta do troco obrigatoriamente (só chega aqui se não for isOtherCity)
       if (payment === "cash") {
         return {
           session: next(updated, { step: "WAITING_CHANGE_INFO" }, now),
@@ -619,6 +641,7 @@ export async function advanceCheckout(args: {
         aborted: false
       };
     }
+
     case "WAITING_CHANGE_INFO": {
       const t = normalize(text);
       const isNo = SKIP_RE.test(t) || t === "nao";
