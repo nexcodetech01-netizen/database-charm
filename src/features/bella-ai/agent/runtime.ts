@@ -32,7 +32,14 @@ export interface AgentRuntimeTrace {
   fallbackReason?: string;
   executionTimeMs: number;
   response?: AgentResponse;
+  telemetry?: {
+    provider: string;
+    model?: string;
+    latencyMs?: number;
+    fallbackUsed?: boolean;
+  };
 }
+
 
 export interface AgentRuntimeResult {
   /** null quando o consumidor deve usar o fluxo legado. */
@@ -76,6 +83,12 @@ export async function handleWithAgentRuntime(
         companyId: input.ctx.companyId 
       }
     });
+
+    // Diagnóstico via telemetria do Gateway
+    const telemetry = aiResult.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw
+      ? (aiResult.raw as any).telemetry
+      : { provider: aiResult.provider, fallbackUsed: aiResult.error?.fallbackUsed };
+
 
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
       intent = {
@@ -122,7 +135,11 @@ export async function handleWithAgentRuntime(
         fallback: false,
         executionTimeMs: Date.now() - startedAt.getTime(),
         response,
+        telemetry: aiResult.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw 
+          ? (aiResult.raw as any).telemetry 
+          : { provider: aiResult.provider }
       },
+
     };
   } catch (err) {
     await recordFallback(input.ctx, intent, startedAt, `runtime_error:${errMsg(err)}`);
@@ -143,7 +160,9 @@ function finalizeFallback(
       fallback: true,
       fallbackReason: reason,
       executionTimeMs: Date.now() - startedAt.getTime(),
+      telemetry: { provider: 'unknown', fallbackUsed: true }
     },
+
   };
 }
 
