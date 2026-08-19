@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import { broadcastInboxEvent } from "../lib/inbox-sync";
 import { NotificationSettings } from "@/hooks/use-notification-settings";
+import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
 
 /**
  * Hook para ativar o listener em tempo real da tabela `whatsapp_message_events`
@@ -15,18 +16,19 @@ export function useExternalNotificationsRealtime(
 ) {
   const processedIds = useRef<Set<string>>(new Set());
   const pendingEvents = useRef<{ event: any, isHistorical: boolean }[]>([]);
+  const addLog = useLogStore(state => state.addLog);
 
   // Efeito para processar eventos pendentes assim que as configurações carregarem
   useEffect(() => {
-    console.log(`[EXT-NOTIF] settingsLoading: ${settingsLoading}`);
+    addLog('[EXT-NOTIF]', `settingsLoading: ${settingsLoading}`);
     if (!settingsLoading && settings && pendingEvents.current.length > 0) {
-      console.log(`[EXT-NOTIF] processing ${pendingEvents.current.length} pending events after settings load.`);
+      addLog('[EXT-NOTIF]', `processing ${pendingEvents.current.length} pending events after settings load.`);
       const eventsToProcess = [...pendingEvents.current];
       pendingEvents.current = [];
       
       eventsToProcess.forEach(({ event, isHistorical }) => {
         if (event.wa_message_id?.includes("n8n-10")) {
-          console.log(`[EXT-NOTIF] processing pending event n8n-10`);
+          addLog('[EXT-NOTIF]', `processing pending event n8n-10`);
         }
         emitEvent(event, isHistorical);
       });
@@ -35,7 +37,7 @@ export function useExternalNotificationsRealtime(
 
   const emitEvent = (event: any, isHistorical: boolean) => {
     if (event.wa_message_id?.includes("n8n-10")) {
-      console.log(`[EXT-NOTIF] emitting catalog.order.received n8n-10`);
+      addLog('[EXT-NOTIF]', `emitting catalog.order.received n8n-10`);
     }
     if (!companyId) return;
 
@@ -71,12 +73,12 @@ export function useExternalNotificationsRealtime(
   };
 
   useEffect(() => {
-    console.log(`[EXT-NOTIF] hook mounted`);
+    addLog('[EXT-NOTIF]', `hook mounted`);
     if (!companyId) return;
 
     const processExternalEvent = (event: any, isHistorical = false) => {
       if (event.wa_message_id?.includes("n8n-10")) {
-        console.log(`[EXT-NOTIF] processing event n8n-10`);
+        addLog('[EXT-NOTIF]', `processing event n8n-10`);
       }
       // Evita duplicidade
       if (processedIds.current.has(event.wa_message_id)) return;
@@ -85,7 +87,7 @@ export function useExternalNotificationsRealtime(
       // Se as configurações ainda estão carregando, armazena no buffer
       if (settingsLoading || !settings) {
         if (event.wa_message_id?.includes("n8n-10")) {
-          console.log(`[EXT-NOTIF] queued pending event n8n-10`);
+          addLog('[EXT-NOTIF]', `queued pending event n8n-10`);
         }
         pendingEvents.current.push({ event, isHistorical });
         return;
@@ -97,7 +99,7 @@ export function useExternalNotificationsRealtime(
 
     // 2. Consulta inicial para não perder notificações enquanto offline
     const fetchRecentExternalEvents = async () => {
-      console.log(`[EXT-NOTIF] historical query started`);
+      addLog('[EXT-NOTIF]', `historical query started`);
       const { data, error } = await supabase
         .from("whatsapp_message_events")
         .select("*")
@@ -108,10 +110,10 @@ export function useExternalNotificationsRealtime(
         .limit(10);
 
       if (!error && data) {
-        console.log(`[EXT-NOTIF] historical events count: ${data.length}`);
+        addLog('[EXT-NOTIF]', `historical events count: ${data.length}`);
         const hasN8N10 = data.some(row => row.wa_message_id?.includes("n8n-10"));
         if (hasN8N10) {
-          console.log(`[EXT-NOTIF] found n8n event: n8n-10`);
+          addLog('[EXT-NOTIF]', `found n8n event: n8n-10`);
         }
         [...data].reverse().forEach(row => processExternalEvent(row, true));
       }
