@@ -81,12 +81,16 @@ function statusVariant(status: string) {
 function CommercialInboxPage() {
   const perms = usePermissions();
   const companyId = perms.companyId ?? null;
-  const { data, isLoading } = useCommercialInbox(companyId);
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useCommercialInbox(companyId, page);
   useCommercialInboxRealtime(companyId);
   const updateStatus = useUpdateCommercialInboxStatus();
   const [selected, setSelected] = useState<CommercialInboxTicket | null>(null);
 
-  const tickets = useMemo(() => data ?? [], [data]);
+  const tickets = useMemo(() => data?.rows ?? [], [data]);
+  const total = data?.total ?? 0;
+  const pageSize = 50;
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
@@ -201,6 +205,34 @@ function CommercialInboxPage() {
               ))}
             </TableBody>
           </Table>
+        )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Mostrando {tickets.length} de {total} atendimentos
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm font-medium">
+                Página {page} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Próxima
+              </Button>
+            </div>
+          </div>
         )}
       </Card>
 

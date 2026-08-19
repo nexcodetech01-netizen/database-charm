@@ -51,24 +51,31 @@ export interface CommercialInboxTicket {
 
 const KEY = ["whatsapp-commercial-inbox"] as const;
 
-export function useCommercialInbox(companyId: string | null) {
+export function useCommercialInbox(companyId: string | null, page = 1) {
+  const pageSize = 50;
   const query = useQuery({
-    queryKey: [...KEY, companyId],
+    queryKey: [...KEY, companyId, page],
     enabled: Boolean(companyId),
-    queryFn: async (): Promise<CommercialInboxTicket[]> => {
-      const { data, error } = await supabase
+    queryFn: async (): Promise<{ rows: CommercialInboxTicket[]; total: number }> => {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
         .from("whatsapp_commercial_inbox")
         .select(`
           id, phone, buyer_name, item_count, total, status, origin, created_at,
           fulfillment, delivery, payment, sale_id, converted_at,
           full_name, person_type, cpf, cnpj, birth_date, zip_code,
           state, city, district, street, number, complement, items
-        `)
+        `, { count: "exact" })
         .eq("company_id", companyId!)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .range(from, to);
       if (error) throw error;
-      return (data ?? []) as unknown as CommercialInboxTicket[];
+      return {
+        rows: (data ?? []) as unknown as CommercialInboxTicket[],
+        total: count ?? 0,
+      };
     },
   });
 
