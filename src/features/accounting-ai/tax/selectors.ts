@@ -6,6 +6,7 @@
  */
 import { formatCurrency } from "@/lib/format";
 import { SIMPLES_LIMIT } from "@/features/tax";
+import { companyDayStartUtc, companyStartOfDay } from "@/lib/time/company-day";
 import type {
   BellaTaxMetric,
   BellaTaxSimulation,
@@ -51,8 +52,13 @@ export function daysToDue(
   today = new Date(),
 ): number | null {
   if (!dueDate) return null;
-  const due = new Date(`${dueDate.slice(0, 10)}T00:00:00Z`).getTime();
-  const ref = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  // FIX (2026-08-19): "T00:00:00Z" tratava a data de vencimento como
+  // UTC, e "today" usava getters locais do servidor (não do fuso do
+  // Brasil) — mesma classe de bug já corrigida em Relatórios/Painel
+  // Executivo/Central de KPIs/Marketing. Perto da virada do dia (BRT),
+  // isso podia mostrar o prazo de vencimento com 1 dia de diferença.
+  const due = new Date(companyDayStartUtc(dueDate.slice(0, 10))).getTime();
+  const ref = companyStartOfDay(today).getTime();
   if (!Number.isFinite(due)) return null;
   return Math.round((due - ref) / DAY_MS);
 }

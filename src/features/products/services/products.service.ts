@@ -51,48 +51,40 @@ const DETAIL_SELECT = `
   )
 `;
 
+import { computeKitBottleneck } from "../lib/reconcile-kit";
+
 function calculateKitStock(composition: any[], parentId?: string) {
   if (!composition || composition.length === 0) return 0;
-  
+
   // Garantir que a busca na tabela kit_components use estritamente o ID do produto do kit atual
-  let components = parentId 
+  const components = parentId
     ? composition.filter(c => c.parent_id === parentId || c.parent_product_id === parentId)
     : composition;
 
   if (components.length === 0) return 0;
 
-  // CORREÇÃO: Limpeza e deduplicação de componentes para evitar contagem duplicada ou somas incorretas
-  // Mantemos apenas um registro por component_id (o primeiro que aparecer)
+  // Deduplicação por component_id — mantemos só um registro por componente,
+  // e achatamos o formato pra bater com o esperado por computeKitBottleneck.
   const uniqueComponentsMap = new Map();
-  components.forEach(c => {
+  components.forEach((c: any) => {
     const compId = c.component_id || c.id;
-    if (compId && !uniqueComponentsMap.has(compId)) {
-      uniqueComponentsMap.set(compId, c);
-    }
-  });
-  
-  const uniqueComponents = Array.from(uniqueComponentsMap.values());
-
-  const stocks = uniqueComponents.map((c: any) => {
-    // Garantimos que estamos pegando o estoque do produto vinculado ao componente individualmente
+    if (!compId || uniqueComponentsMap.has(compId)) return;
     const componentProduct = c.product || c.produto_componente || c;
-    const componentStock = Number(componentProduct?.stock ?? 0);
-    const quantityInKit = Number(c.quantity || 1);
-    const reservedQuantity = c.reserved_quantity != null ? Number(c.reserved_quantity) : null;
-    
-    const safeQuantity = quantityInKit > 0 ? quantityInKit : 1;
-    const physicalMax = Math.floor(componentStock / safeQuantity);
-    
-    // Se houver reserva, ela é o teto, mas nunca ultrapassa o físico
-    if (reservedQuantity !== null) {
-      return Math.min(physicalMax, reservedQuantity);
-    }
-    
-    return physicalMax;
+    uniqueComponentsMap.set(compId, {
+      component_id: compId,
+      quantity: Number(c.quantity || 1),
+      stock: Number(componentProduct?.stock ?? 0),
+      cost: Number(componentProduct?.cost ?? 0),
+      reserved_quantity: c.reserved_quantity != null ? Number(c.reserved_quantity) : null,
+    });
   });
-  
-  // O estoque do kit é o valor MÍNIMO entre os componentes (gargalo)
-  return Math.min(...stocks);
+
+  // CONSOLIDAÇÃO (2026-08-19): essa função tinha uma implementação
+  // própria do cálculo de gargalo/reserva, praticamente idêntica à de
+  // `computeKitBottleneck` (reconcile-kit.ts) — mesma classe de
+  // duplicação já corrigida antes em outros lugares do kit. Reutiliza
+  // a função única agora, pra as duas nunca mais poderem divergir.
+  return computeKitBottleneck(Array.from(uniqueComponentsMap.values()) as any);
 }
 
 export const productsService = {

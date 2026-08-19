@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/format";
 import { cashCoverageDays } from "../insights";
 import { makeNotification } from "./helpers";
 import { unavailableProviders } from "./providers";
+import { companyDayStartUtc, companyDayKey } from "@/lib/time/company-day";
 import type { BellaNotification, ProactiveContext, ProactiveRule } from "./types";
 
 /** Variação mínima (%) para considerar movimento relevante. */
@@ -31,10 +32,17 @@ function pct(value: number): string {
 }
 
 function daysUntil(dateIso: string, referenceIso: string): number | null {
-  const due = Date.parse(`${dateIso.slice(0, 10)}T00:00:00Z`);
-  const ref = Date.parse(`${referenceIso.slice(0, 10)}T00:00:00Z`);
-  if (!Number.isFinite(due) || !Number.isFinite(ref)) return null;
-  return Math.round((due - ref) / 86_400_000);
+  // FIX (2026-08-19): "T00:00:00Z" tratava datas como UTC — inofensivo
+  // quando os dois lados já eram datas "puras" (sem hora), mas
+  // `referenceIso` normalmente vem de `new Date().toISOString()` (um
+  // timestamp real). Cortar os 10 primeiros caracteres de um timestamp
+  // UTC pega o dia em UTC, não no fuso do Brasil — perto da virada do
+  // dia (21h+ BRT), isso adiantava a data de referência em 1 dia,
+  // fazendo alertas de vencimento de imposto disparar um dia errado.
+  const due = companyDayStartUtc(dateIso.slice(0, 10));
+  const ref = companyDayStartUtc(companyDayKey(referenceIso));
+  if (!Number.isFinite(new Date(due).getTime()) || !Number.isFinite(new Date(ref).getTime())) return null;
+  return Math.round((new Date(due).getTime() - new Date(ref).getTime()) / 86_400_000);
 }
 
 export const receitaCrescendoRule: ProactiveRule = (ctx) => {
