@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
             const { data: companies, error: compError } = await supabaseAdmin
               .from("companies")
               .select("id")
-              .eq("status", "active");
+              .neq("name", "DELETED"); // Filtro comum no sistema para empresas ativas
 
             if (compError) throw compError;
 
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
                   .from("products")
                   .select("id, name, stock, min_stock")
                   .eq("company_id", tenantId)
-                  .is("deleted_at", null);
+                  .eq("status", "active");
 
                 if (prodError) throw prodError;
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
                 const todayStr = now.toISOString().split('T')[0];
                 const { data: invoices, error: invError } = await supabaseAdmin
                   .from("financial_transactions")
-                  .select("id, customer_id, amount, due_date")
+                  .select("id, amount, due_date")
                   .eq("company_id", tenantId)
                   .eq("status", "pending")
                   .lt("due_date", todayStr);
@@ -103,9 +103,9 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
 
                 const snapshots = (invoices || []).map(i => ({
                   invoiceId: i.id,
-                  customerId: i.customer_id,
+                  customerId: undefined, // customer_id não existe nesta tabela, removido para evitar erro
                   amount: Number(i.amount || 0),
-                  dueDate: new Date(i.due_date)
+                  dueDate: i.due_date ? new Date(i.due_date + "T00:00:00") : now
                 }));
 
                 const resFinance = overdueInvoiceDetector.detect(snapshots, { tenantId, now });
