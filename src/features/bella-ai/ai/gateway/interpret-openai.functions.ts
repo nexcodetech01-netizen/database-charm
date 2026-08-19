@@ -126,26 +126,41 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
 
       if (!response.ok) {
         const errText = await response.text().catch(() => "no_body");
-        let info = { status: response.status, body: errText };
+        let info: Record<string, any> = { status: response.status };
+        
         try {
           const parsed = JSON.parse(errText);
           if (parsed.error) {
-            info = { ...info, ...parsed.error };
+            info = { 
+              ...info, 
+              type: parsed.error.type,
+              code: parsed.error.code,
+              param: parsed.error.param,
+              message: parsed.error.message
+            };
           }
-        } catch {}
+        } catch {
+          info.message = errText;
+        }
 
         console.error("[bella.interpret.openai] API Error", {
-          status: response.status,
-          type: (info as any).type,
-          code: (info as any).code,
-          param: (info as any).param,
-          message: (info as any).message || (info as any).body,
+          ...info,
           model,
           endpoint: GATEWAY_URL,
           latency: Date.now() - startedAt
         });
 
-        throw new Error(`OPENAI_HTTP_${response.status}`);
+        // Lançar um erro que contenha os dados seguros serializados
+        const error = new Error("OPENAI_API_ERROR");
+        (error as any).safeDetails = {
+          status: info.status,
+          type: info.type,
+          code: info.code,
+          param: info.param,
+          message: info.message,
+          model
+        };
+        throw error;
       }
 
       const payload = await response.json();
