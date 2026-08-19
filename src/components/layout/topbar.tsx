@@ -30,6 +30,9 @@ import { NotificationSettingsPanel } from "@/components/settings/notification-se
 import { useNotificationSettings } from "@/hooks/use-notification-settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
+import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
+
 
 
 export function Topbar() {
@@ -58,7 +61,13 @@ export function Topbar() {
     totalPages,
     filteredCount
   } = useBrowserNotifications();
+  
+  // Ativa listeners de tempo real para notificações externas e internas
+  useExternalNotificationsRealtime(user?.user_metadata?.company_id);
+  useCommercialInboxRealtime(user?.user_metadata?.company_id);
+
   const lastNotifiedRef = useRef<string | null>(null);
+
   const [showSettings, setShowSettings] = useState(false);
 
 
