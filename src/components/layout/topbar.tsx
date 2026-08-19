@@ -344,12 +344,13 @@ export function Topbar() {
             </Button>
           )}
 
-          <Button
-            variant="ghost"
-            size="icon"
+          <Button 
+            variant="ghost" 
+            size="icon" 
             onClick={() => setShowSettings(true)}
             title="Configurações de Notificação"
           >
+
             <Settings className="h-4 w-4" />
           </Button>
         </div>
