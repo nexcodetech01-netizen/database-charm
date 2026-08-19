@@ -9,9 +9,7 @@ import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
  * Hook para ativar o listener em tempo real da tabela `whatsapp_message_events`
  * para capturar eventos de notificação disparados por sistemas externos (n8n).
  * 
- * Correção (Fase 3): settings e settingsLoading agora são lidos via Refs para evitar 
- * que a troca de estado de carregamento interrompa/reinicie a inscrição Realtime, 
- * o que causava perda de eventos durante a janela de reconexão.
+ * Correção (Fase 3): settings e settingsLoading via Refs + Sufixo aleatório no canal.
  */
 export function useExternalNotificationsRealtime(
   companyId: string | null, 
@@ -22,16 +20,13 @@ export function useExternalNotificationsRealtime(
   const pendingEvents = useRef<{ event: any, isHistorical: boolean }[]>([]);
   const addLog = useLogStore(state => state.addLog);
   
-  // Refs para ler o estado mais recente sem disparar o efeito de subscription
   const settingsRef = useRef(settings);
   const loadingRef = useRef(settingsLoading);
 
-  // Atualiza as refs quando os props mudam
   useEffect(() => {
     settingsRef.current = settings;
     loadingRef.current = settingsLoading;
     
-    // Se parou de carregar e temos settings, processa o que estiver no buffer
     if (!settingsLoading && settings && pendingEvents.current.length > 0) {
       addLog('[EXT-NOTIF]', `processing ${pendingEvents.current.length} pending events after settings load.`);
       const eventsToProcess = [...pendingEvents.current];
@@ -46,7 +41,6 @@ export function useExternalNotificationsRealtime(
   const emitEvent = (event: any, isHistorical: boolean) => {
     if (!companyId) return;
 
-    // No momento, focamos apenas em notificações de pedidos do catálogo (catalog.order.received)
     if (event.wa_message_id?.startsWith('n8n-')) {
       bellaEventEngine.emit({
         type: "catalog.order.received",
@@ -81,24 +75,22 @@ export function useExternalNotificationsRealtime(
     addLog('[EXT-NOTIF]', `hook mounted/company changed: ${companyId}`);
     if (!companyId) return;
 
+    // Sufixo aleatório para garantir unicidade do canal nesta montagem
+    const channelId = Math.random().toString(36).substring(7);
+
     const processExternalEvent = (event: any, isHistorical = false) => {
-      // Evita duplicidade
       if (processedIds.current.has(event.wa_message_id)) return;
       processedIds.current.add(event.wa_message_id);
 
-      // Se as configurações ainda estão carregando, armazena no buffer
-      // Usamos as refs para garantir que lemos o valor atual sem depender do fechamento do efeito
       if (loadingRef.current || !settingsRef.current) {
         addLog('[EXT-NOTIF]', `queued pending event: ${event.wa_message_id}`);
         pendingEvents.current.push({ event, isHistorical });
         return;
       }
 
-      // Se já temos settings, emite imediatamente
       emitEvent(event, isHistorical);
     };
 
-    // 2. Consulta inicial para não perder notificações enquanto offline
     const fetchRecentExternalEvents = async () => {
       addLog('[EXT-NOTIF]', `historical query started`);
       const { data, error } = await supabase
@@ -118,9 +110,8 @@ export function useExternalNotificationsRealtime(
 
     void fetchRecentExternalEvents();
 
-    // 3. Realtime subscription - Agora depende APENAS do companyId
     const channel = supabase
-      .channel(`external-notifications-${companyId}`)
+      .channel(`external-notifications-${companyId}-${channelId}`)
       .on(
         "postgres_changes",
         {
@@ -141,5 +132,5 @@ export function useExternalNotificationsRealtime(
       addLog('[EXT-NOTIF]', `cleaning up channel for company: ${companyId}`);
       void supabase.removeChannel(channel);
     };
-  }, [companyId]); // A dependência agora é APENAS o companyId
+  }, [companyId]); 
 }
