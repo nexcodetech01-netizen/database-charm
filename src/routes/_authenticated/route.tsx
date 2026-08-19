@@ -4,6 +4,7 @@ import { companyService } from "@/features/onboarding";
 import { AppLayout } from "@/components/layout/app-layout";
 import { NextActionProvider } from "@/components/feedback/next-action-provider";
 import { PaymentConfirmedListener } from "@/components/feedback/payment-confirmed-listener";
+import { NotificationLogPanel } from "@/features/diagnostics/components/notification-log-panel";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -40,6 +41,7 @@ function AuthenticatedLayout() {
       <PaymentConfirmedListener />
       <AppLayout>
         <Outlet />
+        <NotificationLogPanel />
       </AppLayout>
     </NextActionProvider>
   );

@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
+import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
 
 
 
@@ -40,6 +41,7 @@ export function Topbar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toggle: toggleMobileNav } = useMobileNav();
+  const addLog = useLogStore(state => state.addLog);
   
   const [catalogOrdersCount, setCatalogOrdersCount] = useState(0);
   const { settings, isLoading: settingsLoading } = useNotificationSettings();
@@ -91,40 +93,40 @@ export function Topbar() {
       if (entry.action === "created") {
         const ticketId = (event.payload as any)?.ticketId;
         if (ticketId === "10") {
-          console.log(`[TOPBAR-NOTIF] received catalog.order.received n8n-10`);
+          addLog('[TOPBAR-NOTIF]', `received catalog.order.received n8n-10`);
         }
         
         updateCount();
         
         const config = settings[event.type];
         if (ticketId === "10") {
-          console.log(`[TOPBAR-NOTIF] config exists: ${!!config}`);
+          addLog('[TOPBAR-NOTIF]', `config exists: ${!!config}`);
           if (config) {
-            console.log(`[TOPBAR-NOTIF] sound: ${config.sound}`);
-            console.log(`[TOPBAR-NOTIF] browser: ${config.browser}`);
+            addLog('[TOPBAR-NOTIF]', `sound: ${config.sound}`);
+            addLog('[TOPBAR-NOTIF]', `browser: ${config.browser}`);
           }
         }
         if (!config) return;
 
         if (ticketId === "10") {
-          console.log(`[TOPBAR-NOTIF] duplicate check n8n-10`);
+          addLog('[TOPBAR-NOTIF]', `duplicate check n8n-10`);
         }
         if (ticketId && notifiedIdsRef.current.has(ticketId)) {
           if (ticketId === "10") {
-            console.log(`[TOPBAR-NOTIF] discarded duplicate n8n-10`);
+            addLog('[TOPBAR-NOTIF]', `discarded duplicate n8n-10`);
           }
           return;
         }
         if (ticketId) notifiedIdsRef.current.add(ticketId);
 
         if (ticketId === "10") {
-          console.log(`[TOPBAR-NOTIF] showing notification n8n-10`);
+          addLog('[TOPBAR-NOTIF]', `showing notification n8n-10`);
         }
 
         // Notificação sonora
         if (config.sound && audioRef.current) {
           if (ticketId === "10") {
-            console.log(`[TOPBAR-NOTIF] playing sound n8n-10`);
+            addLog('[TOPBAR-NOTIF]', `playing sound n8n-10`);
           }
           audioRef.current.play().catch(() => {
             // Browsers bloqueiam autoplay sem interação
@@ -148,7 +150,7 @@ export function Topbar() {
         // Notificação do Navegador (respeita preferência)
         if (config.browser) {
           if (ticketId === "10") {
-            console.log(`[TOPBAR-NOTIF] browser notification n8n-10`);
+            addLog('[TOPBAR-NOTIF]', `browser notification n8n-10`);
           }
           notify(title, {
             body: description,
