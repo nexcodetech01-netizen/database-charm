@@ -38,7 +38,20 @@ export function useNotificationSettings() {
         return DEFAULT_SETTINGS;
       }
 
-      return (data?.notification_settings as NotificationSettings) || DEFAULT_SETTINGS;
+      const dbSettings = (data?.notification_settings as NotificationSettings) || {};
+
+      // Mesclagem profunda para garantir que todas as chaves do DEFAULT_SETTINGS existam
+      // e que as preferências do usuário tenham prioridade.
+      const mergedSettings = { ...DEFAULT_SETTINGS };
+
+      Object.keys(dbSettings).forEach((key) => {
+        mergedSettings[key] = {
+          ...DEFAULT_SETTINGS[key],
+          ...dbSettings[key],
+        };
+      });
+
+      return mergedSettings;
     },
     enabled: !!user?.id,
   });
