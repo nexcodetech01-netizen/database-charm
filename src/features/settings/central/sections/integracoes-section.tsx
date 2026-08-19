@@ -3,7 +3,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { testAsaasConnection } from "@/features/bella-pay/lib/bella-pay.functions";
+import { useBellaPayConfig } from "@/features/bella-pay/hooks/use-bella-pay";
 
 import type { LucideIcon } from "lucide-react";
 import {
@@ -98,16 +98,21 @@ export function IntegracoesSection() {
   const [mlOpen, setMlOpen] = useState(false);
   const queryClient = useQueryClient();
   const getMlIntegration = useServerFn(getMercadoLivreIntegration);
-  const bellaPayConfigFn = useServerFn(testAsaasConnection);
   const router = useRouter();
   const companyId = (router.state.matches.find(m => (m.context as any)?.company?.id)?.context as any)?.company?.id;
 
-  const { data: bellaPayConfig } = useQuery({
-    queryKey: ["bella-pay", "config", companyId],
-    queryFn: () => bellaPayConfigFn({ data: { companyId, environment: "sandbox" } }),
-    enabled: !!companyId,
-    retry: false,
-  });
+  // CORREÇÃO: antes esse card fazia um teste AO VIVO (`testAsaasConnection`)
+  // com o ambiente fixo em "sandbox", ignorando qual ambiente a empresa
+  // realmente configurou (a maioria usa Produção). Se não houvesse chave
+  // de sandbox cadastrada — o caso comum — o teste falhava sempre e o
+  // card mostrava "Não conectado" mesmo com a Produção funcionando
+  // perfeitamente. Também usava a mesma chave de cache do React Query
+  // (`["bella-pay","config",companyId]`) que `useBellaPayConfig`, só que
+  // com um formato de dado diferente — colisão que podia fazer uma tela
+  // "roubar" o cache errado da outra. Agora lê o status real já testado
+  // e salvo no banco (o mesmo que a tela de Configuração do Bella Pay
+  // usa), sem repetir um teste ao vivo nem forçar ambiente errado.
+  const { data: bellaPayConfig } = useBellaPayConfig(companyId);
 
   const { data: mlIntegration } = useQuery({
     queryKey: MERCADOLIVRE_INTEGRATION_QUERY_KEY,
@@ -115,7 +120,7 @@ export function IntegracoesSection() {
     staleTime: 30_000,
   });
   const mlConnected = mlIntegration?.connected ?? false;
-  const asaasConnected = bellaPayConfig?.ok ?? false;
+  const asaasConnected = bellaPayConfig?.connection_status === "connected";
 
   const handleMlStatusChange = () => {
     void queryClient.invalidateQueries({ queryKey: MERCADOLIVRE_INTEGRATION_QUERY_KEY });
