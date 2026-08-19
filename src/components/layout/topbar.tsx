@@ -160,7 +160,8 @@ export function Topbar() {
     const updateCount = () => {
 
       const active = bellaEventRegistry.listActive({
-        tenantId: companyId
+        tenantId: companyId || undefined
+
       });
       const catalogOrders = active.filter(e => e.type === "catalog.order.received");
       setCatalogOrdersCount(catalogOrders.length);
@@ -259,7 +260,7 @@ export function Topbar() {
       } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
         // Quando resolvido em outra aba, removemos do registry local se existir
         bellaEventRegistry.resolveByPayload({
-          tenantId: companyId,
+          tenantId: companyId || "",
           type: "catalog.order.received",
           payload: { entityId: msg.payload.ticketId }
         });
