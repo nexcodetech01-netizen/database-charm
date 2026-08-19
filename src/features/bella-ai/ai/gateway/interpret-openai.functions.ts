@@ -14,6 +14,7 @@ import {
 } from "../prompts/interpretPrompt";
 import { integrationFetch } from "@/lib/http-client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyAccess } from "@/lib/company-resolver.server";
 
 const skillCatalogSchema = z.array(
   z.object({
@@ -63,15 +64,32 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 export const interpretWithOpenAI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => inputSchema.parse(data))
+  .inputValidator((data: unknown) => {
+    const parsed = inputSchema.parse(data);
+    // Validação Zod: companyId deve vir no context e ser um UUID válido
+    const companyId = (parsed.context as any)?.companyId;
+    if (!companyId || typeof companyId !== 'string') {
+      throw new Error("MISSING_COMPANY_CONTEXT");
+    }
+    z.string().uuid().parse(companyId);
+    return parsed;
+  })
   .handler(async ({ data, context }): Promise<OpenAIInterpretResult> => {
-    // 1. Segurança: userId e companyId do contexto, nunca do input.
-    // context.claims pode conter o org_id se configurado no Supabase Custom Claims
-    const { userId, claims } = context;
-    const companyId = (claims as any)?.company_id || (claims as any)?.org_id;
+    // 1. Segurança: userId do contexto autenticado.
+    const { userId, supabase } = context;
+    const companyId = (data.context as any)?.companyId;
 
-    if (!userId || !companyId) {
-      console.error("[bella.interpret.openai] Missing userId or companyId in claims", { userId, claims });
+    if (!userId) {
+      console.error("[bella.interpret.openai] Missing userId in authenticated context");
+      throw new Error("UNAUTHORIZED_USER");
+    }
+
+    // Autorização real: Valida o vínculo do usuário com a empresa solicitada.
+    // NÃO confia no companyId vindo dos claims (que não existem no NexOS) nem cegamente no input.
+    try {
+      await assertCompanyAccess(supabase, userId, companyId);
+    } catch (err) {
+      console.error("[bella.interpret.openai] Access denied for company", { userId, companyId });
       throw new Error("UNAUTHORIZED_CONTEXT");
     }
 
