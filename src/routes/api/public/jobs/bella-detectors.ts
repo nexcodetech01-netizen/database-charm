@@ -47,12 +47,14 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
             // 1. Buscar todas as empresas ativas
             const { data: companies, error: compError } = await supabaseAdmin
               .from("companies")
-              .select("id")
-              .neq("name", "DELETED"); // Filtro comum no sistema para empresas ativas
+              .select("id, name");
 
             if (compError) throw compError;
 
-            for (const company of (companies || [])) {
+            // Filtro manual para evitar erro de tipo no .neq() se a coluna 'name' tiver restrições
+            const activeCompanies = (companies || []).filter(c => c.name !== "DELETED");
+
+            for (const company of activeCompanies) {
               const tenantId = company.id;
               const now = new Date();
 
@@ -60,13 +62,15 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
               try {
                 const { data: products, error: prodError } = await supabaseAdmin
                   .from("products")
-                  .select("id, name, stock, min_stock")
-                  .eq("company_id", tenantId)
-                  .eq("status", "active");
+                  .select("id, name, stock, min_stock, status")
+                  .eq("company_id", tenantId);
 
                 if (prodError) throw prodError;
 
-                const snapshots = (products || []).map(p => ({
+                // Filtro manual de status para evitar problemas de tipo no query builder
+                const activeProducts = (products || []).filter(p => p.status === "active");
+
+                const snapshots = activeProducts.map(p => ({
                   productId: p.id,
                   name: p.name,
                   stock: Number(p.stock || 0),
@@ -94,16 +98,18 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
                 const todayStr = now.toISOString().split('T')[0];
                 const { data: invoices, error: invError } = await supabaseAdmin
                   .from("financial_transactions")
-                  .select("id, amount, due_date")
+                  .select("id, amount, due_date, status")
                   .eq("company_id", tenantId)
-                  .eq("status", "pending")
                   .lt("due_date", todayStr);
 
                 if (invError) throw invError;
 
-                const snapshots = (invoices || []).map(i => ({
+                // Filtro manual de status
+                const pendingInvoices = (invoices || []).filter(i => i.status === "pending");
+
+                const snapshots = pendingInvoices.map(i => ({
                   invoiceId: i.id,
-                  customerId: undefined, // customer_id não existe nesta tabela, removido para evitar erro
+                  customerId: undefined as any,
                   amount: Number(i.amount || 0),
                   dueDate: i.due_date ? new Date(i.due_date + "T00:00:00") : now
                 }));
