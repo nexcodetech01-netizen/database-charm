@@ -56,7 +56,7 @@ function writeStoredBuildId(id: string): void {
 
 /** Executa uma vez por carregamento de aba. Seguro para chamar em StrictMode. */
 export async function runPwaBoot(): Promise<void> {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!import.meta.env.PROD) return;
   if (isPreviewHostname(window.location.hostname)) return;
   if (window.self !== window.top) return;

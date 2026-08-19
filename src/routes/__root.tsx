@@ -187,7 +187,13 @@ function RootComponent() {
   const location = useLocation();
 
   useEffect(() => {
-    void runPwaBoot();
+    // Solo en el cliente y después de la primera renderización para evitar bloqueos de hidratación
+    const timer = setTimeout(() => {
+      void runPwaBoot().catch(err => {
+        console.warn("[RootComponent] PWA Boot background error:", err);
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Failsafe: force clear scroll locks and pointer events on every route change
