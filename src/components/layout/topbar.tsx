@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone, Settings, ChevronLeft, ChevronRight, CheckCircle, Filter } from "lucide-react";
+import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone, Settings, ChevronLeft, ChevronRight, CheckCircle, Filter, Check } from "lucide-react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
-import { getUnreadNotifications } from "@/features/bella-ai/events/persistence.functions";
+import { getUnreadNotifications, readNotification } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
@@ -58,14 +58,7 @@ function routeForEvent(event: BellaEvent): string {
   }
 }
 
-
 export function Topbar() {
-  // BUG ENCONTRADO: `user?.user_metadata?.company_id` nunca reflete o
-  // company_id real do usuário — o AuthProvider busca isso separadamente
-  // na tabela `profiles` (campo `current_company_id`) e expõe como
-  // `companyId` no contexto. Ler de `user_metadata` sempre resultava em
-  // `undefined`, o que travava a inscrição realtime antes mesmo dela
-  // começar (guard `if (!companyId) return;` no hook).
   const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -99,17 +92,73 @@ export function Topbar() {
   useCommercialInboxRealtime(companyId);
 
   const notifiedIdsRef = useRef<Set<string>>(new Set());
-
   const [showSettings, setShowSettings] = useState(false);
 
+  const updateCount = () => {
+    const active = bellaEventRegistry.listActive({
+      tenantId: companyId || undefined
+    });
+    const catalogOrders = active.filter(e => e.type === "catalog.order.received");
+    setCatalogOrdersCount(catalogOrders.length);
+    setActiveAlerts(active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+  };
+
+  /**
+   * Marca uma notificação como lida tanto no Registry (UI) quanto no Banco.
+   */
+  const markAlertAsRead = async (alert: BellaEvent) => {
+    if (!companyId) return;
+    
+    // 1. Remove do Registry imediatamente para atualizar o badge
+    bellaEventRegistry.resolve(alert.id);
+    updateCount();
+
+    // 2. Persiste no banco de dados (se for um ID de banco real)
+    // IDs gerados em runtime começam com prefixos ou UUIDs específicos,
+    // mas a função readNotification cuida da validação uuid no handler.
+    try {
+      await readNotification({
+        data: {
+          notificationId: alert.id,
+          companyId: companyId
+        }
+      });
+    } catch (err) {
+      console.warn("[Topbar] Falha ao marcar notificação como lida no banco:", err);
+    }
+  };
+
+  const markAllAlertsAsRead = async () => {
+    if (!companyId || activeAlerts.length === 0) return;
+
+    const alertsToRead = [...activeAlerts];
+    
+    // UI Update massivo
+    alertsToRead.forEach(alert => bellaEventRegistry.resolve(alert.id));
+    updateCount();
+
+    // Banco de dados (processa em paralelo para performance)
+    try {
+      await Promise.all(
+        alertsToRead.map(alert => 
+          readNotification({
+            data: {
+              notificationId: alert.id,
+              companyId: companyId
+            }
+          }).catch(e => console.error(e))
+        )
+      );
+    } catch (err) {
+      console.warn("[Topbar] Falha ao marcar todas as notificações como lidas:", err);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Inicia o registry se ainda não estiver (singleton)
     bellaEventRegistry.start();
 
-    // Fase 1: Hidratação do Registry com notificações persistentes não lidas
     const hydrateRegistry = async () => {
       if (!companyId) return;
 
@@ -118,21 +167,15 @@ export function Topbar() {
           data: { companyId: companyId }
         })) as any;
 
-
         const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
-
 
         if (unread && unread.length > 0) {
           addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
 
           unread.forEach((notif: any) => {
-
             const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
             if (!meta) return;
 
-            // Emite para o engine silenciosamente (evitando loops infinitos se possível,
-            // mas o registry já dedupa por key estável)
-            // Usamos as informações da tabela.
             const severity = (notif.metadata as any)?.severity || meta.defaultSeverity;
 
             bellaEventRegistry.upsert({
@@ -157,88 +200,35 @@ export function Topbar() {
       }
     };
 
-    const updateCount = () => {
-
-      const active = bellaEventRegistry.listActive({
-        tenantId: companyId || undefined
-
-      });
-      const catalogOrders = active.filter(e => e.type === "catalog.order.received");
-      setCatalogOrdersCount(catalogOrders.length);
-      // Sino: mostra TODOS os tipos de alerta ativos, não só pedidos do
-      // catálogo (antes o sino ignorava estoque baixo, conta vencida, etc.
-      // — os eventos existiam no Registry mas nunca eram exibidos aqui).
-      setActiveAlerts(active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-    };
-
     updateCount();
     void hydrateRegistry();
-
 
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
       if (entry.action === "created") {
         const ticketId = (event.payload as any)?.ticketId;
-        if (ticketId === "10") {
-          addLog('[TOPBAR-NOTIF]', `received catalog.order.received n8n-10`);
-        }
-
         updateCount();
 
         const config = settings[event.type];
-        if (ticketId === "10") {
-          addLog('[TOPBAR-NOTIF]', `config exists: ${!!config}`);
-          if (config) {
-            addLog('[TOPBAR-NOTIF]', `sound: ${config.sound}`);
-            addLog('[TOPBAR-NOTIF]', `browser: ${config.browser}`);
-          }
-        }
         if (!config) return;
 
-        if (ticketId === "10") {
-          addLog('[TOPBAR-NOTIF]', `duplicate check n8n-10`);
-        }
-        if (ticketId && notifiedIdsRef.current.has(ticketId)) {
-          if (ticketId === "10") {
-            addLog('[TOPBAR-NOTIF]', `discarded duplicate n8n-10`);
-          }
-          return;
-        }
+        if (ticketId && notifiedIdsRef.current.has(ticketId)) return;
         if (ticketId) notifiedIdsRef.current.add(ticketId);
 
-        if (ticketId === "10") {
-          addLog('[TOPBAR-NOTIF]', `showing notification n8n-10`);
-        }
-
-        // Notificação sonora
         if (config.sound && audioRef.current) {
-          if (ticketId === "10") {
-            addLog('[TOPBAR-NOTIF]', `playing sound n8n-10`);
-          }
-          audioRef.current.play().catch(() => {
-            // Browsers bloqueiam autoplay sem interação
-          });
+          audioRef.current.play().catch(() => {});
         }
 
-        const payload = event.payload as any;
         const title = event.title || "Nova notificação";
         const description = event.description || "";
 
-        // Notificação visual Toast (sempre mostramos se estiver na aba ativa)
         toast.success(title, {
           description,
           action: ticketId
-            ? { label: "Ver", onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }) }
-            : event.type === "whatsapp.message.received"
-              ? { label: "Ver", onClick: () => navigate({ to: "/whatsapp" }) }
-              : { label: "Ver", onClick: () => navigate({ to: routeForEvent(event) }) }
-
+            ? { label: "Ver", onClick: () => { markAlertAsRead(event); navigate({ to: "/comercial/inbox-whatsapp" }); } }
+            : { label: "Ver", onClick: () => { markAlertAsRead(event); navigate({ to: routeForEvent(event) }); } }
         });
 
-        // Notificação do Navegador (respeita preferência)
         if (config.browser) {
-          if (ticketId === "10") {
-            addLog('[TOPBAR-NOTIF]', `browser notification n8n-10`);
-          }
           notify(title, {
             body: description,
             tag: ticketId || undefined,
@@ -246,19 +236,16 @@ export function Topbar() {
           } as any);
         }
       } else if (entry.action === "resolved" || entry.action === "expired") {
-
         updateCount();
       }
     });
 
-    // Listener para BroadcastChannel (Sincronização entre abas)
     const channel = getInboxChannel();
     const handleMessage = (event: MessageEvent) => {
       const msg = event.data;
       if (msg.type === "CATALOG_ORDER_RECEIVED") {
         updateCount();
       } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
-        // Quando resolvido em outra aba, removemos do registry local se existir
         bellaEventRegistry.resolveByPayload({
           tenantId: companyId || "",
           type: "catalog.order.received",
@@ -278,17 +265,8 @@ export function Topbar() {
     };
   }, [companyId, settings, navigate, notify]);
 
-
-
-  const displayName =
-    (user?.user_metadata?.full_name as string | undefined) ||
-    user?.email ||
-    "Você";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase())
-    .join("") || "U";
+  const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Você";
+  const initials = displayName.split(" ").slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -318,7 +296,6 @@ export function Topbar() {
         <Menu className="h-5 w-5" />
       </Button>
       <div className="relative min-w-0 flex-1 max-w-md">
-
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
@@ -352,11 +329,9 @@ export function Topbar() {
             onClick={() => setShowSettings(true)}
             title="Configurações de Notificação"
           >
-
             <Settings className="h-4 w-4" />
           </Button>
         </div>
-
 
         <Popover>
           <PopoverTrigger asChild>
@@ -495,7 +470,6 @@ export function Topbar() {
               </div>
             )}
           </PopoverContent>
-
         </Popover>
 
         <ThemeToggle />
@@ -515,30 +489,50 @@ export function Topbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <DropdownMenuLabel className="p-0">Notificações</DropdownMenuLabel>
+              {activeAlerts.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-[10px] text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    markAllAlertsAsRead();
+                  }}
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Marcar todas lidas
+                </Button>
+              )}
+            </div>
             <DropdownMenuSeparator />
             {activeAlerts.length > 0 ? (
               <div className="max-h-[320px] overflow-y-auto">
-                {activeAlerts.slice(0, 15).map((event) => (
-                  <DropdownMenuItem key={event.id} asChild>
+                {activeAlerts.slice(0, 15).map((alert) => (
+                  <DropdownMenuItem 
+                    key={alert.id} 
+                    onSelect={() => markAlertAsRead(alert)}
+                    asChild
+                  >
                     <Link
-                      to={routeForEvent(event)}
-                      className="flex flex-col items-start gap-0.5 p-3"
+                      to={routeForEvent(alert)}
+                      className="flex flex-col items-start gap-0.5 p-3 cursor-pointer"
                     >
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
                             "h-1.5 w-1.5 rounded-full shrink-0",
-                            event.severity === "critical" && "bg-destructive",
-                            event.severity === "warning" && "bg-warning",
-                            event.severity === "info" && "bg-primary",
-                            event.severity === "success" && "bg-emerald-500",
+                            alert.severity === "critical" && "bg-destructive",
+                            alert.severity === "warning" && "bg-warning",
+                            alert.severity === "info" && "bg-primary",
+                            alert.severity === "success" && "bg-emerald-500",
                           )}
                         />
-                        <span className="font-semibold text-sm">{event.title}</span>
+                        <span className="font-semibold text-sm">{alert.title}</span>
                       </div>
                       <span className="text-xs text-muted-foreground pl-3">
-                        {event.description}
+                        {alert.description}
                       </span>
                     </Link>
                   </DropdownMenuItem>
@@ -589,6 +583,5 @@ export function Topbar() {
         </DialogContent>
       </Dialog>
     </header>
-
   );
 }
