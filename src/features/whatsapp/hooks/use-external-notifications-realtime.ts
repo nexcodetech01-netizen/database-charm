@@ -18,18 +18,25 @@ export function useExternalNotificationsRealtime(
 
   // Efeito para processar eventos pendentes assim que as configurações carregarem
   useEffect(() => {
+    console.log(`[EXT-NOTIF] settingsLoading: ${settingsLoading}`);
     if (!settingsLoading && settings && pendingEvents.current.length > 0) {
-      console.log(`[Realtime] Processando ${pendingEvents.current.length} eventos pendentes após carregamento de settings.`);
+      console.log(`[EXT-NOTIF] processing ${pendingEvents.current.length} pending events after settings load.`);
       const eventsToProcess = [...pendingEvents.current];
       pendingEvents.current = [];
       
       eventsToProcess.forEach(({ event, isHistorical }) => {
+        if (event.wa_message_id?.includes("n8n-10")) {
+          console.log(`[EXT-NOTIF] processing pending event n8n-10`);
+        }
         emitEvent(event, isHistorical);
       });
     }
   }, [settingsLoading, settings]);
 
   const emitEvent = (event: any, isHistorical: boolean) => {
+    if (event.wa_message_id?.includes("n8n-10")) {
+      console.log(`[EXT-NOTIF] emitting catalog.order.received n8n-10`);
+    }
     if (!companyId) return;
 
     // No momento, focamos apenas em notificações de pedidos do catálogo (catalog.order.received)
@@ -64,15 +71,22 @@ export function useExternalNotificationsRealtime(
   };
 
   useEffect(() => {
+    console.log(`[EXT-NOTIF] hook mounted`);
     if (!companyId) return;
 
     const processExternalEvent = (event: any, isHistorical = false) => {
+      if (event.wa_message_id?.includes("n8n-10")) {
+        console.log(`[EXT-NOTIF] processing event n8n-10`);
+      }
       // Evita duplicidade
       if (processedIds.current.has(event.wa_message_id)) return;
       processedIds.current.add(event.wa_message_id);
 
       // Se as configurações ainda estão carregando, armazena no buffer
       if (settingsLoading || !settings) {
+        if (event.wa_message_id?.includes("n8n-10")) {
+          console.log(`[EXT-NOTIF] queued pending event n8n-10`);
+        }
         pendingEvents.current.push({ event, isHistorical });
         return;
       }
@@ -83,6 +97,7 @@ export function useExternalNotificationsRealtime(
 
     // 2. Consulta inicial para não perder notificações enquanto offline
     const fetchRecentExternalEvents = async () => {
+      console.log(`[EXT-NOTIF] historical query started`);
       const { data, error } = await supabase
         .from("whatsapp_message_events")
         .select("*")
@@ -93,6 +108,11 @@ export function useExternalNotificationsRealtime(
         .limit(10);
 
       if (!error && data) {
+        console.log(`[EXT-NOTIF] historical events count: ${data.length}`);
+        const hasN8N10 = data.some(row => row.wa_message_id?.includes("n8n-10"));
+        if (hasN8N10) {
+          console.log(`[EXT-NOTIF] found n8n event: n8n-10`);
+        }
         [...data].reverse().forEach(row => processExternalEvent(row, true));
       }
     };
