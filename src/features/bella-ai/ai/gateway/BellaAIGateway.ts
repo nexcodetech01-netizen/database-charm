@@ -28,6 +28,8 @@ import { MockProvider } from "../providers/MockProvider";
 import { GeminiProvider } from "../providers/GeminiProvider";
 import { OpenAIProvider } from "../providers/OpenAIProvider";
 import { BELLA_SYSTEM_PROMPT, withCompanyContext } from "../prompts/systemPrompt";
+import { getBellaAIConfig } from "./get-config.functions";
+
 
 export interface BellaAIGatewayOptions {
   /** Provider preferido — se falhar, aplica fallback no MockProvider. */
@@ -42,38 +44,76 @@ export interface AskInput extends Omit<BuildRequestInput, "system"> {
 }
 
 export class BellaAIGateway {
-  private readonly preferred: AIProvider;
+  private preferred: AIProvider | null = null;
   private readonly fallback: AIProvider;
   private readonly defaultTimeoutMs: number;
+  private configPromise: Promise<void> | null = null;
 
   constructor(options: BellaAIGatewayOptions = {}) {
     this.fallback = new MockProvider();
-    this.preferred = options.preferred ?? this.fallback;
+    if (options.preferred) {
+      this.preferred = options.preferred;
+    }
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 15_000;
   }
 
-  /** Provider ativo (útil para telemetria/UI). */
-  getActiveProviderId(): AIProviderId {
-    return this.preferred.id;
+  private async ensureConfig(): Promise<void> {
+    if (this.preferred) return;
+    if (this.configPromise) return this.configPromise;
+
+    this.configPromise = (async () => {
+      try {
+        const config = await getBellaAIConfig();
+        this.preferred = this.createProvider(config.provider);
+      } catch (err) {
+        console.error("[BellaAIGateway] Failed to load server config, using Gemini default", err);
+        this.preferred = new GeminiProvider();
+      }
+    })();
+
+    return this.configPromise;
   }
+
+  private createProvider(id: AIProviderId): AIProvider {
+    switch (id) {
+      case "openai":
+        return new OpenAIProvider();
+      case "gemini":
+        return new GeminiProvider();
+      default:
+        return new MockProvider();
+    }
+  }
+
+  /** Provider ativo (útil para telemetria/UI). */
+  async getActiveProviderId(): Promise<AIProviderId> {
+    await this.ensureConfig();
+    return this.preferred?.id ?? this.fallback.id;
+  }
+
 
   /** Conversa livre — devolve `AIResult` já padronizado. */
   async chat(input: AskInput): Promise<AIResult> {
+    await this.ensureConfig();
     const request = this.buildRequest(input);
     return this.runWithFallback((provider) => this.doChat(provider, request));
   }
 
   /** Interpretação de intenção — retorna intent + parameters. */
   async interpret(input: AskInput): Promise<AIResult> {
+    await this.ensureConfig();
     const request = this.buildRequest(input);
     return this.runWithFallback((provider) => this.doInterpret(provider, request));
   }
 
+
   /** Health check de todos os providers conhecidos. */
   async healthCheck(): Promise<AIProviderHealth[]> {
-    const providers = uniqueProviders([this.preferred, this.fallback]);
+    await this.ensureConfig();
+    const providers = uniqueProviders([this.preferred!, this.fallback]);
     return Promise.all(providers.map((p) => safeHealth(p)));
   }
+
 
   /* -------------------- internals -------------------- */
 
@@ -88,12 +128,23 @@ export class BellaAIGateway {
   private async runWithFallback(
     call: (provider: AIProvider) => Promise<AIResult>,
   ): Promise<AIResult> {
+    const preferred = this.preferred!;
+    const startedAt = Date.now();
+
     // Tenta preferido
-    if (this.preferred.isConfigured()) {
+    if (preferred.isConfigured()) {
       try {
-        return await call(this.preferred);
+        const result = await call(preferred);
+        // Telemetria já vem no result.raw para OpenAI, mas garantimos aqui
+        console.info(`[BellaAIGateway] Processed by ${preferred.id}`, {
+          model: result.raw && typeof result.raw === 'object' && 'telemetry' in result.raw ? (result.raw as any).telemetry?.model : 'unknown',
+          latency: Date.now() - startedAt,
+          fallbackUsed: false
+        });
+        return result;
       } catch (err) {
         const info = describeError(err);
+        console.warn(`[BellaAIGateway] ${preferred.id} failed, falling back to ${this.fallback.id}`, info);
         // Cai silenciosamente no fallback.
         try {
           const fallbackResult = await call(this.fallback);
@@ -103,7 +154,7 @@ export class BellaAIGateway {
             error: { ...info, fallbackUsed: true },
           };
         } catch {
-          return buildErrorResult(this.preferred.id, { ...info, fallbackUsed: false });
+          return buildErrorResult(preferred.id, { ...info, fallbackUsed: false });
         }
       }
     }
@@ -115,7 +166,7 @@ export class BellaAIGateway {
         success: false,
         error: {
           code: "not_configured",
-          message: `Provider "${this.preferred.id}" não configurado. Usando modo offline.`,
+          message: `Provider "${preferred.id}" não configurado. Usando modo offline.`,
           fallbackUsed: true,
         },
       };
@@ -123,6 +174,7 @@ export class BellaAIGateway {
       return buildErrorResult(this.fallback.id, describeError(err));
     }
   }
+
 
   private async doChat(provider: AIProvider, request: AIRequest): Promise<AIResult> {
     const response = await provider.chat(request);
@@ -177,24 +229,10 @@ function uniqueProviders(list: AIProvider[]): AIProvider[] {
 
 /**
  * Instância padrão usada pela Bella.
- * O provider preferido é determinado por BELLA_AI_PROVIDER (openai | gemini | mock).
+ * O provider preferido é determinado pelo servidor via getBellaAIConfig().
  */
-const DEFAULT_PROVIDER_ID = (import.meta as any).env?.VITE_BELLA_AI_PROVIDER || "gemini";
+export const bellaAIGateway = new BellaAIGateway();
 
-function createPreferredProvider(): AIProvider {
-  switch (DEFAULT_PROVIDER_ID) {
-    case "openai":
-      return new OpenAIProvider();
-    case "gemini":
-      return new GeminiProvider();
-    default:
-      return new MockProvider();
-  }
-}
-
-export const bellaAIGateway = new BellaAIGateway({
-  preferred: createPreferredProvider(),
-});
 
 // Reexports úteis para consumidores.
 export { BELLA_SYSTEM_PROMPT };

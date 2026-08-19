@@ -17,6 +17,7 @@ import { logAgentExecution } from "./execution-log";
 import { runAgent } from "./agent";
 import { bellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import type { AgentContext, AgentIntent, AgentResponse } from "./types";
+import type { AIResult } from "../ai/gateway/types";
 
 export interface AgentRuntimeInput {
   message: string;
@@ -32,7 +33,14 @@ export interface AgentRuntimeTrace {
   fallbackReason?: string;
   executionTimeMs: number;
   response?: AgentResponse;
+  telemetry?: {
+    provider: string;
+    model?: string;
+    latencyMs?: number;
+    fallbackUsed?: boolean;
+  };
 }
+
 
 export interface AgentRuntimeResult {
   /** null quando o consumidor deve usar o fluxo legado. */
@@ -67,8 +75,10 @@ export async function handleWithAgentRuntime(
 
   // Fase 2 — Tentativa via LLM (Nova Ordem: LLM -> Determinístico)
   let intent: AgentIntent | null = null;
+  let aiResult: AIResult | null = null;
+  
   try {
-    const aiResult = await bellaAIGateway.interpret({
+    aiResult = await bellaAIGateway.interpret({
       userMessage: input.message,
       companyName: input.ctx.companyId, 
       context: { 
@@ -112,6 +122,10 @@ export async function handleWithAgentRuntime(
       confirmed: input.confirmed,
     });
 
+    const telemetry = aiResult?.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw 
+      ? (aiResult.raw as any).telemetry 
+      : { provider: aiResult?.provider || 'unknown', fallbackUsed: aiResult?.error?.fallbackUsed };
+
     // Erros funcionais do próprio agente (not_allowed, unknown_intent, error)
     // NÃO são fallback — são respostas legítimas.
     return {
@@ -122,7 +136,9 @@ export async function handleWithAgentRuntime(
         fallback: false,
         executionTimeMs: Date.now() - startedAt.getTime(),
         response,
+        telemetry
       },
+
     };
   } catch (err) {
     await recordFallback(input.ctx, intent, startedAt, `runtime_error:${errMsg(err)}`);
@@ -143,7 +159,9 @@ function finalizeFallback(
       fallback: true,
       fallbackReason: reason,
       executionTimeMs: Date.now() - startedAt.getTime(),
+      telemetry: { provider: 'unknown', fallbackUsed: true }
     },
+
   };
 }
 

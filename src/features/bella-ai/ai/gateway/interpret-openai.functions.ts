@@ -132,7 +132,8 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
       }
 
       const payload = await response.json();
-      const content = payload.choices?.[0]?.message?.content ?? "{}";
+      const choice = payload.choices?.[0];
+      const content = choice?.message?.content ?? "{}";
       const parsed = safeParseJson(content);
 
       if (!parsed) {
@@ -144,11 +145,18 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
       const parameters = (parsed.parameters && typeof parsed.parameters === "object") ? parsed.parameters as Record<string, JsonValue> : {};
       const responseText = typeof parsed.response === "string" ? parsed.response : "";
 
+      const telemetry = {
+        provider: "openai" as const,
+        model: payload.model || model, // Usa o modelo real retornado pela API se disponível
+        latencyMs: Date.now() - startedAt,
+        tokensInput: payload.usage?.prompt_tokens,
+        tokensOutput: payload.usage?.completion_tokens,
+      };
+
       console.info("[bella.interpret.openai] success", {
         intent,
         confidence,
-        model,
-        latencyMs,
+        telemetry,
         companyId
       });
 
@@ -157,18 +165,13 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
         confidence,
         parameters,
         response: responseText,
-        telemetry: {
-          provider: "openai",
-          model,
-          latencyMs,
-          tokensInput: payload.usage?.prompt_tokens,
-          tokensOutput: payload.usage?.completion_tokens,
-        }
+        telemetry
       };
     } catch (err) {
       console.error("[bella.interpret.openai] execution failed", err);
       throw err;
     }
+
   });
 
 function safeParseJson(raw: string): Record<string, unknown> | null {
