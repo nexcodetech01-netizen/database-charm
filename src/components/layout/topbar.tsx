@@ -229,7 +229,8 @@ export function Topbar() {
             ? { label: "Ver", onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }) }
             : event.type === "whatsapp.message.received"
               ? { label: "Ver", onClick: () => navigate({ to: "/whatsapp" }) }
-              : undefined
+              : { label: "Ver", onClick: () => navigate({ to: routeForEvent(event) }) }
+
         });
 
         // Notificação do Navegador (respeita preferência)
