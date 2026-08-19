@@ -186,7 +186,7 @@ export class BellaEventRegistry {
           referenceId: payload?.entityId || payload?.ticketId || null,
           metadata: payload
         }
-      }).catch(err => {
+      }).catch((err: any) => {
         console.warn("[BellaEventRegistry] Falha na persistência silenciosa:", err);
       });
 

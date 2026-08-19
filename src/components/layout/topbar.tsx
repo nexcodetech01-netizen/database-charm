@@ -101,7 +101,7 @@ export function Topbar() {
           
           unread.forEach((notif: any) => {
 
-            const meta = BELLA_EVENT_CATALOG[notif.event_type as keyof typeof BELLA_EVENT_CATALOG];
+            const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
             if (!meta) return;
 
             // Emite para o engine silenciosamente (evitando loops infinitos se possível, 
