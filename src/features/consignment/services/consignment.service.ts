@@ -305,8 +305,7 @@ export class ConsignmentService {
     const upsertData = items.map(item => {
       const existing = item.id ? existingItems.find(ei => ei.id === item.id) : null;
       
-      return {
-        ...(item.id ? { id: item.id } : {}),
+      const payload: any = {
         consignment_id: consignmentId,
         company_id: companyId,
         product_id: item.product_id,
@@ -317,6 +316,13 @@ export class ConsignmentService {
         returned_quantity: existing ? (existing.returned_quantity ?? 0) : 0,
         quantidade_extraviada: existing ? (existing.quantidade_extraviada ?? 0) : 0
       };
+
+      // Only include id if it exists and is not null/undefined
+      if (item.id) {
+        payload.id = item.id;
+      }
+      
+      return payload;
     });
 
     const { error: upsertError } = await supabase
