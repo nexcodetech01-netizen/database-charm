@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface LogEntry {
+export interface LogEntry {
   id: string;
   timestamp: Date;
   prefix: '[EXT-NOTIF]' | '[TOPBAR-NOTIF]';
@@ -15,7 +15,7 @@ interface LogStore {
 
 export const useLogStore = create<LogStore>((set) => ({
   logs: [],
-  addLog: (prefix, message) => set((state) => ({
+  addLog: (prefix: LogEntry['prefix'], message: string) => set((state) => ({
     logs: [
       {
         id: Math.random().toString(36).substring(2, 9),
@@ -23,7 +23,7 @@ export const useLogStore = create<LogStore>((set) => ({
         prefix,
         message,
       },
-      ...state.logs.slice(0, 99), // Manter apenas os últimos 100 logs
+      ...state.logs.slice(0, 99),
     ],
   })),
   clearLogs: () => set({ logs: [] }),

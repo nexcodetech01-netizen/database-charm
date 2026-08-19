@@ -63,7 +63,7 @@ export function NotificationLogPanel() {
             </div>
           ) : (
             <div className="space-y-1">
-              {logs.map((log) => (
+              {logs.map((log: any) => (
                 <div key={log.id} className="group border-b border-border/50 pb-1 last:border-0">
                   <span className="text-muted-foreground mr-2">
                     [{format(log.timestamp, "HH:mm:ss")}]
