@@ -137,15 +137,19 @@ export function Topbar() {
     // evento tem em memória.
     try {
       const payload = alert.payload as any;
-      await readNotificationByContent({
+      const refId = payload?.entityId || payload?.ticketId || null;
+      addLog('[TOPBAR-NOTIF]', `marcando como lida: type=${alert.type} referenceId=${refId}`);
+      const result = await readNotificationByContent({
         data: {
           companyId,
           eventType: alert.type,
-          referenceId: payload?.entityId || payload?.ticketId || null,
+          referenceId: refId,
         }
       });
+      addLog('[TOPBAR-NOTIF]', `resultado do servidor: ${JSON.stringify(result)}`);
     } catch (err) {
       console.warn("[Topbar] Falha ao marcar notificação como lida no banco:", err);
+      addLog('[TOPBAR-NOTIF]', `ERRO ao marcar como lida: ${err}`);
     }
   };
 

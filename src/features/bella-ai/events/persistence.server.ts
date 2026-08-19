@@ -118,14 +118,12 @@ export async function markNotificationAsReadByContent(
   eventType: string,
   referenceId: string | null,
 ) {
-  // CORREÇÃO 2: quando `referenceId` é null (evento sem entityId/ticketId
-  // no payload — bem comum), `.eq("reference_id", null)` NUNCA bate com
-  // nada no Supabase/PostgREST — mesmo contra linhas onde a coluna
-  // também é NULL. `.eq()` vira `= NULL` em SQL, que é sempre
-  // indeterminado (nunca verdadeiro), diferente de `IS NULL`. É preciso
-  // usar `.is()` especificamente para comparar com null. Sem isso, toda
-  // notificação sem referenceId continuava "não lida" no banco pra
-  // sempre, mesmo depois da primeira correção (empresa+tipo+referência).
+  console.log("[Persistence] markNotificationAsReadByContent chamado com:", {
+    companyId,
+    eventType,
+    referenceId,
+  });
+
   let query = (supabaseAdmin as any)
     .from("notifications")
     .update({
@@ -138,11 +136,38 @@ export async function markNotificationAsReadByContent(
 
   query = referenceId === null ? query.is("reference_id", null) : query.eq("reference_id", referenceId);
 
-  const { error } = await query;
+  // .select() faz o update devolver as linhas afetadas — sem isso, não
+  // dá pra saber se 0 ou N linhas foram atualizadas (Supabase não avisa
+  // sozinho quando um update não bate com nada, não é um "erro").
+  const { data: updatedRows, error } = await query.select("id, event_type, reference_id, status");
 
   if (error) {
     console.error("[Persistence] Erro ao ler notificação (por conteúdo):", error);
     throw error;
   }
-  return { success: true };
+
+  console.log(
+    `[Persistence] markNotificationAsReadByContent: ${updatedRows?.length ?? 0} linha(s) atualizada(s).`,
+    updatedRows,
+  );
+
+  if (!updatedRows || updatedRows.length === 0) {
+    // Diagnóstico extra: busca (sem filtrar por status) pra ver se a
+    // linha existe com outro valor de reference_id/status do que o
+    // esperado — isso aparece nos logs do servidor e ajuda a apontar a
+    // causa exata na próxima investigação, caso ainda não tenha resolvido.
+    const { data: debugRows } = await (supabaseAdmin as any)
+      .from("notifications")
+      .select("id, event_type, reference_id, status, created_at")
+      .eq("company_id", companyId)
+      .eq("event_type", eventType)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    console.warn(
+      "[Persistence] Nenhuma linha batida. Últimas 5 notificações desse tipo/empresa pra comparar:",
+      debugRows,
+    );
+  }
+
+  return { success: true, updatedCount: updatedRows?.length ?? 0 };
 }
