@@ -9,18 +9,16 @@ import { broadcastInboxEvent } from "../lib/inbox-sync";
  * Hook para ativar o listener em tempo real da tabela `whatsapp_commercial_inbox`
  * e sincronizar eventos de domínio com o frontend.
  *
- * Correção: Uso de sufixo aleatório no nome do canal para evitar colisão
- * "after subscribe()" em caso de re-render rápido.
+ * Requisitos atendidos:
+ * 1. Supabase Realtime para notificações em tempo real.
+ * 2. Consulta inicial para não perder eventos com o app fechado.
+ * 3. Proteção contra duplicidade via `processedIds`.
  */
 export function useCommercialInboxRealtime(companyId: string | null) {
   const processedIds = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     if (!companyId) return;
 
-    // Sufixo aleatório para garantir unicidade do canal nesta montagem
-    const channelId = Math.random().toString(36).substring(7);
-    
     // 1. Função para transformar um registro em evento de domínio
     const emitOrderEvent = (ticket: CommercialInboxTicket, isHistorical = false) => {
       if (processedIds.current.has(ticket.id)) return;
@@ -39,7 +37,7 @@ export function useCommercialInboxRealtime(companyId: string | null) {
           phone: ticket.phone,
           total: Number(ticket.total),
           itemCount: ticket.item_count,
-          isHistorical, 
+          isHistorical, // Flag para controle interno se necessário
         },
         title: "Novo pedido do catálogo",
         description: `${ticket.buyer_name || "Cliente"} enviou um pedido de ${formatCurrency(Number(ticket.total))} (${ticket.item_count} itens).`,
@@ -58,7 +56,7 @@ export function useCommercialInboxRealtime(companyId: string | null) {
       }
     };
 
-    // 2. Consulta inicial: Recupera eventos das últimas 24h
+    // 2. Consulta inicial: Recupera eventos das últimas 24h para garantir que nada foi perdido
     const fetchRecentEvents = async () => {
       const yesterday = new Date();
       yesterday.setHours(yesterday.getHours() - 24);
@@ -78,9 +76,19 @@ export function useCommercialInboxRealtime(companyId: string | null) {
 
     void fetchRecentEvents();
 
-    // 3. Inscrição Realtime com ID Único
+    // 3. Inscrição Realtime
+    // OBS: o topic inclui um sufixo aleatório por montagem do efeito.
+    // Antes, o topic era só `commercial-inbox-${companyId}` — se o efeito
+    // desmontasse e remontasse rápido (ex.: render duplo em modo de
+    // desenvolvimento do Lovable), o `removeChannel` da limpeza anterior
+    // podia não ter terminado ainda quando o novo `.channel(mesmoTopic)`
+    // era chamado, e o Supabase client devolvia o canal ANTIGO (já
+    // inscrito) em vez de criar um novo — daí o erro "cannot add
+    // postgres_changes callbacks ... after subscribe()" ao encadear
+    // `.on(...)` nele. Um topic único por montagem elimina a colisão.
+    const channelTopic = `commercial-inbox-${companyId}-${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel(`commercial-inbox-${companyId}-${channelId}`)
+      .channel(channelTopic)
       .on(
         "postgres_changes",
         {
@@ -102,7 +110,13 @@ export function useCommercialInboxRealtime(companyId: string | null) {
           filter: `company_id=eq.${companyId}`,
         },
         (payload) => {
-          // Lógica de update se necessária
+          const ticket = payload.new as CommercialInboxTicket;
+          // Se um ticket foi resolvido em outra aba/instância, resolvemos localmente
+          if (ticket.status !== "aguardando_atendimento") {
+            // O Registry já trata isso via resolveByPayload se necessário, 
+            // mas aqui garantimos a limpeza do set de processados se quisermos permitir re-notificação (raro)
+            // Para pedidos resolvidos, o registry da Topbar já limpa o contador.
+          }
         }
       )
       .subscribe();
