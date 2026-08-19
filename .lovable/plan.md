@@ -37,4 +37,3 @@ Refatoração da seleção de provider para ocorrer de forma segura no backend, 
 - **Performance**: A configuração do provider será resolvida no momento da execução se ainda não estiver disponível.
 - **Fallback**: Se `BELLA_AI_PROVIDER` não estiver definido ou o provider escolhido falhar, o sistema reverterá para o fallback existente (Gemini ou Mock).
 - **Build**: `npm run build` será executado para validar a integridade e ausência de chaves no bundle.
-
