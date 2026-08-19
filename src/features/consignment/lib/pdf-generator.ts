@@ -5,7 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/format";
 import { Consignment, ConsignmentItem } from "../types";
 
-export const generateConsignmentPDF = async (consignment: Consignment, items: ConsignmentItem[], companyName: string = "NexOS ERP") => {
+export const generateConsignmentPDF = async (consignment: Consignment, items: ConsignmentItem[], companyData: { name: string; cnpj?: string | null; address?: string | null; city?: string | null; state?: string | null } = { name: "NexOS ERP" }) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -30,32 +30,55 @@ export const generateConsignmentPDF = async (consignment: Consignment, items: Co
   doc.setFont("helvetica", "bold");
   doc.text("CONSIGNANTE:", margin, 48);
   doc.setFont("helvetica", "normal");
-  doc.text(`${companyName}`, margin + 35, 48);
+  doc.text(`${companyData.name}`, margin + 35, 48);
   
+  let currentY = 48;
+
+  if (companyData.cnpj) {
+    currentY += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("CNPJ:", margin, currentY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${companyData.cnpj}`, margin + 35, currentY);
+  }
+
+  if (companyData.address) {
+    currentY += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text("ENDERECO:", margin, currentY);
+    doc.setFont("helvetica", "normal");
+    const addressStr = `${companyData.address}${companyData.city ? `, ${companyData.city}` : ''}${companyData.state ? ` - ${companyData.state}` : ''}`;
+    doc.text(addressStr, margin + 35, currentY);
+  }
+
   // Consignatário (Revendedor)
+  currentY += 8;
   doc.setFont("helvetica", "bold");
-  doc.text("CONSIGNATARIO:", margin, 56);
+  doc.text("CONSIGNATARIO:", margin, currentY);
   doc.setFont("helvetica", "normal");
-  doc.text(`${consignment.reseller?.name || "N/A"}`, margin + 35, 56);
+  doc.text(`${consignment.reseller?.name || "N/A"}`, margin + 35, currentY);
   
   if (consignment.reseller?.document) {
+    currentY += 5;
     doc.setFont("helvetica", "bold");
-    doc.text("CPF/CNPJ:", margin, 61);
+    doc.text("CPF/CNPJ:", margin, currentY);
     doc.setFont("helvetica", "normal");
-    doc.text(`${consignment.reseller.document}`, margin + 35, 61);
+    doc.text(`${consignment.reseller.document}`, margin + 35, currentY);
   }
   
   if (consignment.reseller?.address) {
+    currentY += 5;
     doc.setFont("helvetica", "bold");
-    doc.text("ENDERECO:", margin, 66);
+    doc.text("ENDERECO:", margin, currentY);
     doc.setFont("helvetica", "normal");
-    doc.text(`${consignment.reseller.address}`, margin + 35, 66);
+    doc.text(`${consignment.reseller.address}`, margin + 35, currentY);
   }
 
   // 2. DOS ITENS CONSIGNADOS
+  const tableStartY = Math.max(85, currentY + 15);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("2. DOS ITENS CONSIGNADOS", margin, 80);
+  doc.text("2. DOS ITENS CONSIGNADOS", margin, tableStartY - 5);
 
   const tableData = items.map((item) => [
     item.product?.sku || "-",
@@ -68,7 +91,7 @@ export const generateConsignmentPDF = async (consignment: Consignment, items: Co
   const totalValue = items.reduce((acc, item) => acc + (item.sent_quantity * (item.suggested_price || 0)), 0);
 
   autoTable(doc, {
-    startY: 85,
+    startY: tableStartY,
     head: [["SKU", "Descricao do Produto", "Qtd", "Preco Sug.", "Total"]],
     body: tableData,
     foot: [["", "VALOR TOTAL CONSIGNADO", "", "", formatCurrency(totalValue)]],

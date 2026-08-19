@@ -107,7 +107,15 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
       
       try {
         const { consignment, items } = await ConsignmentService.getConsignment(data.id);
-        const blob = await generateConsignmentPDF(consignment, items, "Empresa NexOS");
+        
+        // Buscar dados da empresa para o PDF
+        const { data: company } = await supabase
+          .from('companies')
+          .select('name, cnpj, address, city, state')
+          .eq('id', companyId)
+          .single();
+
+        const blob = await generateConsignmentPDF(consignment, items, company || { name: "NexOS ERP" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;

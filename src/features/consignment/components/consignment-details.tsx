@@ -30,6 +30,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RegisterSettlementDialog } from './register-settlement-dialog';
 
@@ -64,7 +65,14 @@ export function ConsignmentDetails() {
     if (!data) return;
     setGeneratingPdf(true);
     try {
-      const blob = await generateConsignmentPDF(data.consignment, data.items, "Empresa NexOS");
+      // Buscar dados da empresa para o PDF
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, cnpj, address, city, state')
+        .eq('id', data.consignment.company_id)
+        .single();
+
+      const blob = await generateConsignmentPDF(data.consignment, data.items, company || { name: "NexOS ERP" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
