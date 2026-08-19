@@ -33,6 +33,10 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
+import { getUnreadNotifications } from "@/features/bella-ai/events/persistence.functions";
+import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
+import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
+
 
 
 
@@ -79,7 +83,56 @@ export function Topbar() {
     // Inicia o registry se ainda não estiver (singleton)
     bellaEventRegistry.start();
 
+    // Fase 1: Hidratação do Registry com notificações persistentes não lidas
+    const hydrateRegistry = async () => {
+      if (!user?.user_metadata?.company_id) return;
+      
+      try {
+        const unreadResponse = (await getUnreadNotifications({ 
+          data: { companyId: user.user_metadata.company_id }
+        })) as any;
+
+        
+        const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
+
+        
+        if (unread && unread.length > 0) {
+          addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
+          
+          unread.forEach((notif: any) => {
+
+            const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
+            if (!meta) return;
+
+            // Emite para o engine silenciosamente (evitando loops infinitos se possível, 
+            // mas o registry já dedupa por key estável)
+            // Usamos as informações da tabela.
+            const severity = (notif.metadata as any)?.severity || meta.defaultSeverity;
+            
+            bellaEventRegistry.upsert({
+              id: notif.id,
+              tenantId: notif.company_id,
+              type: notif.event_type as any,
+              module: meta.module,
+              severity: severity,
+              priority: priorityFromSeverity(severity),
+              title: notif.title,
+              description: notif.message,
+              payload: notif.metadata || {},
+              createdAt: new Date(notif.created_at),
+              source: "persistence:hydration"
+            });
+          });
+          
+          updateCount();
+        }
+      } catch (err) {
+        console.warn("[Topbar] Erro na hidratação de notificações:", err);
+      }
+    };
+
     const updateCount = () => {
+
       const active = bellaEventRegistry.listActive({ 
         tenantId: user?.user_metadata?.company_id 
       });
@@ -88,6 +141,8 @@ export function Topbar() {
     };
 
     updateCount();
+    void hydrateRegistry();
+
 
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
       if (entry.action === "created") {

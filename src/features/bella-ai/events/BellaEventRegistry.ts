@@ -2,6 +2,8 @@ import { bellaEventEngine, type BellaEventEngine } from "./BellaEventEngine";
 import { comparePriority } from "./EventPriority";
 import type { BellaEvent } from "./BellaEvent";
 import type { BellaEventModule } from "./BellaEventTypes";
+import { saveNotification } from "./persistence.functions";
+
 
 export type RegistryAction = "created" | "updated" | "resolved" | "expired";
 
@@ -171,7 +173,30 @@ export class BellaEventRegistry {
     const entry: RegistryLogEntry = { action, eventId: event.id, key, at: new Date(), reason };
     this.log.push(entry);
     if (this.log.length > 500) this.log.splice(0, this.log.length - 500);
+
+    // Persistência assíncrona (Fase 1)
+    if (action === "created") {
+      const payload = event.payload as any;
+      const save = saveNotification as any;
+      save({
+
+        data: {
+          companyId: event.tenantId,
+          eventType: event.type,
+          title: event.title,
+          message: event.description,
+          referenceId: payload?.entityId || payload?.ticketId || null,
+          metadata: payload
+        }
+      }).catch((err: any) => {
+        console.warn("[BellaEventRegistry] Falha na persistência silenciosa:", err);
+      });
+
+
+    }
+
     // Log operacional silencioso — sem I/O externo.
+
     if (typeof console !== "undefined" && typeof console.debug === "function") {
       console.debug("[bella-events]", action, event.type, event.id);
     }

@@ -38,7 +38,8 @@ function MetricsPage() {
       const { data, error } = await supabase
         .from("query_metrics")
         .select("*")
-        .eq("company_id", companyId!)
+        .eq("company_id", companyId as string)
+
         .gte("created_at", sevenDaysAgo)
         .order("created_at", { ascending: false });
 
@@ -73,7 +74,8 @@ function MetricsPage() {
     };
 
     return {
-      last24h: calculateStats(metrics.filter((m) => new Date(m.created_at) >= yesterday)),
+      last24h: calculateStats(metrics.filter((m) => m.created_at && new Date(m.created_at) >= yesterday)),
+
       last7d: calculateStats(metrics),
     };
   })();
@@ -93,6 +95,7 @@ function MetricsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metrics?.length.toString() || "0"}</div>
+
             </CardContent>
           </Card>
           <Card>
@@ -114,7 +117,8 @@ function MetricsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-sm font-mono">
-                {metrics && metrics[0] ? new Date(metrics[0].created_at).toLocaleString() : "—"}
+                {metrics && metrics[0]?.created_at ? new Date(metrics[0].created_at).toLocaleString() : "—"}
+
               </div>
             </CardContent>
           </Card>
