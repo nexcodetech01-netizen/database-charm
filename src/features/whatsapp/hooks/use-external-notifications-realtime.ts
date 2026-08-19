@@ -121,6 +121,5 @@ export function useExternalNotificationsRealtime(
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [companyId, settingsLoading, !!settings]);
-}
+    }, [companyId, settingsLoading, !!settings]);
 }
