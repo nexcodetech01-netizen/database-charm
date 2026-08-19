@@ -268,6 +268,8 @@ export class ConsignmentService {
       .delete()
       .eq('id', id);
     if (cError) throw cError;
+  }
+
   static async updateConsignmentItems(
     consignmentId: string,
     companyId: string,
