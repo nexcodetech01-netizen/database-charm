@@ -15,6 +15,7 @@ export const saveNotification = createServerFn({ method: "POST" })
     referenceId: z.string().optional().nullable(),
     metadata: z.record(z.any()).optional(),
   }).parse(data))
+
   .handler(async ({ data }) => {
     return persistNotification(data);
   });

@@ -8,7 +8,7 @@ export async function persistNotification(data: {
   referenceId?: string | null;
   metadata?: any;
 }) {
-  const { data: inserted, error } = await supabaseAdmin
+  const { data: inserted, error } = await (supabaseAdmin as any)
     .from("notifications")
     .insert({
       company_id: data.companyId,
@@ -30,7 +30,7 @@ export async function persistNotification(data: {
 }
 
 export async function fetchUnreadNotifications(companyId: string, limit: number) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin as any)
     .from("notifications")
     .select("*")
     .eq("company_id", companyId)
@@ -42,11 +42,11 @@ export async function fetchUnreadNotifications(companyId: string, limit: number)
     console.error("[Persistence] Erro ao buscar notificações:", error);
     throw error;
   }
-  return data;
+  return data || [];
 }
 
 export async function markNotificationAsRead(notificationId: string, companyId: string) {
-  const { error } = await supabaseAdmin
+  const { error } = await (supabaseAdmin as any)
     .from("notifications")
     .update({ 
       status: "read",
