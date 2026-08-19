@@ -1,18 +1,6 @@
 /**
  * Job: Recuperação de entrada não paga ("carrinho abandonado" do catálogo).
- *
- * Um cliente que gera o PIX de entrada no catálogo público mas não paga
- * hoje simplesmente esfria — nada acontece. Esse job roda periodicamente
- * (via cron, mesmo mecanismo do bella-detectors), busca cobranças de
- * entrada pendentes há mais de `FOLLOWUP_AFTER_HOURS` sem lembrete
- * enviado, e manda um WhatsApp reaproveitando o template já aprovado na
- * Meta (`cobranca_criada_v2`, o mesmo usado nas cobranças normais do
- * Bella Pay) — mesmo texto/QR, funcionando como lembrete natural.
- *
- * Só afeta cobranças com `buyer_phone` preenchido (campo era opcional no
- * checkout) e com `external_reference` no padrão `catalog:...` (só
- * cobranças de entrada do catálogo público — não mexe em cobranças de
- * venda/PDV, que já têm seu próprio fluxo de notificação na criação).
+ * ...
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { authorizeJobRequest } from "@/lib/job-auth.server";
@@ -21,13 +9,15 @@ import { runJob } from "@/lib/job-runs.server";
 import { requireServiceKey } from "@/lib/job-admin.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const FOLLOWUP_AFTER_HOURS = 3;
+// REDUZIDO PARA TESTE: 0.01 horas (~36 segundos) em vez de 3 horas
+const FOLLOWUP_AFTER_HOURS = 0.01; 
 const MAX_PER_RUN = 100;
 
 export const Route = createFileRoute("/api/public/jobs/entrada-followup")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // ... (resto do código idêntico)
         const rateLimit = enforceRateLimit({
           route: "jobs:entrada-followup",
           windowMs: 60_000,
