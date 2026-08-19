@@ -89,17 +89,43 @@ export function Topbar() {
 
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
       if (entry.action === "created") {
+        const ticketId = (event.payload as any)?.ticketId;
+        if (ticketId === "10") {
+          console.log(`[TOPBAR-NOTIF] received catalog.order.received n8n-10`);
+        }
+        
         updateCount();
         
         const config = settings[event.type];
+        if (ticketId === "10") {
+          console.log(`[TOPBAR-NOTIF] config exists: ${!!config}`);
+          if (config) {
+            console.log(`[TOPBAR-NOTIF] sound: ${config.sound}`);
+            console.log(`[TOPBAR-NOTIF] browser: ${config.browser}`);
+          }
+        }
         if (!config) return;
 
-        const ticketId = (event.payload as any)?.ticketId;
-        if (ticketId && notifiedIdsRef.current.has(ticketId)) return;
+        if (ticketId === "10") {
+          console.log(`[TOPBAR-NOTIF] duplicate check n8n-10`);
+        }
+        if (ticketId && notifiedIdsRef.current.has(ticketId)) {
+          if (ticketId === "10") {
+            console.log(`[TOPBAR-NOTIF] discarded duplicate n8n-10`);
+          }
+          return;
+        }
         if (ticketId) notifiedIdsRef.current.add(ticketId);
+
+        if (ticketId === "10") {
+          console.log(`[TOPBAR-NOTIF] showing notification n8n-10`);
+        }
 
         // Notificação sonora
         if (config.sound && audioRef.current) {
+          if (ticketId === "10") {
+            console.log(`[TOPBAR-NOTIF] playing sound n8n-10`);
+          }
           audioRef.current.play().catch(() => {
             // Browsers bloqueiam autoplay sem interação
           });
@@ -121,6 +147,9 @@ export function Topbar() {
 
         // Notificação do Navegador (respeita preferência)
         if (config.browser) {
+          if (ticketId === "10") {
+            console.log(`[TOPBAR-NOTIF] browser notification n8n-10`);
+          }
           notify(title, {
             body: description,
             tag: ticketId || undefined,
