@@ -36,27 +36,15 @@ export const getUnreadNotifications = createServerFn({ method: "GET" })
   });
 
 /**
- * Marca uma notificação específica como lida.
- */
-/**
  * Marca uma notificação como lida — por id (modo antigo) OU por
  * conteúdo (empresa + tipo + referência, pra eventos que chegam ao vivo
  * e têm um id sintético que não bate com o id real do banco).
  *
  * NOTA DE ENGENHARIA: originalmente essa segunda forma foi implementada
- * como uma server function NOVA e separada (`readNotificationByContent`).
- * Por algum motivo não totalmente esclarecido — possivelmente um
- * problema no registro dela no manifesto de server functions do
- * TanStack Start em builds incrementais — as chamadas pra essa função
- * nova falhavam consistentemente com um erro de validação Zod dizendo
- * que o payload "data" nunca chegava, mesmo com o payload sendo enviado
- * corretamente e o código sendo estruturalmente idêntico a este aqui
- * (que sempre funcionou). Um rebuild completo não resolveu.
- *
- * Pra não depender de descobrir a causa exata desse problema de
- * infraestrutura, a função nova foi eliminada e essa capacidade foi
- * fundida DENTRO desta rota já comprovadamente funcional — evitando
- * precisar registrar qualquer server function nova.
+ * como uma server function separada. Por algum motivo de infraestrutura
+ * do TanStack Start em builds incrementais, as chamadas pra funções
+ * novas podiam falhar com erro de validação. A função foi fundida
+ * nesta rota já funcional para garantir estabilidade.
  */
 export const readNotification = createServerFn({ method: "POST" })
   .validator((data: any) => z.object({
