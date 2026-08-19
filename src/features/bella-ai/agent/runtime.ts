@@ -17,6 +17,7 @@ import { logAgentExecution } from "./execution-log";
 import { runAgent } from "./agent";
 import { bellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import type { AgentContext, AgentIntent, AgentResponse } from "./types";
+import type { AIResult } from "../ai/gateway/types";
 
 export interface AgentRuntimeInput {
   message: string;
@@ -74,8 +75,10 @@ export async function handleWithAgentRuntime(
 
   // Fase 2 — Tentativa via LLM (Nova Ordem: LLM -> Determinístico)
   let intent: AgentIntent | null = null;
+  let aiResult: AIResult | null = null;
+  
   try {
-    const aiResult = await bellaAIGateway.interpret({
+    aiResult = await bellaAIGateway.interpret({
       userMessage: input.message,
       companyName: input.ctx.companyId, 
       context: { 
@@ -83,12 +86,6 @@ export async function handleWithAgentRuntime(
         companyId: input.ctx.companyId 
       }
     });
-
-    // Diagnóstico via telemetria do Gateway
-    const telemetry = aiResult.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw
-      ? (aiResult.raw as any).telemetry
-      : { provider: aiResult.provider, fallbackUsed: aiResult.error?.fallbackUsed };
-
 
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
       intent = {
@@ -125,6 +122,10 @@ export async function handleWithAgentRuntime(
       confirmed: input.confirmed,
     });
 
+    const telemetry = aiResult?.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw 
+      ? (aiResult.raw as any).telemetry 
+      : { provider: aiResult?.provider || 'unknown', fallbackUsed: aiResult?.error?.fallbackUsed };
+
     // Erros funcionais do próprio agente (not_allowed, unknown_intent, error)
     // NÃO são fallback — são respostas legítimas.
     return {
@@ -135,9 +136,7 @@ export async function handleWithAgentRuntime(
         fallback: false,
         executionTimeMs: Date.now() - startedAt.getTime(),
         response,
-        telemetry: aiResult.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw 
-          ? (aiResult.raw as any).telemetry 
-          : { provider: aiResult.provider }
+        telemetry
       },
 
     };
