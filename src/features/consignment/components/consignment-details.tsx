@@ -64,7 +64,14 @@ export function ConsignmentDetails() {
     if (!data) return;
     setGeneratingPdf(true);
     try {
-      const blob = await generateConsignmentPDF(data.consignment, data.items, "Empresa NexOS");
+      // Buscar dados da empresa para o PDF
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, cnpj, address, city, state')
+        .eq('id', data.consignment.company_id)
+        .single();
+
+      const blob = await generateConsignmentPDF(data.consignment, data.items, company || { name: "NexOS ERP" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

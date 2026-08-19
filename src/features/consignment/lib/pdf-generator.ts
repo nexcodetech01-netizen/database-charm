@@ -5,7 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/format";
 import { Consignment, ConsignmentItem } from "../types";
 
-export const generateConsignmentPDF = async (consignment: Consignment, items: ConsignmentItem[], companyName: string = "NexOS ERP") => {
+export const generateConsignmentPDF = async (consignment: Consignment, items: ConsignmentItem[], companyData: { name: string; cnpj?: string | null; address?: string | null; city?: string | null; state?: string | null } = { name: "NexOS ERP" }) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
