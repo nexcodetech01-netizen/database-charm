@@ -58,7 +58,12 @@ export interface OpenAIInterpretResult {
   };
 }
 
-const DEFAULT_MODEL = "gpt-5.6-luna";
+// BUG ENCONTRADO: "gpt-5.6-luna" não é um modelo real da OpenAI — toda
+// chamada sem BELLA_OPENAI_MODEL configurado explicitamente no ambiente
+// falhava na própria API da OpenAI com "modelo não encontrado". Trocado
+// pelo modelo real mais adequado pro caso de uso (classificação de
+// intenção + resposta em JSON estruturado, precisa ser rápido e barato).
+const DEFAULT_MODEL = "gpt-4o-mini";
 const GATEWAY_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_TIMEOUT_MS = 15_000;
 

@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Send, Loader2 } from "lucide-react";
@@ -9,6 +10,9 @@ import { ASK_EXAMPLES, QUICK_ACTION_PROMPTS } from "../workspace/data";
 import { useAuth } from "@/providers/auth-provider";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
 import { handleWithAgentRuntime } from "../agent/runtime";
+import { interpretWithOpenAI } from "../ai/gateway/interpret-openai.functions";
+import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
+import { BellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import { askBella, appendMessage, createMessage, emptyContext, updateContext } from "@/features/accounting-ai/chat";
 import type { ChatMessage, ChatContextState } from "@/features/accounting-ai/chat/types";
 import { toast } from "sonner";
@@ -20,6 +24,19 @@ export function BellaAskPanel() {
   const { user, companyId } = useAuth();
   const { permissions, isOwner } = usePermissions();
   const legacyContextRef = useRef<ChatContextState>(emptyContext());
+
+  // CORREÇÃO: `interpretWithOpenAI` é uma server function — chamada
+  // direto (sem `useServerFn()`) a partir da cadeia de classes
+  // Gateway→Provider sempre falhava com erro de validação (a mesma
+  // causa raiz corrigida hoje no fluxo de notificações). Aqui, dentro
+  // do componente, o hook vincula a função corretamente; o provider e
+  // o gateway recebem essa versão já vinculada injetada, em vez de
+  // usar o singleton padrão (que chama a função sem o hook).
+  const interpretWithOpenAIFn = useServerFn(interpretWithOpenAI);
+  const gateway = useMemo(
+    () => new BellaAIGateway({ preferred: new OpenAIProvider(interpretWithOpenAIFn) }),
+    [interpretWithOpenAIFn],
+  );
 
   const handleSend = useCallback(async () => {
     const message = prompt.trim();
@@ -40,7 +57,8 @@ export function BellaAskPanel() {
           userId: user?.id,
           permissions,
           isOwner,
-        }
+        },
+        gateway,
       });
 
       if (runtimeResult.response) {
@@ -68,7 +86,7 @@ export function BellaAskPanel() {
     } finally {
       setIsThinking(false);
     }
-  }, [prompt, companyId, user?.id, permissions, isOwner, isThinking]);
+  }, [prompt, companyId, user?.id, permissions, isOwner, isThinking, gateway]);
 
   return (
     <Section
