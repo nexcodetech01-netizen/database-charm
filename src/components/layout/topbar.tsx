@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone, Settings, ChevronLeft, ChevronRight, CheckCircle, Filter, Check } from "lucide-react";
+import { Bell, Search, LogOut, User, Menu, Volume2, VolumeX, Smartphone, Settings, ChevronLeft, ChevronRight, CheckCircle, Filter, ExternalLink, History, Trash2 } from "lucide-react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,6 @@ import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-not
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { History, Trash2, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NotificationSettingsPanel } from "@/components/settings/notification-settings-panel";
 import { useNotificationSettings } from "@/hooks/use-notification-settings";
@@ -58,7 +57,36 @@ function routeForEvent(event: BellaEvent): string {
   }
 }
 
+/**
+ * Marca um alerta como lido: resolve no Registry (some da lista/badge na
+ * hora) e marca como lido no banco (`readNotification`, já existia desde
+ * a Fase 1 mas nunca tinha sido ligado a nenhuma ação do usuário — por
+ * isso o badge nunca "sumia depois de ver").
+ */
+async function markAlertAsRead(event: BellaEvent, companyId: string) {
+  bellaEventRegistry.resolveByPayload({
+    tenantId: event.tenantId,
+    type: event.type,
+    payload: event.payload,
+  });
+  try {
+    await readNotification({
+      data: { notificationId: event.id, companyId },
+    });
+  } catch {
+    // best-effort: se falhar no banco, o alerta já sumiu da tela pro
+    // usuário; na próxima hidratação da página ele reaparece se ainda
+    // estiver "não lido" no banco, o que é aceitável.
+  }
+}
+
 export function Topbar() {
+  // BUG ENCONTRADO: `user?.user_metadata?.company_id` nunca reflete o
+  // company_id real do usuário — o AuthProvider busca isso separadamente
+  // na tabela `profiles` (campo `current_company_id`) e expõe como
+  // `companyId` no contexto. Ler de `user_metadata` sempre resultava em
+  // `undefined`, o que travava a inscrição realtime antes mesmo dela
+  // começar (guard `if (!companyId) return;` no hook).
   const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -92,6 +120,7 @@ export function Topbar() {
   useCommercialInboxRealtime(companyId);
 
   const notifiedIdsRef = useRef<Set<string>>(new Set());
+
   const [showSettings, setShowSettings] = useState(false);
 
   const updateCount = () => {
