@@ -80,3 +80,49 @@ export async function markNotificationAsRead(notificationId: string, companyId: 
   }
   return { success: true };
 }
+
+/**
+ * Marca como lida por CONTEÚDO do evento (empresa + tipo + referência),
+ * não pelo id do banco.
+ *
+ * BUG QUE ISSO CORRIGE: eventos criados ao vivo (via `BellaEventEngine.emit`)
+ * recebem um id sintético local (`bella-evt-<timestamp>-<seq>`, gerado em
+ * `nextId()`) — não um UUID. A linha real na tabela `notifications` só é
+ * criada depois, de forma assíncrona e "fire-and-forget" em
+ * `BellaEventRegistry.record()` (`saveNotification(...).catch(...)`, sem
+ * aguardar nem devolver o id real de volta pro evento em memória). Ou
+ * seja: pra eventos que chegam AO VIVO durante a sessão, o id que a tela
+ * conhece NUNCA bate com o id real salvo no banco — "marcar como lida"
+ * atualizava 0 linhas (ou nem completava, já que `readNotification`
+ * valida o id como UUID e um id sintético falha nessa validação).
+ * Resultado: a notificação sumia da tela (efeito só local, em memória),
+ * mas continuava "não lida" no banco pra sempre — e reaparecia a cada
+ * refresh, já que a hidratação busca as não lidas direto do banco.
+ *
+ * A correção usa a MESMA combinação (empresa + tipo + referência) que
+ * `persistNotification` já usa pra deduplicar — não depende de nenhum id
+ * sintético bater com o real, e funciona igual tanto pra eventos
+ * hidratados do banco quanto pra eventos que chegaram ao vivo.
+ */
+export async function markNotificationAsReadByContent(
+  companyId: string,
+  eventType: string,
+  referenceId: string | null,
+) {
+  const { error } = await (supabaseAdmin as any)
+    .from("notifications")
+    .update({
+      status: "read",
+      read_at: new Date().toISOString(),
+    })
+    .eq("company_id", companyId)
+    .eq("event_type", eventType)
+    .eq("reference_id", referenceId)
+    .eq("status", "unread");
+
+  if (error) {
+    console.error("[Persistence] Erro ao ler notificação (por conteúdo):", error);
+    throw error;
+  }
+  return { success: true };
+}

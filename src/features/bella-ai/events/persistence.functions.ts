@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { persistNotification, fetchUnreadNotifications, markNotificationAsRead } from "./persistence.server";
+import { persistNotification, fetchUnreadNotifications, markNotificationAsRead, markNotificationAsReadByContent } from "./persistence.server";
 
 /**
  * Persiste uma notificação no banco de dados.
@@ -47,4 +47,23 @@ export const readNotification = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     return markNotificationAsRead(data.data.notificationId, data.data.companyId);
+  });
+
+/**
+ * Marca como lida por conteúdo (empresa + tipo + referência), sem
+ * depender do id sintético que eventos criados ao vivo recebem antes de
+ * a linha real existir no banco. Ver comentário em
+ * `markNotificationAsReadByContent` (persistence.server.ts) para o
+ * detalhe do bug que isso corrige.
+ */
+export const readNotificationByContent = createServerFn({ method: "POST" })
+  .validator((data: any) => z.object({
+    data: z.object({
+      companyId: z.string().uuid(),
+      eventType: z.string(),
+      referenceId: z.string().nullable(),
+    })
+  }).parse(data))
+  .handler(async ({ data }) => {
+    return markNotificationAsReadByContent(data.data.companyId, data.data.eventType, data.data.referenceId);
   });

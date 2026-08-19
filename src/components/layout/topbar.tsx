@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
-import { getUnreadNotifications, readNotification } from "@/features/bella-ai/events/persistence.functions";
+import { getUnreadNotifications, readNotificationByContent } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
@@ -128,14 +128,20 @@ export function Topbar() {
     });
     updateCount();
 
-    // 2. Persiste no banco de dados (se for um ID de banco real)
-    // IDs gerados em runtime começam com prefixos ou UUIDs específicos,
-    // mas a função readNotification cuida da validação uuid no handler.
+    // 2. Persiste no banco de dados.
+    // CORREÇÃO: eventos que chegam ao vivo (via BellaEventEngine.emit)
+    // têm um `id` sintético local (não é o id real da linha no banco,
+    // que só é criado depois, assíncrono, em BellaEventRegistry.record).
+    // Marcar por conteúdo (empresa+tipo+referência) — mesma chave usada
+    // pra deduplicar ao salvar — funciona independente de qual id o
+    // evento tem em memória.
     try {
-      await readNotification({
+      const payload = alert.payload as any;
+      await readNotificationByContent({
         data: {
-          notificationId: alert.id,
-          companyId: companyId
+          companyId,
+          eventType: alert.type,
+          referenceId: payload?.entityId || payload?.ticketId || null,
         }
       });
     } catch (err) {
@@ -160,14 +166,16 @@ export function Topbar() {
     // Banco de dados (processa em paralelo para performance)
     try {
       await Promise.all(
-        alertsToRead.map(alert => 
-          readNotification({
+        alertsToRead.map(alert => {
+          const payload = alert.payload as any;
+          return readNotificationByContent({
             data: {
-              notificationId: alert.id,
-              companyId: companyId
+              companyId,
+              eventType: alert.type,
+              referenceId: payload?.entityId || payload?.ticketId || null,
             }
-          }).catch(e => console.error(e))
-        )
+          }).catch(e => console.error(e));
+        })
       );
     } catch (err) {
       console.warn("[Topbar] Falha ao marcar todas as notificações como lidas:", err);
