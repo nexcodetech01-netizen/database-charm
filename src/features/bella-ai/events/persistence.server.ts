@@ -8,6 +8,24 @@ export async function persistNotification(data: {
   referenceId?: string | null;
   metadata?: any;
 }) {
+  // Prevenção de duplicidade: não gravar se já existe um evento 'unread' 
+  // do mesmo tipo para a mesma entidade/tenant nas últimas 24h.
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  
+  const { data: existing } = await (supabaseAdmin as any)
+    .from("notifications")
+    .select("id")
+    .eq("company_id", data.companyId)
+    .eq("event_type", data.eventType)
+    .eq("reference_id", data.referenceId || null)
+    .eq("status", "unread")
+    .gt("created_at", oneDayAgo)
+    .maybeSingle();
+
+  if (existing) {
+    return existing; // Ignora duplicidade
+  }
+
   const { data: inserted, error } = await (supabaseAdmin as any)
     .from("notifications")
     .insert({
@@ -21,6 +39,7 @@ export async function persistNotification(data: {
     })
     .select()
     .single();
+
 
   if (error) {
     console.error("[Persistence] Erro ao salvar notificação:", error);
