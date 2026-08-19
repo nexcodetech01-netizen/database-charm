@@ -14,6 +14,7 @@ import {
 } from "@/features/whatsapp/inbound/commercial-inbox";
 import { buildConversionPatch } from "@/features/whatsapp/inbound/inbox-conversion";
 import { broadcastInboxEvent } from "../lib/inbox-sync";
+import { logQueryMetric } from "@/lib/metrics";
 
 export interface CommercialInboxTicket {
   id: string;
@@ -78,6 +79,9 @@ export function useCommercialInbox(companyId: string | null, page = 1) {
         .order("created_at", { ascending: false })
         .range(from, to);
       if (error) throw error;
+      
+      logQueryMetric("inbox_list", data, companyId);
+
       return {
         rows: (data ?? []).map((row: any) => ({ ...row, items: [] })) as unknown as CommercialInboxTicket[],
         total: count ?? 0,
@@ -236,6 +240,11 @@ export function useCommercialInboxDetail(ticketId: string | null) {
         .eq("id", ticketId!)
         .maybeSingle();
       if (error) throw error;
+
+      // Pegamos o company_id do próprio dado retornado, se disponível
+      const companyId = (data as any)?.company_id || null;
+      logQueryMetric("inbox_ticket_detail", data, companyId);
+
       return data as unknown as CommercialInboxTicket | null;
     },
   });
