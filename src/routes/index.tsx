@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 // O NexOS utiliza PWA Manifest-Only. SWs legados são removidos no boot em __root.tsx.
-// Qualquer erro status 500 no carregamento do resource do PWA é ignóbil e tratado pelo navegador.
+// Qualquer erro status 500 no carregamento do resource do PWA é tratado nativamente pelo navegador.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/providers/auth-provider";
 import { LoadingSurface } from "@/components/design";

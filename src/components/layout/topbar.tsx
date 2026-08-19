@@ -17,8 +17,9 @@ import { useMobileNav } from "./mobile-nav-context";
 import { useEffect, useState, useRef } from "react";
 import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
-import { getInboxChannel } from "@/features/whatsapp/lib/inbox-sync";
+import { getInboxChannel, broadcastInboxEvent } from "@/features/whatsapp/lib/inbox-sync";
 import { useBrowserNotifications } from "@/features/whatsapp/hooks/use-inbox-notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -35,23 +36,51 @@ import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
 import { getUnreadNotifications } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
-import { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
+import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
+
+/** Rota de destino ao clicar num alerta do sino, por módulo do evento. */
+function routeForEvent(event: BellaEvent): string {
+  switch (event.type) {
+    case "catalog.order.received":
+    case "whatsapp.message.received":
+      return "/comercial/inbox-whatsapp";
+    case "inventory.min_stock_reached":
+    case "inventory.out_of_stock":
+    case "inventory.slow_moving":
+      return "/estoque";
+    case "finance.invoice.overdue":
+    case "finance.cashflow.negative":
+    case "finance.receivable.created":
+    case "finance.payable.created":
+      return "/financeiro";
+    default:
+      return "/";
+  }
+}
+
 
 export function Topbar() {
+  // BUG ENCONTRADO: `user?.user_metadata?.company_id` nunca reflete o
+  // company_id real do usuário — o AuthProvider busca isso separadamente
+  // na tabela `profiles` (campo `current_company_id`) e expõe como
+  // `companyId` no contexto. Ler de `user_metadata` sempre resultava em
+  // `undefined`, o que travava a inscrição realtime antes mesmo dela
+  // começar (guard `if (!companyId) return;` no hook).
   const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toggle: toggleMobileNav } = useMobileNav();
   const addLog = useLogStore(state => state.addLog);
-  
-  const [activeEvents, setActiveEvents] = useState<BellaEvent[]>([]);
+
+  const [catalogOrdersCount, setCatalogOrdersCount] = useState(0);
+  const [activeAlerts, setActiveAlerts] = useState<BellaEvent[]>([]);
   const { settings, isLoading: settingsLoading } = useNotificationSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { 
-    permission, 
-    requestPermission, 
-    notify, 
-    history: notificationHistory, 
+  const {
+    permission,
+    requestPermission,
+    notify,
+    history: notificationHistory,
     clearHistory,
     markAsRead,
     markAllAsRead,
@@ -62,51 +91,50 @@ export function Topbar() {
     page,
     setPage,
     totalPages,
+    filteredCount
   } = useBrowserNotifications();
-  
+
+  // Ativa listeners de tempo real para notificações externas e internas
   useExternalNotificationsRealtime(companyId, settings, settingsLoading);
   useCommercialInboxRealtime(companyId);
 
   const notifiedIdsRef = useRef<Set<string>>(new Set());
+
   const [showSettings, setShowSettings] = useState(false);
 
-  const routeForEvent = (event: BellaEvent) => {
-    switch (event.module) {
-      case "inventory": return "/estoque";
-      case "finance": return "/financeiro";
-      case "sales": 
-        if (event.type === "catalog.order.received" || event.type === "whatsapp.message.received") {
-          return "/comercial/inbox-whatsapp";
-        }
-        return "/vendas";
-      default: return "/dashboard";
-    }
-  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
+    // Inicia o registry se ainda não estiver (singleton)
     bellaEventRegistry.start();
 
+    // Fase 1: Hidratação do Registry com notificações persistentes não lidas
     const hydrateRegistry = async () => {
       if (!companyId) return;
-      
+
       try {
-        const unreadResponse = (await getUnreadNotifications({ 
-          data: { companyId }
+        const unreadResponse = (await getUnreadNotifications({
+          data: { companyId: companyId }
         })) as any;
+
 
         const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
 
+
         if (unread && unread.length > 0) {
           addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
-          
+
           unread.forEach((notif: any) => {
+
             const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
             if (!meta) return;
 
+            // Emite para o engine silenciosamente (evitando loops infinitos se possível,
+            // mas o registry já dedupa por key estável)
+            // Usamos as informações da tabela.
             const severity = (notif.metadata as any)?.severity || meta.defaultSeverity;
-            
+
             bellaEventRegistry.upsert({
               id: notif.id,
               tenantId: notif.company_id,
@@ -121,64 +149,124 @@ export function Topbar() {
               source: "persistence:hydration"
             });
           });
-          
-          updateState();
+
+          updateCount();
         }
       } catch (err) {
         console.warn("[Topbar] Erro na hidratação de notificações:", err);
       }
     };
 
-    const updateState = () => {
-      const active = bellaEventRegistry.listActive({ 
-        tenantId: companyId || undefined 
+    const updateCount = () => {
+
+      const active = bellaEventRegistry.listActive({
+        tenantId: companyId || undefined
+
       });
-      setActiveEvents([...active].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+      const catalogOrders = active.filter(e => e.type === "catalog.order.received");
+      setCatalogOrdersCount(catalogOrders.length);
+      // Sino: mostra TODOS os tipos de alerta ativos, não só pedidos do
+      // catálogo (antes o sino ignorava estoque baixo, conta vencida, etc.
+      // — os eventos existiam no Registry mas nunca eram exibidos aqui).
+      setActiveAlerts(active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
     };
 
-    updateState();
+    updateCount();
     void hydrateRegistry();
+
 
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
       if (entry.action === "created") {
-        updateState();
-        
-        const config = settings[event.type];
-        if (!config) return;
-
-        const ticketId = (event.payload as any)?.ticketId || (event.payload as any)?.entityId;
-        if (ticketId && notifiedIdsRef.current.has(String(ticketId))) return;
-        if (ticketId) notifiedIdsRef.current.add(String(ticketId));
-
-        if (config.sound && audioRef.current) {
-          audioRef.current.play().catch(() => {});
+        const ticketId = (event.payload as any)?.ticketId;
+        if (ticketId === "10") {
+          addLog('[TOPBAR-NOTIF]', `received catalog.order.received n8n-10`);
         }
 
+        updateCount();
+
+        const config = settings[event.type];
+        if (ticketId === "10") {
+          addLog('[TOPBAR-NOTIF]', `config exists: ${!!config}`);
+          if (config) {
+            addLog('[TOPBAR-NOTIF]', `sound: ${config.sound}`);
+            addLog('[TOPBAR-NOTIF]', `browser: ${config.browser}`);
+          }
+        }
+        if (!config) return;
+
+        if (ticketId === "10") {
+          addLog('[TOPBAR-NOTIF]', `duplicate check n8n-10`);
+        }
+        if (ticketId && notifiedIdsRef.current.has(ticketId)) {
+          if (ticketId === "10") {
+            addLog('[TOPBAR-NOTIF]', `discarded duplicate n8n-10`);
+          }
+          return;
+        }
+        if (ticketId) notifiedIdsRef.current.add(ticketId);
+
+        if (ticketId === "10") {
+          addLog('[TOPBAR-NOTIF]', `showing notification n8n-10`);
+        }
+
+        // Notificação sonora
+        if (config.sound && audioRef.current) {
+          if (ticketId === "10") {
+            addLog('[TOPBAR-NOTIF]', `playing sound n8n-10`);
+          }
+          audioRef.current.play().catch(() => {
+            // Browsers bloqueiam autoplay sem interação
+          });
+        }
+
+        const payload = event.payload as any;
         const title = event.title || "Nova notificação";
         const description = event.description || "";
 
+        // Notificação visual Toast (sempre mostramos se estiver na aba ativa)
         toast.success(title, {
           description,
-          action: { label: "Ver", onClick: () => navigate({ to: routeForEvent(event) }) }
+          action: ticketId
+            ? { label: "Ver", onClick: () => navigate({ to: "/comercial/inbox-whatsapp" }) }
+            : event.type === "whatsapp.message.received"
+              ? { label: "Ver", onClick: () => navigate({ to: "/whatsapp" }) }
+              : { label: "Ver", onClick: () => navigate({ to: routeForEvent(event) }) }
+
         });
 
+        // Notificação do Navegador (respeita preferência)
         if (config.browser) {
+          if (ticketId === "10") {
+            addLog('[TOPBAR-NOTIF]', `browser notification n8n-10`);
+          }
           notify(title, {
             body: description,
-            tag: ticketId ? String(ticketId) : undefined,
+            tag: ticketId || undefined,
             type: event.type
           } as any);
         }
       } else if (entry.action === "resolved" || entry.action === "expired") {
-        updateState();
+
+        updateCount();
       }
     });
 
+    // Listener para BroadcastChannel (Sincronização entre abas)
     const channel = getInboxChannel();
     const handleMessage = (event: MessageEvent) => {
       const msg = event.data;
-      if (msg.type === "CATALOG_ORDER_RECEIVED" || msg.type === "CATALOG_ORDER_RESOLVED") {
-        updateState();
+      if (msg.type === "CATALOG_ORDER_RECEIVED") {
+        updateCount();
+      } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
+        // Quando resolvido em outra aba, removemos do registry local se existir
+        bellaEventRegistry.resolveByPayload({
+          tenantId: companyId || "",
+          type: "catalog.order.received",
+          payload: { entityId: msg.payload.ticketId }
+        });
+        updateCount();
+      } else if (msg.type === "SYNC_COUNT") {
+        setCatalogOrdersCount(msg.payload.count);
       }
     };
 
@@ -190,8 +278,17 @@ export function Topbar() {
     };
   }, [companyId, settings, navigate, notify]);
 
-  const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Você";
-  const initials = displayName.split(" ").slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
+
+
+  const displayName =
+    (user?.user_metadata?.full_name as string | undefined) ||
+    user?.email ||
+    "Você";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("") || "U";
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -199,15 +296,6 @@ export function Topbar() {
     await authService.signOut();
     navigate({ to: "/auth", replace: true });
   }
-
-  const severityColor = (severity: string) => {
-    switch (severity) {
-      case "critical": return "bg-destructive";
-      case "warning": return "bg-warning";
-      case "success": return "bg-success";
-      default: return "bg-info";
-    }
-  };
 
   return (
     <header
@@ -230,6 +318,7 @@ export function Topbar() {
         <Menu className="h-5 w-5" />
       </Button>
       <div className="relative min-w-0 flex-1 max-w-md">
+
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
@@ -243,12 +332,12 @@ export function Topbar() {
 
       <div className="ml-auto flex items-center gap-1">
         <audio ref={audioRef} src="/notification-alert.mp3" preload="auto" />
-        
+
         <div className="flex items-center gap-1 border-r border-border pr-2 mr-1">
           {permission !== "granted" && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => requestPermission()}
               title="Ativar notificações do navegador"
               className="text-warning animate-pulse"
@@ -263,9 +352,11 @@ export function Topbar() {
             onClick={() => setShowSettings(true)}
             title="Configurações de Notificação"
           >
+
             <Settings className="h-4 w-4" />
           </Button>
         </div>
+
 
         <Popover>
           <PopoverTrigger asChild>
@@ -276,18 +367,31 @@ export function Topbar() {
           <PopoverContent className="w-80 p-0" align="end">
             <div className="flex flex-col border-b p-3 gap-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold">Histórico</h4>
+                <h4 className="text-sm font-semibold">Alertas Recentes</h4>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={markAllAsRead} title="Marcar todos como lidos">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={markAllAsRead}
+                    title="Marcar todos como lidos"
+                  >
                     <CheckCircle className="h-3.5 w-3.5" />
                   </Button>
                   {notificationHistory.length > 0 && (
-                    <Button variant="ghost" size="icon" onClick={clearHistory} className="h-8 w-8 text-muted-foreground hover:text-destructive" title="Limpar Histórico">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={clearHistory}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      title="Limpar Histórico"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger className="h-7 text-[10px] py-0 px-2">
@@ -297,11 +401,12 @@ export function Topbar() {
                   <SelectContent>
                     <SelectItem value="all">Todos Tipos</SelectItem>
                     <SelectItem value="catalog.order.received">Catálogo</SelectItem>
-                    <SelectItem value="whatsapp.message.received">WhatsApp</SelectItem>
-                    <SelectItem value="inventory.min_stock_reached">Estoque</SelectItem>
+                    <SelectItem value="whatsapp.message.received">Mensagens WhatsApp</SelectItem>
+                    <SelectItem value="sale.created">Vendas</SelectItem>
                     <SelectItem value="finance.invoice.overdue">Financeiro</SelectItem>
                   </SelectContent>
                 </Select>
+
                 <Select value={String(filterRead)} onValueChange={(v) => setFilterRead(v === "all" ? "all" : v === "true")}>
                   <SelectTrigger className="h-7 text-[10px] py-0 px-2">
                     <SelectValue placeholder="Status" />
@@ -319,78 +424,130 @@ export function Topbar() {
               {notificationHistory.length === 0 ? (
                 <div className="p-8 text-center flex flex-col items-center gap-2">
                   <Bell className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">Vazio.</p>
+                  <p className="text-xs text-muted-foreground">Nenhum alerta encontrado.</p>
                 </div>
               ) : (
                 <div className="divide-y">
                   {notificationHistory.map((item) => (
-                    <div key={item.id} className={cn("p-3 hover:bg-accent/50 transition-colors group relative cursor-default", !item.read && "bg-primary/5 border-l-2 border-l-primary")}>
+                    <div
+                      key={item.id}
+                      className={cn(
+                        "p-3 hover:bg-accent/50 transition-colors group relative cursor-default",
+                        !item.read && "bg-primary/5 border-l-2 border-l-primary"
+                      )}
+                      onMouseEnter={() => !item.read && markAsRead(item.id)}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{item.title}</p>
                           <p className="text-[10px] text-muted-foreground line-clamp-2">{item.body}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[9px] text-muted-foreground">{format(item.at, "HH:mm", { locale: ptBR })}</span>
+                            <span className="text-[9px] text-muted-foreground">
+                              {format(item.at, "HH:mm", { locale: ptBR })}
+                            </span>
+                            {item.type && (
+                              <span className="text-[8px] bg-muted px-1 rounded text-muted-foreground uppercase tracking-wider">
+                                {item.type.split('.')[0]}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0" onClick={() => navigate({ to: item.type?.includes("inbox") ? "/comercial/inbox-whatsapp" : "/dashboard" })}>
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
+                        {item.ticketId && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+                            onClick={() => navigate({ to: "/comercial/inbox-whatsapp" })}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t p-2 bg-muted/20">
-                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-[10px] text-muted-foreground">Pág. {page}/{totalPages}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+                <span className="text-[10px] text-muted-foreground">
+                  Página {page} de {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </PopoverContent>
+
         </Popover>
 
         <ThemeToggle />
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Alertas Ativos">
+            <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
               <Bell className="h-4 w-4" />
-              {activeEvents.length > 0 && (
-                <Badge className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center rounded-full px-1 text-[10px]" variant="destructive">
-                  {activeEvents.length}
+              {activeAlerts.length > 0 && (
+                <Badge
+                  className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center rounded-full px-1 text-[10px]"
+                  variant="destructive"
+                >
+                  {activeAlerts.length}
                 </Badge>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-y-auto">
-            <DropdownMenuLabel className="flex justify-between items-center">
-              Alertas Ativos
-              {activeEvents.length > 0 && <span className="text-[10px] font-normal text-muted-foreground">{activeEvents.length} notificações</span>}
-            </DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {activeEvents.length > 0 ? (
-              activeEvents.slice(0, 15).map((event) => (
-                <DropdownMenuItem key={event.id} asChild>
-                  <Link to={routeForEvent(event)} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
-                    <div className="flex items-center gap-2 w-full">
-                      <div className={cn("h-2 w-2 rounded-full shrink-0", severityColor(event.severity))} />
-                      <span className="font-semibold text-sm truncate flex-1">{event.title}</span>
-                      <span className="text-[9px] text-muted-foreground">{format(event.createdAt, "HH:mm", { locale: ptBR })}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground line-clamp-1">{event.description}</span>
-                    <span className="text-[10px] text-primary font-medium mt-1">Tratar agora →</span>
-                  </Link>
-                </DropdownMenuItem>
-              ))
+            {activeAlerts.length > 0 ? (
+              <div className="max-h-[320px] overflow-y-auto">
+                {activeAlerts.slice(0, 15).map((event) => (
+                  <DropdownMenuItem key={event.id} asChild>
+                    <Link
+                      to={routeForEvent(event)}
+                      className="flex flex-col items-start gap-0.5 p-3"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full shrink-0",
+                            event.severity === "critical" && "bg-destructive",
+                            event.severity === "warning" && "bg-warning",
+                            event.severity === "info" && "bg-primary",
+                            event.severity === "success" && "bg-emerald-500",
+                          )}
+                        />
+                        <span className="font-semibold text-sm">{event.title}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground pl-3">
+                        {event.description}
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </div>
             ) : (
-              <div className="p-4 text-center text-sm text-muted-foreground">Nenhum alerta crítico ativo.</div>
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Nenhuma notificação nova.
+              </div>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -413,10 +570,12 @@ export function Topbar() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>
-              <User className="mr-2 h-4 w-4" />Meu perfil
+              <User className="mr-2 h-4 w-4" />
+              Meu perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />Sair
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -430,6 +589,6 @@ export function Topbar() {
         </DialogContent>
       </Dialog>
     </header>
+
   );
 }
-
