@@ -172,7 +172,21 @@ export function useExternalNotificationsRealtime(
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // CORREÇÃO: entre o mount do hook e o canal ficar de fato
+        // "SUBSCRIBED", existe uma janela em que um INSERT pode acontecer
+        // sem ser capturado pelo listener (a inscrição ainda não estava
+        // pronta). A busca histórica já roda no mount, mas cobre só o que
+        // já existia ATÉ aquele momento — não o que chega durante a
+        // conexão. Rodar a busca de novo assim que o canal confirma
+        // SUBSCRIBED fecha essa janela: qualquer evento que tenha
+        // chegado nesse meio-tempo é pego aqui (dedupe via processedIds
+        // evita duplicar o que a live subscription já processou).
+        addLog('[EXT-NOTIF]', `channel status: ${status}`);
+        if (status === "SUBSCRIBED") {
+          void fetchRecentExternalEvents();
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
