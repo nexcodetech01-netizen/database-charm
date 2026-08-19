@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   Clock,
   Plus,
-  Loader2
+  Loader2,
+  Edit2,
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -33,13 +35,17 @@ import { generateConsignmentPDF } from '../lib/pdf-generator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RegisterSettlementDialog } from './register-settlement-dialog';
+import { EditConsignmentItemsDialog } from './edit-consignment-items-dialog';
+import { useAuth } from '@/providers/auth-provider';
 
 export function ConsignmentDetails() {
   const { id } = useParams({ from: '/_authenticated/consignacoes/$id' });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isSettlementOpen, setIsSettlementOpen] = useState(false);
+  const [isEditItemsOpen, setIsEditItemsOpen] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { companyId } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['consignment', id],
@@ -199,12 +205,24 @@ export function ConsignmentDetails() {
       </div>
 
       <Card className="bg-slate-900/50 border-slate-800">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
-            Produtos Consignados
-          </CardTitle>
-          <CardDescription>Resumo de movimentações e saldo em posse do revendedor.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              Produtos Consignados
+            </CardTitle>
+            <CardDescription>Resumo de movimentações e saldo em posse do revendedor.</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-slate-800 bg-slate-900/50 text-slate-400 hover:text-white"
+            onClick={() => setIsEditItemsOpen(true)}
+            disabled={consignment.status === 'fechada' || consignment.status === 'cancelada'}
+          >
+            <Edit2 className="h-3.5 w-3.5 mr-2" />
+            Editar Itens
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -329,6 +347,14 @@ export function ConsignmentDetails() {
         onOpenChange={setIsSettlementOpen}
         consignmentId={id}
         items={items}
+      />
+
+      <EditConsignmentItemsDialog
+        open={isEditItemsOpen}
+        onOpenChange={setIsEditItemsOpen}
+        consignmentId={id}
+        companyId={companyId || consignment.company_id}
+        initialItems={items}
       />
     </div>
   );
