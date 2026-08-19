@@ -2,67 +2,83 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import { broadcastInboxEvent } from "../lib/inbox-sync";
+import { NotificationSettings } from "@/hooks/use-notification-settings";
 
 /**
  * Hook para ativar o listener em tempo real da tabela `whatsapp_message_events`
  * para capturar eventos de notificação disparados por sistemas externos (n8n).
  */
-export function useExternalNotificationsRealtime(companyId: string | null) {
+export function useExternalNotificationsRealtime(
+  companyId: string | null, 
+  settings: NotificationSettings | undefined,
+  settingsLoading: boolean
+) {
   const processedIds = useRef<Set<string>>(new Set());
+  const pendingEvents = useRef<{ event: any, isHistorical: boolean }[]>([]);
+
+  // Efeito para processar eventos pendentes assim que as configurações carregarem
+  useEffect(() => {
+    if (!settingsLoading && settings && pendingEvents.current.length > 0) {
+      console.log(`[Realtime] Processando ${pendingEvents.current.length} eventos pendentes após carregamento de settings.`);
+      const eventsToProcess = [...pendingEvents.current];
+      pendingEvents.current = [];
+      
+      eventsToProcess.forEach(({ event, isHistorical }) => {
+        emitEvent(event, isHistorical);
+      });
+    }
+  }, [settingsLoading, settings]);
+
+  const emitEvent = (event: any, isHistorical: boolean) => {
+    if (!companyId) return;
+
+    // No momento, focamos apenas em notificações de pedidos do catálogo (catalog.order.received)
+    if (event.wa_message_id?.startsWith('n8n-')) {
+      bellaEventEngine.emit({
+        type: "catalog.order.received",
+        tenantId: companyId,
+        payload: {
+          entityId: event.wa_message_id.replace('n8n-', ''),
+          ticketId: event.wa_message_id.replace('n8n-', ''),
+          companyId: companyId,
+          source: "n8n",
+          isExternal: true,
+          isHistorical
+        },
+        title: "Novo pedido do catálogo",
+        description: "Um novo pedido foi recebido via integração externa.",
+        source: isHistorical ? "history:external" : "realtime:external",
+      });
+
+      if (!isHistorical) {
+        broadcastInboxEvent({
+          type: "CATALOG_ORDER_RECEIVED",
+          payload: {
+            ticketId: event.wa_message_id.replace('n8n-', ''),
+            buyerName: "Cliente",
+            total: 0
+          }
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!companyId) return;
 
-    // 1. Função para processar e emitir o evento no BellaEngine
     const processExternalEvent = (event: any, isHistorical = false) => {
       // Evita duplicidade
       if (processedIds.current.has(event.wa_message_id)) return;
       processedIds.current.add(event.wa_message_id);
 
-      // No momento, focamos apenas em notificações de pedidos do catálogo (catalog.order.received)
-      // O endpoint trigger.ts usa wa_message_id como prefixo 'n8n-' + event_id
-      // e persistimos o status como 'processed'.
-      
-      // Como a tabela whatsapp_message_events não tem o campo 'type' (ela é de logs),
-      // e o trigger.ts já persistiu o evento n8n-10, precisamos saber se esse registro
-      // é um pedido do catálogo. 
-      // O trigger.ts insere wa_message_id = `n8n-${data.event_id}`.
-      
-      if (event.wa_message_id?.startsWith('n8n-')) {
-        // Para eventos n8n, assumimos catalog.order.received conforme especificado no trigger.ts
-        // Se no futuro houver outros tipos, o trigger.ts precisaria persistir o tipo em algum lugar
-        // ou usaríamos uma convenção no wa_message_id.
-        
-        bellaEventEngine.emit({
-          type: "catalog.order.received",
-          tenantId: companyId,
-          payload: {
-            entityId: event.wa_message_id.replace('n8n-', ''),
-            ticketId: event.wa_message_id.replace('n8n-', ''),
-            companyId: companyId,
-            source: "n8n",
-            isExternal: true,
-            isHistorical
-          },
-          // O BellaEventEngine usará os defaults do catálogo para título/descrição se não passarmos,
-          // mas o trigger.ts enviou títulos específicos. Infelizmente não temos o título aqui no log.
-          // Usamos o padrão do sistema.
-          title: "Novo pedido do catálogo",
-          description: "Um novo pedido foi recebido via integração externa.",
-          source: isHistorical ? "history:external" : "realtime:external",
-        });
-
-        if (!isHistorical) {
-          broadcastInboxEvent({
-            type: "CATALOG_ORDER_RECEIVED",
-            payload: {
-              ticketId: event.wa_message_id.replace('n8n-', ''),
-              buyerName: "Cliente",
-              total: 0 // Não temos o valor no log de eventos
-            }
-          });
-        }
+      // Se as configurações ainda estão carregando, armazena no buffer
+      if (settingsLoading || !settings) {
+        pendingEvents.current.push({ event, isHistorical });
+        return;
       }
+
+      // Se já temos settings, emite imediatamente
+      emitEvent(event, isHistorical);
     };
 
     // 2. Consulta inicial para não perder notificações enquanto offline
@@ -74,10 +90,9 @@ export function useExternalNotificationsRealtime(companyId: string | null) {
         .eq("status", "processed")
         .like("wa_message_id", "n8n-%")
         .order("sent_at", { ascending: false })
-        .limit(10); // Apenas os mais recentes
+        .limit(10);
 
       if (!error && data) {
-        // Invertemos para processar do mais antigo para o mais novo
         [...data].reverse().forEach(row => processExternalEvent(row, true));
       }
     };
@@ -106,5 +121,5 @@ export function useExternalNotificationsRealtime(companyId: string | null) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [companyId]);
+    }, [companyId, settingsLoading, !!settings]);
 }

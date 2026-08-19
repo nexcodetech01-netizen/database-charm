@@ -63,7 +63,7 @@ export function Topbar() {
   } = useBrowserNotifications();
   
   // Ativa listeners de tempo real para notificações externas e internas
-  useExternalNotificationsRealtime(user?.user_metadata?.company_id);
+  useExternalNotificationsRealtime(user?.user_metadata?.company_id, settings, settingsLoading);
   useCommercialInboxRealtime(user?.user_metadata?.company_id);
 
   const lastNotifiedRef = useRef<string | null>(null);
