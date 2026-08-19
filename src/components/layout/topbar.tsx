@@ -106,7 +106,6 @@ export function Topbar() {
         }
         if (!config) return;
 
-        const ticketId = (event.payload as any)?.ticketId;
         if (ticketId === "10") {
           console.log(`[TOPBAR-NOTIF] duplicate check n8n-10`);
         }
