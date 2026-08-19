@@ -125,8 +125,26 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
       const latencyMs = Date.now() - startedAt;
 
       if (!response.ok) {
-        const errBody = await response.text().catch(() => "no_body");
-        console.error("[bella.interpret.openai] API Error", { status: response.status, error: errBody });
+        const errText = await response.text().catch(() => "no_body");
+        let info = { status: response.status, body: errText };
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.error) {
+            info = { ...info, ...parsed.error };
+          }
+        } catch {}
+
+        console.error("[bella.interpret.openai] API Error", {
+          status: response.status,
+          type: (info as any).type,
+          code: (info as any).code,
+          param: (info as any).param,
+          message: (info as any).message || (info as any).body,
+          model,
+          endpoint: GATEWAY_URL,
+          latency: Date.now() - startedAt
+        });
+
         throw new Error(`OPENAI_HTTP_${response.status}`);
       }
 
