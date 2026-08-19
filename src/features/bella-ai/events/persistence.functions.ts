@@ -36,34 +36,35 @@ export const getUnreadNotifications = createServerFn({ method: "GET" })
   });
 
 /**
- * Marca uma notificação específica como lida.
+ * Marca uma notificação como lida — por id (modo antigo) OU por
+ * conteúdo (empresa + tipo + referência, pra eventos que chegam ao vivo
+ * e têm um id sintético que não bate com o id real do banco).
+ *
+ * NOTA DE ENGENHARIA: originalmente essa segunda forma foi implementada
+ * como uma server function separada. Por algum motivo de infraestrutura
+ * do TanStack Start em builds incrementais, as chamadas pra funções
+ * novas podiam falhar com erro de validação. A função foi fundida
+ * nesta rota já funcional para garantir estabilidade.
  */
 export const readNotification = createServerFn({ method: "POST" })
   .validator((data: any) => z.object({
     data: z.object({
-      notificationId: z.string().uuid(),
+      notificationId: z.string().uuid().optional(),
       companyId: z.string().uuid(),
-    })
+      eventType: z.string().optional(),
+      referenceId: z.string().nullable().optional(),
+    }).refine(
+      (d) => !!d.notificationId || !!d.eventType,
+      { message: "Informe notificationId OU eventType (com referenceId)." }
+    )
   }).parse(data))
   .handler(async ({ data }) => {
-    return markNotificationAsRead(data.data.notificationId, data.data.companyId);
-  });
-
-/**
- * Marca como lida por conteúdo (empresa + tipo + referência), sem
- * depender do id sintético que eventos criados ao vivo recebem antes de
- * a linha real existir no banco. Ver comentário em
- * `markNotificationAsReadByContent` (persistence.server.ts) para o
- * detalhe do bug que isso corrige.
- */
-export const readNotificationByContent = createServerFn({ method: "POST" })
-  .validator((data: any) => z.object({
-    data: z.object({
-      companyId: z.string().uuid(),
-      eventType: z.string(),
-      referenceId: z.string().nullable(),
-    })
-  }).parse(data))
-  .handler(async ({ data }) => {
-    return markNotificationAsReadByContent(data.data.companyId, data.data.eventType, data.data.referenceId);
+    if (data.data.notificationId) {
+      return markNotificationAsRead(data.data.notificationId, data.data.companyId);
+    }
+    return markNotificationAsReadByContent(
+      data.data.companyId,
+      data.data.eventType!,
+      data.data.referenceId ?? null,
+    );
   });

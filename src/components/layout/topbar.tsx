@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
-import { getUnreadNotifications, readNotificationByContent } from "@/features/bella-ai/events/persistence.functions";
+import { getUnreadNotifications, readNotification } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
@@ -139,7 +139,7 @@ export function Topbar() {
       const payload = alert.payload as any;
       const refId = payload?.entityId || payload?.ticketId || null;
       addLog('[TOPBAR-NOTIF]', `marcando como lida: type=${alert.type} referenceId=${refId}`);
-      const result = await readNotificationByContent({
+      const result = await readNotification({
         data: {
           companyId,
           eventType: alert.type,
@@ -172,7 +172,7 @@ export function Topbar() {
       await Promise.all(
         alertsToRead.map(alert => {
           const payload = alert.payload as any;
-          return readNotificationByContent({
+          return readNotification({
             data: {
               companyId,
               eventType: alert.type,
