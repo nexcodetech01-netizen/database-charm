@@ -19,10 +19,11 @@ grant all on public.query_metrics to service_role;
 
 alter table public.query_metrics enable row level security;
 
+-- Política simples para leitura (admins ou usuários da mesma empresa)
 create policy "Users can view metrics for their company"
 on public.query_metrics for select
 to authenticated
-using (company_id = auth.jwt()->>'company_id'::uuid);
+using (company_id::text = (auth.jwt() ->> 'company_id'));
 ```
 
 ## 2. Infraestrutura de Logging (Frontend/Client)
@@ -35,7 +36,7 @@ Alterar `src/features/whatsapp/hooks/use-commercial-inbox.ts` para capturar o ta
 Implementar uma nova rota `src/routes/_authenticated/ferramentas.metricas-inbox.tsx` que exibe:
 - Médias de KB por query (24h / 7 dias).
 - Contagem de chamadas por tipo.
-- Gráfico simples ou tabela de resumo.
+- Tabela de resumo de performance.
 
 ## Detalhes Técnicos
 - O tamanho do payload será estimado via `JSON.stringify(data).length / 1024`.
