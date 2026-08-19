@@ -31,9 +31,17 @@ async function fetchDeployedBundleTag(): Promise<string | null> {
       credentials: "same-origin",
       headers: { "cache-control": "no-cache", pragma: "no-cache" },
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn(`[PWA-Check] Health check failed with status: ${response.status}`);
+      return null;
+    }
 
     const html = await response.text();
+    if (!html || !html.includes("<script")) {
+      console.warn("[PWA-Check] Deployed HTML seems invalid or empty.");
+      return null;
+    }
+    
     const parsed = new DOMParser().parseFromString(html, "text/html");
     const script = parsed.querySelector<HTMLScriptElement>(
       'script[src*="/assets/"], script[src*="assets/"]',
@@ -41,7 +49,8 @@ async function fetchDeployedBundleTag(): Promise<string | null> {
     return script?.getAttribute("src")
       ? normalizeBundleTag(script.getAttribute("src")!)
       : null;
-  } catch {
+  } catch (err: any) {
+    console.warn(`[PWA-Check] Deployed bundle check failed: ${err.message}`);
     return null;
   }
 }
