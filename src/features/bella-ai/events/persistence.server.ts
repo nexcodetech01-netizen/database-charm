@@ -11,16 +11,25 @@ export async function persistNotification(data: {
   // Prevenção de duplicidade: não gravar se já existe um evento 'unread' 
   // do mesmo tipo para a mesma entidade/tenant nas últimas 24h.
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  
-  const { data: existing } = await (supabaseAdmin as any)
+  const refId = data.referenceId || null;
+
+  let existingQuery = (supabaseAdmin as any)
     .from("notifications")
     .select("id")
     .eq("company_id", data.companyId)
     .eq("event_type", data.eventType)
-    .eq("reference_id", data.referenceId || null)
     .eq("status", "unread")
-    .gt("created_at", oneDayAgo)
-    .maybeSingle();
+    .gt("created_at", oneDayAgo);
+
+  // CORREÇÃO: `.eq("reference_id", null)` nunca bate com nada no
+  // Supabase/PostgREST, mesmo contra linhas onde a coluna também é NULL
+  // (vira `= NULL` em SQL, sempre indeterminado). Isso fazia a checagem
+  // de duplicidade nunca encontrar duplicata pra eventos sem
+  // referenceId, e o mesmo bug afetava `markNotificationAsReadByContent`
+  // logo abaixo — corrigido nos dois com `.is()` quando o valor é null.
+  existingQuery = refId === null ? existingQuery.is("reference_id", null) : existingQuery.eq("reference_id", refId);
+
+  const { data: existing } = await existingQuery.maybeSingle();
 
   if (existing) {
     return existing; // Ignora duplicidade
@@ -109,7 +118,15 @@ export async function markNotificationAsReadByContent(
   eventType: string,
   referenceId: string | null,
 ) {
-  const { error } = await (supabaseAdmin as any)
+  // CORREÇÃO 2: quando `referenceId` é null (evento sem entityId/ticketId
+  // no payload — bem comum), `.eq("reference_id", null)` NUNCA bate com
+  // nada no Supabase/PostgREST — mesmo contra linhas onde a coluna
+  // também é NULL. `.eq()` vira `= NULL` em SQL, que é sempre
+  // indeterminado (nunca verdadeiro), diferente de `IS NULL`. É preciso
+  // usar `.is()` especificamente para comparar com null. Sem isso, toda
+  // notificação sem referenceId continuava "não lida" no banco pra
+  // sempre, mesmo depois da primeira correção (empresa+tipo+referência).
+  let query = (supabaseAdmin as any)
     .from("notifications")
     .update({
       status: "read",
@@ -117,8 +134,11 @@ export async function markNotificationAsReadByContent(
     })
     .eq("company_id", companyId)
     .eq("event_type", eventType)
-    .eq("reference_id", referenceId)
     .eq("status", "unread");
+
+  query = referenceId === null ? query.is("reference_id", null) : query.eq("reference_id", referenceId);
+
+  const { error } = await query;
 
   if (error) {
     console.error("[Persistence] Erro ao ler notificação (por conteúdo):", error);
