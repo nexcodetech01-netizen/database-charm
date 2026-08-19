@@ -15,6 +15,7 @@ import type { CartSession } from "./cart-session";
 import { digits, parseCurrency } from "@/lib/masks";
 import { isValidCNPJ, isValidCPF } from "@/lib/validators";
 
+
 export type CheckoutStep =
   | "WAITING_PAYMENT_METHOD"
   | "WAITING_PAYMENT_METHOD_OTHER_CITY"
