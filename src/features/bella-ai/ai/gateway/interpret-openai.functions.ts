@@ -66,8 +66,12 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data, context }): Promise<OpenAIInterpretResult> => {
     // 1. Segurança: userId e companyId do contexto, nunca do input.
-    const { userId, companyId } = context;
+    // context.claims pode conter o org_id se configurado no Supabase Custom Claims
+    const { userId, claims } = context;
+    const companyId = (claims as any)?.company_id || (claims as any)?.org_id;
+
     if (!userId || !companyId) {
+      console.error("[bella.interpret.openai] Missing userId or companyId in claims", { userId, claims });
       throw new Error("UNAUTHORIZED_CONTEXT");
     }
 

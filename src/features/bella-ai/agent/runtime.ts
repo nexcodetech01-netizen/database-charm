@@ -70,10 +70,10 @@ export async function handleWithAgentRuntime(
   try {
     const aiResult = await bellaAIGateway.interpret({
       userMessage: input.message,
-      companyName: ctx.companyId, // Simplificação, ideally pass name if known
+      companyName: input.ctx.companyId, 
       context: { 
-        userId: ctx.userId,
-        companyId: ctx.companyId 
+        userId: input.ctx.userId,
+        companyId: input.ctx.companyId 
       }
     });
 
