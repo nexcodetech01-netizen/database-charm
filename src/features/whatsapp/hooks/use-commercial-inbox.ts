@@ -58,10 +58,15 @@ export function useCommercialInbox(companyId: string | null) {
     queryFn: async (): Promise<CommercialInboxTicket[]> => {
       const { data, error } = await supabase
         .from("whatsapp_commercial_inbox")
-        .select("*")
+        .select(`
+          id, phone, buyer_name, item_count, total, status, origin, created_at,
+          fulfillment, delivery, payment, sale_id, converted_at,
+          full_name, person_type, cpf, cnpj, birth_date, zip_code,
+          state, city, district, street, number, complement, items
+        `)
         .eq("company_id", companyId!)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(50);
       if (error) throw error;
       return (data ?? []) as unknown as CommercialInboxTicket[];
     },

@@ -57,7 +57,10 @@ export const crmService = {
   async listOpportunities(companyId: string, filters?: { search?: string; stageId?: string; status?: string }) {
     let q = supabase
       .from("opportunities")
-      .select("*")
+      .select(`
+        id, title, estimated_value, status, stage_id, created_at, position,
+        company_id, customer_id, closed_at, won_reason, lost_reason, probability
+      `)
       .eq("company_id", companyId)
       .order("position", { ascending: true })
       .order("created_at", { ascending: false });
@@ -144,7 +147,7 @@ export const crmService = {
   async listEvents(companyId: string, filters?: { customerId?: string; opportunityId?: string; limit?: number }) {
     let q = supabase
       .from("crm_events")
-      .select("*")
+      .select("id, company_id, customer_id, opportunity_id, event_type, description, occurred_at, user_id, metadata")
       .eq("company_id", companyId)
       .order("occurred_at", { ascending: false })
       .limit(filters?.limit ?? 100);
