@@ -113,7 +113,6 @@ export const interpretWithOpenAI = createServerFn({ method: "POST" })
               { role: "user", content: userPrompt },
             ],
             response_format: { type: "json_object" },
-            temperature: 0.2,
           }),
         },
         { 
