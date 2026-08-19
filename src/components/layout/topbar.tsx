@@ -32,10 +32,11 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
-import { getUnreadNotifications, readNotification } from "@/features/bella-ai/events/persistence.functions";
+import { getUnreadNotifications, readNotification, saveNotification } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
+import { useServerFn } from "@tanstack/react-start";
 
 /** Rota de destino ao clicar num alerta do sino, por módulo do evento. */
 function routeForEvent(event: BellaEvent): string {
@@ -58,12 +59,6 @@ function routeForEvent(event: BellaEvent): string {
 }
 
 export function Topbar() {
-  // BUG ENCONTRADO: `user?.user_metadata?.company_id` nunca reflete o
-  // company_id real do usuário — o AuthProvider busca isso separadamente
-  // na tabela `profiles` (campo `current_company_id`) e expõe como
-  // `companyId` no contexto. Ler de `user_metadata` sempre resultava em
-  // `undefined`, o que travava a inscrição realtime antes mesmo dela
-  // começar (guard `if (!companyId) return;` no hook).
   const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -74,6 +69,12 @@ export function Topbar() {
   const [activeAlerts, setActiveAlerts] = useState<BellaEvent[]>([]);
   const { settings, isLoading: settingsLoading } = useNotificationSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Hooks das Server Functions (CORREÇÃO: essencial para TanStack Start v1)
+  const getUnreadFn = useServerFn(getUnreadNotifications);
+  const readNotificationFn = useServerFn(readNotification);
+  const saveNotificationFn = useServerFn(saveNotification);
+
   const {
     permission,
     requestPermission,
@@ -92,12 +93,10 @@ export function Topbar() {
     filteredCount
   } = useBrowserNotifications();
 
-  // Ativa listeners de tempo real para notificações externas e internas
   useExternalNotificationsRealtime(companyId, settings, settingsLoading);
   useCommercialInboxRealtime(companyId);
 
   const notifiedIdsRef = useRef<Set<string>>(new Set());
-
   const [showSettings, setShowSettings] = useState(false);
 
   const updateCount = () => {
@@ -109,18 +108,9 @@ export function Topbar() {
     setActiveAlerts(active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
   };
 
-  /**
-   * Marca uma notificação como lida tanto no Registry (UI) quanto no Banco.
-   */
   const markAlertAsRead = async (alert: BellaEvent) => {
     if (!companyId) return;
     
-    // 1. Remove do Registry imediatamente para atualizar o badge
-    // BUG CORRIGIDO: `resolve()` espera a CHAVE derivada interna
-    // (`tenantId::type::entityId`), não o `id` bruto do banco — por isso
-    // "Marcar como lida" não removia nada da lista visualmente, mesmo
-    // persistindo no banco por trás. `resolveByPayload` deriva a chave
-    // certa a partir do próprio evento.
     bellaEventRegistry.resolveByPayload({
       tenantId: alert.tenantId,
       type: alert.type,
@@ -128,18 +118,12 @@ export function Topbar() {
     });
     updateCount();
 
-    // 2. Persiste no banco de dados.
-    // CORREÇÃO: eventos que chegam ao vivo (via BellaEventEngine.emit)
-    // têm um `id` sintético local (não é o id real da linha no banco,
-    // que só é criado depois, assíncrono, em BellaEventRegistry.record).
-    // Marcar por conteúdo (empresa+tipo+referência) — mesma chave usada
-    // pra deduplicar ao salvar — funciona independente de qual id o
-    // evento tem em memória.
     try {
       const payload = alert.payload as any;
       const refId = payload?.entityId || payload?.ticketId || null;
       addLog('[TOPBAR-NOTIF]', `marcando como lida: type=${alert.type} referenceId=${refId}`);
-      const result = await readNotification({
+      
+      const result = await readNotificationFn({
         data: {
           companyId,
           eventType: alert.type,
@@ -158,8 +142,6 @@ export function Topbar() {
 
     const alertsToRead = [...activeAlerts];
     
-    // UI Update massivo
-    // Mesma correção: resolveByPayload em vez de resolve(alert.id)
     alertsToRead.forEach(alert => bellaEventRegistry.resolveByPayload({
       tenantId: alert.tenantId,
       type: alert.type,
@@ -167,12 +149,11 @@ export function Topbar() {
     }));
     updateCount();
 
-    // Banco de dados (processa em paralelo para performance)
     try {
       await Promise.all(
         alertsToRead.map(alert => {
           const payload = alert.payload as any;
-          return readNotification({
+          return readNotificationFn({
             data: {
               companyId,
               eventType: alert.type,
@@ -195,7 +176,7 @@ export function Topbar() {
       if (!companyId) return;
 
       try {
-        const unreadResponse = (await getUnreadNotifications({
+        const unreadResponse = (await getUnreadFn({
           data: { companyId: companyId }
         })) as any;
 
@@ -235,8 +216,24 @@ export function Topbar() {
     updateCount();
     void hydrateRegistry();
 
+    // Listener para o Registry: no navegador, o Topbar cuida da persistência
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
       if (entry.action === "created") {
+        // CORREÇÃO: Persiste no banco usando o hook do componente
+        const payload = event.payload as any;
+        saveNotificationFn({
+          data: {
+            companyId: event.tenantId,
+            eventType: event.type,
+            title: event.title,
+            message: event.description,
+            referenceId: payload?.entityId || payload?.ticketId || null,
+            metadata: payload
+          }
+        }).catch(err => {
+          console.warn("[Topbar] Falha na persistência via hook:", err);
+        });
+
         const ticketId = (event.payload as any)?.ticketId;
         updateCount();
 
@@ -295,7 +292,7 @@ export function Topbar() {
       unsubscribe();
       channel?.removeEventListener("message", handleMessage);
     };
-  }, [companyId, settings, navigate, notify]);
+  }, [companyId, settings, navigate, notify, getUnreadFn, saveNotificationFn]);
 
   const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Você";
   const initials = displayName.split(" ").slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
@@ -367,249 +364,150 @@ export function Topbar() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" title="Histórico de Alertas">
-              <History className="h-4 w-4" />
-            </Button>
+            <div className="relative">
+              <Button variant="ghost" size="icon" title="Alertas Ativos">
+                <Bell className={cn("h-4 w-4", activeAlerts.length > 0 && "animate-tada text-primary")} />
+                {activeAlerts.length > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground border-2 border-background animate-in fade-in zoom-in">
+                    {activeAlerts.length > 9 ? '9+' : activeAlerts.length}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-0" align="end">
             <div className="flex flex-col border-b p-3 gap-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold">Alertas Recentes</h4>
+                <h4 className="text-sm font-semibold">Alertas Ativos</h4>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={markAllAsRead}
-                    title="Marcar todos como lidos"
+                    onClick={markAllAlertsAsRead}
+                    title="Resolver todos"
                   >
                     <CheckCircle className="h-3.5 w-3.5" />
                   </Button>
-                  {notificationHistory.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={clearHistory}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      title="Limpar Histórico"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="Histórico Completo"
+                    asChild
+                  >
+                    <Link to="/">
+                      <History className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="h-7 text-[10px] py-0 px-2">
-                    <Filter className="h-3 w-3 mr-1" />
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos Tipos</SelectItem>
-                    <SelectItem value="catalog.order.received">Catálogo</SelectItem>
-                    <SelectItem value="whatsapp.message.received">Mensagens WhatsApp</SelectItem>
-                    <SelectItem value="sale.created">Vendas</SelectItem>
-                    <SelectItem value="finance.invoice.overdue">Financeiro</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={String(filterRead)} onValueChange={(v) => setFilterRead(v === "all" ? "all" : v === "true")}>
-                  <SelectTrigger className="h-7 text-[10px] py-0 px-2">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="false">Não Lidos</SelectItem>
-                    <SelectItem value="true">Lidos</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
             <div className="max-h-[350px] overflow-y-auto">
-              {notificationHistory.length === 0 ? (
+              {activeAlerts.length === 0 ? (
                 <div className="p-8 text-center flex flex-col items-center gap-2">
-                  <Bell className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-xs text-muted-foreground">Nenhum alerta encontrado.</p>
+                  <Check className="h-8 w-8 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">Tudo em ordem por aqui.</p>
                 </div>
               ) : (
                 <div className="divide-y">
-                  {notificationHistory.map((item) => (
+                  {activeAlerts.map((alert) => (
                     <div
-                      key={item.id}
+                      key={alert.id}
                       className={cn(
                         "p-3 hover:bg-accent/50 transition-colors group relative cursor-default",
-                        !item.read && "bg-primary/5 border-l-2 border-l-primary"
+                        alert.severity === 'critical' && "bg-destructive/5"
                       )}
-                      onMouseEnter={() => !item.read && markAsRead(item.id)}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex gap-3">
+                        <div className={cn(
+                          "mt-1 h-2 w-2 rounded-full shrink-0",
+                          alert.severity === 'critical' ? "bg-destructive" : 
+                          alert.severity === 'warning' ? "bg-warning" : "bg-primary"
+                        )} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{item.title}</p>
-                          <p className="text-[10px] text-muted-foreground line-clamp-2">{item.body}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[9px] text-muted-foreground">
-                              {format(item.at, "HH:mm", { locale: ptBR })}
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <p className="text-xs font-medium truncate">{alert.title}</p>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {format(alert.createdAt, "HH:mm", { locale: ptBR })}
                             </span>
-                            {item.type && (
-                              <span className="text-[8px] bg-muted px-1 rounded text-muted-foreground uppercase tracking-wider">
-                                {item.type.split('.')[0]}
-                              </span>
-                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed mb-2">
+                            {alert.description}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] bg-primary/10 hover:bg-primary/20 text-primary border-none"
+                              onClick={() => {
+                                markAlertAsRead(alert);
+                                navigate({ to: routeForEvent(alert) });
+                              }}
+                            >
+                              Ver Detalhes
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                              onClick={() => markAlertAsRead(alert)}
+                            >
+                              Ignorar
+                            </Button>
                           </div>
                         </div>
-                        {item.ticketId && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                            onClick={() => navigate({ to: "/comercial/inbox-whatsapp" })}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t p-2 bg-muted/20">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  disabled={page === 1}
-                  onClick={() => setPage(p => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-[10px] text-muted-foreground">
-                  Página {page} de {totalPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </PopoverContent>
         </Popover>
 
-        <ThemeToggle />
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
-              <Bell className="h-4 w-4" />
-              {activeAlerts.length > 0 && (
-                <Badge
-                  className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center rounded-full px-1 text-[10px]"
-                  variant="destructive"
-                >
-                  {activeAlerts.length}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <div className="flex items-center justify-between px-2 py-1.5">
-              <DropdownMenuLabel className="p-0">Notificações</DropdownMenuLabel>
-              {activeAlerts.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-[10px] text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    markAllAlertsAsRead();
-                  }}
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  Marcar todas lidas
-                </Button>
-              )}
-            </div>
-            <DropdownMenuSeparator />
-            {activeAlerts.length > 0 ? (
-              <div className="max-h-[320px] overflow-y-auto">
-                {activeAlerts.slice(0, 15).map((alert) => (
-                  <DropdownMenuItem 
-                    key={alert.id} 
-                    onSelect={() => markAlertAsRead(alert)}
-                    asChild
-                  >
-                    <Link
-                      to={routeForEvent(alert)}
-                      className="flex flex-col items-start gap-0.5 p-3 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 rounded-full shrink-0",
-                            alert.severity === "critical" && "bg-destructive",
-                            alert.severity === "warning" && "bg-warning",
-                            alert.severity === "info" && "bg-primary",
-                            alert.severity === "success" && "bg-emerald-500",
-                          )}
-                        />
-                        <span className="font-semibold text-sm">{alert.title}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground pl-3">
-                        {alert.description}
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-            ) : (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Nenhuma notificação nova.
-              </div>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full p-0.5 pr-2 transition-colors hover:bg-accent">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full ml-1">
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
                 {initials}
               </div>
-              <span className="hidden text-sm font-medium sm:inline">{displayName.split(" ")[0]}</span>
-            </button>
+            </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">{displayName}</span>
-                <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{displayName}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <User className="mr-2 h-4 w-4" />
-              Meu perfil
+            <DropdownMenuItem asChild>
+              <Link to="/" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Meu Perfil</span>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut}>
+            <DropdownMenuItem onClick={() => setShowSettings(true)} className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Configurações</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              <span>Sair</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Configurações do Usuário</DialogTitle>
+            <DialogTitle>Configurações de Notificação</DialogTitle>
           </DialogHeader>
           <NotificationSettingsPanel />
         </DialogContent>

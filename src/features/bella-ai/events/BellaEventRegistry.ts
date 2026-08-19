@@ -4,7 +4,6 @@ import type { BellaEvent } from "./BellaEvent";
 import type { BellaEventModule } from "./BellaEventTypes";
 import { saveNotification } from "./persistence.functions";
 
-
 export type RegistryAction = "created" | "updated" | "resolved" | "expired";
 
 export interface RegistryLogEntry {
@@ -17,12 +16,6 @@ export interface RegistryLogEntry {
 
 export type RegistryListener = (entry: RegistryLogEntry, event: BellaEvent) => void;
 
-/**
- * Deriva a chave estável usada para deduplicar o mesmo "fato".
- * Prioriza `payload.entityId` (ex.: productId, customerId, invoiceId).
- * Sem entityId, cai para o tipo + tenant — apropriado para eventos globais
- * como `finance.cashflow.negative`.
- */
 export function deriveEventKey(event: Pick<BellaEvent, "tenantId" | "type" | "payload">): string {
   const raw = (event.payload as { entityId?: string | number } | null | undefined)?.entityId;
   const entityId = raw !== undefined && raw !== null ? String(raw) : "_";
@@ -31,19 +24,6 @@ export function deriveEventKey(event: Pick<BellaEvent, "tenantId" | "type" | "pa
 
 const SEVERITY_ORDER = { critical: 3, warning: 2, success: 1, info: 0 } as const;
 
-/**
- * BellaEventRegistry
- *
- * Mantém o **estado ativo** dos eventos — o que ainda é verdade agora.
- * O `BellaEventEngine` é o barramento pub/sub; o Registry é a projeção
- * consultável usada pela Home (top-N prioridades) e pelo InsightsEngine.
- *
- * Responsabilidades:
- *  - Dedup por chave estável.
- *  - Ciclo de vida: create/update/resolve/expire com log interno.
- *  - Sweep periódico para eventos com `expiresAt`.
- *  - Consultas por tenant/módulo + top-N por prioridade.
- */
 export class BellaEventRegistry {
   private active = new Map<string, BellaEvent>();
   private log: RegistryLogEntry[] = [];
@@ -56,7 +36,6 @@ export class BellaEventRegistry {
     private readonly sweepIntervalMs = 60_000,
   ) {}
 
-  /** Começa a escutar o engine e a varrer expirações periodicamente. */
   start(): void {
     if (this.unsubscribe) return;
     this.unsubscribe = this.engine.subscribe((event) => this.upsert(event));
@@ -74,10 +53,6 @@ export class BellaEventRegistry {
     }
   }
 
-  /**
-   * Insere ou atualiza o evento pela chave estável. Retorna o evento final
-   * (com `createdAt` original preservado em caso de update).
-   */
   upsert(event: BellaEvent): BellaEvent {
     const key = deriveEventKey(event);
     const existing = this.active.get(key);
@@ -98,7 +73,6 @@ export class BellaEventRegistry {
     return event;
   }
 
-  /** Resolve o evento correspondente à chave, se ainda ativo. */
   resolve(key: string, reason?: string): BellaEvent | null {
     const event = this.active.get(key);
     if (!event) return null;
@@ -108,12 +82,10 @@ export class BellaEventRegistry {
     return resolved;
   }
 
-  /** Atalho: resolve pelo `tenantId + type + entityId` do payload. */
   resolveByPayload(input: Pick<BellaEvent, "tenantId" | "type" | "payload">, reason?: string): BellaEvent | null {
     return this.resolve(deriveEventKey(input), reason);
   }
 
-  /** Remove eventos cujo `expiresAt` já passou. Retorna quantos expiraram. */
   sweepExpired(now: Date = new Date()): number {
     let count = 0;
     for (const [key, event] of this.active) {
@@ -126,7 +98,6 @@ export class BellaEventRegistry {
     return count;
   }
 
-  /** Lista eventos ativos, opcionalmente filtrados. */
   listActive(query: { tenantId?: string; module?: BellaEventModule } = {}): BellaEvent[] {
     const out: BellaEvent[] = [];
     for (const event of this.active.values()) {
@@ -137,10 +108,6 @@ export class BellaEventRegistry {
     return out;
   }
 
-  /**
-   * Top-N prioridades ativas para exibir na Home.
-   * Ordenação: prioridade DESC → severidade DESC → createdAt DESC.
-   */
   getTopPriorities(tenantId: string, n = 4): BellaEvent[] {
     return this.listActive({ tenantId })
       .sort((a, b) => {
@@ -153,7 +120,6 @@ export class BellaEventRegistry {
       .slice(0, n);
   }
 
-  /** Diagnóstico: histórico das últimas N transições (default 200). */
   getLog(limit = 200): RegistryLogEntry[] {
     return this.log.slice(-limit);
   }
@@ -163,7 +129,6 @@ export class BellaEventRegistry {
     return () => this.listeners.delete(listener);
   }
 
-  /** Zera estado — usado por testes e ferramentas de diagnóstico. */
   clear(): void {
     this.active.clear();
     this.log = [];
@@ -174,12 +139,11 @@ export class BellaEventRegistry {
     this.log.push(entry);
     if (this.log.length > 500) this.log.splice(0, this.log.length - 500);
 
-    // Persistência assíncrona (Fase 1)
-    if (action === "created") {
+    // CORREÇÃO: Persistência só roda no SERVIDOR (node/workers) via chamada direta.
+    // No NAVEGADOR (cliente), a persistência é feita via hook no componente Topbar.
+    if (action === "created" && typeof window === "undefined") {
       const payload = event.payload as any;
-      const save = saveNotification as any;
-      save({
-
+      saveNotification({
         data: {
           companyId: event.tenantId,
           eventType: event.type,
@@ -189,13 +153,9 @@ export class BellaEventRegistry {
           metadata: payload
         }
       }).catch((err: any) => {
-        console.warn("[BellaEventRegistry] Falha na persistência silenciosa:", err);
+        console.warn("[BellaEventRegistry-Server] Falha na persistência:", err);
       });
-
-
     }
-
-    // Log operacional silencioso — sem I/O externo.
 
     if (typeof console !== "undefined" && typeof console.debug === "function") {
       console.debug("[bella-events]", action, event.type, event.id);
@@ -210,5 +170,4 @@ export class BellaEventRegistry {
   }
 }
 
-/** Singleton acoplado ao `bellaEventEngine` padrão. `start()` sob demanda. */
 export const bellaEventRegistry = new BellaEventRegistry();
