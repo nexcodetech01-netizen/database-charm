@@ -66,7 +66,7 @@ export function Topbar() {
   useExternalNotificationsRealtime(user?.user_metadata?.company_id, settings, settingsLoading);
   useCommercialInboxRealtime(user?.user_metadata?.company_id);
 
-  const lastNotifiedRef = useRef<string | null>(null);
+  const notifiedIdsRef = useRef<Set<string>>(new Set());
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -95,8 +95,8 @@ export function Topbar() {
         if (!config) return;
 
         const ticketId = (event.payload as any)?.ticketId;
-        if (ticketId && lastNotifiedRef.current === ticketId) return;
-        if (ticketId) lastNotifiedRef.current = ticketId;
+        if (ticketId && notifiedIdsRef.current.has(ticketId)) return;
+        if (ticketId) notifiedIdsRef.current.add(ticketId);
 
         // Notificação sonora
         if (config.sound && audioRef.current) {
