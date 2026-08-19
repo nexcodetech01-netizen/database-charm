@@ -303,30 +303,20 @@ export class ConsignmentService {
 
     // Upsert itens (novos e atualizados)
     const upsertData = items.map(item => {
-      const base: any = {
+      const existing = item.id ? existingItems.find(ei => ei.id === item.id) : null;
+      
+      return {
+        ...(item.id ? { id: item.id } : {}),
         consignment_id: consignmentId,
         company_id: companyId,
         product_id: item.product_id,
         sent_quantity: item.sent_quantity,
         cost_price: item.cost_price,
         suggested_price: item.suggested_price || 0,
+        sold_quantity: existing ? (existing.sold_quantity ?? 0) : 0,
+        returned_quantity: existing ? (existing.returned_quantity ?? 0) : 0,
+        quantidade_extraviada: existing ? (existing.quantidade_extraviada ?? 0) : 0
       };
-
-      if (item.id) {
-        base.id = item.id;
-        // In updates, we only send 0 if it's explicitly null or undefined to avoid overwriting existing data
-        // but since we want to be safe and the instruction asks to ensure 0 if null/undefined:
-        const existing = existingItems.find(ei => ei.id === item.id);
-        base.sold_quantity = (existing?.sold_quantity ?? 0);
-        base.returned_quantity = (existing?.returned_quantity ?? 0);
-        base.quantidade_extraviada = (existing?.quantidade_extraviada ?? 0);
-      } else {
-        base.sold_quantity = 0;
-        base.returned_quantity = 0;
-        base.quantidade_extraviada = 0;
-      }
-
-      return base;
     });
 
     const { error: upsertError } = await supabase
