@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
-  getRequestHeader,
   getRequestHost,
   getRequestProtocol,
 } from "@tanstack/react-start/server";
 import { z } from "zod";
 import type { PublicCollection } from "@/features/catalog/types";
+import { loadCollectionPagePayload } from "@/features/catalog/lib/load-collection-page.server";
 
 const inputSchema = z.object({
   slug: z.string(),
@@ -23,32 +23,20 @@ export const loadPublicCollection = createServerFn({ method: "GET" })
     const proto = getRequestProtocol({ xForwardedProto: true });
     const host = getRequestHost({ xForwardedHost: true });
     const origin = `${proto}://${host}`;
-    const qs = data.preview ? "?preview=1" : "";
-    const url = `${origin}/api/public/catalog/${encodeURIComponent(
-      data.slug,
-    )}${qs}`;
-
-    const headers: Record<string, string> = {};
-    if (data.preview) {
-      // Encaminha o bearer do usuário para autorizar preview de coleção agendada.
-      const auth = safeHeader("authorization");
-      if (auth) headers.authorization = auth;
-    }
 
     try {
-      const res = await fetch(url, { headers });
-      if (!res.ok) return { collection: null, origin };
-      const collection = (await res.json()) as PublicCollection;
-      return { collection, origin };
+      // Chama a lógica direto (mesmo processo), sem fazer HTTP pra si
+      // mesmo — mesma correção aplicada na SuperFrete em 2026-08-18.
+      // O preview continua exigindo o bearer do usuário, só que agora
+      // resolvido dentro de `authorizePreview` via header em vez de
+      // reencaminhado por uma requisição HTTP própria.
+      const result = await loadCollectionPagePayload({
+        slug: data.slug,
+        isPreview: data.preview,
+      });
+      if (!result.ok) return { collection: null, origin };
+      return { collection: result.payload as unknown as PublicCollection, origin };
     } catch {
       return { collection: null, origin };
     }
   });
-
-function safeHeader(name: string): string | null {
-  try {
-    return getRequestHeader(name) ?? null;
-  } catch {
-    return null;
-  }
-}
