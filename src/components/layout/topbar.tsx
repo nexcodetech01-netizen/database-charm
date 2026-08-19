@@ -131,7 +131,7 @@ export function Topbar() {
 
     const updateState = () => {
       const active = bellaEventRegistry.listActive({ 
-        tenantId: companyId 
+        tenantId: companyId || undefined 
       });
       setActiveEvents([...active].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
     };
