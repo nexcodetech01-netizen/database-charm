@@ -94,6 +94,7 @@ import { Route as ApiPublicJobsMercadolivreRefreshRouteImport } from './routes/a
 import { Route as ApiPublicJobsMercadolivreReconcileRouteImport } from './routes/api/public/jobs/mercadolivre-reconcile'
 import { Route as ApiPublicJobsMarketplaceSyncRouteImport } from './routes/api/public/jobs/marketplace-sync'
 import { Route as ApiPublicJobsHealthRouteImport } from './routes/api/public/jobs/health'
+import { Route as ApiPublicJobsEntradaFollowupRouteImport } from './routes/api/public/jobs/entrada-followup'
 import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/public/jobs/dlq-reprocess'
 import { Route as ApiPublicJobsBellaDetectorsRouteImport } from './routes/api/public/jobs/bella-detectors'
 import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
@@ -589,6 +590,12 @@ const ApiPublicJobsHealthRoute = ApiPublicJobsHealthRouteImport.update({
   path: '/api/public/jobs/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsEntradaFollowupRoute =
+  ApiPublicJobsEntradaFollowupRouteImport.update({
+    id: '/api/public/jobs/entrada-followup',
+    path: '/api/public/jobs/entrada-followup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsDlqReprocessRoute =
   ApiPublicJobsDlqReprocessRouteImport.update({
     id: '/api/public/jobs/dlq-reprocess',
@@ -782,6 +789,7 @@ export interface FileRoutesByFullPath {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
+  '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
   '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
@@ -885,6 +893,7 @@ export interface FileRoutesByTo {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
+  '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
   '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
@@ -991,6 +1000,7 @@ export interface FileRoutesById {
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
+  '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
   '/api/public/jobs/health': typeof ApiPublicJobsHealthRoute
   '/api/public/jobs/marketplace-sync': typeof ApiPublicJobsMarketplaceSyncRoute
   '/api/public/jobs/mercadolivre-reconcile': typeof ApiPublicJobsMercadolivreReconcileRoute
@@ -1097,6 +1107,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
+    | '/api/public/jobs/entrada-followup'
     | '/api/public/jobs/health'
     | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
@@ -1200,6 +1211,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
+    | '/api/public/jobs/entrada-followup'
     | '/api/public/jobs/health'
     | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
@@ -1305,6 +1317,7 @@ export interface FileRouteTypes {
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
+    | '/api/public/jobs/entrada-followup'
     | '/api/public/jobs/health'
     | '/api/public/jobs/marketplace-sync'
     | '/api/public/jobs/mercadolivre-reconcile'
@@ -1339,6 +1352,7 @@ export interface RootRouteChildren {
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
   ApiPublicJobsBellaDetectorsRoute: typeof ApiPublicJobsBellaDetectorsRoute
   ApiPublicJobsDlqReprocessRoute: typeof ApiPublicJobsDlqReprocessRoute
+  ApiPublicJobsEntradaFollowupRoute: typeof ApiPublicJobsEntradaFollowupRoute
   ApiPublicJobsHealthRoute: typeof ApiPublicJobsHealthRoute
   ApiPublicJobsMarketplaceSyncRoute: typeof ApiPublicJobsMarketplaceSyncRoute
   ApiPublicJobsMercadolivreReconcileRoute: typeof ApiPublicJobsMercadolivreReconcileRoute
@@ -1951,6 +1965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/entrada-followup': {
+      id: '/api/public/jobs/entrada-followup'
+      path: '/api/public/jobs/entrada-followup'
+      fullPath: '/api/public/jobs/entrada-followup'
+      preLoaderRoute: typeof ApiPublicJobsEntradaFollowupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/dlq-reprocess': {
       id: '/api/public/jobs/dlq-reprocess'
       path: '/api/public/jobs/dlq-reprocess'
@@ -2433,6 +2454,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
   ApiPublicJobsBellaDetectorsRoute: ApiPublicJobsBellaDetectorsRoute,
   ApiPublicJobsDlqReprocessRoute: ApiPublicJobsDlqReprocessRoute,
+  ApiPublicJobsEntradaFollowupRoute: ApiPublicJobsEntradaFollowupRoute,
   ApiPublicJobsHealthRoute: ApiPublicJobsHealthRoute,
   ApiPublicJobsMarketplaceSyncRoute: ApiPublicJobsMarketplaceSyncRoute,
   ApiPublicJobsMercadolivreReconcileRoute:
