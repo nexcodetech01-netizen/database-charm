@@ -119,7 +119,16 @@ export function useCommercialInboxRealtime(companyId: string | null) {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Mesma correção aplicada em use-external-notifications-realtime.ts:
+        // fecha a janela entre "efeito montou" e "canal confirmou
+        // SUBSCRIBED" reconsultando os eventos recentes assim que a
+        // inscrição fica de fato pronta — sem isso, um pedido criado
+        // bem nesse intervalo passa batido até o próximo refresh.
+        if (status === "SUBSCRIBED") {
+          void fetchRecentEvents();
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
