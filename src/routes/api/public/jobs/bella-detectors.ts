@@ -16,8 +16,6 @@ import { overdueInvoiceDetector } from "@/features/bella-ai/events/detectors/fin
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
 
-// Garantir que o Registry está ouvindo antes de começar (Singleton)
-bellaEventRegistry.start();
 
 export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
   server: {
@@ -35,6 +33,9 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
 
         const noServiceKey = requireServiceKey("bella-detectors");
         if (noServiceKey) return noServiceKey;
+
+        // Garantir que o Registry está ouvindo antes de começar (Singleton)
+        bellaEventRegistry.start();
 
         return runJob("bella-detectors", async () => {
           const results = {
