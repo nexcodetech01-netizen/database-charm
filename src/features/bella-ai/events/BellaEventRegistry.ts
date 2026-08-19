@@ -177,7 +177,7 @@ export class BellaEventRegistry {
     // Persistência assíncrona (Fase 1)
     if (action === "created") {
       const payload = event.payload as any;
-      saveNotification({
+      (saveNotification as any)({
         data: {
           companyId: event.tenantId,
           eventType: event.type,

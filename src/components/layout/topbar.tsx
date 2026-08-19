@@ -88,9 +88,10 @@ export function Topbar() {
       if (!user?.user_metadata?.company_id) return;
       
       try {
-        const unreadResponse = await getUnreadNotifications({ 
+        const unreadResponse = (await getUnreadNotifications({ 
           data: { companyId: user.user_metadata.company_id }
-        }) as any[];
+        })) as any;
+
         
         const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
 
@@ -100,7 +101,7 @@ export function Topbar() {
           
           unread.forEach((notif: any) => {
 
-            const meta = BELLA_EVENT_CATALOG[notif.event_type as any];
+            const meta = BELLA_EVENT_CATALOG[notif.event_type as keyof typeof BELLA_EVENT_CATALOG];
             if (!meta) return;
 
             // Emite para o engine silenciosamente (evitando loops infinitos se possível, 
