@@ -12,9 +12,10 @@
  *   - Nunca modifica caminhos existentes; é aditivo.
  */
 import { isBellaAgentEnabled } from "./config";
-import { detectRuntimeIntent, SUPPORTED_RUNTIME_INTENTS } from "./intent-engine";
+import { detectDeterministicIntent, SUPPORTED_RUNTIME_INTENTS } from "./intent-engine";
 import { logAgentExecution } from "./execution-log";
 import { runAgent } from "./agent";
+import { bellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import type { AgentContext, AgentIntent, AgentResponse } from "./types";
 
 export interface AgentRuntimeInput {
@@ -64,13 +65,34 @@ export async function handleWithAgentRuntime(
     };
   }
 
-  // Fase 2 — só assumimos intents explicitamente migradas.
+  // Fase 2 — Tentativa via LLM (Nova Ordem: LLM -> Determinístico)
   let intent: AgentIntent | null = null;
   try {
-    intent = detectRuntimeIntent(input.message);
+    const aiResult = await bellaAIGateway.interpret({
+      userMessage: input.message,
+      companyName: input.ctx.companyId, 
+      context: { 
+        userId: input.ctx.userId,
+        companyId: input.ctx.companyId 
+      }
+    });
+
+    if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
+      intent = {
+        id: aiResult.intent,
+        confidence: aiResult.confidence,
+        entities: aiResult.parameters,
+        raw: input.message,
+        confirmationRequired: false, // Será validado pelo Planner/PermissionEngine
+        source: "llm"
+      };
+    } else {
+      // Fallback para determinístico
+      intent = detectDeterministicIntent(input.message);
+    }
   } catch (err) {
-    await recordFallback(input.ctx, null, startedAt, `detect_error:${errMsg(err)}`);
-    return finalizeFallback(startedAt, null, `detect_error`);
+    console.warn("[agent.runtime] LLM interpretation failed, falling back to deterministic", err);
+    intent = detectDeterministicIntent(input.message);
   }
 
   if (

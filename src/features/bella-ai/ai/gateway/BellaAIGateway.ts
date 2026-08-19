@@ -26,6 +26,7 @@ import type {
 } from "./types";
 import { MockProvider } from "../providers/MockProvider";
 import { GeminiProvider } from "../providers/GeminiProvider";
+import { OpenAIProvider } from "../providers/OpenAIProvider";
 import { BELLA_SYSTEM_PROMPT, withCompanyContext } from "../prompts/systemPrompt";
 
 export interface BellaAIGatewayOptions {
@@ -175,12 +176,24 @@ function uniqueProviders(list: AIProvider[]): AIProvider[] {
 /* -------------------- default instance -------------------- */
 
 /**
- * Instância padrão usada pela Bella. Como o GeminiProvider ainda não
- * possui integração real, o Gateway operará em modo fallback (Mock),
- * mantendo o ERP 100% funcional.
+ * Instância padrão usada pela Bella.
+ * O provider preferido é determinado por BELLA_AI_PROVIDER (openai | gemini | mock).
  */
+const DEFAULT_PROVIDER_ID = (import.meta as any).env?.VITE_BELLA_AI_PROVIDER || "gemini";
+
+function createPreferredProvider(): AIProvider {
+  switch (DEFAULT_PROVIDER_ID) {
+    case "openai":
+      return new OpenAIProvider();
+    case "gemini":
+      return new GeminiProvider();
+    default:
+      return new MockProvider();
+  }
+}
+
 export const bellaAIGateway = new BellaAIGateway({
-  preferred: new GeminiProvider(),
+  preferred: createPreferredProvider(),
 });
 
 // Reexports úteis para consumidores.

@@ -239,6 +239,12 @@ const RULES: Rule[] = [
 ];
 
 export function detectRuntimeIntent(raw: string): AgentIntent | null {
+  // O detectRuntimeIntent tradicional só cuida da parte determinística.
+  // Para suporte a LLM, o AgentRuntime chamará o BellaAIGateway.
+  return detectDeterministicIntent(raw);
+}
+
+export function detectDeterministicIntent(raw: string): AgentIntent | null {
   const text = norm(raw ?? "");
   if (!text) return null;
 
