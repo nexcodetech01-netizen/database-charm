@@ -15,7 +15,7 @@ import {
 import { Activity, Database, BarChart3, Clock } from "lucide-react";
 import { requirePermission } from "@/features/rbac";
 
-export const Route = createFileRoute("/_authenticated/ferramentas.metricas-inbox")({
+export const Route = createFileRoute("/_authenticated/ferramentas/metricas-inbox")({
   beforeLoad: requirePermission("settings.view"),
   head: () => ({
     meta: [{ title: "Métricas de Egress (Inbox) | NexOS" }],
@@ -92,7 +92,7 @@ function MetricsPage() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics?.length || 0}</div>
+              <div className="text-2xl font-bold">{metrics?.length.toString() || "0"}</div>
             </CardContent>
           </Card>
           <Card>
@@ -147,7 +147,7 @@ function MetricsPage() {
                   {stats.last24h.map((s) => (
                     <TableRow key={s.name}>
                       <TableCell className="font-medium font-mono">{s.name}</TableCell>
-                      <TableCell className="text-right">{s.count}</TableCell>
+                      <TableCell className="text-right">{s.count.toString()}</TableCell>
                       <TableCell className="text-right">{s.avg} KB</TableCell>
                       <TableCell className="text-right">{s.max} KB</TableCell>
                     </TableRow>
@@ -185,7 +185,7 @@ function MetricsPage() {
                   {stats.last7d.map((s) => (
                     <TableRow key={s.name}>
                       <TableCell className="font-medium font-mono">{s.name}</TableCell>
-                      <TableCell className="text-right">{s.count}</TableCell>
+                      <TableCell className="text-right">{s.count.toString()}</TableCell>
                       <TableCell className="text-right">{s.avg} KB</TableCell>
                       <TableCell className="text-right">{s.max} KB</TableCell>
                     </TableRow>
