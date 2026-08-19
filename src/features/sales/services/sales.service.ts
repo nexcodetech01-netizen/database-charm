@@ -310,7 +310,7 @@ export const salesService = {
         .select(`
           id, number, sale_date, grand_total, status, customer_id, 
           payment_method, notes, items_total, discount, shipping, 
-          tax_total, created_at, sale_source, deleted_at, cash_session_id
+          created_at, sale_source, deleted_at, cash_session_id
         `)
         .in("id", ordered);
       if (pErr) throw pErr;
@@ -325,7 +325,7 @@ export const salesService = {
           .select(`
             id, number, sale_date, grand_total, status, customer_id, 
             payment_method, notes, items_total, discount, shipping, 
-            tax_total, created_at, sale_source, deleted_at, cash_session_id
+            created_at, sale_source, deleted_at, cash_session_id
           `, { count: "exact" })
           .eq("company_id", companyId),
       )
