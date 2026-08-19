@@ -30,6 +30,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RegisterSettlementDialog } from './register-settlement-dialog';
 

@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateConsignmentDialog } from './create-consignment-dialog';
 import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { supabase } from '@/integrations/supabase/client';
 import { ConsignmentItem } from '../types';
 import { toast } from 'sonner';
 
