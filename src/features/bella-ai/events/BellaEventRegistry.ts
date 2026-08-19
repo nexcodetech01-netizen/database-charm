@@ -177,7 +177,9 @@ export class BellaEventRegistry {
     // Persistência assíncrona (Fase 1)
     if (action === "created") {
       const payload = event.payload as any;
-      (saveNotification as any)({
+      const save = saveNotification as any;
+      save({
+
         data: {
           companyId: event.tenantId,
           eventType: event.type,
@@ -186,7 +188,7 @@ export class BellaEventRegistry {
           referenceId: payload?.entityId || payload?.ticketId || null,
           metadata: payload
         }
-      }).catch((err: any) => {
+      }).catch(err => {
         console.warn("[BellaEventRegistry] Falha na persistência silenciosa:", err);
       });
 
