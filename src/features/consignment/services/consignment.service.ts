@@ -310,9 +310,9 @@ export class ConsignmentService {
       sent_quantity: item.sent_quantity,
       cost_price: item.cost_price,
       suggested_price: item.suggested_price || 0,
-      // Se for novo, inicializa contadores. Se for update, o Supabase mantém se não enviarmos ou podemos ser explícitos.
-      // Para evitar sobrescrever movimentação real em updates, só mandamos o que mudou ou garantimos que não zeramos.
-      ...(item.id ? {} : { sold_quantity: 0, returned_quantity: 0, quantidade_extraviada: 0 })
+      sold_quantity: item.id ? undefined : 0,
+      returned_quantity: item.id ? undefined : 0,
+      quantidade_extraviada: item.id ? undefined : 0
     }));
 
     const { error: upsertError } = await supabase
