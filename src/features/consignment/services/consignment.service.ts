@@ -268,5 +268,55 @@ export class ConsignmentService {
       .delete()
       .eq('id', id);
     if (cError) throw cError;
+  static async updateConsignmentItems(
+    consignmentId: string,
+    companyId: string,
+    items: Array<{ id?: string; product_id: string; sent_quantity: number; cost_price: number; suggested_price?: number }>
+  ): Promise<void> {
+    const { data: existingItems, error: fetchError } = await supabase
+      .from('consignment_items')
+      .select('id, sold_quantity, returned_quantity, quantidade_extraviada')
+      .eq('consignment_id', consignmentId);
+
+    if (fetchError) throw fetchError;
+
+    const itemsToKeepIds = items.map(it => it.id).filter(Boolean) as string[];
+    const itemsToDelete = existingItems.filter(ei => !itemsToKeepIds.includes(ei.id));
+
+    // Validar remoções
+    for (const item of itemsToDelete) {
+      if ((item.sold_quantity || 0) > 0 || (item.returned_quantity || 0) > 0 || (item.quantidade_extraviada || 0) > 0) {
+        throw new Error('Não é possível remover um item que já teve vendas, devoluções ou extravios registrados.');
+      }
+    }
+
+    // Deletar itens removidos
+    if (itemsToDelete.length > 0) {
+      const { error: delError } = await supabase
+        .from('consignment_items')
+        .delete()
+        .in('id', itemsToDelete.map(i => i.id));
+      if (delError) throw delError;
+    }
+
+    // Upsert itens (novos e atualizados)
+    const upsertData = items.map(item => ({
+      ...(item.id ? { id: item.id } : {}),
+      consignment_id: consignmentId,
+      company_id: companyId,
+      product_id: item.product_id,
+      sent_quantity: item.sent_quantity,
+      cost_price: item.cost_price,
+      suggested_price: item.suggested_price || 0,
+      // Se for novo, inicializa contadores. Se for update, o Supabase mantém se não enviarmos ou podemos ser explícitos.
+      // Para evitar sobrescrever movimentação real em updates, só mandamos o que mudou ou garantimos que não zeramos.
+      ...(item.id ? {} : { sold_quantity: 0, returned_quantity: 0, quantidade_extraviada: 0 })
+    }));
+
+    const { error: upsertError } = await supabase
+      .from('consignment_items')
+      .upsert(upsertData as any);
+
+    if (upsertError) throw upsertError;
   }
 }
