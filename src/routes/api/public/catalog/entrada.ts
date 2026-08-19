@@ -250,6 +250,11 @@ export const Route = createFileRoute("/api/public/catalog/entrada")({
           pix_payload: pixPayload,
           external_reference: externalReference,
           environment: env,
+          // Estruturado (antes só existia embutido em `description`), para
+          // permitir o job de follow-up de entrada não paga localizar e
+          // notificar o comprador via WhatsApp.
+          buyer_name: buyerName,
+          buyer_phone: parsed.data.buyerPhone ?? null,
         });
 
         log("charge_created", {
