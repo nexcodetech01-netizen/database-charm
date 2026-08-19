@@ -919,6 +919,8 @@ export type Database = {
           asaas_customer_id: string | null
           asaas_id: string
           billing_type: string
+          buyer_name: string | null
+          buyer_phone: string | null
           canceled_at: string | null
           company_id: string
           created_at: string
@@ -928,6 +930,7 @@ export type Database = {
           environment: string
           external_reference: string | null
           financial_transaction_id: string | null
+          followup_sent_at: string | null
           id: string
           installment_count: number
           installment_value: number | null
@@ -949,6 +952,8 @@ export type Database = {
           asaas_customer_id?: string | null
           asaas_id: string
           billing_type: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
           canceled_at?: string | null
           company_id: string
           created_at?: string
@@ -958,6 +963,7 @@ export type Database = {
           environment?: string
           external_reference?: string | null
           financial_transaction_id?: string | null
+          followup_sent_at?: string | null
           id?: string
           installment_count?: number
           installment_value?: number | null
@@ -979,6 +985,8 @@ export type Database = {
           asaas_customer_id?: string | null
           asaas_id?: string
           billing_type?: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
           canceled_at?: string | null
           company_id?: string
           created_at?: string
@@ -988,6 +996,7 @@ export type Database = {
           environment?: string
           external_reference?: string | null
           financial_transaction_id?: string | null
+          followup_sent_at?: string | null
           id?: string
           installment_count?: number
           installment_value?: number | null
