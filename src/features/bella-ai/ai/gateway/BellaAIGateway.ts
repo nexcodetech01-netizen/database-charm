@@ -144,10 +144,16 @@ export class BellaAIGateway {
         return result;
       } catch (err) {
         const info = describeError(err);
-        console.warn(`[BellaAIGateway] ${preferred.id} failed, falling back to ${this.fallback.id}`, {
-          ...info,
-          originalError: err instanceof Error ? err.message : String(err)
-        });
+        
+        // Se for um erro da OpenAI com detalhes seguros, logamos estruturado
+        if (err && typeof err === 'object' && 'safeDetails' in err) {
+          console.warn(`[BellaAIGateway] OpenAI error`, (err as any).safeDetails);
+        } else {
+          console.warn(`[BellaAIGateway] ${preferred.id} failed, falling back to ${this.fallback.id}`, {
+            ...info,
+            originalError: err instanceof Error ? err.message : String(err)
+          });
+        }
         // Cai silenciosamente no fallback.
         try {
           const fallbackResult = await call(this.fallback);
