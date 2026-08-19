@@ -60,20 +60,26 @@ export function useCommercialInbox(companyId: string | null, page = 1) {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
+      // FIX (2026-08-19): a lista não precisa do campo `items` (o JSON
+      // completo dos produtos do pedido, até ~500kB por linha — o
+      // maior contribuinte pro consumo de saída de dados identificado
+      // na auditoria). A lista já tem `item_count`/`total` pro resumo;
+      // `items` completo só é buscado sob demanda, ao abrir um ticket
+      // específico — ver `useCommercialInboxDetail` abaixo.
       const { data, error, count } = await supabase
         .from("whatsapp_commercial_inbox")
         .select(`
           id, phone, buyer_name, item_count, total, status, origin, created_at,
           fulfillment, delivery, payment, sale_id, converted_at,
           full_name, person_type, cpf, cnpj, birth_date, zip_code,
-          state, city, district, street, number, complement, items
+          state, city, district, street, number, complement
         `, { count: "exact" })
         .eq("company_id", companyId!)
         .order("created_at", { ascending: false })
         .range(from, to);
       if (error) throw error;
       return {
-        rows: (data ?? []) as unknown as CommercialInboxTicket[],
+        rows: (data ?? []).map((row: any) => ({ ...row, items: [] })) as unknown as CommercialInboxTicket[],
         total: count ?? 0,
       };
     },
@@ -209,6 +215,28 @@ export function useMarkInboxConverted() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}
+
+/**
+ * Busca o ticket completo (incluindo `items`, o JSON pesado dos
+ * produtos do pedido) só quando um ticket específico é aberto — ver
+ * comentário em `useCommercialInbox` sobre por que a lista não traz
+ * esse campo por padrão.
+ */
+export function useCommercialInboxDetail(ticketId: string | null) {
+  return useQuery({
+    queryKey: ["whatsapp-commercial-inbox-detail", ticketId],
+    enabled: Boolean(ticketId),
+    queryFn: async (): Promise<CommercialInboxTicket | null> => {
+      const { data, error } = await supabase
+        .from("whatsapp_commercial_inbox")
+        .select("*")
+        .eq("id", ticketId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as CommercialInboxTicket | null;
     },
   });
 }
