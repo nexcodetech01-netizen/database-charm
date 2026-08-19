@@ -57,29 +57,6 @@ function routeForEvent(event: BellaEvent): string {
   }
 }
 
-/**
- * Marca um alerta como lido: resolve no Registry (some da lista/badge na
- * hora) e marca como lido no banco (`readNotification`, já existia desde
- * a Fase 1 mas nunca tinha sido ligado a nenhuma ação do usuário — por
- * isso o badge nunca "sumia depois de ver").
- */
-async function markAlertAsRead(event: BellaEvent, companyId: string) {
-  bellaEventRegistry.resolveByPayload({
-    tenantId: event.tenantId,
-    type: event.type,
-    payload: event.payload,
-  });
-  try {
-    await readNotification({
-      data: { notificationId: event.id, companyId },
-    });
-  } catch {
-    // best-effort: se falhar no banco, o alerta já sumiu da tela pro
-    // usuário; na próxima hidratação da página ele reaparece se ainda
-    // estiver "não lido" no banco, o que é aceitável.
-  }
-}
-
 export function Topbar() {
   // BUG ENCONTRADO: `user?.user_metadata?.company_id` nunca reflete o
   // company_id real do usuário — o AuthProvider busca isso separadamente
@@ -139,7 +116,16 @@ export function Topbar() {
     if (!companyId) return;
     
     // 1. Remove do Registry imediatamente para atualizar o badge
-    bellaEventRegistry.resolve(alert.id);
+    // BUG CORRIGIDO: `resolve()` espera a CHAVE derivada interna
+    // (`tenantId::type::entityId`), não o `id` bruto do banco — por isso
+    // "Marcar como lida" não removia nada da lista visualmente, mesmo
+    // persistindo no banco por trás. `resolveByPayload` deriva a chave
+    // certa a partir do próprio evento.
+    bellaEventRegistry.resolveByPayload({
+      tenantId: alert.tenantId,
+      type: alert.type,
+      payload: alert.payload,
+    });
     updateCount();
 
     // 2. Persiste no banco de dados (se for um ID de banco real)
@@ -163,7 +149,12 @@ export function Topbar() {
     const alertsToRead = [...activeAlerts];
     
     // UI Update massivo
-    alertsToRead.forEach(alert => bellaEventRegistry.resolve(alert.id));
+    // Mesma correção: resolveByPayload em vez de resolve(alert.id)
+    alertsToRead.forEach(alert => bellaEventRegistry.resolveByPayload({
+      tenantId: alert.tenantId,
+      type: alert.type,
+      payload: alert.payload,
+    }));
     updateCount();
 
     // Banco de dados (processa em paralelo para performance)
