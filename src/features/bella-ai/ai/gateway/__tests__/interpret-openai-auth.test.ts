@@ -8,8 +8,13 @@ import { z } from "zod";
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: vi.fn(() => ({
     middleware: vi.fn().mockReturnThis(),
+    validator: vi.fn().mockReturnThis(),
     inputValidator: vi.fn().mockReturnThis(),
-    handler: vi.fn((fn) => fn),
+    handler: vi.fn((fn) => {
+      const wrapper: any = fn;
+      wrapper.handler = fn; // Expõe para testes
+      return wrapper;
+    }),
   })),
 }));
 
@@ -29,7 +34,7 @@ vi.mock("@/lib/http-client.server", () => ({
 }));
 
 describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
-  const mockSkills = [];
+  const mockSkills: any[] = [];
   const validUuid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   const otherUuid = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
   const validMessage = "Olá";
@@ -37,7 +42,6 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
   it("1. companyId válido + usuário pertence à empresa -> OpenAI pode ser chamada", async () => {
     vi.mocked(assertCompanyAccess).mockResolvedValue(validUuid);
     
-    // Simulação do handler interno da server function
     const context = { userId: "user-1", supabase: {} };
     const data = { 
       message: validMessage, 
@@ -45,9 +49,8 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
       context: { companyId: validUuid } 
     };
 
-    // Apenas verificamos que não lança erro de autorização antes de chegar na OpenAI
-    // (A chamada OpenAI falharia por falta de API Key no teste, mas o foco é o gate de auth)
-    await expect(interpretWithOpenAI.handler({ data, context })).resolves.toBeDefined;
+    const handler = (interpretWithOpenAI as any).handler;
+    await expect(handler({ data, context })).resolves.toBeDefined;
     expect(assertCompanyAccess).toHaveBeenCalledWith(context.supabase, context.userId, validUuid);
   });
 
@@ -61,12 +64,12 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
       context: { companyId: otherUuid } 
     };
 
-    await expect(interpretWithOpenAI.handler({ data, context }))
+    const handler = (interpretWithOpenAI as any).handler;
+    await expect(handler({ data, context }))
       .rejects.toThrow("UNAUTHORIZED_CONTEXT");
   });
 
   it("3. companyId ausente -> erro de contexto (validado pelo validator)", () => {
-    // Simulamos a lógica do inputValidator que implementamos
     const validator = (data: any) => {
       const companyId = data.context?.companyId;
       if (!companyId) throw new Error("MISSING_COMPANY_CONTEXT");
@@ -96,14 +99,15 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
       context: { companyId: validUuid } 
     };
 
-    await expect(interpretWithOpenAI.handler({ data, context }))
+    const handler = (interpretWithOpenAI as any).handler;
+    await expect(handler({ data, context }))
       .rejects.toThrow("UNAUTHORIZED_USER");
   });
 
   it("6. Confirmar que nenhum companyId é extraído de JWT claims", async () => {
+    vi.mocked(assertCompanyAccess).mockClear();
     vi.mocked(assertCompanyAccess).mockResolvedValue(validUuid);
     
-    // Enviamos claims que seriam ignorados
     const context = { 
       userId: "user-1", 
       supabase: {}, 
@@ -115,10 +119,11 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
       context: { companyId: validUuid } 
     };
 
-    await interpretWithOpenAI.handler({ data, context });
+    const handler = (interpretWithOpenAI as any).handler;
+    await handler({ data, context });
     
-    // Deve ter usado o ID do payload (validado), não o do claim
     expect(assertCompanyAccess).toHaveBeenCalledWith(context.supabase, context.userId, validUuid);
     expect(assertCompanyAccess).not.toHaveBeenCalledWith(context.supabase, context.userId, "wrong-id");
   });
 });
+
