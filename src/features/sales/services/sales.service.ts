@@ -307,7 +307,11 @@ export const salesService = {
 
       const { data: pageRows, error: pErr } = await supabase
         .from("sales")
-        .select("*")
+        .select(`
+          id, number, sale_date, grand_total, status, customer_id, 
+          payment_method, notes, items_total, discount, shipping, 
+          created_at, deleted_at, cash_session_id
+        `)
         .in("id", ordered);
       if (pErr) throw pErr;
       const byId = new Map((pageRows ?? []).map((r) => [r.id, r]));
@@ -318,7 +322,11 @@ export const salesService = {
       const { data, error, count } = await applyFilters(
         supabase
           .from("sales")
-          .select("*", { count: "exact" })
+          .select(`
+            id, number, sale_date, grand_total, status, customer_id, 
+            payment_method, notes, items_total, discount, shipping, 
+            created_at, deleted_at, cash_session_id
+          `, { count: "exact" })
           .eq("company_id", companyId),
       )
         .order(filters.sortBy, { ascending: filters.sortDir === "asc" })
