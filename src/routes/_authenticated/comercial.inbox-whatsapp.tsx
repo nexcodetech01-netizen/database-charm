@@ -33,6 +33,7 @@ import {
 } from "@/features/whatsapp/inbound/commercial-inbox";
 import {
   useCommercialInbox,
+  useCommercialInboxDetail,
   useUpdateCommercialInboxStatus,
   type CommercialInboxTicket,
 } from "@/features/whatsapp/hooks/use-commercial-inbox";
@@ -85,7 +86,9 @@ function CommercialInboxPage() {
   const { data, isLoading } = useCommercialInbox(companyId, page);
   useCommercialInboxRealtime(companyId);
   const updateStatus = useUpdateCommercialInboxStatus();
-  const [selected, setSelected] = useState<CommercialInboxTicket | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: selectedDetail } = useCommercialInboxDetail(selectedId);
+  const selected = selectedDetail ?? null;
 
   const tickets = useMemo(() => data?.rows ?? [], [data]);
   const total = data?.total ?? 0;
@@ -145,7 +148,7 @@ function CommercialInboxPage() {
                     {t.origin}
                   </TableCell>
                   <TableCell className="text-right space-x-2 whitespace-nowrap">
-                    <Button variant="ghost" size="sm" onClick={() => setSelected(t)}>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedId(t.id)}>
                       Abrir
                     </Button>
                     {isConverted(t) && t.sale_id ? (
@@ -236,7 +239,7 @@ function CommercialInboxPage() {
         )}
       </Card>
 
-      <Dialog open={Boolean(selected)} onOpenChange={(o) => !o && setSelected(null)}>
+      <Dialog open={Boolean(selectedId)} onOpenChange={(o) => !o && setSelectedId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{selected?.buyer_name ?? "Atendimento"}</DialogTitle>
@@ -311,6 +314,8 @@ function CommercialInboxPage() {
               </p>
               <p className="font-semibold">Total: {money(Number(selected.total))}</p>
             </div>
+          ) : selectedId ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
           ) : null}
         </DialogContent>
       </Dialog>
