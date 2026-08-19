@@ -88,14 +88,18 @@ export function Topbar() {
       if (!user?.user_metadata?.company_id) return;
       
       try {
-        const unread = await getUnreadNotifications({ 
-          companyId: user.user_metadata.company_id 
-        });
+        const unreadResponse = await getUnreadNotifications({ 
+          data: { companyId: user.user_metadata.company_id }
+        }) as any[];
+        
+        const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
+
         
         if (unread && unread.length > 0) {
           addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
           
-          unread.forEach(notif => {
+          unread.forEach((notif: any) => {
+
             const meta = BELLA_EVENT_CATALOG[notif.event_type as any];
             if (!meta) return;
 

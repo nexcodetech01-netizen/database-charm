@@ -178,15 +178,18 @@ export class BellaEventRegistry {
     if (action === "created") {
       const payload = event.payload as any;
       saveNotification({
-        companyId: event.tenantId,
-        eventType: event.type,
-        title: event.title,
-        message: event.description,
-        referenceId: payload?.entityId || payload?.ticketId || null,
-        metadata: payload
+        data: {
+          companyId: event.tenantId,
+          eventType: event.type,
+          title: event.title,
+          message: event.description,
+          referenceId: payload?.entityId || payload?.ticketId || null,
+          metadata: payload
+        }
       }).catch(err => {
         console.warn("[BellaEventRegistry] Falha na persistência silenciosa:", err);
       });
+
     }
 
     // Log operacional silencioso — sem I/O externo.
