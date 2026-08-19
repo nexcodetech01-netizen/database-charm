@@ -16,6 +16,8 @@ import type { BellaSkillMissingField, BellaSkillResult } from "../skills/types";
 
 export interface AgentContext {
   companyId: string;
+  /** Nome de exibição da empresa, usado no prompt da IA (opcional). */
+  companyName?: string | null;
   userId?: string | null;
   conversationId?: string | null;
   /** Permissões efetivas do usuário (união dos roles). Owner recebe {"*"}. */

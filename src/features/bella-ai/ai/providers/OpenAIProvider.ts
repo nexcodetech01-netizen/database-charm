@@ -14,12 +14,36 @@ import type {
   AIResponse,
   AIResult,
 } from "../gateway/types";
-import { interpretWithOpenAI } from "../gateway/interpret-openai.functions";
+import { interpretWithOpenAI as interpretWithOpenAIDefault } from "../gateway/interpret-openai.functions";
 import { buildSkillsCatalog } from "../gateway/skills-catalog";
+
+type InterpretFn = typeof interpretWithOpenAIDefault;
 
 export class OpenAIProvider implements AIProvider {
   readonly id = "openai" as const;
   readonly displayName = "OpenAI (GPT)";
+  private readonly interpretFn: InterpretFn;
+
+  /**
+   * CORREÇÃO: `interpretWithOpenAI` é uma server function do TanStack
+   * Start. Chamada direto (import estático) a partir de código que
+   * eventualmente é acionado por um componente cliente (`bella-ask-panel.tsx`
+   * → `handleWithAgentRuntime` → `BellaAIGateway` → aqui), sem passar
+   * pelo hook `useServerFn()`, falha com o mesmo erro "data Required"
+   * já corrigido hoje no fluxo de notificações — hooks só funcionam
+   * dentro de componentes React, e nenhuma dessas classes é um.
+   *
+   * Em vez de restruturar toda a cadeia de classes pra virar
+   * componente/hook, o construtor aceita receber a versão já vinculada
+   * (via `useServerFn(interpretWithOpenAI)`) injetada de fora — o
+   * componente que efetivamente inicia a conversa é quem cria essa
+   * versão vinculada e injeta aqui. Se nada for passado, cai no import
+   * direto (seguro só quando chamado de contexto genuinamente
+   * server-side, nunca a partir de um componente cliente).
+   */
+  constructor(interpretFn?: InterpretFn) {
+    this.interpretFn = interpretFn ?? interpretWithOpenAIDefault;
+  }
 
   isConfigured(): boolean {
     // A disponibilidade real é checada no backend via presence da API KEY.
@@ -33,7 +57,7 @@ export class OpenAIProvider implements AIProvider {
       provider: this.id,
       model: result.raw && typeof result.raw === 'object' && 'telemetry' in result.raw 
         ? (result.raw as any).telemetry.model 
-        : "gpt-5.6-luna",
+        : "gpt-4o-mini",
       raw: result.raw,
     };
   }
@@ -50,7 +74,7 @@ export class OpenAIProvider implements AIProvider {
     const context = (request.context ?? {}) as Record<string, unknown>;
     const companyName = typeof context.companyName === "string" ? context.companyName : undefined;
 
-    const data = await interpretWithOpenAI({
+    const data = await this.interpretFn({
       data: {
         message,
         skills,

@@ -15,7 +15,7 @@ import { isBellaAgentEnabled } from "./config";
 import { detectDeterministicIntent, SUPPORTED_RUNTIME_INTENTS } from "./intent-engine";
 import { logAgentExecution } from "./execution-log";
 import { runAgent } from "./agent";
-import { bellaAIGateway } from "../ai/gateway/BellaAIGateway";
+import { bellaAIGateway, BellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import type { AgentContext, AgentIntent, AgentResponse } from "./types";
 import type { AIResult } from "../ai/gateway/types";
 
@@ -24,6 +24,13 @@ export interface AgentRuntimeInput {
   ctx: AgentContext;
   /** Confirmação humana já obtida (para ações destrutivas). */
   confirmed?: boolean;
+  /**
+   * Gateway de IA opcional, com provider configurado usando server
+   * functions já vinculadas via `useServerFn()` — necessário quando
+   * chamado a partir de um componente cliente. Sem isso, usa o
+   * singleton padrão (seguro só server-side).
+   */
+  gateway?: BellaAIGateway;
 }
 
 export interface AgentRuntimeTrace {
@@ -57,6 +64,14 @@ const FALLBACK_ERR_PREFIX = "fallback:";
 export async function handleWithAgentRuntime(
   input: AgentRuntimeInput,
 ): Promise<AgentRuntimeResult> {
+  // CORREÇÃO: `gateway` opcional — permite ao chamador (componente
+  // cliente) injetar uma instância de `BellaAIGateway` configurada com
+  // um provider cujas server functions já foram vinculadas via
+  // `useServerFn()`. Sem isso, usa o singleton padrão importado (seguro
+  // só quando `handleWithAgentRuntime` é chamado de contexto
+  // genuinamente server-side). Ver comentário em `OpenAIProvider.ts`
+  // para o detalhe completo do bug que isso corrige.
+  const gateway = input.gateway ?? bellaAIGateway;
   const startedAt = new Date();
 
   // Fase 1 — feature flag off → nada a fazer.
@@ -78,9 +93,16 @@ export async function handleWithAgentRuntime(
   let aiResult: AIResult | null = null;
   
   try {
-    aiResult = await bellaAIGateway.interpret({
+    aiResult = await gateway.interpret({
       userMessage: input.message,
-      companyName: input.ctx.companyId, 
+      // BUG CORRIGIDO: `companyName` estava recebendo o valor de
+      // `companyId` (um UUID, não o nome da empresa) — a IA via um
+      // código aleatório no lugar do nome do negócio no prompt.
+      // `AgentContext` não tem campo de nome de empresa ainda; até
+      // isso ser adicionado, não inventamos um valor errado — melhor
+      // deixar undefined (o prompt já lida com ausência) do que mandar
+      // o UUID disfarçado de nome.
+      companyName: input.ctx.companyName,
       context: { 
         userId: input.ctx.userId,
         companyId: input.ctx.companyId 
