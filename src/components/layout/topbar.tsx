@@ -38,7 +38,7 @@ import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
 
 export function Topbar() {
-  const { user } = useAuth();
+  const { user, companyId } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toggle: toggleMobileNav } = useMobileNav();
@@ -64,8 +64,8 @@ export function Topbar() {
     totalPages,
   } = useBrowserNotifications();
   
-  useExternalNotificationsRealtime(user?.user_metadata?.company_id, settings, settingsLoading);
-  useCommercialInboxRealtime(user?.user_metadata?.company_id);
+  useExternalNotificationsRealtime(companyId, settings, settingsLoading);
+  useCommercialInboxRealtime(companyId);
 
   const notifiedIdsRef = useRef<Set<string>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
@@ -89,11 +89,11 @@ export function Topbar() {
     bellaEventRegistry.start();
 
     const hydrateRegistry = async () => {
-      if (!user?.user_metadata?.company_id) return;
+      if (!companyId) return;
       
       try {
         const unreadResponse = (await getUnreadNotifications({ 
-          data: { companyId: user.user_metadata.company_id }
+          data: { companyId }
         })) as any;
 
         const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
@@ -131,7 +131,7 @@ export function Topbar() {
 
     const updateState = () => {
       const active = bellaEventRegistry.listActive({ 
-        tenantId: user?.user_metadata?.company_id 
+        tenantId: companyId || undefined 
       });
       setActiveEvents([...active].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
     };
@@ -188,7 +188,7 @@ export function Topbar() {
       unsubscribe();
       channel?.removeEventListener("message", handleMessage);
     };
-  }, [user?.user_metadata?.company_id, settings, navigate, notify]);
+  }, [companyId, settings, navigate, notify]);
 
   const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Você";
   const initials = displayName.split(" ").slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
