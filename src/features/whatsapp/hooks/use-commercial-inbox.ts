@@ -154,7 +154,12 @@ export function useCommercialInboxTicket(id: string | null) {
     queryFn: async (): Promise<CommercialInboxTicket | null> => {
       const { data, error } = await supabase
         .from("whatsapp_commercial_inbox")
-        .select("*")
+        .select(`
+          id, phone, buyer_name, item_count, total, status, origin, created_at,
+          fulfillment, delivery, payment, sale_id, converted_at,
+          full_name, person_type, cpf, cnpj, birth_date, zip_code,
+          state, city, district, street, number, complement, items
+        `)
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
