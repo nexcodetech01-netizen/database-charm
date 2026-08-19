@@ -302,18 +302,22 @@ export class ConsignmentService {
     }
 
     // Upsert itens (novos e atualizados)
-    const upsertData = items.map(item => ({
-      ...(item.id ? { id: item.id } : {}),
-      consignment_id: consignmentId,
-      company_id: companyId,
-      product_id: item.product_id,
-      sent_quantity: item.sent_quantity,
-      cost_price: item.cost_price,
-      suggested_price: item.suggested_price || 0,
-      sold_quantity: item.id ? undefined : 0,
-      returned_quantity: item.id ? undefined : 0,
-      quantidade_extraviada: item.id ? undefined : 0
-    }));
+    const upsertData = items.map(item => {
+      const existing = item.id ? existingItems.find(ei => ei.id === item.id) : null;
+      
+      return {
+        ...(item.id ? { id: item.id } : {}),
+        consignment_id: consignmentId,
+        company_id: companyId,
+        product_id: item.product_id,
+        sent_quantity: item.sent_quantity,
+        cost_price: item.cost_price,
+        suggested_price: item.suggested_price || 0,
+        sold_quantity: existing ? (existing.sold_quantity ?? 0) : 0,
+        returned_quantity: existing ? (existing.returned_quantity ?? 0) : 0,
+        quantidade_extraviada: existing ? (existing.quantidade_extraviada ?? 0) : 0
+      };
+    });
 
     const { error: upsertError } = await supabase
       .from('consignment_items')
