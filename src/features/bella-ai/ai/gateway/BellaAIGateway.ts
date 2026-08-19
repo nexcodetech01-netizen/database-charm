@@ -144,7 +144,10 @@ export class BellaAIGateway {
         return result;
       } catch (err) {
         const info = describeError(err);
-        console.warn(`[BellaAIGateway] ${preferred.id} failed, falling back to ${this.fallback.id}`, info);
+        console.warn(`[BellaAIGateway] ${preferred.id} failed, falling back to ${this.fallback.id}`, {
+          ...info,
+          originalError: err instanceof Error ? err.message : String(err)
+        });
         // Cai silenciosamente no fallback.
         try {
           const fallbackResult = await call(this.fallback);
