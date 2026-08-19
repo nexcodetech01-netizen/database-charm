@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { interpretWithOpenAI } from "../interpret-openai.functions";
 import { assertCompanyAccess, CompanyAccessError } from "@/lib/company-resolver.server";
 import { z } from "zod";
+import { integrationFetch } from "@/lib/http-client.server";
 
 // Mock das dependências externas
 vi.mock("@tanstack/react-start", () => ({
@@ -26,6 +27,9 @@ vi.mock("@/lib/company-resolver.server", () => ({
   assertCompanyAccess: vi.fn(),
   CompanyAccessError: class CompanyAccessError extends Error {
     code = "COMPANY_ACCESS_DENIED";
+    constructor(message = "Access Denied") {
+      super(message);
+    }
   },
 }));
 
@@ -39,8 +43,21 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
   const otherUuid = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
   const validMessage = "Olá";
 
+  // Helper para simular resposta da OpenAI
+  const mockOpenAISuccess = () => {
+    vi.mocked(integrationFetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify({ intent: "test", confidence: 1, response: "ok" }) } }],
+        model: "gpt-test",
+        usage: { prompt_tokens: 10, completion_tokens: 10 }
+      })
+    } as any);
+  };
+
   it("1. companyId válido + usuário pertence à empresa -> OpenAI pode ser chamada", async () => {
     vi.mocked(assertCompanyAccess).mockResolvedValue(validUuid);
+    mockOpenAISuccess();
     
     const context = { userId: "user-1", supabase: {} };
     const data = { 
@@ -50,7 +67,7 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
     };
 
     const handler = (interpretWithOpenAI as any).handler;
-    await expect(handler({ data, context })).resolves.toBeDefined;
+    await expect(handler({ data, context })).resolves.toBeDefined();
     expect(assertCompanyAccess).toHaveBeenCalledWith(context.supabase, context.userId, validUuid);
   });
 
@@ -107,6 +124,7 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
   it("6. Confirmar que nenhum companyId é extraído de JWT claims", async () => {
     vi.mocked(assertCompanyAccess).mockClear();
     vi.mocked(assertCompanyAccess).mockResolvedValue(validUuid);
+    mockOpenAISuccess();
     
     const context = { 
       userId: "user-1", 
@@ -126,4 +144,5 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
     expect(assertCompanyAccess).not.toHaveBeenCalledWith(context.supabase, context.userId, "wrong-id");
   });
 });
+
 
