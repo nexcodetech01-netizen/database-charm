@@ -70,6 +70,7 @@ import { Route as AuthenticatedFornecedoresSupplierIdRouteImport } from './route
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
 import { Route as AuthenticatedFiscalConfiguracaoRouteImport } from './routes/_authenticated/fiscal.configuracao'
 import { Route as AuthenticatedFinanceiroSaudeFiscalRouteImport } from './routes/_authenticated/financeiro.saude-fiscal'
+import { Route as AuthenticatedFerramentasMetricasInboxRouteImport } from './routes/_authenticated/ferramentas.metricas-inbox'
 import { Route as AuthenticatedFerramentasCalculadoraFreteRouteImport } from './routes/_authenticated/ferramentas.calculadora-frete'
 import { Route as AuthenticatedEstoqueReconciliacaoRouteImport } from './routes/_authenticated/estoque.reconciliacao'
 import { Route as AuthenticatedConsignacoesIdRouteImport } from './routes/_authenticated/consignacoes.$id'
@@ -445,6 +446,12 @@ const AuthenticatedFinanceiroSaudeFiscalRoute =
     path: '/saude-fiscal',
     getParentRoute: () => AuthenticatedFinanceiroRoute,
   } as any)
+const AuthenticatedFerramentasMetricasInboxRoute =
+  AuthenticatedFerramentasMetricasInboxRouteImport.update({
+    id: '/ferramentas/metricas-inbox',
+    path: '/ferramentas/metricas-inbox',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFerramentasCalculadoraFreteRoute =
   AuthenticatedFerramentasCalculadoraFreteRouteImport.update({
     id: '/ferramentas/calculadora-frete',
@@ -736,6 +743,7 @@ export interface FileRoutesByFullPath {
   '/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
+  '/ferramentas/metricas-inbox': typeof AuthenticatedFerramentasMetricasInboxRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -837,6 +845,7 @@ export interface FileRoutesByTo {
   '/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
+  '/ferramentas/metricas-inbox': typeof AuthenticatedFerramentasMetricasInboxRoute
   '/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -941,6 +950,7 @@ export interface FileRoutesById {
   '/_authenticated/consignacoes/$id': typeof AuthenticatedConsignacoesIdRoute
   '/_authenticated/estoque/reconciliacao': typeof AuthenticatedEstoqueReconciliacaoRoute
   '/_authenticated/ferramentas/calculadora-frete': typeof AuthenticatedFerramentasCalculadoraFreteRoute
+  '/_authenticated/ferramentas/metricas-inbox': typeof AuthenticatedFerramentasMetricasInboxRoute
   '/_authenticated/financeiro/saude-fiscal': typeof AuthenticatedFinanceiroSaudeFiscalRoute
   '/_authenticated/fiscal/configuracao': typeof AuthenticatedFiscalConfiguracaoRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRouteWithChildren
@@ -1045,6 +1055,7 @@ export interface FileRouteTypes {
     | '/consignacoes/$id'
     | '/estoque/reconciliacao'
     | '/ferramentas/calculadora-frete'
+    | '/ferramentas/metricas-inbox'
     | '/financeiro/saude-fiscal'
     | '/fiscal/configuracao'
     | '/fiscal/notas'
@@ -1146,6 +1157,7 @@ export interface FileRouteTypes {
     | '/consignacoes/$id'
     | '/estoque/reconciliacao'
     | '/ferramentas/calculadora-frete'
+    | '/ferramentas/metricas-inbox'
     | '/financeiro/saude-fiscal'
     | '/fiscal/configuracao'
     | '/fiscal/notas'
@@ -1249,6 +1261,7 @@ export interface FileRouteTypes {
     | '/_authenticated/consignacoes/$id'
     | '/_authenticated/estoque/reconciliacao'
     | '/_authenticated/ferramentas/calculadora-frete'
+    | '/_authenticated/ferramentas/metricas-inbox'
     | '/_authenticated/financeiro/saude-fiscal'
     | '/_authenticated/fiscal/configuracao'
     | '/_authenticated/fiscal/notas'
@@ -1756,6 +1769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroSaudeFiscalRouteImport
       parentRoute: typeof AuthenticatedFinanceiroRoute
     }
+    '/_authenticated/ferramentas/metricas-inbox': {
+      id: '/_authenticated/ferramentas/metricas-inbox'
+      path: '/ferramentas/metricas-inbox'
+      fullPath: '/ferramentas/metricas-inbox'
+      preLoaderRoute: typeof AuthenticatedFerramentasMetricasInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ferramentas/calculadora-frete': {
       id: '/_authenticated/ferramentas/calculadora-frete'
       path: '/ferramentas/calculadora-frete'
@@ -2245,6 +2265,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedComprasNovoRoute: typeof AuthenticatedComprasNovoRoute
   AuthenticatedConfiguracoesPrecificacaoRoute: typeof AuthenticatedConfiguracoesPrecificacaoRoute
   AuthenticatedFerramentasCalculadoraFreteRoute: typeof AuthenticatedFerramentasCalculadoraFreteRoute
+  AuthenticatedFerramentasMetricasInboxRoute: typeof AuthenticatedFerramentasMetricasInboxRoute
   AuthenticatedFiscalConfiguracaoRoute: typeof AuthenticatedFiscalConfiguracaoRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRouteWithChildren
   AuthenticatedFornecedoresSupplierIdRoute: typeof AuthenticatedFornecedoresSupplierIdRouteWithChildren
@@ -2315,6 +2336,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedConfiguracoesPrecificacaoRoute,
   AuthenticatedFerramentasCalculadoraFreteRoute:
     AuthenticatedFerramentasCalculadoraFreteRoute,
+  AuthenticatedFerramentasMetricasInboxRoute:
+    AuthenticatedFerramentasMetricasInboxRoute,
   AuthenticatedFiscalConfiguracaoRoute: AuthenticatedFiscalConfiguracaoRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRouteWithChildren,
   AuthenticatedFornecedoresSupplierIdRoute:

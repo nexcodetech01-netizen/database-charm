@@ -5587,6 +5587,38 @@ export type Database = {
           },
         ]
       }
+      query_metrics: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          payload_size_kb: number
+          query_name: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          payload_size_kb: number
+          query_name: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          payload_size_kb?: number
+          query_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resellers: {
         Row: {
           address: string | null
