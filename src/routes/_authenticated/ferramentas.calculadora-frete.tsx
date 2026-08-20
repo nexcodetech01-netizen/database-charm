@@ -492,6 +492,7 @@ function ShippingCalculatorPage() {
                                 <Input 
                                   placeholder="00000-000" 
                                   {...field} 
+                                  onChange={(e) => field.onChange(formatCep(e.target.value))}
                                   className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50 transition-colors"
                                 />
                               </FormControl>
@@ -688,7 +689,7 @@ function ShippingCalculatorPage() {
                           </TabsTrigger>
                           <TabsTrigger 
                             value="recentes" 
-                            disabled={recentDestCeps.length === 0}
+                            disabled={recentDestCeps.length === 0 && recentQuotes.length === 0}
                             className="h-full px-6 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#E5A855] text-xs uppercase font-bold tracking-wider"
                           >
                             Recentes
@@ -718,6 +719,7 @@ function ShippingCalculatorPage() {
                                     <Input 
                                       placeholder="00000-000" 
                                       {...field} 
+                                      onChange={(e) => field.onChange(formatCep(e.target.value))}
                                       className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50"
                                     />
                                   </FormControl>
@@ -728,18 +730,48 @@ function ShippingCalculatorPage() {
                           </TabsContent>
                           
                           <TabsContent value="recentes" className="mt-0">
-                            <div className="space-y-1">
-                              {recentDestCeps.map((cep) => (
-                                <button
-                                  key={cep}
-                                  type="button"
-                                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-left hover:bg-sidebar/40 border border-transparent hover:border-sidebar-border/40 transition-all group"
-                                  onClick={() => {
-                                    calcForm.setValue("cep_destino", cep);
-                                    setDestTab("novo");
-                                  }}
-                                >
-                                  <MapPin className="h-4 w-4 text-muted-foreground group-hover:text-[#E5A855] transition-colors" />
+                            <div className="space-y-4">
+                              {recentQuotes.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Cotações Anteriores</p>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {recentQuotes.map((quote, idx) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        className="flex flex-col gap-1 rounded-lg px-3 py-2 text-sm text-left hover:bg-sidebar/40 border border-sidebar-border/20 transition-all group"
+                                        onClick={() => applyRecentQuote(quote)}
+                                      >
+                                        <div className="flex justify-between items-center w-full">
+                                          <span className="font-bold text-[10px] text-primary">{quote.input.cep_destino}</span>
+                                          <span className="text-[9px] text-muted-foreground">{new Date(quote.timestamp).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex gap-2 text-[9px] text-muted-foreground font-medium">
+                                          <span>{quote.input.peso_kg}kg</span>
+                                          <span>•</span>
+                                          <span>{quote.results.length} opções</span>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {recentDestCeps.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">CEPs Frequentes</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {recentDestCeps.map((cep) => (
+                                      <button
+                                        key={cep}
+                                        type="button"
+                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-left hover:bg-sidebar/40 border border-sidebar-border/20 transition-all group"
+                                        onClick={() => {
+                                          calcForm.setValue("cep_destino", cep);
+                                          setDestTab("novo");
+                                        }}
+                                      >
+                                        <MapPin className="h-3 w-3 text-muted-foreground group-hover:text-[#E5A855] transition-colors" />
                                   <span className="font-medium">{cep}</span>
                                 </button>
                               ))}
