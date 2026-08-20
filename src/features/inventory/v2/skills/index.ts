@@ -269,7 +269,7 @@ export const stockPurchaseSuggestionSkill = defineBaseSkill({
 
     return skillResult.success(
       [`🛒 Sugestão de Compra`, preview, `\nDeseja criar o pedido de compra?`].join("\n"),
-      { suggestions },
+      { rows: suggestions }, // Mantendo 'rows' para compatibilidade de tipos se necessário ou usando um objeto mais genérico
       [{ id: "create_purchase_order", title: "Criar Pedido", actionLabel: "Executar" }],
     );
   },
