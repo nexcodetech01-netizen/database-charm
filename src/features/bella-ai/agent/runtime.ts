@@ -108,8 +108,8 @@ export async function handleWithAgentRuntime(
         companyId: input.ctx.companyId,
         conversationId: input.ctx.conversationId,
         // Injetar memória de curto prazo no contexto para continuidade (Fase 2)
-        lastIntent: intent?.id,
-        lastParameters: intent?.entities,
+        lastIntent: (intent as AgentIntent | null)?.id,
+        lastParameters: (intent as AgentIntent | null)?.entities,
       }
     });
 

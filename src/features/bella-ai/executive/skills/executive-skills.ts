@@ -57,7 +57,7 @@ export const companyStatusSkill = skill(
     const { dre, cash } = r.snapshot;
     return [
       `💰 Resumo Financeiro`,
-      `• Receita Líquida: ${BRL.format(dre.grossRevenue - dre.taxes)}`,
+      `• Receita Líquida: ${BRL.format(dre.netRevenue)}`,
       `• Número de Vendas: ${r.snapshot.rankings.customers.reduce((acc, c) => acc + c.salesCount, 0)}`,
       `• Ticket Médio: ${BRL.format(dre.grossRevenue / Math.max(r.snapshot.rankings.customers.reduce((acc, c) => acc + c.salesCount, 0), 1))}`,
       `• Lucro Líquido: ${BRL.format(dre.netProfit)} (margem ${pct(dre.netMargin)})`,
