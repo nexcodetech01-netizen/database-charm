@@ -46,6 +46,36 @@ export async function calculateSuperfreteShipping(
       ? "https://api.superfrete.com"
       : "https://sandbox.superfrete.com";
 
+  // FIX (2026-08-20): a API do Superfrete passou a EXIGIR o campo
+  // `services` (erro "(services) é obrigatório" quando omitido) —
+  // diferente de quando essa restrição foi removida em 2026-08-18
+  // (na época, omitir o campo funcionava e trazia todas as opções).
+  // Pra não voltar a travar em só 3 transportadoras (o bug original
+  // que motivou remover isso), passamos uma lista ampla de códigos de
+  // serviço conhecidos, em vez do "1,2,17" antigo.
+  //
+  // IMPORTANTE: essa lista foi montada com o conhecimento público mais
+  // recente disponível, sem conseguir confirmar ao vivo contra a
+  // documentação atual da Superfrete (sem acesso à internet neste
+  // ambiente no momento da correção). Vale conferir no painel da
+  // Superfrete (Configurações > Transportadoras habilitadas) se essa
+  // lista bate com o que sua conta realmente tem disponível — se
+  // faltar alguma transportadora que você sabe que deveria aparecer,
+  // me avisa o código dela (aparece no painel deles) que eu adiciono.
+  // FIX (2026-08-20, revisão 2): o erro "(services) é obrigatório"
+  // continuava aparecendo mesmo com o campo preenchido — a causa
+  // provável é o FORMATO: a API da SuperFrete espera uma LISTA de
+  // números (array JSON), não um texto único separado por vírgulas
+  // ("1,2,3,..."). Um validador de schema que espera array trata uma
+  // string como tipo errado e reporta como se o campo obrigatório
+  // estivesse ausente — exatamente o sintoma visto.
+  const SUPERFRETE_SERVICES_RAW =
+    process.env["SUPERFRETE_SERVICES"] || "1,2,3,4,15,16,17,18,22,31,32,33";
+  const SUPERFRETE_SERVICES = SUPERFRETE_SERVICES_RAW
+    .split(",")
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !Number.isNaN(n));
+
   const payload = {
     from: { postal_code: (cep_origem || "").replace(/\D/g, "") },
     to: { postal_code: (cep_destino || "").replace(/\D/g, "") },
@@ -61,6 +91,7 @@ export async function calculateSuperfreteShipping(
       receipt: false,
       own_hand: false,
     },
+    services: SUPERFRETE_SERVICES,
   };
 
   const response = await fetch(`${baseUrl}/api/v0/calculator`, {
@@ -83,6 +114,14 @@ export async function calculateSuperfreteShipping(
   }
 
   if (!response.ok) {
+    // Log detalhado pra facilitar diagnóstico se o erro persistir —
+    // mostra exatamente o que foi enviado e o que a SuperFrete
+    // devolveu, sem precisar adivinhar de novo.
+    console.error("[calculateSuperfreteShipping] Erro da API:", {
+      status: response.status,
+      payloadSent: payload,
+      responseBody: data,
+    });
     // FIX (2026-08-18): antes lançava só a mensagem genérica da raiz
     // ("Ocorreu um ou mais erros."), escondendo o motivo real — a
     // Superfrete devolve as mensagens específicas dentro de um objeto
