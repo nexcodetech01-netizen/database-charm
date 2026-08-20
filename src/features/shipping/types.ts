@@ -10,29 +10,33 @@ const preprocessNumeric = (val: unknown) => {
 };
 
 export const ShippingCalculatorSchema = z.object({
-  cep_origem: z.string().regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de origem inválido (00000-000)"),
-  cep_destino: z.string().regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de destino inválido (00000-000)"),
+  cep_origem: z.string()
+    .min(8, "CEP muito curto")
+    .regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de origem inválido. Use o formato 00000-000"),
+  cep_destino: z.string()
+    .min(8, "CEP muito curto")
+    .regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de destino inválido. Use o formato 00000-000"),
   peso_kg: z.preprocess(preprocessNumeric, z.number({ 
     required_error: "Peso é obrigatório",
     invalid_type_error: "Peso deve ser um número" 
-  }).min(0.01, "Peso mínimo 0.01kg")),
+  }).min(0.01, "Peso mínimo 0.01kg").max(30, "Peso máximo 30kg")),
   altura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Altura é obrigatória",
     invalid_type_error: "Altura deve ser um número"
-  }).min(2, "Altura mínima 2cm")),
+  }).min(2, "Altura mínima 2cm").max(105, "Altura máxima 105cm")),
   largura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Largura é obrigatória",
     invalid_type_error: "Largura deve ser um número"
-  }).min(11, "Largura mínima 11cm")),
+  }).min(11, "Largura mínima 11cm").max(105, "Largura máxima 105cm")),
   comprimento_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Comprimento é obrigatório",
     invalid_type_error: "Comprimento deve ser um número"
-  }).min(16, "Comprimento mínimo 16cm")),
+  }).min(16, "Comprimento mínimo 16cm").max(105, "Comprimento máxima 105cm")),
   format: z.string().default("3"),
   valor_declarado: z.preprocess(preprocessNumeric, z.number({
     required_error: "Valor seguro é obrigatório",
     invalid_type_error: "Valor seguro deve ser um número"
-  }).min(0, "Valor mínimo R$ 0")),
+  }).min(0, "Valor mínimo R$ 0").max(10000, "Valor máximo R$ 10.000")),
 });
 
 export type ShippingCalculatorInput = {

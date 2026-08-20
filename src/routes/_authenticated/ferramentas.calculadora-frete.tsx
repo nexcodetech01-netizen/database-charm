@@ -60,6 +60,7 @@ function ShippingCalculatorPage() {
   const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [calcError, setCalcError] = useState<{ message: string; details?: string[] } | null>(null);
 
   async function handlePrintThermal() {
     if (!labelResult?.label_url) return;
@@ -109,12 +110,16 @@ function ShippingCalculatorPage() {
       if (recents) setRecentDestCeps(JSON.parse(recents));
 
       const quotes = localStorage.getItem(RECENT_QUOTES_KEY);
-      if (quotes) setRecentQuotes(JSON.parse(quotes));
+      if (quotes) {
+        const parsedQuotes = JSON.parse(quotes);
+        setRecentQuotes(parsedQuotes);
+        if (parsedQuotes.length > 0) {
+          setDestTab("recentes");
+        }
+      }
     } catch {
-      // localStorage indisponível (modo privado, etc.) — segue sem
-      // memorizar, não é crítico pro funcionamento da calculadora.
+      // localStorage indisponível
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleSaveOriginCep() {
@@ -203,6 +208,7 @@ function ShippingCalculatorPage() {
 
   const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
+    mode: "onChange",
     defaultValues: {
       format: "3",
       cep_origem: "01001-000",
@@ -237,6 +243,7 @@ function ShippingCalculatorPage() {
     setIsLoading(true);
     setResults(null);
     setSelectedOption(null);
+    setCalcError(null);
     setCalcErrors([]);
     console.log("CALCULATOR_DEBUG: Submitting form data:", data);
     try {
@@ -269,7 +276,12 @@ function ShippingCalculatorPage() {
         response.errors.forEach((msg) => toast.warning(msg));
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao calcular frete.");
+      const errorMessage = error.message || "Erro inesperado ao calcular frete.";
+      setCalcError({ 
+        message: errorMessage, 
+        details: ["Verifique sua conexão ou se os dados de CEP e dimensões estão corretos."] 
+      });
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -746,10 +758,12 @@ function ShippingCalculatorPage() {
                                           <span className="font-bold text-[10px] text-primary">{quote.input.cep_destino}</span>
                                           <span className="text-[9px] text-muted-foreground">{new Date(quote.timestamp).toLocaleDateString()}</span>
                                         </div>
-                                        <div className="flex gap-2 text-[9px] text-muted-foreground font-medium">
+                                        <div className="flex flex-wrap gap-2 text-[9px] text-muted-foreground font-medium">
                                           <span>{quote.input.peso_kg}kg</span>
                                           <span>•</span>
-                                          <span>{quote.results.length} opções</span>
+                                          <span>{quote.input.largura_cm}x{quote.input.altura_cm}x{quote.input.comprimento_cm}cm</span>
+                                          <span>•</span>
+                                          <span className="text-emerald-500">{quote.results.length} opções</span>
                                         </div>
                                       </button>
                                     ))}
@@ -846,6 +860,33 @@ function ShippingCalculatorPage() {
               <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-sidebar-border bg-sidebar/10">
                 <LoadingSurface variant="cards" metrics={1} />
               </div>
+            ) : calcError ? (
+              <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 rounded-xl overflow-hidden">
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 mt-0.5" />
+                  <div className="flex-1">
+                    <AlertTitle className="text-sm font-black uppercase tracking-widest mb-2">Erro no Cálculo</AlertTitle>
+                    <AlertDescription className="text-xs space-y-3">
+                      <p className="font-medium text-foreground">{calcError.message}</p>
+                      {calcError.details && (
+                        <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                          {calcError.details.map((d, i) => <li key={i}>{d}</li>)}
+                        </ul>
+                      )}
+                      <div className="pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-destructive/30 hover:bg-destructive/10"
+                          onClick={() => calcForm.handleSubmit(onCalcSubmit)()}
+                        >
+                          Tentar Novamente
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </div>
+                </div>
+              </Alert>
             ) : results ? (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
