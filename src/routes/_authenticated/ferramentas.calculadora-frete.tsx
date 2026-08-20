@@ -184,6 +184,17 @@ function ShippingCalculatorPage() {
     return `${clean.slice(0, 5)}-${clean.slice(5, 8)}`;
   };
 
+  const formatNumeric = (value: string) => {
+    // Permite apenas números e uma única vírgula ou ponto
+    const clean = value.replace(/[^0-9,.]/g, "");
+    const parts = clean.split(/[,.]/);
+    if (parts.length > 2) {
+      return parts[0] + "," + parts.slice(1).join("");
+    }
+    return clean.replace(".", ",");
+  };
+
+
   // BUG ENCONTRADO E CORRIGIDO: o remetente de TODA etiqueta emitida
   // por essa tela estava com dados fixos e falsos no código — CNPJ
   // genérico "00.000.000/0001-00", endereço "Av. Paulista, 1000" (não
