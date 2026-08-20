@@ -415,18 +415,16 @@ function ShippingCalculatorPage() {
         icon={Truck}
       />
 
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-2 mb-8 bg-sidebar/20 p-2 rounded-2xl w-fit border border-sidebar-border/30">
         <div className={cn(
-          "flex items-center justify-center h-10 w-10 rounded-full border-2 transition-colors",
-          step === 1 ? "bg-primary border-primary text-primary-foreground" : "bg-muted border-muted text-muted-foreground"
-        )}>1</div>
-        <div className="h-px w-8 bg-muted" />
+          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+          step === 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
+        )}>Cotação</div>
+        <div className="h-4 w-px bg-sidebar-border/40" />
         <div className={cn(
-          "flex items-center justify-center h-10 w-10 rounded-full border-2 transition-colors",
-          step === 2 ? "bg-primary border-primary text-primary-foreground" : "bg-muted border-muted text-muted-foreground"
-        )}>2</div>
-        <div className="h-px w-8 bg-muted" />
-        <div className="flex items-center justify-center h-10 w-10 rounded-full border-2 bg-muted border-muted text-muted-foreground">3</div>
+          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+          step === 2 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
+        )}>Destinatário</div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
