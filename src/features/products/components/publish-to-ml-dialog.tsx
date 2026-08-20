@@ -183,6 +183,8 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const integrationFn = useServerFn(getMercadoLivreIntegration);
   const generateDescFn = useServerFn(generateMercadoLivreDescription);
   const getCategoryAttrsFn = useServerFn(getMercadoLivreCategoryAttributes);
+  const getProductPricingIntelligenceFn = useServerFn(getProductPricingIntelligence);
+  const getProductChannelSettingsFn = useServerFn(getProductChannelSettings);
 
   const [activeTab, setActiveTab] = useState("info");
 
@@ -202,7 +204,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const pricingQuery = useQuery({
     queryKey: ["pricing", "product-intelligence", product?.company_id, product?.id],
     queryFn: () =>
-      getProductPricingIntelligence({
+      getProductPricingIntelligenceFn({
         data: { companyId: product?.company_id, productId: product?.id },
       }),
     enabled: open && Boolean(product?.company_id && product?.id),
@@ -211,7 +213,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
   const channelSettingsQuery = useQuery({
     queryKey: ["pricing", "channel-settings", product?.company_id, product?.id],
     queryFn: () =>
-      getProductChannelSettings({
+      getProductChannelSettingsFn({
         data: { companyId: product?.company_id, productId: product?.id },
       }),
     enabled: open && Boolean(product?.company_id && product?.id),

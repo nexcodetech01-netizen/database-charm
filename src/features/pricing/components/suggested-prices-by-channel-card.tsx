@@ -17,6 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -133,6 +134,10 @@ export function SuggestedPricesByChannelCard(props: Props) {
 
   // Modo produto persistido — usa server fn + React Query
   const qc = useQueryClient();
+  const getProductPricingIntelligenceFn = useServerFn(getProductPricingIntelligence);
+  const getProductChannelSettingsFn = useServerFn(getProductChannelSettings);
+  const saveProductChannelSettingsFn = useServerFn(saveProductChannelSettings);
+
   const companyId = !isLocal ? props.companyId : "";
   const productId = !isLocal ? props.productId : "";
   const queryKey = ["pricing", "product-intelligence", companyId, productId] as const;
@@ -141,7 +146,7 @@ export function SuggestedPricesByChannelCard(props: Props) {
 
   const query = useQuery({
     queryKey,
-    queryFn: () => getProductPricingIntelligence({ data: { companyId, productId } }),
+    queryFn: () => getProductPricingIntelligenceFn({ data: { companyId, productId } }),
     enabled: !isLocal && Boolean(companyId && productId),
   });
 
@@ -152,14 +157,14 @@ export function SuggestedPricesByChannelCard(props: Props) {
   const settingsKey = ["pricing", "channel-settings", companyId, productId] as const;
   const settingsQuery = useQuery({
     queryKey: settingsKey,
-    queryFn: () => getProductChannelSettings({ data: { companyId, productId } }),
+    queryFn: () => getProductChannelSettingsFn({ data: { companyId, productId } }),
     enabled: !isLocal && Boolean(companyId && productId),
     staleTime: 60_000,
   });
 
   const saveMutation = useMutation({
     mutationFn: (settings: ProductChannelSettingsDTO) =>
-      saveProductChannelSettings({
+      saveProductChannelSettingsFn({
         data: { companyId, productId, settings },
       }),
     onSuccess: (data) => {

@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -99,10 +100,13 @@ interface Props {
 
 export function PriceRecalculationWorkspace({ companyId }: Props) {
   const queryClient = useQueryClient();
+  const getPriceRecalculationListFn = useServerFn(getPriceRecalculationList);
+  const applyProductSuggestedPriceFn = useServerFn(applyProductSuggestedPrice);
+
   const [marginTarget, setMarginTarget] = useState<RecalculationMarginKind>("ideal");
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["price-recalculation-list", companyId, marginTarget],
-    queryFn: () => getPriceRecalculationList({ data: { companyId, marginTarget } }),
+    queryFn: () => getPriceRecalculationListFn({ data: { companyId, marginTarget } }),
     staleTime: 30_000,
   });
 
@@ -208,7 +212,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
   // ─── Aplicação individual
   const applyMutation = useMutation({
     mutationFn: (productId: string) =>
-      applyProductSuggestedPrice({
+      applyProductSuggestedPriceFn({
         data: { companyId, productId, strategy: "final" },
       }),
     onSuccess: async (res) => {
@@ -256,7 +260,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
       const it = selectedItems[i];
       setBulkState((s) => (s ? { ...s, currentName: it.name } : s));
       try {
-        const res = await applyProductSuggestedPrice({
+        const res = await applyProductSuggestedPriceFn({
           data: { companyId, productId: it.productId, strategy: "final" },
         });
         setBulkState((s) =>

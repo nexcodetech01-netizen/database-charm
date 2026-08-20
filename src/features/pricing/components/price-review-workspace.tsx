@@ -13,6 +13,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowUpRight,
@@ -130,10 +131,13 @@ interface Props {
 
 export function PriceReviewWorkspace({ companyId }: Props) {
   const queryClient = useQueryClient();
+  const getCommercialDashboardFn = useServerFn(getCommercialDashboard);
+  const getProductPricingIntelligenceFn = useServerFn(getProductPricingIntelligence);
+  const applyProductSuggestedPriceFn = useServerFn(applyProductSuggestedPrice);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["commercial-dashboard", companyId],
-    queryFn: () => getCommercialDashboard({ data: { companyId } }),
+    queryFn: () => getCommercialDashboardFn({ data: { companyId } }),
     staleTime: 30_000,
   });
 
@@ -181,7 +185,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   const explainQuery = useQuery({
     queryKey: ["product-pricing-intelligence", companyId, explainProductId],
     queryFn: () =>
-      getProductPricingIntelligence({
+      getProductPricingIntelligenceFn({
         data: { companyId, productId: explainProductId! },
       }),
     enabled: !!explainProductId,
@@ -191,7 +195,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
   // ─── Aplicar preço (individual)
   const applyMutation = useMutation({
     mutationFn: (productId: string) =>
-      applyProductSuggestedPrice({
+      applyProductSuggestedPriceFn({
         data: { companyId, productId, strategy: "final" },
       }),
     onSuccess: async (res) => {
@@ -297,7 +301,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
       const item = items[i];
       setBulkState((s) => (s ? { ...s, currentName: item.name } : s));
       try {
-        const res = await applyProductSuggestedPrice({
+        const res = await applyProductSuggestedPriceFn({
           data: {
             companyId,
             productId: item.productId,
