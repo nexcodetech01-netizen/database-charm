@@ -827,24 +827,24 @@ function ShippingCalculatorPage() {
                   </div>
 
                   <Button
-                    type="submit"
+                    onClick={calcForm.handleSubmit(onCalcSubmit)}
                     disabled={isLoading}
-                    className="w-full h-14 text-sm font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98]"
+                    className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transition-all"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         COTANDO...
                       </>
                     ) : (
-                      "Calcular frete com desconto"
+                      "Calcular frete"
                     )}
                   </Button>
-                </form>
-              </Form>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6 lg:sticky lg:top-8">
+            <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
                   <Package className="h-5 w-5 text-primary" />
