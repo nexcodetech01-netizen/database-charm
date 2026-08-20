@@ -11,7 +11,7 @@ import { BellaSkillRegistry } from "../skills";
 import { canExecuteSkill } from "./permission-engine";
 import { planFromIntent } from "./planner";
 import { logAgentExecution } from "./execution-log";
-import type { AgentContext, AgentIntent, AgentResponse, AgentStepResult } from "./types";
+import type { AgentContext, AgentIntent, AgentResponse, AgentStepResult, AgentPlan } from "./types";
 
 export interface RunAgentInput {
   intent: AgentIntent;
