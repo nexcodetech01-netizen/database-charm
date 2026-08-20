@@ -10,8 +10,8 @@ const preprocessNumeric = (val: unknown) => {
 };
 
 export const ShippingCalculatorSchema = z.object({
-  cep_origem: z.string().min(8, "CEP de origem inválido"),
-  cep_destino: z.string().min(8, "CEP de destino inválido"),
+  cep_origem: z.string().regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de origem inválido (00000-000)"),
+  cep_destino: z.string().regex(/^\d{5}-\d{3}$|^\d{8}$/, "CEP de destino inválido (00000-000)"),
   peso_kg: z.preprocess(preprocessNumeric, z.number({ 
     required_error: "Peso é obrigatório",
     invalid_type_error: "Peso deve ser um número" 
@@ -19,15 +19,15 @@ export const ShippingCalculatorSchema = z.object({
   altura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Altura é obrigatória",
     invalid_type_error: "Altura deve ser um número"
-  }).min(0, "Altura mínima 0cm")),
+  }).min(2, "Altura mínima 2cm")),
   largura_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Largura é obrigatória",
     invalid_type_error: "Largura deve ser um número"
-  }).min(0, "Largura mínima 0cm")),
+  }).min(11, "Largura mínima 11cm")),
   comprimento_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Comprimento é obrigatório",
     invalid_type_error: "Comprimento deve ser um número"
-  }).min(0, "Comprimento mínimo 0cm")),
+  }).min(16, "Comprimento mínimo 16cm")),
   format: z.string().default("3"),
   valor_declarado: z.preprocess(preprocessNumeric, z.number({
     required_error: "Valor seguro é obrigatório",
