@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown, Printer } from "lucide-react";
+import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown, Printer, Save, Trash2, Search, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -28,9 +28,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LoadingSurface } from "@/components/design";
 import { MoneyValue } from "@/components/layout/money-value";
 import { cn } from "@/lib/utils";
+
+/** Chaves de localStorage — CEP de origem salvo e últimos destinos usados. */
+const SAVED_ORIGIN_CEP_KEY = "nexos:frete:cep-origem-salvo";
+const RECENT_DEST_CEPS_KEY = "nexos:frete:ceps-destino-recentes";
+const MAX_RECENT_CEPS = 5;
 
 export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-frete")({
   component: ShippingCalculatorPage,
@@ -77,6 +84,58 @@ function ShippingCalculatorPage() {
   }
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [destTab, setDestTab] = useState<"novo" | "recentes">("novo");
+  const [recentDestCeps, setRecentDestCeps] = useState<string[]>([]);
+  const [showExtras, setShowExtras] = useState(false);
+
+  // Carrega o CEP de origem salvo (se houver) e o histórico de destinos
+  // recentes — mesma ideia da SuperFrete de lembrar o CEP de quem envia,
+  // pra não precisar digitar toda vez.
+  useEffect(() => {
+    try {
+      const savedOrigin = localStorage.getItem(SAVED_ORIGIN_CEP_KEY);
+      if (savedOrigin) calcForm.setValue("cep_origem", savedOrigin);
+      const recents = localStorage.getItem(RECENT_DEST_CEPS_KEY);
+      if (recents) setRecentDestCeps(JSON.parse(recents));
+    } catch {
+      // localStorage indisponível (modo privado, etc.) — segue sem
+      // memorizar, não é crítico pro funcionamento da calculadora.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSaveOriginCep() {
+    const cep = calcForm.getValues("cep_origem");
+    if (!cep) {
+      toast.error("Digite um CEP de origem antes de salvar.");
+      return;
+    }
+    try {
+      localStorage.setItem(SAVED_ORIGIN_CEP_KEY, cep);
+      toast.success("CEP de origem salvo — vai vir preenchido da próxima vez.");
+    } catch {
+      toast.error("Não foi possível salvar (armazenamento local indisponível).");
+    }
+  }
+
+  function handleClearOriginCep() {
+    calcForm.setValue("cep_origem", "");
+    try {
+      localStorage.removeItem(SAVED_ORIGIN_CEP_KEY);
+    } catch {
+      // sem problema, só não limpa o salvo
+    }
+  }
+
+  function rememberDestCep(cep: string) {
+    try {
+      const next = [cep, ...recentDestCeps.filter((c) => c !== cep)].slice(0, MAX_RECENT_CEPS);
+      setRecentDestCeps(next);
+      localStorage.setItem(RECENT_DEST_CEPS_KEY, JSON.stringify(next));
+    } catch {
+      // sem problema, só não memoriza
+    }
+  }
 
   // BUG ENCONTRADO E CORRIGIDO: o remetente de TODA etiqueta emitida
   // por essa tela estava com dados fixos e falsos no código — CNPJ
@@ -93,7 +152,7 @@ function ShippingCalculatorPage() {
       const { data, error } = await supabase
         .from("companies")
         .select("name, cnpj, zip_code, address, address_number, complement, neighborhood, city, state, email, phone")
-        .eq("id", companyId!)
+        .eq("id", companyId)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -151,6 +210,7 @@ function ShippingCalculatorPage() {
       
       const response = await calculateShippingFn({ data: sanitizedData as any });
       setResults(response.options);
+      rememberDestCep(String(data.cep_destino));
       if (response.options.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
       }
@@ -363,30 +423,65 @@ function ShippingCalculatorPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-5">
           {step === 1 ? (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Calculator className="h-5 w-5 text-primary" />
-                  Passo 1: Cotação
-                </CardTitle>
-                <CardDescription>
-                  Dimensões e CEPs do pacote.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...calcForm}>
-                  <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
+            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden">
+              <Form {...calcForm}>
+                <form onSubmit={calcForm.handleSubmit(onCalcSubmit)}>
+                  {/* INFORME A ORIGEM */}
+                  <div className="px-5 pt-5 pb-1">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
+                      Informe a origem
+                    </p>
+                  </div>
+                  <div className="mx-5 mb-5 mt-2 rounded-xl bg-background/40 border border-sidebar-border/40 p-4 space-y-4">
+                    <div className="flex items-end justify-between gap-3">
+                      <FormField
+                        control={calcForm.control}
+                        name="cep_origem"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs text-muted-foreground">CEP de origem</FormLabel>
+                            <FormControl>
+                              <Input placeholder="00000-000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex gap-2 pb-0.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1.5 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/25 border border-emerald-600/20"
+                          onClick={handleSaveOriginCep}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          Salvar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          className="gap-1.5 bg-muted text-muted-foreground hover:bg-muted/70"
+                          onClick={handleClearOriginCep}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Limpar
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={calcForm.control}
                         name="format"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Formato</FormLabel>
+                            <FormLabel className="text-xs text-muted-foreground">Formato</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o formato" />
+                                  <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -399,44 +494,12 @@ function ShippingCalculatorPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={calcForm.control}
-                        name="cep_origem"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP Origem</FormLabel>
-                            <FormControl>
-                              <Input placeholder="00000-000" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={calcForm.control}
-                        name="cep_destino"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CEP Destino</FormLabel>
-                            <FormControl>
-                              <Input placeholder="00000-000" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={calcForm.control}
                         name="peso_kg"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs text-muted-foreground">Peso (kg)</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="0,3"
@@ -449,57 +512,39 @@ function ShippingCalculatorPage() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={calcForm.control}
-                        name="valor_declarado"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Valor Seguro (R$)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="0,00"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
                     <div className={cn(
-                      "grid gap-3",
+                      "grid gap-4",
                       calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
                     )}>
-                      <FormField
-                        control={calcForm.control}
-                        name="altura_cm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Altura (cm)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="11"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                       <FormField
                         control={calcForm.control}
                         name="largura_cm"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Largura (cm)</FormLabel>
+                            <FormLabel className="text-xs text-muted-foreground">Largura (cm)</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="16"
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={calcForm.control}
+                        name="altura_cm"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">Altura (cm)</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="11"
                                 {...field}
                                 value={field.value ?? ""}
                                 onChange={(e) => field.onChange(e.target.value)}
@@ -515,7 +560,7 @@ function ShippingCalculatorPage() {
                           name="comprimento_cm"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs">Comp. (cm)</FormLabel>
+                              <FormLabel className="text-xs text-muted-foreground">Comprimento (cm)</FormLabel>
                               <FormControl>
                                 <Input
                                   placeholder="20"
@@ -531,12 +576,125 @@ function ShippingCalculatorPage() {
                       )}
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Cotando..." : "Calcular Opções"}
+                    <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Shield className="h-3.5 w-3.5" />
+                            Seguro, aviso e mão própria
+                          </span>
+                          <ChevronDown
+                            className={cn("h-4 w-4 transition-transform", showExtras && "rotate-180")}
+                          />
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <FormField
+                          control={calcForm.control}
+                          name="valor_declarado"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs text-muted-foreground">Valor declarado / seguro (R$)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="0,00"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+
+                  {/* INFORME O DESTINO */}
+                  <div className="px-5 pb-1">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
+                      Informe o destino
+                    </p>
+                  </div>
+                  <div className="mx-5 mb-5 mt-2">
+                    <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")}>
+                      <TabsList className="grid w-full grid-cols-2 bg-background/40">
+                        <TabsTrigger value="novo">Novo</TabsTrigger>
+                        <TabsTrigger value="recentes" disabled={recentDestCeps.length === 0}>
+                          Recentes
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="novo" className="mt-3">
+                        <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-4">
+                          <FormField
+                            control={calcForm.control}
+                            name="cep_destino"
+                            render={({ field }) => (
+                              <FormItem>
+                                <div className="flex items-center justify-between">
+                                  <FormLabel className="text-xs text-muted-foreground">CEP de destino</FormLabel>
+                                  <a
+                                    href={`https://buscacepinter.correios.com.br/app/endereco/index.php`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs font-medium text-[#B392E0] hover:underline"
+                                  >
+                                    <Search className="h-3 w-3" />
+                                    Pesquisar CEP
+                                  </a>
+                                </div>
+                                <FormControl>
+                                  <Input placeholder="00000-000" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="recentes" className="mt-3">
+                        <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-2 space-y-1">
+                          {recentDestCeps.map((cep) => (
+                            <button
+                              key={cep}
+                              type="button"
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left hover:bg-sidebar/40 transition-colors"
+                              onClick={() => {
+                                calcForm.setValue("cep_destino", cep);
+                                setDestTab("novo");
+                              }}
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              {cep}
+                            </button>
+                          ))}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+
+                  <div className="px-5 pb-5">
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full h-12 text-base font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cotando...
+                        </>
+                      ) : (
+                        "Calcular frete com desconto"
+                      )}
                     </Button>
-                  </form>
-                </Form>
-              </CardContent>
+                  </div>
+                </form>
+              </Form>
             </Card>
           ) : (
             <Card className="border-primary/20 bg-primary/5">
