@@ -99,7 +99,6 @@ import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/publ
 import { Route as ApiPublicJobsBellaDetectorsRouteImport } from './routes/api/public/jobs/bella-detectors'
 import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
 import { Route as ApiPublicCatalogSlugRouteImport } from './routes/api/public/catalog/$slug'
-import { Route as ApiPublicAuditRunRouteImport } from './routes/api/public/audit/run'
 import { Route as AuthenticatedVendasSaleIdEditarRouteImport } from './routes/_authenticated/vendas_.$saleId.editar'
 import { Route as AuthenticatedProdutosProductIdEditarRouteImport } from './routes/_authenticated/produtos_.$productId.editar'
 import { Route as AuthenticatedFornecedoresSupplierIdEditarRouteImport } from './routes/_authenticated/fornecedores_.$supplierId.editar'
@@ -619,11 +618,6 @@ const ApiPublicCatalogSlugRoute = ApiPublicCatalogSlugRouteImport.update({
   path: '/api/public/catalog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAuditRunRoute = ApiPublicAuditRunRouteImport.update({
-  id: '/api/public/audit/run',
-  path: '/api/public/audit/run',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedVendasSaleIdEditarRoute =
   AuthenticatedVendasSaleIdEditarRouteImport.update({
     id: '/editar',
@@ -791,7 +785,6 @@ export interface FileRoutesByFullPath {
   '/fornecedores/$supplierId/editar': typeof AuthenticatedFornecedoresSupplierIdEditarRoute
   '/produtos/$productId/editar': typeof AuthenticatedProdutosProductIdEditarRoute
   '/vendas/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
-  '/api/public/audit/run': typeof ApiPublicAuditRunRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
@@ -896,7 +889,6 @@ export interface FileRoutesByTo {
   '/fornecedores/$supplierId/editar': typeof AuthenticatedFornecedoresSupplierIdEditarRoute
   '/produtos/$productId/editar': typeof AuthenticatedProdutosProductIdEditarRoute
   '/vendas/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
-  '/api/public/audit/run': typeof ApiPublicAuditRunRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
@@ -1004,7 +996,6 @@ export interface FileRoutesById {
   '/_authenticated/fornecedores_/$supplierId/editar': typeof AuthenticatedFornecedoresSupplierIdEditarRoute
   '/_authenticated/produtos_/$productId/editar': typeof AuthenticatedProdutosProductIdEditarRoute
   '/_authenticated/vendas_/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
-  '/api/public/audit/run': typeof ApiPublicAuditRunRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
@@ -1112,7 +1103,6 @@ export interface FileRouteTypes {
     | '/fornecedores/$supplierId/editar'
     | '/produtos/$productId/editar'
     | '/vendas/$saleId/editar'
-    | '/api/public/audit/run'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
@@ -1217,7 +1207,6 @@ export interface FileRouteTypes {
     | '/fornecedores/$supplierId/editar'
     | '/produtos/$productId/editar'
     | '/vendas/$saleId/editar'
-    | '/api/public/audit/run'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
@@ -1324,7 +1313,6 @@ export interface FileRouteTypes {
     | '/_authenticated/fornecedores_/$supplierId/editar'
     | '/_authenticated/produtos_/$productId/editar'
     | '/_authenticated/vendas_/$saleId/editar'
-    | '/api/public/audit/run'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
     | '/api/public/jobs/bella-detectors'
@@ -1360,7 +1348,6 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRouteWithChildren
-  ApiPublicAuditRunRoute: typeof ApiPublicAuditRunRoute
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
   ApiPublicJobsBellaDetectorsRoute: typeof ApiPublicJobsBellaDetectorsRoute
@@ -2013,13 +2000,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCatalogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/audit/run': {
-      id: '/api/public/audit/run'
-      path: '/api/public/audit/run'
-      fullPath: '/api/public/audit/run'
-      preLoaderRoute: typeof ApiPublicAuditRunRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/vendas_/$saleId/editar': {
       id: '/_authenticated/vendas_/$saleId/editar'
       path: '/editar'
@@ -2470,7 +2450,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
   CatalogoColecaoSlugRoute: CatalogoColecaoSlugRouteWithChildren,
-  ApiPublicAuditRunRoute: ApiPublicAuditRunRoute,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
   ApiPublicJobsBellaDetectorsRoute: ApiPublicJobsBellaDetectorsRoute,
