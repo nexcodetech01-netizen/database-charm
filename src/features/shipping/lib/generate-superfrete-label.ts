@@ -127,6 +127,29 @@ export async function generateSuperfreteLabel(data: GenerateLabelInput): Promise
     checkoutData?.id ||
     cartData?.id;
 
+  // ATENÇÃO: nesse ponto o pagamento já foi CONFIRMADO pela SuperFrete
+  // (checkoutResponse.ok === true, dinheiro já foi debitado). Se nenhum
+  // dos campos esperados de order_id existir na resposta (ex.: a
+  // SuperFrete mudou o formato da resposta), caímos no último recurso
+  // de usar o id do carrinho (`cartData.id`) como se fosse o id do
+  // pedido — que pode estar errado, deixando a etiqueta/rastreio
+  // referenciando o pedido errado DEPOIS que o dinheiro já saiu. Não dá
+  // pra travar aqui (o pagamento já aconteceu, travar seria pior), mas
+  // registramos um alerta bem visível pra investigar rapidamente se
+  // isso acontecer, em vez de passar batido silenciosamente.
+  if (
+    !checkoutData?.order_id &&
+    !checkoutData?.orders?.[0]?.id &&
+    !checkoutData?.purchase?.id &&
+    !checkoutData?.purchase?.orders?.[0]?.id &&
+    !checkoutData?.id
+  ) {
+    console.error(
+      "[generateSuperfreteLabel] ALERTA: pagamento confirmado mas order_id não encontrado no formato esperado da resposta. Usando cartData.id como fallback — PODE ESTAR ERRADO. Verificar manualmente.",
+      { cartId: cartData?.id, checkoutDataKeys: Object.keys(checkoutData || {}) },
+    );
+  }
+
   let labelUrl = `${baseUrl}/api/v0/checkout/print?orders[]=${orderId}`;
 
   try {
