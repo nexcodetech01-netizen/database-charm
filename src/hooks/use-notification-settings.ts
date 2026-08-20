@@ -1,7 +1,8 @@
 import { useAuth } from "@/providers/auth-provider";
-import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { getNotificationSettingsFn, updateNotificationSettingsFn } from "@/features/settings/notification-settings.functions";
 
 export type NotificationPreference = {
   sound: boolean;
@@ -21,37 +22,34 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
 export function useNotificationSettings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  const getSettings = useServerFn(getNotificationSettingsFn);
+  const updateSettingsFn = useServerFn(updateNotificationSettingsFn);
 
   const { data: settings = DEFAULT_SETTINGS, isLoading } = useQuery({
     queryKey: ["notification-settings", user?.id],
     queryFn: async () => {
       if (!user?.id) return DEFAULT_SETTINGS;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("notification_settings")
-        .eq("id", user.id)
-        .single();
+      try {
+        const dbSettings = await getSettings();
+        if (!dbSettings) return DEFAULT_SETTINGS;
 
-      if (error) {
+        // Mesclagem profunda para garantir que todas as chaves do DEFAULT_SETTINGS existam
+        const mergedSettings = { ...DEFAULT_SETTINGS };
+
+        Object.keys(dbSettings).forEach((key) => {
+          mergedSettings[key] = {
+            ...DEFAULT_SETTINGS[key],
+            ...dbSettings[key],
+          };
+        });
+
+        return mergedSettings;
+      } catch (error) {
         console.error("Erro ao buscar configurações de notificação:", error);
         return DEFAULT_SETTINGS;
       }
-
-      const dbSettings = (data?.notification_settings as NotificationSettings) || {};
-
-      // Mesclagem profunda para garantir que todas as chaves do DEFAULT_SETTINGS existam
-      // e que as preferências do usuário tenham prioridade.
-      const mergedSettings = { ...DEFAULT_SETTINGS };
-
-      Object.keys(dbSettings).forEach((key) => {
-        mergedSettings[key] = {
-          ...DEFAULT_SETTINGS[key],
-          ...dbSettings[key],
-        };
-      });
-
-      return mergedSettings;
     },
     enabled: !!user?.id,
   });
@@ -60,17 +58,12 @@ export function useNotificationSettings() {
     mutationFn: async (newSettings: NotificationSettings) => {
       if (!user?.id) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({ notification_settings: newSettings })
-        .eq("id", user.id);
-
-      if (error) throw error;
+      await updateSettingsFn({ data: newSettings });
       return newSettings;
     },
     onSuccess: (newSettings) => {
       queryClient.setQueryData(["notification-settings", user?.id], newSettings);
-      toast.success("Configurações atualizadas com sucesso");
+      toast.success("Configurações atualizadas");
     },
     onError: (error) => {
       console.error("Erro ao atualizar configurações:", error);
