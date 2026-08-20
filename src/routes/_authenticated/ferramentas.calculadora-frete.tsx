@@ -49,6 +49,7 @@ function ShippingCalculatorPage() {
   
   const [step, setStep] = useState<1 | 2>(1);
   const [results, setResults] = useState<ShippingOption[] | null>(null);
+  const [calcErrors, setCalcErrors] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
   const [labelResult, setLabelResult] = useState<LabelResult | null>(null);
   const [printing, setPrinting] = useState(false);
@@ -195,6 +196,7 @@ function ShippingCalculatorPage() {
     setIsLoading(true);
     setResults(null);
     setSelectedOption(null);
+    setCalcErrors([]);
     console.log("CALCULATOR_DEBUG: Submitting form data:", data);
     try {
       // Sanitização manual para garantir tipos numéricos antes de enviar para a Server Function
@@ -215,6 +217,13 @@ function ShippingCalculatorPage() {
         toast.info("Nenhuma opção de frete encontrada.");
       }
       if (response.errors.length > 0) {
+        // MELHORIA: antes o motivo específico (ex.: "dimensão abaixo do
+        // mínimo aceito") só aparecia num toast passageiro — sumia da
+        // tela rápido e a caixa de aviso fixa sempre mostrava a mesma
+        // mensagem genérica, sem dizer o motivo real nem o tamanho
+        // aceito. Agora o motivo fica guardado e aparece de forma
+        // permanente na caixa de aviso, junto com a mensagem genérica.
+        setCalcErrors(response.errors);
         response.errors.forEach((msg) => toast.warning(msg));
       }
     } catch (error: any) {
@@ -772,7 +781,18 @@ function ShippingCalculatorPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Nenhuma opção</AlertTitle>
                     <AlertDescription>
-                      Não encontramos frete para este CEP ou dimensões.
+                      {calcErrors.length > 0 ? (
+                        <>
+                          <p>A SuperFrete recusou essa cotação:</p>
+                          <ul className="mt-1 list-disc pl-4 space-y-0.5">
+                            {calcErrors.map((msg, i) => (
+                              <li key={i}>{msg}</li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : (
+                        "Não encontramos frete para este CEP ou dimensões."
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
