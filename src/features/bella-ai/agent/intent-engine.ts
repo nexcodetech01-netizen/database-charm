@@ -155,6 +155,36 @@ const RULES: Rule[] = [
     ],
     confidence: 0.9,
   },
+  // stock.purchase_suggestion — sugestão de compra
+  {
+    intent: "stock.purchase_suggestion",
+    patterns: [
+      /\bpreparar sugestao de compra\b/,
+      /\bo que (devo|preciso) comprar\b/,
+      /\bsugestao de reposicao\b/,
+    ],
+    confidence: 0.9,
+  },
+  // sale.search — consultar vendas
+  {
+    intent: "sale.search",
+    patterns: [
+      /\b(consultar|buscar|ver|pesquisar) vendas\b/,
+      /\bquanto vendi\b/,
+      /\blista de pedidos\b/,
+    ],
+    confidence: 0.85,
+  },
+  // sale.best_customer — cliente com maior compra
+  {
+    intent: "sale.best_customer",
+    patterns: [
+      /\b(quem|qual) (e|eh) o cliente que mais compra\b/,
+      /\bmelhor cliente\b/,
+      /\bquem mais compra\b/,
+    ],
+    confidence: 0.9,
+  },
   // product.create — cadastrar produto
   {
     intent: "product.create",

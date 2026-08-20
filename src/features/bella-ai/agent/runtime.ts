@@ -148,12 +148,14 @@ export async function handleWithAgentRuntime(
       confirmed: input.confirmed,
     });
 
+    // Se for uma operação que requer confirmação e ainda não foi confirmada,
+    // o código do AgentOutcomeCode será "needs_confirmation".
+    // Isso deve ser tratado pela UI (BellaAskPanel).
+
     const telemetry = aiResult?.raw && typeof aiResult.raw === 'object' && 'telemetry' in aiResult.raw 
       ? (aiResult.raw as any).telemetry 
       : { provider: aiResult?.provider || 'unknown', fallbackUsed: aiResult?.error?.fallbackUsed };
 
-    // Erros funcionais do próprio agente (not_allowed, unknown_intent, error)
-    // NÃO são fallback — são respostas legítimas.
     return {
       response,
       trace: {
@@ -164,7 +166,6 @@ export async function handleWithAgentRuntime(
         response,
         telemetry
       },
-
     };
   } catch (err) {
     await recordFallback(input.ctx, intent, startedAt, `runtime_error:${errMsg(err)}`);

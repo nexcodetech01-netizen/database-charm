@@ -17,10 +17,16 @@ import { askBella, appendMessage, createMessage, emptyContext, updateContext } f
 import type { ChatMessage, ChatContextState } from "@/features/accounting-ai/chat/types";
 import { toast } from "sonner";
 
+import { ActionCard, type ActionCardStatus } from "./ActionCard";
+
 export function BellaAskPanel() {
   const [prompt, setPrompt] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pendingAction, setPendingAction] = useState<{
+    intent: any;
+    plan: any;
+  } | null>(null);
   const { user, companyId } = useAuth();
   const { permissions, isOwner } = usePermissions();
   const legacyContextRef = useRef<ChatContextState>(emptyContext());
@@ -62,9 +68,16 @@ export function BellaAskPanel() {
       });
 
       if (runtimeResult.response) {
+        if (runtimeResult.response.code === "needs_confirmation") {
+          setPendingAction({
+            intent: runtimeResult.response.intent,
+            plan: runtimeResult.response.plan,
+          });
+          return;
+        }
+
         // Operational intent handled
         toast.success(runtimeResult.response.message);
-        // In a real chat we would append to messages here
         return;
       }
 
@@ -88,6 +101,35 @@ export function BellaAskPanel() {
     }
   }, [prompt, companyId, user?.id, permissions, isOwner, isThinking, gateway]);
 
+  const handleActionConfirm = async () => {
+    if (!pendingAction || !companyId) return;
+    setIsThinking(true);
+    try {
+      const result = await handleWithAgentRuntime({
+        message: pendingAction.intent.raw,
+        ctx: {
+          companyId,
+          userId: user?.id,
+          permissions,
+          isOwner,
+        },
+        gateway,
+        confirmed: true,
+      });
+
+      if (result.response?.code === "executed") {
+        toast.success(result.response.message);
+      } else if (result.response?.code === "error") {
+        toast.error(result.response.message);
+      }
+    } catch (error) {
+      toast.error("Erro ao executar ação.");
+    } finally {
+      setIsThinking(false);
+      setPendingAction(null);
+    }
+  };
+
   return (
     <Section
       title={
@@ -98,6 +140,24 @@ export function BellaAskPanel() {
       density="comfortable"
     >
       <div data-testid="bella-ask-panel" className="space-y-5">
+        {pendingAction && (
+          <ActionCard
+            title={pendingAction.plan.intentId}
+            summary={pendingAction.plan.confirmationSummary}
+            details={
+              <div className="space-y-1">
+                {Object.entries(pendingAction.intent.entities).map(([k, v]) => (
+                  <p key={k}>
+                    <span className="capitalize">{k}</span>: {String(v)}
+                  </p>
+                ))}
+              </div>
+            }
+            onConfirm={handleActionConfirm}
+            onCancel={() => setPendingAction(null)}
+          />
+        )}
+
         <div className="space-y-2">
           <p
             className={cn(
@@ -134,11 +194,11 @@ export function BellaAskPanel() {
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Ex.: quais produtos estão parados este mês?"
             className="min-h-[104px] resize-none"
-            disabled={isThinking}
+            disabled={isThinking || !!pendingAction}
           />
           <Button 
             className="w-full gap-2" 
-            disabled={!prompt.trim() || isThinking}
+            disabled={!prompt.trim() || isThinking || !!pendingAction}
             onClick={handleSend}
           >
             {isThinking ? (
