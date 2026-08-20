@@ -225,8 +225,9 @@ export const getCashBalanceSkill: BellaSkill = {
   canExecute: (ctx) => Boolean(ctx.companyId),
   async execute(_payload, ctx) {
     const snap = await financeQueryService.snapshot(ctx.companyId);
-    const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-    
+    const brl = (v: number) =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
     return skillResult.success(
       [
         `💰 Caixa`,
@@ -240,10 +241,59 @@ export const getCashBalanceSkill: BellaSkill = {
   },
 };
 
+export const getReceivablesSkill: BellaSkill = {
+  id: "finance.get_receivables",
+  name: "Contas a receber",
+  module: "finance",
+  description: "Consulta os lançamentos pendentes de entrada.",
+  canExecute: (ctx) => Boolean(ctx.companyId),
+  async execute(_payload, ctx) {
+    const snap = await financeQueryService.snapshot(ctx.companyId);
+    const brl = (v: number) =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+    return skillResult.success(
+      [
+        `📈 Contas a Receber`,
+        `• Total pendente: ${brl(snap.overview.receivable)}`,
+        snap.overdueAmount > 0 ? `• ⚠️ Vencidos: ${brl(snap.overdueAmount)} (${snap.overdueCount} título(s))` : "• ✅ Tudo em dia!",
+        `• Previsto 30d: ${brl(snap.forecast30d.incoming)}`,
+      ].join("\n"),
+      snap,
+      [{ id: "open_finance_receivables", title: "Ver Recebíveis", actionLabel: "Ver" }],
+    );
+  },
+};
+
+export const getPayablesSkill: BellaSkill = {
+  id: "finance.get_payables",
+  name: "Contas a pagar",
+  module: "finance",
+  description: "Consulta os lançamentos pendentes de saída.",
+  canExecute: (ctx) => Boolean(ctx.companyId),
+  async execute(_payload, ctx) {
+    const snap = await financeQueryService.snapshot(ctx.companyId);
+    const brl = (v: number) =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+    return skillResult.success(
+      [
+        `📉 Contas a Pagar`,
+        `• Total pendente: ${brl(snap.overview.payable)}`,
+        `• Previsto 30d: ${brl(snap.forecast30d.outgoing)}`,
+      ].join("\n"),
+      snap,
+      [{ id: "open_finance_payables", title: "Ver a Pagar", actionLabel: "Ver" }],
+    );
+  },
+};
+
 export const financeSkills: BellaSkill[] = [
   registerExpenseSkill,
   registerIncomeSkill,
   registerCashSupplySkill,
   registerCashWithdrawalSkill,
   getCashBalanceSkill,
+  getReceivablesSkill,
+  getPayablesSkill,
 ];

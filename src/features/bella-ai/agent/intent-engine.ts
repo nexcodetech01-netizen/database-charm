@@ -25,6 +25,10 @@ export const SUPPORTED_RUNTIME_INTENTS = [
   "product.update_stock",
   "product.list_low_stock",
   "finance.cash_balance",
+  "finance.receivable",
+  "finance.payable",
+  "sale.search",
+  "sale.best_customer",
   // Sprint 003 — Estoque
   "stock.add",
   "stock.remove",
@@ -32,6 +36,7 @@ export const SUPPORTED_RUNTIME_INTENTS = [
   "stock.history",
   "stock.low",
   "stock.balance",
+  "stock.purchase_suggestion",
 ] as const;
 export type SupportedRuntimeIntent = (typeof SUPPORTED_RUNTIME_INTENTS)[number];
 
@@ -68,6 +73,29 @@ const RULES: Rule[] = [
       /\bqual (o|meu) saldo\b/,
       /\bquanto (tem|ha) (no|em) caixa\b/,
       /\bcaixa (atual|do dia)\b/,
+    ],
+    confidence: 0.9,
+  },
+  // Financeiro: Contas a receber
+  {
+    intent: "finance.receivable",
+    patterns: [
+      /\bcontas a receber\b/,
+      /\bquanto (tenho|temos) a receber\b/,
+      /\bvalores pendentes de entrada\b/,
+      /\bo que tem para entrar\b/,
+    ],
+    confidence: 0.9,
+  },
+  // Financeiro: Contas a pagar
+  {
+    intent: "finance.payable",
+    patterns: [
+      /\bcontas a pagar\b/,
+      /\bquanto (tenho|temos) a pagar\b/,
+      /\bvalores pendentes de saida\b/,
+      /\bo que tem para sair\b/,
+      /\bdividas pendentes\b/,
     ],
     confidence: 0.9,
   },
@@ -124,6 +152,36 @@ const RULES: Rule[] = [
       /\b(produtos?|itens) (com )?estoque (baixo|critico|crítico|minimo|mínimo)\b/,
       /\b(estoque )?abaixo do (minimo|mínimo)\b/,
       /\b(faltando|acabando) (no )?estoque\b/,
+    ],
+    confidence: 0.9,
+  },
+  // stock.purchase_suggestion — sugestão de compra
+  {
+    intent: "stock.purchase_suggestion",
+    patterns: [
+      /\bpreparar sugestao de compra\b/,
+      /\bo que (devo|preciso) comprar\b/,
+      /\bsugestao de reposicao\b/,
+    ],
+    confidence: 0.9,
+  },
+  // sale.search — consultar vendas
+  {
+    intent: "sale.search",
+    patterns: [
+      /\b(consultar|buscar|ver|pesquisar) vendas\b/,
+      /\bquanto vendi\b/,
+      /\blista de pedidos\b/,
+    ],
+    confidence: 0.85,
+  },
+  // sale.best_customer — cliente com maior compra
+  {
+    intent: "sale.best_customer",
+    patterns: [
+      /\b(quem|qual) (e|eh) o cliente que mais compra\b/,
+      /\bmelhor cliente\b/,
+      /\bquem mais compra\b/,
     ],
     confidence: 0.9,
   },

@@ -63,6 +63,31 @@ const SKILL_PERMISSION_MAP: Record<string, SkillPermissionSpec> = {
   "stock.history": { skillId: "stock.history", requires: ["inventory.view"], destructive: false },
   "stock.low": { skillId: "stock.low", requires: ["inventory.view"], destructive: false },
   "stock.balance": { skillId: "stock.balance", requires: ["inventory.view"], destructive: false },
+  "stock.purchase_suggestion": {
+    skillId: "stock.purchase_suggestion",
+    requires: ["inventory.view"],
+    destructive: false,
+  },
+
+  // Vendas
+  "sale.search": { skillId: "sale.search", requires: ["sales.view"], destructive: false },
+  "sale.best_customer": {
+    skillId: "sale.best_customer",
+    requires: ["reports.view"],
+    destructive: false,
+  },
+
+  // Financeiro (Consultas)
+  "finance.get_receivables": {
+    skillId: "finance.get_receivables",
+    requires: ["finance.view"],
+    destructive: false,
+  },
+  "finance.get_payables": {
+    skillId: "finance.get_payables",
+    requires: ["finance.view"],
+    destructive: false,
+  },
 
   // Agenda
   "agenda.create_appointment": {

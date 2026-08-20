@@ -26,6 +26,10 @@ const INTENT_TO_SKILL: Record<string, string> = {
   "finance.cash_balance": "finance.get_cash_balance",
   "cash.supply": "cash.register_supply",
   "cash.withdrawal": "cash.register_withdrawal",
+  "finance.receivable": "finance.get_receivables",
+  "finance.payable": "finance.get_payables",
+  "sale.search": "sale.search",
+  "sale.best_customer": "sale.best_customer",
   // Sprint 003 — Estoque
   "stock.add": "stock.add",
   "stock.remove": "stock.remove",
@@ -33,6 +37,7 @@ const INTENT_TO_SKILL: Record<string, string> = {
   "stock.history": "stock.history",
   "stock.low": "stock.low",
   "stock.balance": "stock.balance",
+  "stock.purchase_suggestion": "stock.purchase_suggestion",
 };
 
 export function planFromIntent(intent: AgentIntent): AgentPlan | null {

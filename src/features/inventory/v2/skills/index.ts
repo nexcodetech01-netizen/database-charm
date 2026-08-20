@@ -231,6 +231,50 @@ export const stockBalanceSkill = defineBaseSkill({
   },
 });
 
+// ---------------------- stock.purchase_suggestion ----------------------
+export const stockPurchaseSuggestionSchema = z
+  .object({
+    limit: z.number().int().min(1).max(50).optional(),
+  })
+  .strict();
+
+export const stockPurchaseSuggestionSkill = defineBaseSkill({
+  id: "stock.purchase_suggestion",
+  name: "Sugestão de compra",
+  module: "inventory",
+  description: "Gera uma lista de itens para reposição com base no estoque mínimo.",
+  schema: stockPurchaseSuggestionSchema,
+  requiredPermissions: ["inventory.view"],
+  destructive: false,
+  async handler(input, ctx) {
+    const svc = new StockService(ctx);
+    const rows = await svc.listLowStock(input.limit ?? 20);
+    if (rows.length === 0) {
+      return skillResult.success("Estoque saudável. Nenhuma sugestão de compra necessária.", {
+        rows: [],
+      } as any);
+    }
+
+    const suggestions = rows.map((r) => {
+      const stock = Number(r.stock ?? 0);
+      const min = Number(r.min_stock ?? 0);
+      const buy = Math.max(min - stock + Math.ceil(min * 0.2), 1); // Repõe até o mínimo + 20%
+      return { ...r, suggestedQuantity: buy };
+    });
+
+    const preview = suggestions
+      .slice(0, 5)
+      .map((s) => `• ${s.name} — comprar ${s.suggestedQuantity} un`)
+      .join("\n");
+
+    return skillResult.success(
+      [`🛒 Sugestão de Compra`, preview, `\nDeseja criar o pedido de compra?`].join("\n"),
+      { rows: suggestions } as any,
+      [{ id: "create_purchase_order", title: "Criar Pedido", actionLabel: "Executar" }],
+    );
+  },
+});
+
 export const stockV2BaseSkills = [
   stockAddSkill,
   stockRemoveSkill,
@@ -238,4 +282,5 @@ export const stockV2BaseSkills = [
   stockHistorySkill,
   stockLowSkill,
   stockBalanceSkill,
+  stockPurchaseSuggestionSkill,
 ] as const;
