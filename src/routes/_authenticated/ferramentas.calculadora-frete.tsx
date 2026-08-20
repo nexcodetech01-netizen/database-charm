@@ -93,7 +93,7 @@ function ShippingCalculatorPage() {
       const { data, error } = await supabase
         .from("companies")
         .select("name, cnpj, zip_code, address, address_number, complement, neighborhood, city, state, email, phone")
-        .eq("id", companyId)
+        .eq("id", companyId!)
         .maybeSingle();
       if (error) throw error;
       return data;
