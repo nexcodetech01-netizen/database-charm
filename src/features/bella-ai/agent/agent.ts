@@ -7,7 +7,7 @@
  * Aditivo: coexiste com o Orchestrator antigo (pricing) e com o Action
  * Engine legado. Consumidores novos devem preferir este pipeline.
  */
-import { BellaSkillRegistry } from "../skills";
+import { BellaSkillRegistry } from "../skills/registry";
 import { canExecuteSkill } from "./permission-engine";
 import { planFromIntent } from "./planner";
 import { logAgentExecution } from "./execution-log";
