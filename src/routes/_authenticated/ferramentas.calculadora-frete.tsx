@@ -772,9 +772,12 @@ function ShippingCalculatorPage() {
                                         }}
                                       >
                                         <MapPin className="h-3 w-3 text-muted-foreground group-hover:text-[#E5A855] transition-colors" />
-                                  <span className="font-medium">{cep}</span>
-                                </button>
-                              ))}
+                                        <span className="font-medium">{cep}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </TabsContent>
                         </div>
