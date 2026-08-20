@@ -432,299 +432,335 @@ function ShippingCalculatorPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-5">
           {step === 1 ? (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden">
+            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-8">
               <Form {...calcForm}>
-                <form onSubmit={calcForm.handleSubmit(onCalcSubmit)}>
+                <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-8">
                   {/* INFORME A ORIGEM */}
-                  <div className="px-5 pt-5 pb-1">
+                  <div className="space-y-4">
                     <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      Informe a origem
+                      INFORME A ORIGEM
                     </p>
-                  </div>
-                  <div className="mx-5 mb-5 mt-2 rounded-xl bg-background/40 border border-sidebar-border/40 p-4 space-y-4">
-                    <div className="flex items-end justify-between gap-3">
-                      <FormField
-                        control={calcForm.control}
-                        name="cep_origem"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-xs text-muted-foreground">CEP de origem</FormLabel>
-                            <FormControl>
-                              <Input placeholder="00000-000" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex gap-2 pb-0.5">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          className="gap-1.5 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/25 border border-emerald-600/20"
-                          onClick={handleSaveOriginCep}
-                        >
-                          <Save className="h-3.5 w-3.5" />
-                          Salvar
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          className="gap-1.5 bg-muted text-muted-foreground hover:bg-muted/70"
-                          onClick={handleClearOriginCep}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Limpar
-                        </Button>
+                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-5 space-y-4">
+                      <div className="flex items-end gap-3">
+                        <FormField
+                          control={calcForm.control}
+                          name="cep_origem"
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">CEP de origem</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="00000-000" 
+                                  {...field} 
+                                  className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50 transition-colors"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="h-10 px-3 bg-emerald-600/10 text-emerald-400 hover:bg-emerald-600/20 border border-emerald-600/20 rounded-lg transition-all"
+                            onClick={handleSaveOriginCep}
+                            title="Salvar CEP"
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="h-10 px-3 bg-muted/30 text-muted-foreground hover:bg-muted/50 border border-sidebar-border/40 rounded-lg transition-all"
+                            onClick={handleClearOriginCep}
+                            title="Limpar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={calcForm.control}
-                        name="format"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">Formato</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="1">Caixa / Pacote</SelectItem>
-                                <SelectItem value="2">Rolo / Cilindro</SelectItem>
-                                <SelectItem value="3">Envelope</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={calcForm.control}
-                        name="peso_kg"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">Peso (kg)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="0,3"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className={cn(
-                      "grid gap-4",
-                      calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
-                    )}>
-                      <FormField
-                        control={calcForm.control}
-                        name="largura_cm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">Largura (cm)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="16"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={calcForm.control}
-                        name="altura_cm"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">Altura (cm)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="11"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {calcForm.watch("format") !== "3" && (
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={calcForm.control}
-                          name="comprimento_cm"
+                          name="format"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs text-muted-foreground">Comprimento (cm)</FormLabel>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Formato</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-10 bg-background/60 border-sidebar-border/40">
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="1">Caixa / Pacote</SelectItem>
+                                  <SelectItem value="2">Rolo / Cilindro</SelectItem>
+                                  <SelectItem value="3">Envelope</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={calcForm.control}
+                          name="peso_kg"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Peso (kg)</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="20"
+                                  placeholder="0,3"
                                   {...field}
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value)}
+                                  className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      )}
-                    </div>
+                      </div>
 
-                    <Collapsible open={showExtras} onOpenChange={setShowExtras}>
-                      <CollapsibleTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Shield className="h-3.5 w-3.5" />
-                            Seguro, aviso e mão própria
-                          </span>
-                          <ChevronDown
-                            className={cn("h-4 w-4 transition-transform", showExtras && "rotate-180")}
-                          />
-                        </button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-2">
+                      <div className={cn(
+                        "grid gap-4",
+                        calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
+                      )}>
                         <FormField
                           control={calcForm.control}
-                          name="valor_declarado"
+                          name="largura_cm"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs text-muted-foreground">Valor declarado / seguro (R$)</FormLabel>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Largura (cm)</FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder="0,00"
+                                  placeholder="16"
                                   {...field}
                                   value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value)}
+                                  className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
-
-                  {/* INFORME O DESTINO */}
-                  <div className="px-5 pb-1">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      Informe o destino
-                    </p>
-                  </div>
-                  <div className="mx-5 mb-5 mt-2">
-                    <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")}>
-                      <TabsList className="grid w-full grid-cols-2 bg-background/40">
-                        <TabsTrigger value="novo">Novo</TabsTrigger>
-                        <TabsTrigger value="recentes" disabled={recentDestCeps.length === 0}>
-                          Recentes
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="novo" className="mt-3">
-                        <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-4">
+                        <FormField
+                          control={calcForm.control}
+                          name="altura_cm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Altura (cm)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="11"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="h-10 bg-background/60 border-sidebar-border/40"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {calcForm.watch("format") !== "3" && (
                           <FormField
                             control={calcForm.control}
-                            name="cep_destino"
+                            name="comprimento_cm"
                             render={({ field }) => (
                               <FormItem>
-                                <div className="flex items-center justify-between">
-                                  <FormLabel className="text-xs text-muted-foreground">CEP de destino</FormLabel>
-                                  <a
-                                    href={`https://buscacepinter.correios.com.br/app/endereco/index.php`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-xs font-medium text-[#B392E0] hover:underline"
-                                  >
-                                    <Search className="h-3 w-3" />
-                                    Pesquisar CEP
-                                  </a>
-                                </div>
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Comprimento (cm)</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="00000-000" {...field} />
+                                  <Input
+                                    placeholder="20"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    className="h-10 bg-background/60 border-sidebar-border/40"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        </div>
-                      </TabsContent>
-                      <TabsContent value="recentes" className="mt-3">
-                        <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-2 space-y-1">
-                          {recentDestCeps.map((cep) => (
-                            <button
-                              key={cep}
-                              type="button"
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left hover:bg-sidebar/40 transition-colors"
-                              onClick={() => {
-                                calcForm.setValue("cep_destino", cep);
-                                setDestTab("novo");
-                              }}
-                            >
-                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                              {cep}
-                            </button>
-                          ))}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                        )}
+                      </div>
+
+                      <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+                        <CollapsibleTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <Shield className="h-3.5 w-3.5" />
+                              Seguro, aviso e mão própria
+                            </span>
+                            <ChevronDown
+                              className={cn("h-4 w-4 transition-transform", showExtras && "rotate-180")}
+                            />
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-2">
+                          <FormField
+                            control={calcForm.control}
+                            name="valor_declarado"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Valor declarado / seguro (R$)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="0,00"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    className="h-10 bg-background/60 border-sidebar-border/40"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
                   </div>
 
-                  <div className="px-5 pb-5">
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full h-12 text-base font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Cotando...
-                        </>
-                      ) : (
-                        "Calcular frete com desconto"
-                      )}
-                    </Button>
+                  {/* INFORME O DESTINO */}
+                  <div className="space-y-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
+                      INFORME O DESTINO
+                    </p>
+                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 overflow-hidden">
+                      <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")} className="w-full">
+                        <TabsList className="w-full justify-start h-12 bg-transparent rounded-none border-b border-sidebar-border/40 p-0">
+                          <TabsTrigger 
+                            value="novo" 
+                            className="h-full px-6 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#E5A855] text-xs uppercase font-bold tracking-wider"
+                          >
+                            Novo
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="recentes" 
+                            disabled={recentDestCeps.length === 0}
+                            className="h-full px-6 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#E5A855] text-xs uppercase font-bold tracking-wider"
+                          >
+                            Recentes
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <div className="p-5">
+                          <TabsContent value="novo" className="mt-0 space-y-4">
+                            <FormField
+                              control={calcForm.control}
+                              name="cep_destino"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground block">CEP de destino</FormLabel>
+                                    <a
+                                      href={`https://buscacepinter.correios.com.br/app/endereco/index.php`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#B392E0] hover:text-[#B392E0]/80 transition-colors"
+                                    >
+                                      <Search className="h-3 w-3" />
+                                      Pesquisar CEP
+                                    </a>
+                                  </div>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="00000-000" 
+                                      {...field} 
+                                      className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </TabsContent>
+                          
+                          <TabsContent value="recentes" className="mt-0">
+                            <div className="space-y-1">
+                              {recentDestCeps.map((cep) => (
+                                <button
+                                  key={cep}
+                                  type="button"
+                                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-left hover:bg-sidebar/40 border border-transparent hover:border-sidebar-border/40 transition-all group"
+                                  onClick={() => {
+                                    calcForm.setValue("cep_destino", cep);
+                                    setDestTab("novo");
+                                  }}
+                                >
+                                  <MapPin className="h-4 w-4 text-muted-foreground group-hover:text-[#E5A855] transition-colors" />
+                                  <span className="font-medium">{cep}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </TabsContent>
+                        </div>
+                      </Tabs>
+                    </div>
                   </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-14 text-sm font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98]"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        COTANDO...
+                      </>
+                    ) : (
+                      "Calcular frete com desconto"
+                    )}
+                  </Button>
                 </form>
               </Form>
             </Card>
           ) : (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
+            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
                   <Package className="h-5 w-5 text-primary" />
-                  Cotação Selecionada
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-background border border-primary/10">
-                  <div>
-                    <p className="font-bold text-lg">{selectedOption?.servico}</p>
-                    <p className="text-sm text-muted-foreground">{selectedOption?.transportadora}</p>
-                  </div>
-                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-primary" />
                 </div>
-                <Button variant="ghost" className="w-full" onClick={() => setStep(1)}>
-                  Alterar Cotação
-                </Button>
-              </CardContent>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-widest">Cotação Selecionada</h3>
+                  <p className="text-xs text-muted-foreground">Revise os detalhes abaixo</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-background/40 border border-sidebar-border/40 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-base">{selectedOption?.servico}</p>
+                    <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">{selectedOption?.transportadora}</p>
+                  </div>
+                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-[#E5A855]" />
+                </div>
+                <div className="h-px bg-sidebar-border/40 w-full" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Truck className="h-3.5 w-3.5" />
+                  <span>Prazo estimado: <strong>{selectedOption?.prazo_dias} dias úteis</strong></span>
+                </div>
+              </div>
+
+              <Button 
+                variant="ghost" 
+                className="w-full h-10 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/30" 
+                onClick={() => setStep(1)}
+              >
+                Alterar Cotação
+              </Button>
             </Card>
           )}
         </div>
