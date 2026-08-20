@@ -76,6 +76,29 @@ const RULES: Rule[] = [
     ],
     confidence: 0.9,
   },
+  // Financeiro: Contas a receber
+  {
+    intent: "finance.receivable",
+    patterns: [
+      /\bcontas a receber\b/,
+      /\bquanto (tenho|temos) a receber\b/,
+      /\bvalores pendentes de entrada\b/,
+      /\bo que tem para entrar\b/,
+    ],
+    confidence: 0.9,
+  },
+  // Financeiro: Contas a pagar
+  {
+    intent: "finance.payable",
+    patterns: [
+      /\bcontas a pagar\b/,
+      /\bquanto (tenho|temos) a pagar\b/,
+      /\bvalores pendentes de saida\b/,
+      /\bo que tem para sair\b/,
+      /\bdividas pendentes\b/,
+    ],
+    confidence: 0.9,
+  },
   // customer.create — cadastrar cliente
   {
     intent: "customer.create",
