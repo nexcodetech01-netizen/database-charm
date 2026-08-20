@@ -198,6 +198,73 @@ export const printManager = {
     }
   },
 
+  /**
+   * BUG ENCONTRADO E CORRIGIDO: `print()` acima só ENFILEIRA o trabalho
+   * e responde `{success: true}` imediatamente — sem esperar a
+   * impressão de verdade acontecer. O processamento real roda depois,
+   * de forma desacoplada (`this.process()` chamado sem `await` dentro
+   * de `enqueue()`), e se falhar (Bridge offline, impressora não
+   * encontrada, erro de rede), isso só fica registrado no histórico
+   * interno da fila — nenhuma tela que chama `print()` direto fica
+   * sabendo. Por isso "aceitou o PDF mas não imprimiu, sem erro
+   * nenhum": a UI mostrava sucesso na hora, e o erro real acontecia
+   * silenciosamente alguns instantes depois.
+   *
+   * `printAndWait` resolve isso: enfileira e espera de verdade o
+   * evento `PRINT_FINISHED` ou `PRINT_ERROR` correspondente a esse
+   * job específico, com um timeout de segurança. Use isso em vez de
+   * `print()` sempre que a tela precisar saber o resultado real
+   * (e não só que o pedido foi aceito na fila).
+   */
+  async printAndWait(
+    label: LabelData,
+    options: PrintOptions,
+    timeoutMs = 20_000,
+  ): Promise<PrintResult> {
+    if (!label.zpl && !label.content && !label.pdf && !label.image) {
+      return { success: false, message: 'Conteúdo do documento vazio' };
+    }
+
+    let jobId: string;
+    try {
+      jobId = await printQueue.enqueue(label, options);
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Erro ao enfileirar impressão',
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    }
+
+    return new Promise<PrintResult>((resolve) => {
+      let settled = false;
+      const finish = (result: PrintResult) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        unsubscribe();
+        resolve(result);
+      };
+
+      const unsubscribe = printQueue.addListener((event) => {
+        if (event.jobId !== jobId) return;
+        if (event.type === 'PRINT_FINISHED') {
+          finish({ success: true, jobId });
+        } else if (event.type === 'PRINT_ERROR') {
+          finish({ success: false, message: event.error, jobId });
+        }
+      });
+
+      const timer = setTimeout(() => {
+        finish({
+          success: false,
+          message: 'Tempo esgotado esperando confirmação da impressão. Verifique se o Print Bridge está aberto e conectado.',
+          jobId,
+        });
+      }, timeoutMs);
+    });
+  },
+
   async getPrinters() {
     return await printerService.listPrinters();
   },

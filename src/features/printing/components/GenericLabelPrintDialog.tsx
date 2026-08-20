@@ -182,11 +182,11 @@ export function GenericLabelPrintDialog({
       console.info("[GenericPrint] Iniciando impressão", { blockId: block.id, type: block.type, isPdf: !!block.pdf });
 
       const result = block.pdf
-        ? await printManager.print(
+        ? await printManager.printAndWait(
             { id: jobId, pdf: block.pdf },
             { strategy: "PDF", type: "LABEL", printerId: selectedPrinterId || undefined },
           )
-        : await printManager.print(
+        : await printManager.printAndWait(
             { id: jobId, zpl: block.zpl },
             { strategy: "RAW", type: "LABEL", printerId: selectedPrinterId || undefined },
           );
