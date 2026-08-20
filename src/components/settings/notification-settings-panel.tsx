@@ -10,6 +10,10 @@ const EVENT_LABELS: Record<string, { title: string; description: string }> = {
     title: "Pedidos do Catálogo",
     description: "Novos pedidos recebidos via WhatsApp/Catálogo",
   },
+  "whatsapp.message.received": {
+    title: "Mensagens do WhatsApp",
+    description: "Alertas para novas mensagens recebidas no chat",
+  },
   "sale.created": {
     title: "Vendas Criadas",
     description: "Notificações para novas vendas no sistema",
@@ -59,29 +63,29 @@ export function NotificationSettingsPanel() {
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
               )}
               
-              <div className="p-3 pb-1.5 flex items-start justify-between">
-                <div className="flex flex-col gap-0.5">
+              <div className="p-4 pb-2 flex items-start justify-between">
+                <div className="flex flex-col gap-1">
                   <h4 className={cn(
-                    "text-xs font-bold tracking-tight uppercase opacity-90",
-                    isCatalog ? "text-primary" : "text-foreground"
+                    "text-[10px] font-black tracking-widest uppercase",
+                    isCatalog ? "text-primary" : "text-blue-400"
                   )}>
                     {label.title}
                   </h4>
-                  <p className="text-[10px] leading-tight text-muted-foreground/70 line-clamp-1">
+                  <p className="text-[10px] font-medium leading-tight text-muted-foreground/60">
                     {label.description}
                   </p>
                 </div>
               </div>
 
-              <div className="px-3 pb-2.5 space-y-0.5">
-                <div className="h-[1px] bg-border/30 w-full mb-1.5" />
+              <div className="px-4 pb-4 space-y-2">
+                <div className="h-[1px] bg-border/20 w-full mb-2" />
                 
-                <div className="flex items-center justify-between group/row py-0.5">
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="h-3 w-3 text-muted-foreground/70" />
+                <div className="flex items-center justify-between group/row">
+                  <div className="flex items-center gap-2.5">
+                    <Volume2 className="h-3.5 w-3.5 text-muted-foreground/60" />
                     <Label 
                       htmlFor={`${type}-sound`} 
-                      className="text-[11px] font-medium cursor-pointer text-foreground/80"
+                      className="text-[11px] font-semibold cursor-pointer text-foreground/80"
                     >
                       Som de Alerta
                     </Label>
@@ -90,16 +94,16 @@ export function NotificationSettingsPanel() {
                     id={`${type}-sound`}
                     checked={config.sound}
                     onCheckedChange={() => toggleSetting(type, "sound")}
-                    className="scale-[0.8] origin-right pointer-events-auto"
+                    className="scale-[0.85] origin-right pointer-events-auto"
                   />
                 </div>
 
-                <div className="flex items-center justify-between group/row py-0.5">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="h-3 w-3 text-muted-foreground/70" />
+                <div className="flex items-center justify-between group/row">
+                  <div className="flex items-center gap-2.5">
+                    <Smartphone className="h-3.5 w-3.5 text-muted-foreground/60" />
                     <Label 
                       htmlFor={`${type}-browser`} 
-                      className="text-[11px] font-medium cursor-pointer text-foreground/80"
+                      className="text-[11px] font-semibold cursor-pointer text-foreground/80"
                     >
                       Notificação Push
                     </Label>
@@ -108,7 +112,7 @@ export function NotificationSettingsPanel() {
                     id={`${type}-browser`}
                     checked={config.browser}
                     onCheckedChange={() => toggleSetting(type, "browser")}
-                    className="scale-[0.8] origin-right pointer-events-auto"
+                    className="scale-[0.85] origin-right pointer-events-auto"
                   />
                 </div>
               </div>
