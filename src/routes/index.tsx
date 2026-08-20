@@ -7,112 +7,77 @@ export default function Index() {
       <Section
         title={
           <span className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" /> Bella IA Operational Agent
+            <Truck className="h-5 w-5 text-primary" /> SuperFrete UI Restructuring
           </span>
         }
       >
         <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
           <p>
-            O ActionCard foi enriquecido com dados reais obtidos via StockService antes da confirmação.
+            Reestruturação completa da interface da Calculadora de Frete seguindo o design do SuperFrete no Dark Mode.
           </p>
 
           <div className="rounded-lg border bg-card p-4 space-y-3">
             <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-4 w-4 text-green-500" /> Fluxo auditado e corrigido
+              <CheckCircle2 className="h-4 w-4 text-green-500" /> Mudanças de Layout e UX
             </h3>
             
             <ul className="space-y-2">
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">1. AgentRuntime:</span>
-                Permite que o <code>runAgent</code> gerencie a interrupção para confirmação.
+                <span className="font-medium text-foreground">1. Origem:</span>
+                Botões "Salvar" e "Limpar" bem definidos com texto e ícones à direita do CEP.
               </li>
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">2. runAgent:</span>
-                O loop intercepta <code>needs_confirmation</code> e enriquece o <code>AgentPlan</code> com dados reais.
+                <span className="font-medium text-foreground">2. Inputs Material:</span>
+                Labels em caixa alta e borda inferior (border-b) para um visual limpo e profissional.
               </li>
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">3. BaseSkill:</span>
-                Implementado <code>prepareConfirmation</code> para resolver entidades ANTES da mutação.
+                <span className="font-medium text-foreground">3. Cards Contrastantes:</span>
+                Containers <code>bg-card</code> com bordas discretas e cantos arredondados (rounded-xl).
               </li>
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">4. stock.adjust:</span>
-                Implementada resolução de produto e cálculo de delta/target para o card.
+                <span className="font-medium text-foreground">4. Navegação de Destino:</span>
+                Abas "Novo" e "Recentes" com indicador visual verde e link "PESQUISAR CEP" em destaque.
               </li>
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">5. ActionCard:</span>
-                UI adaptada para exibir tabela técnica (Estoque atual, Novo, Ajuste, Operação).
+                <span className="font-medium text-foreground">5. Call to Action:</span>
+                Botão "CALCULAR FRETE COM DESCONTO" em largura total (w-full) em verde vibrante.
               </li>
               <li className="flex gap-2">
-                <span className="font-medium text-foreground">6. Segurança:</span>
-                Operação "para 10" tratada como SET absoluto, garantindo integridade.
+                <span className="font-medium text-foreground">6. Resultados:</span>
+                Painel lateral centralizado para exibição das cotações no mesmo container escuro.
               </li>
             </ul>
           </div>
 
-          <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg text-primary-foreground/90 italic">
-            "A Bella agora mostra EXATAMENTE o que vai acontecer antes de você confirmar qualquer alteração de estoque."
+          <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-lg text-emerald-500 italic">
+            "A interface agora segue rigorosamente a hierarquia visual do SuperFrete, otimizada para o tema escuro do NexOS."
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <Package className="h-4 w-4" /> SKU / Nome
+              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
+                Implemente a validação automática de CEP de origem e destino com mensagens de erro claras e máscara de formato.
               </div>
-              <span className="text-xs">Identificação precisa do item</span>
             </div>
             <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <History className="h-4 w-4" /> Saldo Real
+              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
+                Adicione persistência das cotações para carregar automaticamente a aba "Recentes" com as últimas dimensões e resultados.
               </div>
-              <span className="text-xs">Consulta ao StockService</span>
             </div>
             <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <Search className="h-4 w-4" /> Auditoria
+              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
+                Implemente estados de carregamento e tratamento de falhas no cálculo de frete para evitar cliques repetidos no botão.
               </div>
-              <span className="text-xs">Logs sanitizados e seguros</span>
             </div>
-          </div>
-        </div>
-      </Section>
-      <Section
-        title={
-          <span className="flex items-center gap-2">
-            <Truck className="h-5 w-5 text-primary" /> Shipping Calculator Evolution
-          </span>
-        }
-      >
-        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-          <p>
-            Implementações focadas em conversão, segurança de dados e experiência do usuário (UX) na Calculadora de Frete SuperFrete.
-          </p>
-
-          <div className="rounded-lg border bg-card p-4 space-y-3">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-4 w-4 text-green-500" /> Funcionalidades Implementadas
-            </h3>
-            
-            <ul className="space-y-2 text-xs">
-              <li className="flex gap-2">
-                <span className="font-bold text-foreground">• Validação em Tempo Real:</span>
-                Máscaras de CEP (00000-000) e validação <code>onChange</code> via Zod para feedback imediato.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-foreground">• Persistência Inteligente:</span>
-                Cotações anteriores (dimensões + resultados) salvas no <code>localStorage</code> e carregadas na aba "Recentes".
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-foreground">• Resiliência Operacional:</span>
-                Estados de carregamento (<code>loading</code>) com bloqueio de múltiplos cliques e interface de erro amigável com retry.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-bold text-foreground">• Integridade de Dados:</span>
-                Sanitização de inputs numéricos e limites técnicos (peso/dimensões) alinhados às regras dos Correios/SuperFrete.
-              </li>
-            </ul>
+            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
+                Crie uma interface de erro amigável para quando o cálculo de frete falhar, incluindo ações para tentar novamente.
+              </div>
+            </div>
           </div>
         </div>
       </Section>
     </div>
   );
 }
+
