@@ -236,14 +236,14 @@ const RULES: Rule[] = [
   {
     intent: "stock.adjust",
     patterns: [
-      /\b(?:ajust(?:e|ar|a)|corrigir|acertar|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:do|de|em) /,
-      /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:para|em|a) (\d+(?:[.,]\d+)?) (?:unidades?|un|pcs)? /,
-      /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:para|em|a) (\d+(?:[.,]\d+)?) (?:unidades?|un|pcs)? /,
+      /\b(?:ajust(?:e|ar|a)|corrigir|acertar|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b/,
+      /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
     ],
     extract(text) {
       // Caso 1: "altere o estoque do produto X para 10"
+      // Regex relaxada para lidar com variações no meio da frase
       const absoluteMatch = text.match(
-        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:do|de|em) (?:produto )?(.+?) (?:para|em|a) (\d+(?:[.,]\d+)?)/,
+        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b.*?\b(?:do|de|em)\b\s+(?:produto\s+)?(.+?)\s+\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
       );
       if (absoluteMatch) {
         const query = absoluteMatch[1].trim();
@@ -251,19 +251,9 @@ const RULES: Rule[] = [
         return Number.isFinite(absolute) && query ? { absolute, query } : {};
       }
 
-      // Caso 2: "altere o estoque para 10 do produto X"
-      const absoluteMatchInv = text.match(
-        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:para|em|a) (\d+(?:[.,]\d+)?)(?: units?| unidades?| un)? (?:do|de|em) (?:produto )?(.+)$/,
-      );
-      if (absoluteMatchInv) {
-        const absolute = Number(absoluteMatchInv[1].replace(",", "."));
-        const query = absoluteMatchInv[2].trim();
-        return Number.isFinite(absolute) && query ? { absolute, query } : {};
-      }
-
-      // Caso 3: "ajuste 10 unidades do produto X" (delta)
+      // Caso 2: "ajuste 10 unidades do produto X" (delta)
       const deltaMatch = text.match(
-        /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)) (-?\d+(?:[.,]\d+)?) (?:unidades?|un|pcs) (?:do|de|em) (?:produto )?(.+)$/,
+        /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a))\b\s+(-?\d+(?:[.,]\d+)?)\s+(?:unidades?|un|pcs)\b.*?\b(?:do|de|em)\b\s+(?:produto\s+)?(.+)$/,
       );
       if (deltaMatch) {
         const delta = Number(deltaMatch[1].replace(",", "."));
@@ -276,6 +266,7 @@ const RULES: Rule[] = [
     confidence: 0.85,
     destructive: true,
   },
+
 
   // stock.history: "mostre o histórico do produto Essager"
   {
