@@ -114,9 +114,34 @@ export const stockAdjustSkill = defineBaseSkill({
   destructive: true,
   confirmationSummary: (input) => {
     if (typeof input.absolute === "number") {
-      return `Confirma definir o estoque para ${input.absolute} unidade(s) de "${input.query ?? input.productId}"?`;
+      return `📦 Alterar estoque (Definição Absoluta)`;
     }
-    return `Confirma ajuste de ${input.delta} unidade(s) para "${input.query ?? input.productId}"?`;
+    return `📦 Ajustar estoque (Delta)`;
+  },
+  async prepareConfirmation(input, ctx) {
+    const svc = new StockService(ctx);
+    const balance = await svc.balance({
+      productId: input.productId ?? null,
+      query: input.query ?? null,
+    });
+
+    const current = balance.stock;
+    let target = input.absolute;
+    let delta = input.delta;
+
+    if (typeof input.absolute === "number") {
+      delta = input.absolute - current;
+    } else if (typeof input.delta === "number") {
+      target = current + input.delta;
+    }
+
+    return {
+      productName: balance.product.name,
+      currentStock: current,
+      targetStock: target,
+      delta: delta,
+      operation: typeof input.absolute === "number" ? "definição absoluta" : "ajuste relativo",
+    };
   },
   async handler(input, ctx) {
     ensureLookup(input);

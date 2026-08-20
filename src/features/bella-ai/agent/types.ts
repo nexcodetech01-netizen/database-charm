@@ -47,6 +47,8 @@ export interface AgentPlan {
   intentId: string;
   requiresConfirmation: boolean;
   confirmationSummary?: string;
+  /** Dados ricos para o ActionCard (ex.: delta de estoque, nome do produto) */
+  confirmationData?: Record<string, unknown>;
   steps: AgentPlanStep[];
 }
 

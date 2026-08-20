@@ -29,6 +29,7 @@ export interface BaseSkillSpec<S extends ZodObject<ZodRawShape>, TData> {
   readonly destructive?: boolean;
   handler(input: ZInfer<S>, ctx: ExecutionContext): Promise<BellaSkillResult<TData>>;
   confirmationSummary?(input: ZInfer<S>): string;
+  prepareConfirmation?(input: ZInfer<S>, ctx: ExecutionContext): Promise<Record<string, unknown>>;
 }
 
 export interface BaseSkillRunInput<S extends ZodObject<ZodRawShape>> {
@@ -103,10 +104,15 @@ export function defineBaseSkill<S extends ZodObject<ZodRawShape>, TData>(
       // 3) Confirmação humana para operações destrutivas.
       if (spec.destructive && !confirmed) {
         const summary = spec.confirmationSummary?.(parsed.data) ?? `Confirma "${spec.name}"?`;
+        const confirmationData = spec.prepareConfirmation 
+          ? await spec.prepareConfirmation(parsed.data, ctx)
+          : undefined;
+
         return {
           ok: false,
-          code: "invalid_payload",
+          code: "needs_confirmation",
           message: summary,
+          data: confirmationData as any,
         } as BellaSkillResult<TData>;
       }
 

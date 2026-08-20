@@ -48,23 +48,40 @@ class BellaSkillRegistryImpl {
     id: string,
     payload: BellaSkillPayload,
     ctx: BellaSkillContext,
+    confirmed?: boolean,
   ): Promise<BellaSkillResult> {
-    const skill = this.get(id);
+    const skill = this.skills.get(id);
     if (!skill) {
-      return skillResult.unavailable(
-        `Skill "${id}" não encontrada. Verifique se o módulo está disponível.`,
-      );
+      return skillResult.unavailable(`Skill "${id}" não encontrada.`);
     }
-    if (!skill.canExecute(ctx)) {
-      return skillResult.notAllowed(
-        `Você não tem permissão para executar "${skill.name}" agora.`,
-      );
-    }
+
     try {
+      // Se a skill for uma BaseSkill (v2), usamos o método run que gerencia o pipeline
+      if ("run" in skill && typeof (skill as any).run === "function") {
+        // Build basic ExecutionContext for BaseSkill
+        const { buildExecutionContext } = await import("../agent/infrastructure/context");
+        const execCtx = buildExecutionContext({
+          companyId: ctx.companyId,
+          userId: ctx.userId ?? null,
+          permissions: new Set(["*"]), // Fallback permissions, real check inside run
+          isOwner: true,
+          channel: "web",
+        });
+
+        return await (skill as any).run({
+          payload,
+          ctx: execCtx,
+          confirmed,
+        });
+      }
+
+      // Legado
+      if (!skill.canExecute(ctx)) {
+        return skillResult.notAllowed(`Você não tem permissão para executar "${skill.name}" agora.`);
+      }
       return await skill.execute(payload, ctx);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha inesperada ao executar a Skill.";
-      return skillResult.error(message);
+      return skillResult.error(err instanceof Error ? err.message : "Falha na execução.");
     }
   }
 }

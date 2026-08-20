@@ -11,7 +11,7 @@ import { BellaSkillRegistry } from "../skills";
 import { canExecuteSkill } from "./permission-engine";
 import { planFromIntent } from "./planner";
 import { logAgentExecution } from "./execution-log";
-import type { AgentContext, AgentIntent, AgentResponse, AgentStepResult } from "./types";
+import type { AgentContext, AgentIntent, AgentResponse, AgentStepResult, AgentPlan } from "./types";
 
 export interface RunAgentInput {
   intent: AgentIntent;
@@ -48,17 +48,9 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
     };
   }
 
-  // 2) Confirmação (antes de qualquer side-effect)
-  if (plan.requiresConfirmation && !confirmed) {
-    return {
-      code: "needs_confirmation",
-      message:
-        plan.confirmationSummary ?? "Essa operação precisa de confirmação. Podemos prosseguir?",
-      intent,
-      plan,
-      steps: [],
-    };
-  }
+  // 2) Planejamento ok. A confirmação agora é tratada dentro do loop de execução 
+  // para permitir que as Skills gerem resumos ricos com dados reais.
+
 
   // 3) Permissão + execução passo-a-passo
   const steps: AgentStepResult[] = [];
@@ -88,11 +80,42 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
 
     const skill = BellaSkillRegistry.get(step.skillId);
     
+    // Agora o registry.execute cuida da confirmação interna via BaseSkill
     const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
       companyId: ctx.companyId,
       userId: ctx.userId ?? null,
-    });
+    }, confirmed);
+    
     steps.push({ step, result });
+
+    if (result.code === "needs_confirmation") {
+      const finishedAt = new Date();
+      await logAgentExecution({
+        ctx,
+        intent,
+        step,
+        result,
+        confirmationRequired: true,
+        confirmed: false,
+        startedAt,
+        finishedAt,
+      });
+
+      // Enriquecer o plano com o resumo e dados da skill
+      const enrichedPlan: AgentPlan = {
+        ...plan,
+        confirmationSummary: result.message,
+        confirmationData: result.data as Record<string, unknown>,
+      };
+
+      return {
+        code: "needs_confirmation",
+        message: result.message,
+        intent,
+        plan: enrichedPlan,
+        steps,
+      };
+    }
 
     if (result.code === "missing_fields") {
       const finishedAt = new Date();

@@ -84,9 +84,13 @@ export function ActionCard({
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4 space-y-3">
-        {summary && <p className={cn("font-medium", TEXT_TOKENS.sm)}>{summary}</p>}
-        {details && <div className={cn("text-muted-foreground", TEXT_TOKENS.xs)}>{details}</div>}
+      <CardContent className="pt-4 space-y-4">
+        {summary && <p className={cn("font-semibold text-foreground leading-tight", TEXT_TOKENS.sm)}>{summary}</p>}
+        {details && (
+          <div className={cn("rounded-md border border-border/50 bg-muted/20 p-3", TEXT_TOKENS.xs)}>
+            {details}
+          </div>
+        )}
         
         {status === "error" && (
           <div className="flex items-center gap-2 p-2 rounded bg-destructive/10 text-destructive text-xs">
