@@ -833,7 +833,7 @@ function ShippingCalculatorPage() {
               </Form>
             </Card>
           ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6">
+            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6 lg:sticky lg:top-8">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
                   <Package className="h-5 w-5 text-primary" />
