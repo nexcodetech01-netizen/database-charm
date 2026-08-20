@@ -21,7 +21,7 @@ import { calculateShipping, generateLabel } from "@/features/shipping/services/s
 import { printManager } from "@/features/printing/services/print.service";
 import type { Printer as PrinterInfo } from "@/features/printing/types/printing.types";
 
-import { PageLayout, PageHeader } from "@/components/layout";
+import { PageLayout, PageHeader, BreadcrumbNav } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,9 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 import { LoadingSurface } from "@/components/design";
+import { EmptyState } from "@/components/layout";
 import { MoneyValue } from "@/components/layout/money-value";
 import { cn } from "@/lib/utils";
 
@@ -473,38 +475,41 @@ function ShippingCalculatorPage() {
   }
 
   return (
-    <PageLayout title="Frete e Etiquetas">
-      <PageHeader
-        title="Gestão de Frete SuperFrete"
-        description={step === 1 ? "Consulte preços e prazos de entrega." : "Informe os dados do destinatário para emitir a etiqueta."}
-        icon={Truck}
-      />
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+      <BreadcrumbNav />
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
+            <Truck className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                Frete e Etiquetas
+              </h1>
+              <Badge variant="secondary" className="font-mono text-[10px] tracking-wider uppercase">SuperFrete</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">Calcule fretes e gere etiquetas para seus pedidos.</p>
+          </div>
+        </div>
+      </header>
 
-      <div className="flex items-center gap-2 mb-8 bg-sidebar/20 p-2 rounded-2xl w-fit border border-sidebar-border/30">
-        <div className={cn(
-          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-          step === 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
-        )}>Cotação</div>
-        <div className="h-4 w-px bg-sidebar-border/40" />
-        <div className={cn(
-          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-          step === 2 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
-        )}>Destinatário</div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5 space-y-6">
           {step === 1 ? (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-8">
-              <Form {...calcForm}>
-                <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-8">
-                  {/* INFORME A ORIGEM */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      INFORME A ORIGEM
-                    </p>
-                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-5 space-y-4">
-                      <div className="flex items-end gap-3">
+            <div className="space-y-6">
+              <Card className="border-border bg-card shadow-sm overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Origem
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Form {...calcForm}>
+                    <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-end gap-3">
                         <FormField
                           control={calcForm.control}
                           name="cep_origem"
@@ -699,14 +704,20 @@ function ShippingCalculatorPage() {
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
-                  </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-                  {/* INFORME O DESTINO */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      INFORME O DESTINO
-                    </p>
-                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 overflow-hidden">
+            <Card className="border-border bg-card shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Destino
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="rounded-xl bg-background/40 border border-border/40 overflow-hidden">
                       <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")} className="w-full">
                         <TabsList className="w-full justify-start h-12 bg-transparent rounded-none border-b border-sidebar-border/40 p-0">
                           <TabsTrigger 
@@ -812,47 +823,43 @@ function ShippingCalculatorPage() {
                           </TabsContent>
                         </div>
                       </Tabs>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-14 text-sm font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98]"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        COTANDO...
-                      </>
-                    ) : (
-                      "Calcular frete com desconto"
-                    )}
-                  </Button>
-                </form>
-              </Form>
+                </div>
+              </CardContent>
             </Card>
-          ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6 lg:sticky lg:top-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                  <Package className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest">Cotação Selecionada</h3>
-                  <p className="text-xs text-muted-foreground">Revise os detalhes abaixo</p>
-                </div>
-              </div>
 
-              <div className="p-4 rounded-xl bg-background/40 border border-sidebar-border/40 space-y-3">
+            <Button
+              onClick={calcForm.handleSubmit(onCalcSubmit)}
+              disabled={isLoading}
+              className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transition-all"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  COTANDO...
+                </>
+              ) : (
+                "Calcular frete"
+              )}
+            </Button>
+          </div>
+        ) : (
+          <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Cotação Selecionada
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-4">
+              <div className="p-4 rounded-xl bg-background/40 border border-border/40 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-bold text-base">{selectedOption?.servico}</p>
                     <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">{selectedOption?.transportadora}</p>
                   </div>
-                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-[#E5A855]" />
+                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-primary" />
                 </div>
-                <div className="h-px bg-sidebar-border/40 w-full" />
+                <div className="h-px bg-border/40 w-full" />
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Truck className="h-3.5 w-3.5" />
                   <span>Prazo estimado: <strong>{selectedOption?.prazo_dias} dias úteis</strong></span>
@@ -861,121 +868,114 @@ function ShippingCalculatorPage() {
 
               <Button 
                 variant="ghost" 
-                className="w-full h-10 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/30" 
+                className="w-full h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/30" 
                 onClick={() => setStep(1)}
               >
                 Alterar Cotação
               </Button>
-            </Card>
-          )}
-        </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-        <div className="lg:col-span-7">
-          {step === 1 ? (
-            isLoading ? (
-              <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-sidebar-border bg-sidebar/10">
-                <LoadingSurface variant="cards" metrics={1} />
-              </div>
-            ) : calcError ? (
-              <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 rounded-xl overflow-hidden">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 mt-0.5" />
-                  <div className="flex-1">
-                    <AlertTitle className="text-sm font-black uppercase tracking-widest mb-2">Erro no Cálculo</AlertTitle>
-                    <AlertDescription className="text-xs space-y-3">
-                      <p className="font-medium text-foreground">{calcError.message}</p>
-                      {calcError.details && (
-                        <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-                          {calcError.details.map((d, i) => <li key={i}>{d}</li>)}
-                        </ul>
-                      )}
-                      <div className="pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-destructive/30 hover:bg-destructive/10"
-                          onClick={() => calcForm.handleSubmit(onCalcSubmit)()}
-                        >
-                          Tentar Novamente
-                        </Button>
-                      </div>
-                    </AlertDescription>
-                  </div>
+      <div className="lg:col-span-7">
+        {step === 1 ? (
+          isLoading ? (
+            <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/50">
+              <LoadingSurface variant="cards" metrics={1} />
+            </div>
+          ) : calcError ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6">
+              <div className="flex gap-4">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
-              </Alert>
-            ) : results ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-destructive mb-1">Não foi possível calcular o frete</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {calcError.message}. Verifique os CEPs e as dimensões informadas e tente novamente.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => calcForm.handleSubmit(onCalcSubmit)()}
+                  >
+                    Tentar Novamente
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : results ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
                   Opções Disponíveis
                 </h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {results.map((option, idx) => (
-                    <Card 
-                      key={idx} 
-                      className={cn(
-                        "overflow-hidden border-sidebar-border/50 transition-all cursor-pointer group hover:border-primary/50 hover:shadow-md",
-                        selectedOption?.id === option.id && "border-primary ring-1 ring-primary"
-                      )}
-                      onClick={() => handleSelectOption(option)}
-                    >
-                      <div className="bg-primary/5 px-4 py-2 border-b border-sidebar-border/30 flex justify-between items-center">
-                        <p className="text-xs font-bold uppercase tracking-wider text-primary/80">
-                          {option.transportadora}
-                        </p>
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="text-lg font-bold">{option.servico}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Prazo: {option.prazo_dias} {option.prazo_dias === 1 ? 'dia útil' : 'dias úteis'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <MoneyValue 
-                              value={option.preco} 
-                              className="text-xl font-black text-primary" 
-                            />
-                          </div>
+                <Badge variant="outline" className="text-[10px]">{results.length} resultados</Badge>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {results.map((option, idx) => (
+                  <Card 
+                    key={idx} 
+                    className={cn(
+                      "overflow-hidden border-border transition-all cursor-pointer group hover:border-primary/50 hover:shadow-md bg-card/50",
+                      selectedOption?.id === option.id && "border-primary ring-1 ring-primary"
+                    )}
+                    onClick={() => handleSelectOption(option)}
+                  >
+                    <div className="bg-primary/5 px-4 py-2 border-b border-border/50 flex justify-between items-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        {option.transportadora}
+                      </p>
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-base font-bold">{option.servico}</p>
+                          <p className="text-[11px] text-muted-foreground font-medium">
+                            Prazo: {option.prazo_dias} {option.prazo_dias === 1 ? 'dia útil' : 'dias úteis'}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                {results.length === 0 && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Nenhuma opção</AlertTitle>
-                    <AlertDescription>
-                      {calcErrors.length > 0 ? (
-                        <>
-                          <p>A SuperFrete recusou essa cotação:</p>
-                          <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                            {calcErrors.map((msg, i) => (
-                              <li key={i}>{msg}</li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : (
-                        "Não encontramos frete para este CEP ou dimensões."
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                        <div className="text-right">
+                          <MoneyValue 
+                            value={option.preco} 
+                            className="text-lg font-black text-primary" 
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
-              <div className="flex h-[400px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-sidebar-border/40 bg-sidebar/5 p-8 text-center text-muted-foreground animate-pulse-slow">
-                <Calculator className="mb-6 h-16 w-16 opacity-10" />
-                <h4 className="text-sm font-black uppercase tracking-widest mb-2">Aguardando Cotação</h4>
-                <p className="max-w-[200px] text-xs font-medium leading-relaxed">
-                  Informe as dimensões e clique em calcular para ver as opções de frete.
-                </p>
-              </div>
-            )
+              {results.length === 0 && (
+                <EmptyState
+                  icon={AlertCircle}
+                  title="Nenhuma opção encontrada"
+                  description={
+                    calcErrors.length > 0 ? (
+                      <ul className="mt-2 text-xs space-y-1">
+                        {calcErrors.map((msg, i) => <li key={i} className="text-destructive font-medium">• {msg}</li>)}
+                      </ul>
+                    ) : "Não encontramos frete para este CEP ou dimensões."
+                  }
+                />
+              )}
+            </div>
           ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
+            <EmptyState
+              icon={Truck}
+              title="Cotação de frete"
+              description="Preencha os dados do envio para consultar as opções disponíveis."
+              className="h-[400px]"
+            />
+          )
+        ) : (
+          <Card className="border-border bg-card shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <User className="h-5 w-5 text-primary" />
@@ -1162,13 +1162,26 @@ function ShippingCalculatorPage() {
                       />
                     </div>
 
-                    <div className="pt-4 border-t border-sidebar-border/30">
-                      <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
-                        {isLoading ? "Emitindo e Pagando..." : `Emitir Etiqueta - R$ ${selectedOption?.preco.toFixed(2)}`}
+                    <div className="pt-6 border-t border-border/50">
+                      <Button type="submit" className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20" disabled={isLoading}>
+                        {isLoading ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Emitindo e Pagando...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span>Emitir Etiqueta • <MoneyValue value={selectedOption?.preco || 0} /></span>
+                          </div>
+                        )}
                       </Button>
-                      <p className="text-center text-xs text-muted-foreground mt-4">
-                        Ao clicar, o valor será debitado do seu saldo SuperFrete.
-                      </p>
+                      <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10 flex items-start gap-2">
+                        <Shield className="h-3.5 w-3.5 text-primary mt-0.5" />
+                        <p className="text-[10px] leading-relaxed text-muted-foreground">
+                          Seguro NexOS: O valor será debitado do seu saldo <strong>SuperFrete</strong> de forma segura e instantânea.
+                        </p>
+                      </div>
                     </div>
                   </form>
                 </Form>
@@ -1177,6 +1190,6 @@ function ShippingCalculatorPage() {
           )}
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
