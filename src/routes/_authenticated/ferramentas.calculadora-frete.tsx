@@ -823,28 +823,34 @@ function ShippingCalculatorPage() {
                           </TabsContent>
                         </div>
                       </Tabs>
-                    </div>
-                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <Button
-                    onClick={calcForm.handleSubmit(onCalcSubmit)}
-                    disabled={isLoading}
-                    className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transition-all"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        COTANDO...
-                      </>
-                    ) : (
-                      "Calcular frete"
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
+            <Button
+              onClick={calcForm.handleSubmit(onCalcSubmit)}
+              disabled={isLoading}
+              className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transition-all"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  COTANDO...
+                </>
+              ) : (
+                "Calcular frete"
+              )}
+            </Button>
+          </div>
+        ) : (
+          <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Cotação Selecionada
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
                   <Package className="h-5 w-5 text-primary" />
