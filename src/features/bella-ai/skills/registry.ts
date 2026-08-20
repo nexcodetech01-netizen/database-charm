@@ -20,7 +20,7 @@ class BellaSkillRegistryImpl {
   private initialized = false;
 
   register<TPayload, TData>(skill: BellaSkill<TPayload, TData>): void {
-    console.log(`[Registry] Registrando skill: ${skill.id}`);
+    
     // Registro idempotente: evita duplicados no Singleton
     if (this.skills.has(skill.id)) return;
     
