@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 
 import { 
   ShippingCalculatorSchema, 
@@ -33,6 +34,9 @@ export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-fr
 });
 
 function ShippingCalculatorPage() {
+  const calculateShippingFn = useServerFn(calculateShipping);
+  const generateLabelFn = useServerFn(generateLabel);
+  
   const [step, setStep] = useState<1 | 2>(1);
   const [results, setResults] = useState<ShippingOption[] | null>(null);
   const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
@@ -120,7 +124,7 @@ function ShippingCalculatorPage() {
         format: String(data.format),
       };
       
-      const response = await calculateShipping({ data: sanitizedData as any });
+      const response = await calculateShippingFn({ data: sanitizedData as any });
       setResults(response.options);
       if (response.options.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
@@ -176,7 +180,7 @@ function ShippingCalculatorPage() {
       
       console.log("SHIPPING_DEBUG: Sending label payload:", payload);
 
-      const result = await generateLabel({
+      const result = await generateLabelFn({
         data: payload as any
       });
 

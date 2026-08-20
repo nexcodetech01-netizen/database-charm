@@ -10,6 +10,7 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { BadgeCheck, Building2, CheckCircle2, Info, Layers, Package, Sparkles } from "lucide-react";
@@ -51,17 +52,20 @@ interface Props {
 
 export function ProductPricingIntelligenceCard({ companyId, productId, productQueryKey }: Props) {
   const qc = useQueryClient();
+  const getProductPricingIntelligenceFn = useServerFn(getProductPricingIntelligence);
+  const applyProductSuggestedPriceFn = useServerFn(applyProductSuggestedPrice);
+  
   const queryKey = ["pricing", "product-intelligence", companyId, productId] as const;
 
   const query = useQuery({
     queryKey,
-    queryFn: () => getProductPricingIntelligence({ data: { companyId, productId } }),
+    queryFn: () => getProductPricingIntelligenceFn({ data: { companyId, productId } }),
   });
 
   const [explainOpen, setExplainOpen] = useState(false);
 
   const applyMutation = useMutation({
-    mutationFn: () => applyProductSuggestedPrice({ data: { companyId, productId } }),
+    mutationFn: () => applyProductSuggestedPriceFn({ data: { companyId, productId } }),
     onSuccess: async (res) => {
       toast.success(`Preço aplicado: ${formatCurrency(res.appliedPriceCents / 100)}`);
       await qc.invalidateQueries({ queryKey });

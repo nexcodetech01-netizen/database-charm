@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from '@tanstack/react-router';
+import { useServerFn } from "@tanstack/react-start";
 import { 
   ArrowLeft, 
   FileText, 
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/format';
-import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { generateConsignmentPDF } from '../lib/pdf.functions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RegisterSettlementDialog } from './register-settlement-dialog';
@@ -39,6 +40,7 @@ import { EditConsignmentItemsDialog } from './edit-consignment-items-dialog';
 import { useAuth } from '@/providers/auth-provider';
 
 export function ConsignmentDetails() {
+  const generateConsignmentPDFFn = useServerFn(generateConsignmentPDF);
   const { id } = useParams({ from: '/_authenticated/consignacoes/$id' });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -78,14 +80,23 @@ export function ConsignmentDetails() {
         .eq('id', data.consignment.company_id)
         .single();
 
-      const blob = await generateConsignmentPDF(data.consignment, data.items, company || { name: "NexOS ERP" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `contrato-consignacao-${id.split('-')[0]}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('Contrato gerado!');
+      const result = await generateConsignmentPDFFn({
+        data: {
+          consignmentId: id,
+          companyId: data.consignment.company_id
+        }
+      });
+
+      if (result.url) {
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.target = "_blank";
+        link.download = `contrato-consignacao-${id.split('-')[0]}.pdf`;
+        link.click();
+        toast.success('Contrato gerado!');
+      } else {
+        toast.info(result.message || 'Geração de PDF em processamento.');
+      }
     } catch (err) {
       console.error(err);
       toast.error('Erro ao gerar PDF');

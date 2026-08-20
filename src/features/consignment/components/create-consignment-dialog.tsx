@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useServerFn } from "@tanstack/react-start";
 import { ConsignmentService } from '@/features/consignment/services/consignment.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/providers/auth-provider';
@@ -36,7 +37,7 @@ import { ProductPickerDialog } from '@/features/catalog/components/product-picke
 import { Trash2, Plus, Package } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { supabase } from '@/integrations/supabase/client';
-import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { generateConsignmentPDF } from '../lib/pdf.functions';
 
 const consignmentFormSchema = z.object({
   reseller_id: z.string().uuid('Selecione um revendedor'),
@@ -62,6 +63,7 @@ interface SelectedItem {
 }
 
 export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props) {
+  const generateConsignmentPDFFn = useServerFn(generateConsignmentPDF);
   const { loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [isProductPickerOpen, setIsProductPickerOpen] = React.useState(false);
@@ -115,13 +117,22 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
           .eq('id', companyId)
           .single();
 
-        const blob = await generateConsignmentPDF(consignment, items, company || { name: "NexOS ERP" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `contrato-consignacao-${data.id.split('-')[0]}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
+        const result = await generateConsignmentPDFFn({
+          data: {
+            consignmentId: data.id,
+            companyId: companyId
+          }
+        });
+
+        if (result.url) {
+          const link = document.createElement('a');
+          link.href = result.url;
+          link.target = "_blank";
+          link.download = `contrato-consignacao-${data.id.split('-')[0]}.pdf`;
+          link.click();
+        } else {
+          console.log(result.message || 'Geração de PDF em processamento.');
+        }
       } catch (err) {
         console.error("Erro ao gerar PDF automático:", err);
       }
