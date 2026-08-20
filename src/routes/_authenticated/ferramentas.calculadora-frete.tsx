@@ -475,24 +475,24 @@ function ShippingCalculatorPage() {
   }
 
   return (
-    <PageLayout title="Frete e Etiquetas">
-      <PageHeader
-        title="Gestão de Frete SuperFrete"
-        description={step === 1 ? "Consulte preços e prazos de entrega." : "Informe os dados do destinatário para emitir a etiqueta."}
-        icon={Truck}
-      />
-
-      <div className="flex items-center gap-2 mb-8 bg-sidebar/20 p-2 rounded-2xl w-fit border border-sidebar-border/30">
-        <div className={cn(
-          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-          step === 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
-        )}>Cotação</div>
-        <div className="h-4 w-px bg-sidebar-border/40" />
-        <div className={cn(
-          "flex items-center justify-center h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-          step === 2 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground"
-        )}>Destinatário</div>
-      </div>
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
+      <BreadcrumbNav />
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
+            <Truck className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                Frete e Etiquetas
+              </h1>
+              <Badge variant="secondary" className="font-mono text-[10px] tracking-wider uppercase">SuperFrete</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">Calcule fretes e gere etiquetas para seus pedidos.</p>
+          </div>
+        </div>
+      </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="lg:col-span-5">
