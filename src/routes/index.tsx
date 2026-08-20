@@ -56,22 +56,12 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
               <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Implemente a validação automática de CEP de origem e destino com mensagens de erro claras e máscara de formato.
+                Implementar validação e máscaras para peso, largura e comprimento, com mensagens de erro claras quando os valores estiverem inválidos.
               </div>
             </div>
             <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
               <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Adicione persistência das cotações para carregar automaticamente a aba "Recentes" com as últimas dimensões e resultados.
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Implemente estados de carregamento e tratamento de falhas no cálculo de frete para evitar cliques repetidos no botão.
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Crie uma interface de erro amigável para quando o cálculo de frete falhar, incluindo ações para tentar novamente.
+                Ajustar o layout da Calculadora de Frete para funcionar perfeitamente em telas menores, garantindo que o painel de resultados e o formulário fiquem bem distribuídos.
               </div>
             </div>
           </div>
@@ -80,4 +70,5 @@ export default function Index() {
     </div>
   );
 }
+
 

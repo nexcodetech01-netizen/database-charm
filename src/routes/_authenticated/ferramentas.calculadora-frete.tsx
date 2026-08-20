@@ -184,6 +184,17 @@ function ShippingCalculatorPage() {
     return `${clean.slice(0, 5)}-${clean.slice(5, 8)}`;
   };
 
+  const formatNumeric = (value: string) => {
+    // Permite apenas números e uma única vírgula ou ponto
+    const clean = value.replace(/[^0-9,.]/g, "");
+    const parts = clean.split(/[,.]/);
+    if (parts.length > 2) {
+      return parts[0] + "," + parts.slice(1).join("");
+    }
+    return clean.replace(".", ",");
+  };
+
+
   // BUG ENCONTRADO E CORRIGIDO: o remetente de TODA etiqueta emitida
   // por essa tela estava com dados fixos e falsos no código — CNPJ
   // genérico "00.000.000/0001-00", endereço "Av. Paulista, 1000" (não
@@ -570,7 +581,7 @@ function ShippingCalculatorPage() {
                                   placeholder="0,3"
                                   {...field}
                                   value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                   className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
@@ -582,8 +593,9 @@ function ShippingCalculatorPage() {
 
                       <div className={cn(
                         "grid gap-4",
-                        calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
+                        calcForm.watch("format") === "3" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"
                       )}>
+
                         <FormField
                           control={calcForm.control}
                           name="largura_cm"
@@ -595,12 +607,13 @@ function ShippingCalculatorPage() {
                                   placeholder="16"
                                   {...field}
                                   value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                   className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
+
                           )}
                         />
                         <FormField
@@ -614,12 +627,13 @@ function ShippingCalculatorPage() {
                                   placeholder="11"
                                   {...field}
                                   value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                   className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
+
                           )}
                         />
                         {calcForm.watch("format") !== "3" && (
@@ -634,12 +648,13 @@ function ShippingCalculatorPage() {
                                     placeholder="20"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                     className="h-10 bg-background/60 border-sidebar-border/40"
                                   />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
+
                             )}
                           />
                         )}
@@ -672,12 +687,13 @@ function ShippingCalculatorPage() {
                                     placeholder="0,00"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                     className="h-10 bg-background/60 border-sidebar-border/40"
                                   />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
+
                             )}
                           />
                         </CollapsibleContent>
@@ -817,7 +833,7 @@ function ShippingCalculatorPage() {
               </Form>
             </Card>
           ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6">
+            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-6 lg:sticky lg:top-8">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
                   <Package className="h-5 w-5 text-primary" />

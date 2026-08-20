@@ -31,7 +31,7 @@ export const ShippingCalculatorSchema = z.object({
   comprimento_cm: z.preprocess(preprocessNumeric, z.number({
     required_error: "Comprimento é obrigatório",
     invalid_type_error: "Comprimento deve ser um número"
-  }).min(16, "Comprimento mínimo 16cm").max(105, "Comprimento máxima 105cm")),
+  }).min(16, "Comprimento mínimo 16cm").max(105, "Comprimento máximo 105cm")),
   format: z.string().default("3"),
   valor_declarado: z.preprocess(preprocessNumeric, z.number({
     required_error: "Valor seguro é obrigatório",
