@@ -252,7 +252,7 @@ export const stockPurchaseSuggestionSkill = defineBaseSkill({
     if (rows.length === 0) {
       return skillResult.success("Estoque saudável. Nenhuma sugestão de compra necessária.", {
         rows: [],
-      });
+      } as any);
     }
 
     const suggestions = rows.map((r) => {
@@ -269,7 +269,7 @@ export const stockPurchaseSuggestionSkill = defineBaseSkill({
 
     return skillResult.success(
       [`🛒 Sugestão de Compra`, preview, `\nDeseja criar o pedido de compra?`].join("\n"),
-      { rows: suggestions }, // Mantendo 'rows' para compatibilidade de tipos se necessário ou usando um objeto mais genérico
+      { rows: suggestions } as any,
       [{ id: "create_purchase_order", title: "Criar Pedido", actionLabel: "Executar" }],
     );
   },
