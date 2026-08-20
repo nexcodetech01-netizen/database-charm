@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { useExternalNotificationsRealtime } from "@/features/whatsapp/hooks/use-external-notifications-realtime";
 import { useCommercialInboxRealtime } from "@/features/whatsapp/hooks/use-commercial-inbox-realtime";
 import { useLogStore } from "@/features/diagnostics/hooks/use-log-store";
-import { getUnreadNotifications, readNotification, saveNotification } from "@/features/bella-ai/events/persistence.functions";
+import { getUnreadNotifications, markNotificationReadFn, saveNotification } from "@/features/bella-ai/events/persistence.functions";
 import { BELLA_EVENT_CATALOG } from "@/features/bella-ai/events/catalog";
 import { priorityFromSeverity } from "@/features/bella-ai/events/EventPriority";
 import type { BellaEvent } from "@/features/bella-ai/events/BellaEvent";
@@ -72,7 +72,7 @@ export function Topbar() {
   
   // Hooks das Server Functions (CORREÇÃO: essencial para TanStack Start v1)
   const getUnreadFn = useServerFn(getUnreadNotifications);
-  const readNotificationFn = useServerFn(readNotification);
+  const readNotificationFn = useServerFn(markNotificationReadFn);
   const saveNotificationFn = useServerFn(saveNotification);
 
   const {

@@ -61,7 +61,7 @@ export const getUnreadNotifications = createServerFn({ method: "GET" })
  * conteúdo (empresa + tipo + referência, pra eventos que chegam ao vivo
  * e têm um id sintético que não bate com o id real do banco).
  */
-export const readNotification = createServerFn({ method: "POST" })
+export const markNotificationReadFn = createServerFn({ method: "POST" })
   .inputValidator((data: any) => z.object({
     notificationId: z.string().uuid().optional(),
     companyId: z.string().uuid(),
