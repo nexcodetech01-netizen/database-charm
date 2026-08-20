@@ -5,6 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Truck, Calculator, AlertCircle, Package, User, MapPin, CreditCard, Download, ExternalLink, Loader2, ChevronDown, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/providers/auth-provider";
+import { supabase } from "@/integrations/supabase/client";
 
 import { 
   ShippingCalculatorSchema, 
@@ -75,6 +78,28 @@ function ShippingCalculatorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingCep, setIsFetchingCep] = useState(false);
 
+  // BUG ENCONTRADO E CORRIGIDO: o remetente de TODA etiqueta emitida
+  // por essa tela estava com dados fixos e falsos no código — CNPJ
+  // genérico "00.000.000/0001-00", endereço "Av. Paulista, 1000" (não
+  // é o endereço real de ninguém), telefone/e-mail de placeholder. Toda
+  // etiqueta gerada saía com remetente errado. Corrigido buscando os
+  // dados reais cadastrados da empresa (mesmos campos já preenchidos
+  // em Configurações).
+  const { companyId } = useAuth();
+  const { data: companyData } = useQuery({
+    queryKey: ["company-sender-info", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("name, cnpj, zip_code, address, address_number, complement, neighborhood, city, state, email, phone")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
     defaultValues: {
@@ -142,22 +167,43 @@ function ShippingCalculatorPage() {
   async function onLabelSubmit(recipientData: AddressInfo) {
     if (!selectedOption) return;
 
+    // Antes disso era um objeto 100% inventado (CNPJ genérico, endereço
+    // "Av. Paulista, 1000" que não existe pra ninguém, telefone de
+    // placeholder). Agora usa os dados reais cadastrados da empresa —
+    // e bloqueia com uma mensagem clara se o cadastro estiver
+    // incompleto, em vez de mandar dado errado pra SuperFrete (que
+    // gera dinheiro real gasto numa etiqueta com remetente furado).
+    if (
+      !companyData?.name ||
+      !companyData?.cnpj ||
+      !companyData?.address ||
+      !companyData?.zip_code ||
+      !companyData?.neighborhood ||
+      !companyData?.city ||
+      !companyData?.state ||
+      !companyData?.phone
+    ) {
+      toast.error(
+        "Complete o cadastro da sua empresa (nome, CNPJ, endereço completo e telefone) em Configurações antes de emitir etiquetas.",
+        { description: "O remetente da etiqueta é montado a partir desses dados." },
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // For sender, we'd normally pull from secrets via server function, 
-      // but the requirement asks for a form where sender can be pre-filled.
-      // For now, we'll use a placeholder sender and let the server function handle defaults if needed.
       const senderData: AddressInfo = {
-        name: "NexOS Fashion",
-        document: "00.000.000/0001-00",
-        postal_code: calcForm.getValues("cep_origem"),
-        address: "Av. Paulista",
-        number: "1000",
-        district: "Bela Vista",
-        city: "São Paulo",
-        state: "SP",
-        email: "admin@nexxcode.com.br",
-        phone: "11999999999",
+        name: companyData.name,
+        document: companyData.cnpj,
+        postal_code: companyData.zip_code || calcForm.getValues("cep_origem"),
+        address: companyData.address,
+        number: companyData.address_number || "S/N",
+        complement: companyData.complement || undefined,
+        district: companyData.neighborhood || "",
+        city: companyData.city || "",
+        state: companyData.state || "",
+        email: companyData.email || "",
+        phone: companyData.phone || "",
       };
 
       const calcValues = calcForm.getValues();
