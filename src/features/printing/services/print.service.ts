@@ -247,7 +247,7 @@ export const printManager = {
       };
 
       const unsubscribe = printQueue.addListener((event) => {
-        if (event.jobId !== jobId) return;
+        if ('jobId' in event && event.jobId !== jobId) return;
         if (event.type === 'PRINT_FINISHED') {
           finish({ success: true, jobId });
         } else if (event.type === 'PRINT_ERROR') {
