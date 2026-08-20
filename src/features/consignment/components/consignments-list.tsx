@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from '@tanstack/react-router';
 import { 
   Package, 
@@ -38,12 +39,13 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateConsignmentDialog } from './create-consignment-dialog';
-import { generateConsignmentPDF } from '../lib/pdf-generator';
+import { generateConsignmentPDF } from '../lib/pdf.functions';
 import { supabase } from '@/integrations/supabase/client';
 import { ConsignmentItem } from '../types';
 import { toast } from 'sonner';
 
 export function ConsignmentsList() {
+  const generateConsignmentPDFFn = useServerFn(generateConsignmentPDF);
   const { companyId, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
@@ -99,14 +101,23 @@ export function ConsignmentsList() {
         .eq('id', companyId!)
         .single();
 
-      const blob = await generateConsignmentPDF(consignment, items, company || { name: "NexOS ERP" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `contrato-consignacao-${id.split('-')[0]}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('Contrato gerado com sucesso!');
+      const result = await generateConsignmentPDFFn({
+        data: {
+          consignmentId: id,
+          companyId: companyId!
+        }
+      });
+
+      if (result.url) {
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.target = "_blank";
+        link.download = `contrato-consignacao-${id.split('-')[0]}.pdf`;
+        link.click();
+        toast.success('Contrato gerado com sucesso!');
+      } else {
+        toast.info(result.message || 'Geração de PDF em processamento.');
+      }
     } catch (error) {
       console.error(error);
       toast.error('Erro ao gerar PDF');
