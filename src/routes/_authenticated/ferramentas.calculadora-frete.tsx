@@ -1162,13 +1162,26 @@ function ShippingCalculatorPage() {
                       />
                     </div>
 
-                    <div className="pt-4 border-t border-sidebar-border/30">
-                      <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
-                        {isLoading ? "Emitindo e Pagando..." : `Emitir Etiqueta - R$ ${selectedOption?.preco.toFixed(2)}`}
+                    <div className="pt-6 border-t border-border/50">
+                      <Button type="submit" className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20" disabled={isLoading}>
+                        {isLoading ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Emitindo e Pagando...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span>Emitir Etiqueta • <MoneyValue value={selectedOption?.preco || 0} /></span>
+                          </div>
+                        )}
                       </Button>
-                      <p className="text-center text-xs text-muted-foreground mt-4">
-                        Ao clicar, o valor será debitado do seu saldo SuperFrete.
-                      </p>
+                      <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10 flex items-start gap-2">
+                        <Shield className="h-3.5 w-3.5 text-primary mt-0.5" />
+                        <p className="text-[10px] leading-relaxed text-muted-foreground">
+                          Seguro NexOS: O valor será debitado do seu saldo <strong>SuperFrete</strong> de forma segura e instantânea.
+                        </p>
+                      </div>
                     </div>
                   </form>
                 </Form>
