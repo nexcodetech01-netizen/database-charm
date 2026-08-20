@@ -687,12 +687,13 @@ function ShippingCalculatorPage() {
                                     placeholder="0,00"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                     className="h-10 bg-background/60 border-sidebar-border/40"
                                   />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
+
                             )}
                           />
                         </CollapsibleContent>
