@@ -168,7 +168,7 @@ function CommercialInboxPage() {
         description="Atendimentos encaminhados pela Bella. Nenhuma venda é criada automaticamente."
       />
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0">
         {isLoading ? (
           <div className="p-6 text-sm text-muted-foreground">Carregando…</div>
         ) : tickets.length === 0 ? (
@@ -182,10 +182,10 @@ function CommercialInboxPage() {
             {tickets.map((t: CommercialInboxTicket) => (
               <div
                 key={t.id}
-                className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4"
+                className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 transition-colors hover:bg-muted/40"
               >
                 {/* Identidade do cliente */}
-                <div className="flex min-w-0 items-center gap-3 sm:w-56 sm:shrink-0">
+                <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
                   <Avatar className="h-10 w-10 shrink-0">
                     <AvatarFallback className="bg-[#B392E0]/15 text-sm font-semibold text-[#B392E0]">
                       {initials(t.buyer_name)}
@@ -200,29 +200,29 @@ function CommercialInboxPage() {
                   </div>
                 </div>
 
-                {/* Itens, total, origem, data — agrupados numa linha só no mobile */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground sm:flex-1 sm:flex-nowrap">
-                  <span className="flex items-center gap-1.5 sm:w-20 sm:shrink-0">
+                {/* Itens, total, origem, data */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
                     <Package className="h-3.5 w-3.5" />
                     {t.item_count} {t.item_count === 1 ? "item" : "itens"}
                   </span>
-                  <span className="text-sm font-semibold text-foreground sm:w-28 sm:shrink-0">
+                  <span className="whitespace-nowrap text-sm font-semibold text-foreground">
                     {money(Number(t.total))}
                   </span>
-                  <span className="flex items-center gap-1.5 text-emerald-500 sm:w-28 sm:shrink-0">
+                  <span className="flex items-center gap-1.5 whitespace-nowrap text-emerald-500">
                     <MessageCircle className="h-3.5 w-3.5" />
                     WhatsApp
                   </span>
-                  <span className="sm:w-32 sm:shrink-0">{formatRelativeDate(t.created_at)}</span>
+                  <span className="whitespace-nowrap">{formatRelativeDate(t.created_at)}</span>
                 </div>
 
                 {/* Status */}
-                <div className="sm:w-40 sm:shrink-0">
-                  <StatusPill status={t.status} />
-                </div>
+                <StatusPill status={t.status} />
 
-                {/* Ações: CTA principal visível, secundárias num menu */}
-                <div className="flex items-center gap-2 sm:ml-auto sm:shrink-0">
+                {/* Ações: CTA principal visível, secundárias num menu. Quebra
+                    pra linha de baixo (largura cheia) se não couber junto do
+                    resto, em vez de cortar ou forçar rolagem lateral. */}
+                <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
                   <Button variant="ghost" size="sm" onClick={() => setSelectedId(t.id)}>
                     Abrir
                   </Button>
