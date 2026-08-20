@@ -37,7 +37,14 @@ import { cn } from "@/lib/utils";
 /** Chaves de localStorage — CEP de origem salvo e últimos destinos usados. */
 const SAVED_ORIGIN_CEP_KEY = "nexos:frete:cep-origem-salvo";
 const RECENT_DEST_CEPS_KEY = "nexos:frete:ceps-destino-recentes";
+const RECENT_QUOTES_KEY = "nexos:frete:recent-quotes";
 const MAX_RECENT_CEPS = 5;
+
+interface RecentQuote {
+  timestamp: number;
+  input: ShippingCalculatorInput;
+  results: ShippingOption[];
+}
 
 export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-frete")({
   component: ShippingCalculatorPage,
@@ -87,6 +94,7 @@ function ShippingCalculatorPage() {
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [destTab, setDestTab] = useState<"novo" | "recentes">("novo");
   const [recentDestCeps, setRecentDestCeps] = useState<string[]>([]);
+  const [recentQuotes, setRecentQuotes] = useState<RecentQuote[]>([]);
   const [showExtras, setShowExtras] = useState(false);
 
   // Carrega o CEP de origem salvo (se houver) e o histórico de destinos
@@ -96,8 +104,12 @@ function ShippingCalculatorPage() {
     try {
       const savedOrigin = localStorage.getItem(SAVED_ORIGIN_CEP_KEY);
       if (savedOrigin) calcForm.setValue("cep_origem", savedOrigin);
+      
       const recents = localStorage.getItem(RECENT_DEST_CEPS_KEY);
       if (recents) setRecentDestCeps(JSON.parse(recents));
+
+      const quotes = localStorage.getItem(RECENT_QUOTES_KEY);
+      if (quotes) setRecentQuotes(JSON.parse(quotes));
     } catch {
       // localStorage indisponível (modo privado, etc.) — segue sem
       // memorizar, não é crítico pro funcionamento da calculadora.
@@ -137,6 +149,35 @@ function ShippingCalculatorPage() {
       // sem problema, só não memoriza
     }
   }
+
+  function saveRecentQuote(input: ShippingCalculatorInput, options: ShippingOption[]) {
+    try {
+      const newQuote: RecentQuote = {
+        timestamp: Date.now(),
+        input,
+        results: options
+      };
+      const next = [newQuote, ...recentQuotes].slice(0, 10);
+      setRecentQuotes(next);
+      localStorage.setItem(RECENT_QUOTES_KEY, JSON.stringify(next));
+    } catch (err) {
+      console.warn("Failed to save recent quote", err);
+    }
+  }
+
+  function applyRecentQuote(quote: RecentQuote) {
+    calcForm.reset(quote.input);
+    setResults(quote.results);
+    setStep(1);
+    setDestTab("novo");
+    toast.success("Cotação anterior carregada.");
+  }
+
+  const formatCep = (value: string) => {
+    const clean = value.replace(/\D/g, "");
+    if (clean.length <= 5) return clean;
+    return `${clean.slice(0, 5)}-${clean.slice(5, 8)}`;
+  };
 
   // BUG ENCONTRADO E CORRIGIDO: o remetente de TODA etiqueta emitida
   // por essa tela estava com dados fixos e falsos no código — CNPJ
@@ -213,6 +254,7 @@ function ShippingCalculatorPage() {
       const response = await calculateShippingFn({ data: sanitizedData as any });
       setResults(response.options);
       rememberDestCep(String(data.cep_destino));
+      saveRecentQuote(sanitizedData as any, response.options);
       if (response.options.length === 0) {
         toast.info("Nenhuma opção de frete encontrada.");
       }
