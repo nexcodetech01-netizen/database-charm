@@ -834,10 +834,11 @@ function ShippingCalculatorPage() {
                 )}
               </div>
             ) : (
-              <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-sidebar-border bg-sidebar/5 p-8 text-center text-muted-foreground">
-                <Calculator className="mb-4 h-12 w-12 opacity-20" />
-                <p className="max-w-xs text-sm">
-                  Escolha as dimensões e clique em calcular.
+              <div className="flex h-[400px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-sidebar-border/40 bg-sidebar/5 p-8 text-center text-muted-foreground animate-pulse-slow">
+                <Calculator className="mb-6 h-16 w-16 opacity-10" />
+                <h4 className="text-sm font-black uppercase tracking-widest mb-2">Aguardando Cotação</h4>
+                <p className="max-w-[200px] text-xs font-medium leading-relaxed">
+                  Informe as dimensões e clique em calcular para ver as opções de frete.
                 </p>
               </div>
             )
