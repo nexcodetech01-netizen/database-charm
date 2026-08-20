@@ -151,7 +151,7 @@ export const stockAdjustSkill = defineBaseSkill({
 
     const actionText = finalDelta > 0 ? "incrementado" : "reduzido";
     return skillResult.success(
-      `Estoque ${actionText} em ${Math.abs(finalDelta)} unidade(s). Saldo final: ${mov.product?.stock ?? 'atualizado'}.`,
+      `Estoque ${actionText} em ${Math.abs(finalDelta)} unidade(s). Saldo atualizado com sucesso.`,
       mov,
     );
   },
