@@ -34,7 +34,7 @@ export function BellaAskPanel() {
   // usar o singleton padrão (que chama a função sem o hook).
   const interpretWithOpenAIFn = useServerFn(interpretWithOpenAI);
   const gateway = useMemo(
-    () => new BellaAIGateway({ preferred: new OpenAIProvider(interpretWithOpenAIFn) }),
+    () => new BellaAIGateway({ preferred: new OpenAIProvider(interpretWithOpenAIFn as any) }),
     [interpretWithOpenAIFn],
   );
 
