@@ -43,9 +43,11 @@ class BellaSkillRegistryImpl {
     // Import dinâmico para quebrar o ciclo de barrels.
     // O bootstrap de skills importa este Registry para registrar,
     // então chamamos o bootstrap aqui para disparar o processo.
-    await import("./index");
+    const { initializeSkills } = await import("./index");
+    initializeSkills();
     this.initialized = true;
   }
+
 
 
   get(id: string): BellaSkill | undefined {
