@@ -25,6 +25,10 @@ export const SUPPORTED_RUNTIME_INTENTS = [
   "product.update_stock",
   "product.list_low_stock",
   "finance.cash_balance",
+  "finance.receivable",
+  "finance.payable",
+  "sale.search",
+  "sale.best_customer",
   // Sprint 003 — Estoque
   "stock.add",
   "stock.remove",
@@ -32,6 +36,7 @@ export const SUPPORTED_RUNTIME_INTENTS = [
   "stock.history",
   "stock.low",
   "stock.balance",
+  "stock.purchase_suggestion",
 ] as const;
 export type SupportedRuntimeIntent = (typeof SUPPORTED_RUNTIME_INTENTS)[number];
 
