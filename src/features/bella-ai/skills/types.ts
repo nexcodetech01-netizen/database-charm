@@ -35,6 +35,7 @@ export interface BellaSkillMissingField {
 /** Códigos de resultado padronizados — nunca strings livres. */
 export type BellaSkillResultCode =
   | "success"
+  | "needs_confirmation"
   | "missing_fields"
   | "invalid_payload"
   | "module_unavailable"
