@@ -1,4 +1,4 @@
-import { Sparkles, CheckCircle2, Package, Search, History, Truck } from "lucide-react";
+import { Sparkles, CheckCircle2, Package, Search, History, Truck, AlertCircle, FileSearch } from "lucide-react";
 import { Section } from "@/components/design";
 
 export default function Index() {
@@ -7,68 +7,60 @@ export default function Index() {
       <Section
         title={
           <span className="flex items-center gap-2">
-            <Truck className="h-5 w-5 text-primary" /> SuperFrete UI Restructuring
+            <FileSearch className="h-5 w-5 text-primary" /> Auditoria Técnica: Bella IA Agent Runtime
           </span>
         }
       >
         <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-          <p>
-            Reestruturação completa da interface da Calculadora de Frete seguindo o design do SuperFrete no Dark Mode.
-          </p>
+          <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-lg text-amber-600 font-bold italic mb-4 text-center">
+            "Atenção: Auditoria concluída. Não foram realizadas modificações no código de negócio."
+          </div>
 
-          <div className="rounded-lg border bg-card p-4 space-y-3">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-4 w-4 text-green-500" /> Mudanças de Layout e UX
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg border bg-card p-4 space-y-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" /> Fluxo de Intenção
+              </h3>
+              <ul className="space-y-1 text-xs">
+                <li><span className="text-foreground font-medium">INTENT REAL:</span> stock.adjust</li>
+                <li><span className="text-foreground font-medium">ORIGEM:</span> OpenAI / Intent Engine</li>
+                <li><span className="text-foreground font-medium">SKILL ID SOLICITADO:</span> stock.adjust</li>
+              </ul>
+            </div>
+
+            <div className="rounded-lg border bg-card p-4 space-y-2">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Package className="h-4 w-4 text-blue-500" /> Registro de Skills
+              </h3>
+              <ul className="space-y-1 text-xs">
+                <li><span className="text-foreground font-medium">SKILLS REGISTRADAS:</span> stock.add, stock.remove, stock.adjust, stock.history, stock.low, stock.balance, stock.purchase_suggestion</li>
+                <li><span className="text-foreground font-medium">LOCAL:</span> inventory/v2/skills/index.ts</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-3">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-4 w-4" /> Diagnóstico: Causa Raiz
             </h3>
-            
-            <ul className="space-y-2">
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">1. Origem:</span>
-                Botões "Salvar" e "Limpar" bem definidos com texto e ícones à direita do CEP.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">2. Inputs Material:</span>
-                Labels em caixa alta e borda inferior (border-b) para um visual limpo e profissional.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">3. Cards Contrastantes:</span>
-                Containers <code>bg-card</code> com bordas discretas e cantos arredondados (rounded-xl).
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">4. Navegação de Destino:</span>
-                Abas "Novo" e "Recentes" com indicador visual verde e link "PESQUISAR CEP" em destaque.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">5. Call to Action:</span>
-                Botão "CALCULAR FRETE COM DESCONTO" em largura total (w-full) em verde vibrante.
-              </li>
-              <li className="flex gap-2">
-                <span className="font-medium text-foreground">6. Resultados:</span>
-                Painel lateral centralizado para exibição das cotações no mesmo container escuro.
-              </li>
-            </ul>
+            <p className="text-xs leading-normal text-foreground/80">
+              Identificada falha na inicialização do bootstrap de skills em <code>src/features/bella-ai/skills/index.ts</code>. 
+              Devido a uma dependência circular entre o Agente e o módulo de Inventário, o bloco de registro de side-effects não está sendo executado completamente antes da primeira solicitação ao <code>BellaSkillRegistry</code>.
+            </p>
+            <div className="text-[10px] font-mono bg-background/50 p-2 rounded border">
+              ARQUIVO EXATO: src/features/bella-ai/skills/index.ts<br/>
+              CORREÇÃO MÍNIMA: Ajustar o import side-effect no entry point do Agente.
+            </div>
           </div>
 
-          <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-lg text-emerald-500 italic">
-            "A interface agora segue rigorosamente a hierarquia visual do SuperFrete, otimizada para o tema escuro do NexOS."
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Implementar validação e máscaras para peso, largura e comprimento, com mensagens de erro claras quando os valores estiverem inválidos.
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
-              <div className="flex items-center gap-2 font-medium text-foreground text-xs">
-                Ajustar o layout da Calculadora de Frete para funcionar perfeitamente em telas menores, garantindo que o painel de resultados e o formulário fiquem bem distribuídos.
-              </div>
-            </div>
+          <div className="p-4 bg-muted/30 border rounded-lg">
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-2">Próximo Passo Recomendado</h4>
+            <p className="text-xs">
+              Mover a lógica de registro estático para um método <code>bootstrap()</code> explícito ou garantir que o import de <code>@/features/bella-ai/skills</code> ocorra no topo do ciclo de vida da aplicação para garantir a população do Map de Skills.
+            </p>
           </div>
         </div>
       </Section>
     </div>
   );
 }
-
-
