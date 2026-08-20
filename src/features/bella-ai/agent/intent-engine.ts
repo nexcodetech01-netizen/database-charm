@@ -236,16 +236,14 @@ const RULES: Rule[] = [
   {
     intent: "stock.adjust",
     patterns: [
-      /\b(ajust(e|ar|a)|corrigir|acertar|alter(e|ar|a)|defin(a|ir)|mud(e|ar)|coloc(ar|que)|deix(ar|e)) (estoque|saldo) (do|de|em) /,
-      /\b(ajust(e|ar|a)|alter(e|ar|a)|defin(a|ir)|mud(e|ar)|coloc(ar|que)|deix(ar|e)) (para|em|a) (\d+([.,]\d+)?) (unidades?|un|pcs)? /,
+      /\b(?:ajust(?:e|ar|a)|corrigir|acertar|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b/,
+      /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
+      /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a))\b\s+(-?\d+(?:[.,]\d+)?)\s+(?:unidades?|un|pcs)\b/,
     ],
     extract(text) {
-      // Caso 1: "adicione 10 unidades ao produto X" (mantido do stock.add original se o LLM falhar, 
-      // mas aqui focamos no stock.adjust conforme o pedido)
-
-      // Caso 2: "altere o estoque do produto X para 10"
+      // Caso 1: "altere o estoque do produto X para 10"
       const absoluteMatch = text.match(
-        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:do|de|em) (?:produto )?(.+?) (?:para|em|a) (\d+(?:[.,]\d+)?)/
+        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b.*?\b(?:do|de|em)\b\s+(?:produto\s+)?(.+?)\s+\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
       );
       if (absoluteMatch) {
         const query = absoluteMatch[1].trim();
@@ -253,9 +251,9 @@ const RULES: Rule[] = [
         return Number.isFinite(absolute) && query ? { absolute, query } : {};
       }
 
-      // Caso 3: "ajuste 10 unidades do produto X" (delta)
+      // Caso 2: "ajuste 10 unidades do produto X" (delta)
       const deltaMatch = text.match(
-        /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)) (-?\d+(?:[.,]\d+)?) (?:unidades?|un|pcs) (?:do|de|em) (?:produto )?(.+)$/
+        /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a))\b\s+(-?\d+(?:[.,]\d+)?)\s+(?:unidades?|un|pcs)\b.*?\b(?:do|de|em)\b\s+(?:produto\s+)?(.+)$/,
       );
       if (deltaMatch) {
         const delta = Number(deltaMatch[1].replace(",", "."));
@@ -268,6 +266,9 @@ const RULES: Rule[] = [
     confidence: 0.85,
     destructive: true,
   },
+
+
+
   // stock.history: "mostre o histórico do produto Essager"
   {
     intent: "stock.history",
@@ -322,6 +323,7 @@ export function detectRuntimeIntent(raw: string): AgentIntent | null {
 export function detectDeterministicIntent(raw: string): AgentIntent | null {
   const text = norm(raw ?? "");
   if (!text) return null;
+
 
   for (const rule of RULES) {
     for (const pattern of rule.patterns) {

@@ -114,17 +114,24 @@ export async function handleWithAgentRuntime(
     });
 
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
+      
+      const detIntent = detectDeterministicIntent(input.message);
+      
       intent = {
         id: aiResult.intent,
         confidence: aiResult.confidence,
         entities: aiResult.parameters,
         raw: input.message,
-        confirmationRequired: false, // Será validado pelo Planner/PermissionEngine
+        confirmationRequired: false,
         source: "llm"
       };
     } else {
-      // Fallback para determinístico
       intent = detectDeterministicIntent(input.message);
+    }
+    
+    
+    if (intent && !SUPPORTED_RUNTIME_INTENTS.includes(intent.id as any)) {
+    } else if (!intent) {
     }
   } catch (err) {
     console.warn("[agent.runtime] LLM interpretation failed, falling back to deterministic", err);
