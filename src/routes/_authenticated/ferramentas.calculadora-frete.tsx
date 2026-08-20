@@ -208,6 +208,7 @@ function ShippingCalculatorPage() {
 
   const calcForm = useForm<any>({
     resolver: zodResolver(ShippingCalculatorSchema),
+    mode: "onChange",
     defaultValues: {
       format: "3",
       cep_origem: "01001-000",
