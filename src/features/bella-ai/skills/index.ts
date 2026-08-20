@@ -63,6 +63,7 @@ const fiscalV2Adapted = fiscalV2BaseSkills.map((s) =>
  * Chamado pelo registry.ensureInitialized() para garantir ordem de carga.
  */
 export function initializeSkills(): void {
+  console.log("[SkillsIndex] Inicializando skills...");
   BellaSkillRegistry.registerAll([
     ...financeSkills,
     ...customerSkills,
