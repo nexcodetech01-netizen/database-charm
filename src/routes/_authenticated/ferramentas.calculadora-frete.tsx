@@ -494,19 +494,22 @@ function ShippingCalculatorPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5 space-y-6">
           {step === 1 ? (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm overflow-hidden p-6 space-y-8">
-              <Form {...calcForm}>
-                <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-8">
-                  {/* INFORME A ORIGEM */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      INFORME A ORIGEM
-                    </p>
-                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 p-5 space-y-4">
-                      <div className="flex items-end gap-3">
+            <div className="space-y-6">
+              <Card className="border-border bg-card shadow-sm overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Origem
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Form {...calcForm}>
+                    <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-end gap-3">
                         <FormField
                           control={calcForm.control}
                           name="cep_origem"
