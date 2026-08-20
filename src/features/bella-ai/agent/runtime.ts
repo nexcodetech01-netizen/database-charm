@@ -113,13 +113,9 @@ export async function handleWithAgentRuntime(
       }
     });
 
-    console.log(`[BELLA-AUDIT] message: ${input.message}`);
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
-      console.log(`[BELLA-AUDIT] aiIntent: ${aiResult.intent}`);
-      console.log(`[BELLA-AUDIT] aiConfidence: ${aiResult.confidence}`);
       
       const detIntent = detectDeterministicIntent(input.message);
-      console.log(`[BELLA-AUDIT] deterministicIntent: ${detIntent?.id || "null"}`);
       
       intent = {
         id: aiResult.intent,
@@ -130,25 +126,16 @@ export async function handleWithAgentRuntime(
         source: "llm"
       };
     } else {
-      console.log(`[BELLA-AUDIT] aiIntent: unknown/failed`);
       intent = detectDeterministicIntent(input.message);
-      console.log(`[BELLA-AUDIT] deterministicIntent: ${intent?.id || "null"}`);
     }
     
-    console.log(`[BELLA-AUDIT] finalIntent: ${intent?.id || "null"}`);
     
     if (intent && !SUPPORTED_RUNTIME_INTENTS.includes(intent.id as any)) {
-      console.log(`[BELLA-AUDIT] fallbackReason: intent_not_supported (${intent.id})`);
     } else if (!intent) {
-      console.log(`[BELLA-AUDIT] fallbackReason: no_intent_detected`);
     }
   } catch (err) {
     console.warn("[agent.runtime] LLM interpretation failed, falling back to deterministic", err);
     intent = detectDeterministicIntent(input.message);
-    console.log(`[BELLA-AUDIT] message: ${input.message}`);
-    console.log(`[BELLA-AUDIT] aiIntent: error`);
-    console.log(`[BELLA-AUDIT] deterministicIntent: ${intent?.id || "null"}`);
-    console.log(`[BELLA-AUDIT] finalIntent: ${intent?.id || "null"}`);
   }
 
   if (
