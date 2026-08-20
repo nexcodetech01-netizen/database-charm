@@ -7,58 +7,141 @@ export default function Index() {
       <Section
         title={
           <span className="flex items-center gap-2">
-            <FileSearch className="h-5 w-5 text-primary" /> Auditoria Técnica: Bella IA Agent Runtime
+            <Truck className="h-5 w-5 text-primary" /> Redesenho da Calculadora de Frete
           </span>
         }
       >
-        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-          <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-lg text-amber-600 font-bold italic mb-4 text-center">
-            "Atenção: Auditoria concluída. Não foram realizadas modificações no código de negócio."
-          </div>
+        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+          Redesenhe SOMENTE a interface da tela Ferramentas &gt; Calculadora de Frete / Frete e Etiquetas.
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border bg-card p-4 space-y-2">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" /> Fluxo de Intenção
-              </h3>
-              <ul className="space-y-1 text-xs">
-                <li><span className="text-foreground font-medium">INTENT REAL:</span> stock.adjust</li>
-                <li><span className="text-foreground font-medium">ORIGEM:</span> OpenAI / Intent Engine</li>
-                <li><span className="text-foreground font-medium">SKILL ID SOLICITADO:</span> stock.adjust</li>
-              </ul>
-            </div>
+          IMPORTANTE:
+          - NÃO altere a lógica de cálculo.
+          - NÃO altere a integração SuperFrete.
+          - NÃO altere APIs/server functions.
+          - NÃO altere autenticação, Supabase, banco ou RLS.
+          - NÃO altere payloads nem regras de negócio.
+          - NÃO altere geração de etiquetas.
+          - NÃO altere outros módulos do NexOS.
+          - Se encontrar erro funcional da SuperFrete, apenas reporte; não corrija nesta tarefa.
 
-            <div className="rounded-lg border bg-card p-4 space-y-2">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <Package className="h-4 w-4 text-blue-500" /> Registro de Skills
-              </h3>
-              <ul className="space-y-1 text-xs">
-                <li><span className="text-foreground font-medium">SKILLS REGISTRADAS:</span> stock.add, stock.remove, stock.adjust, stock.history, stock.low, stock.balance, stock.purchase_suggestion</li>
-                <li><span className="text-foreground font-medium">LOCAL:</span> inventory/v2/skills/index.ts</li>
-              </ul>
-            </div>
-          </div>
+          Quero uma tela com aparência PREMIUM e consistente com o NexOS ERP.
 
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 space-y-3">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-4 w-4" /> Diagnóstico: Causa Raiz
-            </h3>
-            <p className="text-xs leading-normal text-foreground/80">
-              Identificada falha na inicialização do bootstrap de skills em <code>src/features/bella-ai/skills/index.ts</code>. 
-              Devido a uma dependência circular entre o Agente e o módulo de Inventário, o bloco de registro de side-effects não está sendo executado completamente antes da primeira solicitação ao <code>BellaSkillRegistry</code>.
-            </p>
-            <div className="text-[10px] font-mono bg-background/50 p-2 rounded border">
-              ARQUIVO EXATO: src/features/bella-ai/skills/index.ts<br/>
-              CORREÇÃO MÍNIMA: Ajustar o import side-effect no entry point do Agente.
-            </div>
-          </div>
+          PROBLEMAS DA TELA ATUAL:
+          - muito espaço vazio à direita;
+          - hierarquia visual fraca;
+          - cards demais;
+          - formulário parece isolado;
+          - alerta de erro vermelho ocupa espaço demais;
+          - inputs inconsistentes;
+          - botão principal pesado;
+          - SuperFrete parece ser o produto, quando é apenas o provedor.
 
-          <div className="p-4 bg-muted/30 border rounded-lg">
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-2">Próximo Passo Recomendado</h4>
-            <p className="text-xs">
-              Mover a lógica de registro estático para um método <code>bootstrap()</code> explícito ou garantir que o import de <code>@/features/bella-ai/skills</code> ocorra no topo do ciclo de vida da aplicação para garantir a população do Map de Skills.
-            </p>
-          </div>
+          NOVO LAYOUT:
+
+          HEADER
+          - Breadcrumb discreto: Ferramentas &gt; Calculadora de Frete
+          - Título: "Frete e Etiquetas"
+          - Subtítulo: "Calcule fretes e gere etiquetas para seus pedidos."
+          - Pequeno badge indicando "SuperFrete" como integração.
+
+          ÁREA PRINCIPAL
+          Criar layout desktop em duas colunas equilibradas.
+
+          COLUNA ESQUERDA — DADOS DO ENVIO
+
+          Card "Origem"
+          - CEP de origem
+          - manter os botões e funcionalidades atuais;
+          - Formato/embalagem;
+          - Peso;
+          - Largura;
+          - Altura;
+          - manter seguro/aviso/mão própria existente.
+
+          Card "Destino"
+          - manter abas Novo / Recentes;
+          - CEP de destino;
+          - manter pesquisa de CEP e demais funcionalidades atuais.
+
+          Botão principal:
+          "Calcular frete"
+
+          Deve ficar elegante, proporcional e integrado ao design do NexOS.
+
+          COLUNA DIREITA — COTAÇÃO
+
+          Antes de calcular:
+          mostrar estado vazio elegante:
+
+          ícone de entrega
+          "Cotação de frete"
+          "Preencha os dados do envio para consultar as opções disponíveis."
+
+          Depois do cálculo:
+          preservar TODOS os resultados atuais, mas organizar de maneira profissional.
+
+          Cada opção deve destacar:
+          - transportadora/serviço;
+          - prazo;
+          - preço;
+          - ações existentes.
+
+          Não remover nenhuma funcionalidade existente.
+
+          ERRO
+
+          O erro atual gigante:
+
+          "ERRO NO CÁLCULO
+          Falha ao calcular frete na SuperFrete..."
+
+          deve virar um alerta compacto dentro do painel de cotação.
+
+          Exemplo:
+
+          ⚠ Não foi possível calcular o frete
+
+          Verifique os CEPs e as dimensões informadas e tente novamente.
+
+          [Tentar novamente]
+
+          Manter os logs técnicos existentes no console. Não modificar o tratamento técnico.
+
+          ESTILO
+
+          - Dark theme atual do NexOS.
+          - Visual premium de ERP.
+          - Bordas sutis.
+          - Radius consistente.
+          - Espaçamento profissional.
+          - Tipografia hierárquica.
+          - Inputs uniformes.
+          - Estados hover/focus/disabled consistentes.
+          - Nada excessivamente colorido.
+          - Usar as cores/tokens existentes do NexOS.
+          - Não criar uma identidade visual diferente do restante do sistema.
+
+          RESPONSIVIDADE
+
+          Desktop:
+          duas colunas equilibradas.
+
+          Notebook:
+          reduzir espaçamentos sem criar overflow.
+
+          Mobile:
+          empilhar formulário e cotação.
+
+          IMPORTANTE:
+          Antes de alterar, localize os componentes atuais da Calculadora de Frete e reutilize toda a lógica existente.
+
+          Faça apenas alterações de UI/estilo.
+
+          Ao terminar:
+          1. rode typecheck;
+          2. rode build;
+          3. confirme quais arquivos de UI foram alterados;
+          4. confirme que nenhuma lógica da SuperFrete foi modificada.
         </div>
       </Section>
     </div>
