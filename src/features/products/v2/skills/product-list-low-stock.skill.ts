@@ -29,10 +29,17 @@ export const productListLowStockSkill = defineBaseSkill({
     }
     const preview = rows
       .slice(0, 5)
-      .map((r) => `• ${r.name} — ${r.stock ?? 0}/${r.min_stock ?? 0}`)
+      .map((r) => `• ${r.name} — ${r.stock ?? 0} un (mín. ${r.min_stock ?? 0})`)
       .join("\n");
+    
     return skillResult.success(
-      `${rows.length} produto(s) com estoque abaixo do mínimo:\n${preview}`,
+      [
+        `📦 Estoque Baixo`,
+        `Encontrei ${rows.length} produtos críticos.`,
+        preview,
+        rows.length > 5 ? `... e outros ${rows.length - 5} itens.` : "",
+        `💡 Sugestão: Reabastecer os itens acima para evitar ruptura.`,
+      ].filter(Boolean).join("\n"),
       { rows },
       [{ id: "open_inventory", title: "Abrir Estoque", actionLabel: "Ver" }],
     );

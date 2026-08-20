@@ -105,7 +105,11 @@ export async function handleWithAgentRuntime(
       companyName: input.ctx.companyName,
       context: { 
         userId: input.ctx.userId,
-        companyId: input.ctx.companyId 
+        companyId: input.ctx.companyId,
+        conversationId: input.ctx.conversationId,
+        // Injetar memória de curto prazo no contexto para continuidade (Fase 2)
+        lastIntent: (intent as any)?.id,
+        lastParameters: (intent as any)?.entities,
       }
     });
 

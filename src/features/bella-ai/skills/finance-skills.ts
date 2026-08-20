@@ -225,9 +225,15 @@ export const getCashBalanceSkill: BellaSkill = {
   canExecute: (ctx) => Boolean(ctx.companyId),
   async execute(_payload, ctx) {
     const snap = await financeQueryService.snapshot(ctx.companyId);
-    const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    const brl = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+    
     return skillResult.success(
-      `Saldo atual: ${brl.format(snap.overview.currentBalance)}. Receber: ${brl.format(snap.overview.receivable)} · Pagar: ${brl.format(snap.overview.payable)}.`,
+      [
+        `💰 Caixa`,
+        `• Saldo: ${brl(snap.overview.currentBalance)}`,
+        `• A receber: ${brl(snap.overview.receivable)}`,
+        `• A pagar: ${brl(snap.overview.payable)}`,
+      ].join("\n"),
       snap,
       [{ id: "open_finance", title: "Abrir Financeiro", actionLabel: "Ver" }],
     );

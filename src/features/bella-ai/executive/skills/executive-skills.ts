@@ -56,12 +56,12 @@ export const companyStatusSkill = skill(
   (r) => {
     const { dre, cash } = r.snapshot;
     return [
-      `Receita do período: ${BRL.format(dre.grossRevenue)}`,
-      `Lucro líquido: ${BRL.format(dre.netProfit)} (margem ${pct(dre.netMargin)})`,
-      `EBITDA: ${BRL.format(dre.ebitda)}`,
-      `Caixa disponível: ${BRL.format(cash.available)}`,
-      `A receber: ${BRL.format(cash.receivable)} | A pagar: ${BRL.format(cash.payable)}`,
-      `Score executivo: ${r.risk.overallScore}/100 (${r.risk.severity})`,
+      `💰 Resumo Financeiro`,
+      `• Receita Líquida: ${BRL.format(dre.netRevenue)}`,
+      `• Número de Vendas: ${r.snapshot.rankings.customers.reduce((acc, c) => acc + c.salesCount, 0)}`,
+      `• Ticket Médio: ${BRL.format(dre.grossRevenue / Math.max(r.snapshot.rankings.customers.reduce((acc, c) => acc + c.salesCount, 0), 1))}`,
+      `• Lucro Líquido: ${BRL.format(dre.netProfit)} (margem ${pct(dre.netMargin)})`,
+      `• Saldo em Caixa: ${BRL.format(cash.available)}`,
     ];
   },
 );
@@ -221,14 +221,13 @@ export const customerAttentionSkill = skill(
     const lines: string[] = [];
     if (rank.customers.topRevenue[0]) {
       const c = rank.customers.topRevenue[0];
-      lines.push(`Maior faturamento: ${c.name} (${BRL.format(c.revenue)} em ${c.salesCount} venda(s)).`);
-    }
-    if (rank.customers.topRecurring[0]) {
-      lines.push(`Mais recorrente: ${rank.customers.topRecurring[0].name}.`);
-    }
-    if (rank.customers.topOverdue[0]) {
-      const c = rank.customers.topOverdue[0];
-      lines.push(`Maior inadimplência: ${c.name} (${BRL.format(c.overdueAmount)} vencidos).`);
+      lines.push(
+        `👤 Cliente que mais compra`,
+        `${c.name}`,
+        `• ${c.salesCount} compras`,
+        `• ${BRL.format(c.revenue)} em faturamento`
+      );
+      lines.push("", "Quer que eu mostre o histórico de compras?");
     }
     return lines.length ? lines : ["Ainda não há histórico suficiente de clientes no período."];
   },

@@ -192,7 +192,16 @@ export const stockLowSkill = defineBaseSkill({
       .slice(0, 5)
       .map((r) => `• ${r.name} — saldo ${r.stock} / mín. ${r.min_stock}`)
       .join("\n");
-    return skillResult.success(`${rows.length} produto(s) abaixo do mínimo:\n${preview}`, { rows });
+
+    return skillResult.success(
+      [
+        `📦 Itens Críticos`,
+        `Total de ${rows.length} produtos abaixo do mínimo.`,
+        preview,
+        `💡 Sugestão: Planejar compra para repor o estoque desses itens.`
+      ].join("\n"),
+      { rows }
+    );
   },
 });
 
