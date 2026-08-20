@@ -48,17 +48,9 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
     };
   }
 
-  // 2) Confirmação (antes de qualquer side-effect)
-  if (plan.requiresConfirmation && !confirmed) {
-    return {
-      code: "needs_confirmation",
-      message:
-        plan.confirmationSummary ?? "Essa operação precisa de confirmação. Podemos prosseguir?",
-      intent,
-      plan,
-      steps: [],
-    };
-  }
+  // 2) Planejamento ok. A confirmação agora é tratada dentro do loop de execução 
+  // para permitir que as Skills gerem resumos ricos com dados reais.
+
 
   // 3) Permissão + execução passo-a-passo
   const steps: AgentStepResult[] = [];
