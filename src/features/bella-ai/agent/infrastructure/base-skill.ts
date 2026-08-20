@@ -31,7 +31,6 @@ export interface BaseSkillSpec<S extends ZodObject<ZodRawShape>, TData> {
   confirmationSummary?(input: ZInfer<S>): string;
   prepareConfirmation?(input: ZInfer<S>, ctx: ExecutionContext): Promise<Record<string, unknown>>;
 }
-}
 
 export interface BaseSkillRunInput<S extends ZodObject<ZodRawShape>> {
   payload: Record<string, unknown>;
