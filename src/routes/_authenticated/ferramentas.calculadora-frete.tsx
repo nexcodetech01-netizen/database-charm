@@ -1179,6 +1179,6 @@ function ShippingCalculatorPage() {
           )}
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
