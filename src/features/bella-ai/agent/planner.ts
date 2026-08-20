@@ -51,7 +51,11 @@ export function planFromIntent(intent: AgentIntent): AgentPlan | null {
     order: 1,
     skillId,
     description: `Executar ${skillId}`,
-    payload: { ...intent.entities },
+    payload: { 
+      ...intent.entities,
+      // Passamos metadados da intenção para a skill se necessário
+      _intentSource: intent.source
+    },
     critical: true,
   };
 
