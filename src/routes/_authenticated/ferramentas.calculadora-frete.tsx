@@ -581,7 +581,7 @@ function ShippingCalculatorPage() {
                                   placeholder="0,3"
                                   {...field}
                                   value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
                                   className="h-10 bg-background/60 border-sidebar-border/40"
                                 />
                               </FormControl>
@@ -593,8 +593,9 @@ function ShippingCalculatorPage() {
 
                       <div className={cn(
                         "grid gap-4",
-                        calcForm.watch("format") === "3" ? "grid-cols-2" : "grid-cols-3"
+                        calcForm.watch("format") === "3" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"
                       )}>
+
                         <FormField
                           control={calcForm.control}
                           name="largura_cm"
