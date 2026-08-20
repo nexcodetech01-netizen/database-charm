@@ -4,6 +4,7 @@
  */
 import { handleWithAgentRuntime } from "./runtime";
 import type { AgentContext } from "./types";
+import { detectDeterministicIntent } from "./intent-engine";
 
 export async function runServerAudit() {
   const ctx: AgentContext = {
@@ -16,13 +17,17 @@ export async function runServerAudit() {
   const messages = [
     "Altere o estoque da Carteira Masculina Texturizada - Arthur Preto para 10.",
     "Defina o estoque da Carteira Masculina Texturizada - Arthur Preto para 10.",
-    "Ajuste o estoque da Carteira Masculina Texturizada - Arthur Preto."
+    "Ajuste o estoque da Carteira Masculina Texturizada - Arthur Preto.",
+    "ajuste 10 unidades do produto X"
   ];
 
   console.log("=== BELLA IA SERVER AUDIT START ===");
   for (const message of messages) {
     try {
-      // Nota: handleWithAgentRuntime loga internamente [BELLA-AUDIT]
+      console.log(`[AUDIT-TEST] Raw message: "${message}"`);
+      const det = detectDeterministicIntent(message);
+      console.log(`[AUDIT-DET] Result: ${JSON.stringify(det)}`);
+      
       await handleWithAgentRuntime({ message, ctx });
     } catch (err) {
       console.error(`[AUDIT-ERROR] ${message}:`, err);
@@ -30,3 +35,4 @@ export async function runServerAudit() {
   }
   console.log("=== BELLA IA SERVER AUDIT END ===");
 }
+
