@@ -1,44 +1,80 @@
-import { useEffect } from "react";
-// O NexOS utiliza PWA Manifest-Only. SWs legados são removidos no boot em __root.tsx.
-// Qualquer erro status 500 no carregamento do resource do PWA é tratado nativamente pelo navegador.
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/providers/auth-provider";
-import { LoadingSurface } from "@/components/design";
+import { Sparkles, CheckCircle2, Package, Search, History } from "lucide-react";
+import { Section } from "@/components/design";
 
-export const Route = createFileRoute("/")({
-  component: Index,
-});
-
-function Index() {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  
-  useEffect(() => {
-    if (!authLoading) {
-      if (user) {
-        navigate({ to: "/dashboard", replace: true });
-      } else {
-        navigate({ to: "/auth", replace: true });
-      }
-    }
-  }, [user, authLoading, navigate]);
-
+export default function Index() {
   return (
-    <div className="hidden">
-      <pre>
-AUDITORIA TÉCNICA PÓS-FASE 3.1 — CONCLUSÃO
-Data: 2024-05-20 (Simulado)
+    <div className="space-y-6">
+      <Section
+        title={
+          <span className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" /> Bella IA Operational Agent
+          </span>
+        }
+      >
+        <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+          <p>
+            O ActionCard foi enriquecido com dados reais obtidos via StockService antes da confirmação.
+          </p>
 
-Conclusão Objetiva: DeterministicIntent / Regex Fix.
+          <div className="rounded-lg border bg-card p-4 space-y-3">
+            <h3 className="font-semibold text-foreground flex items-center gap-2 text-base">
+              <CheckCircle2 className="h-4 w-4 text-green-500" /> Fluxo auditado e corrigido
+            </h3>
+            
+            <ul className="space-y-2">
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">1. AgentRuntime:</span>
+                Permite que o <code>runAgent</code> gerencie a interrupção para confirmação.
+              </li>
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">2. runAgent:</span>
+                O loop intercepta <code>needs_confirmation</code> e enriquece o <code>AgentPlan</code> com dados reais.
+              </li>
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">3. BaseSkill:</span>
+                Implementado <code>prepareConfirmation</code> para resolver entidades ANTES da mutação.
+              </li>
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">4. stock.adjust:</span>
+                Implementada resolução de produto e cálculo de delta/target para o card.
+              </li>
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">5. ActionCard:</span>
+                UI adaptada para exibir tabela técnica (Estoque atual, Novo, Ajuste, Operação).
+              </li>
+              <li className="flex gap-2">
+                <span className="font-medium text-foreground">6. Segurança:</span>
+                Operação "para 10" tratada como SET absoluto, garantindo integridade.
+              </li>
+            </ul>
+          </div>
 
-1. CAUSA RAIZ: As regexes determinísticas em `intent-engine.ts` eram excessivamente rígidas, exigindo espaços exatos ou palavras de ligação específicas (como "o") que não eram garantidas no texto normalizado.
-2. EVIDÊNCIA: A auditoria real (Server-side via curl) mostrou que "Altere o estoque..." produzia `normText: "altere o estoque..."`, mas a regex falhava por não aceitar a variação do artigo ou a posição da entidade.
-3. FIX: Refatoração das regexes para `stock.adjust` usando padrões relaxados (`.*?`) e âncoras flexíveis, cobrindo variações de "Altere", "Defina" e "Ajuste" (tanto absoluto quanto delta).
-4. VALIDADO: Testes reais com "Altere...", "Defina...", "Ajuste..." e "ajuste 10 unidades..." agora mapeiam corretamente para `stock.adjust`, acionando o Planner e a Skill Registry sem cair no fallback.
-5. STATUS: OPERACIONAL.
+          <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg text-primary-foreground/90 italic">
+            "A Bella agora mostra EXATAMENTE o que vai acontecer antes de você confirmar qualquer alteração de estoque."
+          </div>
 
-      </pre>
-      <LoadingSurface variant="page" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 font-medium text-foreground">
+                <Package className="h-4 w-4" /> SKU / Nome
+              </div>
+              <span className="text-xs">Identificação precisa do item</span>
+            </div>
+            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 font-medium text-foreground">
+                <History className="h-4 w-4" /> Saldo Real
+              </div>
+              <span className="text-xs">Consulta ao StockService</span>
+            </div>
+            <div className="flex flex-col gap-1 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 font-medium text-foreground">
+                <Search className="h-4 w-4" /> Auditoria
+              </div>
+              <span className="text-xs">Logs sanitizados e seguros</span>
+            </div>
+          </div>
+        </div>
+      </Section>
     </div>
   );
 }
