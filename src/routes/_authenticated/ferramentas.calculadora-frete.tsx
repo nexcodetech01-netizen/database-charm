@@ -757,10 +757,12 @@ function ShippingCalculatorPage() {
                                           <span className="font-bold text-[10px] text-primary">{quote.input.cep_destino}</span>
                                           <span className="text-[9px] text-muted-foreground">{new Date(quote.timestamp).toLocaleDateString()}</span>
                                         </div>
-                                        <div className="flex gap-2 text-[9px] text-muted-foreground font-medium">
+                                        <div className="flex flex-wrap gap-2 text-[9px] text-muted-foreground font-medium">
                                           <span>{quote.input.peso_kg}kg</span>
                                           <span>•</span>
-                                          <span>{quote.results.length} opções</span>
+                                          <span>{quote.input.largura_cm}x{quote.input.altura_cm}x{quote.input.comprimento_cm}cm</span>
+                                          <span>•</span>
+                                          <span className="text-emerald-500">{quote.results.length} opções</span>
                                         </div>
                                       </button>
                                     ))}
