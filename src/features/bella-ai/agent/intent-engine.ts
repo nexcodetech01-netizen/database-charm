@@ -330,7 +330,9 @@ export function detectRuntimeIntent(raw: string): AgentIntent | null {
 
 export function detectDeterministicIntent(raw: string): AgentIntent | null {
   const text = norm(raw ?? "");
+  console.log(`[BELLA-AUDIT] normText: "${text}"`);
   if (!text) return null;
+
 
   for (const rule of RULES) {
     for (const pattern of rule.patterns) {
