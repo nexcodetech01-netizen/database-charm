@@ -15,6 +15,7 @@ import { isBellaAgentEnabled } from "./config";
 import { detectDeterministicIntent, SUPPORTED_RUNTIME_INTENTS } from "./intent-engine";
 import { logAgentExecution } from "./execution-log";
 import { runAgent } from "./agent";
+import { BellaSkillRegistry } from "../skills/registry";
 import { bellaAIGateway, BellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import type { AgentContext, AgentIntent, AgentResponse } from "./types";
 import type { AIResult } from "../ai/gateway/types";
@@ -73,6 +74,10 @@ export async function handleWithAgentRuntime(
   // para o detalhe completo do bug que isso corrige.
   const gateway = input.gateway ?? bellaAIGateway;
   const startedAt = new Date();
+
+  // Garante inicialização das Skills antes de processar
+  await BellaSkillRegistry.ensureInitialized();
+
 
   // Fase 1 — feature flag off → nada a fazer.
   if (!isBellaAgentEnabled()) {

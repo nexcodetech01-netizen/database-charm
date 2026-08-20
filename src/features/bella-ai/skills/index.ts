@@ -58,24 +58,32 @@ const fiscalV2Adapted = fiscalV2BaseSkills.map((s) =>
   adaptBaseSkillToBella(s as any),
 );
 
-BellaSkillRegistry.registerAll([
-  ...financeSkills,
-  ...customerSkills,
-  ...productSkills,
-  ...agendaSkills,
-  ...serviceOrderSkills,
-  ...quoteSkills,
-  ...accountingSkills,
-  ...taxSkills,
-  ...executiveSkills,
-]);
+/**
+ * Inicializa e registra todas as skills no Registry.
+ * Chamado pelo registry.ensureInitialized() para garantir ordem de carga.
+ */
+export function initializeSkills(): void {
+  
+  BellaSkillRegistry.registerAll([
+    ...financeSkills,
+    ...customerSkills,
+    ...productSkills,
+    ...agendaSkills,
+    ...serviceOrderSkills,
+    ...quoteSkills,
+    ...accountingSkills,
+    ...taxSkills,
+    ...executiveSkills,
+  ]);
 
-// Registra as v2 por último para sobrescrever ids repetidos.
-for (const s of productV2Adapted) BellaSkillRegistry.register(s);
-for (const s of stockV2Adapted) BellaSkillRegistry.register(s);
-for (const s of salesV2Adapted) BellaSkillRegistry.register(s);
-for (const s of financeV2Adapted) BellaSkillRegistry.register(s);
-for (const s of fiscalV2Adapted) BellaSkillRegistry.register(s);
+  // Registra as v2 por último para sobrescrever ids repetidos.
+  for (const s of productV2Adapted) BellaSkillRegistry.register(s);
+  for (const s of stockV2Adapted) BellaSkillRegistry.register(s);
+  for (const s of salesV2Adapted) BellaSkillRegistry.register(s);
+  for (const s of financeV2Adapted) BellaSkillRegistry.register(s);
+  for (const s of fiscalV2Adapted) BellaSkillRegistry.register(s);
+}
+
 
 export {
   financeSkills,

@@ -17,8 +17,13 @@ import type { BellaModuleKey } from "../providers/modules/base";
 
 class BellaSkillRegistryImpl {
   private skills = new Map<string, BellaSkill>();
+  private initialized = false;
 
   register<TPayload, TData>(skill: BellaSkill<TPayload, TData>): void {
+    
+    // Registro idempotente: evita duplicados no Singleton
+    if (this.skills.has(skill.id)) return;
+    
     // Cast necessário: o Map guarda o tipo genérico apagado; a
     // Skill valida o payload no seu próprio execute().
     this.skills.set(skill.id, skill as unknown as BellaSkill);
@@ -27,6 +32,24 @@ class BellaSkillRegistryImpl {
   registerAll(skills: BellaSkill<unknown, unknown>[]): void {
     for (const s of skills) this.register(s as unknown as BellaSkill);
   }
+
+  /**
+   * Inicializa o Registry com todas as skills do sistema.
+   * Chamado explicitamente no bootstrap do Agente para evitar 
+   * falhas por dependência circular em imports implícitos.
+   */
+  async ensureInitialized(): Promise<void> {
+    if (this.initialized) return;
+    
+    // Import dinâmico para quebrar o ciclo de barrels.
+    // O bootstrap de skills importa este Registry para registrar,
+    // então chamamos o bootstrap aqui para disparar o processo.
+    const { initializeSkills } = await import("./index");
+    initializeSkills();
+    this.initialized = true;
+  }
+
+
 
   get(id: string): BellaSkill | undefined {
     return this.skills.get(id);
