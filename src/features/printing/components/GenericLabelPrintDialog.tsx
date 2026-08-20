@@ -25,7 +25,10 @@ import { detectZPLDimensions, parseZPLBlocks } from "../lib/zpl-parser";
 
 interface DocumentBlock {
   id: string;
-  zpl: string;
+  zpl?: string;
+  /** Base64 (data URL) do PDF, quando o arquivo importado é um PDF em vez de TXT/ZPL. */
+  pdf?: string;
+  fileName?: string;
   type: "label" | "danfe";
   title: string;
   stats?: {
@@ -70,7 +73,49 @@ export function GenericLabelPrintDialog({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
     setIsLoading(true);
+
+    // NOVO: suporte a PDF, além do TXT (ZPL) do Mercado Livre. O sistema
+    // de impressão já sabia lidar com PDF (`strategy: "PDF"`, usado no
+    // fluxo da SuperFrete) — esse importador só nunca tinha sido
+    // conectado a isso, ficava restrito a arquivos TXT com comandos ZPL.
+    if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (!dataUrl) {
+          setIsLoading(false);
+          toast.error("Não foi possível ler o PDF.");
+          return;
+        }
+        const block: DocumentBlock = {
+          id: "block-0",
+          pdf: dataUrl,
+          fileName: file.name,
+          type: "label",
+          title: file.name.replace(/\.pdf$/i, "") || "Etiqueta (PDF)",
+          stats: {
+            format: "PDF",
+            size: `${(file.size / 1024).toFixed(0)} KB`,
+            encoding: "base64",
+          },
+        };
+        setBlocks([block]);
+        setActiveTab("block-0");
+        toast.success("PDF importado com sucesso.");
+        setIsLoading(false);
+      };
+      reader.onerror = () => {
+        toast.error("Erro ao ler o arquivo PDF.");
+        setIsLoading(false);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       const content = e.target?.result as string;
@@ -134,19 +179,17 @@ export function GenericLabelPrintDialog({
     const jobId = `OP-${block.id}`; 
     
     try {
-      console.info("[GenericPrint] Iniciando impressão", { blockId: block.id, type: block.type });
-      
-      const result = await printManager.print(
-        {
-          id: jobId,
-          zpl: block.zpl,
-        },
-        { 
-          strategy: "RAW",
-          type: 'LABEL',
-          printerId: selectedPrinterId || undefined
-        }
-      );
+      console.info("[GenericPrint] Iniciando impressão", { blockId: block.id, type: block.type, isPdf: !!block.pdf });
+
+      const result = block.pdf
+        ? await printManager.print(
+            { id: jobId, pdf: block.pdf },
+            { strategy: "PDF", type: "LABEL", printerId: selectedPrinterId || undefined },
+          )
+        : await printManager.print(
+            { id: jobId, zpl: block.zpl },
+            { strategy: "RAW", type: "LABEL", printerId: selectedPrinterId || undefined },
+          );
 
       if (!result.success) {
         throw new Error(result.message || "Erro ao enfileirar impressão.");
@@ -176,7 +219,7 @@ export function GenericLabelPrintDialog({
                 Imprimir Etiqueta (Operacional)
               </DialogTitle>
               <p className="text-[12px] text-slate-500 mt-1 font-medium">
-                Importe o arquivo TXT do Mercado Livre para imprimir.
+                Importe o arquivo TXT (ZPL) ou PDF da etiqueta para imprimir.
               </p>
             </div>
           </div>
@@ -196,17 +239,17 @@ export function GenericLabelPrintDialog({
               <div className="max-w-md space-y-2">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Nenhuma etiqueta carregada</h3>
                 <p className="text-slate-500 text-sm">
-                  Clique no botão abaixo para selecionar o arquivo TXT que você baixou do Mercado Livre.
+                  Clique no botão abaixo para selecionar o arquivo TXT (do Mercado Livre) ou PDF da etiqueta.
                 </p>
               </div>
               <Button onClick={handleImportTXT} size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8">
-                <Upload className="mr-2 h-5 w-5" /> Selecionar Arquivo TXT
+                <Upload className="mr-2 h-5 w-5" /> Selecionar Arquivo (TXT ou PDF)
               </Button>
               <input 
                 type="file" 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
-                accept=".txt" 
+                accept=".txt,.pdf,application/pdf" 
                 className="hidden" 
               />
             </div>
@@ -248,7 +291,7 @@ export function GenericLabelPrintDialog({
                             { label: 'Tipo', value: currentBlock.type === 'label' ? 'Etiqueta' : 'DANFE' },
                             { label: 'Formato', value: currentBlock.stats?.format || 'ZPL' },
                             { label: 'Dimensões', value: currentBlock.stats?.size || 'Auto' },
-                            { label: 'Comandos', value: currentBlock.stats?.commands || 0 }
+                            ...(currentBlock.pdf ? [] : [{ label: 'Comandos', value: currentBlock.stats?.commands || 0 }])
                           ].map(item => (
                             <div key={item.label} className="flex justify-between items-center text-[11px]">
                               <span className="text-slate-500 font-medium">{item.label}</span>
@@ -285,15 +328,23 @@ export function GenericLabelPrintDialog({
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pré-visualização da Etiqueta</span>
                       </div>
                       <div className="flex-1 p-6 flex items-center justify-center overflow-auto">
-                        <LabelPreview 
-                          label={{
-                            id: currentBlock.id,
-                            zpl: currentBlock.zpl,
-                            width: detectZPLDimensions(currentBlock.zpl).width,
-                            height: detectZPLDimensions(currentBlock.zpl).height,
-                          }}
-                          className="max-h-full"
-                        />
+                        {currentBlock.pdf ? (
+                          <iframe
+                            src={currentBlock.pdf}
+                            title={`Pré-visualização — ${currentBlock.title}`}
+                            className="w-full h-full min-h-[500px] rounded-lg border"
+                          />
+                        ) : (
+                          <LabelPreview 
+                            label={{
+                              id: currentBlock.id,
+                              zpl: currentBlock.zpl,
+                              width: detectZPLDimensions(currentBlock.zpl || "").width,
+                              height: detectZPLDimensions(currentBlock.zpl || "").height,
+                            }}
+                            className="max-h-full"
+                          />
+                        )}
                       </div>
                     </div>
                   )}
@@ -342,7 +393,7 @@ export function GenericLabelPrintDialog({
         type="file" 
         ref={fileInputRef} 
         onChange={handleFileChange} 
-        accept=".txt" 
+        accept=".txt,.pdf,application/pdf" 
         className="hidden" 
       />
     </Dialog>
