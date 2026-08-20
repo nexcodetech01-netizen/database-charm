@@ -145,12 +145,33 @@ export function BellaAskPanel() {
             title={pendingAction.plan.intentId}
             summary={pendingAction.plan.confirmationSummary}
             details={
-              <div className="space-y-1">
-                {Object.entries(pendingAction.intent.entities).map(([k, v]) => (
-                  <p key={k}>
-                    <span className="capitalize">{k}</span>: {String(v)}
-                  </p>
-                ))}
+              <div className="space-y-2">
+                {pendingAction.plan.confirmationData ? (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <span className="text-muted-foreground">Produto:</span>
+                    <span className="font-medium text-foreground">{String(pendingAction.plan.confirmationData.productName || "-")}</span>
+                    
+                    <span className="text-muted-foreground">Estoque atual:</span>
+                    <span className="font-medium">{String(pendingAction.plan.confirmationData.currentStock || 0)}</span>
+                    
+                    <span className="text-muted-foreground">Novo estoque:</span>
+                    <span className="font-medium text-primary">{String(pendingAction.plan.confirmationData.targetStock || 0)}</span>
+                    
+                    <span className="text-muted-foreground">Ajuste:</span>
+                    <span className="font-medium">{Number(pendingAction.plan.confirmationData.delta || 0) > 0 ? "+" : ""}{String(pendingAction.plan.confirmationData.delta || 0)}</span>
+                    
+                    <span className="text-muted-foreground">Operação:</span>
+                    <span className="italic">{String(pendingAction.plan.confirmationData.operation || "manual")}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {Object.entries(pendingAction.intent.entities).map(([k, v]) => (
+                      <p key={k}>
+                        <span className="capitalize">{k}</span>: {String(v)}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             }
             onConfirm={handleActionConfirm}

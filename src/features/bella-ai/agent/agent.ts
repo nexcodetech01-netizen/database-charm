@@ -80,11 +80,42 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
 
     const skill = BellaSkillRegistry.get(step.skillId);
     
+    // Agora o registry.execute cuida da confirmação interna via BaseSkill
     const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
       companyId: ctx.companyId,
       userId: ctx.userId ?? null,
-    });
+    }, confirmed);
+    
     steps.push({ step, result });
+
+    if (result.code === "needs_confirmation") {
+      const finishedAt = new Date();
+      await logAgentExecution({
+        ctx,
+        intent,
+        step,
+        result,
+        confirmationRequired: true,
+        confirmed: false,
+        startedAt,
+        finishedAt,
+      });
+
+      // Enriquecer o plano com o resumo e dados da skill
+      const enrichedPlan: AgentPlan = {
+        ...plan,
+        confirmationSummary: result.message,
+        confirmationData: result.data as Record<string, unknown>,
+      };
+
+      return {
+        code: "needs_confirmation",
+        message: result.message,
+        intent,
+        plan: enrichedPlan,
+        steps,
+      };
+    }
 
     if (result.code === "missing_fields") {
       const finishedAt = new Date();
