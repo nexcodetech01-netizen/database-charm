@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import type { CommercialInboxTicket } from "@/features/whatsapp/hooks/use-commercial-inbox";
+import { KEY as COMMERCIAL_INBOX_QUERY_KEY } from "@/features/whatsapp/hooks/use-commercial-inbox";
 import { formatCurrency } from "@/lib/format";
 import { broadcastInboxEvent } from "../lib/inbox-sync";
 
@@ -16,8 +18,20 @@ import { broadcastInboxEvent } from "../lib/inbox-sync";
  */
 export function useCommercialInboxRealtime(companyId: string | null) {
   const processedIds = useRef<Set<string>>(new Set());
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     if (!companyId) return;
+
+    // BUG ENCONTRADO E CORRIGIDO: esse hook emitia o evento (pro
+    // sino/toast) e chamava `broadcastInboxEvent` — mas
+    // `broadcastInboxEvent` usa `BroadcastChannel`, que por definição
+    // do próprio navegador NUNCA entrega a mensagem de volta pra quem
+    // enviou. Serve só pra sincronizar OUTRAS abas abertas — a aba
+    // atual nunca recebia o próprio aviso. Faltava invalidar a query
+    // da lista NESTA aba diretamente, por isso o pedido novo só
+    // aparecia depois de recarregar a página manualmente, mesmo o
+    // sino/notificação já funcionando corretamente.
 
     // 1. Função para transformar um registro em evento de domínio
     const emitOrderEvent = (ticket: CommercialInboxTicket, isHistorical = false) => {
@@ -71,6 +85,9 @@ export function useCommercialInboxRealtime(companyId: string | null) {
 
       if (!error && data) {
         data.forEach(row => emitOrderEvent(row as unknown as CommercialInboxTicket, true));
+        if (data.length > 0) {
+          void queryClient.invalidateQueries({ queryKey: [...COMMERCIAL_INBOX_QUERY_KEY, companyId] });
+        }
       }
     };
 
@@ -99,6 +116,8 @@ export function useCommercialInboxRealtime(companyId: string | null) {
         },
         (payload) => {
           emitOrderEvent(payload.new as CommercialInboxTicket);
+          // Atualiza a lista NESTA aba (ver comentário no topo do hook).
+          void queryClient.invalidateQueries({ queryKey: [...COMMERCIAL_INBOX_QUERY_KEY, companyId] });
         },
       )
       .on(
@@ -117,6 +136,10 @@ export function useCommercialInboxRealtime(companyId: string | null) {
             // mas aqui garantimos a limpeza do set de processados se quisermos permitir re-notificação (raro)
             // Para pedidos resolvidos, o registry da Topbar já limpa o contador.
           }
+          // Mesma correção: sem isso, mudar o status em outra aba/instância
+          // (ex.: outro atendente marcou como atendido) só refletia aqui
+          // depois de recarregar a página.
+          void queryClient.invalidateQueries({ queryKey: [...COMMERCIAL_INBOX_QUERY_KEY, companyId] });
         }
       )
       .subscribe((status) => {

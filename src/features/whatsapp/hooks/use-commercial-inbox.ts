@@ -50,7 +50,7 @@ export interface CommercialInboxTicket {
   complement: string | null;
 }
 
-const KEY = ["whatsapp-commercial-inbox"] as const;
+export const KEY = ["whatsapp-commercial-inbox"] as const;
 
 export function useCommercialInbox(companyId: string | null, page = 1) {
   const pageSize = 50;
