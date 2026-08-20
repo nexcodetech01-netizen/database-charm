@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getNotificationSettings, updateNotificationSettings } from "./notification-settings.server";
-import { requireSupabaseAuth } from "@/features/auth/require-supabase-auth";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const getNotificationSettingsFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -15,3 +15,4 @@ export const updateNotificationSettingsFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     return updateNotificationSettings(context.supabase, context.userId, data);
   });
+
