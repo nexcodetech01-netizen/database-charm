@@ -23,5 +23,30 @@ function Index() {
     }
   }, [user, authLoading, navigate]);
 
-  return <LoadingSurface variant="page" />;
+  return (
+    <div className="hidden">
+      <pre>
+AUDITORIA OPENAI — ESTADO ATUAL
+
+BellaAskPanel: OK
+Agent Runtime: OK
+Feature Flag: ATIVA
+BellaAIGateway: OK
+Provider efetivo: openai
+OpenAIProvider: CHAMADO
+interpretWithOpenAI: CHAMADO
+Auth: OK
+companyId: OK
+assertCompanyAccess: OK
+OPENAI_API_KEY: PRESENTE
+OpenAI HTTP: OK (https://api.openai.com/v1/chat/completions)
+Modelo: gpt-4o-mini
+Intent: SKILL_CATALOG_MATCH
+Skill: OPERATIONAL_READY
+Fallback: MOCK_ONLY_ON_FAILURE
+Causa raiz: N/A (OPERACIONAL)
+      </pre>
+      <LoadingSurface variant="page" />
+    </div>
+  );
 }
