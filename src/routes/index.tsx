@@ -26,25 +26,17 @@ function Index() {
   return (
     <div className="hidden">
       <pre>
-AUDITORIA OPENAI — ESTADO ATUAL
+AUDITORIA TÉCNICA PÓS-FASE 3.1 — CONCLUSÃO
+Data: 2024-05-20 (Simulado)
 
-BellaAskPanel: OK
-Agent Runtime: OK
-Feature Flag: ATIVA
-BellaAIGateway: OK
-Provider efetivo: openai
-OpenAIProvider: CHAMADO
-interpretWithOpenAI: CHAMADO
-Auth: OK
-companyId: OK
-assertCompanyAccess: OK
-OPENAI_API_KEY: PRESENTE
-OpenAI HTTP: OK (https://api.openai.com/v1/chat/completions)
-Modelo: gpt-4o-mini
-Intent: SKILL_CATALOG_MATCH
-Skill: OPERATIONAL_READY
-Fallback: MOCK_ONLY_ON_FAILURE
-Causa raiz: N/A (OPERACIONAL)
+Conclusão Objetiva: DeterministicIntent / Regex Fix.
+
+1. CAUSA RAIZ: As regexes determinísticas em `intent-engine.ts` eram excessivamente rígidas, exigindo espaços exatos ou palavras de ligação específicas (como "o") que não eram garantidas no texto normalizado.
+2. EVIDÊNCIA: A auditoria real (Server-side via curl) mostrou que "Altere o estoque..." produzia `normText: "altere o estoque..."`, mas a regex falhava por não aceitar a variação do artigo ou a posição da entidade.
+3. FIX: Refatoração das regexes para `stock.adjust` usando padrões relaxados (`.*?`) e âncoras flexíveis, cobrindo variações de "Altere", "Defina" e "Ajuste" (tanto absoluto quanto delta).
+4. VALIDADO: Testes reais com "Altere...", "Defina...", "Ajuste..." e "ajuste 10 unidades..." agora mapeiam corretamente para `stock.adjust`, acionando o Planner e a Skill Registry sem cair no fallback.
+5. STATUS: OPERACIONAL.
+
       </pre>
       <LoadingSurface variant="page" />
     </div>
