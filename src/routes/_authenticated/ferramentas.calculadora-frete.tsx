@@ -110,12 +110,16 @@ function ShippingCalculatorPage() {
       if (recents) setRecentDestCeps(JSON.parse(recents));
 
       const quotes = localStorage.getItem(RECENT_QUOTES_KEY);
-      if (quotes) setRecentQuotes(JSON.parse(quotes));
+      if (quotes) {
+        const parsedQuotes = JSON.parse(quotes);
+        setRecentQuotes(parsedQuotes);
+        if (parsedQuotes.length > 0) {
+          setDestTab("recentes");
+        }
+      }
     } catch {
-      // localStorage indisponível (modo privado, etc.) — segue sem
-      // memorizar, não é crítico pro funcionamento da calculadora.
+      // localStorage indisponível
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleSaveOriginCep() {
