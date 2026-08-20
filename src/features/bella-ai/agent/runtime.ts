@@ -142,7 +142,14 @@ export async function handleWithAgentRuntime(
     } else if (!intent) {
       console.log(`[BELLA-AUDIT] fallbackReason: no_intent_detected`);
     }
-
+  } catch (err) {
+    console.warn("[agent.runtime] LLM interpretation failed, falling back to deterministic", err);
+    intent = detectDeterministicIntent(input.message);
+    console.log(`[BELLA-AUDIT] message: ${input.message}`);
+    console.log(`[BELLA-AUDIT] aiIntent: error`);
+    console.log(`[BELLA-AUDIT] deterministicIntent: ${intent?.id || "null"}`);
+    console.log(`[BELLA-AUDIT] finalIntent: ${intent?.id || "null"}`);
+  }
 
   if (
     !intent ||
