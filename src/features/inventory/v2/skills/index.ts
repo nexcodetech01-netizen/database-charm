@@ -96,8 +96,9 @@ export const stockAdjustSchema = z
   .object({
     ...lookupShape,
     delta: z.number().refine((n) => n !== 0, {
-      message: "Delta não pode ser zero (use valores negativos para reduzir).",
-    }),
+      message: "Delta não pode ser zero.",
+    }).optional(),
+    absolute: z.number().min(0).optional(),
     reason: z.string().trim().max(240).optional(),
     notes: z.string().trim().max(500).optional(),
   })
@@ -111,19 +112,48 @@ export const stockAdjustSkill = defineBaseSkill({
   schema: stockAdjustSchema,
   requiredPermissions: ["inventory.update"],
   destructive: true,
-  confirmationSummary: (input) =>
-    `Confirma ajuste de ${input.delta} unidade(s) para "${input.query ?? input.productId}"?`,
+  confirmationSummary: (input) => {
+    if (typeof input.absolute === "number") {
+      return `Confirma definir o estoque para ${input.absolute} unidade(s) de "${input.query ?? input.productId}"?`;
+    }
+    return `Confirma ajuste de ${input.delta} unidade(s) para "${input.query ?? input.productId}"?`;
+  },
   async handler(input, ctx) {
     ensureLookup(input);
     const svc = new StockService(ctx);
+
+    let finalDelta = input.delta;
+
+    // Se informou valor absoluto, calcula o delta
+    if (typeof input.absolute === "number") {
+      const balance = await svc.balance({
+        productId: input.productId ?? null,
+        query: input.query ?? null,
+      });
+      finalDelta = input.absolute - balance.stock;
+      
+      if (finalDelta === 0) {
+        return skillResult.success(`O estoque de "${balance.product.name}" já é ${input.absolute}. Nenhuma alteração necessária.`);
+      }
+    }
+
+    if (finalDelta === undefined || finalDelta === 0) {
+      throw new Error("Informe um delta ou valor absoluto válido para o ajuste.");
+    }
+
     const mov = await svc.adjust({
       productId: input.productId ?? null,
       query: input.query ?? null,
-      delta: input.delta,
+      delta: finalDelta,
       reason: input.reason ?? null,
       notes: input.notes ?? null,
     });
-    return skillResult.success(`Ajuste de ${input.delta} unidade(s) registrado.`, mov);
+
+    const actionText = finalDelta > 0 ? "incrementado" : "reduzido";
+    return skillResult.success(
+      `Estoque ${actionText} em ${Math.abs(finalDelta)} unidade(s). Saldo final: ${mov.product?.stock ?? 'atualizado'}.`,
+      mov,
+    );
   },
 });
 
@@ -190,16 +220,18 @@ export const stockLowSkill = defineBaseSkill({
     }
     const preview = rows
       .slice(0, 5)
-      .map((r) => `• ${r.name} — saldo ${r.stock} / mín. ${r.min_stock}`)
+      .map((r) => `• ${r.name} — ${r.stock} disponíveis / mín. ${r.min_stock}`)
       .join("\n");
 
     return skillResult.success(
       [
-        `📦 Itens Críticos`,
-        `Total de ${rows.length} produtos abaixo do mínimo.`,
+        `⚠️ Estoque crítico`,
+        `${rows.length} produtos abaixo do mínimo.`,
+        `\nPrincipais itens:`,
         preview,
-        `💡 Sugestão: Planejar compra para repor o estoque desses itens.`
-      ].join("\n"),
+        rows.length > 5 ? `\n... e outros ${rows.length - 5} itens.` : "",
+        `\n💡 Posso preparar uma sugestão de compra.`
+      ].filter(Boolean).join("\n"),
       { rows }
     );
   },

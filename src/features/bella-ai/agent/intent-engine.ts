@@ -236,17 +236,34 @@ const RULES: Rule[] = [
   {
     intent: "stock.adjust",
     patterns: [
-      /\b(ajust(e|ar|a)|corrigir|acertar) (estoque|saldo) (do|de|em) /,
-      /\b(ajust(e|ar|a)) (-?\d+([.,]\d+)?) (unidades?|un|pcs) /,
+      /\b(ajust(e|ar|a)|corrigir|acertar|alter(e|ar|a)|defin(a|ir)|mud(e|ar)|coloc(ar|que)|deix(ar|e)) (estoque|saldo) (do|de|em) /,
+      /\b(ajust(e|ar|a)|alter(e|ar|a)|defin(a|ir)|mud(e|ar)|coloc(ar|que)|deix(ar|e)) (para|em|a) (\d+([.,]\d+)?) (unidades?|un|pcs)? /,
     ],
     extract(text) {
-      const m = text.match(
-        /\b(?:ajust(?:e|ar|a)) (-?\d+(?:[.,]\d+)?) (?:unidades?|un|pcs) (?:do|de|em) (?:produto )?(.+)$/,
+      // Caso 1: "adicione 10 unidades ao produto X" (mantido do stock.add original se o LLM falhar, 
+      // mas aqui focamos no stock.adjust conforme o pedido)
+
+      // Caso 2: "altere o estoque do produto X para 10"
+      const absoluteMatch = text.match(
+        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e)) (?:o )?(?:estoque|saldo) (?:do|de|em) (?:produto )?(.+?) (?:para|em|a) (\d+(?:[.,]\d+)?)/
       );
-      if (!m) return {};
-      const delta = Number(m[1].replace(",", "."));
-      const query = m[2].trim();
-      return Number.isFinite(delta) && delta !== 0 && query ? { delta, query } : {};
+      if (absoluteMatch) {
+        const query = absoluteMatch[1].trim();
+        const absolute = Number(absoluteMatch[2].replace(",", "."));
+        return Number.isFinite(absolute) && query ? { absolute, query } : {};
+      }
+
+      // Caso 3: "ajuste 10 unidades do produto X" (delta)
+      const deltaMatch = text.match(
+        /\b(?:ajust(?:e|ar|a)|alter(?:e|ar|a)) (-?\d+(?:[.,]\d+)?) (?:unidades?|un|pcs) (?:do|de|em) (?:produto )?(.+)$/
+      );
+      if (deltaMatch) {
+        const delta = Number(deltaMatch[1].replace(",", "."));
+        const query = deltaMatch[2].trim();
+        return Number.isFinite(delta) && delta !== 0 && query ? { delta, query } : {};
+      }
+
+      return {};
     },
     confidence: 0.85,
     destructive: true,
