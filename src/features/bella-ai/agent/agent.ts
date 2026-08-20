@@ -86,6 +86,9 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
       };
     }
 
+    const skill = BellaSkillRegistry.get(step.skillId);
+    console.log(`[BELLA-AUDIT] skillFound: ${step.skillId} -> ${!!skill}`);
+    
     const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
       companyId: ctx.companyId,
       userId: ctx.userId ?? null,

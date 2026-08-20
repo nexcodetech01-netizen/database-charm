@@ -42,6 +42,7 @@ const INTENT_TO_SKILL: Record<string, string> = {
 
 export function planFromIntent(intent: AgentIntent): AgentPlan | null {
   const skillId = INTENT_TO_SKILL[intent.id];
+  console.log(`[BELLA-AUDIT] plannerIntent: ${intent.id} -> ${skillId || "null"}`);
   if (!skillId) return null;
 
   const spec = getSkillPermissionSpec(skillId);
