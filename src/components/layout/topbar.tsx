@@ -505,8 +505,8 @@ export function Topbar() {
       </div>
 
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl pt-10">
+          <DialogHeader className="px-1">
             <DialogTitle>Configurações de Notificação</DialogTitle>
           </DialogHeader>
           <NotificationSettingsPanel />
