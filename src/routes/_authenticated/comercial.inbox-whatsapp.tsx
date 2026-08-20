@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Inbox } from "lucide-react";
+import { Inbox, MessageCircle, MoreVertical, Phone, Package } from "lucide-react";
 import { requirePermission } from "@/features/rbac";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
 import { PageHeader } from "@/components/layout";
 import { BreadcrumbNav } from "@/components/layout/breadcrumb-nav";
 import { EmptyState } from "@/components/layout/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -17,13 +18,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   COMMERCIAL_INBOX_STATUS,
   COMMERCIAL_STATUS_LABEL,
@@ -72,11 +71,76 @@ function money(value: number): string {
   }).format(Number.isFinite(value) ? value : 0);
 }
 
-function statusVariant(status: string) {
-  if (status === COMMERCIAL_INBOX_STATUS.attended) return "secondary" as const;
-  if (status === COMMERCIAL_INBOX_STATUS.converted) return "secondary" as const;
-  if (status === COMMERCIAL_INBOX_STATUS.cancelled) return "outline" as const;
-  return "default" as const;
+/**
+ * Cores por status, ligadas ao tema "Ametista Noturna" do NexOS —
+ * aguardando usa o dourado champanhe de destaque (chama atenção,
+ * precisa de ação), atendido fica neutro (já foi visto), convertido
+ * em verde (venda concluída), cancelado apagado (morto, baixa
+ * prioridade visual).
+ */
+const STATUS_STYLE: Record<string, string> = {
+  [COMMERCIAL_INBOX_STATUS.waiting]:
+    "bg-[#E5A855]/15 text-[#E5A855] ring-1 ring-inset ring-[#E5A855]/30",
+  [COMMERCIAL_INBOX_STATUS.attended]:
+    "bg-slate-400/15 text-slate-300 ring-1 ring-inset ring-slate-400/25",
+  [COMMERCIAL_INBOX_STATUS.converted]:
+    "bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30",
+  [COMMERCIAL_INBOX_STATUS.cancelled]:
+    "bg-muted text-muted-foreground ring-1 ring-inset ring-border",
+};
+
+function StatusPill({ status }: { status: string }) {
+  const label = (COMMERCIAL_STATUS_LABEL as Record<string, string>)[status] ?? status;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+        STATUS_STYLE[status] ?? STATUS_STYLE[COMMERCIAL_INBOX_STATUS.cancelled],
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Iniciais do nome (até 2 letras) pro avatar quando não há foto. */
+function initials(name: string | null | undefined): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Telefone brasileiro formatado: 55 14 99625-0549 → (14) 99625-0549. */
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  const local = digits.length > 11 && digits.startsWith("55") ? digits.slice(2) : digits;
+  if (local.length === 11) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
+  }
+  if (local.length === 10) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
+  }
+  return raw;
+}
+
+/** Data relativa amigável — "Hoje 12:34", "Ontem 13:52", ou completa se mais antiga. */
+function formatRelativeDate(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+  const time = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  if (isSameDay(date, now)) return `Hoje, ${time}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (isSameDay(date, yesterday)) return `Ontem, ${time}`;
+
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) + `, ${time}`;
 }
 
 function CommercialInboxPage() {
@@ -104,7 +168,7 @@ function CommercialInboxPage() {
         description="Atendimentos encaminhados pela Bella. Nenhuma venda é criada automaticamente."
       />
 
-      <Card className="p-0">
+      <Card className="p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-6 text-sm text-muted-foreground">Carregando…</div>
         ) : tickets.length === 0 ? (
@@ -114,100 +178,116 @@ function CommercialInboxPage() {
             description="Quando um cliente confirmar o pedido no WhatsApp, ele aparece aqui."
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead className="text-right">Itens</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tickets.map((t: CommercialInboxTicket) => (
-                <TableRow key={t.id}>
-                  <TableCell className="font-medium">
-                    {t.buyer_name ?? "—"}
-                  </TableCell>
-                  <TableCell>{t.phone}</TableCell>
-                  <TableCell className="text-right">{t.item_count}</TableCell>
-                  <TableCell className="text-right">{money(Number(t.total))}</TableCell>
-                  <TableCell>
-                    {new Date(t.created_at).toLocaleString("pt-BR")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant(t.status)}>
-                      {(COMMERCIAL_STATUS_LABEL as Record<string, string>)[t.status] ?? t.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="uppercase text-xs text-muted-foreground">
-                    {t.origin}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2 whitespace-nowrap">
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedId(t.id)}>
-                      Abrir
+          <div className="divide-y divide-border">
+            {tickets.map((t: CommercialInboxTicket) => (
+              <div
+                key={t.id}
+                className="flex flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4"
+              >
+                {/* Identidade do cliente */}
+                <div className="flex min-w-0 items-center gap-3 sm:w-56 sm:shrink-0">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-[#B392E0]/15 text-sm font-semibold text-[#B392E0]">
+                      {initials(t.buyer_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{t.buyer_name ?? "Sem nome"}</p>
+                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      {formatPhone(t.phone)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Itens, total, origem, data — agrupados numa linha só no mobile */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground sm:flex-1 sm:flex-nowrap">
+                  <span className="flex items-center gap-1.5 sm:w-20 sm:shrink-0">
+                    <Package className="h-3.5 w-3.5" />
+                    {t.item_count} {t.item_count === 1 ? "item" : "itens"}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground sm:w-28 sm:shrink-0">
+                    {money(Number(t.total))}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-emerald-500 sm:w-28 sm:shrink-0">
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    WhatsApp
+                  </span>
+                  <span className="sm:w-32 sm:shrink-0">{formatRelativeDate(t.created_at)}</span>
+                </div>
+
+                {/* Status */}
+                <div className="sm:w-40 sm:shrink-0">
+                  <StatusPill status={t.status} />
+                </div>
+
+                {/* Ações: CTA principal visível, secundárias num menu */}
+                <div className="flex items-center gap-2 sm:ml-auto sm:shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedId(t.id)}>
+                    Abrir
+                  </Button>
+                  {isConverted(t) && t.sale_id ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/vendas/$saleId" params={{ saleId: t.sale_id }}>
+                        Abrir venda
+                      </Link>
                     </Button>
-                    {isConverted(t) && t.sale_id ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link
-                          to="/vendas/$saleId"
-                          params={{ saleId: t.sale_id }}
-                        >
-                          Abrir venda
-                        </Link>
-                      </Button>
-                    ) : canConvert(t) ? (
-                      <Button variant="default" size="sm" asChild>
-                        <Link to="/vendas/novo" search={{ inboxId: t.id }}>
-                          Converter em venda
-                        </Link>
-                      </Button>
-                    ) : (
-                      <Button variant="default" size="sm" disabled>
+                  ) : canConvert(t) ? (
+                    <Button variant="default" size="sm" asChild>
+                      <Link to="/vendas/novo" search={{ inboxId: t.id }}>
                         Converter em venda
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button variant="default" size="sm" disabled>
+                      Converter em venda
+                    </Button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        aria-label="Mais ações"
+                      >
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={
-                        t.status !== COMMERCIAL_INBOX_STATUS.waiting ||
-                        updateStatus.isPending
-                      }
-                      onClick={() =>
-                        updateStatus.mutate({
-                          id: t.id,
-                          status: COMMERCIAL_INBOX_STATUS.attended,
-                        })
-                      }
-                    >
-                      Marcar atendido
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={
-                        t.status !== COMMERCIAL_INBOX_STATUS.waiting ||
-                        updateStatus.isPending
-                      }
-                      onClick={() =>
-                        updateStatus.mutate({
-                          id: t.id,
-                          status: COMMERCIAL_INBOX_STATUS.cancelled,
-                        })
-                      }
-                    >
-                      Cancelar
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        disabled={
+                          t.status !== COMMERCIAL_INBOX_STATUS.waiting || updateStatus.isPending
+                        }
+                        onClick={() =>
+                          updateStatus.mutate({
+                            id: t.id,
+                            status: COMMERCIAL_INBOX_STATUS.attended,
+                          })
+                        }
+                      >
+                        Marcar atendido
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        disabled={
+                          t.status !== COMMERCIAL_INBOX_STATUS.waiting || updateStatus.isPending
+                        }
+                        onClick={() =>
+                          updateStatus.mutate({
+                            id: t.id,
+                            status: COMMERCIAL_INBOX_STATUS.cancelled,
+                          })
+                        }
+                      >
+                        Cancelar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {totalPages > 1 && (
           <div className="flex items-center justify-between p-4 border-t">
