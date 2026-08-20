@@ -1,4 +1,4 @@
-import { Sparkles, CheckCircle2, Package, Search, History } from "lucide-react";
+import { Sparkles, CheckCircle2, Package, Search, History, Truck } from "lucide-react";
 import { Section } from "@/components/design";
 
 export default function Index() {
@@ -116,5 +116,3 @@ export default function Index() {
     </div>
   );
 }
-
-import { Truck } from "lucide-react";
