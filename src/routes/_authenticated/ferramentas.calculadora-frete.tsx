@@ -850,26 +850,16 @@ function ShippingCalculatorPage() {
                 Cotação Selecionada
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-                  <Package className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest">Cotação Selecionada</h3>
-                  <p className="text-xs text-muted-foreground">Revise os detalhes abaixo</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-background/40 border border-sidebar-border/40 space-y-3">
+            <CardContent className="space-y-6 pt-4">
+              <div className="p-4 rounded-xl bg-background/40 border border-border/40 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-bold text-base">{selectedOption?.servico}</p>
                     <p className="text-xs uppercase font-bold tracking-wider text-muted-foreground">{selectedOption?.transportadora}</p>
                   </div>
-                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-[#E5A855]" />
+                  <MoneyValue value={selectedOption?.preco || 0} className="text-xl font-black text-primary" />
                 </div>
-                <div className="h-px bg-sidebar-border/40 w-full" />
+                <div className="h-px bg-border/40 w-full" />
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Truck className="h-3.5 w-3.5" />
                   <span>Prazo estimado: <strong>{selectedOption?.prazo_dias} dias úteis</strong></span>
@@ -878,121 +868,114 @@ function ShippingCalculatorPage() {
 
               <Button 
                 variant="ghost" 
-                className="w-full h-10 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/30" 
+                className="w-full h-10 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/30" 
                 onClick={() => setStep(1)}
               >
                 Alterar Cotação
               </Button>
-            </Card>
-          )}
-        </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-        <div className="lg:col-span-7">
-          {step === 1 ? (
-            isLoading ? (
-              <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-sidebar-border bg-sidebar/10">
-                <LoadingSurface variant="cards" metrics={1} />
-              </div>
-            ) : calcError ? (
-              <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 rounded-xl overflow-hidden">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 mt-0.5" />
-                  <div className="flex-1">
-                    <AlertTitle className="text-sm font-black uppercase tracking-widest mb-2">Erro no Cálculo</AlertTitle>
-                    <AlertDescription className="text-xs space-y-3">
-                      <p className="font-medium text-foreground">{calcError.message}</p>
-                      {calcError.details && (
-                        <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
-                          {calcError.details.map((d, i) => <li key={i}>{d}</li>)}
-                        </ul>
-                      )}
-                      <div className="pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-destructive/30 hover:bg-destructive/10"
-                          onClick={() => calcForm.handleSubmit(onCalcSubmit)()}
-                        >
-                          Tentar Novamente
-                        </Button>
-                      </div>
-                    </AlertDescription>
-                  </div>
+      <div className="lg:col-span-7">
+        {step === 1 ? (
+          isLoading ? (
+            <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-card/50">
+              <LoadingSurface variant="cards" metrics={1} />
+            </div>
+          ) : calcError ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6">
+              <div className="flex gap-4">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
-              </Alert>
-            ) : results ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-destructive mb-1">Não foi possível calcular o frete</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {calcError.message}. Verifique os CEPs e as dimensões informadas e tente novamente.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => calcForm.handleSubmit(onCalcSubmit)()}
+                  >
+                    Tentar Novamente
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : results ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
                   Opções Disponíveis
                 </h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {results.map((option, idx) => (
-                    <Card 
-                      key={idx} 
-                      className={cn(
-                        "overflow-hidden border-sidebar-border/50 transition-all cursor-pointer group hover:border-primary/50 hover:shadow-md",
-                        selectedOption?.id === option.id && "border-primary ring-1 ring-primary"
-                      )}
-                      onClick={() => handleSelectOption(option)}
-                    >
-                      <div className="bg-primary/5 px-4 py-2 border-b border-sidebar-border/30 flex justify-between items-center">
-                        <p className="text-xs font-bold uppercase tracking-wider text-primary/80">
-                          {option.transportadora}
-                        </p>
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="text-lg font-bold">{option.servico}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Prazo: {option.prazo_dias} {option.prazo_dias === 1 ? 'dia útil' : 'dias úteis'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <MoneyValue 
-                              value={option.preco} 
-                              className="text-xl font-black text-primary" 
-                            />
-                          </div>
+                <Badge variant="outline" className="text-[10px]">{results.length} resultados</Badge>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {results.map((option, idx) => (
+                  <Card 
+                    key={idx} 
+                    className={cn(
+                      "overflow-hidden border-border transition-all cursor-pointer group hover:border-primary/50 hover:shadow-md bg-card/50",
+                      selectedOption?.id === option.id && "border-primary ring-1 ring-primary"
+                    )}
+                    onClick={() => handleSelectOption(option)}
+                  >
+                    <div className="bg-primary/5 px-4 py-2 border-b border-border/50 flex justify-between items-center">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        {option.transportadora}
+                      </p>
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-base font-bold">{option.servico}</p>
+                          <p className="text-[11px] text-muted-foreground font-medium">
+                            Prazo: {option.prazo_dias} {option.prazo_dias === 1 ? 'dia útil' : 'dias úteis'}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                {results.length === 0 && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Nenhuma opção</AlertTitle>
-                    <AlertDescription>
-                      {calcErrors.length > 0 ? (
-                        <>
-                          <p>A SuperFrete recusou essa cotação:</p>
-                          <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                            {calcErrors.map((msg, i) => (
-                              <li key={i}>{msg}</li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : (
-                        "Não encontramos frete para este CEP ou dimensões."
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                        <div className="text-right">
+                          <MoneyValue 
+                            value={option.preco} 
+                            className="text-lg font-black text-primary" 
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ) : (
-              <div className="flex h-[400px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-sidebar-border/40 bg-sidebar/5 p-8 text-center text-muted-foreground animate-pulse-slow">
-                <Calculator className="mb-6 h-16 w-16 opacity-10" />
-                <h4 className="text-sm font-black uppercase tracking-widest mb-2">Aguardando Cotação</h4>
-                <p className="max-w-[200px] text-xs font-medium leading-relaxed">
-                  Informe as dimensões e clique em calcular para ver as opções de frete.
-                </p>
-              </div>
-            )
+              {results.length === 0 && (
+                <EmptyState
+                  icon={AlertCircle}
+                  title="Nenhuma opção encontrada"
+                  description={
+                    calcErrors.length > 0 ? (
+                      <ul className="mt-2 text-xs space-y-1">
+                        {calcErrors.map((msg, i) => <li key={i} className="text-destructive font-medium">• {msg}</li>)}
+                      </ul>
+                    ) : "Não encontramos frete para este CEP ou dimensões."
+                  }
+                />
+              )}
+            </div>
           ) : (
-            <Card className="border-sidebar-border/50 bg-sidebar/30 backdrop-blur-sm">
+            <EmptyState
+              icon={Truck}
+              title="Cotação de frete"
+              description="Preencha os dados do envio para consultar as opções disponíveis."
+              className="h-[400px]"
+            />
+          )
+        ) : (
+          <Card className="border-border bg-card shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <User className="h-5 w-5 text-primary" />
