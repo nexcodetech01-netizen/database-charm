@@ -704,14 +704,20 @@ function ShippingCalculatorPage() {
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
-                  </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-                  {/* INFORME O DESTINO */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#E5A855]">
-                      INFORME O DESTINO
-                    </p>
-                    <div className="rounded-xl bg-background/40 border border-sidebar-border/40 overflow-hidden">
+            <Card className="border-border bg-card shadow-sm overflow-hidden">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Destino
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="rounded-xl bg-background/40 border border-border/40 overflow-hidden">
                       <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")} className="w-full">
                         <TabsList className="w-full justify-start h-12 bg-transparent rounded-none border-b border-sidebar-border/40 p-0">
                           <TabsTrigger 
