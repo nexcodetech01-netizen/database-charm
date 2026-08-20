@@ -55,7 +55,7 @@ function ShippingCalculatorPage() {
         toast.error("Impressora térmica não encontrada. Confira se o Print Bridge está conectado.");
         return;
       }
-      const result = await printManager.print(
+      const result = await printManager.printAndWait(
         { id: `superfrete-${labelResult.order_id}`, pdf: labelResult.label_url },
         { strategy: "PDF", printerId: defaultPrinter.id, type: "LABEL" },
       );

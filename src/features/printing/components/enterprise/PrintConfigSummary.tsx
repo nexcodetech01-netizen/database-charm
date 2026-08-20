@@ -41,7 +41,7 @@ export function PrintConfigSummary({ companyId }: { companyId?: string }) {
       title: "Teste de Cupom"
     };
 
-    const result = await printManager.print(labelData as any, {
+    const result = await printManager.printAndWait(labelData as any, {
       strategy: isLabel ? 'RAW' : 'PDF',
       type: type,
       printerId: targetId
