@@ -21,7 +21,7 @@ import { calculateShipping, generateLabel } from "@/features/shipping/services/s
 import { printManager } from "@/features/printing/services/print.service";
 import type { Printer as PrinterInfo } from "@/features/printing/types/printing.types";
 
-import { PageLayout, PageHeader } from "@/components/layout";
+import { PageLayout, PageHeader, BreadcrumbNav } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
