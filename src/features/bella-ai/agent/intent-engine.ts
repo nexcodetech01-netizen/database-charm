@@ -321,7 +321,7 @@ export function detectRuntimeIntent(raw: string): AgentIntent | null {
 }
 
 export function detectDeterministicIntent(raw: string): AgentIntent | null {
-  const text = norm(raw ?? "");
+  const text = normalize(raw ?? "");
   if (!text) return null;
 
 
@@ -342,4 +342,12 @@ export function detectDeterministicIntent(raw: string): AgentIntent | null {
     }
   }
   return null;
+}
+
+function normalize(t: string): string {
+  return t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
