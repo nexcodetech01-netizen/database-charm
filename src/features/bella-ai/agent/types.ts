@@ -83,6 +83,33 @@ export interface AgentResponse {
   suggestions?: AgentSuggestion[];
 }
 
+export interface AgentRuntimeResult {
+  response: AgentResponse | null;
+  trace: AgentRuntimeTrace;
+}
+
+export interface AgentRuntimeInput {
+  message: string;
+  ctx: AgentContext;
+  confirmed?: boolean;
+  gateway?: any;
+}
+
+export interface AgentRuntimeTrace {
+  enabled: boolean;
+  intent: AgentIntent | null;
+  fallback: boolean;
+  fallbackReason?: string;
+  executionTimeMs: number;
+  response?: AgentResponse;
+  telemetry?: {
+    provider: string;
+    model?: string;
+    latencyMs?: number;
+    fallbackUsed?: boolean;
+  };
+}
+
 /** Metadados que o PermissionEngine devolve para cada skill. */
 export interface SkillPermissionSpec {
   skillId: string;
