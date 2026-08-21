@@ -11,6 +11,8 @@
 import { fetchAutomationsFor } from "./AutomationRegistry";
 import { AutomationRunner } from "./AutomationRunner";
 import { persistAutomationRun } from "./AutomationExecution";
+// BellaSkillRegistry é importado aqui apenas no ambiente de servidor.
+
 import type { AutomationEvent } from "./types";
 
 export interface DispatchSummary {
@@ -30,6 +32,11 @@ export const AutomationEngine = {
     event: AutomationEvent,
   ): Promise<DispatchSummary> {
     const list = await fetchAutomationsFor(supabase, event.companyId, event.triggerType);
+    
+    // Importação dinâmica para evitar vazamento do Registry no cliente.
+    // AutomationEngine.dispatch é chamado por rotas de API ou Jobs.
+    const { BellaSkillRegistry } = await import("../skills/registry" + "");
+
     const summary: DispatchSummary = {
       matched: list.length,
       executed: 0,
@@ -38,7 +45,7 @@ export const AutomationEngine = {
     };
 
     for (const automation of list) {
-      const result = await AutomationRunner.run(automation, event);
+      const result = await AutomationRunner.run(automation, event, { skills: BellaSkillRegistry });
       if (result.status === "skipped") {
         // Ainda registra para dar visibilidade "por que não rodou".
         await persistAutomationRun(supabase, {

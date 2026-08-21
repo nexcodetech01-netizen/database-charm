@@ -72,6 +72,7 @@ export const AutomationRunner = {
         continue;
       }
 
+      const payload = AutomationActions.resolvePayload(def, event);
       try {
         if (!deps.skills) throw new Error("Skill Registry não disponível.");
         const result = await deps.skills.execute(def.skillId, payload, {
