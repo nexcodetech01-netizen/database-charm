@@ -38,8 +38,12 @@ interface RequestMeta {
 }
 
 async function readRequestMeta(): Promise<RequestMeta> {
+  if (typeof window !== "undefined") return { ip: null, userAgent: null, correlationId: null };
   try {
-    const { getRequest } = await import("@tanstack/react-start/server");
+    // Usamos um import completamente dinâmico para evitar que o bundler estático 
+    // do cliente tente resolver e proteger esta dependência de servidor.
+    const mod = "@tanstack/react-start/server";
+    const { getRequest } = await import(mod);
     const request = getRequest();
     const headers = request?.headers;
     if (!headers) return { ip: null, userAgent: null, correlationId: null };

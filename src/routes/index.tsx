@@ -2,19 +2,19 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * CORREÇÃO DE ERRO DE COMPILAÇÃO E BUILD (VITE / PUBLISHING FAILED)
+ * DIAGNÓSTICO E CORREÇÃO FORÇADA DE BUILD (REVERTER ERRO DE SINTAXE)
  *
- * O publish falhou no estágio de "rendering chunks" com erro no script de build. 
+ * O build de produção está falhando em loop. Precisamos identificar o arquivo exato que está quebrando a compilação:
  *
- * Por favor, faça uma varificação completa para corrigir essa falha:
+ * 1. EXECUTE O CHEQUE DE TIPOS:
+ *    - Execute o comando `npx tsc --noEmit` no terminal para expor a linha e o arquivo exato onde está o erro de TypeScript ou sintaxe.
  *
- * 1. DIAGNÓSTICO DE SINTAXE E TIPOS:
- *    - Verifique os componentes e arquivos modificados recentemente (notificações, modal, frete e serviços).
- *    - Identifique e corrija qualquer import quebrado, tag JSX mal fechada, variável não declarada ou incompatibilidade de tipos TypeScript.
+ * 2. CORRIJA OU REVERTA O COMPONENTE QUEBRADO:
+ *    - Identifique qual arquivo modificado recentemente (notificações, modal ou calculadora de frete) possui importação inválida, tag JSX não fechada ou erro de tipagem.
+ *    - Reconstrua esse arquivo de forma limpa e simples para garantir que a compilação volte a passar.
  *
- * 2. LIMPEZA DE CACHE E COMPILAÇÃO:
- *    - Certifique-se de que não existem erros impeditivos no compilador do Vite / TanStack Start.
- *    - Valide se o comando de build interno encerra com sucesso (exit status 0) para liberar o Publish novamente.
+ * 3. CONFIRME O BUILD:
+ *    - Rode o comando `npm run build` no terminal integrado até que ele finalize com sucesso (exit status 0) antes de tentar publicar novamente.
  */
 
 export const Route = createFileRoute("/")({

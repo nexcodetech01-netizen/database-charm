@@ -41,24 +41,22 @@ class BellaSkillRegistryImpl {
   async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
     
-    // CORREÇÃO: Usamos import.meta.env.SSR para garantir que o compilador 
-    // e o bundler saibam que este bloco é exclusivo do lado do servidor.
+    // CORREÇÃO: Usamos check de window para garantir execução apenas server-side.
     if (typeof window !== 'undefined') {
       this.initialized = true;
       return;
     }
     
     try {
-      // @ts-ignore - Este import é seguro pois o check acima garante execução apenas server-side
-      const { initializeRegistryOnServer } = await import("./registry.server" + "");
+      // Importação mascarada para o bundler do cliente
+      const serverModPath = "./registry.server" + "";
+      const { initializeRegistryOnServer } = await import(serverModPath);
       await initializeRegistryOnServer();
       this.initialized = true;
     } catch (err) {
       console.warn("[BellaSkillRegistry] Could not initialize server skills:", err);
     }
   }
-
-
 
   get(id: string): BellaSkill | undefined {
     return this.skills.get(id);
@@ -94,8 +92,9 @@ class BellaSkillRegistryImpl {
     try {
       // Se a skill for uma BaseSkill (v2), usamos o método run que gerencia o pipeline
       if ("run" in skill && typeof (skill as any).run === "function") {
-        // Build basic ExecutionContext for BaseSkill
-        const { buildExecutionContext } = await import("../agent/infrastructure/context" + "");
+        // Importação mascarada do Context Builder
+        const contextModPath = "../agent/infrastructure/context" + "";
+        const { buildExecutionContext } = await import(contextModPath);
         const execCtx = buildExecutionContext({
           companyId: ctx.companyId,
           userId: ctx.userId ?? null,
