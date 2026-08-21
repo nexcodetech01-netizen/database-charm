@@ -29,6 +29,7 @@ export const stockAddSchema = z
     quantity: z.number().positive(),
     reason: z.string().trim().max(240).optional(),
     notes: z.string().trim().max(500).optional(),
+    _intentSource: z.string().optional(),
   })
   .strict();
 
@@ -64,6 +65,7 @@ export const stockRemoveSchema = z
     quantity: z.number().positive(),
     reason: z.string().trim().max(240).optional(),
     notes: z.string().trim().max(500).optional(),
+    _intentSource: z.string().optional(),
   })
   .strict();
 
