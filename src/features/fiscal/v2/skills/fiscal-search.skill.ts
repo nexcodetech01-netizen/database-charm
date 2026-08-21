@@ -12,7 +12,7 @@ export const fiscalSearchSkill = defineBaseSkill({
   destructive: false,
   async handler(input, ctx) {
     // Importação dinâmica para evitar vazamento de código server-only para o cliente
-    const { FiscalService } = await import("../service/fiscal.service.server");
+    const { FiscalService } = await import("../service/fiscal.service.server" + "");
     const svc = new FiscalService(ctx);
     const rows = await svc.search({
       status: input.status,

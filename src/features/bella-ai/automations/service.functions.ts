@@ -79,6 +79,9 @@ export const createAutomationFromTemplate = createServerFn({ method: "POST" })
     z.object({ companyId: uuid, templateId: z.string().min(1) }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    // 1. Resolve internal dependencies within handler to avoid client leak
+    const { BellaSkillRegistry } = await import("../skills/registry" + "");
+    
     // Hardening RBAC server-side (a UI não é barreira de segurança).
     await requireServerPermission(context, "bella_ia.create", {
       companyId: data.companyId,
@@ -87,12 +90,15 @@ export const createAutomationFromTemplate = createServerFn({ method: "POST" })
     });
     const tpl = getTemplate(data.templateId);
     if (!tpl) throw new Error(`Template "${data.templateId}" não encontrado.`);
-    const issues = AutomationValidator.validate({
-      name: tpl.name,
-      triggerType: tpl.triggerType,
-      actions: tpl.actions,
-      conditions: tpl.conditions,
-    });
+    const issues = AutomationValidator.validate(
+      {
+        name: tpl.name,
+        triggerType: tpl.triggerType,
+        actions: tpl.actions,
+        conditions: tpl.conditions,
+      },
+      { skills: BellaSkillRegistry }
+    );
     // Sem falhar hard: um template pode referenciar Skill ainda não registrada;
     // ainda assim persiste como desabilitada para o usuário editar depois.
     const enabled = issues.length === 0;

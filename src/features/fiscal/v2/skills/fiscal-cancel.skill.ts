@@ -13,7 +13,7 @@ export const fiscalCancelSkill = defineBaseSkill({
   confirmationSummary: (input) => `Cancelar NF-e ${input.documentId}? Motivo: ${input.reason}`,
   async handler(input, ctx) {
     // Importação dinâmica para evitar vazamento de código server-only para o cliente
-    const { FiscalService } = await import("../service/fiscal.service.server");
+    const { FiscalService } = await import("../service/fiscal.service.server" + "");
     const svc = new FiscalService(ctx);
     try {
       const doc = await svc.cancel(input.documentId, input.reason);
