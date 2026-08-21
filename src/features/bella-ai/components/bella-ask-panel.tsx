@@ -107,23 +107,19 @@ export function BellaAskPanel() {
     if (!pendingAction || !companyId) return;
     setIsThinking(true);
     try {
-      const result = await handleAgentRuntime({
+      const response = await executeAgentAction({
         data: {
-          message: pendingAction.intent.raw,
+          intent: pendingAction.intent,
           ctx: {
             companyId,
           },
-          confirmed: true,
         }
       });
 
-      if (result && typeof result === 'object' && 'response' in result) {
-        const response = (result as any).response;
-        if (response?.code === "executed") {
-          toast.success(response.message);
-        } else if (response?.code === "error") {
-          toast.error(response.message);
-        }
+      if (response?.code === "executed") {
+        toast.success(response.message);
+      } else if (response?.code === "error") {
+        toast.error(response.message);
       }
     } catch (error) {
       toast.error("Erro ao executar ação.");
