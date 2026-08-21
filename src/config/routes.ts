@@ -8,6 +8,7 @@ export const ROUTES = {
   onboarding: "/onboarding",
   dashboard: "/dashboard",
   products: "/produtos",
+  productReviews: "/produtos/avaliacoes",
   categories: "/categorias",
   inventory: "/estoque",
   inventoryReconciliation: "/estoque/reconciliacao",

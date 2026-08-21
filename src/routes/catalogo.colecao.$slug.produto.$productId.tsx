@@ -36,6 +36,7 @@ import {
   resolveAvailability,
 } from "@/features/catalog/components/availability-badge";
 import { ProductLightbox } from "@/features/catalog/components/product-lightbox";
+import { ProductReviews } from "@/features/catalog/components/product-reviews";
 import { FramedImage } from "@/components/media/framed-image";
 
 const productSearchSchema = z.object({
@@ -423,6 +424,8 @@ function PublicProductPage() {
               {data.description}
             </p>
           )}
+
+          <ProductReviews productId={data.id} companyId={data.company_id} />
         </section>
 
         {data.related.length > 0 && (
