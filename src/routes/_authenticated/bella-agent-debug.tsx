@@ -22,11 +22,12 @@ import { usePermissions } from "@/features/rbac/hooks/use-permissions";
 import {
   fetchAgentExecutionLog,
   fetchAgentRuntimeMetrics,
-  handleWithAgentRuntime,
   isBellaAgentEnabled,
   setBellaAgentEnabled,
   type AgentRuntimeTrace,
 } from "@/features/bella-ai/agent";
+import { handleAgentRuntimeFn } from "@/features/bella-ai/agent/runtime.functions";
+
 
 /**
  * Painel interno de Debug do Agent Runtime (Fase 5).
@@ -87,15 +88,14 @@ function BellaAgentDebugPage() {
     setTrace(null);
     setResponseText("");
     try {
-      const result = await handleWithAgentRuntime({
-        message,
-        ctx: {
-          companyId,
-          userId: null,
-          conversationId: null,
-          permissions: new Set(permissions),
-          isOwner,
-        },
+      const result = await handleAgentRuntimeFn({
+        data: {
+          message,
+          ctx: {
+            companyId,
+            conversationId: null,
+          },
+        }
       });
       setTrace(result.trace);
       setResponseText(result.response?.message ?? "(fluxo legado assumiria)");
