@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import React, { Suspense, lazy } from "react";
 import { cn } from "@/lib/utils";
+const BellaAskPanel = lazy(() => import("@/features/bella-ai/components/bella-ask-panel").then(m => ({ default: m.BellaAskPanel })));
+
 import {
-  BellaAskPanel,
   BellaOverviewGrid,
   BellaInsightsGrid,
   BellaSuggestedTasks,
@@ -141,7 +143,9 @@ function BellaPage() {
 
         {/* Coluna direita — barra fixa da Bella IA. */}
         <aside className="min-w-0 space-y-4">
-          <BellaAskPanel />
+          <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
+            <BellaAskPanel />
+          </Suspense>
         </aside>
       </div>
 
