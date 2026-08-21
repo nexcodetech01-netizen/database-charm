@@ -6,7 +6,9 @@
  * (linhas com `error_message` iniciando em "fallback:").
  */
 import { supabase } from "@/integrations/supabase/client";
-import { FALLBACK_LOG_PREFIX } from "./runtime";
+// Importação removida para evitar vazamento de runtime.ts (que importa Registry) para o cliente.
+// O prefixo é fixo em "fallback:".
+const FALLBACK_LOG_PREFIX = "fallback:";
 
 export interface AgentRuntimeMetricsWindow {
   companyId: string;
