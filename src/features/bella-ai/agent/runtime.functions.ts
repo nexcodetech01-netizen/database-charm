@@ -18,8 +18,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // 1. Authenticate and authorize using Supabase context from middleware
-    // Note: TanStack Start v1 middleware context is accessible via context.auth or injected keys
-    // For this project, userId is typically injected by attachSupabaseAuth or similar
+    // Note: TanStack Start v1 middleware context is accessible via context
     const userId = (context as any).userId;
     
     if (!userId) {
@@ -27,14 +26,12 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
     }
 
     // 2. Validate multi-tenant access using the dedicated server-side resolver
-    // Note: assertCompanyAccess in this project usually takes (supabase, userId, companyId)
     await assertCompanyAccess(supabaseAdmin, userId, data.ctx.companyId);
 
     // 3. Fetch permissions server-side (do not trust client-sent permissions)
     const perms = await fetchUserPermissions(userId, data.ctx.companyId);
 
     // 4. Execute runtime with server-side context
-    // This is safe because this handler only runs on the server
     const result = await handleWithAgentRuntime({
       message: data.message,
       ctx: {
@@ -47,6 +44,15 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
       confirmed: data.confirmed,
     });
 
-    // Ensure the result is serializable for the transport layer
-    return JSON.parse(JSON.stringify(result));
+    // Recursively sanitize to ensure pure serializability (Set to Array, etc.)
+    const sanitize = (obj: any): any => {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (obj instanceof Set) return Array.from(obj);
+      if (Array.isArray(obj)) return obj.map(sanitize);
+      return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => [k, sanitize(v)])
+      );
+    };
+
+    return sanitize(result);
   });
