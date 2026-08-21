@@ -9,7 +9,7 @@ import { INTERACTION_TOKENS, RADIUS_TOKENS, TEXT_TOKENS } from "@/design";
 import { ASK_EXAMPLES, QUICK_ACTION_PROMPTS } from "../workspace/data";
 import { useAuth } from "@/providers/auth-provider";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
-import { handleAgentRuntimeFn } from "../agent/runtime.functions";
+import { handleAgentRuntimeFn, executeAgentActionFn } from "../agent/runtime.functions";
 import { interpretWithOpenAI } from "../ai/gateway/interpret-openai.functions";
 // Importação removida para evitar vazamento do OpenAIProvider (que importa Registry) para o cliente.
 // O provedor será carregado dinamicamente ou injetado.
