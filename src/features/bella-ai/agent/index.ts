@@ -32,8 +32,10 @@ export {
 //   type AgentRuntimeResult,
 //   type AgentRuntimeTrace,
 // } from "./runtime";
-export { FALLBACK_LOG_PREFIX } from "./runtime";
-export type { AgentRuntimeInput, AgentRuntimeResult, AgentRuntimeTrace } from "./runtime";
+// export { FALLBACK_LOG_PREFIX } from "./runtime";
+// export type { AgentRuntimeInput, AgentRuntimeResult, AgentRuntimeTrace } from "./runtime";
+export const FALLBACK_LOG_PREFIX = "fallback:";
+export type { AgentRuntimeInput, AgentRuntimeResult, AgentRuntimeTrace } from "./types";
 // runtime.ts foi removido do barrel para evitar vazamento de código server-side.
 // Types e constantes seguras devem vir de arquivos separados se necessário,
 // mas por enquanto mantemos o essencial via export individual.
