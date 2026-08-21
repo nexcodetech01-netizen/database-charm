@@ -18,7 +18,7 @@ import {
 } from "../context";
 import type { BellaPendingSkill } from "../context/types";
 // Carrega o SkillRegistry (registra todas as Skills no import).
-import { BellaSkillRegistry } from "../skills";
+import { BellaSkillRegistry } from "../skills/registry";
 import type {
   BellaSkill,
   BellaSkillContext,
