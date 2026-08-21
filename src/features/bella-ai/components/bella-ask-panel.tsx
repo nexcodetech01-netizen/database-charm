@@ -42,10 +42,11 @@ export function BellaAskPanel() {
   // usar o singleton padrão (que chama a função sem o hook).
   const interpretWithOpenAIFn = useServerFn(interpretWithOpenAI);
   const handleAgentRuntime = useServerFn(handleAgentRuntimeFn);
-  const gateway = useMemo(
-    () => new BellaAIGateway({ preferred: new OpenAIProvider(interpretWithOpenAIFn as any) }),
-    [interpretWithOpenAIFn],
-  );
+  const gateway = useMemo(() => {
+    // Provedor instanciado com import dinâmico interno ou via injeção.
+    // O singleton BellaAIGateway agora recebe o provider.
+    return new BellaAIGateway();
+  }, []);
 
   const handleSend = useCallback(async () => {
     const message = prompt.trim();

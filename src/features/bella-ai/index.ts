@@ -28,7 +28,8 @@ export { BellaAutomationsList } from "./components/bella-automations-list";
 export { BellaAgentsGrid } from "./components/bella-agents-grid";
 export { BellaPromptsLibrary } from "./components/bella-prompts-library";
 export { BellaHistoryTimeline } from "./components/bella-history-timeline";
-export { BellaAskPanel } from "./components/bella-ask-panel";
+// BellaAskPanel exportado seletivamente para ser importado dinamicamente onde necessário
+// export { BellaAskPanel } from "./components/bella-ask-panel";
 export { BellaGreetingHero } from "./components/bella-greeting-hero";
 export type { BellaGreetingHeroProps } from "./components/bella-greeting-hero";
 export { BellaQuickActions } from "./components/bella-quick-actions";
@@ -80,6 +81,7 @@ export type {
   ExecutiveAlert as ExecutiveAlertItem,
   ComparisonResult,
   PeriodKey,
+PeriodKey as PeriodKeyType
 } from "./intelligence";
 export { ExecutiveSummaryCard } from "./components/executive-summary-card";
 export { ExecutiveScoreGauge } from "./components/executive-score-gauge";
@@ -97,5 +99,3 @@ export {
   getCashflowHandler,
   getFinancialSummaryHandler,
 } from "./actions/finance-handlers";
-
-
