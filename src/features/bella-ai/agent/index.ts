@@ -23,13 +23,17 @@ export {
   SUPPORTED_RUNTIME_INTENTS,
   type SupportedRuntimeIntent,
 } from "./intent-engine";
-export {
-  handleWithAgentRuntime,
-  FALLBACK_LOG_PREFIX,
-  type AgentRuntimeInput,
-  type AgentRuntimeResult,
-  type AgentRuntimeTrace,
-} from "./runtime";
+// Removido do barrel para evitar vazamento de código server-only para o cliente
+// handleWithAgentRuntime importa o pipeline completo que inclui o Registry.
+// export {
+//   handleWithAgentRuntime,
+//   FALLBACK_LOG_PREFIX,
+//   type AgentRuntimeInput,
+//   type AgentRuntimeResult,
+//   type AgentRuntimeTrace,
+// } from "./runtime";
+export { FALLBACK_LOG_PREFIX } from "./runtime";
+export type { AgentRuntimeInput, AgentRuntimeResult, AgentRuntimeTrace } from "./runtime";
 export {
   fetchAgentRuntimeMetrics,
   fetchAgentExecutionLog,
