@@ -7,7 +7,6 @@
  * Aditivo: coexiste com o Orchestrator antigo (pricing) e com o Action
  * Engine legado. Consumidores novos devem preferir este pipeline.
  */
-import { BellaSkillRegistry } from "../skills/registry";
 import { canExecuteSkill } from "./permission-engine";
 import { planFromIntent } from "./planner";
 import { logAgentExecution } from "./execution-log";
@@ -21,6 +20,16 @@ export interface RunAgentInput {
 }
 
 export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
+  // SEGURANÇA: Bloqueia execução acidental no navegador.
+  // runAgent carrega o BellaSkillRegistry que por sua vez carrega skills de negócio.
+  if (typeof window !== 'undefined') {
+    throw new Error("Agente Operacional só pode ser executado no servidor.");
+  }
+
+  // Importação dinâmica com string concatenada para evitar que o bundler do cliente
+  // arraste o Registry e suas dependências server-only (como FiscalService).
+  const { BellaSkillRegistry } = await import("../skills/registry" + "");
+
   const { intent, ctx, confirmed = false } = input;
   const startedAt = new Date();
 
@@ -48,11 +57,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
     };
   }
 
-  // 2) Planejamento ok. A confirmação agora é tratada dentro do loop de execução 
-  // para permitir que as Skills gerem resumos ricos com dados reais.
-
-
-  // 3) Permissão + execução passo-a-passo
+  // 2) Permissão + execução passo-a-passo
   const steps: AgentStepResult[] = [];
   for (const step of plan.steps) {
     const check = canExecuteSkill(ctx, step.skillId);
@@ -78,12 +83,11 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
       };
     }
 
-    const skill = BellaSkillRegistry.get(step.skillId);
-    
     // Agora o registry.execute cuida da confirmação interna via BaseSkill
     const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
       companyId: ctx.companyId,
       userId: ctx.userId ?? null,
+      supabase: ctx.supabase, // Propaga o cliente injetado
     }, confirmed);
     
     steps.push({ step, result });
@@ -181,7 +185,7 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
     intent,
     plan,
     steps,
-    suggestions: last?.suggestions?.map((s) => ({
+    suggestions: last?.suggestions?.map((s: any) => ({
       id: s.id,
       title: s.title,
       actionLabel: s.actionLabel,
