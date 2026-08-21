@@ -37,15 +37,13 @@ export function buildSkillsCatalog(registry?: any): SkillCatalogEntry[] {
   const targetRegistry = registry;
   if (!targetRegistry) return [];
 
-  return targetRegistry.list()
+  return (targetRegistry.list() as any[])
     .map((skill) => ({
       id: skill.id,
       name: skill.name,
       module: skill.module,
       description: skill.description,
       requiresConfirmation: Boolean(skill.requiresConfirmation),
-      // Skills atuais não expõem schema formal — o LLM infere a partir
-      // da descrição. Quando o schema formal chegar, popula aqui.
       parameters: [],
     }))
     .sort((a, b) =>

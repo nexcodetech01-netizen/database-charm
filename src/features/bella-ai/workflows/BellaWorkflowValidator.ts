@@ -4,7 +4,9 @@
  * existente no BellaSkillRegistry.
  */
 
-import { BellaSkillRegistry } from "../skills/registry";
+// Importação removida para evitar vazamento do Registry no bundle do cliente.
+// O validador deve receber o registry como argumento ou injetado dinamicamente no servidor.
+// import { BellaSkillRegistry } from "../skills/registry";
 import type { BellaWorkflowDefinition } from "./BellaWorkflowTypes";
 
 export interface BellaWorkflowValidationResult {
@@ -14,7 +16,7 @@ export interface BellaWorkflowValidationResult {
 
 export function validateDefinition(
   def: BellaWorkflowDefinition,
-  registry: typeof BellaSkillRegistry = BellaSkillRegistry,
+  registry: any,
 ): BellaWorkflowValidationResult {
   const errors: string[] = [];
 
