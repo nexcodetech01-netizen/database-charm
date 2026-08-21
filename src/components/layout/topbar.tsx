@@ -69,6 +69,44 @@ export function Topbar() {
   const [activeAlerts, setActiveAlerts] = useState<BellaEvent[]>([]);
   const { settings, isLoading: settingsLoading } = useNotificationSettings();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlockedRef = useRef(false);
+
+  // CORREÇÃO: navegadores bloqueiam áudio disparado programaticamente
+  // (sem clique direto do usuário naquele instante) até a pessoa
+  // interagir com a página pelo menos uma vez desde que carregou —
+  // uma política de segurança do próprio navegador contra som
+  // automático indesejado. Se uma notificação chega logo depois de um
+  // F5, antes de qualquer clique, o `audioRef.current.play()` falha
+  // silenciosamente (o `.catch(() => {})` engolia o erro sem avisar
+  // ninguém) — o sino atualiza normalmente (isso não é bloqueado),
+  // mas o som nunca toca. "Desbloqueia" o áudio assim que a pessoa
+  // clicar em qualquer lugar da página pela primeira vez, tocando e
+  // pausando instantaneamente (silencioso, imperceptível) — depois
+  // disso, os `.play()` programáticos passam a funcionar normalmente
+  // pro resto da sessão.
+  useEffect(() => {
+    if (audioUnlockedRef.current) return;
+    const unlock = () => {
+      if (audioUnlockedRef.current || !audioRef.current) return;
+      audioRef.current
+        .play()
+        .then(() => {
+          audioRef.current?.pause();
+          if (audioRef.current) audioRef.current.currentTime = 0;
+          audioUnlockedRef.current = true;
+        })
+        .catch(() => {
+          // Ainda bloqueado (raro depois de um clique real) — tenta de
+          // novo no próximo clique, sem quebrar nada.
+        });
+    };
+    document.addEventListener("click", unlock);
+    document.addEventListener("keydown", unlock);
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("keydown", unlock);
+    };
+  }, []);
   
   // Hooks das Server Functions (CORREÇÃO: essencial para TanStack Start v1)
   const getUnreadFn = useServerFn(getUnreadNotifications);
@@ -244,7 +282,9 @@ export function Topbar() {
         if (ticketId) notifiedIdsRef.current.add(ticketId);
 
         if (config.sound && audioRef.current) {
-          audioRef.current.play().catch(() => {});
+          audioRef.current.play().catch((err) => {
+            addLog('[TOPBAR-NOTIF]', `falha ao tocar som (provável bloqueio de autoplay do navegador): ${err?.message || err}`);
+          });
         }
 
         const title = event.title || "Nova notificação";
