@@ -5,7 +5,8 @@
  * percorre a lista de nós, estimando tempo e apontando o caminho
  * previsto para o usuário.
  */
-import { BellaSkillRegistry } from "../skills/registry";
+// Importação de tipo apenas para evitar vazamento
+import type { BellaSkillRegistry } from "../skills/registry";
 import { validateFlow } from "./FlowValidator";
 import type {
   FlowDefinition,
@@ -37,9 +38,9 @@ const DEFAULT_TIMING: Record<string, number> = {
 
 export function simulateFlow(
   flow: FlowDefinition,
-  deps: { skills?: typeof BellaSkillRegistry } = {},
+  deps: { skills?: { get(id: string): any } } = {},
 ): FlowSimulationResult {
-  const skills = deps.skills ?? BellaSkillRegistry;
+  const skills = deps.skills;
   const validation = validateFlow(flow);
   const warnings: string[] = validation.issues.map((i) => i.message);
   const steps: FlowSimulationStep[] = [];
