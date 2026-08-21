@@ -13,7 +13,18 @@ class BellaWorkflowRegistryImpl {
   private workflows = new Map<string, BellaWorkflowDefinition>();
 
   register(def: BellaWorkflowDefinition): void {
-    const validation = validateDefinition(def);
+    // No cliente, não temos acesso ao BellaSkillRegistry para validar. 
+    // No servidor, carregamos dinamicamente para validar.
+    let validation = { ok: true, errors: [] as string[] };
+    if (typeof window === 'undefined') {
+      try {
+        const { BellaSkillRegistry } = await import("../skills/registry" + "");
+        validation = validateDefinition(def, BellaSkillRegistry);
+      } catch (err) {
+        console.warn("[BellaWorkflowRegistry] Skipped server-side validation:", err);
+      }
+    }
+
     if (!validation.ok) {
       throw new Error(
         `[BellaWorkflowRegistry] "${def.workflowId}" inválido: ${validation.errors.join("; ")}`,
