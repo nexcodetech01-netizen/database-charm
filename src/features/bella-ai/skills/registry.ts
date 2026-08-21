@@ -50,7 +50,7 @@ class BellaSkillRegistryImpl {
     
     try {
       // @ts-ignore - Este import é seguro pois o check acima garante execução apenas server-side
-      const { initializeRegistryOnServer } = await import("./registry.server");
+      const { initializeRegistryOnServer } = await import("./registry.server" + "");
       await initializeRegistryOnServer();
       this.initialized = true;
     } catch (err) {
@@ -95,7 +95,7 @@ class BellaSkillRegistryImpl {
       // Se a skill for uma BaseSkill (v2), usamos o método run que gerencia o pipeline
       if ("run" in skill && typeof (skill as any).run === "function") {
         // Build basic ExecutionContext for BaseSkill
-        const { buildExecutionContext } = await import("../agent/infrastructure/context");
+        const { buildExecutionContext } = await import("../agent/infrastructure/context" + "");
         const execCtx = buildExecutionContext({
           companyId: ctx.companyId,
           userId: ctx.userId ?? null,

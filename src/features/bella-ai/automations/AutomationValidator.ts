@@ -5,7 +5,8 @@
  * Não consulta banco nem executa Skills; apenas garante que a definição
  * é bem-formada e não tenta invocar uma Skill destrutiva.
  */
-import { BellaSkillRegistry } from "../skills/registry";
+// Import removido para evitar vazamento de código server-only no cliente via Registry.
+// O validador deve receber o Registry como dependência se necessário, ou usar IDs de string.
 import { AutomationActions } from "./AutomationActions";
 import type { Automation } from "./types";
 
@@ -15,9 +16,13 @@ export interface AutomationValidationIssue {
 }
 
 export const AutomationValidator = {
-  validate(input: Pick<Automation, "name" | "triggerType" | "actions" | "conditions">): AutomationValidationIssue[] {
+  validate(
+    input: Pick<Automation, "name" | "triggerType" | "actions" | "conditions">,
+    deps: { skills?: { has(id: string): boolean } } = {}
+  ): AutomationValidationIssue[] {
     const issues: AutomationValidationIssue[] = [];
     if (!input.name || input.name.trim().length < 3) {
+
       issues.push({ field: "name", message: "Nome deve ter ao menos 3 caracteres." });
     }
     if (!input.triggerType) {
@@ -37,7 +42,7 @@ export const AutomationValidator = {
             message: `Skill "${a.skillId}" é destrutiva e não pode ser automatizada.`,
           });
         }
-        if (!BellaSkillRegistry.has(a.skillId)) {
+        if (deps.skills && !deps.skills.has(a.skillId)) {
           issues.push({
             field: `actions.${idx}.skillId`,
             message: `Skill "${a.skillId}" não está registrada.`,
