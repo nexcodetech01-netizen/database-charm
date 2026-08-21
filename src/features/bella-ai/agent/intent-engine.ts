@@ -330,10 +330,6 @@ export function detectDeterministicIntent(raw: string): AgentIntent | null {
       if (pattern.test(text)) {
         const entities = rule.extract?.(text) ?? {};
         
-        // Normalização de chaves para evitar duplicação em payloads de skills estritas.
-        // Se a intenção já tem 'absolute' ou 'delta', remove 'quantity' se for derivado da mesma regex.
-        // No stock.adjust determinístico, quantity não é extraído, mas em outras intents sim.
-        
         return {
           id: rule.intent,
           confidence: rule.confidence,
@@ -346,12 +342,4 @@ export function detectDeterministicIntent(raw: string): AgentIntent | null {
     }
   }
   return null;
-}
-
-function norm(t: string): string {
-  return t
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
 }
