@@ -40,13 +40,16 @@ class BellaSkillRegistryImpl {
    */
   async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
-    if (!isServer) {
+    
+    // CORREÇÃO: Usamos import.meta.env.SSR para garantir que o compilador 
+    // e o bundler saibam que este bloco é exclusivo do lado do servidor.
+    if (!import.meta.env.SSR) {
       this.initialized = true;
       return;
     }
     
     try {
-      // @ts-ignore - Este import é seguro pois o isServer garante execução apenas node-side
+      // @ts-ignore - Este import é seguro pois o check acima garante execução apenas server-side
       const { initializeRegistryOnServer } = await import("./registry.server");
       await initializeRegistryOnServer();
       this.initialized = true;
