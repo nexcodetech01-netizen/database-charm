@@ -59,7 +59,7 @@ export function simulateFlow(
     }
     if (node.kind === "skill") {
       skillId = String(node.config.skillId ?? "");
-      const skill = skillId ? skills.get(skillId) : undefined;
+      const skill = (skillId && skills) ? skills.get(skillId) : undefined;
       action = skill ? `Executar Skill "${skill.name}"` : `Skill "${skillId}" inexistente`;
       if (!skill) note = "Simulação não chamou Skill; publicação falhará.";
     }

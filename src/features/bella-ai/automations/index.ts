@@ -1,9 +1,11 @@
 /**
  * Bella Automations — barrel público.
+ *
+ * NOTA: AutomationEngine e AutomationRunner foram removidos do barrel
+ * para evitar vazamento de código server-only (Registry) para o cliente.
+ * Consumidores de UI devem usar apenas types e componentes.
  */
 export * from "./types";
-export { AutomationEngine } from "./AutomationEngine";
-export { AutomationRunner } from "./AutomationRunner";
 export { AutomationScheduler } from "./AutomationScheduler";
 export { AutomationConditions } from "./AutomationConditions";
 export { AutomationActions, DESTRUCTIVE_SKILL_IDS } from "./AutomationActions";
