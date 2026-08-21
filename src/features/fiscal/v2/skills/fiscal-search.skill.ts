@@ -1,6 +1,5 @@
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
-import { FiscalService } from "../service/fiscal.service.server";
 import { fiscalSearchSchema } from "../schemas";
 
 export const fiscalSearchSkill = defineBaseSkill({
@@ -12,6 +11,8 @@ export const fiscalSearchSkill = defineBaseSkill({
   requiredPermissions: ["fiscal.view"],
   destructive: false,
   async handler(input, ctx) {
+    // Importação dinâmica para evitar vazamento de código server-only para o cliente
+    const { FiscalService } = await import("../service/fiscal.service.server");
     const svc = new FiscalService(ctx);
     const rows = await svc.search({
       status: input.status,

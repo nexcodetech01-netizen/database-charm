@@ -1,6 +1,5 @@
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
-import { FiscalService } from "../service/fiscal.service.server";
 import { fiscalStatusSchema } from "../schemas";
 import type { FiscalDocument, FiscalEvent } from "../types";
 
@@ -21,6 +20,9 @@ export const fiscalStatusSkill = defineBaseSkill<
         { field: "documentId", label: "Identificador da NF-e", type: "text", required: true },
       ]) as never;
     }
+    
+    // Importação dinâmica para evitar vazamento de código server-only para o cliente
+    const { FiscalService } = await import("../service/fiscal.service.server");
     const svc = new FiscalService(ctx);
     let doc: FiscalDocument | null = null;
     if (input.documentId) doc = await svc.findById(input.documentId);
