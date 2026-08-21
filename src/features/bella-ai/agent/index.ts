@@ -15,7 +15,8 @@ export {
   type AgentMetricsSummary,
   type AgentMetricsWindow,
 } from "./observability";
-export { runAgent, type RunAgentInput } from "./agent";
+// Removido do barrel para evitar vazamento de código server-only para o cliente
+// export { runAgent, type RunAgentInput } from "./agent";
 export { isBellaAgentEnabled, setBellaAgentEnabled } from "./config";
 export {
   detectRuntimeIntent,
