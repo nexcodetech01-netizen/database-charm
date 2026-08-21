@@ -1,4 +1,11 @@
 import { logger } from '../config/logger';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 export interface PrintJob {
   id: string;
@@ -94,10 +101,98 @@ export class PrintJobService {
     }
   }
 
+  /**
+   * BUG ENCONTRADO E CORRIGIDO (2026-08-20): esse método era 100%
+   * simulado — só esperava 1,5s e "dava certo" sozinho, sem nunca
+   * mandar nada de verdade pra impressora. Era um placeholder deixado
+   * como "TODO" (comentário original: "Para esta simulação de
+   * Hardening, focamos na infraestrutura de controle") e nunca foi
+   * completado. É por isso que o NexOS às vezes "confirmava sucesso"
+   * mas nada saía fisicamente — a fila e o controle de status sempre
+   * foram reais, só a impressão em si nunca aconteceu.
+   *
+   * Implementação real por tipo:
+   * - PDF: usa o `pdf-to-printer` (Windows, imprime silenciosamente
+   *   via SumatraPDF empacotado — não precisa abrir nenhum programa
+   *   visível na tela).
+   * - ZPL/RAW/RECEIPT (texto puro pra impressora térmica): grava um
+   *   arquivo temporário e copia direto pro compartilhamento da
+   *   impressora no Windows (`copy /b arquivo \\localhost\NOME`) —
+   *   técnica padrão pra mandar bytes crus sem passar pelo driver
+   *   gráfico do Windows, necessário pra comandos ZPL funcionarem.
+   *   IMPORTANTE: a impressora térmica precisa estar COMPARTILHADA no
+   *   Windows (Painel de Controle > Impressoras > Propriedades >
+   *   Compartilhamento) com o nome batendo com o que aparece no NexOS
+   *   — sem isso, esse método de cópia direta não funciona.
+   * - IMAGE: mesma técnica de cópia direta do RAW/ZPL (a maioria das
+   *   impressoras térmicas aceita imagem já convertida em comandos
+   *   binários da própria impressora).
+   */
   private async executePrint(job: PrintJob): Promise<void> {
-    // Aqui integraria com bibliotecas nativas como node-printer ou envio direto para socket
-    // Para esta simulação de Hardening, focamos na infraestrutura de controle
-    return new Promise((resolve) => setTimeout(resolve, 1500));
+    const tmpDir = os.tmpdir();
+    const tmpFile = path.join(tmpDir, `nexos-print-${job.id}`);
+
+    try {
+      if (job.type === 'PDF') {
+        await this.printPdf(job, tmpFile);
+      } else {
+        await this.printRaw(job, tmpFile);
+      }
+    } finally {
+      // Limpa o arquivo temporário, sucesso ou erro — não deixa lixo
+      // acumulando na pasta temp do Windows a cada impressão.
+      fs.promises.unlink(tmpFile).catch(() => {});
+    }
+  }
+
+  private async printPdf(job: PrintJob, tmpFile: string): Promise<void> {
+    const base64 = job.data?.data;
+    if (!base64) {
+      throw new Error('PDF sem conteúdo (campo "data" vazio) — nada pra imprimir.');
+    }
+
+    const pdfPath = `${tmpFile}.pdf`;
+    await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
+
+    // Import dinâmico: só carrega essa dependência quando precisa
+    // imprimir PDF de verdade, evitando custo em outros tipos de job.
+    const { print } = await import('pdf-to-printer');
+    await print(pdfPath, { printer: job.printer });
+
+    await fs.promises.unlink(pdfPath).catch(() => {});
+  }
+
+  private async printRaw(job: PrintJob, tmpFile: string): Promise<void> {
+    // ZPL, RAW e RECEIPT chegam como texto (comandos da impressora ou
+    // conteúdo já formatado) — pega o primeiro campo preenchido entre
+    // os aceitos pelo schema.
+    const content: string | undefined = job.data?.zpl || job.data?.content || job.data?.data;
+    if (!content) {
+      throw new Error(`Job do tipo ${job.type} sem conteúdo — nada pra imprimir.`);
+    }
+
+    const rawFile = `${tmpFile}.prn`;
+    await fs.promises.writeFile(rawFile, content, 'binary');
+
+    // Copia os bytes crus direto pro compartilhamento da impressora no
+    // Windows — não passa pelo driver gráfico, essencial pra comandos
+    // ZPL/RAW funcionarem (imprimir via driver normal reformataria ou
+    // ignoraria os comandos). A impressora precisa estar compartilhada
+    // no Windows com esse mesmo nome.
+    const printerShare = `\\\\localhost\\${job.printer}`;
+    try {
+      await execFileAsync('cmd.exe', ['/c', 'copy', '/b', rawFile, printerShare]);
+    } catch (err: any) {
+      throw new Error(
+        `Falha ao enviar pra impressora "${job.printer}". Confirme que ela está ` +
+        `COMPARTILHADA no Windows (Painel de Controle > Dispositivos e Impressoras > ` +
+        `clique com botão direito na impressora > Propriedades da Impressora > aba ` +
+        `Compartilhamento > marcar "Compartilhar esta impressora", com o nome do ` +
+        `compartilhamento igual ao nome que aparece no NexOS). Erro original: ${err.message}`,
+      );
+    } finally {
+      await fs.promises.unlink(rawFile).catch(() => {});
+    }
   }
 
   private moveToHistory(job: PrintJob) {
