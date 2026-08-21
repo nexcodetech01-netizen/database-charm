@@ -62,19 +62,17 @@ export async function calculateSuperfreteShipping(
   // lista bate com o que sua conta realmente tem disponível — se
   // faltar alguma transportadora que você sabe que deveria aparecer,
   // me avisa o código dela (aparece no painel deles) que eu adiciono.
-  // FIX (2026-08-20, revisão 2): o erro "(services) é obrigatório"
-  // continuava aparecendo mesmo com o campo preenchido — a causa
-  // provável é o FORMATO: a API da SuperFrete espera uma LISTA de
-  // números (array JSON), não um texto único separado por vírgulas
-  // ("1,2,3,..."). Um validador de schema que espera array trata uma
-  // string como tipo errado e reporta como se o campo obrigatório
-  // estivesse ausente — exatamente o sintoma visto.
-  const SUPERFRETE_SERVICES_RAW =
+  // FIX (2026-08-20, revisão 4 — CORREÇÃO DEFINITIVA): a revisão 2
+  // (mudar `services` pra array) estava ERRADA. A prova veio da própria
+  // resposta de erro da SuperFrete: "data.services.split is not a
+  // function" — ou seja, é o BACKEND DELES que chama `.split(",")`
+  // nesse campo pra separar os códigos. Isso só funciona se `services`
+  // for uma STRING separada por vírgula ("1,2,3,4") — mandar um array
+  // quebra o código deles (array não tem `.split`), e o erro que eles
+  // devolvem é literalmente essa exceção interna. Revertido pro formato
+  // de texto original, que é o que a API deles realmente espera.
+  const SUPERFRETE_SERVICES =
     process.env["SUPERFRETE_SERVICES"] || "1,2,3,4,15,16,17,18,22,31,32,33";
-  const SUPERFRETE_SERVICES = SUPERFRETE_SERVICES_RAW
-    .split(",")
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !Number.isNaN(n));
 
   const payload = {
     from: { postal_code: (cep_origem || "").replace(/\D/g, "") },
