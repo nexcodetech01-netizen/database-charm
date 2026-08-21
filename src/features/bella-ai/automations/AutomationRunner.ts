@@ -6,7 +6,9 @@
  * e devolve um resultado agregado. Não consulta banco — recebe a
  * automação e o evento já resolvidos.
  */
-import { BellaSkillRegistry } from "../skills/registry";
+// Import removido para evitar vazamento de código server-only no cliente.
+// O runner deve receber o Registry como dependência se necessário.
+
 import { AutomationActions } from "./AutomationActions";
 import { AutomationConditions } from "./AutomationConditions";
 import type {
@@ -24,7 +26,11 @@ export interface AutomationRunResult {
 }
 
 export const AutomationRunner = {
-  async run(automation: Automation, event: AutomationEvent): Promise<AutomationRunResult> {
+  async run(
+    automation: Automation,
+    event: AutomationEvent,
+    deps: { skills?: { has(id: string): boolean; execute(id: string, payload: any, ctx: any): Promise<any> } } = {}
+  ): Promise<AutomationRunResult> {
     const startedAt = Date.now();
     if (!automation.enabled) {
       return { status: "skipped", durationMs: 0, actionsSummary: [], error: null };
@@ -55,7 +61,7 @@ export const AutomationRunner = {
         hasError = true;
         continue;
       }
-      if (!BellaSkillRegistry.has(def.skillId)) {
+      if (deps.skills && !deps.skills.has(def.skillId)) {
         outcomes.push({
           skillId: def.skillId,
           label,
@@ -66,9 +72,9 @@ export const AutomationRunner = {
         continue;
       }
 
-      const payload = AutomationActions.resolvePayload(def, event);
       try {
-        const result = await BellaSkillRegistry.execute(def.skillId, payload, {
+        if (!deps.skills) throw new Error("Skill Registry não disponível.");
+        const result = await deps.skills.execute(def.skillId, payload, {
           companyId: automation.companyId,
           userId: null,
         });
