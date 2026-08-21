@@ -88,6 +88,7 @@ export interface PublicRelatedProduct {
 
 export interface PublicProductDetail extends CollectionVisibility {
   id: string;
+  company_id: string;
   name: string;
   brand: string | null;
   description: string | null;

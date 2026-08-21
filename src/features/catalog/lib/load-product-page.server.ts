@@ -8,6 +8,7 @@ const DEFAULT_ENTRADA_PERCENT = 30;
 
 export type ProductPagePayload = {
   id: string;
+  company_id: string;
   name: string;
   brand: string | null;
   description: string | null;
@@ -211,6 +212,7 @@ export async function loadProductPagePayload(params: {
 
   const payload: ProductPagePayload = {
     id: prod.id,
+    company_id: col.company_id,
     name: prod.name,
     brand: prod.brand,
     description: prod.description,
