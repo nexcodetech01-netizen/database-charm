@@ -41,12 +41,17 @@ class BellaSkillRegistryImpl {
   async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
     
-    // Import dinâmico para quebrar o ciclo de barrels.
-    // O bootstrap de skills importa este Registry para registrar,
-    // então chamamos o bootstrap aqui para disparar o processo.
-    const { initializeSkills } = await import("./index");
-    initializeSkills();
-    this.initialized = true;
+    // CORREÇÃO CIRÚRGICA: O import dinâmico estático 'await import("./index")' 
+    // estava sendo rastreado pelo Vite no bundle do cliente, vazando 
+    // dependências de servidor. Agora usamos um helper .server.ts que 
+    // é opaco para o bundle do cliente.
+    try {
+      const { initializeRegistryOnServer } = await import("./registry.server");
+      await initializeRegistryOnServer();
+      this.initialized = true;
+    } catch (err) {
+      console.warn("[BellaSkillRegistry] Could not initialize server skills:", err);
+    }
   }
 
 
