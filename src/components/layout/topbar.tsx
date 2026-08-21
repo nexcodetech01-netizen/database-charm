@@ -505,11 +505,13 @@ export function Topbar() {
       </div>
 
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-2xl pt-10">
-          <DialogHeader className="px-1">
-            <DialogTitle>Configurações de Notificação</DialogTitle>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-slate-800 bg-slate-950/95 backdrop-blur-xl">
+          <DialogHeader className="pt-6 px-6 pb-4 border-b border-slate-800 space-y-0 flex-row items-center justify-between">
+            <DialogTitle className="text-xl font-bold text-white mb-1">Configurações de Notificação</DialogTitle>
           </DialogHeader>
-          <NotificationSettingsPanel />
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[calc(85vh-80px)]">
+            <NotificationSettingsPanel />
+          </div>
         </DialogContent>
       </Dialog>
     </header>
