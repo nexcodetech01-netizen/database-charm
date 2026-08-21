@@ -74,9 +74,14 @@ export interface BuildExecutionContextInput {
   channel: RequestContext["channel"];
   requestId?: string;
   locale?: string;
+  supabase?: SupabaseClient; // Added optional supabase override
 }
 
 export function buildExecutionContext(input: BuildExecutionContextInput): ExecutionContext {
+  const { supabase: browserSupabase } = typeof window !== 'undefined' 
+    ? require("@/integrations/supabase/client")
+    : { supabase: null };
+
   return {
     companyId: input.companyId,
     userId: input.userId,
@@ -88,7 +93,7 @@ export function buildExecutionContext(input: BuildExecutionContextInput): Execut
       locale: input.locale ?? "pt-BR",
     },
     security: makeSecurityContext(input.permissions, input.isOwner),
-    supabase,
+    supabase: input.supabase ?? browserSupabase,
   };
 }
 

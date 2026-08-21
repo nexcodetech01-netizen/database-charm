@@ -3,7 +3,6 @@ import { z } from "zod";
 import { handleWithAgentRuntime } from "./runtime";
 import { assertCompanyAccess } from "@/lib/company-resolver.server";
 import { fetchUserPermissions } from "@/features/rbac/lib/fetch-permissions";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
   .validator(
@@ -17,21 +16,29 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
     })
   )
   .handler(async ({ data, context }) => {
-    // 1. Authenticate and authorize using Supabase context from middleware
-    // Note: TanStack Start v1 middleware context is accessible via context
+    // 1. Authenticate using TanStack context (provided by middleware)
     const userId = (context as any).userId;
     
     if (!userId) {
       throw new Error("Unauthorized");
     }
 
-    // 2. Validate multi-tenant access using the dedicated server-side resolver
+    // 2. Resolve internal dependencies within handler to avoid client leak
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 3. Validate multi-tenant access
     await assertCompanyAccess(supabaseAdmin, userId, data.ctx.companyId);
 
-    // 3. Fetch permissions server-side (do not trust client-sent permissions)
+    // 4. Fetch permissions server-side
     const perms = await fetchUserPermissions(userId, data.ctx.companyId);
 
-    // 4. Execute runtime with server-side context
+    // 5. Build ExecutionContext with the user's Supabase client
+    const { buildExecutionContext } = await import("./infrastructure/context");
+    // Note: We need a way to pass the user's session supabase client here.
+    // TanStack Start middleware usually adds it to context.
+    const userSupabase = (context as any).supabase;
+
+    // 6. Execute runtime
     const result = await handleWithAgentRuntime({
       message: data.message,
       ctx: {
@@ -40,6 +47,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
         permissions: perms.permissions,
         isOwner: perms.isOwner,
         conversationId: data.ctx.conversationId,
+        supabase: userSupabase, // Inject the authenticated client
       },
       confirmed: data.confirmed,
     });

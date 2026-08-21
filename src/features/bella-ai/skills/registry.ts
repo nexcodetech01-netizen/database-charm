@@ -102,6 +102,7 @@ class BellaSkillRegistryImpl {
           permissions: new Set(["*"]), // Fallback permissions, real check inside run
           isOwner: true,
           channel: "web",
+          supabase: (ctx as any).supabase, // Use the client from context if available
         });
 
         return await (skill as any).run({
