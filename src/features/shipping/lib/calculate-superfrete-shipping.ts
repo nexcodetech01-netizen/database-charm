@@ -136,7 +136,15 @@ export async function calculateSuperfreteShipping(
       const messages = Object.values(nestedErrors).flat().map(String);
       return { options: [], errors: messages.length > 0 ? messages : [data.message || "Nenhuma opção de frete encontrada."] };
     }
-    throw new Error(data.message || "Falha ao calcular frete na SuperFrete");
+    // Sempre inclui o corpo completo da resposta da SuperFrete na
+    // mensagem — mesmo quando `data.message` existe, porque esse campo
+    // às vezes é só um resumo genérico ("Bad Request") que esconde o
+    // detalhe real que vem em outro campo da resposta. Com isso tudo
+    // aparece direto na tela, sem precisar de log de servidor.
+    const baseMessage = data.message || "Falha ao calcular frete na SuperFrete";
+    throw new Error(
+      `${baseMessage} (status ${response.status}): ${JSON.stringify(data).slice(0, 500)}`,
+    );
   }
 
   const rawOptions = Array.isArray(data) ? data : [data];
