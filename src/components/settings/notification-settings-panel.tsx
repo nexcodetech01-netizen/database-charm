@@ -44,7 +44,7 @@ export function NotificationSettingsPanel() {
   const eventTypes = Object.keys(DEFAULT_SETTINGS);
 
   return (
-    <div className="space-y-4 w-full pb-6">
+    <div className="space-y-4 w-full">
       <div className="grid gap-2.5">
         {eventTypes.map((type) => {
           const config = settings[type] || { sound: false, browser: false };
