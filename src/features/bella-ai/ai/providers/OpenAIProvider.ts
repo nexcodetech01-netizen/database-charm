@@ -15,6 +15,7 @@ import type {
   AIResult,
 } from "../gateway/types";
 import { interpretWithOpenAI as interpretWithOpenAIDefault } from "../gateway/interpret-openai.functions";
+// buildSkillsCatalog agora exige a injeção do registry para evitar import estático do singleton que vaza código server-side.
 import { buildSkillsCatalog } from "../gateway/skills-catalog";
 
 type InterpretFn = typeof interpretWithOpenAIDefault;
@@ -70,7 +71,14 @@ export class OpenAIProvider implements AIProvider {
       throw new Error("OPENAI_EMPTY_MESSAGE");
     }
 
-    const skills = buildSkillsCatalog();
+    // No servidor, carregamos o registry dinamicamente se não estiver disponível.
+    let skills: any[] = [];
+    if (typeof window === 'undefined') {
+      const { BellaSkillRegistry } = await import("../../skills/registry" + "");
+      await BellaSkillRegistry.ensureInitialized();
+      skills = buildSkillsCatalog(BellaSkillRegistry);
+    }
+
     const context = (request.context ?? {}) as Record<string, unknown>;
     const companyName = typeof context.companyName === "string" ? context.companyName : undefined;
 

@@ -4,7 +4,8 @@
  * Nunca envia código-fonte ou implementações — apenas o mínimo necessário
  * para o modelo identificar intenção e extrair parâmetros.
  */
-import { BellaSkillRegistry } from "../../skills/registry";
+// Importação removida para evitar vazamento do Registry (e suas dependências server-side) no bundle do cliente.
+// O catálogo deve ser injetado ou carregado dinamicamente apenas no servidor.
 
 export interface SkillCatalogParameter {
   name: string;
@@ -27,8 +28,16 @@ export interface SkillCatalogEntry {
  * Constrói o catálogo a partir do Registry client-side.
  * Ordena por módulo → id para determinismo.
  */
-export function buildSkillsCatalog(): SkillCatalogEntry[] {
-  return BellaSkillRegistry.list()
+export function buildSkillsCatalog(registry?: any): SkillCatalogEntry[] {
+  if (!registry && typeof window !== 'undefined') {
+    console.warn("[buildSkillsCatalog] Registry not provided in client context. Returning empty catalog.");
+    return [];
+  }
+  
+  const targetRegistry = registry;
+  if (!targetRegistry) return [];
+
+  return targetRegistry.list()
     .map((skill) => ({
       id: skill.id,
       name: skill.name,
