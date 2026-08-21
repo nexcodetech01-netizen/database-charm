@@ -17,6 +17,8 @@ import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RastreioIndexRouteImport } from './routes/rastreio.index'
+import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
@@ -151,6 +153,16 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RastreioIndexRoute = RastreioIndexRouteImport.update({
+  id: '/rastreio/',
+  path: '/rastreio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RastreioTrackingCodeRoute = RastreioTrackingCodeRouteImport.update({
+  id: '/rastreio/$trackingCode',
+  path: '/rastreio/$trackingCode',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -745,6 +757,8 @@ export interface FileRoutesByFullPath {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/rastreio/': typeof RastreioIndexRoute
   '/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
@@ -850,6 +864,8 @@ export interface FileRoutesByTo {
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/rastreio': typeof RastreioIndexRoute
   '/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/clientes/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
@@ -956,6 +972,8 @@ export interface FileRoutesById {
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
+  '/rastreio/': typeof RastreioIndexRoute
   '/_authenticated/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/_authenticated/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/_authenticated/clientes_/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
@@ -1063,6 +1081,8 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
+    | '/rastreio/$trackingCode'
+    | '/rastreio/'
     | '/bella-contadora/fechamento-mensal'
     | '/bella-pay/test'
     | '/clientes/$customerId'
@@ -1168,6 +1188,8 @@ export interface FileRouteTypes {
     | '/vendas'
     | '/whatsapp'
     | '/invite/$token'
+    | '/rastreio/$trackingCode'
+    | '/rastreio'
     | '/bella-contadora/fechamento-mensal'
     | '/bella-pay/test'
     | '/clientes/$customerId'
@@ -1273,6 +1295,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
     | '/invite/$token'
+    | '/rastreio/$trackingCode'
+    | '/rastreio/'
     | '/_authenticated/bella-contadora/fechamento-mensal'
     | '/_authenticated/bella-pay/test'
     | '/_authenticated/clientes_/$customerId'
@@ -1347,6 +1371,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
+  RastreioIndexRoute: typeof RastreioIndexRoute
   CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRouteWithChildren
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
@@ -1424,6 +1450,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rastreio/': {
+      id: '/rastreio/'
+      path: '/rastreio'
+      fullPath: '/rastreio/'
+      preLoaderRoute: typeof RastreioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rastreio/$trackingCode': {
+      id: '/rastreio/$trackingCode'
+      path: '/rastreio/$trackingCode'
+      fullPath: '/rastreio/$trackingCode'
+      preLoaderRoute: typeof RastreioTrackingCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -2449,6 +2489,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
+  RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
+  RastreioIndexRoute: RastreioIndexRoute,
   CatalogoColecaoSlugRoute: CatalogoColecaoSlugRouteWithChildren,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
