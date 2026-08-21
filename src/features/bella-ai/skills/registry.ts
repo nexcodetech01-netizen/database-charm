@@ -6,7 +6,6 @@
  * passa por aqui, permitindo evoluir cada módulo isoladamente.
  */
 
-import { isServer } from "@tanstack/react-start";
 import type {
   BellaSkill,
   BellaSkillContext,
