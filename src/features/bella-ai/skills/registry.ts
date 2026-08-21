@@ -6,6 +6,7 @@
  * passa por aqui, permitindo evoluir cada módulo isoladamente.
  */
 
+import { isServer } from "@tanstack/react-start";
 import type {
   BellaSkill,
   BellaSkillContext,
@@ -40,12 +41,13 @@ class BellaSkillRegistryImpl {
    */
   async ensureInitialized(): Promise<void> {
     if (this.initialized) return;
+    if (!isServer) {
+      this.initialized = true;
+      return;
+    }
     
-    // CORREÇÃO CIRÚRGICA: O import dinâmico estático 'await import("./index")' 
-    // estava sendo rastreado pelo Vite no bundle do cliente, vazando 
-    // dependências de servidor. Agora usamos um helper .server.ts que 
-    // é opaco para o bundle do cliente.
     try {
+      // @ts-ignore - Este import é seguro pois o isServer garante execução apenas node-side
       const { initializeRegistryOnServer } = await import("./registry.server");
       await initializeRegistryOnServer();
       this.initialized = true;
