@@ -497,6 +497,7 @@ function ShippingCalculatorPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5 space-y-6">
           {step === 1 ? (
+            <Form {...calcForm}>
             <div className="space-y-6">
               <Card className="border-border bg-card shadow-sm overflow-hidden">
                 <CardHeader className="pb-4">
@@ -506,7 +507,6 @@ function ShippingCalculatorPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <Form {...calcForm}>
                     <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-6">
                       <div className="space-y-4">
                         <div className="flex items-end gap-3">
@@ -705,18 +705,17 @@ function ShippingCalculatorPage() {
                       </Collapsible>
                     </div>
                   </form>
-                </Form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-border bg-card shadow-sm overflow-hidden">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Destino
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              <Card className="border-border bg-card shadow-sm overflow-hidden">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Destino
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
                 <div className="rounded-xl bg-background/40 border border-border/40 overflow-hidden">
                       <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")} className="w-full">
                         <TabsList className="w-full justify-start h-12 bg-transparent rounded-none border-b border-sidebar-border/40 p-0">
@@ -841,8 +840,9 @@ function ShippingCalculatorPage() {
                 "Calcular frete"
               )}
             </Button>
-          </div>
-        ) : (
+            </div>
+            </Form>
+          ) : (
           <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
             <CardHeader className="pb-4">
               <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
