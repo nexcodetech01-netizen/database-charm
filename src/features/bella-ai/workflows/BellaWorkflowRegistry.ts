@@ -1,29 +1,27 @@
-/**
- * BellaWorkflowRegistry — armazena templates de workflows.
- * Análogo ao BellaSkillRegistry: ponto único de registro/consulta.
- *
- * A validação estrutural (Skill existente etc.) roda no `register()` —
- * um template inválido nunca entra no Registry.
- */
-
 import type { BellaWorkflowDefinition } from "./BellaWorkflowTypes";
 import { validateDefinition } from "./BellaWorkflowValidator";
 
 class BellaWorkflowRegistryImpl {
   private workflows = new Map<string, BellaWorkflowDefinition>();
 
-  register(def: BellaWorkflowDefinition): void {
-    const validation = validateDefinition(def);
-    if (!validation.ok) {
-      throw new Error(
-        `[BellaWorkflowRegistry] "${def.workflowId}" inválido: ${validation.errors.join("; ")}`,
-      );
+  /**
+   * Registra um workflow. 
+   * A validação estrutural é feita via injeção de dependência do SkillRegistry.
+   */
+  register(def: BellaWorkflowDefinition, registry?: any): void {
+    if (registry) {
+      const validation = validateDefinition(def, registry);
+      if (!validation.ok) {
+        throw new Error(
+          `[BellaWorkflowRegistry] "${def.workflowId}" inválido: ${validation.errors.join("; ")}`,
+        );
+      }
     }
     this.workflows.set(def.workflowId, def);
   }
 
-  registerAll(defs: BellaWorkflowDefinition[]): void {
-    for (const d of defs) this.register(d);
+  registerAll(defs: BellaWorkflowDefinition[], registry?: any): void {
+    for (const d of defs) this.register(d, registry);
   }
 
   get(id: string): BellaWorkflowDefinition | undefined {
@@ -38,7 +36,6 @@ class BellaWorkflowRegistryImpl {
     return Array.from(this.workflows.values());
   }
 
-  /** Somente para testes. */
   __clearAll(): void {
     this.workflows.clear();
   }

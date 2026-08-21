@@ -5,8 +5,12 @@
  * Complementa `fetchAgentMetrics` incluindo contagem de fallbacks
  * (linhas com `error_message` iniciando em "fallback:").
  */
-import { supabase } from "@/integrations/supabase/client";
-import { FALLBACK_LOG_PREFIX } from "./runtime";
+// Supabase import removed to prevent client-side leaks when this file is imported by server-only logic or vice versa.
+// In this specific project, supabase client is intended to be used only where appropriate.
+// import { supabase } from "@/integrations/supabase/client";
+// Importação removida para evitar vazamento de runtime.ts (que importa Registry) para o cliente.
+// O prefixo é fixo em "fallback:".
+const FALLBACK_LOG_PREFIX = "fallback:";
 
 export interface AgentRuntimeMetricsWindow {
   companyId: string;
@@ -35,7 +39,8 @@ interface Row {
 export async function fetchAgentRuntimeMetrics(
   input: AgentRuntimeMetricsWindow,
 ): Promise<AgentRuntimeMetricsSummary> {
-  const { data, error } = await supabase
+  const { supabase: supabaseClient } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabaseClient
     .from("bella_executions")
     .select("skill_id,intent,success,execution_time_ms,error_message")
     .eq("company_id", input.companyId)
@@ -91,7 +96,8 @@ export interface AgentExecutionLogRow {
 export async function fetchAgentExecutionLog(
   input: AgentRuntimeMetricsWindow & { limit?: number },
 ): Promise<AgentExecutionLogRow[]> {
-  const { data, error } = await supabase
+  const { supabase: supabaseClient } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabaseClient
     .from("bella_executions")
     .select(
       "id,started_at,intent,skill_id,success,result_code,error_message,execution_time_ms,confirmation_required,confirmed,parameters",

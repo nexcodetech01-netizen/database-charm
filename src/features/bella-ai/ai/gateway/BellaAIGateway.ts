@@ -25,8 +25,10 @@ import type {
   AIResult,
 } from "./types";
 import { MockProvider } from "../providers/MockProvider";
-import { GeminiProvider } from "../providers/GeminiProvider";
-import { OpenAIProvider } from "../providers/OpenAIProvider";
+// GeminiProvider e OpenAIProvider removidos das importações estáticas para evitar vazamentos.
+// Eles serão carregados dinamicamente no createProvider().
+// import { GeminiProvider } from "../providers/GeminiProvider";
+// import { OpenAIProvider } from "../providers/OpenAIProvider";
 import { BELLA_SYSTEM_PROMPT, withCompanyContext } from "../prompts/systemPrompt";
 import { getBellaAIConfig } from "./get-config.functions";
 
@@ -64,9 +66,10 @@ export class BellaAIGateway {
     this.configPromise = (async () => {
       try {
         const config = await getBellaAIConfig();
-        this.preferred = this.createProvider(config.provider);
+        this.preferred = await this.createProvider(config.provider);
       } catch (err) {
         console.error("[BellaAIGateway] Failed to load server config, using Gemini default", err);
+        const { GeminiProvider } = await import("../providers/GeminiProvider" + "");
         this.preferred = new GeminiProvider();
       }
     })();
@@ -74,12 +77,16 @@ export class BellaAIGateway {
     return this.configPromise;
   }
 
-  private createProvider(id: AIProviderId): AIProvider {
+  private async createProvider(id: AIProviderId): Promise<AIProvider> {
     switch (id) {
-      case "openai":
+      case "openai": {
+        const { OpenAIProvider } = await import("../providers/OpenAIProvider" + "");
         return new OpenAIProvider();
-      case "gemini":
+      }
+      case "gemini": {
+        const { GeminiProvider } = await import("../providers/GeminiProvider" + "");
         return new GeminiProvider();
+      }
       default:
         return new MockProvider();
     }

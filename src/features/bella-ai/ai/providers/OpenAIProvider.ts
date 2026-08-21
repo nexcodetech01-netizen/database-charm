@@ -15,7 +15,8 @@ import type {
   AIResult,
 } from "../gateway/types";
 import { interpretWithOpenAI as interpretWithOpenAIDefault } from "../gateway/interpret-openai.functions";
-import { buildSkillsCatalog } from "../gateway/skills-catalog";
+// buildSkillsCatalog agora exige a injeção do registry para evitar import estático do singleton que vaza código server-side.
+// import { buildSkillsCatalog } from "../gateway/skills-catalog";
 
 type InterpretFn = typeof interpretWithOpenAIDefault;
 
@@ -70,7 +71,25 @@ export class OpenAIProvider implements AIProvider {
       throw new Error("OPENAI_EMPTY_MESSAGE");
     }
 
-    const skills = buildSkillsCatalog();
+    // No servidor, carregamos o catálogo dinamicamente.
+    // O import do registry singleton foi removido do topo para evitar vazamento de código server-side.
+    let skills: any[] = [];
+    if (typeof window === 'undefined') {
+      try {
+        const [regMod, catMod] = await Promise.all([
+          import("../../skills/registry" + ""),
+          import("../gateway/skills-catalog" + "")
+        ]);
+        const registry = regMod.BellaSkillRegistry;
+        const builder = catMod.buildSkillsCatalog;
+        
+        await registry.ensureInitialized();
+        skills = builder(registry);
+      } catch (err) {
+        console.warn("[OpenAIProvider] Falha ao carregar catálogo de skills no servidor:", err);
+      }
+    }
+
     const context = (request.context ?? {}) as Record<string, unknown>;
     const companyName = typeof context.companyName === "string" ? context.companyName : undefined;
 

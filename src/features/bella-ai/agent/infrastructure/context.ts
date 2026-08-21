@@ -89,7 +89,7 @@ export function buildExecutionContext(input: BuildExecutionContextInput): Execut
       locale: input.locale ?? "pt-BR",
     },
     security: makeSecurityContext(input.permissions, input.isOwner),
-    supabase: input.supabase ?? supabase,
+    supabase: input.supabase ?? (typeof window !== 'undefined' ? supabase : undefined) as any,
   };
 }
 
