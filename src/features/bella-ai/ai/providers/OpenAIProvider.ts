@@ -71,13 +71,23 @@ export class OpenAIProvider implements AIProvider {
       throw new Error("OPENAI_EMPTY_MESSAGE");
     }
 
-    // No servidor, carregamos o registry dinamicamente se não estiver disponível.
+    // No servidor, carregamos o catálogo dinamicamente.
+    // O import do registry singleton foi removido do topo para evitar vazamento de código server-side.
     let skills: any[] = [];
     if (typeof window === 'undefined') {
-      const { BellaSkillRegistry } = await import("../../skills/registry" + "");
-      const { buildSkillsCatalog } = await import("../gateway/skills-catalog" + "");
-      await BellaSkillRegistry.ensureInitialized();
-      skills = buildSkillsCatalog(BellaSkillRegistry);
+      try {
+        const [regMod, catMod] = await Promise.all([
+          import("../../skills/registry" + ""),
+          import("../gateway/skills-catalog" + "")
+        ]);
+        const registry = regMod.BellaSkillRegistry;
+        const builder = catMod.buildSkillsCatalog;
+        
+        await registry.ensureInitialized();
+        skills = builder(registry);
+      } catch (err) {
+        console.warn("[OpenAIProvider] Falha ao carregar catálogo de skills no servidor:", err);
+      }
     }
 
     const context = (request.context ?? {}) as Record<string, unknown>;
