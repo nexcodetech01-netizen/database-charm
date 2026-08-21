@@ -3637,6 +3637,129 @@ export type Database = {
           },
         ]
       }
+      loyalty_accounts: {
+        Row: {
+          company_id: string
+          customer_id: string
+          points_balance: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          customer_id: string
+          points_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          customer_id?: string
+          points_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_accounts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_settings: {
+        Row: {
+          company_id: string
+          enabled: boolean
+          points_per_real: number
+          redemption_value_per_point: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          enabled?: boolean
+          points_per_real?: number
+          redemption_value_per_point?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          enabled?: boolean
+          points_per_real?: number
+          redemption_value_per_point?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_transactions: {
+        Row: {
+          company_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          points: number
+          sale_id: string | null
+          type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          points: number
+          sale_id?: string | null
+          type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          points?: number
+          sale_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_campaigns: {
         Row: {
           budget: number
@@ -5115,6 +5238,57 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          comment: string | null
+          company_id: string
+          created_at: string
+          customer_name: string
+          id: string
+          product_id: string
+          rating: number
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          comment?: string | null
+          company_id: string
+          created_at?: string
+          customer_name: string
+          id?: string
+          product_id: string
+          rating: number
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          comment?: string | null
+          company_id?: string
+          created_at?: string
+          customer_name?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
