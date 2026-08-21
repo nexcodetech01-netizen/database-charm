@@ -38,6 +38,7 @@ interface RequestMeta {
 }
 
 async function readRequestMeta(): Promise<RequestMeta> {
+  if (typeof window !== "undefined") return { ip: null, userAgent: null, correlationId: null };
   try {
     const { getRequest } = await import("@tanstack/react-start/server");
     const request = getRequest();
