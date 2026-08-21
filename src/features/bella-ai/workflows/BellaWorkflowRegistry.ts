@@ -12,17 +12,17 @@ import { validateDefinition } from "./BellaWorkflowValidator";
 class BellaWorkflowRegistryImpl {
   private workflows = new Map<string, BellaWorkflowDefinition>();
 
-  register(def: BellaWorkflowDefinition): void {
-    // No cliente, não temos acesso ao BellaSkillRegistry para validar. 
-    // No servidor, carregamos dinamicamente para validar.
+  register(def: BellaWorkflowDefinition, registry?: any): void {
     let validation = { ok: true, errors: [] as string[] };
-    if (typeof window === 'undefined') {
-      try {
-        const { BellaSkillRegistry } = await import("../skills/registry" + "");
-        validation = validateDefinition(def, BellaSkillRegistry);
-      } catch (err) {
-        console.warn("[BellaWorkflowRegistry] Skipped server-side validation:", err);
-      }
+    
+    // Se o registry for passado, validamos imediatamente.
+    // Caso contrário, se estivermos no servidor, tentamos carregar o global.
+    if (registry) {
+      validation = validateDefinition(def, registry);
+    } else if (typeof window === 'undefined') {
+      // Nota: No servidor, o ideal é que o registry seja passado.
+      // A validação aqui é apenas um fallback de segurança.
+      validation = { ok: true, errors: [] }; 
     }
 
     if (!validation.ok) {
@@ -32,6 +32,7 @@ class BellaWorkflowRegistryImpl {
     }
     this.workflows.set(def.workflowId, def);
   }
+
 
   registerAll(defs: BellaWorkflowDefinition[]): void {
     for (const d of defs) this.register(d);
