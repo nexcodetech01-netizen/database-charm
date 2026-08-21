@@ -88,6 +88,7 @@ function BellaAgentDebugPage() {
     setTrace(null);
     setResponseText("");
     try {
+      // Usamos handleAgentRuntimeFn para planejamento
       const result = await handleAgentRuntimeFn({
         data: {
           message,
@@ -100,6 +101,8 @@ function BellaAgentDebugPage() {
       setTrace(result.trace);
       setResponseText(result.response?.message ?? "(fluxo legado assumiria)");
       await Promise.all([metricsQuery.refetch(), logQuery.refetch()]);
+    } catch (err) {
+      console.error("Simulation failed", err);
     } finally {
       setRunning(false);
     }

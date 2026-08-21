@@ -9,7 +9,7 @@ import { INTERACTION_TOKENS, RADIUS_TOKENS, TEXT_TOKENS } from "@/design";
 import { ASK_EXAMPLES, QUICK_ACTION_PROMPTS } from "../workspace/data";
 import { useAuth } from "@/providers/auth-provider";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
-import { handleAgentRuntimeFn } from "../agent/runtime.functions";
+import { handleAgentRuntimeFn, executeAgentActionFn } from "../agent/runtime.functions";
 import { interpretWithOpenAI } from "../ai/gateway/interpret-openai.functions";
 // Importação removida para evitar vazamento do OpenAIProvider (que importa Registry) para o cliente.
 // O provedor será carregado dinamicamente ou injetado.
@@ -42,6 +42,7 @@ export function BellaAskPanel() {
   // usar o singleton padrão (que chama a função sem o hook).
   const interpretWithOpenAIFn = useServerFn(interpretWithOpenAI);
   const handleAgentRuntime = useServerFn(handleAgentRuntimeFn);
+  const executeAgentAction = useServerFn(executeAgentActionFn);
   const gateway = useMemo(() => new BellaAIGateway(), []);
 
   const handleSend = useCallback(async () => {
@@ -106,23 +107,19 @@ export function BellaAskPanel() {
     if (!pendingAction || !companyId) return;
     setIsThinking(true);
     try {
-      const result = await handleAgentRuntime({
+      const response = await executeAgentAction({
         data: {
-          message: pendingAction.intent.raw,
+          intent: pendingAction.intent,
           ctx: {
             companyId,
           },
-          confirmed: true,
         }
       });
 
-      if (result && typeof result === 'object' && 'response' in result) {
-        const response = (result as any).response;
-        if (response?.code === "executed") {
-          toast.success(response.message);
-        } else if (response?.code === "error") {
-          toast.error(response.message);
-        }
+      if (response?.code === "executed") {
+        toast.success(response.message);
+      } else if (response?.code === "error") {
+        toast.error(response.message);
       }
     } catch (error) {
       toast.error("Erro ao executar ação.");

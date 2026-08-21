@@ -383,7 +383,7 @@ function ShippingCalculatorPage() {
             companyId,
             orderSource: "calculadora-frete",
             carrier: "Correios",
-            serviceName: selectedOption.name,
+            serviceName: selectedOption.servico,
             trackingCode: result.tracking_code,
             labelUrl: result.label_url ?? null,
             orderIdSuperfrete: result.order_id ?? null,
