@@ -18,6 +18,8 @@ import {
   type LabelResult
 } from "@/features/shipping/types";
 import { calculateShipping, generateLabel } from "@/features/shipping/services/shipping.functions";
+import { saveShipment } from "@/features/shipping/lib/shipment-tracking.functions";
+
 import { printManager } from "@/features/printing/services/print.service";
 import type { Printer as PrinterInfo } from "@/features/printing/types/printing.types";
 
@@ -55,6 +57,7 @@ export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-fr
 function ShippingCalculatorPage() {
   const calculateShippingFn = useServerFn(calculateShipping);
   const generateLabelFn = useServerFn(generateLabel);
+  const saveShipmentFn = useServerFn(saveShipment);
   
   const [step, setStep] = useState<1 | 2>(1);
   const [results, setResults] = useState<ShippingOption[] | null>(null);
@@ -368,6 +371,30 @@ function ShippingCalculatorPage() {
 
       setLabelResult(result);
       toast.success("Etiqueta gerada com sucesso!");
+
+      // Salva o rastreio ligado a esse envio — sem isso, o código de
+      // rastreio só existia nessa tela e sumia depois, sem nenhuma
+      // forma de consultar depois (nem por você, nem pelo cliente).
+      // Best-effort: se isso falhar, não desfaz nem trava a etiqueta
+      // (que já foi emitida e paga) — só perde a página de rastreio.
+      if (result?.tracking_code && companyId) {
+        void saveShipmentFn({
+          data: {
+            companyId,
+            orderSource: "calculadora-frete",
+            carrier: "Correios",
+            serviceName: selectedOption.name,
+            trackingCode: result.tracking_code,
+            labelUrl: result.label_url ?? null,
+            orderIdSuperfrete: result.order_id ?? null,
+            recipientName: recipientData.name,
+            recipientCity: recipientData.city,
+            recipientState: recipientData.state,
+          },
+        }).catch((err) => {
+          console.error("[onLabelSubmit] Falha ao salvar rastreio (etiqueta já emitida normalmente):", err);
+        });
+      }
     } catch (error: any) {
       console.error("SHIPPING_DEBUG: Label error:", error);
       toast.error(error.message || "Erro ao emitir etiqueta. Verifique o saldo.");
