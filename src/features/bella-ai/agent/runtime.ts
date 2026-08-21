@@ -65,13 +65,11 @@ const FALLBACK_ERR_PREFIX = "fallback:";
 export async function handleWithAgentRuntime(
   input: AgentRuntimeInput,
 ): Promise<AgentRuntimeResult> {
-  // CORREÇÃO: `gateway` opcional — permite ao chamador (componente
-  // cliente) injetar uma instância de `BellaAIGateway` configurada com
-  // um provider cujas server functions já foram vinculadas via
-  // `useServerFn()`. Sem isso, usa o singleton padrão importado (seguro
-  // só quando `handleWithAgentRuntime` é chamado de contexto
-  // genuinamente server-side). Ver comentário em `OpenAIProvider.ts`
-  // para o detalhe completo do bug que isso corrige.
+  // SEGURANÇA: Bloqueia execução acidental no navegador
+  if (!import.meta.env.SSR) {
+    throw new Error("Agente Operacional só pode ser executado no servidor.");
+  }
+
   const gateway = input.gateway ?? bellaAIGateway;
   const startedAt = new Date();
 

@@ -84,6 +84,10 @@ class BellaSkillRegistryImpl {
   ): Promise<BellaSkillResult> {
     const skill = this.skills.get(id);
     if (!skill) {
+      // Se não estiver no Map e estivermos no cliente, significa que tentamos executar lógica de negócio no bundle errado
+      if (!import.meta.env.SSR) {
+        throw new Error(`Segurança: Skill "${id}" não disponível no cliente. Use Server Functions.`);
+      }
       return skillResult.unavailable(`Skill "${id}" não encontrada.`);
     }
 

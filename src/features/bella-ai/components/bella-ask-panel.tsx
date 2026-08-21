@@ -9,7 +9,7 @@ import { INTERACTION_TOKENS, RADIUS_TOKENS, TEXT_TOKENS } from "@/design";
 import { ASK_EXAMPLES, QUICK_ACTION_PROMPTS } from "../workspace/data";
 import { useAuth } from "@/providers/auth-provider";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
-import { handleWithAgentRuntime } from "../agent/runtime";
+import { handleAgentRuntimeFn } from "../agent/runtime.functions";
 import { interpretWithOpenAI } from "../ai/gateway/interpret-openai.functions";
 import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
 import { BellaAIGateway } from "../ai/gateway/BellaAIGateway";
@@ -39,6 +39,7 @@ export function BellaAskPanel() {
   // o gateway recebem essa versão já vinculada injetada, em vez de
   // usar o singleton padrão (que chama a função sem o hook).
   const interpretWithOpenAIFn = useServerFn(interpretWithOpenAI);
+  const handleAgentRuntime = useServerFn(handleAgentRuntimeFn);
   const gateway = useMemo(
     () => new BellaAIGateway({ preferred: new OpenAIProvider(interpretWithOpenAIFn as any) }),
     [interpretWithOpenAIFn],
@@ -55,16 +56,14 @@ export function BellaAskPanel() {
     // For now we just process and wait for the response to show it.
 
     try {
-      // Step A: Attempt with the new Operational Agent Runtime
-      const runtimeResult = await handleWithAgentRuntime({
-        message,
-        ctx: {
-          companyId,
-          userId: user?.id,
-          permissions,
-          isOwner,
-        },
-        gateway,
+      // Step A: Attempt with the new Operational Agent Runtime (VIA SERVER FUNCTION)
+      const runtimeResult = await handleAgentRuntime({
+        data: {
+          message,
+          ctx: {
+            companyId,
+          },
+        }
       });
 
       if (runtimeResult.response) {
@@ -105,16 +104,14 @@ export function BellaAskPanel() {
     if (!pendingAction || !companyId) return;
     setIsThinking(true);
     try {
-      const result = await handleWithAgentRuntime({
-        message: pendingAction.intent.raw,
-        ctx: {
-          companyId,
-          userId: user?.id,
-          permissions,
-          isOwner,
-        },
-        gateway,
-        confirmed: true,
+      const result = await handleAgentRuntime({
+        data: {
+          message: pendingAction.intent.raw,
+          ctx: {
+            companyId,
+          },
+          confirmed: true,
+        }
       });
 
       if (result.response?.code === "executed") {
