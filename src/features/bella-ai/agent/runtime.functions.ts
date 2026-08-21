@@ -32,10 +32,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
     // 4. Fetch permissions server-side
     const perms = await fetchUserPermissions(userId, data.ctx.companyId);
 
-    // 5. Build ExecutionContext with the user's Supabase client
-    const { buildExecutionContext } = await import("./infrastructure/context");
-    // Note: We need a way to pass the user's session supabase client here.
-    // TanStack Start middleware usually adds it to context.
+    // 5. Get the user's authenticated Supabase client from middleware context
     const userSupabase = (context as any).supabase;
 
     // 6. Execute runtime
@@ -47,7 +44,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
         permissions: perms.permissions,
         isOwner: perms.isOwner,
         conversationId: data.ctx.conversationId,
-        supabase: userSupabase, // Inject the authenticated client
+        supabase: userSupabase,
       },
       confirmed: data.confirmed,
     });

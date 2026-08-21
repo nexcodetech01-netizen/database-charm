@@ -21,8 +21,10 @@ export interface AgentContext {
   userId?: string | null;
   conversationId?: string | null;
   /** Permissões efetivas do usuário (união dos roles). Owner recebe {"*"}. */
-  permissions: Set<string>;
+  permissions: Set<string> | ReadonlySet<string>;
   isOwner?: boolean;
+  /** Cliente Supabase autenticado — RLS aplicada como o usuário. */
+  supabase?: any;
 }
 
 export interface AgentIntent {
