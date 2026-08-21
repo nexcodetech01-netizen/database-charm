@@ -96,5 +96,6 @@ export {
   getOverdueBillsHandler,
   getCashflowHandler,
   getFinancialSummaryHandler,
-} from "./actions/financeiro-handlers" as any; // Usamos as any para evitar erro de tipo se o arquivo foi renomeado ou movido
+} from "./actions/finance-handlers";
+
 
