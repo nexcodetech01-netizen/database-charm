@@ -8,8 +8,8 @@
  *   - Nó `workflow` deve referenciar `workflowId` no BellaWorkflowRegistry.
  *   - Nós de configuração (delay/notification/etc.) validam campos mínimos.
  */
-import { BellaSkillRegistry } from "../skills/registry";
-import { BellaWorkflowRegistry } from "../workflows/BellaWorkflowRegistry";
+// Imports dinâmicos são usados para evitar vazamento de código server-only para o bundle do cliente.
+
 import type {
   FlowDefinition,
   FlowValidationIssue,
@@ -19,12 +19,12 @@ import type {
 export function validateFlow(
   flow: FlowDefinition,
   deps: {
-    skills?: typeof BellaSkillRegistry;
-    workflows?: typeof BellaWorkflowRegistry;
+    skills?: { has(id: string): boolean };
+    workflows?: { has(id: string): boolean };
   } = {},
 ): FlowValidationResult {
-  const skills = deps.skills ?? BellaSkillRegistry;
-  const workflows = deps.workflows ?? BellaWorkflowRegistry;
+  const { skills, workflows } = deps;
+
   const issues: FlowValidationIssue[] = [];
 
   if (!flow.nodes || flow.nodes.length === 0) {
@@ -67,7 +67,7 @@ export function validateFlow(
             code: "invalid_config",
             message: `Nó "${node.label}" não informa skillId.`,
           });
-        } else if (!skills.has(skillId)) {
+        } else if (skills && !skills.has(skillId)) {
           issues.push({
             nodeId: node.id,
             code: "invalid_skill",
@@ -78,7 +78,7 @@ export function validateFlow(
       }
       case "workflow": {
         const wfId = String(node.config.workflowId ?? "");
-        if (!wfId || !workflows.has(wfId)) {
+        if (!wfId || (workflows && !workflows.has(wfId))) {
           issues.push({
             nodeId: node.id,
             code: "invalid_config",
