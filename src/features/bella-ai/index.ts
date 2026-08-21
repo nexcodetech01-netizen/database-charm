@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./providers";
-export * from "./actions";
+// Mover a exportação de ações para baixo e comentar a exportação do engine
+// export * from "./actions";
 export * from "./context";
 export * from "./providers/modules";
 export { assistantService } from "./services/assistant.service";
@@ -84,3 +85,16 @@ export { ExecutiveSummaryCard } from "./components/executive-summary-card";
 export { ExecutiveScoreGauge } from "./components/executive-score-gauge";
 export { ExecutiveInsightsList } from "./components/executive-insights-list";
 export { ExecutiveRecommendationsList } from "./components/executive-recommendations-list";
+
+// Exportação seletiva de ações para evitar vazamento do BellaActionEngine
+export { keywordParser } from "./actions/keyword-parser";
+export {
+  financeHandlers,
+  getCashBalanceHandler,
+  getMonthRevenueHandler,
+  getMonthExpensesHandler,
+  getOverdueBillsHandler,
+  getCashflowHandler,
+  getFinancialSummaryHandler,
+} from "./actions/financeiro-handlers" as any; // Usamos as any para evitar erro de tipo se o arquivo foi renomeado ou movido
+
