@@ -5,7 +5,7 @@ export * from "./types";
 export * from "./schemas";
 export * from "./provider";
 export * from "./repository";
-export * from "./service";
+// export * from "./service"; // Server-only, moved to internal imports to prevent client bundle leakage
 export * from "./skills";
 export { fiscalV2BaseSkills } from "./skills";
 export {
