@@ -5,7 +5,7 @@
  * Não consulta banco nem executa Skills; apenas garante que a definição
  * é bem-formada e não tenta invocar uma Skill destrutiva.
  */
-import { BellaSkillRegistry } from "../skills";
+import { BellaSkillRegistry } from "../skills/registry";
 import { AutomationActions } from "./AutomationActions";
 import type { Automation } from "./types";
 

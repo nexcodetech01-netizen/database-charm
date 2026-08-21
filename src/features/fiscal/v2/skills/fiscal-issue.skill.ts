@@ -1,6 +1,6 @@
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
-import { FiscalService } from "../service/fiscal.service";
+import { FiscalService } from "../service/fiscal.service.server";
 import { fiscalIssueSchema } from "../schemas";
 
 export const fiscalIssueSkill = defineBaseSkill({
@@ -31,7 +31,7 @@ export const fiscalIssueSkill = defineBaseSkill({
       const detail = validationIssues.length
         ? validationIssues
             .slice(0, 3)
-            .map((i) => `• ${i.field}: ${i.message}`)
+            .map((i: any) => `• ${i.field}: ${i.message}`)
             .join("\n")
         : (document.rejectionReason ?? "Motivo não informado.");
       return skillResult.success(`${testNotice}NF-e rejeitada.\n${detail}`, {

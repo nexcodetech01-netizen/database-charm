@@ -6,7 +6,7 @@
  * e devolve um resultado agregado. Não consulta banco — recebe a
  * automação e o evento já resolvidos.
  */
-import { BellaSkillRegistry } from "../skills";
+import { BellaSkillRegistry } from "../skills/registry";
 import { AutomationActions } from "./AutomationActions";
 import { AutomationConditions } from "./AutomationConditions";
 import type {

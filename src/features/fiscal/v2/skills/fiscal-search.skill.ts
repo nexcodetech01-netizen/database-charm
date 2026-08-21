@@ -1,6 +1,6 @@
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
-import { FiscalService } from "../service/fiscal.service";
+import { FiscalService } from "../service/fiscal.service.server";
 import { fiscalSearchSchema } from "../schemas";
 
 export const fiscalSearchSkill = defineBaseSkill({
@@ -24,7 +24,7 @@ export const fiscalSearchSkill = defineBaseSkill({
     if (rows.length === 0) return skillResult.success("Nenhuma NF-e encontrada.", { rows, total: 0 });
     const preview = rows
       .slice(0, 5)
-      .map((r) => `• nº ${r.number ?? "-"} · ${r.status} · R$ ${r.totalAmount.toFixed(2)}`)
+      .map((r: any) => `• nº ${r.number ?? "-"} · ${r.status} · R$ ${r.totalAmount.toFixed(2)}`)
       .join("\n");
     return skillResult.success(`${rows.length} NF-e encontrada(s).\n${preview}`, {
       rows,

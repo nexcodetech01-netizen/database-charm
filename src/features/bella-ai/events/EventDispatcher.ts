@@ -7,7 +7,7 @@
  * componente responsável.
  */
 import { toast } from "@/hooks/use-toast";
-import { BellaSkillRegistry } from "../skills";
+import { BellaSkillRegistry } from "../skills/registry";
 import type { BellaSkillContext } from "../skills/types";
 import { bellaWorkflowEngine } from "../workflows";
 import { EventRegistry } from "./EventRegistry";
