@@ -18,7 +18,8 @@ import {
 } from "../context";
 import type { BellaPendingSkill } from "../context/types";
 // Carrega o SkillRegistry (registra todas as Skills no import).
-import { BellaSkillRegistry } from "../skills/registry";
+// Importado dinamicamente no run() para evitar vazamento no bundle do cliente
+import type { BellaSkillRegistry as SkillRegistryType } from "../skills/registry";
 import type {
   BellaSkill,
   BellaSkillContext,
@@ -79,6 +80,7 @@ class BellaActionEngineImpl {
 
     // 0) Existe uma Skill pendente? Trata continuação antes do parser.
     if (pending) {
+      const { BellaSkillRegistry } = await import("../skills/registry" + "");
       const skill = BellaSkillRegistry.get(pending.skillId);
       if (!skill) {
         this.manager.update(ctx.companyId, { pendingSkill: null });
@@ -128,6 +130,7 @@ class BellaActionEngineImpl {
 
     // Skills — coleta + confirmação + execução.
     if (intent.action === "EXECUTE_SKILL" && intent.skillId) {
+      const { BellaSkillRegistry } = await import("../skills/registry" + "");
       const skill = BellaSkillRegistry.get(intent.skillId);
       if (!skill) return UNKNOWN_ACTION_RESPONSE;
       if (!skill.canExecute(skillCtx)) {
@@ -231,6 +234,7 @@ class BellaActionEngineImpl {
     payload: BellaSkillPayload,
     ctx: BellaSkillContext,
   ): Promise<BellaActionResponse> {
+    const { BellaSkillRegistry } = await import("../skills/registry" + "");
     const result = await BellaSkillRegistry.execute(skill.id, payload, ctx);
     const response = skillResultToResponse(result);
     // Se ainda faltar campo após execute (ex.: Skill sem validate), continua a coleta.
