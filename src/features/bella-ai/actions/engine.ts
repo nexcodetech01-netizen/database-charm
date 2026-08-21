@@ -26,7 +26,7 @@ import type {
   BellaSkillPayload,
   BellaSkillResult,
   BellaSkillSuggestion,
-} from "../skills";
+} from "../skills/types";
 
 /**
  * BellaActionEngine
