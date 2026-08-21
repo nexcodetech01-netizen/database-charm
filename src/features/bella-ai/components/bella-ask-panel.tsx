@@ -11,7 +11,9 @@ import { useAuth } from "@/providers/auth-provider";
 import { usePermissions } from "@/features/rbac/hooks/use-permissions";
 import { handleAgentRuntimeFn } from "../agent/runtime.functions";
 import { interpretWithOpenAI } from "../ai/gateway/interpret-openai.functions";
-import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
+// Importação removida para evitar vazamento do OpenAIProvider (que importa Registry) para o cliente.
+// O provedor será carregado dinamicamente ou injetado.
+// import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
 import { BellaAIGateway } from "../ai/gateway/BellaAIGateway";
 import { askBella, appendMessage, createMessage, emptyContext, updateContext } from "@/features/accounting-ai/chat";
 import type { ChatMessage, ChatContextState } from "@/features/accounting-ai/chat/types";
