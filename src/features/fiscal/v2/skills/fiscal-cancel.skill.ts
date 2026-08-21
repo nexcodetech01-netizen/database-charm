@@ -1,6 +1,6 @@
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
-import { FiscalService } from "../service/fiscal.service";
+import { FiscalService } from "../service/fiscal.service.server";
 import { fiscalCancelSchema } from "../schemas";
 
 export const fiscalCancelSkill = defineBaseSkill({
