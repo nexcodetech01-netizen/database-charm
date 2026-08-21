@@ -243,7 +243,7 @@ const RULES: Rule[] = [
     extract(text) {
       // Caso 1: "altere o estoque do produto X para 10"
       const absoluteMatch = text.match(
-        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b.*?\b(?:do|de|em)\b\s+(?:produto\s+)?(.+?)\s+\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
+        /\b(?:alter(?:e|ar|a)|defin(?:a|ir)|mud(?:e|ar)|coloc(?:ar|que)|deix(?:ar|e))\b.*?\b(?:estoque|saldo)\b.*?\b(?:do|de|da|em)\b\s+(?:produto\s+)?(.+?)\s+\b(?:para|em|a)\b\s+(\d+(?:[.,]\d+)?)/,
       );
       if (absoluteMatch) {
         const query = absoluteMatch[1].trim();
