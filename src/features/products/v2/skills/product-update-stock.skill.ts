@@ -15,6 +15,7 @@ export const productUpdateStockSchema = z
     type: z.enum(["in", "out", "adjustment"]),
     reason: z.string().trim().max(240).optional(),
     notes: z.string().trim().max(500).optional(),
+    _intentSource: z.string().optional(),
   })
   .strict();
 
