@@ -6263,6 +6263,81 @@ export type Database = {
         }
         Relationships: []
       }
+      shipments: {
+        Row: {
+          carrier: string | null
+          company_id: string
+          created_at: string
+          estimated_delivery_days: number | null
+          id: string
+          label_url: string | null
+          order_id_superfrete: string | null
+          order_reference: string | null
+          order_source: string | null
+          recipient_city: string | null
+          recipient_name: string | null
+          recipient_state: string | null
+          sale_id: string | null
+          service_name: string | null
+          status: string
+          tracking_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          company_id: string
+          created_at?: string
+          estimated_delivery_days?: number | null
+          id?: string
+          label_url?: string | null
+          order_id_superfrete?: string | null
+          order_reference?: string | null
+          order_source?: string | null
+          recipient_city?: string | null
+          recipient_name?: string | null
+          recipient_state?: string | null
+          sale_id?: string | null
+          service_name?: string | null
+          status?: string
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          company_id?: string
+          created_at?: string
+          estimated_delivery_days?: number | null
+          id?: string
+          label_url?: string | null
+          order_id_superfrete?: string | null
+          order_reference?: string | null
+          order_source?: string | null
+          recipient_city?: string | null
+          recipient_name?: string | null
+          recipient_state?: string | null
+          sale_id?: string | null
+          service_name?: string | null
+          status?: string
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simples_brackets: {
         Row: {
           annex: string
