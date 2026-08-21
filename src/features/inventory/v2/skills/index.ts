@@ -101,6 +101,7 @@ export const stockAdjustSchema = z
     absolute: z.number().min(0).optional(),
     reason: z.string().trim().max(240).optional(),
     notes: z.string().trim().max(500).optional(),
+    _intentSource: z.string().optional(),
   })
   .strict();
 
