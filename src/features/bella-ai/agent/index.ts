@@ -34,6 +34,9 @@ export {
 // } from "./runtime";
 export { FALLBACK_LOG_PREFIX } from "./runtime";
 export type { AgentRuntimeInput, AgentRuntimeResult, AgentRuntimeTrace } from "./runtime";
+// runtime.ts foi removido do barrel para evitar vazamento de código server-side.
+// Types e constantes seguras devem vir de arquivos separados se necessário,
+// mas por enquanto mantemos o essencial via export individual.
 export {
   fetchAgentRuntimeMetrics,
   fetchAgentExecutionLog,
@@ -41,3 +44,4 @@ export {
   type AgentRuntimeMetricsWindow,
   type AgentExecutionLogRow,
 } from "./metrics";
+
