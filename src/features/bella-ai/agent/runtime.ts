@@ -66,7 +66,7 @@ export async function handleWithAgentRuntime(
   input: AgentRuntimeInput,
 ): Promise<AgentRuntimeResult> {
   // SEGURANÇA: Bloqueia execução acidental no navegador
-  if (!import.meta.env.SSR) {
+  if (typeof window !== 'undefined') {
     throw new Error("Agente Operacional só pode ser executado no servidor.");
   }
 

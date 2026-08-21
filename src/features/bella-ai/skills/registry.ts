@@ -43,7 +43,7 @@ class BellaSkillRegistryImpl {
     
     // CORREÇÃO: Usamos import.meta.env.SSR para garantir que o compilador 
     // e o bundler saibam que este bloco é exclusivo do lado do servidor.
-    if (!import.meta.env.SSR) {
+    if (typeof window !== 'undefined') {
       this.initialized = true;
       return;
     }
@@ -85,7 +85,7 @@ class BellaSkillRegistryImpl {
     const skill = this.skills.get(id);
     if (!skill) {
       // Se não estiver no Map e estivermos no cliente, significa que tentamos executar lógica de negócio no bundle errado
-      if (!import.meta.env.SSR) {
+      if (typeof window !== 'undefined') {
         throw new Error(`Segurança: Skill "${id}" não disponível no cliente. Use Server Functions.`);
       }
       return skillResult.unavailable(`Skill "${id}" não encontrada.`);
