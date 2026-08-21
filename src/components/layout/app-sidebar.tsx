@@ -26,6 +26,8 @@ import {
   Zap,
   Layers,
   Banknote,
+  Star,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/rbac";
@@ -80,6 +82,7 @@ const groups: NavGroup[] = [
         children: [
           { title: "Todos os Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
           { title: "Categorias", url: ROUTES.categories, icon: Layers, status: "available", permission: "products.view" },
+          { title: "Avaliações", url: ROUTES.productReviews, icon: Star, status: "available", permission: "products.view" },
         ]
       },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
@@ -111,6 +114,7 @@ const groups: NavGroup[] = [
       { title: "Bella Contadora", url: ROUTES.bellaAccountant, icon: Calculator, status: "available", permission: "reports.view" },
       { title: "Conhecimento Bella", url: ROUTES.bellaKnowledge, icon: BookOpen, status: "available", permission: "bella_ia.view" },
       { title: "Marketing", url: ROUTES.marketing, icon: Megaphone, status: "available", permission: "marketing.view" },
+      { title: "Fidelidade", url: ROUTES.loyalty, icon: Gift, status: "available", permission: "sales.view" },
     ],
   },
   {
