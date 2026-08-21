@@ -66,18 +66,21 @@ export function BellaAskPanel() {
         }
       });
 
-      if (runtimeResult.response) {
-        if (runtimeResult.response.code === "needs_confirmation") {
-          setPendingAction({
-            intent: runtimeResult.response.intent,
-            plan: runtimeResult.response.plan,
-          });
+      if (runtimeResult && typeof runtimeResult === 'object' && 'response' in runtimeResult) {
+        const response = (runtimeResult as any).response;
+        if (response) {
+          if (response.code === "needs_confirmation") {
+            setPendingAction({
+              intent: response.intent,
+              plan: response.plan,
+            });
+            return;
+          }
+
+          // Operational intent handled
+          toast.success(response.message);
           return;
         }
-
-        // Operational intent handled
-        toast.success(runtimeResult.response.message);
-        return;
       }
 
       // Step B: Fallback to the legacy Bella Contadora (Financial/Accounting)
@@ -114,10 +117,13 @@ export function BellaAskPanel() {
         }
       });
 
-      if (result.response?.code === "executed") {
-        toast.success(result.response.message);
-      } else if (result.response?.code === "error") {
-        toast.error(result.response.message);
+      if (result && typeof result === 'object' && 'response' in result) {
+        const response = (result as any).response;
+        if (response?.code === "executed") {
+          toast.success(response.message);
+        } else if (response?.code === "error") {
+          toast.error(response.message);
+        }
       }
     } catch (error) {
       toast.error("Erro ao executar ação.");
