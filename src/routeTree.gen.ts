@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RastreioIndexRouteImport } from './routes/rastreio.index'
 import { Route as RastreioTrackingCodeRouteImport } from './routes/rastreio.$trackingCode'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as FidelidadeSlugRouteImport } from './routes/fidelidade.$slug'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
 import { Route as AuthenticatedSaudePlataformaRouteImport } from './routes/_authenticated/saude-plataforma'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedFidelidadeRouteImport } from './routes/_authenticated/fidelidade'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
 import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -170,6 +172,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FidelidadeSlugRoute = FidelidadeSlugRouteImport.update({
+  id: '/fidelidade/$slug',
+  path: '/fidelidade/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
   id: '/whatsapp',
   path: '/whatsapp',
@@ -245,6 +252,11 @@ const AuthenticatedFornecedoresRoute =
 const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFidelidadeRoute = AuthenticatedFidelidadeRouteImport.update({
+  id: '/fidelidade',
+  path: '/fidelidade',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
@@ -742,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
   '/estoque': typeof AuthenticatedEstoqueRouteWithChildren
+  '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
@@ -756,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
+  '/fidelidade/$slug': typeof FidelidadeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/rastreio/': typeof RastreioIndexRoute
@@ -849,6 +863,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documentos': typeof AuthenticatedDocumentosRoute
   '/estoque': typeof AuthenticatedEstoqueRouteWithChildren
+  '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
@@ -863,6 +878,7 @@ export interface FileRoutesByTo {
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
+  '/fidelidade/$slug': typeof FidelidadeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/rastreio': typeof RastreioIndexRoute
@@ -957,6 +973,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documentos': typeof AuthenticatedDocumentosRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRouteWithChildren
+  '/_authenticated/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
@@ -971,6 +988,7 @@ export interface FileRoutesById {
   '/_authenticated/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
+  '/fidelidade/$slug': typeof FidelidadeSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/rastreio/': typeof RastreioIndexRoute
@@ -1066,6 +1084,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documentos'
     | '/estoque'
+    | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
     | '/importacoes'
@@ -1080,6 +1099,7 @@ export interface FileRouteTypes {
     | '/saude-plataforma'
     | '/vendas'
     | '/whatsapp'
+    | '/fidelidade/$slug'
     | '/invite/$token'
     | '/rastreio/$trackingCode'
     | '/rastreio/'
@@ -1173,6 +1193,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documentos'
     | '/estoque'
+    | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
     | '/importacoes'
@@ -1187,6 +1208,7 @@ export interface FileRouteTypes {
     | '/saude-plataforma'
     | '/vendas'
     | '/whatsapp'
+    | '/fidelidade/$slug'
     | '/invite/$token'
     | '/rastreio/$trackingCode'
     | '/rastreio'
@@ -1280,6 +1302,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/documentos'
     | '/_authenticated/estoque'
+    | '/_authenticated/fidelidade'
     | '/_authenticated/financeiro'
     | '/_authenticated/fornecedores'
     | '/_authenticated/importacoes'
@@ -1294,6 +1317,7 @@ export interface FileRouteTypes {
     | '/_authenticated/saude-plataforma'
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
+    | '/fidelidade/$slug'
     | '/invite/$token'
     | '/rastreio/$trackingCode'
     | '/rastreio/'
@@ -1370,6 +1394,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  FidelidadeSlugRoute: typeof FidelidadeSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   RastreioIndexRoute: typeof RastreioIndexRoute
@@ -1473,6 +1498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fidelidade/$slug': {
+      id: '/fidelidade/$slug'
+      path: '/fidelidade/$slug'
+      fullPath: '/fidelidade/$slug'
+      preLoaderRoute: typeof FidelidadeSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/whatsapp': {
       id: '/_authenticated/whatsapp'
       path: '/whatsapp'
@@ -1569,6 +1601,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro'
       fullPath: '/financeiro'
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fidelidade': {
+      id: '/_authenticated/fidelidade'
+      path: '/fidelidade'
+      fullPath: '/fidelidade'
+      preLoaderRoute: typeof AuthenticatedFidelidadeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque': {
@@ -2325,6 +2364,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentosRoute: typeof AuthenticatedDocumentosRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRouteWithChildren
+  AuthenticatedFidelidadeRoute: typeof AuthenticatedFidelidadeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRouteWithChildren
@@ -2390,6 +2430,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentosRoute: AuthenticatedDocumentosRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRouteWithChildren,
+  AuthenticatedFidelidadeRoute: AuthenticatedFidelidadeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRouteWithChildren,
@@ -2488,6 +2529,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  FidelidadeSlugRoute: FidelidadeSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   RastreioIndexRoute: RastreioIndexRoute,
