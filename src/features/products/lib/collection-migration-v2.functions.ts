@@ -9,62 +9,52 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     // 1. Get ALL products for this company
     const { data: allProducts, error: fetchError } = await supabase
       .from("products")
-      .select("id, name, sales_channels, status, category_id, category:product_categories(id, name)")
+      .select("id, name, sales_channels, status, category_id")
       .eq("company_id", companyId);
 
     if (fetchError) throw fetchError;
-    
-    // 2. Filter products that are active and have 'catalog' in sales_channels
-    const eligibleProducts = (allProducts ?? []).filter(p => {
-        const isPublic = p.status === 'active';
-        // @ts-ignore
-        const hasCatalog = (p.sales_channels as string[] | null)?.includes('catalog');
-        return isPublic && hasCatalog;
-    });
 
-    // 3. Narrow down to 'Vestuário' products
-    // Since previous filters failed, let's identify them by name or category name
-    const vestuarioProducts = eligibleProducts.filter(p => {
-        // @ts-ignore
-        const catName = (p.category as any)?.name?.trim();
-        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario' || catName === 'VESTUÁRIO' || 
-                           p.name.toLowerCase().includes('camiseta') || p.name.toLowerCase().includes('calça') || 
-                           p.name.toLowerCase().includes('vestido');
-        
-        return isVestuario;
-    });
+    // Use specific IDs mentioned in the audit
+    const auditIds = [
+      "10d8d05e-5b12-4211-96f3-69ed3c31405a",
+      "af744aca-fcf3-487e-97f2-11a2f960f588",
+      "0e380f81-f2f2-4917-8e12-c2883a48e895",
+      "72f32fe4-22b0-4b21-87a4-a9572c6edc88",
+      "29e01a84-7a31-4043-a621-3e4b706c6c73",
+      "1b51d410-d85c-44d3-827d-965a9ef03901",
+      "38557bcb-8e3d-4c57-827a-e45f187a0279",
+      "3bf2ae3f-3665-4f46-9f87-a2f026048d90",
+      "d1614022-75d3-4672-8700-0e104ea26330",
+      "843a63f0-4f49-4171-884b-01121d154625"
+    ];
+
+    const vestuarioProducts = (allProducts ?? []).filter(p => auditIds.includes(p.id));
 
     if (vestuarioProducts.length === 0) {
-      const categories = [...new Set((allProducts ?? []).map(p => (p as any).category?.name))];
       return { 
           success: false, 
-          message: "Nenhum produto de Vestuário com canal 'catalog' encontrado.",
-          availableCategories: categories,
-          totalProductsFound: allProducts?.length,
-          eligibleCount: eligibleProducts.length
+          message: "Nenhum dos IDs de Vestuário auditados foi encontrado no banco.",
+          foundIdsCount: (allProducts ?? []).length
       };
     }
 
     const productIds = vestuarioProducts.map(p => p.id);
 
-    // 4. Check existing associations
-    const { data: existing, error: existingError } = await supabase
+    // Check existing associations
+    const { data: existing } = await supabase
       .from("product_collection_items")
       .select("product_id")
       .eq("collection_id", collectionId)
       .in("product_id", productIds);
 
-    if (existingError) throw existingError;
     const existingIds = new Set(existing?.map(e => e.product_id) || []);
-    
-    // 5. Filter only those not associated yet
     const toAssociate = productIds.filter(id => !existingIds.has(id));
 
     if (toAssociate.length === 0) {
-      return { success: true, message: "Todos os produtos de Vestuário já estão associados.", count: 0 };
+      return { success: true, message: "Todos os produtos de Vestuário auditados já estão associados.", count: 0 };
     }
 
-    // 6. Get last position to append
+    // Get position
     const { data: lastItem } = await supabase
       .from("product_collection_items")
       .select("position")
@@ -75,7 +65,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     const startPos = (lastItem?.position ?? 0) + 1;
 
-    // 7. Insert associations
+    // Insert
     const newItems = toAssociate.map((productId, index) => ({
       collection_id: collectionId,
       product_id: productId,
@@ -90,12 +80,8 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     return { 
       success: true, 
-      message: `${toAssociate.length} produtos de Vestuário associados com sucesso.`,
+      message: `${toAssociate.length} produtos de Vestuário associados via auditoria.`,
       count: toAssociate.length,
       associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
-
-
-
-
