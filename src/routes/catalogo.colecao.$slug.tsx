@@ -185,6 +185,7 @@ function PublicCollectionPage() {
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["public-collection", slug, isPreview],
     queryFn: () => fetchPublicCollection(slug, isPreview),
+    initialData: Route.useLoaderData().collection || undefined,
     staleTime: 60_000,
     retry: 1,
   });
