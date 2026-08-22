@@ -6,13 +6,28 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     const collectionId = "c1266d6d-66e0-4f51-872f-574f7678d43d";
     const companyId = "78bfccca-f3a5-4110-9983-13e073f3ba77";
 
-    // 1. Get Vestuario products that have 'catalog' in sales_channels
+    // 1. Get the 'Vestuário' category ID first
+    const { data: categoryData, error: catError } = await supabase
+      .from("product_categories")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("name", "Vestuário")
+      .maybeSingle();
+
+    if (catError) throw catError;
+    if (!categoryData) {
+      return { success: false, message: "Categoria 'Vestuário' não encontrada." };
+    }
+
+    const categoryId = categoryData.id;
+
+    // 2. Get Vestuario products that have 'catalog' in sales_channels
     const { data: products, error: fetchError } = await supabase
       .from("products")
-      .select("id, name, category")
+      .select("id, name")
       .eq("company_id", companyId)
       .eq("status", "active")
-      .eq("category", "Vestuário")
+      .eq("category_id", categoryId)
       .contains("sales_channels", ["catalog"]);
 
     if (fetchError) throw fetchError;
@@ -22,7 +37,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     const productIds = products.map(p => p.id);
 
-    // 2. Check existing associations to avoid duplicates
+    // 3. Check existing associations to avoid duplicates
     const { data: existing, error: existingError } = await supabase
       .from("product_collection_items")
       .select("product_id")
@@ -32,14 +47,14 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     if (existingError) throw existingError;
     const existingIds = new Set(existing?.map(e => e.product_id) || []);
     
-    // 3. Filter only those not associated yet
+    // 4. Filter only those not associated yet
     const toAssociate = productIds.filter(id => !existingIds.has(id));
 
     if (toAssociate.length === 0) {
       return { success: true, message: "Todos os produtos de Vestuário já estão associados.", count: 0 };
     }
 
-    // 4. Get last position to append
+    // 5. Get last position to append
     const { data: lastItem } = await supabase
       .from("product_collection_items")
       .select("position")
@@ -50,7 +65,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     const startPos = (lastItem?.position ?? 0) + 1;
 
-    // 5. Insert associations
+    // 6. Insert associations
     const newItems = toAssociate.map((productId, index) => ({
       collection_id: collectionId,
       product_id: productId,
@@ -70,3 +85,4 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
       associatedNames: products.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
