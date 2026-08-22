@@ -4,16 +4,15 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // 1. Diagnostics: List all collections in the entire database
-    const { data: cols, error: colError } = await supabaseAdmin
+    // Check if the table exists by trying a count
+    const { count, error } = await supabaseAdmin
       .from("product_collections")
-      .select("id, name, slug, company_id");
-
-    if (colError) throw colError;
+      .select("*", { count: 'exact', head: true });
 
     return { 
         success: false, 
-        message: "Debug: Global Collection List",
-        collections: cols
+        message: "Collection Count Diagnostic",
+        count: count,
+        error: error?.message
     };
   });
