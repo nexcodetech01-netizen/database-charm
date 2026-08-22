@@ -203,6 +203,10 @@ function PublicCollectionPage() {
   }, [data]);
 
   const categories = useMemo(() => {
+    if (data?.categories && data.categories.length > 0) {
+      return data.categories;
+    }
+    // Fallback para extração dinâmica se o payload estiver vazio
     const set = new Set<string>();
     for (const p of data?.products ?? []) {
       if (p.category_name) set.add(p.category_name);
