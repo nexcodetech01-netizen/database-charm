@@ -695,9 +695,12 @@ function PublicCollectionPage() {
                 }
 
                 return (
-                  <Card key={p.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                  <Card
+                    key={p.id}
+                    className="group overflow-hidden rounded-2xl border-border/40 bg-card/40 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20"
+                  >
                     <div
-                      className="relative aspect-square w-full overflow-hidden bg-muted cursor-pointer"
+                      className="relative aspect-[4/5] w-full overflow-hidden bg-muted/30 cursor-pointer"
                       onClick={() => setQuickViewId(p.id)}
                     >
                       {p.cover_url ? (
@@ -705,66 +708,74 @@ function PublicCollectionPage() {
                           src={p.cover_url}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center">
-                          <Package className="h-10 w-10 text-muted-foreground" />
+                          <Package className="h-10 w-10 text-muted-foreground/30" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                      
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
                       {(data.show_stock || availability !== "available") && (
                         <AvailabilityBadge
                           kind={availability}
                           size="sm"
-                          className="absolute left-2 top-2"
+                          className="absolute left-3 top-3 shadow-lg"
                         />
                       )}
-                      <div className="absolute bottom-2 right-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                      
+                      <div className="absolute bottom-3 left-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                         <Button
                           size="sm"
-                          className="rounded-full shadow-lg"
+                          className="w-full rounded-xl bg-white/90 text-black hover:bg-white backdrop-blur-md shadow-xl font-bold tracking-tight"
                           onClick={(e) => {
                             e.stopPropagation();
                             setQuickViewId(p.id);
                           }}
                         >
-                          Quick View
+                          Visualização Rápida
                         </Button>
                       </div>
                     </div>
-                    <CardContent className="space-y-2 p-3">
-                      <div className="space-y-0.5">
+                    
+                    <CardContent className="space-y-3 p-4">
+                      <div className="space-y-1">
                         {data.show_brand && p.brand && (
-                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary/80">
                             {p.brand}
                           </div>
                         )}
-                        <div
-                          className="line-clamp-2 text-sm font-bold leading-tight cursor-pointer hover:text-primary transition-colors min-h-[2.5rem]"
+                        <h3
+                          className="line-clamp-2 text-sm font-semibold leading-snug cursor-pointer hover:text-primary transition-colors min-h-[2.5rem] text-foreground/90"
                           onClick={() => setQuickViewId(p.id)}
                         >
                           {p.name}
-                        </div>
+                        </h3>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      
+                      <div className="flex flex-col gap-0.5">
                         {data.show_price && (
-                          <div className="text-base font-bold text-primary">
+                          <div className="text-lg font-black tracking-tight text-foreground">
                             {formatCurrency(p.price)}
                           </div>
                         )}
                         {data.show_installments && data.show_price && plan && (
-                          <div className="text-[10px] text-muted-foreground font-medium">
+                          <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                            <span className="h-1 w-1 rounded-full bg-primary/40" />
                             {plan.label}
                           </div>
                         )}
                       </div>
+                      
                       <div className="pt-1">
                         <Button
                           asChild
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
-                          className="w-full h-8 rounded-lg text-xs font-semibold"
+                          className="w-full h-9 rounded-xl text-xs font-bold border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all active:scale-95"
                           disabled={outOfStock}
                         >
                           <Link
@@ -783,16 +794,20 @@ function PublicCollectionPage() {
             </div>
 
             {hasMore && (
-              <div className="mt-12 flex justify-center">
+              <div className="mt-16 flex flex-col items-center justify-center gap-4">
+                <div className="h-px w-24 bg-gradient-to-r from-transparent via-border to-transparent" />
                 <Button
                   variant="outline"
                   size="lg"
-                  className="rounded-full px-8 shadow-sm"
+                  className="rounded-2xl px-10 h-14 border-border/60 font-bold hover:bg-accent hover:border-primary/30 transition-all shadow-sm active:scale-95"
                   onClick={() =>
                     updateSearch({ page: currentPage + 1 }, false)
                   }
                 >
-                  Carregar mais ({filtered.length - visibleCount} restantes)
+                  Ver mais produtos
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    ({filtered.length - visibleCount} restantes)
+                  </span>
                 </Button>
               </div>
             )}
