@@ -5150,6 +5150,57 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          comment: string | null
+          company_id: string
+          created_at: string
+          customer_name: string
+          id: string
+          product_id: string
+          rating: number
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          comment?: string | null
+          company_id: string
+          created_at?: string
+          customer_name: string
+          id?: string
+          product_id: string
+          rating: number
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          comment?: string | null
+          company_id?: string
+          created_at?: string
+          customer_name?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_suppliers: {
         Row: {
           address: string | null
@@ -5238,57 +5289,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_reviews: {
-        Row: {
-          comment: string | null
-          company_id: string
-          created_at: string
-          customer_name: string
-          id: string
-          product_id: string
-          rating: number
-          reviewed_at: string | null
-          status: string
-        }
-        Insert: {
-          comment?: string | null
-          company_id: string
-          created_at?: string
-          customer_name: string
-          id?: string
-          product_id: string
-          rating: number
-          reviewed_at?: string | null
-          status?: string
-        }
-        Update: {
-          comment?: string | null
-          company_id?: string
-          created_at?: string
-          customer_name?: string
-          id?: string
-          product_id?: string
-          rating?: number
-          reviewed_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_reviews_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_reviews_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
