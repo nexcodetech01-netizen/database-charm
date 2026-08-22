@@ -15,6 +15,7 @@ import { DRAFT_KEYS } from "@/lib/draft-storage";
 import { DraftAutosave } from "@/components/feedback/draft-autosave";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toTitleCasePtBr } from "@/lib/text-format";
+import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import { suggestProductTags } from "../../lib/tag-suggestions.functions";
@@ -83,7 +84,7 @@ type FormState = {
 const empty: FormState = {
   name: "", sku: "", barcode: "SEM GTIN", ncm: "", cest: "",
   brand: "Genérico", model: "Padrão", description: "", category_id: "",
-  supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica", "catalog"],
+  supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica"],
   cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
   channel_fee_pct: "0", channel_fixed_fee: "0", tax_pct: "0",
@@ -601,8 +602,21 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     // preço no motor oficial NESSE MOMENTO para garantir que o que for pro
     // banco seja o preço exato da categoria, mesmo que a UI mostre algo
     // desalinhado (ex: custo alterado mas effect de UI não rodou ainda).
+    //
+    // BUG DE UX ENCONTRADO E CORRIGIDO (2026-08-21, "salva mas o valor
+    // muda"): esse recálculo sempre SOBRESCREVIA silenciosamente
+    // qualquer preço/margem que a pessoa tivesse digitado na mão,
+    // sempre que o interruptor "usar margem da categoria" estivesse
+    // ligado — e ele vem LIGADO por padrão em todo produto novo (linha
+    // ~88 desse arquivo). Resultado: a pessoa digita um preço
+    // específico, salva sem erro nenhum na tela, e o preço acaba saindo
+    // diferente do que foi digitado — sem nenhum aviso explicando o
+    // motivo. Agora, se isso acontecer, mostramos um aviso claro depois
+    // de salvar, dizendo que o preço foi ajustado pela margem da
+    // categoria (em vez de mudar caladinho).
     let finalPrice = num(form.price);
     let finalMargin = num(form.margin);
+    const typedPriceBeforeOverride = finalPrice;
 
     if (form.use_category_margin && form.category_id) {
       const suggestion = computeSuggestedPrice({
@@ -625,6 +639,9 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       finalPrice = suggestion.targetPrice;
       finalMargin = suggestion.marginPct;
     }
+
+    const priceWasOverriddenByCategory =
+      form.use_category_margin && form.category_id && Math.abs(finalPrice - typedPriceBeforeOverride) > 0.01;
 
     const payload: ProductUpdate = {
       name: toTitleCasePtBr(form.name),
@@ -729,6 +746,12 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       }
 
       toast.success(isEdit ? "Atualizado" : "Criado");
+      if (priceWasOverriddenByCategory) {
+        toast.warning(
+          `Preço ajustado para ${formatCurrency(finalPrice)} pela margem da categoria (interruptor "usar margem da categoria" está ligado). Desligue esse interruptor na aba Custos & Preço se quiser definir um preço manual.`,
+          { duration: 8000 },
+        );
+      }
       if (!isEdit && saved?.id) setCreatedProduct({ id: saved.id as string, name: payload.name as string });
       else navigate({ to: "/produtos" });
     } catch (err: any) { 

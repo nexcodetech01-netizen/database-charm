@@ -14,7 +14,19 @@ interface StockFormProps {
 export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormProps) {
   const numValue = parseFloat(String(form.stock).replace(/[^\d.-]/g, "")) || 0;
   const isKit = form.product_type === 'kit';
-  
+  // BUG DE UX ENCONTRADO E CORRIGIDO (2026-08-21, "salva mas não salva o
+  // que era pra salvar"): esse campo sempre foi editável normalmente na
+  // tela pra QUALQUER produto — mas pra produto SIMPLES já existente
+  // (não-kit, editando), o valor digitado aqui é descartado em silêncio
+  // antes de salvar (ver `shouldStripStockFromPayload` — o banco só
+  // permite mudar estoque via movimentação, pra manter o histórico
+  // real). O único aviso disso era um texto pequeno e discreto embaixo,
+  // fácil de não notar — a pessoa digitava um novo valor, salvava sem
+  // erro nenhum, e o estoque continuava o mesmo de antes. Agora o campo
+  // fica desabilitado nesse caso específico, deixando claro que não dá
+  // pra editar direto ali, em vez de parecer editável sem ser.
+  const stockFieldDisabled = isEdit && !isKit;
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="space-y-4">
@@ -28,12 +40,14 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               id="stock"
               type="number"
               value={form.stock}
+              disabled={stockFieldDisabled}
               onChange={(e) => {
                 setForm((s: any) => ({ ...s, stock: e.target.value }));
               }}
               className={cn(
                 "text-lg font-bold tabular-nums pr-12",
-                isKit && "text-blue-400 bg-blue-950/20 border-blue-500/50"
+                isKit && "text-blue-400 bg-blue-950/20 border-blue-500/50",
+                stockFieldDisabled && "opacity-70 cursor-not-allowed"
               )}
 
             />
@@ -54,8 +68,13 @@ export function StockForm({ form, setForm, isEdit, onOpenMovement }: StockFormPr
               </p>
             </div>
           ) : isEdit && (
-            <p className="text-[10px] text-muted-foreground">
-              Para registrar entradas ou saídas rastreáveis no estoque, utilize os botões <strong>Entrada</strong> ou <strong>Ajuste</strong> abaixo.
+            <p className="text-xs text-amber-400 bg-amber-950/20 border border-amber-500/30 rounded-sm p-2 flex items-start gap-2">
+              <Boxes className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                Esse campo não pode ser editado direto aqui — para registrar
+                entradas ou saídas rastreáveis no estoque, utilize os botões{" "}
+                <strong>Entrada</strong> ou <strong>Ajuste</strong> abaixo.
+              </span>
             </p>
           )}
 
