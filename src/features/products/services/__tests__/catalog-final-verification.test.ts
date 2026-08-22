@@ -12,6 +12,9 @@ vi.mock('@/integrations/supabase/client', () => ({
     single: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    rpc: vi.fn().mockReturnThis(),
   },
 }));
 
@@ -32,8 +35,10 @@ describe('Catalog Integration Final Verification', () => {
   });
 
   it('should ensure catalog is present in the create payload and triggers auto-linking', async () => {
-    // 1. Setup mock for products.insert
-    const mockInsert = vi.fn().mockResolvedValue({
+    // 1. Setup mock for products.insert chain: .from().insert().select().single()
+    const mockInsert = vi.fn().mockReturnThis();
+    const mockSelect = vi.fn().mockReturnThis();
+    const mockSingle = vi.fn().mockResolvedValue({
       data: { id: mockProductId, status: 'active', sales_channels: ['loja_fisica', 'catalog'] },
       error: null,
     });
@@ -42,8 +47,8 @@ describe('Catalog Integration Final Verification', () => {
       if (table === 'products') {
         return {
           insert: mockInsert,
-          select: vi.fn().mockReturnThis(),
-          single: vi.fn().mockReturnThis(),
+          select: mockSelect,
+          single: mockSingle,
         };
       }
       if (table === 'inventory_movements') {
