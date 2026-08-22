@@ -76,6 +76,8 @@ export function useCreateProduct() {
 
 export function useUpdateProduct() {
   const qc = useQueryClient();
+  const invalidateCatalog = useServerFn(invalidateCatalogCache);
+
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: ProductUpdate }) =>
       productsService.update(id, input),
@@ -93,7 +95,7 @@ export function useUpdateProduct() {
       if (currentChannels.includes('catalog')) {
         try {
           // Tentativa de invalidação de cache de CDN (Edge/Server)
-          // void invoker({ slug: 'tg-style-catalogue' }); // Slug da coleção principal
+          void invalidateCatalog({ data: { slug: 'tg-style-catalogue' } });
           // Invalida o cache do loader no TanStack Query (client-side)
           await qc.invalidateQueries({ queryKey: ["public-collection"] });
         } catch (err) {
