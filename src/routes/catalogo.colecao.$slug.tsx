@@ -462,7 +462,7 @@ function PublicCollectionPage() {
               )}
 
               {categories.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className="flex flex-wrap items-center gap-2 pb-2">
                   <Button
                     variant={search.cat === "all" ? "secondary" : "outline"}
                     size="sm"
