@@ -4,87 +4,59 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // We target the specific slug from the load logic: 'tg-style-catalogue'
-    // The company_id was confirmed in previous turns: '78bfccca-f3a5-4110-9983-13e073f3ba77'
-    const targetSlug = "tg-style-catalogue";
     const companyId = "78bfccca-f3a5-4110-9983-13e073f3ba77";
+    const targetSlug = "tg-style-catalogue";
 
-    // 1. Diagnostics: Try to find the collection using exact query from load logic
-    const { data: col, error: colErr } = await supabaseAdmin
+    // 1. Diagnostics: List all collections for THIS company in product_collections
+    const { data: cols, error: colError } = await supabaseAdmin
       .from("product_collections")
-      .select("id, slug, name, company_id")
-      .eq("slug", targetSlug)
-      .maybeSingle();
-
-    if (colErr) throw colErr;
-
-    if (!col) {
-      // If not found by slug, let's list all collections for THIS company
-      const { data: allCols } = await supabaseAdmin
-        .from("product_collections")
-        .select("id, name, slug, company_id")
-        .eq("company_id", companyId);
-
-      return { 
-          success: false, 
-          message: `Coleção slug='${targetSlug}' não encontrada.`,
-          availableForCompany: allCols,
-          companyId: companyId
-      };
-    }
-
-    const collectionId = col.id;
-
-    // 2. Get ALL products for this company
-    const { data: allProducts, error: fetchError } = await supabaseAdmin
-      .from("products")
-      .select("id, name, sales_channels, status, category_id, category:product_categories(id, name)")
+      .select("id, name, slug")
       .eq("company_id", companyId);
 
-    if (fetchError) throw fetchError;
-    
-    // 3. Filter products that are active, have 'catalog' in sales_channels, 
-    // and belong to a category named 'Vestuário'
-    const vestuarioProducts = (allProducts ?? []).filter(p => {
-        const isPublic = p.status === 'active';
-        // @ts-ignore
-        const channels = (p.sales_channels as string[] | null);
-        const hasCatalog = channels?.includes('catalog');
-        
-        // Normalize name for comparison
-        // @ts-ignore
-        const catName = (p.category as any)?.name?.trim();
-        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario' || catName === 'VESTUÁRIO';
-        
-        return isPublic && hasCatalog && isVestuario;
-    });
+    if (colError) throw colError;
 
-    if (vestuarioProducts.length === 0) {
+    // 2. Find the collection
+    const targetCol = cols?.find(c => c.slug === targetSlug);
+
+    if (!targetCol) {
       return { 
           success: false, 
-          message: "Nenhum produto de Vestuário com canal 'catalog' encontrado.",
-          totalProducts: allProducts?.length,
-          categories: [...new Set((allProducts ?? []).map(p => (p as any).category?.name))]
+          message: `Coleção '${targetSlug}' não encontrada para empresa ${companyId}.`,
+          foundCollections: cols
       };
     }
 
-    const productIds = vestuarioProducts.map(p => p.id);
+    const collectionId = targetCol.id;
 
-    // 4. Check existing associations
+    // 3. IDs of products identified in audit
+    const auditIds = [
+      "10d8d05e-5b12-4211-96f3-69ed3c31405a",
+      "af744aca-fcf3-487e-97f2-11a2f960f588",
+      "0e380f81-f2f2-4917-8e12-c2883a48e895",
+      "72f32fe4-22b0-4b21-87a4-a9572c6edc88",
+      "29e01a84-7a31-4043-a621-3e4b706c6c73",
+      "1b51d410-d85c-44d3-827d-965a9ef03901",
+      "38557bcb-8e3d-4c57-827a-e45f187a0279",
+      "3bf2ae3f-3665-4f46-9f87-a2f026048d90",
+      "d1614022-75d3-4672-8700-0e104ea26330",
+      "843a63f0-4f49-4171-884b-01121d154625"
+    ];
+
+    // 4. Check existing items
     const { data: existing } = await supabaseAdmin
       .from("product_collection_items")
       .select("product_id")
       .eq("collection_id", collectionId)
-      .in("product_id", productIds);
+      .in("product_id", auditIds);
 
     const existingIds = new Set(existing?.map(e => e.product_id) || []);
-    const toAssociate = productIds.filter(id => !existingIds.has(id));
+    const toAssociate = auditIds.filter(id => !existingIds.has(id));
 
     if (toAssociate.length === 0) {
-      return { success: true, message: "Todos os produtos de Vestuário já estão associados.", count: 0 };
+      return { success: true, message: "Todos os produtos auditados já estão associados.", count: 0 };
     }
 
-    // 5. Get last position to append
+    // 5. Get position
     const { data: lastItem } = await supabaseAdmin
       .from("product_collection_items")
       .select("position")
@@ -95,7 +67,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     const startPos = (lastItem?.position ?? 0) + 1;
 
-    // 6. Insert associations
+    // 6. Final Association
     const newItems = toAssociate.map((productId, index) => ({
       collection_id: collectionId,
       product_id: productId,
@@ -110,9 +82,8 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     return { 
       success: true, 
-      message: `${toAssociate.length} produtos de Vestuário associados com sucesso.`,
+      message: `${toAssociate.length} produtos de Vestuário associados via auditoria Admin.`,
       count: toAssociate.length,
-      collection: col.name,
-      associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
+      collection: targetCol.name
     };
   });
