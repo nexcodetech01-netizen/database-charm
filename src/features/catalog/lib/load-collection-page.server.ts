@@ -64,6 +64,7 @@ export type CollectionPagePayload = {
     unit: string;
     cover_url: string | null;
   }>;
+  categories: string[];
 };
 
 export type CollectionPageResult =
