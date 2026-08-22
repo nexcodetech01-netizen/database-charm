@@ -382,12 +382,13 @@ function PublicCollectionPage() {
       )}
 
       {data.products.length > 0 && (
-        <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="mx-auto max-w-5xl px-4 py-3">
-            <div className="flex flex-col gap-4">
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="relative lg:col-span-2">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto max-w-5xl px-4 py-4">
+            <div className="flex flex-col gap-5">
+              {/* Toolbar: Search and Filters */}
+              <div className="flex flex-col lg:flex-row items-center gap-3">
+                <div className="relative w-full lg:flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                   <Input
                     value={q}
                     onChange={(e) => {
@@ -395,57 +396,57 @@ function PublicCollectionPage() {
                       setQ(v);
                       updateSearch({ q: v });
                     }}
-                    placeholder="Buscar por nome ou código..."
-                    className="pl-8 h-10 rounded-xl"
+                    placeholder="O que você está procurando?"
+                    className="pl-10 h-11 rounded-2xl border-border/40 bg-muted/30 focus:bg-background transition-all"
                   />
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex w-full lg:w-auto items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
                   <Select
                     value={search.marca || "all"}
                     onValueChange={(v) =>
                       updateSearch({ marca: v === "all" ? "" : v })
                     }
                   >
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-11 min-w-[130px] rounded-2xl border-border/40 bg-muted/30">
                       <SelectValue placeholder="Marca" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas as marcas</SelectItem>
+                      <SelectItem value="all">Todas as Marcas</SelectItem>
                       {brands.map((b) => (
-                        <SelectItem key={b} value={b}>
-                          {b}
-                        </SelectItem>
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
                   <Select
                     value={search.disp}
                     onValueChange={(v) => updateSearch({ disp: v })}
                   >
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-11 min-w-[130px] rounded-2xl border-border/40 bg-muted/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="todos">Disponibilidade</SelectItem>
                       <SelectItem value="disponivel">Disponíveis</SelectItem>
                       <SelectItem value="esgotado">Esgotados</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                   <Button
+
+                  <Button
                     variant={showPriceFilter ? "secondary" : "outline"}
                     size="sm"
-                    className="h-10 rounded-xl px-3"
+                    className="h-11 rounded-2xl px-4 border-border/40"
                     onClick={() => setShowPriceFilter(!showPriceFilter)}
                   >
-                    <Filter className="h-4 w-4 mr-1.5" /> Preço
+                    <Filter className="h-4 w-4 mr-2" /> Preço
                   </Button>
-                   <div className="flex bg-muted p-1 rounded-xl flex-1">
+
+                  <div className="flex bg-muted/50 p-1 rounded-2xl">
                     <Button
                       variant={search.view === "grid" ? "secondary" : "ghost"}
                       size="sm"
-                      className="flex-1 h-8 rounded-lg shadow-none"
+                      className="h-9 w-10 rounded-xl px-0 shadow-none"
                       onClick={() => updateSearch({ view: "grid" })}
                     >
                       <Grid className="h-4 w-4" />
@@ -453,7 +454,7 @@ function PublicCollectionPage() {
                     <Button
                       variant={search.view === "list" ? "secondary" : "ghost"}
                       size="sm"
-                      className="flex-1 h-8 rounded-lg shadow-none"
+                      className="h-9 w-10 rounded-xl px-0 shadow-none"
                       onClick={() => updateSearch({ view: "list" })}
                     >
                       <List className="h-4 w-4" />
@@ -462,12 +463,13 @@ function PublicCollectionPage() {
                 </div>
               </div>
 
+              {/* Price Slider Drawer-like UI */}
               {showPriceFilter && priceRange.max > priceRange.min && (
-                <div className="bg-muted/50 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex justify-between items-center text-sm font-medium">
-                    <span>Faixa de preço</span>
-                    <span className="text-primary font-bold">
-                      {formatCurrency(search.min || priceRange.min)} - {formatCurrency(search.max || priceRange.max)}
+                <div className="bg-muted/30 p-5 rounded-2xl border border-border/40 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-foreground/80">Faixa de Preço</span>
+                    <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                      {formatCurrency(search.min || priceRange.min)} — {formatCurrency(search.max || priceRange.max)}
                     </span>
                   </div>
                   <Slider
@@ -482,12 +484,18 @@ function PublicCollectionPage() {
                 </div>
               )}
 
+              {/* Categories Navigation */}
               {categories.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pb-2">
+                <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Button
-                    variant={search.cat === "all" ? "secondary" : "outline"}
+                    variant={search.cat === "all" ? "secondary" : "ghost"}
                     size="sm"
-                    className="rounded-full h-8 whitespace-nowrap"
+                    className={cn(
+                      "rounded-full h-9 px-5 transition-all",
+                      search.cat === "all" 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
                     onClick={() => updateSearch({ cat: "all" })}
                   >
                     Todas
@@ -495,9 +503,14 @@ function PublicCollectionPage() {
                   {categories.map((c) => (
                     <Button
                       key={c}
-                      variant={search.cat === c ? "secondary" : "outline"}
+                      variant={search.cat === c ? "secondary" : "ghost"}
                       size="sm"
-                      className="rounded-full h-8 whitespace-nowrap"
+                      className={cn(
+                        "rounded-full h-9 px-5 transition-all whitespace-nowrap",
+                        search.cat === c 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
+                      )}
                       onClick={() => updateSearch({ cat: c })}
                     >
                       {c}
@@ -507,12 +520,14 @@ function PublicCollectionPage() {
               )}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-              <div className="text-xs text-muted-foreground font-medium">
-                {filtered.length} produto{filtered.length === 1 ? "" : "s"} encontrados
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3">
+              <div className="text-xs text-muted-foreground font-medium flex items-center gap-2">
+                <span className="bg-muted px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight">
+                  {filtered.length} {filtered.length === 1 ? "Item" : "Itens"}
+                </span>
                 {isFetching && (
-                  <span className="ml-2 inline-flex items-center gap-1 text-primary">
-                    <Loader2 className="h-3 w-3 animate-spin" /> atualizando…
+                  <span className="inline-flex items-center gap-1.5 text-primary animate-pulse">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Atualizando...
                   </span>
                 )}
               </div>
@@ -521,7 +536,7 @@ function PublicCollectionPage() {
                   value={search.ord}
                   onValueChange={(v) => updateSearch({ ord: v })}
                 >
-                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0">
+                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted/50 focus:ring-0 rounded-lg transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
