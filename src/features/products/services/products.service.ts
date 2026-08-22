@@ -260,9 +260,20 @@ export const productsService = {
     // Se o produto é 'active' e tem 'catalog' nos canais de venda,
     // associa-o automaticamente à coleção principal do catálogo.
     if (data?.id && data.status === 'active' && (insertPayload.sales_channels as string[])?.includes('catalog')) {
-      const MAIN_COLLECTION_ID = 'd71d809c-83c6-499e-b2bc-ebfcb1df28af';
+      const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
       void import("@/features/catalog/services/catalog.service")
-        .then(({ catalogService }) => catalogService.addProducts(MAIN_COLLECTION_ID, [data.id]))
+        .then(async ({ catalogService }) => {
+          const { data: col } = await supabase
+            .from("product_collections")
+            .select("id")
+            .eq("company_id", data.company_id)
+            .eq("slug", MAIN_COLLECTION_SLUG)
+            .maybeSingle();
+          
+          if (col?.id) {
+            await catalogService.addProducts(col.id, [data.id]);
+          }
+        })
         .catch(err => console.error("Erro na auto-publicação do catálogo:", err));
     }
 
@@ -382,9 +393,20 @@ export const productsService = {
       const currentStatus = updated?.status || safeInputWithoutComp.status;
       const currentChannels = (updated?.sales_channels || safeInputWithoutComp.sales_channels) as string[];
       if (updated?.id && currentStatus === 'active' && currentChannels?.includes('catalog')) {
-        const MAIN_COLLECTION_ID = 'd71d809c-83c6-499e-b2bc-ebfcb1df28af';
+        const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
         void import("@/features/catalog/services/catalog.service")
-          .then(({ catalogService }) => catalogService.addProducts(MAIN_COLLECTION_ID, [updated.id]))
+          .then(async ({ catalogService }) => {
+            const { data: col } = await supabase
+              .from("product_collections")
+              .select("id")
+              .eq("company_id", updated.company_id)
+              .eq("slug", MAIN_COLLECTION_SLUG)
+              .maybeSingle();
+
+            if (col?.id) {
+              await catalogService.addProducts(col.id, [updated.id]);
+            }
+          })
           .catch(err => console.error("Erro na auto-publicação do catálogo (update):", err));
       }
 

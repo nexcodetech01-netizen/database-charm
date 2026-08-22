@@ -486,36 +486,43 @@ function PublicCollectionPage() {
 
               {/* Categories Navigation */}
               {categories.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Button
-                    variant={search.cat === "all" ? "secondary" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "rounded-full h-9 px-5 transition-all",
-                      search.cat === "all" 
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                    onClick={() => updateSearch({ cat: "all" })}
-                  >
-                    Todas
-                  </Button>
-                  {categories.map((c) => (
+                <div className="relative group/nav">
+                  <div className="flex flex-wrap items-center gap-2 pt-1 transition-all duration-300">
                     <Button
-                      key={c}
-                      variant={search.cat === c ? "secondary" : "ghost"}
+                      variant={search.cat === "all" ? "secondary" : "ghost"}
                       size="sm"
                       className={cn(
-                        "rounded-full h-9 px-5 transition-all whitespace-nowrap",
-                        search.cat === c 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
+                        "rounded-full h-9 px-6 transition-all font-bold tracking-tight text-xs",
+                        search.cat === "all" 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
                           : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
                       )}
-                      onClick={() => updateSearch({ cat: c })}
+                      onClick={() => updateSearch({ cat: "all" })}
                     >
-                      {c}
+                      TODAS
                     </Button>
-                  ))}
+                    {categories.map((c) => (
+                      <Button
+                        key={c}
+                        variant={search.cat === c ? "secondary" : "ghost"}
+                        size="sm"
+                        className={cn(
+                          "rounded-full h-9 px-6 transition-all whitespace-nowrap font-bold tracking-tight text-xs uppercase",
+                          search.cat === c 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
+                            : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
+                        )}
+                        onClick={() => updateSearch({ cat: c })}
+                      >
+                        {c}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  {/* Decorative indicator for many categories */}
+                  {categories.length > 5 && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-muted/20 lg:hidden" />
+                  )}
                 </div>
               )}
             </div>
