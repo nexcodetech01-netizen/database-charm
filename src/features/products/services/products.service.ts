@@ -255,6 +255,16 @@ export const productsService = {
       .select()
       .single();
     if (error) throw error;
+    
+    // RESTAURAR PUBLICAÇÃO AUTOMÁTICA (2026-08-19):
+    // Se o produto é 'active' e tem 'catalog' nos canais de venda,
+    // associa-o automaticamente à coleção principal do catálogo.
+    if (data?.id && data.status === 'active' && (insertPayload.sales_channels as string[])?.includes('catalog')) {
+      const MAIN_COLLECTION_ID = 'd71d809c-83c6-499e-b2bc-ebfcb1df28af';
+      void import("@/features/catalog/services/catalog.service")
+        .then(({ catalogService }) => catalogService.addProducts(MAIN_COLLECTION_ID, [data.id]))
+        .catch(err => console.error("Erro na auto-publicação do catálogo:", err));
+    }
 
     // Handle initial stock movement
     const initialQty = Number(stock ?? 0);
@@ -366,6 +376,18 @@ export const productsService = {
           )
           .catch(() => {});
       }
+
+      // RESTAURAR PUBLICAÇÃO AUTOMÁTICA EM UPDATE (2026-08-19):
+      // Garante que o produto está na coleção principal se os critérios forem atendidos após o update.
+      const currentStatus = updated?.status || safeInputWithoutComp.status;
+      const currentChannels = (updated?.sales_channels || safeInputWithoutComp.sales_channels) as string[];
+      if (updated?.id && currentStatus === 'active' && currentChannels?.includes('catalog')) {
+        const MAIN_COLLECTION_ID = 'd71d809c-83c6-499e-b2bc-ebfcb1df28af';
+        void import("@/features/catalog/services/catalog.service")
+          .then(({ catalogService }) => catalogService.addProducts(MAIN_COLLECTION_ID, [updated.id]))
+          .catch(err => console.error("Erro na auto-publicação do catálogo (update):", err));
+      }
+
       return updated;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
