@@ -74,7 +74,7 @@ function ShippingCalculatorPage() {
       const printers = await printManager.getPrinters();
       const defaultPrinter =
         printers.find((p: PrinterInfo) => p.isDefault) ??
-        printers.find((p: PrinterInfo) => p.name === "LABEL TERMICA");
+        printers.find((p: PrinterInfo) => p.name === "ZDesigner GK420d");
       if (!defaultPrinter) {
         toast.error("Impressora térmica não encontrada. Confira se o Print Bridge está conectado.");
         return;

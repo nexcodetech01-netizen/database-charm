@@ -7,7 +7,7 @@ interface PrinterSelectorProps {
   onValueChange: (value: string) => void;
 }
 
-const FALLBACK_PRINTER_NAME = 'LABEL TERMICA';
+const FALLBACK_PRINTER_NAME = 'ZDesigner GK420d';
 
 export function PrinterSelector({ value, onValueChange }: PrinterSelectorProps) {
   const { printers, loading } = usePrinters();
@@ -22,7 +22,7 @@ export function PrinterSelector({ value, onValueChange }: PrinterSelectorProps) 
         return;
       }
 
-      // 2. Fallback: procurar pelo nome "LABEL TERMICA"
+      // 2. Fallback: procurar pelo nome "ZDesigner GK420d"
       const fallbackPrinter = printers.find(p => 
         p.name.toUpperCase().includes(FALLBACK_PRINTER_NAME.toUpperCase())
       );
