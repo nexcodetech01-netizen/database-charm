@@ -154,10 +154,23 @@ export class PrintJobService {
     const pdfPath = `${tmpFile}.pdf`;
     await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
 
-    // Import dinâmico: só carrega essa dependência quando precisa
-    // imprimir PDF de verdade, evitando custo em outros tipos de job.
-    const { print } = await import('pdf-to-printer');
-    await print(pdfPath, { printer: job.printer });
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-22, revisão 2): a impressão
+    // chegava até aqui certinho, mas falhava no comando final —
+    // confirmado pelo log ao vivo: `-print-to LABEL TERMICA -silent
+    // ...` — o pacote `pdf-to-printer` monta o comando como um texto
+    // único, sem colocar aspas ao redor do nome da impressora. Como
+    // "LABEL TERMICA" tem um ESPAÇO no nome, o programa (SumatraPDF)
+    // entendia "LABEL" como o nome da impressora e "TERMICA" como
+    // outro argumento solto, e falhava sempre. Só não dava esse erro
+    // com impressoras de nome de uma palavra só.
+    //
+    // Correção: em vez de deixar o pacote montar o comando (que tem
+    // esse bug), chamamos o executável do SumatraPDF diretamente via
+    // `execFile` com os argumentos numa LISTA separada — assim cada
+    // argumento (incluindo nomes com espaço) é passado exatamente como
+    // está, sem risco de ser cortado no meio.
+    const sumatraPath = require.resolve('pdf-to-printer/dist/SumatraPDF-3.4.6-32.exe');
+    await execFileAsync(sumatraPath, ['-print-to', job.printer, '-silent', pdfPath]);
 
     await fs.promises.unlink(pdfPath).catch(() => {});
   }
