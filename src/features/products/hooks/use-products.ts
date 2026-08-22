@@ -66,7 +66,8 @@ export function useCreateProduct() {
       
       const channels = (data?.sales_channels || []) as string[];
       if (channels.includes('catalog')) {
-        void invalidateCatalog({ slug: 'tg-style-catalogue' });
+        // Correct usage for server function invoker
+        void invalidateCatalog({ data: { slug: 'tg-style-catalogue' } });
         await qc.invalidateQueries({ queryKey: ["public-collection"] });
       }
     },
