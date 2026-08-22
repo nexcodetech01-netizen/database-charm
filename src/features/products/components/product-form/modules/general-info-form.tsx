@@ -5,8 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { RequiredLabel } from "@/components/ui/required-label";
-import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS } from "../../../types";
+import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS, SALES_CHANNEL_OPTIONS } from "../../../types";
 import { useMemo } from "react";
+import { Smartphone, Globe } from "lucide-react";
 
 interface GeneralInfoFormProps {
   form: any;
@@ -172,6 +173,52 @@ export function GeneralInfoForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      
+      <div className="space-y-4 md:col-span-2 pt-4 border-t border-slate-800/50 mt-2">
+        <div className="flex flex-col gap-1">
+          <Label className="text-base font-semibold">Canais de Venda</Label>
+          <p className="text-xs text-muted-foreground">Onde este produto será publicado</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {SALES_CHANNEL_OPTIONS.map((channel) => {
+            const isSelected = form.sales_channels.includes(channel.value);
+            return (
+              <button
+                key={channel.value}
+                type="button"
+                onClick={() => {
+                  const current = [...form.sales_channels];
+                  if (isSelected) {
+                    setForm((s: any) => ({
+                      ...s,
+                      sales_channels: current.filter((v) => v !== channel.value),
+                    }));
+                  } else {
+                    setForm((s: any) => ({
+                      ...s,
+                      sales_channels: [...current, channel.value],
+                    }));
+                  }
+                }}
+                className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                  isSelected
+                    ? "bg-primary/10 border-primary/50 text-primary ring-1 ring-primary/20"
+                    : "bg-slate-900/40 border-slate-800 hover:border-slate-700"
+                }`}
+              >
+                {channel.value === "loja_fisica" ? (
+                  <Smartphone className="h-4 w-4 shrink-0" />
+                ) : channel.value === "mercadolivre" ? (
+                  <Globe className="h-4 w-4 shrink-0" />
+                ) : (
+                  <Smartphone className="h-4 w-4 shrink-0 rotate-180" />
+                )}
+                <span className="text-xs font-medium">{channel.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

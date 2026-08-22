@@ -124,48 +124,6 @@ export function MultimediaForm({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Canais de Venda</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {SALES_CHANNEL_OPTIONS.map((channel) => {
-                const isSelected = form.sales_channels.includes(channel.value);
-                return (
-                  <button
-                    key={channel.value}
-                    type="button"
-                    onClick={() => {
-                      const current = [...form.sales_channels];
-                      if (isSelected) {
-                        setForm((s: any) => ({
-                          ...s,
-                          sales_channels: current.filter((v) => v !== channel.value),
-                        }));
-                      } else {
-                        setForm((s: any) => ({
-                          ...s,
-                          sales_channels: [...current, channel.value],
-                        }));
-                      }
-                    }}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      isSelected
-                        ? "bg-primary/5 border-primary text-primary ring-1 ring-primary/20"
-                        : "bg-background border-muted hover:border-muted-foreground/30"
-                    }`}
-                  >
-                    {channel.value === "loja_fisica" ? (
-                      <Smartphone className="h-4 w-4 shrink-0" />
-                    ) : channel.value === "mercadolivre" ? (
-                      <Globe className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <Smartphone className="h-4 w-4 shrink-0 rotate-180" />
-                    )}
-                    <span className="text-xs font-medium">{channel.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
       
