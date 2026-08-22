@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,34 @@ export function PricingForm({
   const totalCost = cost + freight + packaging + insurance + other;
   const price = num(form.price);
   const desiredMargin = num(form.margin);
+
+  // CORREÇÃO ("tela tremendo ao alterar a margem alvo", 2026-08-21):
+  // o campo de margem era um input controlado direto por
+  // `desiredMargin` (número derivado de `form.margin` via parse +
+  // reformatação). A cada tecla digitada, `recalculatePrice` reescrevia
+  // `form.margin` como `String(newMargin)` — isso corta qualquer coisa
+  // "incompleta" no meio da digitação (ex.: o ponto decimal de "20."
+  // virando "20" de novo antes de você terminar de digitar "20.5"),
+  // fazendo o valor mostrado "brigar" com o que você está digitando a
+  // cada caractere — na prática parece o campo tremendo/piscando.
+  // Mesmo padrão de correção já usado em outro componente do sistema
+  // (`suggested-prices-by-channel-card.tsx`, campos `marginInput`/
+  // `fixedCostInput`): mantém o TEXTO bruto digitado num estado local,
+  // só sincroniza com o valor calculado quando ele muda por FORA
+  // (troca de produto, aplicar margem da categoria, etc.), não a cada
+  // tecla.
+  const [marginInputText, setMarginInputText] = useState<string>(() => String(form.margin ?? ""));
+  useEffect(() => {
+    // Só resincroniza se o valor NUMÉRICO mudou de fora (troca de
+    // produto, aplicar margem da categoria, etc.) — se for só o
+    // reflexo do que a própria digitação já causou (ex.: "20." e "20"
+    // têm o mesmo valor numérico), não mexe no texto que a pessoa
+    // está digitando.
+    if (num(form.margin) !== num(marginInputText)) {
+      setMarginInputText(String(form.margin ?? ""));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.margin]);
 
   // Novos campos para taxas de canal
   const channelFeePct = num(form.channel_fee_pct || 0);
@@ -351,9 +379,10 @@ export function PricingForm({
                     type="number"
                     step="0.01"
                     className="h-10 text-sm font-bold bg-slate-950 border-slate-700 text-white placeholder:text-slate-500 pr-8 disabled:opacity-70 disabled:cursor-not-allowed"
-                    value={desiredMargin}
+                    value={marginInputText}
                     disabled={form.use_category_margin && categoryMargin !== null}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setMarginInputText(e.target.value);
                       const m = num(e.target.value);
                       recalculatePrice(m, channelFeePct, channelFixedFee);
                     }}
