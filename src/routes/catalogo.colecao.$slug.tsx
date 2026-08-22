@@ -326,24 +326,45 @@ function PublicCollectionPage() {
         </div>
       )}
 
-      <header className="border-b bg-card">
-        <div className="mx-auto max-w-5xl px-4 py-6">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            {data.company_name}
-          </div>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{data.name}</h1>
-          {data.description && (
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {data.description}
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={copyLink}>
-              <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link
-            </Button>
-            <Button size="sm" onClick={share}>
-              <Share2 className="mr-1.5 h-3.5 w-3.5" /> Compartilhar
-            </Button>
+      <header className="relative border-b bg-card/50 backdrop-blur-sm overflow-hidden">
+        {/* Decorative background element */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        
+        <div className="mx-auto max-w-5xl px-4 py-8 relative">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="flex-1 space-y-2">
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tracking-wide uppercase">
+                {data.company_name}
+              </div>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
+                {data.name}
+              </h1>
+              {data.description && (
+                <p className="max-w-2xl text-base text-muted-foreground leading-relaxed">
+                  {data.description}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={copyLink}
+                className="rounded-xl h-10 border-border/50 hover:bg-accent/50 transition-all active:scale-95"
+              >
+                <Copy className="mr-2 h-4 w-4" /> 
+                <span className="hidden sm:inline">Copiar Link</span>
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={share}
+                className="rounded-xl h-10 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 transition-all active:scale-95"
+              >
+                <Share2 className="mr-2 h-4 w-4" /> 
+                <span>Compartilhar</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
