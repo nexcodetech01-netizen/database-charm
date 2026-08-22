@@ -64,6 +64,7 @@ export type CollectionPagePayload = {
     unit: string;
     cover_url: string | null;
   }>;
+  categories: string[];
 };
 
 export type CollectionPageResult =
@@ -148,6 +149,11 @@ export async function loadCollectionPagePayload(params: {
   if (ctaMode === "entrada" && !bellaPayReady) cta = "none";
   if (ctaMode === "comprar_agora") cta = "none";
 
+  const categoriesSet = new Set<string>();
+  products.forEach((p: any) => {
+    if (p.category?.name) categoriesSet.add(p.category.name);
+  });
+
   const payload: CollectionPagePayload = {
     id: col.id,
     slug: col.slug,
@@ -165,6 +171,7 @@ export async function loadCollectionPagePayload(params: {
     show_installments: col.show_installments ?? true,
     show_stock: col.show_stock ?? true,
     show_brand: col.show_brand ?? true,
+    categories: Array.from(categoriesSet).sort((a, b) => a.localeCompare(b)),
     products: products.map((p: any) => ({
       id: p.id,
       name: p.name,
