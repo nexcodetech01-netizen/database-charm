@@ -326,24 +326,45 @@ function PublicCollectionPage() {
         </div>
       )}
 
-      <header className="border-b bg-card">
-        <div className="mx-auto max-w-5xl px-4 py-6">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            {data.company_name}
-          </div>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{data.name}</h1>
-          {data.description && (
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {data.description}
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={copyLink}>
-              <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link
-            </Button>
-            <Button size="sm" onClick={share}>
-              <Share2 className="mr-1.5 h-3.5 w-3.5" /> Compartilhar
-            </Button>
+      <header className="relative border-b bg-card/50 backdrop-blur-sm overflow-hidden">
+        {/* Decorative background element */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        
+        <div className="mx-auto max-w-5xl px-4 py-8 relative">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="flex-1 space-y-2">
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tracking-wide uppercase">
+                {data.company_name}
+              </div>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
+                {data.name}
+              </h1>
+              {data.description && (
+                <p className="max-w-2xl text-base text-muted-foreground leading-relaxed">
+                  {data.description}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={copyLink}
+                className="rounded-xl h-10 border-border/50 hover:bg-accent/50 transition-all active:scale-95"
+              >
+                <Copy className="mr-2 h-4 w-4" /> 
+                <span className="hidden sm:inline">Copiar Link</span>
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={share}
+                className="rounded-xl h-10 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 transition-all active:scale-95"
+              >
+                <Share2 className="mr-2 h-4 w-4" /> 
+                <span>Compartilhar</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -361,12 +382,13 @@ function PublicCollectionPage() {
       )}
 
       {data.products.length > 0 && (
-        <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="mx-auto max-w-5xl px-4 py-3">
-            <div className="flex flex-col gap-4">
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="relative lg:col-span-2">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto max-w-5xl px-4 py-4">
+            <div className="flex flex-col gap-5">
+              {/* Toolbar: Search and Filters */}
+              <div className="flex flex-col lg:flex-row items-center gap-3">
+                <div className="relative w-full lg:flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
                   <Input
                     value={q}
                     onChange={(e) => {
@@ -374,57 +396,57 @@ function PublicCollectionPage() {
                       setQ(v);
                       updateSearch({ q: v });
                     }}
-                    placeholder="Buscar por nome ou código..."
-                    className="pl-8 h-10 rounded-xl"
+                    placeholder="O que você está procurando?"
+                    className="pl-10 h-11 rounded-2xl border-border/40 bg-muted/30 focus:bg-background transition-all"
                   />
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex w-full lg:w-auto items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
                   <Select
                     value={search.marca || "all"}
                     onValueChange={(v) =>
                       updateSearch({ marca: v === "all" ? "" : v })
                     }
                   >
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-11 min-w-[130px] rounded-2xl border-border/40 bg-muted/30">
                       <SelectValue placeholder="Marca" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas as marcas</SelectItem>
+                      <SelectItem value="all">Todas as Marcas</SelectItem>
                       {brands.map((b) => (
-                        <SelectItem key={b} value={b}>
-                          {b}
-                        </SelectItem>
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+
                   <Select
                     value={search.disp}
                     onValueChange={(v) => updateSearch({ disp: v })}
                   >
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-11 min-w-[130px] rounded-2xl border-border/40 bg-muted/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="todos">Disponibilidade</SelectItem>
                       <SelectItem value="disponivel">Disponíveis</SelectItem>
                       <SelectItem value="esgotado">Esgotados</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                   <Button
+
+                  <Button
                     variant={showPriceFilter ? "secondary" : "outline"}
                     size="sm"
-                    className="h-10 rounded-xl px-3"
+                    className="h-11 rounded-2xl px-4 border-border/40"
                     onClick={() => setShowPriceFilter(!showPriceFilter)}
                   >
-                    <Filter className="h-4 w-4 mr-1.5" /> Preço
+                    <Filter className="h-4 w-4 mr-2" /> Preço
                   </Button>
-                   <div className="flex bg-muted p-1 rounded-xl flex-1">
+
+                  <div className="flex bg-muted/50 p-1 rounded-2xl">
                     <Button
                       variant={search.view === "grid" ? "secondary" : "ghost"}
                       size="sm"
-                      className="flex-1 h-8 rounded-lg shadow-none"
+                      className="h-9 w-10 rounded-xl px-0 shadow-none"
                       onClick={() => updateSearch({ view: "grid" })}
                     >
                       <Grid className="h-4 w-4" />
@@ -432,7 +454,7 @@ function PublicCollectionPage() {
                     <Button
                       variant={search.view === "list" ? "secondary" : "ghost"}
                       size="sm"
-                      className="flex-1 h-8 rounded-lg shadow-none"
+                      className="h-9 w-10 rounded-xl px-0 shadow-none"
                       onClick={() => updateSearch({ view: "list" })}
                     >
                       <List className="h-4 w-4" />
@@ -441,12 +463,13 @@ function PublicCollectionPage() {
                 </div>
               </div>
 
+              {/* Price Slider Drawer-like UI */}
               {showPriceFilter && priceRange.max > priceRange.min && (
-                <div className="bg-muted/50 p-4 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex justify-between items-center text-sm font-medium">
-                    <span>Faixa de preço</span>
-                    <span className="text-primary font-bold">
-                      {formatCurrency(search.min || priceRange.min)} - {formatCurrency(search.max || priceRange.max)}
+                <div className="bg-muted/30 p-5 rounded-2xl border border-border/40 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-foreground/80">Faixa de Preço</span>
+                    <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                      {formatCurrency(search.min || priceRange.min)} — {formatCurrency(search.max || priceRange.max)}
                     </span>
                   </div>
                   <Slider
@@ -461,12 +484,18 @@ function PublicCollectionPage() {
                 </div>
               )}
 
+              {/* Categories Navigation */}
               {categories.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pb-2">
+                <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Button
-                    variant={search.cat === "all" ? "secondary" : "outline"}
+                    variant={search.cat === "all" ? "secondary" : "ghost"}
                     size="sm"
-                    className="rounded-full h-8 whitespace-nowrap"
+                    className={cn(
+                      "rounded-full h-9 px-5 transition-all",
+                      search.cat === "all" 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
                     onClick={() => updateSearch({ cat: "all" })}
                   >
                     Todas
@@ -474,9 +503,14 @@ function PublicCollectionPage() {
                   {categories.map((c) => (
                     <Button
                       key={c}
-                      variant={search.cat === c ? "secondary" : "outline"}
+                      variant={search.cat === c ? "secondary" : "ghost"}
                       size="sm"
-                      className="rounded-full h-8 whitespace-nowrap"
+                      className={cn(
+                        "rounded-full h-9 px-5 transition-all whitespace-nowrap",
+                        search.cat === c 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20" 
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
+                      )}
                       onClick={() => updateSearch({ cat: c })}
                     >
                       {c}
@@ -486,12 +520,14 @@ function PublicCollectionPage() {
               )}
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-              <div className="text-xs text-muted-foreground font-medium">
-                {filtered.length} produto{filtered.length === 1 ? "" : "s"} encontrados
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3">
+              <div className="text-xs text-muted-foreground font-medium flex items-center gap-2">
+                <span className="bg-muted px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight">
+                  {filtered.length} {filtered.length === 1 ? "Item" : "Itens"}
+                </span>
                 {isFetching && (
-                  <span className="ml-2 inline-flex items-center gap-1 text-primary">
-                    <Loader2 className="h-3 w-3 animate-spin" /> atualizando…
+                  <span className="inline-flex items-center gap-1.5 text-primary animate-pulse">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Atualizando...
                   </span>
                 )}
               </div>
@@ -500,7 +536,7 @@ function PublicCollectionPage() {
                   value={search.ord}
                   onValueChange={(v) => updateSearch({ ord: v })}
                 >
-                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0">
+                  <SelectTrigger className="h-8 w-auto min-w-[150px] text-xs border-none bg-transparent hover:bg-muted/50 focus:ring-0 rounded-lg transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -569,10 +605,13 @@ function PublicCollectionPage() {
 
                 if (search.view === "list") {
                   return (
-                    <Card key={p.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-                      <div className="flex flex-row p-0 h-40">
+                    <Card
+                      key={p.id}
+                      className="group overflow-hidden rounded-2xl border-border/40 bg-card/40 backdrop-blur-sm transition-all hover:shadow-lg hover:border-primary/20"
+                    >
+                      <div className="flex flex-col sm:flex-row h-full">
                         <div
-                          className="relative aspect-square h-full bg-muted cursor-pointer shrink-0"
+                          className="relative aspect-square sm:w-48 w-full shrink-0 overflow-hidden bg-muted/30 cursor-pointer"
                           onClick={() => setQuickViewId(p.id)}
                         >
                           {p.cover_url ? (
@@ -580,32 +619,32 @@ function PublicCollectionPage() {
                               src={p.cover_url}
                               alt={p.name}
                               loading="lazy"
-                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
                           ) : (
                             <div className="grid h-full w-full place-items-center">
-                              <Package className="h-8 w-8 text-muted-foreground" />
+                              <Package className="h-10 w-10 text-muted-foreground/30" />
                             </div>
                           )}
-                          {availability !== "available" && (
+                          {(data.show_stock || availability !== "available") && (
                             <AvailabilityBadge
                               kind={availability}
                               size="sm"
-                              className="absolute left-1 top-1"
+                              className="absolute left-2 top-2"
                             />
                           )}
                         </div>
-                        <div className="flex flex-col flex-1 p-4 justify-between min-w-0">
+                        <div className="flex flex-col flex-1 p-5 justify-between min-w-0">
                           <div>
-                            <div className="flex justify-between items-start gap-2">
-                              <div className="space-y-0.5 min-w-0">
+                            <div className="flex justify-between items-start gap-4">
+                              <div className="space-y-1.5 min-w-0">
                                 {data.show_brand && p.brand && (
-                                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary/80">
                                     {p.brand}
                                   </div>
                                 )}
                                 <h3
-                                  className="line-clamp-1 text-sm font-bold cursor-pointer hover:text-primary transition-colors"
+                                  className="line-clamp-2 text-base font-bold text-foreground/90 cursor-pointer hover:text-primary transition-colors"
                                   onClick={() => setQuickViewId(p.id)}
                                 >
                                   {p.name}
@@ -613,26 +652,27 @@ function PublicCollectionPage() {
                               </div>
                               {data.show_price && (
                                 <div className="text-right shrink-0">
-                                  <div className="text-base font-bold text-primary">
+                                  <div className="text-lg font-black tracking-tight text-foreground">
                                     {formatCurrency(p.price)}
                                   </div>
                                   {data.show_installments && plan && (
-                                    <div className="text-[10px] text-muted-foreground">
+                                    <div className="text-[10px] text-muted-foreground font-semibold">
                                       {plan.label}
                                     </div>
                                   )}
                                 </div>
                               )}
                             </div>
-                            <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
-                              {p.description || "Ver detalhes..."}
+                            <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                              {p.description || "Toque para ver mais detalhes sobre este produto premium."}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          
+                          <div className="flex gap-3 mt-4">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 text-xs h-8"
+                              className="flex-1 h-10 rounded-xl text-xs font-bold border-border/60"
                               onClick={() => setQuickViewId(p.id)}
                             >
                               Visualizar
@@ -640,13 +680,13 @@ function PublicCollectionPage() {
                             <Button
                               asChild
                               size="sm"
-                              className="flex-1 text-xs h-8"
+                              className="flex-1 h-10 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
                               disabled={outOfStock}
                             >
                               <Link
                                 to="/catalogo/colecao/$slug/produto/$productId"
                                 params={{ slug: data.slug, productId: p.id }}
-                              search={(prev: any) => prev}
+                                search={(prev: any) => prev}
                               >
                                 {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
                               </Link>
@@ -659,9 +699,12 @@ function PublicCollectionPage() {
                 }
 
                 return (
-                  <Card key={p.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                  <Card
+                    key={p.id}
+                    className="group overflow-hidden rounded-2xl border-border/40 bg-card/40 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20"
+                  >
                     <div
-                      className="relative aspect-square w-full overflow-hidden bg-muted cursor-pointer"
+                      className="relative aspect-[4/5] w-full overflow-hidden bg-muted/30 cursor-pointer"
                       onClick={() => setQuickViewId(p.id)}
                     >
                       {p.cover_url ? (
@@ -669,66 +712,74 @@ function PublicCollectionPage() {
                           src={p.cover_url}
                           alt={p.name}
                           loading="lazy"
-                          className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center">
-                          <Package className="h-10 w-10 text-muted-foreground" />
+                          <Package className="h-10 w-10 text-muted-foreground/30" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                      
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
                       {(data.show_stock || availability !== "available") && (
                         <AvailabilityBadge
                           kind={availability}
                           size="sm"
-                          className="absolute left-2 top-2"
+                          className="absolute left-3 top-3 shadow-lg"
                         />
                       )}
-                      <div className="absolute bottom-2 right-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                      
+                      <div className="absolute bottom-3 left-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                         <Button
                           size="sm"
-                          className="rounded-full shadow-lg"
+                          className="w-full rounded-xl bg-white/90 text-black hover:bg-white backdrop-blur-md shadow-xl font-bold tracking-tight"
                           onClick={(e) => {
                             e.stopPropagation();
                             setQuickViewId(p.id);
                           }}
                         >
-                          Quick View
+                          Visualização Rápida
                         </Button>
                       </div>
                     </div>
-                    <CardContent className="space-y-2 p-3">
-                      <div className="space-y-0.5">
+                    
+                    <CardContent className="space-y-3 p-4">
+                      <div className="space-y-1">
                         {data.show_brand && p.brand && (
-                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary/80">
                             {p.brand}
                           </div>
                         )}
-                        <div
-                          className="line-clamp-2 text-sm font-bold leading-tight cursor-pointer hover:text-primary transition-colors min-h-[2.5rem]"
+                        <h3
+                          className="line-clamp-2 text-sm font-semibold leading-snug cursor-pointer hover:text-primary transition-colors min-h-[2.5rem] text-foreground/90"
                           onClick={() => setQuickViewId(p.id)}
                         >
                           {p.name}
-                        </div>
+                        </h3>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      
+                      <div className="flex flex-col gap-0.5">
                         {data.show_price && (
-                          <div className="text-base font-bold text-primary">
+                          <div className="text-lg font-black tracking-tight text-foreground">
                             {formatCurrency(p.price)}
                           </div>
                         )}
                         {data.show_installments && data.show_price && plan && (
-                          <div className="text-[10px] text-muted-foreground font-medium">
+                          <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+                            <span className="h-1 w-1 rounded-full bg-primary/40" />
                             {plan.label}
                           </div>
                         )}
                       </div>
+                      
                       <div className="pt-1">
                         <Button
                           asChild
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
-                          className="w-full h-8 rounded-lg text-xs font-semibold"
+                          className="w-full h-9 rounded-xl text-xs font-bold border-border/60 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all active:scale-95"
                           disabled={outOfStock}
                         >
                           <Link
@@ -747,16 +798,20 @@ function PublicCollectionPage() {
             </div>
 
             {hasMore && (
-              <div className="mt-12 flex justify-center">
+              <div className="mt-16 flex flex-col items-center justify-center gap-4">
+                <div className="h-px w-24 bg-gradient-to-r from-transparent via-border to-transparent" />
                 <Button
                   variant="outline"
                   size="lg"
-                  className="rounded-full px-8 shadow-sm"
+                  className="rounded-2xl px-10 h-14 border-border/60 font-bold hover:bg-accent hover:border-primary/30 transition-all shadow-sm active:scale-95"
                   onClick={() =>
                     updateSearch({ page: currentPage + 1 }, false)
                   }
                 >
-                  Carregar mais ({filtered.length - visibleCount} restantes)
+                  Ver mais produtos
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    ({filtered.length - visibleCount} restantes)
+                  </span>
                 </Button>
               </div>
             )}
@@ -771,12 +826,32 @@ function PublicCollectionPage() {
         onOpenChange={(open) => !open && setQuickViewId(null)}
       />
 
-      <footer className="border-t bg-card/50 py-10 text-center text-xs text-muted-foreground space-y-3">
-        <p className="px-6 max-w-xl mx-auto leading-relaxed">{PAYMENT_CONDITIONS_LEGEND}</p>
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <div className="h-px w-8 bg-border" />
-          <p className="font-medium tracking-wide uppercase text-[10px]">Catálogo Premium · NexOS</p>
-          <div className="h-px w-8 bg-border" />
+      <footer className="relative border-t bg-card/50 py-16 overflow-hidden">
+        {/* Decorative background for footer */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent opacity-30" />
+        
+        <div className="relative mx-auto max-w-5xl px-4 text-center space-y-8">
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Informações de Compra</h4>
+            <p className="px-6 max-w-2xl mx-auto leading-relaxed text-xs text-muted-foreground/80 italic">
+              {PAYMENT_CONDITIONS_LEGEND}
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="h-px w-12 bg-border/40" />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/50 border border-border/40 backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                <p className="font-bold tracking-widest uppercase text-[9px] text-foreground/70">Catálogo Premium · NexOS</p>
+              </div>
+              <div className="h-px w-12 bg-border/40" />
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground/50">
+              © {new Date().getFullYear()} {data.company_name}. Todos os direitos reservados.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
