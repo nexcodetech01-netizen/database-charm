@@ -6,46 +6,40 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     const collectionId = "c1266d6d-66e0-4f51-872f-574f7678d43d";
     const companyId = "78bfccca-f3a5-4110-9983-13e073f3ba77";
 
-    // 1. Get the 'Vestuário' category ID first
-    const { data: categoryData, error: catError } = await supabase
-      .from("product_categories")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("name", "Vestuário")
-      .maybeSingle();
-
-    if (catError) throw catError;
-    if (!categoryData) {
-      return { success: false, message: "Categoria 'Vestuário' não encontrada." };
-    }
-
-    const categoryId = categoryData.id;
-
-    // 2. Get Vestuario products that have 'catalog' in sales_channels
-    const { data: products, error: fetchError } = await supabase
+    // 1. Get ALL products for this company
+    const { data: allProducts, error: fetchError } = await supabase
       .from("products")
-      .select("id, name")
-      .eq("company_id", companyId)
-      .eq("status", "active")
-      .eq("category_id", categoryId);
+      .select("id, name, sales_channels, status, category_id, category:product_categories(name)")
+      .eq("company_id", companyId);
 
     if (fetchError) throw fetchError;
     
-    // Filter by sales_channels containing 'catalog' manually if RPC/contains is tricky, 
-    // but .contains() should work for array columns.
-    const filteredProducts = products.filter(p => {
+    // 2. Filter products that are active, have 'catalog' in sales_channels, 
+    // and belong to a category named 'Vestuário'
+    const vestuarioProducts = (allProducts ?? []).filter(p => {
+        const isPublic = p.status === 'active';
         // @ts-ignore
-        const channels = p.sales_channels as string[] | null;
-        return channels?.includes('catalog');
+        const hasCatalog = (p.sales_channels as string[] | null)?.includes('catalog');
+        // @ts-ignore
+        const isVestuario = (p.category as any)?.name === 'Vestuário';
+        
+        return isPublic && hasCatalog && isVestuario;
     });
 
-    if (filteredProducts.length === 0) {
-      return { success: false, message: "Nenhum produto de Vestuário com canal 'catalog' encontrado." };
+    if (vestuarioProducts.length === 0) {
+      // Diagnostic info
+      const categories = [...new Set((allProducts ?? []).map(p => (p as any).category?.name))];
+      return { 
+          success: false, 
+          message: "Nenhum produto de Vestuário com canal 'catalog' encontrado.",
+          availableCategories: categories,
+          totalProductsFound: allProducts?.length
+      };
     }
 
-    const productIds = filteredProducts.map(p => p.id);
+    const productIds = vestuarioProducts.map(p => p.id);
 
-    // 3. Check existing associations to avoid duplicates
+    // 3. Check existing associations
     const { data: existing, error: existingError } = await supabase
       .from("product_collection_items")
       .select("product_id")
@@ -90,6 +84,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
       success: true, 
       message: `${toAssociate.length} produtos de Vestuário associados com sucesso.`,
       count: toAssociate.length,
-      associatedNames: filteredProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
+      associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
