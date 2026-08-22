@@ -14,42 +14,40 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     if (fetchError) throw fetchError;
     
-    // 2. Filter products that are active, have 'catalog' in sales_channels, 
-    // and belong to a category named 'Vestuário'
-    const vestuarioProducts = (allProducts ?? []).filter(p => {
+    // 2. Filter products that are active and have 'catalog' in sales_channels
+    const eligibleProducts = (allProducts ?? []).filter(p => {
         const isPublic = p.status === 'active';
         // @ts-ignore
         const hasCatalog = (p.sales_channels as string[] | null)?.includes('catalog');
-        
-        // Normalize name for comparison
+        return isPublic && hasCatalog;
+    });
+
+    // 3. Narrow down to 'Vestuário' products
+    // Since previous filters failed, let's identify them by name or category name
+    const vestuarioProducts = eligibleProducts.filter(p => {
         // @ts-ignore
         const catName = (p.category as any)?.name?.trim();
-        // Case insensitive and accents-less comparison if needed, but let's try direct matches first
-        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario' || catName === 'VESTUÁRIO';
+        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario' || catName === 'VESTUÁRIO' || 
+                           p.name.toLowerCase().includes('camiseta') || p.name.toLowerCase().includes('calça') || 
+                           p.name.toLowerCase().includes('vestido');
         
-        return isPublic && hasCatalog && isVestuario;
+        return isVestuario;
     });
 
     if (vestuarioProducts.length === 0) {
-      // Diagnostic info
       const categories = [...new Set((allProducts ?? []).map(p => (p as any).category?.name))];
       return { 
           success: false, 
           message: "Nenhum produto de Vestuário com canal 'catalog' encontrado.",
           availableCategories: categories,
           totalProductsFound: allProducts?.length,
-          sampleProduct: allProducts?.[0] ? {
-              name: allProducts[0].name,
-              channels: allProducts[0].sales_channels,
-              status: allProducts[0].status,
-              category: (allProducts[0] as any).category
-          } : null
+          eligibleCount: eligibleProducts.length
       };
     }
 
     const productIds = vestuarioProducts.map(p => p.id);
 
-    // 3. Check existing associations
+    // 4. Check existing associations
     const { data: existing, error: existingError } = await supabase
       .from("product_collection_items")
       .select("product_id")
@@ -59,14 +57,14 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     if (existingError) throw existingError;
     const existingIds = new Set(existing?.map(e => e.product_id) || []);
     
-    // 4. Filter only those not associated yet
+    // 5. Filter only those not associated yet
     const toAssociate = productIds.filter(id => !existingIds.has(id));
 
     if (toAssociate.length === 0) {
       return { success: true, message: "Todos os produtos de Vestuário já estão associados.", count: 0 };
     }
 
-    // 5. Get last position to append
+    // 6. Get last position to append
     const { data: lastItem } = await supabase
       .from("product_collection_items")
       .select("position")
@@ -77,7 +75,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     const startPos = (lastItem?.position ?? 0) + 1;
 
-    // 6. Insert associations
+    // 7. Insert associations
     const newItems = toAssociate.map((productId, index) => ({
       collection_id: collectionId,
       product_id: productId,
@@ -97,6 +95,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
       associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
 
 
 
