@@ -4,30 +4,27 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // We already know company_id = 78bfccca-f3a5-4110-9983-13e073f3ba77
-    // Let's list ALL tables to see if we have the right table names
-    const { data: tables, error: tablesError } = await supabaseAdmin
-      .from("pg_catalog.pg_tables")
-      .select("tablename")
-      .eq("schemaname", "public");
+    // Final Attempt: Use raw SQL to list collections and bypass any client-side filtering
+    const { data: cols, error: colError } = await supabaseAdmin.rpc('get_collections_debug', {});
 
-    if (tablesError) {
-        // Fallback: Just try a direct query on product_collections without filtering to see IF it has anything
-        const { data: allCollections } = await supabaseAdmin.from("product_collections").select("*").limit(5);
-        const { data: allCompanies } = await supabaseAdmin.from("companies").select("id, name").limit(5);
-        
+    if (colError) {
+        // If RPC doesn't exist (likely), just try to select ID from collections where slug matches
+        const { data: direct, error: directError } = await supabaseAdmin
+            .from("product_collections")
+            .select("id, slug, company_id")
+            .eq("slug", "tg-style-catalogue");
+
         return { 
             success: false, 
-            message: "Table diagnostic failed", 
-            error: tablesError.message,
-            allCollectionsSample: allCollections,
-            allCompaniesSample: allCompanies
+            message: "Direct Slug Lookup",
+            directData: direct,
+            directError: directError?.message
         };
     }
 
     return { 
         success: false, 
-        message: "Public Tables Diagnostic",
-        tables: tables?.map(t => t.tablename)
+        message: "RPC Diagnostic",
+        cols: cols
     };
   });
