@@ -4,32 +4,25 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    const companyId = "78bfccca-f3a5-4110-9983-13e073f3ba77";
-
-    // 1. Find the correct collection ID for 'tg-style-catalogue' for this company
-    const { data: collection, error: colError } = await supabaseAdmin
+    // 1. Diagnostics: List all collections in the database
+    const { data: allCollections, error: colError } = await supabaseAdmin
       .from("product_collections")
-      .select("id, slug")
-      .eq("company_id", companyId)
-      .eq("slug", "tg-style-catalogue")
-      .maybeSingle();
+      .select("id, name, slug, company_id");
 
     if (colError) throw colError;
-    if (!collection) {
-      // Diagnostic: list collections for this company
-      const { data: allCols } = await supabaseAdmin
-        .from("product_collections")
-        .select("id, name, slug")
-        .eq("company_id", companyId);
-      
+
+    const targetCollection = allCollections?.find(c => c.slug === 'tg-style-catalogue');
+
+    if (!targetCollection) {
       return { 
           success: false, 
-          message: "Coleção 'tg-style-catalogue' não encontrada para esta empresa.",
-          availableCollections: allCols
+          message: "Coleção 'tg-style-catalogue' não encontrada em NENHUMA empresa.",
+          allCollectionsFound: allCollections
       };
     }
 
-    const collectionId = collection.id;
+    const collectionId = targetCollection.id;
+    const companyId = targetCollection.company_id;
 
     // 2. Get ALL products for this company bypassing RLS
     const { data: allProducts, error: fetchError } = await supabaseAdmin
@@ -58,8 +51,10 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     if (vestuarioProducts.length === 0) {
       return { 
           success: false, 
-          message: "Nenhum produto de Vestuário com canal 'catalog' encontrado no contexto Admin.",
-          totalProductsFound: allProducts?.length
+          message: "Nenhum produto de Vestuário com canal 'catalog' encontrado para esta empresa.",
+          targetCompany: companyId,
+          totalProductsFound: allProducts?.length,
+          availableCategories: [...new Set((allProducts ?? []).map(p => (p as any).category?.name))]
       };
     }
 
@@ -107,9 +102,12 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
 
     return { 
       success: true, 
-      message: `${toAssociate.length} produtos de Vestuário associados com sucesso (Admin).`,
+      message: `${toAssociate.length} produtos de Vestuário associados com sucesso (Global Admin).`,
       count: toAssociate.length,
+      collectionId: collectionId,
+      companyId: companyId,
       associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
 
