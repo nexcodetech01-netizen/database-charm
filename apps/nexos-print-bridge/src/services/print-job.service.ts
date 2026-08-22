@@ -170,7 +170,23 @@ export class PrintJobService {
     // argumento (incluindo nomes com espaço) é passado exatamente como
     // está, sem risco de ser cortado no meio.
     const sumatraPath = require.resolve('pdf-to-printer/dist/SumatraPDF-3.4.6-32.exe');
-    await execFileAsync(sumatraPath, ['-print-to', job.printer, '-silent', pdfPath]);
+    try {
+      await execFileAsync(sumatraPath, ['-print-to', job.printer, '-silent', pdfPath]);
+    } catch (err: any) {
+      // DIAGNÓSTICO REFORÇADO (2026-08-22, revisão 3): o erro genérico
+      // "Command failed: ..." não mostra o motivo real — só que o
+      // comando terminou com erro. Isso escondia a causa verdadeira.
+      // Agora expomos o stderr/stdout reais do SumatraPDF, que dizem
+      // exatamente por que ele recusou imprimir (driver incompatível,
+      // impressora não encontrada pelo nome exato, etc.).
+      const detail = [err?.stderr, err?.stdout].filter(Boolean).join(' | ') || err?.message || String(err);
+      throw new Error(
+        `SumatraPDF recusou a impressão em "${job.printer}": ${detail}. ` +
+        `Se essa impressora usa um driver genérico "LABEL" (só para comandos ZPL crus), ` +
+        `ela pode não aceitar impressão de PDF por esse caminho — nesse caso, o certo é ` +
+        `gerar a etiqueta como ZPL/imagem em vez de PDF pra essa impressora específica.`,
+      );
+    }
 
     await fs.promises.unlink(pdfPath).catch(() => {});
   }
