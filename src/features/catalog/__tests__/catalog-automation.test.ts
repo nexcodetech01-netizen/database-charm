@@ -13,10 +13,16 @@ export async function testCatalogAutomation() {
   const MAIN_COLLECTION_ID = 'd71d809c-83c6-499e-b2bc-ebfcb1df28af';
   
   // 1. Obter uma empresa e categoria válida para o teste
-  const { data: company } = await supabase.from("companies").select("id").limit(1).single();
-  if (!company?.id) throw new Error("Empresa não encontrada para teste");
+  const { data: company, error: compErr } = await supabase.from("companies").select("id").limit(1).maybeSingle();
+  if (compErr) console.error("Erro ao buscar empresa:", compErr);
+  if (!company?.id) {
+    // Tenta buscar qualquer empresa se a anterior falhou
+    const { data: allCompanies } = await supabase.from("companies").select("id").limit(10);
+    console.log("Empresas encontradas:", allCompanies);
+    throw new Error("Empresa não encontrada para teste. Qtd encontrada: " + (allCompanies?.length || 0));
+  }
 
-  const { data: category } = await supabase.from("product_categories").select("id").eq("company_id", company.id).limit(1).single();
+  const { data: category } = await supabase.from("product_categories").select("id").eq("company_id", company.id).limit(1).maybeSingle();
   
   if (!category?.id) {
     throw new Error("Ambiente de teste incompleto: empresa ou categoria não encontrada.");
