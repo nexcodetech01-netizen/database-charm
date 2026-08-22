@@ -102,9 +102,22 @@ export async function printerRoutes(fastify: FastifyInstance) {
   };
 
   // REGISTRO EXPLÍCITO DAS ROTAS DE IMPRESSÃO
-  fastify.post('/print/pdf', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('PDF', req, res));
-  fastify.post('/print/zpl', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('ZPL', req, res));
-  fastify.post('/print/raw', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('RAW', req, res));
-  fastify.post('/print/image', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('IMAGE', req, res));
-  fastify.post('/print/receipt', { schema: { body: { type: 'object' } } }, (req, res) => handlePrint('RECEIPT', req, res));
+  //
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-22): essas 5 rotas retornavam
+  // 404 mesmo estando registradas certinho no código-fonte (confirmado
+  // com log ao vivo do servidor: OPTIONS funcionava, POST caía direto
+  // no "não encontrado" em poucos milissegundos, sem nem tentar
+  // processar — e as outras rotas do mesmo arquivo, tipo /printers e
+  // /health, funcionavam normalmente). A diferença entre as que
+  // funcionavam e as que não funcionavam: só essas 5 tinham a opção
+  // `{ schema: { body: { type: 'object' } } }`. Esse schema não valida
+  // nada de útil (é só "precisa ser um objeto", sem checar nenhum
+  // campo específico) — removido por completo, já que pode estar
+  // esbarrando numa incompatibilidade de validação do Fastify/AJV
+  // nesta versão, fazendo a rota nem ser registrada de verdade.
+  fastify.post('/print/pdf', (req, res) => handlePrint('PDF', req, res));
+  fastify.post('/print/zpl', (req, res) => handlePrint('ZPL', req, res));
+  fastify.post('/print/raw', (req, res) => handlePrint('RAW', req, res));
+  fastify.post('/print/image', (req, res) => handlePrint('IMAGE', req, res));
+  fastify.post('/print/receipt', (req, res) => handlePrint('RECEIPT', req, res));
 }
