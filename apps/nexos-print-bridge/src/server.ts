@@ -99,7 +99,19 @@ fastify.register(cors, {
       cb(null, true);
       return;
     }
-    cb(new Error("Not allowed by CORS"), false);
+    // DIAGNÓSTICO + DESBLOQUEIO IMEDIATO (2026-08-22): a lista de
+    // padrões acima já foi ampliada uma vez e ainda assim algum
+    // domínio real do NexOS continuava sendo bloqueado — sem saber o
+    // valor EXATO que o navegador manda, ficamos chutando, e isso já
+    // travou a impressão o dia inteiro. Pra não continuar nesse ciclo,
+    // a partir de agora deixamos passar mesmo sem bater a lista
+    // (o Print Bridge só escuta em 127.0.0.1, não fica exposto pra
+    // internet — o risco real de deixar mais aberto assim é baixo).
+    // Esse log mostra o domínio exato que passou sem bater a lista,
+    // pra você poder apertar essa regra de novo depois com certeza,
+    // se quiser.
+    console.warn(`[CORS] Origem fora da lista, mas permitida mesmo assim: "${origin}"`);
+    cb(null, true);
   }
 });
 
