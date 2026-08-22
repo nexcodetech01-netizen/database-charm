@@ -155,22 +155,25 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useEntityForm(product, (p) => {
-    // "Duplicar produto": pré-preenche a partir do produto original, mas
-    // continua sendo uma criação nova (product/id fica undefined) — por
-    // isso SKU e código de barras não são copiados, já que precisam ser
-    // únicos por empresa (a geração automática de SKU cuida disso).
     const seed = p ?? duplicateOf;
+    
+    // Novo produto (não é edição nem duplicação)
     if (!p && !duplicateOf) {
       setMainImageFile(null);
-      setSuggestedTags([]); // Reset suggested tags
-      return empty;
-    }
-    const state = toState(seed);
-    if (!p && duplicateOf) {
-      setMainImageFile(null); // Reset preview on duplication
       setSuggestedTags([]);
-      return { ...state, sku: "", barcode: "SEM GTIN" };
+      return { ...empty, sales_channels: ["loja_fisica", "catalog"] };
     }
+
+    const state = toState(seed);
+    
+    // Duplicação de produto existente
+    if (!p && duplicateOf) {
+      setMainImageFile(null);
+      setSuggestedTags([]);
+      // Ao duplicar, forçamos o novo produto a ter catalog, mesmo que o original não tivesse
+      return { ...state, sku: "", barcode: "SEM GTIN", sales_channels: ["loja_fisica", "catalog"] };
+    }
+    
     return state;
   });
 
