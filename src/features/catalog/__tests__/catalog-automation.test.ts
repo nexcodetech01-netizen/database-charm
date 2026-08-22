@@ -14,9 +14,11 @@ export async function testCatalogAutomation() {
   
   // 1. Obter uma empresa e categoria válida para o teste
   const { data: company } = await supabase.from("companies").select("id").limit(1).single();
-  const { data: category } = await supabase.from("product_categories").select("id").eq("company_id", company?.id).limit(1).single();
+  if (!company?.id) throw new Error("Empresa não encontrada para teste");
+
+  const { data: category } = await supabase.from("product_categories").select("id").eq("company_id", company.id).limit(1).single();
   
-  if (!company?.id || !category?.id) {
+  if (!category?.id) {
     throw new Error("Ambiente de teste incompleto: empresa ou categoria não encontrada.");
   }
 
