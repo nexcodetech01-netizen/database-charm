@@ -9,7 +9,7 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
     // 1. Get ALL products for this company
     const { data: allProducts, error: fetchError } = await supabase
       .from("products")
-      .select("id, name, sales_channels, status, category_id, category:product_categories(name)")
+      .select("id, name, sales_channels, status, category_id, category:product_categories(id, name)")
       .eq("company_id", companyId);
 
     if (fetchError) throw fetchError;
@@ -20,8 +20,11 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
         const isPublic = p.status === 'active';
         // @ts-ignore
         const hasCatalog = (p.sales_channels as string[] | null)?.includes('catalog');
+        
+        // Normalize name for comparison
         // @ts-ignore
-        const isVestuario = (p.category as any)?.name === 'Vestuário';
+        const catName = (p.category as any)?.name?.trim();
+        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario';
         
         return isPublic && hasCatalog && isVestuario;
     });
@@ -87,4 +90,5 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
       associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
 
