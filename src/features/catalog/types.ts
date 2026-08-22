@@ -67,6 +67,7 @@ export interface PublicCollection extends CollectionVisibility {
   whatsapp_phone: string | null;
   entrada_percent: number;
   products: PublicCollectionProduct[];
+  categories: string[];
 }
 
 export interface PublicProductImage {
