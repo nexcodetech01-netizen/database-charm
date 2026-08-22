@@ -23,11 +23,11 @@ interface Input {
 
 const AttributesSchema = z.object({
   product_type: z.string(),
-  gender: z.string(),
-  bag_type: z.string(),
-  material: z.string(),
-  style: z.string(),
-  color: z.string(),
+  gender: z.string().optional().default(""),
+  bag_type: z.string().optional().default(""),
+  material: z.string().optional().default(""),
+  style: z.string().optional().default(""),
+  color: z.string().optional().default(""),
   pattern: z.string().optional().default(""),
   with_zipper: z.string().optional().default(""),
   age_group: z.string().optional().default(""),
@@ -90,8 +90,16 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       : "Detalhes cadastrados: não informados. Use inferências razoáveis sem inventar especificações técnicas.";
 
     const system = [
-      "Você é um copywriter especialista em anúncios de e-commerce (B2C) no Mercado Livre Brasil, focado em bolsas e moda.",
-      "Sua tarefa é DEVOLVER UM JSON com três campos: `title`, `description` e `attributes`.",
+      // BUG CORRIGIDO (2026-08-21): esse prompt tinha a palavra "Bolsa"
+      // e a estrutura de bolsa (alça, fecho, emoji 👜) FIXAS no título e
+      // na descrição, então mesmo cadastrando "camiseta" ou qualquer
+      // outro produto, a IA sempre gerava conteúdo de bolsa — ela
+      // literalmente só seguia a instrução ao pé da letra. Provavelmente
+      // sobrou de um momento em que a loja vendia só bolsas. Reescrito
+      // pra se adaptar ao produto de verdade, com bolsas como só um
+      // exemplo de referência, não uma regra fixa.
+      "Você é um copywriter especialista em anúncios de e-commerce (B2C) no Mercado Livre Brasil, para lojas de moda e acessórios em geral (bolsas, roupas, calçados, semijoias, etc).",
+      "Sua tarefa é DEVOLVER UM JSON com três campos: `title`, `description` e `attributes`, sempre baseados no PRODUTO REAL descrito nos dados de entrada — nunca assuma que o produto é uma bolsa a menos que o título/categoria realmente indiquem isso.",
       "Linguagem persuasiva e voltada para vendas diretas ao consumidor final.",
       "",
       "REGRA DE OURO MANDATÓRIA:",
@@ -100,34 +108,32 @@ export const generateMercadoLivreDescription = createServerFn({ method: "POST" }
       "- Foque exclusivamente nos atributos comerciais para o cliente final.",
       "",
       "REGRAS PARA `title` (Título otimizado do anúncio, pt-BR):",
-      "- Padrão obrigatório: 'Bolsa [Modelo] Feminina [Material] [Detalhe] [Cor/Estilo]'.",
+      "- Comece pelo TIPO REAL do produto (ex.: 'Camiseta', 'Bolsa', 'Calça', 'Tênis', 'Colar' — o que fizer sentido pro item descrito), seguido de modelo/gênero/material/detalhe/cor conforme o que se aplica.",
       "- Máximo ABSOLUTO 60 caracteres.",
       "- Sem emojis no título, sem aspas, sem promocionais (Original, Novo, Barato).",
       "",
-      "REGRAS PARA `description` (Siga RIGOROSAMENTE este modelo estruturado):",
-      "👜 DESCRIÇÃO",
-      "Bolsa [Modelo] em [Material], com [Detalhe de Destaque]. Design [Estilo] que combina com [Ocasiões].",
+      "REGRAS PARA `description` (siga esta estrutura, adaptando o CONTEÚDO ao produto real — os nomes dos blocos ficam iguais, o que muda é o texto dentro):",
+      "[emoji relevante ao produto] DESCRIÇÃO",
+      "Uma ou duas frases descrevendo o produto de verdade: tipo, material, detalhe de destaque, estilo, ocasiões de uso.",
       "",
       "✨ DESTAQUES",
       "- Acabamento de alta qualidade",
-      "- [Detalhe específico, ex: fivela dourada, textura monograma]",
-      "- Alça [tipo de alça]",
-      "- Fecho [tipo de fecho]",
-      "- Espaço interno funcional",
+      "- 3 a 4 detalhes específicos REAIS do tipo de produto (ex.: pra roupa: caimento/tecido/costura; pra bolsa: alça/fecho/espaço interno; pra calçado: solado/conforto — adapte ao que faz sentido, não force características de bolsa em produtos que não são bolsa)",
       "",
       "💡 COMO USAR",
-      "Perfeita para [contexto de uso]. Combina com [estilo de look].",
+      "Contexto de uso e com que estilo/look combina.",
       "",
       "📦 ENVIO",
-      "Despachamos em até 24h úteis. Embalada com cuidado para chegar perfeita até você.",
+      "Despachamos em até 24h úteis. Embalado com cuidado para chegar perfeito até você.",
       "",
       "REGRAS DE VALIDAÇÃO:",
-      "- NUNCA deixe colchetes vazios ou preenchimentos genéricos como '[Detalhe]'. Substitua TUDO por informações reais.",
+      "- NUNCA deixe colchetes vazios ou preenchimentos genéricos como '[Detalhe]'. Substitua TUDO por informações reais, baseadas no produto informado.",
       "- Todos os 4 blocos (DESCRIÇÃO, DESTAQUES, COMO USAR, ENVIO) são obrigatórios.",
       "",
-      "REGRAS PARA `attributes` (Ficha Técnica):",
-      "- product_type, gender, bag_type, material, style, color.",
-      "- pattern (default 'Liso'), with_zipper ('Sim'), age_group ('Adultos'), season ('Permanente').",
+      "REGRAS PARA `attributes` (Ficha Técnica — preencha só o que fizer sentido pro produto; deixe vazio o que não se aplicar):",
+      "- product_type (obrigatório, ex.: 'Camiseta', 'Bolsa', 'Calçado' — o tipo real), gender, material, style, color.",
+      "- bag_type: preencha SOMENTE se o produto for de fato uma bolsa/mochila/necessaire. Pra qualquer outro tipo de produto, deixe em branco.",
+      "- pattern (default 'Liso'), with_zipper (só relevante se o produto tiver zíper — senão deixe em branco), age_group ('Adultos'), season ('Permanente').",
     ].join("\n");
 
     const prompt = [
@@ -216,7 +222,7 @@ function normalizeAttributes(raw: unknown): MlAiAttributes {
     style: clean(obj.style),
     color: clean(obj.color),
     pattern: clean(obj.pattern) || "Liso",
-    with_zipper: clean(obj.with_zipper) || "Sim",
+    with_zipper: clean(obj.with_zipper),
     age_group: clean(obj.age_group) || "Adultos",
     season: clean(obj.season) || "Permanente",
   };

@@ -77,7 +77,7 @@ function FidelidadeAdminPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <BreadcrumbNav />
+      <BreadcrumbNav items={[{ label: "Fidelidade" }]} />
       <PageHeader
         title="Programa de Fidelidade"
         description="Clientes ganham pontos automaticamente a cada venda paga, e podem trocar por desconto depois."
