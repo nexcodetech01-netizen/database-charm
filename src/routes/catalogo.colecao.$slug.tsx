@@ -605,10 +605,13 @@ function PublicCollectionPage() {
 
                 if (search.view === "list") {
                   return (
-                    <Card key={p.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-                      <div className="flex flex-row p-0 h-40">
+                    <Card
+                      key={p.id}
+                      className="group overflow-hidden rounded-2xl border-border/40 bg-card/40 backdrop-blur-sm transition-all hover:shadow-lg hover:border-primary/20"
+                    >
+                      <div className="flex flex-col sm:flex-row h-full">
                         <div
-                          className="relative aspect-square h-full bg-muted cursor-pointer shrink-0"
+                          className="relative aspect-square sm:w-48 w-full shrink-0 overflow-hidden bg-muted/30 cursor-pointer"
                           onClick={() => setQuickViewId(p.id)}
                         >
                           {p.cover_url ? (
@@ -616,32 +619,32 @@ function PublicCollectionPage() {
                               src={p.cover_url}
                               alt={p.name}
                               loading="lazy"
-                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
                           ) : (
                             <div className="grid h-full w-full place-items-center">
-                              <Package className="h-8 w-8 text-muted-foreground" />
+                              <Package className="h-10 w-10 text-muted-foreground/30" />
                             </div>
                           )}
-                          {availability !== "available" && (
+                          {(data.show_stock || availability !== "available") && (
                             <AvailabilityBadge
                               kind={availability}
                               size="sm"
-                              className="absolute left-1 top-1"
+                              className="absolute left-2 top-2"
                             />
                           )}
                         </div>
-                        <div className="flex flex-col flex-1 p-4 justify-between min-w-0">
+                        <div className="flex flex-col flex-1 p-5 justify-between min-w-0">
                           <div>
-                            <div className="flex justify-between items-start gap-2">
-                              <div className="space-y-0.5 min-w-0">
+                            <div className="flex justify-between items-start gap-4">
+                              <div className="space-y-1.5 min-w-0">
                                 {data.show_brand && p.brand && (
-                                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-primary/80">
                                     {p.brand}
                                   </div>
                                 )}
                                 <h3
-                                  className="line-clamp-1 text-sm font-bold cursor-pointer hover:text-primary transition-colors"
+                                  className="line-clamp-2 text-base font-bold text-foreground/90 cursor-pointer hover:text-primary transition-colors"
                                   onClick={() => setQuickViewId(p.id)}
                                 >
                                   {p.name}
@@ -649,26 +652,27 @@ function PublicCollectionPage() {
                               </div>
                               {data.show_price && (
                                 <div className="text-right shrink-0">
-                                  <div className="text-base font-bold text-primary">
+                                  <div className="text-lg font-black tracking-tight text-foreground">
                                     {formatCurrency(p.price)}
                                   </div>
                                   {data.show_installments && plan && (
-                                    <div className="text-[10px] text-muted-foreground">
+                                    <div className="text-[10px] text-muted-foreground font-semibold">
                                       {plan.label}
                                     </div>
                                   )}
                                 </div>
                               )}
                             </div>
-                            <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
-                              {p.description || "Ver detalhes..."}
+                            <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                              {p.description || "Toque para ver mais detalhes sobre este produto premium."}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          
+                          <div className="flex gap-3 mt-4">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 text-xs h-8"
+                              className="flex-1 h-10 rounded-xl text-xs font-bold border-border/60"
                               onClick={() => setQuickViewId(p.id)}
                             >
                               Visualizar
@@ -676,13 +680,13 @@ function PublicCollectionPage() {
                             <Button
                               asChild
                               size="sm"
-                              className="flex-1 text-xs h-8"
+                              className="flex-1 h-10 rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
                               disabled={outOfStock}
                             >
                               <Link
                                 to="/catalogo/colecao/$slug/produto/$productId"
                                 params={{ slug: data.slug, productId: p.id }}
-                              search={(prev: any) => prev}
+                                search={(prev: any) => prev}
                               >
                                 {data.cta_mode === "whatsapp" ? "Pedir Agora" : "Comprar"}
                               </Link>
