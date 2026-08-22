@@ -826,12 +826,32 @@ function PublicCollectionPage() {
         onOpenChange={(open) => !open && setQuickViewId(null)}
       />
 
-      <footer className="border-t bg-card/50 py-10 text-center text-xs text-muted-foreground space-y-3">
-        <p className="px-6 max-w-xl mx-auto leading-relaxed">{PAYMENT_CONDITIONS_LEGEND}</p>
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <div className="h-px w-8 bg-border" />
-          <p className="font-medium tracking-wide uppercase text-[10px]">Catálogo Premium · NexOS</p>
-          <div className="h-px w-8 bg-border" />
+      <footer className="relative border-t bg-card/50 py-16 overflow-hidden">
+        {/* Decorative background for footer */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent opacity-30" />
+        
+        <div className="relative mx-auto max-w-5xl px-4 text-center space-y-8">
+          <div className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Informações de Compra</h4>
+            <p className="px-6 max-w-2xl mx-auto leading-relaxed text-xs text-muted-foreground/80 italic">
+              {PAYMENT_CONDITIONS_LEGEND}
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="h-px w-12 bg-border/40" />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/50 border border-border/40 backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                <p className="font-bold tracking-widest uppercase text-[9px] text-foreground/70">Catálogo Premium · NexOS</p>
+              </div>
+              <div className="h-px w-12 bg-border/40" />
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground/50">
+              © {new Date().getFullYear()} {data.company_name}. Todos os direitos reservados.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
