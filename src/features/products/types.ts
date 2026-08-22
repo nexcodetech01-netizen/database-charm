@@ -40,6 +40,7 @@ export const PRODUCT_UNIT_OPTIONS = [
 export const SALES_CHANNEL_OPTIONS = [
   { value: "loja_fisica", label: "Loja Física" },
   { value: "mercadolivre", label: "Mercado Livre" },
+  { value: "catalog", label: "Catálogo Online" },
 ];
 
 export type StockFilter = "all" | "in_stock" | "low" | "out";

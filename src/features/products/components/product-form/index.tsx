@@ -83,7 +83,7 @@ type FormState = {
 const empty: FormState = {
   name: "", sku: "", barcode: "SEM GTIN", ncm: "", cest: "",
   brand: "Genérico", model: "Padrão", description: "", category_id: "",
-  supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica"],
+  supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica", "catalog"],
   cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
   channel_fee_pct: "0", channel_fixed_fee: "0", tax_pct: "0",

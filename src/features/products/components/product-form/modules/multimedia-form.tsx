@@ -155,8 +155,10 @@ export function MultimediaForm({
                   >
                     {channel.value === "loja_fisica" ? (
                       <Smartphone className="h-4 w-4 shrink-0" />
-                    ) : (
+                    ) : channel.value === "mercadolivre" ? (
                       <Globe className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <Smartphone className="h-4 w-4 shrink-0 rotate-180" />
                     )}
                     <span className="text-xs font-medium">{channel.label}</span>
                   </button>
