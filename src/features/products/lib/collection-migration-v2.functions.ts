@@ -24,7 +24,8 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
         // Normalize name for comparison
         // @ts-ignore
         const catName = (p.category as any)?.name?.trim();
-        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario';
+        // Case insensitive and accents-less comparison if needed, but let's try direct matches first
+        const isVestuario = catName === 'Vestuário' || catName === 'Vestuario' || catName === 'VESTUÁRIO';
         
         return isPublic && hasCatalog && isVestuario;
     });
@@ -36,7 +37,13 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
           success: false, 
           message: "Nenhum produto de Vestuário com canal 'catalog' encontrado.",
           availableCategories: categories,
-          totalProductsFound: allProducts?.length
+          totalProductsFound: allProducts?.length,
+          sampleProduct: allProducts?.[0] ? {
+              name: allProducts[0].name,
+              channels: allProducts[0].sales_channels,
+              status: allProducts[0].status,
+              category: (allProducts[0] as any).category
+          } : null
       };
     }
 
@@ -90,5 +97,6 @@ export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
       associatedNames: vestuarioProducts.filter(p => toAssociate.includes(p.id)).map(p => p.name)
     };
   });
+
 
 
