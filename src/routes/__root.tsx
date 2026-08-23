@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
   useLocation,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { AppProviders } from "@/providers/app-providers";
