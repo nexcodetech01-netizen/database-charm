@@ -170,7 +170,7 @@ export class PrintJobService {
       logger.info(`Iniciando conversão de PDF para imagem para impressora: ${job.printer}`);
       const counter = { pages: 0 };
       
-      const document = await pdf.pdfToImg(pdfPath, {
+      const document = await pdf(pdfPath, {
         scale: 2.0 // Aumenta densidade para melhor leitura de código de barras
       });
 
