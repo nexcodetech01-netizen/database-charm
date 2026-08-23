@@ -147,13 +147,14 @@ export class PrintJobService {
   }
 
   private async printPdf(job: PrintJob, tmpFile: string): Promise<void> {
-    const base64 = job.data?.data;
-    if (!base64) {
+    const base64Raw = job.data?.data;
+    if (!base64Raw) {
       throw new Error('PDF sem conteúdo (campo "data" vazio) — nada pra imprimir.');
     }
 
+    const cleanBase64 = base64Raw.replace(/^data:.*;base64,/, '');
     const pdfPath = path.resolve(`${tmpFile}.pdf`);
-    await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
+    await fs.promises.writeFile(pdfPath, Buffer.from(cleanBase64, 'base64'));
 
     // ABORDAGEM FASE 3.1: Conversão de PDF para Imagem (Server-side)
     //
@@ -217,7 +218,14 @@ export class PrintJobService {
     }
 
     const rawFile = `${tmpFile}.prn`;
-    await fs.promises.writeFile(rawFile, content, 'binary');
+    
+    // Limpeza de Data URI para dados base64 (Requirement 3.1 fallback)
+    if (typeof content === 'string' && content.startsWith('data:')) {
+      const cleanBase64 = content.replace(/^data:.*;base64,/, '');
+      await fs.promises.writeFile(rawFile, Buffer.from(cleanBase64, 'base64'));
+    } else {
+      await fs.promises.writeFile(rawFile, content, 'binary');
+    }
 
     // Copia os bytes crus direto pro compartilhamento da impressora no
     // Windows — não passa pelo driver gráfico, essencial pra comandos
