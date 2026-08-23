@@ -658,7 +658,10 @@ function PublicCollectionPage() {
                               </div>
                               {data.show_price && (
                                 <div className="text-right shrink-0">
-                                  <div className="text-lg font-black tracking-tight text-foreground">
+                                  <div 
+                                    className="text-lg font-black tracking-tight text-foreground"
+                                    style={{ fontFamily: 'Montserrat, sans-serif' }}
+                                  >
                                     {formatCurrency(p.price)}
                                   </div>
                                   {data.show_installments && plan && (
