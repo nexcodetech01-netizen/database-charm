@@ -2,8 +2,9 @@ import { logger } from '../config/logger';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
+import * as pdf from 'pdf-to-img';
 
 const execFileAsync = promisify(execFile);
 
@@ -154,41 +155,56 @@ export class PrintJobService {
     const pdfPath = path.resolve(`${tmpFile}.pdf`);
     await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
 
-    // BUG ENCONTRADO E CORRIGIDO (2026-08-22, revisão 2): a impressão
-    // chegava até aqui certinho, mas falhava no comando final —
-    // confirmado pelo log ao vivo: `-print-to LABEL TERMICA -silent
-    // ...` — o pacote `pdf-to-printer` monta o comando como um texto
-    // único, sem colocar aspas ao redor do nome da impressora. Como
-    // "LABEL TERMICA" tem um ESPAÇO no nome, o programa (SumatraPDF)
-    // entendia "LABEL" como o nome da impressora e "TERMICA" como
-    // outro argumento solto, e falhava sempre. Só não dava esse erro
-    // com impressoras de nome de uma palavra só.
+    // ABORDAGEM FASE 3.1: Conversão de PDF para Imagem (Server-side)
     //
-    // Correção: em vez de deixar o pacote montar o comando (que tem
-    // esse bug), chamamos o executável do SumatraPDF diretamente via
-    // `execFile` com os argumentos numa LISTA separada — assim cada
-    // argumento (incluindo nomes com espaço) é passado exatamente como
-    // está, sem risco de ser cortado no meio.
-    const sumatraPath = require.resolve('pdf-to-printer/dist/SumatraPDF-3.4.6-32.exe');
+    // Por que mudar? Impressoras térmicas genéricas ("LABEL TERMICA")
+    // frequentemente falham ao receber PDFs via SumatraPDF, mesmo com aspas
+    // corrigidas no nome. O driver do Windows para essas impressoras é
+    // simplificado e prefere receber dados rasterizados (imagem).
+    //
+    // Solução: Convertemos cada página do PDF em uma imagem PNG no próprio
+    // servidor e enviamos para a impressora usando o subsistema gráfico do
+    // Windows via PowerShell (Out-Printer), que garante a renderização
+    // correta pelo driver original.
     try {
-      await execFileAsync(sumatraPath, ['-print-to', `"${job.printer}"`, '-silent', `"${pdfPath}"`]);
-    } catch (err: any) {
-      // DIAGNÓSTICO REFORÇADO (2026-08-22, revisão 3): o erro genérico
-      // "Command failed: ..." não mostra o motivo real — só que o
-      // comando terminou com erro. Isso escondia a causa verdadeira.
-      // Agora expomos o stderr/stdout reais do SumatraPDF, que dizem
-      // exatamente por que ele recusou imprimir (driver incompatível,
-      // impressora não encontrada pelo nome exato, etc.).
-      const detail = [err?.stderr, err?.stdout].filter(Boolean).join(' | ') || err?.message || String(err);
-      throw new Error(
-        `SumatraPDF recusou a impressão em "${job.printer}": ${detail}. ` +
-        `Se essa impressora usa um driver genérico "LABEL" (só para comandos ZPL crus), ` +
-        `ela pode não aceitar impressão de PDF por esse caminho — nesse caso, o certo é ` +
-        `gerar a etiqueta como ZPL/imagem em vez de PDF pra essa impressora específica.`,
-      );
-    }
+      logger.info(`Iniciando conversão de PDF para imagem para impressora: ${job.printer}`);
+      const counter = { pages: 0 };
+      
+      const document = await pdf.pdfToImg(pdfPath, {
+        scale: 2.0 // Aumenta densidade para melhor leitura de código de barras
+      });
 
-    await fs.promises.unlink(pdfPath).catch(() => {});
+      for await (const img of document) {
+        counter.pages++;
+        const imgPath = path.resolve(`${tmpFile}-page-${counter.pages}.png`);
+        await fs.promises.writeFile(imgPath, img);
+
+        try {
+          // Imprime a imagem via PowerShell - técnica mais resiliente para drivers GDI/Térmicos
+          // O comando renderiza a imagem através do driver padrão do Windows.
+          const psCommand = `Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-Command", "Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('${imgPath}'); $doc = New-Object System.Drawing.Printing.PrintDocument; $doc.PrinterSettings.PrinterName = '${job.printer}'; $doc.add_PrintPage({ param($s, $e) $e.Graphics.DrawImage($img, 0, 0); $e.HasMorePages = $false }); $doc.Print(); $img.Dispose()" -WindowStyle Hidden -Wait`;
+          
+          await execFileAsync('powershell.exe', ['-NoProfile', '-Command', psCommand]);
+          logger.info(`Página ${counter.pages} enviada para ${job.printer}`);
+        } finally {
+          // Limpa imagem temporária da página
+          fs.promises.unlink(imgPath).catch(() => {});
+        }
+      }
+
+      if (counter.pages === 0) {
+        throw new Error('PDF processado mas nenhuma página foi gerada para impressão.');
+      }
+    } catch (err: any) {
+      const detail = err?.message || String(err);
+      logger.error(`Falha na impressão de PDF via imagem: ${detail}`);
+      throw new Error(
+        `Falha ao renderizar PDF para "${job.printer}": ${detail}. ` +
+        `Verifique se o driver da impressora está instalado corretamente no Windows.`
+      );
+    } finally {
+      await fs.promises.unlink(pdfPath).catch(() => {});
+    }
   }
 
   private async printRaw(job: PrintJob, tmpFile: string): Promise<void> {
@@ -208,6 +224,8 @@ export class PrintJobService {
     // ZPL/RAW funcionarem (imprimir via driver normal reformataria ou
     // ignoraria os comandos). A impressora precisa estar compartilhada
     // no Windows com esse mesmo nome.
+    // IMPORTANTE: Aspas duplas ao redor do caminho do arquivo e do 
+    // compartilhamento são vitais para caminhos/nomes com espaço.
     const printerShare = `\\\\localhost\\${job.printer}`;
     try {
       await execFileAsync('cmd.exe', ['/c', 'copy', '/b', `"${rawFile}"`, `"${printerShare}"`]);
