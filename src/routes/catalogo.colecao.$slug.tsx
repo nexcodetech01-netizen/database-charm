@@ -768,7 +768,10 @@ function PublicCollectionPage() {
                       
                       <div className="flex flex-col gap-0.5">
                         {data.show_price && (
-                          <div className="text-lg font-black tracking-tight text-foreground">
+                          <div 
+                            className="text-lg font-black tracking-tight text-foreground"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                          >
                             {formatCurrency(p.price)}
                           </div>
                         )}
