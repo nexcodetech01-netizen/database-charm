@@ -125,7 +125,10 @@ export function QuickViewDialog({
                       {product.product.brand}
                     </div>
                   )}
-                  <DialogTitle className="text-2xl font-bold leading-tight">
+                  <DialogTitle 
+                    className="text-2xl font-extrabold leading-tight tracking-tight"
+                    style={{ fontFamily: 'Montserrat, sans-serif' }}
+                  >
                     {product.product.name}
                   </DialogTitle>
                 </div>
@@ -140,7 +143,10 @@ export function QuickViewDialog({
               </div>
 
               <div className="mt-4 flex items-baseline gap-2">
-                <div className="text-3xl font-bold text-primary">
+                <div 
+                  className="text-3xl font-black text-primary tracking-tighter"
+                  style={{ fontFamily: 'Montserrat, sans-serif' }}
+                >
                   {formatCurrency(product.product.price)}
                 </div>
                 {product.product.stock > 0 && (

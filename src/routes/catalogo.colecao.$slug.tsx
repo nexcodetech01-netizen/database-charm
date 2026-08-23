@@ -330,17 +330,23 @@ function PublicCollectionPage() {
         {/* Decorative background element */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
         
-        <div className="mx-auto max-w-5xl px-4 py-8 relative">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div className="flex-1 space-y-2">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tracking-wide uppercase">
+        <div className="mx-auto max-w-5xl px-4 py-12 relative">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <div className="flex-1 space-y-4">
+              <div 
+                className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary tracking-[0.2em] uppercase"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
                 {data.company_name}
               </div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
+              <h1 
+                className="text-4xl font-extrabold tracking-tight sm:text-6xl text-foreground"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
                 {data.name}
               </h1>
               {data.description && (
-                <p className="max-w-2xl text-base text-muted-foreground leading-relaxed">
+                <p className="max-w-2xl text-base md:text-lg text-muted-foreground/80 leading-relaxed font-medium">
                   {data.description}
                 </p>
               )}
@@ -486,43 +492,36 @@ function PublicCollectionPage() {
 
               {/* Categories Navigation */}
               {categories.length > 0 && (
-                <div className="relative group/nav">
-                  <div className="flex flex-wrap items-center gap-2 pt-1 transition-all duration-300">
-                    <Button
-                      variant={search.cat === "all" ? "secondary" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "rounded-full h-9 px-6 transition-all font-bold tracking-tight text-xs",
-                        search.cat === "all" 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
-                      )}
+                <div className="relative pt-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
                       onClick={() => updateSearch({ cat: "all" })}
+                      className={cn(
+                        "px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 border",
+                        search.cat === "all"
+                          ? "bg-primary text-primary-foreground border-primary shadow-[0_4px_20px_rgba(var(--primary-rgb),0.4)] scale-105"
+                          : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-foreground"
+                      )}
+                      style={{ fontFamily: 'Montserrat, sans-serif' }}
                     >
-                      TODAS
-                    </Button>
+                      Todas
+                    </button>
                     {categories.map((c) => (
-                      <Button
+                      <button
                         key={c}
-                        variant={search.cat === c ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "rounded-full h-9 px-6 transition-all whitespace-nowrap font-bold tracking-tight text-xs uppercase",
-                          search.cat === c 
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
-                        )}
                         onClick={() => updateSearch({ cat: c })}
+                        className={cn(
+                          "px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 border",
+                          search.cat === c
+                            ? "bg-primary text-primary-foreground border-primary shadow-[0_4px_20px_rgba(var(--primary-rgb),0.4)] scale-105"
+                            : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-foreground"
+                        )}
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}
                       >
                         {c}
-                      </Button>
+                      </button>
                     ))}
                   </div>
-                  
-                  {/* Decorative indicator for many categories */}
-                  {categories.length > 5 && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-muted/20 lg:hidden" />
-                  )}
                 </div>
               )}
             </div>
@@ -659,7 +658,10 @@ function PublicCollectionPage() {
                               </div>
                               {data.show_price && (
                                 <div className="text-right shrink-0">
-                                  <div className="text-lg font-black tracking-tight text-foreground">
+                                  <div 
+                                    className="text-lg font-black tracking-tight text-foreground"
+                                    style={{ fontFamily: 'Montserrat, sans-serif' }}
+                                  >
                                     {formatCurrency(p.price)}
                                   </div>
                                   {data.show_installments && plan && (
@@ -769,7 +771,10 @@ function PublicCollectionPage() {
                       
                       <div className="flex flex-col gap-0.5">
                         {data.show_price && (
-                          <div className="text-lg font-black tracking-tight text-foreground">
+                          <div 
+                            className="text-lg font-black tracking-tight text-foreground"
+                            style={{ fontFamily: 'Montserrat, sans-serif' }}
+                          >
                             {formatCurrency(p.price)}
                           </div>
                         )}
