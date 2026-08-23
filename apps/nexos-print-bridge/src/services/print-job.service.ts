@@ -151,7 +151,7 @@ export class PrintJobService {
       throw new Error('PDF sem conteúdo (campo "data" vazio) — nada pra imprimir.');
     }
 
-    const pdfPath = `${tmpFile}.pdf`;
+    const pdfPath = path.resolve(`${tmpFile}.pdf`);
     await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
 
     // BUG ENCONTRADO E CORRIGIDO (2026-08-22, revisão 2): a impressão
@@ -171,7 +171,7 @@ export class PrintJobService {
     // está, sem risco de ser cortado no meio.
     const sumatraPath = require.resolve('pdf-to-printer/dist/SumatraPDF-3.4.6-32.exe');
     try {
-      await execFileAsync(sumatraPath, ['-print-to', job.printer, '-silent', pdfPath]);
+      await execFileAsync(sumatraPath, ['-print-to', `"${job.printer}"`, '-silent', `"${pdfPath}"`]);
     } catch (err: any) {
       // DIAGNÓSTICO REFORÇADO (2026-08-22, revisão 3): o erro genérico
       // "Command failed: ..." não mostra o motivo real — só que o
@@ -210,7 +210,7 @@ export class PrintJobService {
     // no Windows com esse mesmo nome.
     const printerShare = `\\\\localhost\\${job.printer}`;
     try {
-      await execFileAsync('cmd.exe', ['/c', 'copy', '/b', rawFile, printerShare]);
+      await execFileAsync('cmd.exe', ['/c', 'copy', '/b', `"${rawFile}"`, `"${printerShare}"`]);
     } catch (err: any) {
       throw new Error(
         `Falha ao enviar pra impressora "${job.printer}". Confirme que ela está ` +
