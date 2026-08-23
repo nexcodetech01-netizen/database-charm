@@ -259,20 +259,33 @@ export const productsService = {
     // RESTAURAR PUBLICAÇÃO AUTOMÁTICA (2026-08-19):
     // Se o produto é 'active' e tem 'catalog' nos canais de venda,
     // associa-o automaticamente à coleção principal do catálogo.
+    //
+    // FIX (2026-08-23): antes essa associação rodava em segundo plano
+    // (fire-and-forget, sem "await"), sem nenhum jeito do usuário saber
+    // se ela falhou — o erro só ia parar no console do navegador,
+    // nunca visível. Isso explicava produtos novos "sumindo" do
+    // catálogo sem motivo aparente: a criação do produto sempre dava
+    // certo, mas a associação à coleção podia falhar silenciosamente
+    // (rede, corrida de dados, etc.) sem avisar ninguém. Agora
+    // aguardamos o resultado e avisamos com um toast se falhar.
     if (data?.id && data.status === 'active' && (insertPayload.sales_channels as string[])?.includes('catalog')) {
       const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
-      void import("@/features/catalog/lib/public-collection.functions")
-        .then(async ({ loadPublicCollection }) => {
-          // Resolvemos via server function para garantir acesso admin/RLS correto
-          const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
-          
-          if (collection?.id) {
-            const { catalogService } = await import("@/features/catalog/services/catalog.service");
-            await catalogService.addProducts(collection.id, [data.id]);
-            console.log(`[Auto-Publish] Product ${data.id} linked to collection ${collection.id}`);
-          }
-        })
-        .catch(err => console.error("Erro na auto-publicação do catálogo:", err));
+      try {
+        const { loadPublicCollection } = await import("@/features/catalog/lib/public-collection.functions");
+        const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
+
+        if (collection?.id) {
+          const { catalogService } = await import("@/features/catalog/services/catalog.service");
+          await catalogService.addProducts(collection.id, [data.id]);
+          console.log(`[Auto-Publish] Product ${data.id} linked to collection ${collection.id}`);
+        } else {
+          console.error(`[Auto-Publish] Coleção '${MAIN_COLLECTION_SLUG}' não encontrada.`);
+          toast.error("Produto criado, mas não foi possível publicar no catálogo automaticamente. Adicione manualmente pela tela da coleção.");
+        }
+      } catch (err) {
+        console.error("Erro na auto-publicação do catálogo:", err);
+        toast.error("Produto criado, mas não foi possível publicar no catálogo automaticamente. Adicione manualmente pela tela da coleção.");
+      }
     }
 
     // Handle initial stock movement
@@ -388,21 +401,29 @@ export const productsService = {
 
       // RESTAURAR PUBLICAÇÃO AUTOMÁTICA EM UPDATE (2026-08-19):
       // Garante que o produto está na coleção principal se os critérios forem atendidos após o update.
+      //
+      // FIX (2026-08-23): mesmo problema do create() — rodava em
+      // segundo plano sem aguardar, escondendo falhas do usuário.
       const currentStatus = updated?.status || safeInputWithoutComp.status;
       const currentChannels = (updated?.sales_channels || safeInputWithoutComp.sales_channels) as string[];
       if (updated?.id && currentStatus === 'active' && currentChannels?.includes('catalog')) {
         const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
-        void import("@/features/catalog/lib/public-collection.functions")
-          .then(async ({ loadPublicCollection }) => {
-            const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
+        try {
+          const { loadPublicCollection } = await import("@/features/catalog/lib/public-collection.functions");
+          const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
 
-            if (collection?.id) {
-              const { catalogService } = await import("@/features/catalog/services/catalog.service");
-              await catalogService.addProducts(collection.id, [updated.id]);
-              console.log(`[Auto-Publish-Update] Product ${updated.id} linked to collection ${collection.id}`);
-            }
-          })
-          .catch(err => console.error("Erro na auto-publicação do catálogo (update):", err));
+          if (collection?.id) {
+            const { catalogService } = await import("@/features/catalog/services/catalog.service");
+            await catalogService.addProducts(collection.id, [updated.id]);
+            console.log(`[Auto-Publish-Update] Product ${updated.id} linked to collection ${collection.id}`);
+          } else {
+            console.error(`[Auto-Publish-Update] Coleção '${MAIN_COLLECTION_SLUG}' não encontrada.`);
+            toast.error("Produto salvo, mas não foi possível publicar no catálogo automaticamente. Adicione manualmente pela tela da coleção.");
+          }
+        } catch (err) {
+          console.error("Erro na auto-publicação do catálogo (update):", err);
+          toast.error("Produto salvo, mas não foi possível publicar no catálogo automaticamente. Adicione manualmente pela tela da coleção.");
+        }
       }
 
       return updated;

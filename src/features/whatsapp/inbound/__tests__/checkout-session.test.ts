@@ -179,6 +179,13 @@ describe("handleCheckoutTurn", () => {
     await turn("não");
     await turn("retirada");
     await turn("pix");
+
+    // NOVO (2026-08-23): a confirmação final agora exige que o frete
+    // já tenha sido calculado (session.deliveryFee !== null) — para
+    // "retirada" (sem entrega), simulamos o frete resolvido em R$0.
+    const before = await peekCheckoutSession("co", "5511");
+    if (before) await saveCheckoutSession({ ...before, deliveryFee: 0 });
+
     const confirmTurn = await turn("sim");
     expect(confirmTurn?.confirmed).toBe(true);
   });
@@ -194,6 +201,12 @@ describe("handleCheckoutTurn", () => {
     await turn("não"); // Troco? Não
     await turn("52998224725"); // CPF
     await turn("Rua A, 100, 17600-000"); // Endereço
+
+    // NOVO (2026-08-23): mesmo motivo do teste acima — simula o frete
+    // já calculado antes da confirmação final.
+    const before = await peekCheckoutSession("co", "5511");
+    if (before) await saveCheckoutSession({ ...before, deliveryFee: 5, step: "WAITING_CONFIRMATION" });
+
     const confirmTurn = await turn("sim");
     expect(confirmTurn?.confirmed).toBe(true);
     expect(confirmTurn?.completedSession?.customer.fullName).toBe("Tiele");

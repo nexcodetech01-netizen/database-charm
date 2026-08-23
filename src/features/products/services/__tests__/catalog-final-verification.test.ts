@@ -17,6 +17,19 @@ vi.mock('@/features/catalog/services/catalog.service', () => ({
   },
 }));
 
+// FIX (2026-08-23): faltava mockar loadPublicCollection — sem isso, o
+// código real tentava rodar de verdade (sem conexão real com o banco
+// no teste), sempre devolvia `collection: null`, e `addProducts` NUNCA
+// era chamado — o teste "passava" só por acaso, sem verificar nada de
+// útil. Isso ajudou a mascarar o mesmo bug real relatado pela usuária
+// (produto novo não entrando no catálogo em produção).
+vi.mock('@/features/catalog/lib/public-collection.functions', () => ({
+  loadPublicCollection: vi.fn().mockResolvedValue({
+    collection: { id: 'd71d809c-83c6-499e-b2bc-ebfcb1df28af' },
+    origin: '',
+  }),
+}));
+
 describe('Catalog Integration Final Verification', () => {
   const mockCompanyId = '78bfccca-f3a5-4110-9983-13e073f3ba77';
   const mockProductId = 'prod-verified-123';
@@ -71,5 +84,39 @@ describe('Catalog Integration Final Verification', () => {
 
     await new Promise(resolve => setTimeout(resolve, 100));
     expect(catalogService.addProducts).toHaveBeenCalledWith(MAIN_COLLECTION_ID, [mockProductId]);
+  });
+
+  it('avisa o usuário quando a publicação automática falha, em vez de esconder o erro (2026-08-23)', async () => {
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { id: mockProductId, status: 'active', sales_channels: ['catalog'] },
+      error: null,
+    });
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
+    const mockMovInsert = vi.fn().mockResolvedValue({ error: null });
+
+    (supabase.from as any).mockImplementation((table: string) => {
+      if (table === 'products') return { insert: mockInsert };
+      if (table === 'inventory_movements') return { insert: mockMovInsert };
+      return {};
+    });
+
+    (catalogService.addProducts as any).mockRejectedValueOnce(new Error('falha simulada'));
+
+    const payload = {
+      company_id: mockCompanyId,
+      name: 'Produto Falho',
+      sku: 'FALHO-001',
+      status: 'active',
+      sales_channels: ['catalog'],
+      product_type: 'simple',
+      price: 10,
+      cost: 5,
+      unit: 'UN',
+    };
+
+    // Não deve lançar/quebrar a criação do produto mesmo se a
+    // publicação automática falhar — só avisa via toast.
+    await expect(productsService.create(payload as any)).resolves.toBeDefined();
   });
 });

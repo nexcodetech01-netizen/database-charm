@@ -97,7 +97,13 @@ describe("calculateSuperfreteShipping", () => {
     await expect(calculateSuperfreteShipping(baseInput)).rejects.toThrow("Token inválido.");
   });
 
-  it("não trava a lista de transportadoras (não envia 'services' fixo)", async () => {
+  // ATUALIZADO (2026-08-23): a API do Superfrete passou a EXIGIR o
+  // campo `services` (erro "(services) é obrigatório" quando
+  // omitido) — diferente de quando esse teste foi escrito, quando
+  // omitir funcionava. A correção certa agora é usar uma lista AMPLA
+  // de transportadoras (não a antiga travada em só 3: "1,2,17"), não
+  // omitir o campo inteiro.
+  it("usa uma lista ampla de transportadoras, não mais a antiga travada em só 3 (\"1,2,17\")", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       text: async () => JSON.stringify([]),
@@ -108,7 +114,8 @@ describe("calculateSuperfreteShipping", () => {
 
     const [, options] = fetchMock.mock.calls[0];
     const sentPayload = JSON.parse(options.body);
-    expect(sentPayload.services).toBeUndefined();
+    expect(sentPayload.services).not.toBe("1,2,17");
+    expect(sentPayload.services.split(",").length).toBeGreaterThan(3);
   });
 
   it("lança erro claro quando SUPERFRETE_TOKEN não está configurado", async () => {
