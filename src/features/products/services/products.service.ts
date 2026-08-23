@@ -272,17 +272,6 @@ export const productsService = {
             console.log(`[Auto-Publish] Product ${data.id} linked to collection ${collection.id}`);
           }
         })
-          const { data: col } = await supabase
-            .from("product_collections")
-            .select("id")
-            .eq("company_id", data.company_id)
-            .eq("slug", MAIN_COLLECTION_SLUG)
-            .maybeSingle();
-          
-          if (col?.id) {
-            await catalogService.addProducts(col.id, [data.id]);
-          }
-        })
         .catch(err => console.error("Erro na auto-publicação do catálogo:", err));
     }
 
@@ -403,25 +392,14 @@ export const productsService = {
       const currentChannels = (updated?.sales_channels || safeInputWithoutComp.sales_channels) as string[];
       if (updated?.id && currentStatus === 'active' && currentChannels?.includes('catalog')) {
         const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
-      void import("@/features/catalog/lib/public-collection.functions")
-        .then(async ({ loadPublicCollection }) => {
-          const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
+        void import("@/features/catalog/lib/public-collection.functions")
+          .then(async ({ loadPublicCollection }) => {
+            const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
 
-          if (collection?.id) {
-            const { catalogService } = await import("@/features/catalog/services/catalog.service");
-            await catalogService.addProducts(collection.id, [updated.id]);
-            console.log(`[Auto-Publish-Update] Product ${updated.id} linked to collection ${collection.id}`);
-          }
-        })
-            const { data: col } = await supabase
-              .from("product_collections")
-              .select("id")
-              .eq("company_id", updated.company_id)
-              .eq("slug", MAIN_COLLECTION_SLUG)
-              .maybeSingle();
-
-            if (col?.id) {
-              await catalogService.addProducts(col.id, [updated.id]);
+            if (collection?.id) {
+              const { catalogService } = await import("@/features/catalog/services/catalog.service");
+              await catalogService.addProducts(collection.id, [updated.id]);
+              console.log(`[Auto-Publish-Update] Product ${updated.id} linked to collection ${collection.id}`);
             }
           })
           .catch(err => console.error("Erro na auto-publicação do catálogo (update):", err));
