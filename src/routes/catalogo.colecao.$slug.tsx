@@ -486,43 +486,36 @@ function PublicCollectionPage() {
 
               {/* Categories Navigation */}
               {categories.length > 0 && (
-                <div className="relative group/nav">
-                  <div className="flex flex-wrap items-center gap-2 pt-1 transition-all duration-300">
-                    <Button
-                      variant={search.cat === "all" ? "secondary" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "rounded-full h-9 px-6 transition-all font-bold tracking-tight text-xs",
-                        search.cat === "all" 
-                          ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
-                      )}
+                <div className="relative pt-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
                       onClick={() => updateSearch({ cat: "all" })}
+                      className={cn(
+                        "px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border",
+                        search.cat === "all"
+                          ? "bg-primary text-primary-foreground border-primary shadow-[0_4px_12px_rgba(var(--primary-rgb),0.3)] scale-105"
+                          : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-foreground"
+                      )}
+                      style={{ fontFamily: 'Montserrat, sans-serif' }}
                     >
-                      TODAS
-                    </Button>
+                      Todas
+                    </button>
                     {categories.map((c) => (
-                      <Button
+                      <button
                         key={c}
-                        variant={search.cat === c ? "secondary" : "ghost"}
-                        size="sm"
-                        className={cn(
-                          "rounded-full h-9 px-6 transition-all whitespace-nowrap font-bold tracking-tight text-xs uppercase",
-                          search.cat === c 
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" 
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent"
-                        )}
                         onClick={() => updateSearch({ cat: c })}
+                        className={cn(
+                          "px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border",
+                          search.cat === c
+                            ? "bg-primary text-primary-foreground border-primary shadow-[0_4px_12px_rgba(var(--primary-rgb),0.3)] scale-105"
+                            : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-foreground"
+                        )}
+                        style={{ fontFamily: 'Montserrat, sans-serif' }}
                       >
                         {c}
-                      </Button>
+                      </button>
                     ))}
                   </div>
-                  
-                  {/* Decorative indicator for many categories */}
-                  {categories.length > 5 && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-muted/20 lg:hidden" />
-                  )}
                 </div>
               )}
             </div>
