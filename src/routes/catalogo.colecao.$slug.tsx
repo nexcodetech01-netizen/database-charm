@@ -330,17 +330,23 @@ function PublicCollectionPage() {
         {/* Decorative background element */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
         
-        <div className="mx-auto max-w-5xl px-4 py-8 relative">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div className="flex-1 space-y-2">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tracking-wide uppercase">
+        <div className="mx-auto max-w-5xl px-4 py-12 relative">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+            <div className="flex-1 space-y-4">
+              <div 
+                className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary tracking-[0.2em] uppercase"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
                 {data.company_name}
               </div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
+              <h1 
+                className="text-4xl font-extrabold tracking-tight sm:text-6xl text-foreground"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
                 {data.name}
               </h1>
               {data.description && (
-                <p className="max-w-2xl text-base text-muted-foreground leading-relaxed">
+                <p className="max-w-2xl text-base md:text-lg text-muted-foreground/80 leading-relaxed font-medium">
                   {data.description}
                 </p>
               )}
