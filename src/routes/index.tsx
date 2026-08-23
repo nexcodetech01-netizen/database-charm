@@ -12,6 +12,7 @@ export const Route = createFileRoute("/")({
     }
     
     // Public users see the main collection
-    throw redirect({ to: "/catalogo/colecao/tg-style-catalogue" });
+    // Note: Using type casting to bypass strict route checking for dynamic slugs
+    throw redirect({ to: "/catalogo/colecao/$slug" as any, params: { slug: "tg-style-catalogue" } });
   },
 });
