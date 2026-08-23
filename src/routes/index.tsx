@@ -6,10 +6,12 @@ export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     
+    // If authenticated, go to dashboard
     if (data.user) {
       throw redirect({ to: "/dashboard" });
     }
     
-    throw redirect({ to: "/auth" });
+    // Public users see the main collection
+    throw redirect({ to: "/catalogo/colecao/tg-style-catalogue" });
   },
 });
