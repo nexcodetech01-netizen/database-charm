@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
-import * as pdf from 'pdf-to-img';
+import { pdf } from 'pdf-to-img';
 
 const execFileAsync = promisify(execFile);
 
