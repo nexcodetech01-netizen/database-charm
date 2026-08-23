@@ -218,7 +218,14 @@ export class PrintJobService {
     }
 
     const rawFile = `${tmpFile}.prn`;
-    await fs.promises.writeFile(rawFile, content, 'binary');
+    
+    // Limpeza de Data URI para dados base64 (Requirement 3.1 fallback)
+    if (typeof content === 'string' && content.startsWith('data:')) {
+      const cleanBase64 = content.replace(/^data:.*;base64,/, '');
+      await fs.promises.writeFile(rawFile, Buffer.from(cleanBase64, 'base64'));
+    } else {
+      await fs.promises.writeFile(rawFile, content, 'binary');
+    }
 
     // Copia os bytes crus direto pro compartilhamento da impressora no
     // Windows — não passa pelo driver gráfico, essencial pra comandos
