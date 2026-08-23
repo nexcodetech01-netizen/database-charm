@@ -181,12 +181,55 @@ export class PrintJobService {
         await fs.promises.writeFile(imgPath, img);
 
         try {
-          // Imprime a imagem via PowerShell - técnica mais resiliente para drivers GDI/Térmicos
-          // O comando renderiza a imagem através do driver padrão do Windows.
-          const psCommand = `Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-Command", "Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile('${imgPath}'); $doc = New-Object System.Drawing.Printing.PrintDocument; $doc.PrinterSettings.PrinterName = '${job.printer}'; $doc.add_PrintPage({ param($s, $e) $e.Graphics.DrawImage($img, 0, 0); $e.HasMorePages = $false }); $doc.Print(); $img.Dispose()" -WindowStyle Hidden -Wait`;
-          
-          await execFileAsync('powershell.exe', ['-NoProfile', '-Command', psCommand]);
-          logger.info(`Página ${counter.pages} enviada para ${job.printer}`);
+          // ABORDAGEM FASE 3.2: Script .ps1 temporário para maior robustez
+          // Evita falhas de escape de string e permite capturar erros reais do $doc.Print()
+          const scriptPath = path.resolve(`${tmpFile}-print.ps1`);
+          const psScript = `
+param(
+  [string]$PrinterName,
+  [string]$ImagePath
+)
+try {
+  Add-Type -AssemblyName System.Drawing
+  $img = [System.Drawing.Image]::FromFile($ImagePath)
+  $doc = New-Object System.Drawing.Printing.PrintDocument
+  $doc.PrinterSettings.PrinterName = $PrinterName
+  $doc.add_PrintPage({
+    param($s, $e)
+    $e.Graphics.DrawImage($img, 0, 0)
+    $e.HasMorePages = $false
+  })
+  $doc.Print()
+  $img.Dispose()
+  Write-Output "Successfully sent to printer queue"
+} catch {
+  Write-Error $_.Exception.Message
+  exit 1
+}
+`;
+          await fs.promises.writeFile(scriptPath, psScript, 'utf8');
+
+          try {
+            const { stdout, stderr } = await execFileAsync('powershell.exe', [
+              '-NoProfile',
+              '-ExecutionPolicy',
+              'Bypass',
+              '-File',
+              scriptPath,
+              '-PrinterName',
+              job.printer,
+              '-ImagePath',
+              imgPath
+            ]);
+            
+            if (stdout) logger.info(`PS Output: ${stdout.trim()}`);
+            if (stderr) logger.warn(`PS Error: ${stderr.trim()}`);
+            
+            logger.info(`Página ${counter.pages} enviada para ${job.printer}`);
+          } finally {
+            // Limpa o script temporário
+            fs.promises.unlink(scriptPath).catch(() => {});
+          }
         } finally {
           // Limpa imagem temporária da página
           fs.promises.unlink(imgPath).catch(() => {});
