@@ -125,7 +125,10 @@ export function QuickViewDialog({
                       {product.product.brand}
                     </div>
                   )}
-                  <DialogTitle className="text-2xl font-bold leading-tight">
+                  <DialogTitle 
+                    className="text-2xl font-extrabold leading-tight tracking-tight"
+                    style={{ fontFamily: 'Montserrat, sans-serif' }}
+                  >
                     {product.product.name}
                   </DialogTitle>
                 </div>
