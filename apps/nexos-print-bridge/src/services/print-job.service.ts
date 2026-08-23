@@ -147,13 +147,14 @@ export class PrintJobService {
   }
 
   private async printPdf(job: PrintJob, tmpFile: string): Promise<void> {
-    const base64 = job.data?.data;
-    if (!base64) {
+    const base64Raw = job.data?.data;
+    if (!base64Raw) {
       throw new Error('PDF sem conteúdo (campo "data" vazio) — nada pra imprimir.');
     }
 
+    const cleanBase64 = base64Raw.replace(/^data:.*;base64,/, '');
     const pdfPath = path.resolve(`${tmpFile}.pdf`);
-    await fs.promises.writeFile(pdfPath, Buffer.from(base64, 'base64'));
+    await fs.promises.writeFile(pdfPath, Buffer.from(cleanBase64, 'base64'));
 
     // ABORDAGEM FASE 3.1: Conversão de PDF para Imagem (Server-side)
     //
