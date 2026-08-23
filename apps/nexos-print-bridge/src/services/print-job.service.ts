@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
-import * as pdf from 'pdf-to-img';
+import { pdf } from 'pdf-to-img';
 
 const execFileAsync = promisify(execFile);
 
@@ -170,7 +170,7 @@ export class PrintJobService {
       logger.info(`Iniciando conversão de PDF para imagem para impressora: ${job.printer}`);
       const counter = { pages: 0 };
       
-      const document = await pdf.pdfToImg(pdfPath, {
+      const document = await pdf(pdfPath, {
         scale: 2.0 // Aumenta densidade para melhor leitura de código de barras
       });
 
