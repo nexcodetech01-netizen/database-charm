@@ -261,8 +261,17 @@ export const productsService = {
     // associa-o automaticamente à coleção principal do catálogo.
     if (data?.id && data.status === 'active' && (insertPayload.sales_channels as string[])?.includes('catalog')) {
       const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
-      void import("@/features/catalog/services/catalog.service")
-        .then(async ({ catalogService }) => {
+      void import("@/features/catalog/lib/public-collection.functions")
+        .then(async ({ loadPublicCollection }) => {
+          // Resolvemos via server function para garantir acesso admin/RLS correto
+          const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
+          
+          if (collection?.id) {
+            const { catalogService } = await import("@/features/catalog/services/catalog.service");
+            await catalogService.addProducts(collection.id, [data.id]);
+            console.log(`[Auto-Publish] Product ${data.id} linked to collection ${collection.id}`);
+          }
+        })
           const { data: col } = await supabase
             .from("product_collections")
             .select("id")
@@ -394,8 +403,16 @@ export const productsService = {
       const currentChannels = (updated?.sales_channels || safeInputWithoutComp.sales_channels) as string[];
       if (updated?.id && currentStatus === 'active' && currentChannels?.includes('catalog')) {
         const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
-        void import("@/features/catalog/services/catalog.service")
-          .then(async ({ catalogService }) => {
+      void import("@/features/catalog/lib/public-collection.functions")
+        .then(async ({ loadPublicCollection }) => {
+          const { collection } = await loadPublicCollection({ data: { slug: MAIN_COLLECTION_SLUG } });
+
+          if (collection?.id) {
+            const { catalogService } = await import("@/features/catalog/services/catalog.service");
+            await catalogService.addProducts(collection.id, [updated.id]);
+            console.log(`[Auto-Publish-Update] Product ${updated.id} linked to collection ${collection.id}`);
+          }
+        })
             const { data: col } = await supabase
               .from("product_collections")
               .select("id")
