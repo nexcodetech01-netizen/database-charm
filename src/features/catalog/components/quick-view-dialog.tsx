@@ -143,7 +143,10 @@ export function QuickViewDialog({
               </div>
 
               <div className="mt-4 flex items-baseline gap-2">
-                <div className="text-3xl font-bold text-primary">
+                <div 
+                  className="text-3xl font-black text-primary tracking-tighter"
+                  style={{ fontFamily: 'Montserrat, sans-serif' }}
+                >
                   {formatCurrency(product.product.price)}
                 </div>
                 {product.product.stock > 0 && (
