@@ -192,7 +192,7 @@ function RootComponent() {
   useEffect(() => {
     if (location.pathname.startsWith("/category/")) {
       console.log("[RootComponent] Legacy route detected, redirecting to new catalog...");
-      navigate({ to: "/catalogo/colecao/tg-style-catalogue", replace: true });
+      navigate({ to: "/catalogo/colecao/$slug", params: { slug: "tg-style-catalogue" }, replace: true });
     }
   }, [location.pathname, navigate]);
 
