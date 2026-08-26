@@ -21,7 +21,6 @@ import {
   ArrowUpRight,
   FileBarChart,
   FileText,
-  ListChecks,
   Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -189,7 +188,13 @@ function FinancePage() {
             value="receivables" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
-            <ListChecks className="h-4 w-4" /> Contas a Pagar e Receber
+            <ArrowDownRight className="h-4 w-4" /> A Receber
+          </TabsTrigger>
+          <TabsTrigger 
+            value="payables" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
+          >
+            <ArrowUpRight className="h-4 w-4" /> A Pagar
           </TabsTrigger>
           <TabsTrigger 
             value="cashflow" 
@@ -211,9 +216,10 @@ function FinancePage() {
 
         <TabsContent value="receivables" className="space-y-8">
           <ReceivablesPayablesPanel companyId={company.id} kind="receivable" />
-          <Separator />
+        </TabsContent>
+
+        <TabsContent value="payables" className="space-y-8">
           <ReceivablesPayablesPanel companyId={company.id} kind="payable" />
-          <BellaPayCard />
         </TabsContent>
 
         <TabsContent value="cashflow" className="space-y-6">

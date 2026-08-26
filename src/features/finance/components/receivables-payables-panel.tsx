@@ -3,6 +3,8 @@ import {
   Search,
   Receipt,
   ArrowDownRight,
+  ArrowUpRight,
+  ShoppingBag,
   ShieldCheck,
   Zap,
   MessageCircle,
@@ -12,14 +14,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BellaInlineSuggestion } from "@/features/bella-ai/components/bella-inline-suggestion";
@@ -89,6 +83,22 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: "partial", label: "Parciais" },
   { value: "paid", label: "Pagos" },
 ];
+
+/** Ícone por origem — identifica de cara o tipo do lançamento na lista. */
+const SOURCE_ICON: Record<string, typeof Receipt> = {
+  sale: ArrowDownRight,
+  purchase: ShoppingBag,
+  bella_pay: Zap,
+  manual: Receipt,
+};
+
+/** Cor de fundo do círculo do ícone — mesma lógica de cor por origem. */
+const SOURCE_TINT: Record<string, string> = {
+  sale: "bg-success/15 text-success",
+  purchase: "bg-orange-500/15 text-orange-500",
+  bella_pay: "bg-primary/15 text-primary",
+  manual: "bg-muted text-muted-foreground",
+};
 
 export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   const meta = KIND_META[kind];
@@ -308,161 +318,148 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
       </div>
 
       <div className="rounded-xl border border-border bg-card">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="hidden md:table-cell">Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="hidden lg:table-cell">
-                  {kind === "receivable" ? "Como será recebido" : "Como será pago"}
-                </TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="w-[160px] text-right">Ação</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-24">
-                    <div className="flex flex-col items-center gap-4 text-center">
-                      <div className="rounded-full bg-muted p-4">
-                        {kind === "receivable" ? (
-                          <ArrowDownRight className="h-8 w-8 text-muted-foreground" />
-                        ) : (
-                          <Receipt className="h-8 w-8 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-semibold text-foreground">{meta.empty}</p>
-                        <p className="text-sm text-muted-foreground max-w-[280px]">
-                          Não encontramos nenhum lançamento com os filtros selecionados.
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          setSearch("");
-                          setTab("all");
-                          setPeriod("all");
-                          setOrigin("all");
-                          setPage(1);
-                        }}
-                      >
-                        Limpar filtros
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+        {isLoading ? (
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-1/5" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <div className="rounded-full bg-muted p-4">
+              {kind === "receivable" ? (
+                <ArrowDownRight className="h-8 w-8 text-muted-foreground" />
               ) : (
-                filtered.map(({ row: t, display }) => {
-                  const source = (t.source as TransactionSource) ?? "manual";
-                  const reconciled =
-                    t.status === "paid" &&
-                    (source === "bella_pay" ||
-                      source === "sale" ||
-                      source === "purchase");
-                  const overdueDays = daysOverdue(t);
-                  return (
-                    <TableRow
-                      key={t.id}
-                      className={cn(
-                        "cursor-pointer hover:bg-muted/40 border-l-2",
-                        display === "overdue"
-                          ? "border-l-destructive bg-destructive/[0.03]"
-                          : "border-l-transparent",
-                      )}
-                      onClick={() => openDetails(t)}
-                    >
-                      <TableCell className="py-4">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-sm">{t.description}</p>
-                          <p className="truncate text-xs text-muted-foreground mt-0.5">
-                            {[t.category_name, t.account_name]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden py-4 text-sm md:table-cell">
-                        <span
-                          className={cn(
-                            display === "overdue"
-                              ? "font-medium text-destructive"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          {t.due_date
-                            ? formatDate(t.due_date)
-                            : formatDate(t.transaction_date)}
-                        </span>
-                      </TableCell>
-                      <TableCell
+                <Receipt className="h-8 w-8 text-muted-foreground" />
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="font-semibold text-foreground">{meta.empty}</p>
+              <p className="max-w-[280px] text-sm text-muted-foreground">
+                Não encontramos nenhum lançamento com os filtros selecionados.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setTab("all");
+                setPeriod("all");
+                setOrigin("all");
+                setPage(1);
+              }}
+            >
+              Limpar filtros
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filtered.map(({ row: t, display }) => {
+              const source = (t.source as TransactionSource) ?? "manual";
+              const reconciled =
+                t.status === "paid" &&
+                (source === "bella_pay" || source === "sale" || source === "purchase");
+              const overdueDays = daysOverdue(t);
+              const sourceIcon = SOURCE_ICON[source] ?? Receipt;
+              const SourceIcon = sourceIcon;
+              return (
+                <div
+                  key={t.id}
+                  className={cn(
+                    "flex cursor-pointer flex-wrap items-center gap-4 border-l-2 p-4 transition-colors hover:bg-muted/40",
+                    display === "overdue"
+                      ? "border-l-destructive bg-destructive/[0.03]"
+                      : "border-l-transparent",
+                  )}
+                  onClick={() => openDetails(t)}
+                >
+                  {/* Ícone de origem — identifica de cara se é venda, compra, manual ou Bella Pay */}
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                      SOURCE_TINT[source] ?? SOURCE_TINT.manual,
+                    )}
+                  >
+                    <SourceIcon className="h-4.5 w-4.5" />
+                  </div>
+
+                  {/* Descrição + categoria/conta + vencimento — tudo junto, hierarquia clara */}
+                  <div className="min-w-0 flex-1 basis-52">
+                    <p className="truncate text-sm font-semibold">{t.description}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                      <span className="truncate">
+                        {[t.category_name, t.account_name].filter(Boolean).join(" · ") || "—"}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span
                         className={cn(
-                          "py-4 text-right font-medium tabular-nums",
-                          meta.tone,
+                          display === "overdue" && "font-medium text-destructive",
                         )}
                       >
-                        {meta.prefix}
-                        {formatCurrency(Number(t.amount ?? 0))}
-                        {t.status === "paid" && meta.type === "income" ? " (+)" : t.status === "paid" && meta.type === "expense" ? " (-)" : ""}
-                      </TableCell>
-                      <TableCell className="hidden py-4 text-sm lg:table-cell">
-                        {t.payment_method
-                          ? (FINANCE_PAYMENT_METHOD_LABEL[t.payment_method] ??
-                            t.payment_method)
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="hidden py-4 sm:table-cell">
-                        <div className="flex items-center gap-1.5">
-                          <TransactionStatusBadge
-                            status={display}
-                            receivedAmount={
-                              display === "partial"
-                                ? summarize(t, groups.get(groupKey(t) ?? "") ?? null).received
-                                : undefined
-                            }
-                            overdueDays={display === "overdue" ? overdueDays : undefined}
-                          />
-                          {source === "bella_pay" ? (
-                            <Zap className="h-3.5 w-3.5 text-primary" />
-                          ) : null}
-                          {reconciled ? (
-                            <ShieldCheck className="h-3.5 w-3.5 text-success" />
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell
-                        className="py-4 text-right"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <PrimaryAction
-                          display={display}
-                          verb={meta.verb}
-                          onReceive={() => handleReceive(t)}
-                          onHistory={() => openDetails(t)}
-                          pending={setStatusMut.isPending}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        {t.due_date ? formatDate(t.due_date) : formatDate(t.transaction_date)}
+                      </span>
+                    </p>
+                  </div>
+
+                  {/* Forma de pagamento — some em telas estreitas */}
+                  <div className="hidden w-28 shrink-0 text-sm text-muted-foreground lg:block">
+                    {t.payment_method
+                      ? (FINANCE_PAYMENT_METHOD_LABEL[t.payment_method] ?? t.payment_method)
+                      : "—"}
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <TransactionStatusBadge
+                      status={display}
+                      receivedAmount={
+                        display === "partial"
+                          ? summarize(t, groups.get(groupKey(t) ?? "") ?? null).received
+                          : undefined
+                      }
+                      overdueDays={display === "overdue" ? overdueDays : undefined}
+                    />
+                    {source === "bella_pay" ? <Zap className="h-3.5 w-3.5 text-primary" /> : null}
+                    {reconciled ? <ShieldCheck className="h-3.5 w-3.5 text-success" /> : null}
+                  </div>
+
+                  {/* Valor — bem grande e em destaque, é a informação mais importante */}
+                  <div
+                    className={cn(
+                      "shrink-0 text-right text-base font-bold tabular-nums",
+                      meta.tone,
+                    )}
+                  >
+                    {meta.prefix}
+                    {formatCurrency(Number(t.amount ?? 0))}
+                  </div>
+
+                  {/* Ação — quebra pra linha de baixo se não couber, nunca corta nem exige rolagem lateral */}
+                  <div
+                    className="ml-auto shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <PrimaryAction
+                      display={display}
+                      verb={meta.verb}
+                      onReceive={() => handleReceive(t)}
+                      onHistory={() => openDetails(t)}
+                      pending={setStatusMut.isPending}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
           <span className="text-muted-foreground">
