@@ -209,13 +209,43 @@ export const financeService = {
       return { rows: [] as TransactionWithMeta[], total: count ?? 0 };
     }
 
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-26): essa consulta nunca
+    // trazia o nome do cliente — só categoria e conta. `reference_id`
+    // não é um relacionamento declarado no banco (é genérico, aponta
+    // pra venda/compra/etc. dependendo de `source`), então não dá pra
+    // "pedir junto" com o Supabase — precisa buscar em duas etapas,
+    // igual já é feito em `listIncompleteSettlements` mais abaixo
+    // nesse mesmo arquivo.
+    const saleIds = [
+      ...new Set(
+        rows.filter((r) => (r as any).source === "sale" && (r as any).reference_id)
+          .map((r) => (r as any).reference_id as string),
+      ),
+    ];
+    const salesRes = saleIds.length
+      ? await supabase.from("sales").select("id, customer_id").in("id", saleIds)
+      : { data: [] as { id: string; customer_id: string | null }[] };
+    const sales = salesRes.data ?? [];
+    const customerIds = [...new Set(sales.map((s) => s.customer_id).filter(Boolean))] as string[];
+    const customersRes = customerIds.length
+      ? await supabase.from("customers").select("id, name").in("id", customerIds)
+      : { data: [] as { id: string; name: string }[] };
+    const customerNameById = new Map((customersRes.data ?? []).map((c) => [c.id, c.name]));
+    const customerNameBySaleId = new Map(
+      sales.map((s) => [s.id, s.customer_id ? customerNameById.get(s.customer_id) ?? null : null]),
+    );
+
     return {
       rows: rows.map<TransactionWithMeta>((r) => {
         const cat = (r as any).category;
+        const isSale = (r as any).source === "sale" && (r as any).reference_id;
         return {
           ...r,
           account_name: (r as any).financial_accounts?.name ?? null,
           category_name: cat?.name ?? (r as any).category_name ?? null,
+          customer_name: isSale
+            ? customerNameBySaleId.get((r as any).reference_id) ?? null
+            : null,
         };
       }),
       total: count ?? 0,
