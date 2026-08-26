@@ -135,6 +135,7 @@ export interface TransactionListFilters {
 export interface TransactionWithMeta extends FinancialTransaction {
   account_name: string | null;
   category_name: string | null;
+  customer_name: string | null;
 }
 
 export interface FinanceOverview {
