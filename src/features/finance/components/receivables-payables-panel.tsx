@@ -391,13 +391,22 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                     <SourceIcon className="h-4.5 w-4.5" />
                   </div>
 
-                  {/* Descrição + categoria/conta + vencimento — tudo junto, hierarquia clara */}
+                  {/* Descrição + categoria/conta + vencimento — tudo junto, hierarquia clara.
+                      Prioriza o NOME DO CLIENTE quando a venda tem um vinculado — "Venda Nº
+                      PDV-20260825-191432" sozinho não diz muito de cara; o nome sim. O número
+                      da venda continua visível, só que como legenda, não como título. */}
                   <div className="min-w-0 flex-1 basis-52">
-                    <p className="truncate text-sm font-semibold">{t.description}</p>
+                    <p className="truncate text-sm font-semibold">
+                      {t.customer_name || t.description}
+                    </p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                      <span className="truncate">
-                        {[t.category_name, t.account_name].filter(Boolean).join(" · ") || "—"}
-                      </span>
+                      {t.customer_name ? (
+                        <span className="truncate">{t.description}</span>
+                      ) : (
+                        <span className="truncate">
+                          {[t.category_name, t.account_name].filter(Boolean).join(" · ") || "—"}
+                        </span>
+                      )}
                       <span aria-hidden>·</span>
                       <span
                         className={cn(
