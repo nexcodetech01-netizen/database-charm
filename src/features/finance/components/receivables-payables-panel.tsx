@@ -205,11 +205,23 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
     setDrawerOpen(true);
   }
 
+  const overdueCount = useMemo(
+    () => enriched.filter((e) => e.display === "overdue").length,
+    [enriched],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">{meta.title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold">{meta.title}</h2>
+            {overdueCount > 0 ? (
+              <span className="inline-flex items-center rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">
+                {overdueCount} {overdueCount === 1 ? "vencida" : "vencidas"}
+              </span>
+            ) : null}
+          </div>
           <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
         </div>
       </div>
@@ -243,8 +255,8 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
               }}
             />
           </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2 border-l border-border pl-3">
             <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <select 
@@ -273,25 +285,25 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                 <option value="bella_pay">Bella Pay</option>
               </select>
             </div>
-
-            <Tabs 
-              value={tab} 
-              onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}
-              className="w-auto"
-            >
-              <TabsList className="h-9 bg-muted/50 p-1">
-                {TABS.map((t) => (
-                  <TabsTrigger 
-                    key={t.value} 
-                    value={t.value} 
-                    className="text-xs px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    {t.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
           </div>
+
+          <Tabs 
+            value={tab} 
+            onValueChange={(v) => { setTab(v as TabValue); setPage(1); }}
+            className="w-auto border-l border-border pl-3"
+          >
+            <TabsList className="h-9 bg-muted/50 p-1">
+              {TABS.map((t) => (
+                <TabsTrigger 
+                  key={t.value} 
+                  value={t.value} 
+                  className="text-xs px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
@@ -366,7 +378,12 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                   return (
                     <TableRow
                       key={t.id}
-                      className="cursor-pointer hover:bg-muted/40"
+                      className={cn(
+                        "cursor-pointer hover:bg-muted/40 border-l-2",
+                        display === "overdue"
+                          ? "border-l-destructive bg-destructive/[0.03]"
+                          : "border-l-transparent",
+                      )}
                       onClick={() => openDetails(t)}
                     >
                       <TableCell className="py-4">
@@ -380,18 +397,17 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                         </div>
                       </TableCell>
                       <TableCell className="hidden py-4 text-sm md:table-cell">
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground">
-                            {t.due_date
-                              ? formatDate(t.due_date)
-                              : formatDate(t.transaction_date)}
-                          </span>
-                          {display === "overdue" && overdueDays > 0 ? (
-                            <span className="text-xs font-medium text-destructive">
-                              {overdueDays} {overdueDays === 1 ? "dia" : "dias"} em atraso
-                            </span>
-                          ) : null}
-                        </div>
+                        <span
+                          className={cn(
+                            display === "overdue"
+                              ? "font-medium text-destructive"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {t.due_date
+                            ? formatDate(t.due_date)
+                            : formatDate(t.transaction_date)}
+                        </span>
                       </TableCell>
                       <TableCell
                         className={cn(
@@ -418,6 +434,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                                 ? summarize(t, groups.get(groupKey(t) ?? "") ?? null).received
                                 : undefined
                             }
+                            overdueDays={display === "overdue" ? overdueDays : undefined}
                           />
                           {source === "bella_pay" ? (
                             <Zap className="h-3.5 w-3.5 text-primary" />
