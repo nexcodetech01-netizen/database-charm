@@ -481,7 +481,9 @@ export function CheckoutDialog({
   const { data: cashStillOpen } = useQuery({
     queryKey: ["checkout", "cash-open", saleId],
     enabled: open && !confirmed,
-    refetchInterval: 10000,
+    // Egress: verificação a cada 60s (o banco continua sendo o guard final).
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data: s, error } = await supabase

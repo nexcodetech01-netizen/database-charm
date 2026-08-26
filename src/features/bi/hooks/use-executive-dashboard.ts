@@ -7,7 +7,8 @@ export function useExecutiveDashboard(companyId: string, range: DateRange) {
     queryKey: ["bi", "executive-dashboard", companyId, range.from, range.to],
     queryFn: () => executiveDashboardService.build(companyId, range),
     enabled: Boolean(companyId),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    // Egress: sem polling. O painel recarrega ao trocar período ou via invalidação.
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
   });
 }

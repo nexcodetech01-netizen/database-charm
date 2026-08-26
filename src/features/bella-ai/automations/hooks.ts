@@ -39,8 +39,10 @@ export function useAutomationRuns(companyId: string | null, automationId?: strin
     queryFn: () =>
       fn({ data: { companyId: companyId!, automationId: automationId ?? undefined, limit: 100 } }),
     enabled: !!companyId,
-    staleTime: 10_000,
-    refetchInterval: 30_000,
+    staleTime: 60_000,
+    // Egress: polling espaçado e apenas com a aba em foco.
+    refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   });
 }
 

@@ -25,7 +25,8 @@ export function usePdvSaleWatch({
   saleId,
   enabled,
   onPaid,
-  pollMs = 5_000,
+  // Egress: o Realtime é a via principal; o poll é apenas rede de segurança.
+  pollMs = 30_000,
 }: Options) {
   const onPaidRef = useRef(onPaid);
   useEffect(() => {
