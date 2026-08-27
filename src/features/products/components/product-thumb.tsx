@@ -75,7 +75,20 @@ export function ProductThumb({
       aria-hidden={!url}
     >
       {url ? (
-        <img src={url} alt={alt} className="h-full w-full object-cover" loading="lazy" />
+        <img
+          src={url}
+          alt={alt}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            // Se a transformação de imagem não estiver disponível no plano,
+            // cai para a URL original do objeto.
+            const img = e.currentTarget;
+            const original = withoutImageTransform(img.src);
+            if (original !== img.src) img.src = original;
+          }}
+        />
       ) : (
         <Package className={cn("text-muted-foreground", ICON_CLASS[size])} />
       )}
