@@ -62,20 +62,41 @@ export const productImagesService = {
     if (error) throw error;
   },
 
-  async signedUrl(path: string, expiresIn = 3600) {
+  async signedUrl(path: string, expiresIn = 3600, width?: number) {
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(path, expiresIn);
-    if (error) throw error;
+      .createSignedUrl(
+        path,
+        expiresIn,
+        width ? { transform: { width, resize: "contain", quality: 70 } } : undefined,
+      );
+    if (error) {
+      if (!width) throw error;
+      // Transformação de imagem é recurso de plano pago — fallback silencioso.
+      return this.signedUrl(path, expiresIn);
+    }
     return data.signedUrl;
   },
 
-  async signedUrls(paths: string[], expiresIn = 3600) {
+  /**
+   * Assina URLs em lote. Quando `width` é informado, pede a versão
+   * redimensionada (e WebP automático) ao Storage — reduz drasticamente o
+   * egress em listagens. Se a transformação não estiver disponível no plano,
+   * faz fallback para a URL original.
+   */
+  async signedUrls(paths: string[], expiresIn = 3600, width?: number) {
     if (paths.length === 0) return [] as { path: string; signedUrl: string }[];
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrls(paths, expiresIn);
-    if (error) throw error;
+      .createSignedUrls(
+        paths,
+        expiresIn,
+        width ? { transform: { width, resize: "contain", quality: 70 } } : undefined,
+      );
+    if (error) {
+      if (!width) throw error;
+      return this.signedUrls(paths, expiresIn);
+    }
     return (data ?? [])
       .filter((d) => d.signedUrl)
       .map((d) => ({ path: d.path ?? "", signedUrl: d.signedUrl as string }));
