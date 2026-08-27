@@ -50,7 +50,10 @@ export function ProductThumb({
   className,
 }: Props) {
   const shouldFetch = signedUrl === undefined && !!path;
-  const { data: signed = [] } = useSignedImageUrls(shouldFetch ? [path!] : []);
+  const { data: signed = [] } = useSignedImageUrls(
+    shouldFetch ? [path!] : [],
+    THUMB_WIDTH[size],
+  );
   const url = signedUrl ?? signed[0]?.signedUrl ?? image_url ?? null;
 
   return (
