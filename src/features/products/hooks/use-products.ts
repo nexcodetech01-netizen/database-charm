@@ -93,9 +93,19 @@ export function useUpdateProduct() {
         qc.setQueryData(productsKeys.detail(vars.id), updated);
       }
       
-      // Invalidação instantânea do cache da listagem
-      await qc.invalidateQueries({ queryKey: productsKeys.all });
-      
+      // Invalidação da listagem + detalhe do produto alterado.
+      // Egress: só refazemos a busca da listagem que está montada na tela.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["products", "list"] }),
+        qc.invalidateQueries({ queryKey: productsKeys.metrics(updated?.company_id ?? "") }),
+        qc.invalidateQueries({
+          queryKey: productsKeys.detail(vars.id),
+          refetchType: "active",
+        }),
+        qc.invalidateQueries({ queryKey: ["inventory"], refetchType: "active" }),
+        qc.invalidateQueries({ queryKey: ["inv-product-picker"], refetchType: "active" }),
+      ]);
+
       // Se o produto alterado afeta o catálogo (catalog channel)
       const currentChannels = (updated?.sales_channels || []) as string[];
       if (currentChannels.includes('catalog')) {
@@ -108,15 +118,6 @@ export function useUpdateProduct() {
           console.warn("[Catalog] Invalidation error:", err);
         }
       }
-      
-      await Promise.all([
-        qc.invalidateQueries({
-          queryKey: productsKeys.detail(vars.id),
-          refetchType: "all",
-        }),
-        qc.invalidateQueries({ queryKey: ["inventory"], refetchType: "all" }),
-        qc.invalidateQueries({ queryKey: ["inv-product-picker"], refetchType: "all" }),
-      ]);
     },
   });
 }
