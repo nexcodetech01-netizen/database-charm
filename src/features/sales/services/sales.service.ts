@@ -654,7 +654,7 @@ export const salesService = {
     const headerPayload = { ...header, ...totals };
     log("PAYLOAD sales", headerPayload);
 
-    const { data: created, error } = await supabase
+    let { data: created, error } = await supabase
       .from("sales")
       .insert({
         ...headerPayload,
@@ -662,6 +662,66 @@ export const salesService = {
       })
       .select()
       .single();
+
+    // BUG-VENDA-DUPLICADA (2026-08-27): número de venda gerado uma única vez
+    // no navegador (nextPdvSaleNumber). Se a rede cair/trocar bem no momento
+    // do INSERT, o navegador pode não receber a confirmação mesmo a venda
+    // tendo sido gravada — e um reenvio (manual ou automático) com o MESMO
+    // número esbarra no constraint único "sales_company_id_number_key".
+    // Antes de tratar isso como erro, checamos se a venda já existe.
+    if (error?.code === "23505" && error.message?.includes("sales_company_id_number_key")) {
+      const { data: existing } = await supabase
+        .from("sales")
+        .select()
+        .eq("company_id", headerPayload.company_id)
+        .eq("number", headerPayload.number)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      const sameTotal =
+        existing && Math.abs(Number(existing.grand_total) - Number(headerPayload.grand_total)) < 0.01;
+
+      if (existing && sameTotal) {
+        // Reenvio após instabilidade de rede: a venda original já existe e
+        // bate com o total esperado. Trata como sucesso — NÃO duplica.
+        // Se os itens já foram gravados na tentativa original, retorna
+        // direto: reinserir aqui duplicaria sale_items (e estoque/pagamento
+        // junto). Só segue o fluxo normal (que insere itens) se, por algum
+        // motivo raro, a venda foi criada mas os itens não chegaram a ser
+        // gravados na tentativa anterior.
+        const { count: existingItemsCount } = await supabase
+          .from("sale_items")
+          .select("id", { count: "exact", head: true })
+          .eq("sale_id", existing.id);
+        log("RECUPERADO reenvio pós-queda de rede", {
+          id: existing.id,
+          number: existing.number,
+          existingItemsCount,
+        });
+        if ((existingItemsCount ?? 0) > 0) {
+          return existing as typeof created;
+        }
+        created = existing as typeof created;
+        error = null;
+      } else {
+        // Colisão real (duas vendas diferentes geraram o mesmo timestamp):
+        // tenta novamente uma única vez com um número alternativo.
+        const retryNumber = `${headerPayload.number}-${Math.floor(100 + Math.random() * 900)}`;
+        log("RETRY colisão real de número", { original: headerPayload.number, retryNumber });
+        const retry = await supabase
+          .from("sales")
+          .insert({
+            ...headerPayload,
+            number: retryNumber,
+            customer_id: headerPayload.customer_id || null,
+          })
+          .select()
+          .single();
+        created = retry.data;
+        error = retry.error;
+      }
+    }
+
     if (error || !created) {
       // eslint-disable-next-line no-console
       console.error(`[${trace}] ERRO insert sales`, {
