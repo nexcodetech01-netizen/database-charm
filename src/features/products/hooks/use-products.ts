@@ -21,6 +21,9 @@ export function useProductsList(companyId: string, filters: ProductListFilters) 
   return useQuery({
     queryKey: productsKeys.list(companyId, filters),
     queryFn: () => productsService.list(companyId, filters),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 
@@ -28,6 +31,9 @@ export function useProductMetrics(companyId: string) {
   return useQuery({
     queryKey: productsKeys.metrics(companyId),
     queryFn: () => productsService.metrics(companyId),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 
