@@ -186,11 +186,18 @@ export function useProductImages(productId: string) {
   });
 }
 
-export function useSignedImageUrls(paths: string[]) {
+/**
+ * Assina URLs de imagens. Informe `width` em listagens para receber a versão
+ * redimensionada (WebP automático) e economizar egress.
+ */
+export function useSignedImageUrls(paths: string[], width?: number) {
   return useQuery({
-    queryKey: ["signed-urls", ...paths],
-    queryFn: () => productImagesService.signedUrls(paths),
+    queryKey: ["signed-urls", width ?? "full", ...paths],
+    queryFn: () => productImagesService.signedUrls(paths, 3600, width),
     enabled: paths.length > 0,
-    staleTime: 30 * 60 * 1000,
+    staleTime: 50 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
