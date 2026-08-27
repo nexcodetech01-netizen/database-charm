@@ -18,6 +18,15 @@ const ICON_CLASS = {
   xl: "h-10 w-10",
 } as const;
 
+/** Largura pedida ao Storage por tamanho (px, já com folga para telas retina). */
+const THUMB_WIDTH = {
+  xs: 96,
+  sm: 128,
+  md: 192,
+  lg: 300,
+  xl: 480,
+} as const;
+
 export type ProductThumbSize = keyof typeof SIZE_CLASS;
 
 interface Props {
