@@ -62,43 +62,36 @@ export const productImagesService = {
     if (error) throw error;
   },
 
-  async signedUrl(path: string, expiresIn = 3600, width?: number) {
+  async signedUrl(path: string, expiresIn = 3600, width?: number): Promise<string> {
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(
-        path,
-        expiresIn,
-        width ? { transform: { width, resize: "contain", quality: 70 } } : undefined,
-      );
-    if (error) {
-      if (!width) throw error;
-      // Transformação de imagem é recurso de plano pago — fallback silencioso.
-      return this.signedUrl(path, expiresIn);
-    }
-    return data.signedUrl;
+      .createSignedUrl(path, expiresIn);
+    if (error) throw error;
+    return width ? withImageTransform(data.signedUrl, width) : data.signedUrl;
   },
 
   /**
-   * Assina URLs em lote. Quando `width` é informado, pede a versão
-   * redimensionada (e WebP automático) ao Storage — reduz drasticamente o
-   * egress em listagens. Se a transformação não estiver disponível no plano,
-   * faz fallback para a URL original.
+   * Assina URLs em lote. Quando `width` é informado, a URL aponta para o
+   * endpoint de transformação do Storage (redimensionamento + WebP automático
+   * conforme o Accept do navegador) — reduz drasticamente o egress em listagens.
    */
-  async signedUrls(paths: string[], expiresIn = 3600, width?: number) {
-    if (paths.length === 0) return [] as { path: string; signedUrl: string }[];
+  async signedUrls(
+    paths: string[],
+    expiresIn = 3600,
+    width?: number,
+  ): Promise<{ path: string; signedUrl: string }[]> {
+    if (paths.length === 0) return [];
     const { data, error } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrls(
-        paths,
-        expiresIn,
-        width ? { transform: { width, resize: "contain", quality: 70 } } : undefined,
-      );
-    if (error) {
-      if (!width) throw error;
-      return this.signedUrls(paths, expiresIn);
-    }
+      .createSignedUrls(paths, expiresIn);
+    if (error) throw error;
     return (data ?? [])
       .filter((d) => d.signedUrl)
-      .map((d) => ({ path: d.path ?? "", signedUrl: d.signedUrl as string }));
+      .map((d) => ({
+        path: d.path ?? "",
+        signedUrl: width
+          ? withImageTransform(d.signedUrl as string, width)
+          : (d.signedUrl as string),
+      }));
   },
 };
