@@ -90,7 +90,8 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
       ),
     [rows],
   );
-  const { data: signed = [] } = useSignedImageUrls(coverPaths);
+  // 300px é suficiente para a miniatura da tabela (renderizada a 40px @3x).
+  const { data: signed = [] } = useSignedImageUrls(coverPaths, 300);
   const urlByPath = useMemo(
     () => new Map(signed.map((s) => [s.path, s.signedUrl] as const)),
     [signed],
