@@ -84,6 +84,26 @@ export async function loadCollectionPagePayload(params: {
   slug: string;
   isPreview: boolean;
 }): Promise<CollectionPageResult> {
+  try {
+    return await loadCollectionPagePayloadInner(params);
+  } catch (err) {
+    // BUG-CATALOGO-500 (2026-08-27): a função inteira rodava sem try/catch —
+    // qualquer exceção (banco, storage, config ausente) virava um 500 cru,
+    // sem corpo JSON e sem stack visível pro usuário nem pro dev server.
+    // eslint-disable-next-line no-console
+    console.error(`[catalog:${params.slug}] ERRO ao montar payload público`, err);
+    return {
+      ok: false,
+      status: 500,
+      error: err instanceof Error ? err.message : "Erro ao carregar o catálogo.",
+    };
+  }
+}
+
+async function loadCollectionPagePayloadInner(params: {
+  slug: string;
+  isPreview: boolean;
+}): Promise<CollectionPageResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: col, error: colErr } = await supabaseAdmin
