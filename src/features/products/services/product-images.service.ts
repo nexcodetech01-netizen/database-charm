@@ -2,6 +2,32 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "product-images";
 
+/**
+ * Converte uma URL assinada de objeto na variante servida pelo endpoint de
+ * transformação de imagem do Supabase (mesmo token), pedindo largura fixa,
+ * qualidade reduzida e formato automático (WebP quando suportado).
+ *
+ * Se a transformação não estiver habilitada no projeto, a imagem original
+ * continua acessível pela URL de objeto — por isso o consumidor deve tratar
+ * `onError` caindo para a URL sem transformação quando necessário.
+ */
+function withImageTransform(signedUrl: string, width: number): string {
+  if (!signedUrl || !signedUrl.includes("/object/sign/")) return signedUrl;
+  const rendered = signedUrl.replace("/object/sign/", "/render/image/sign/");
+  const sep = rendered.includes("?") ? "&" : "?";
+  return `${rendered}${sep}width=${width}&resize=contain&quality=70`;
+}
+
+/** Reverte a URL transformada para a URL do objeto original (fallback). */
+export function withoutImageTransform(url: string): string {
+  if (!url.includes("/render/image/sign/")) return url;
+  const [base, query = ""] = url.split("?");
+  const params = new URLSearchParams(query);
+  const token = params.get("token");
+  const objectUrl = base.replace("/render/image/sign/", "/object/sign/");
+  return token ? `${objectUrl}?token=${token}` : objectUrl;
+}
+
 export const productImagesService = {
   bucket: BUCKET,
 
