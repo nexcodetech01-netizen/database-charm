@@ -1,6 +1,7 @@
 import { Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedImageUrls } from "../hooks/use-products";
+import { withoutImageTransform } from "../services/product-images.service";
 
 const SIZE_CLASS = {
   xs: "h-8 w-8 rounded-md",
