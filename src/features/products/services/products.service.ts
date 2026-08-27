@@ -26,7 +26,7 @@ const productCreateSchema = z
 const LIST_SELECT = `
   id, sku, name, brand, price, stock, min_stock, unit, status,
   category_id, supplier_id, cover_image_path, image_url, ml_item_id, ml_permalink,
-  created_at, updated_at, company_id, description, sales_channels, product_type,
+  created_at, updated_at, company_id, product_type,
   category:product_categories(id, name),
   supplier:product_suppliers(id, name)
 `;
