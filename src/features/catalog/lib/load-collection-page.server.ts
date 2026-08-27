@@ -90,12 +90,29 @@ export async function loadCollectionPagePayload(params: {
     // BUG-CATALOGO-500 (2026-08-27): a função inteira rodava sem try/catch —
     // qualquer exceção (banco, storage, config ausente) virava um 500 cru,
     // sem corpo JSON e sem stack visível pro usuário nem pro dev server.
+    //
+    // Causa mais provável desse 500 específico: `supabaseAdmin` (client.server.ts)
+    // lança exceção na primeira chamada quando as secrets SUPABASE_URL /
+    // MY_SUPABASE_SERVICE_KEY (ou SUPABASE_SERVICE_ROLE_KEY) não estão
+    // configuradas no ambiente. Essa é a ÚNICA rota do app que depende do
+    // cliente administrativo — por isso só ela quebra.
     // eslint-disable-next-line no-console
     console.error(`[catalog:${params.slug}] ERRO ao montar payload público`, err);
+
+    const isAdminClientMissing =
+      err instanceof Error && err.message.includes("Operação administrativa indisponível");
+
     return {
       ok: false,
-      status: 500,
-      error: err instanceof Error ? err.message : "Erro ao carregar o catálogo.",
+      // Sem a chave de serviço configurada, a home pública não pode
+      // funcionar de jeito nenhum — melhor devolver 404 (página não
+      // encontrada) do que um 500 "quebrado" pro visitante do site.
+      status: isAdminClientMissing ? 404 : 500,
+      error: isAdminClientMissing
+        ? "not_found"
+        : err instanceof Error
+          ? err.message
+          : "Erro ao carregar o catálogo.",
     };
   }
 }
