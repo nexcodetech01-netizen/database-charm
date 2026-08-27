@@ -136,6 +136,27 @@ BEGIN
      WHERE id = v_original_ft_id;
   END IF;
 
+  -- CORREÇÃO 2 (2026-08-26): sem isso, cancelar o lançamento original
+  -- (acima) faz o saldo restante do crediário DESAPARECER de "A
+  -- Receber" por completo — o saldo passa a existir só dentro do
+  -- módulo de Crediário, invisível no resumo financeiro geral. Cria
+  -- um lançamento NOVO, com o valor CERTO (só o saldo restante, não o
+  -- total original), ligado à parcela do crediário — assim o "A
+  -- Receber" mostra o valor real que falta receber, sem duplicar nem
+  -- esconder.
+  IF v_balance > 0 AND v_installment_id IS NOT NULL THEN
+    INSERT INTO public.financial_transactions(
+      company_id, type, description, amount, transaction_date, due_date,
+      status, source, reference_id, reference_number, created_by
+    )
+    VALUES (
+      v_company_id, 'income',
+      'Venda Nº ' || COALESCE(v_sale.number, v_sale.id::text) || ' — Saldo do crediário',
+      v_balance, CURRENT_DATE, v_due_date,
+      'pending', 'credit_payment', v_installment_id, v_sale.number, auth.uid()
+    );
+  END IF;
+
   UPDATE public.sales SET payment_method='credit', status=CASE WHEN v_balance=0 THEN 'paid' ELSE 'partially_paid' END, paid_at=CASE WHEN v_balance=0 THEN now() ELSE paid_at END, updated_at=now() WHERE id=v_sale_id;
 
   INSERT INTO public.sale_events(sale_id,company_id,user_id,event_type,reason,payload)
