@@ -57,31 +57,54 @@ export function BellaAskPanel() {
 
     try {
       // Step A: Attempt with the new Operational Agent Runtime (VIA SERVER FUNCTION)
-      const runtimeResult = await handleAgentRuntime({
-        data: {
-          message,
-          ctx: {
-            companyId,
-          },
-        }
-      });
-
-      if (runtimeResult && typeof runtimeResult === 'object' && 'response' in runtimeResult) {
-        const response = (runtimeResult as any).response;
-        if (response) {
-          if (response.code === "needs_confirmation") {
-            setPendingAction({
-              intent: response.intent,
-              plan: response.plan,
-            });
-            return;
+      //
+      // BUG ENCONTRADO E CORRIGIDO (2026-08-27): esse passo e o "Step B"
+      // (sistema antigo, mais simples e confiável) ficavam dentro do
+      // MESMO try/catch — então se o agente NOVO desse qualquer erro
+      // (não só "não entendi a pergunta", mas um erro de verdade — ex.:
+      // sessão expirada, falha de rede, bug interno), o código pulava
+      // direto pro erro genérico e NUNCA CHEGAVA a tentar o sistema
+      // antigo, mesmo ele estando pronto e funcionando. Isso quebrava
+      // TODA pergunta feita à Bella sempre que o agente novo tropeçasse
+      // em qualquer coisa, por menor que fosse.
+      //
+      // Agora o agente novo tem seu PRÓPRIO try/catch: se ele falhar,
+      // registra o erro no console (pra investigar depois) e deixa o
+      // fluxo continuar pro sistema antigo normalmente, do mesmo jeito
+      // que já acontece quando o agente novo simplesmente "não entende"
+      // a pergunta.
+      let runtimeHandled = false;
+      try {
+        const runtimeResult = await handleAgentRuntime({
+          data: {
+            message,
+            ctx: {
+              companyId,
+            },
           }
+        });
 
-          // Operational intent handled
-          toast.success(response.message);
-          return;
+        if (runtimeResult && typeof runtimeResult === 'object' && 'response' in runtimeResult) {
+          const response = (runtimeResult as any).response;
+          if (response) {
+            if (response.code === "needs_confirmation") {
+              setPendingAction({
+                intent: response.intent,
+                plan: response.plan,
+              });
+              runtimeHandled = true;
+            } else {
+              // Operational intent handled
+              toast.success(response.message);
+              runtimeHandled = true;
+            }
+          }
         }
+      } catch (agentError) {
+        console.error("[BellaAskPanel] Agente novo falhou, caindo pro sistema antigo:", agentError);
       }
+
+      if (runtimeHandled) return;
 
       // Step B: Fallback to the legacy Bella Contadora (Financial/Accounting)
       const legacyAnswer = await askBella(message, companyId, {
