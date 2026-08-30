@@ -481,9 +481,7 @@ export function CheckoutDialog({
   const { data: cashStillOpen } = useQuery({
     queryKey: ["checkout", "cash-open", saleId],
     enabled: open && !confirmed,
-    // Egress: verificação a cada 60s (o banco continua sendo o guard final).
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data: s, error } = await supabase
@@ -1713,7 +1711,18 @@ export function CheckoutDialog({
       />
       <SaleCompletedDialog
         open={showCompleted}
-        onOpenChange={setShowCompleted}
+        onOpenChange={(v) => {
+          setShowCompleted(v);
+          // BUG ENCONTRADO E CORRIGIDO (2026-08-27): se essa tela de
+          // "venda concluída" for fechada de qualquer jeito que NÃO
+          // seja o botão "Nova Venda" (ex.: o X, clicar fora, tecla
+          // Esc), a tela de CHECKOUT por trás nunca era avisada pra
+          // fechar — ficava aberta e exposta, com os dados da venda
+          // que já terminou, parecendo que "o PDV não fechou depois
+          // de finalizar a venda". Agora, fechar essa tela de
+          // qualquer jeito também fecha o checkout por trás.
+          if (!v) onOpenChange(false);
+        }}
         title={method === "credit" ? "Venda no Crediário Registrada com Sucesso!" : undefined}
         description={method === "credit" ? "O título foi gerado no Contas a Receber do cliente." : undefined}
         onPrintReceipt={() => setShowReceipt(true)}
