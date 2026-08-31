@@ -25,10 +25,17 @@ const PLANS: Record<Exclude<BellaIntentId, "desconhecida">, AccountingSkillId[]>
   ],
   /** Sprint 6.3 — "como está meu estoque?": só skills já existentes. */
   situacao_estoque: [
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-27): essa intenção rodava 4
+    // habilidades juntas — mas só "consultar_produtos" responde de
+    // verdade sobre estoque/produtos parados. As outras 3
+    // (consultar_alertas, consultar_recomendacoes,
+    // consultar_notificacoes) são genéricas e devolvem um resumo da
+    // empresa INTEIRA (caixa, recebíveis, pró-labore, etc.) — por
+    // isso perguntar "quais produtos estão parados" respondia um
+    // apanhado de assuntos sem relação nenhuma com a pergunta.
+    // Removidas as 3 habilidades genéricas, mantida só a que
+    // realmente fala sobre estoque.
     "consultar_produtos",
-    "consultar_alertas",
-    "consultar_recomendacoes",
-    "consultar_notificacoes",
   ],
   /** Sprint 6.4 — "como estão minhas vendas?": só skills já existentes. */
   situacao_vendas: [
