@@ -3,8 +3,10 @@ import { z } from "zod";
 import { handleWithAgentRuntime } from "./runtime";
 import { assertCompanyAccess } from "@/lib/company-resolver.server";
 import { fetchUserPermissions } from "@/features/rbac/lib/fetch-permissions";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     z.object({
       message: z.string(),
@@ -49,6 +51,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
   });
 
 export const executeAgentActionFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator(
     z.object({
       intent: z.any(),
