@@ -30,7 +30,7 @@ export const handleAgentRuntimeFn = createServerFn({ method: "POST" })
     await assertCompanyAccess(supabaseAdmin, userId, data.ctx.companyId);
 
     // 4. Fetch permissions
-    const perms = await fetchUserPermissions(userId, data.ctx.companyId);
+    const perms = await fetchUserPermissions(userId, data.ctx.companyId, supabaseAdmin);
     const userSupabase = (context as any).supabase;
 
     // 5. Execute planning
@@ -71,7 +71,7 @@ export const executeAgentActionFn = createServerFn({ method: "POST" })
 
     await assertCompanyAccess(supabaseAdmin, userId, data.ctx.companyId);
 
-    const perms = await fetchUserPermissions(userId, data.ctx.companyId);
+    const perms = await fetchUserPermissions(userId, data.ctx.companyId, supabaseAdmin);
     const userSupabase = (context as any).supabase;
 
     // EXECUÇÃO REAL
