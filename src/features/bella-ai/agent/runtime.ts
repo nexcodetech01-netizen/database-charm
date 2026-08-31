@@ -117,17 +117,36 @@ export async function handleWithAgentRuntime(
     });
 
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
-      
-      const detIntent = detectDeterministicIntent(input.message);
-      
-      intent = {
-        id: aiResult.intent,
-        confidence: aiResult.confidence,
-        entities: aiResult.parameters,
-        raw: input.message,
-        confirmationRequired: false,
-        source: "llm"
-      };
+
+      // BUG DE QUALIDADE ENCONTRADO E CORRIGIDO (2026-08-27): não
+      // existia nenhum limite mínimo de confiança pra tratar um
+      // "palpite" da IA como certeza — mesmo uma confiança bem baixa
+      // (ex.: 0.2, a IA "achando" meio sem certeza) era tratada
+      // exatamente igual a uma confiança alta (0.95), sempre seguindo
+      // em frente com aquele intent. (A confirmação de segurança pra
+      // ações que MUDAM dado — criar cliente, mudar preço — já é
+      // tratada corretamente à parte, por cada habilidade
+      // individualmente, então isso já estava protegido; o que
+      // faltava era simplesmente não agir sobre um palpite fraco.)
+      //
+      // Corrigido: confiança abaixo de 0.75 agora é tratada como "não
+      // tenho certeza o bastante" — cai pro motor determinístico (mais
+      // simples e prévisível) em vez de seguir com um palpite fraco da
+      // IA generativa.
+      const MIN_LLM_CONFIDENCE = 0.75;
+
+      if (aiResult.confidence < MIN_LLM_CONFIDENCE) {
+        intent = detectDeterministicIntent(input.message);
+      } else {
+        intent = {
+          id: aiResult.intent,
+          confidence: aiResult.confidence,
+          entities: aiResult.parameters,
+          raw: input.message,
+          confirmationRequired: false,
+          source: "llm"
+        };
+      }
     } else {
       intent = detectDeterministicIntent(input.message);
     }
