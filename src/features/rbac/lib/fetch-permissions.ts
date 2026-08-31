@@ -1,4 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as browserSupabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type PermissionsResult = {
   companyId: string | null;
@@ -14,11 +15,30 @@ export type PermissionsResult = {
  * Regras equivalentes ao SQL `public.has_permission()`:
  * - owner (companies.owner_id) recebe "*" (curto-circuito).
  * - demais usuários: união das permissões dos roles em user_roles.
+ *
+ * BUG ENCONTRADO E CORRIGIDO (2026-08-27): essa função sempre usava o
+ * cliente Supabase "genérico" (o mesmo do navegador) — isso funciona
+ * na tela normal (o navegador já tem a sessão de quem está logado),
+ * mas quando chamada a partir do SERVIDOR (ex.: pelo runtime da Bella,
+ * depois da correção de autenticação de hoje), esse cliente genérico
+ * NÃO tem a sessão de ninguém — roda como usuário anônimo, sem
+ * permissão de ler `profiles`/`user_roles`/`companies` pra descobrir
+ * quem é o dono. Resultado: mesmo a DONA da conta era tratada como
+ * "sem nenhuma permissão", negando qualquer ação.
+ *
+ * Corrigido: a função agora aceita um cliente Supabase específico como
+ * parâmetro opcional (`client`) — quem chama do servidor deve passar o
+ * cliente autenticado da requisição (`context.supabase`, já correto
+ * desde a correção de middleware de hoje). Sem passar nada, continua
+ * usando o cliente do navegador (comportamento igual a antes, pras
+ * telas que já funcionavam certo).
  */
 export async function fetchUserPermissions(
   userId: string | null | undefined,
   explicitCompanyId?: string | null,
+  client: SupabaseClient = browserSupabase,
 ): Promise<PermissionsResult> {
+  const supabase = client;
   if (!userId) {
     return { companyId: null, isOwner: false, permissions: new Set<string>() };
   }
