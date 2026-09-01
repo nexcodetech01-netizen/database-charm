@@ -222,8 +222,42 @@ export const financeService = {
           .map((r) => (r as any).reference_id as string),
       ),
     ];
-    const salesRes = saleIds.length
-      ? await supabase.from("sales").select("id, customer_id").in("id", saleIds)
+
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-31): o "saldo do crediário"
+    // (lançamento criado ao converter uma venda pra crediário —
+    // `source = 'credit_payment'`, `reference_id` apontando pra uma
+    // PARCELA, não pra uma venda direto) nunca tinha nome de cliente
+    // resolvido — só os de `source = 'sale'` eram tratados acima. Sem
+    // o nome, esses lançamentos ficam sem aparecer em buscas por nome
+    // de cliente na tela de Financeiro, e o título mostra só o número
+    // da venda. Corrigido buscando a cadeia parcela → conta de
+    // crediário → venda → cliente, mesma lógica de duas etapas já
+    // usada acima.
+    const installmentIds = [
+      ...new Set(
+        rows.filter((r) => (r as any).source === "credit_payment" && (r as any).reference_id)
+          .map((r) => (r as any).reference_id as string),
+      ),
+    ];
+    const installmentsRes = installmentIds.length
+      ? await supabase
+          .from("credit_installments")
+          .select("id, credit_account_id")
+          .in("id", installmentIds)
+      : { data: [] as { id: string; credit_account_id: string }[] };
+    const installments = installmentsRes.data ?? [];
+    const creditAccountIds = [...new Set(installments.map((i) => i.credit_account_id).filter(Boolean))];
+    const creditAccountsRes = creditAccountIds.length
+      ? await supabase.from("credit_accounts").select("id, sale_id").in("id", creditAccountIds)
+      : { data: [] as { id: string; sale_id: string }[] };
+    const creditAccounts = creditAccountsRes.data ?? [];
+    const creditSaleIds = [...new Set(creditAccounts.map((ca) => ca.sale_id).filter(Boolean))];
+
+    const salesRes = saleIds.length || creditSaleIds.length
+      ? await supabase
+          .from("sales")
+          .select("id, customer_id")
+          .in("id", [...new Set([...saleIds, ...creditSaleIds])])
       : { data: [] as { id: string; customer_id: string | null }[] };
     const sales = salesRes.data ?? [];
     const customerIds = [...new Set(sales.map((s) => s.customer_id).filter(Boolean))] as string[];
@@ -234,18 +268,29 @@ export const financeService = {
     const customerNameBySaleId = new Map(
       sales.map((s) => [s.id, s.customer_id ? customerNameById.get(s.customer_id) ?? null : null]),
     );
+    const saleIdByCreditAccountId = new Map(creditAccounts.map((ca) => [ca.id, ca.sale_id]));
+    const creditAccountIdByInstallmentId = new Map(
+      installments.map((i) => [i.id, i.credit_account_id]),
+    );
 
     return {
       rows: rows.map<TransactionWithMeta>((r) => {
         const cat = (r as any).category;
-        const isSale = (r as any).source === "sale" && (r as any).reference_id;
+        const source = (r as any).source;
+        const refId = (r as any).reference_id;
+        let customerName: string | null = null;
+        if (source === "sale" && refId) {
+          customerName = customerNameBySaleId.get(refId) ?? null;
+        } else if (source === "credit_payment" && refId) {
+          const creditAccountId = creditAccountIdByInstallmentId.get(refId);
+          const saleId = creditAccountId ? saleIdByCreditAccountId.get(creditAccountId) : undefined;
+          customerName = saleId ? customerNameBySaleId.get(saleId) ?? null : null;
+        }
         return {
           ...r,
           account_name: (r as any).financial_accounts?.name ?? null,
           category_name: cat?.name ?? (r as any).category_name ?? null,
-          customer_name: isSale
-            ? customerNameBySaleId.get((r as any).reference_id) ?? null
-            : null,
+          customer_name: customerName,
         };
       }),
       total: count ?? 0,
