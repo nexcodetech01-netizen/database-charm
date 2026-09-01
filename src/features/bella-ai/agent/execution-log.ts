@@ -2,8 +2,17 @@
  * ExecutionLogger — persistência da auditoria em `public.bella_executions`.
  *
  * Falhas ao gravar o log NUNCA propagam para o pipeline principal.
+ *
+ * BUG ENCONTRADO E CORRIGIDO (2026-09-01): usava o cliente Supabase
+ * genérico do navegador — rodando aqui, do servidor (dentro do
+ * pipeline da Bella), esse cliente não tem sessão nenhuma, roda como
+ * anônimo, e a inserção sempre falhava com 401 (confirmado nos logs
+ * do Supabase: "POST | 401 | .../bella_executions"). O erro era
+ * engolido silenciosamente (por design, pra não derrubar o agente) —
+ * então o histórico de execuções da Bella nunca foi realmente
+ * gravado, sem ninguém perceber. Trocado pro cliente administrativo.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { AgentContext, AgentIntent, AgentPlanStep } from "./types";
 import type { BellaSkillResult } from "../skills/types";
 
@@ -22,7 +31,7 @@ export interface ExecutionLogInput {
 export async function logAgentExecution(input: ExecutionLogInput): Promise<void> {
   try {
     const durationMs = input.finishedAt.getTime() - input.startedAt.getTime();
-    await supabase.from("bella_executions").insert({
+    await supabaseAdmin.from("bella_executions").insert({
       company_id: input.ctx.companyId,
       user_id: input.ctx.userId ?? null,
       conversation_id: input.ctx.conversationId ?? null,
