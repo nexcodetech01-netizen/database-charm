@@ -157,8 +157,11 @@ export async function exportSessionReportPDF(
   const diff = Number(session.difference ?? 0);
   const cashRows: [string, string][] = [
     ["Saldo inicial", formatCurrency(summary.openingBalance)],
-    ["Vendas em dinheiro (A)", formatCurrency(summary.cashSales)],
-    ["Recebimentos em dinheiro (B)", formatCurrency(summary.cashReceipts)],
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-31): as linhas "(A)" e "(B)"
+    // mostravam o mesmo valor (erro de cópia lendo o mesmo campo
+    // duas vezes) — e a consulta de origem nem separa essas duas
+    // coisas de verdade. Unificado numa linha só.
+    ["Dinheiro recebido (vendas e cobranças)", formatCurrency(summary.cashSales)],
     ["Suprimentos manuais", formatCurrency(summary.cashIn)],
     ["Sangrias manuais", `- ${formatCurrency(summary.cashOut)}`],
     [

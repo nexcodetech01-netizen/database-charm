@@ -221,11 +221,20 @@ export function CloseSessionDialog({ open, onOpenChange, session, onClosed }: Pr
             </div>
             <div className="grid gap-1.5">
               <Row label="Troco inicial" value={formatCurrency(summary?.openingBalance ?? 0)} />
-              <Row label="Vendas em dinheiro" value={formatCurrency(summary?.cashSales ?? 0)} />
-              <Row
-                label="Recebimentos em dinheiro"
-                value={formatCurrency(summary?.cashReceipts ?? 0)}
-              />
+              {/* BUG ENCONTRADO E CORRIGIDO (2026-08-31): existiam
+                  DUAS linhas ("Vendas em dinheiro" e "Recebimentos em
+                  dinheiro") mostrando o MESMO valor — o código que
+                  buscava o 2º campo tinha um erro de cópia e lia o
+                  mesmo dado do 1º campo por engano. Investigando mais
+                  fundo, a consulta que alimenta essa tela nem separa
+                  essas duas coisas de verdade (soma tudo que foi pago
+                  em dinheiro junto, seja venda na hora ou cobrança de
+                  conta antiga) — então mostrar como "duas linhas
+                  diferentes" já era enganoso mesmo antes do erro de
+                  cópia. Unificado numa linha só, honesta com o que
+                  realmente é medido. O total "Dinheiro esperado"
+                  abaixo não muda — já vinha somando isso uma vez só. */}
+              <Row label="Dinheiro recebido (vendas e cobranças)" value={formatCurrency(summary?.cashSales ?? 0)} />
               <Row label="Suprimentos" value={formatCurrency(summary?.cashIn ?? 0)} />
               <Row label="Sangrias" value={`- ${formatCurrency(summary?.cashOut ?? 0)}`} />
             </div>

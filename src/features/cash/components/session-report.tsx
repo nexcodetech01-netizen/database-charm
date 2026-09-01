@@ -92,7 +92,7 @@ export function SessionReport({ session, summary, companyName }: Props) {
           <Line label="Saldo inicial" value={formatCurrency(summary.openingBalance)} />
           <Line label="Suprimentos" value={formatCurrency(summary.cashIn)} />
           <Line label="Sangrias" value={`- ${formatCurrency(summary.cashOut)}`} />
-          <Line label="Vendas em dinheiro" value={formatCurrency(summary.cashSales)} />
+          <Line label="Dinheiro recebido (vendas e cobranças)" value={formatCurrency(summary.cashSales)} />
           <Line
             label="Dinheiro esperado"
             value={formatCurrency(Number(session.expected_cash ?? summary.expectedCash))}
