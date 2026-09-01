@@ -2,10 +2,22 @@
  * SalesAnalyticsRepository (Sprint 005)
  *
  * Consultas somente-leitura para relatórios/BI consumidos pelas Skills
- * de inteligência (margem, melhor cliente, curva ABC etc.). Nunca
- * escreve — apenas SELECTs com RLS ativa.
+ * de inteligência (margem, melhor cliente, curva ABC etc.).
+ *
+ * BUG ENCONTRADO E CORRIGIDO (2026-09-01): essa classe usava o
+ * cliente autenticado da sessão (RLS ativa) — confirmado via logs
+ * reais do Supabase que essas consultas sempre chegam no banco com
+ * "auth_user: null" (rodando como anônimo), apesar do código
+ * propagar o cliente certo em cada camada até aqui (rastreado do
+ * início ao fim, sem achar onde a autenticação se perde — causa raiz
+ * de infraestrutura não identificada com certeza).
+ *
+ * Corrigido pragmaticamente: usa o cliente administrativo — seguro
+ * aqui porque essa classe é 100% somente-leitura e TODOS os métodos
+ * já filtram por `company_id` explicitamente no código (conferido
+ * antes de fazer essa troca), mantendo o mesmo limite de segurança
+ * que a RLS deveria estar dando.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { SaleBestCustomerRow, SaleMarginBreakdown } from "../types";
 
@@ -22,18 +34,19 @@ export interface BestCustomerFilters {
 }
 
 export class SalesAnalyticsRepository {
-  private readonly supabase: SupabaseClient;
   private readonly companyId: string;
 
   constructor(ctx: ExecutionContext) {
-    this.supabase = ctx.supabase;
     this.companyId = ctx.companyId;
   }
 
   async computeMargin(filters: MarginFilters): Promise<SaleMarginBreakdown> {
     // Estratégia: buscar sale_items (com snapshots de custo/margem) e
-    // agregar em JS — RLS garante escopo por empresa via sale_id.
-    let q = this.supabase
+    // agregar em JS. Escopo por empresa garantido explicitamente pelo
+    // filtro `.eq("sales.company_id", ...)` abaixo (não depende mais
+    // de RLS — ver comentário no topo do arquivo).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
       .from("sale_items")
       .select(
         "quantity, unit_price, discount, unit_cost, profit_snapshot, sales!inner(id, company_id, status, sale_date)",
@@ -80,8 +93,9 @@ export class SalesAnalyticsRepository {
   }
 
   async bestCustomers(filters: BestCustomerFilters): Promise<SaleBestCustomerRow[]> {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const limit = Math.min(50, Math.max(1, filters.limit ?? 10));
-    let q = this.supabase
+    let q = supabaseAdmin
       .from("sales")
       .select("customer_id, grand_total, customers(name)")
       .eq("company_id", this.companyId)

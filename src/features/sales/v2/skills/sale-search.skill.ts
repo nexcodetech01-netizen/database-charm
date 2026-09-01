@@ -28,15 +28,7 @@ export const saleSearchSkill = defineBaseSkill({
       limit: input.limit ?? 20,
     });
     if (rows.length === 0) {
-      // DIAGNÓSTICO TEMPORÁRIO (2026-09-01) — investigando por que
-      // essa busca retorna vazio mesmo com filtros corretos e dados
-      // reais confirmados no banco (logs do Supabase mostram
-      // auth_user: null nessa consulta específica). Anexado um
-      // resumo do estado da autenticação na própria resposta, pra dar
-      // pra ver sem precisar de acesso a log de servidor. REMOVER
-      // depois de identificar a causa raiz.
-      const diag = `[diagnóstico: supabase=${!!ctx.supabase}, companyId=${ctx.companyId}, userId=${ctx.userId ?? "ausente"}]`;
-      return skillResult.success(`Nenhum pedido encontrado com os filtros informados. ${diag}`, {
+      return skillResult.success("Nenhum pedido encontrado com os filtros informados.", {
         rows: [],
       });
     }

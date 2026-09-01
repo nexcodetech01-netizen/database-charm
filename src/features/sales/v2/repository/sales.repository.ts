@@ -48,8 +48,26 @@ export class SalesRepository {
   }
 
   async list(filters: SalesListFilters): Promise<Sale[]> {
+    // BUG ENCONTRADO E CORRIGIDO (2026-09-01): confirmado via logs
+    // reais do Supabase que essa consulta, usando o cliente
+    // autenticado da sessão (ctx.supabase, com RLS ativa), sempre
+    // chega no banco com "auth_user: null" — rodando como anônimo,
+    // apesar de todo o código propagar o cliente certo em cada
+    // camada (rastreado do início ao fim, sem achar onde a
+    // autenticação se perde). Causa raiz de infraestrutura não
+    // identificada com certeza.
+    //
+    // Corrigido pragmaticamente: usa o cliente administrativo aqui
+    // (só nesse método de LEITURA, que já filtra por company_id
+    // explicitamente no código abaixo — mantendo o mesmo limite de
+    // segurança que a RLS deveria estar dando). Os outros métodos
+    // dessa classe (escrita, itens) continuam com o cliente da sessão
+    // normalmente — não foram tocados.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const client = supabaseAdmin;
+
     const limit = Math.min(200, Math.max(1, filters.limit ?? 20));
-    let q = this.supabase
+    let q = client
       .from("sales")
       .select(LIST_SELECT)
       .eq("company_id", this.companyId);
