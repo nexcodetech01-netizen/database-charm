@@ -118,24 +118,30 @@ export async function handleWithAgentRuntime(
 
     if (aiResult.success && aiResult.intent && aiResult.intent !== "unknown") {
 
-      // BUG DE QUALIDADE ENCONTRADO E CORRIGIDO (2026-08-27): não
-      // existia nenhum limite mínimo de confiança pra tratar um
-      // "palpite" da IA como certeza — mesmo uma confiança bem baixa
-      // (ex.: 0.2, a IA "achando" meio sem certeza) era tratada
-      // exatamente igual a uma confiança alta (0.95), sempre seguindo
-      // em frente com aquele intent. (A confirmação de segurança pra
-      // ações que MUDAM dado — criar cliente, mudar preço — já é
-      // tratada corretamente à parte, por cada habilidade
-      // individualmente, então isso já estava protegido; o que
-      // faltava era simplesmente não agir sobre um palpite fraco.)
+      // BUG ENCONTRADO E CORRIGIDO (2026-09-01): o limite mínimo de
+      // confiança (0.75) valia igual pra QUALQUER intent — inclusive
+      // consultas de leitura pura (sale.search, finance.cash_balance,
+      // etc.), que não têm risco nenhum em rodar mesmo com confiança
+      // um pouco menor (o pior caso é mostrar algo levemente errado,
+      // nunca mudar dado real). Isso fazia perguntas legítimas mas
+      // fraseadas de um jeito menos comum (ex.: "quanto vendi mês
+      // passado") caírem pro motor determinístico — que só reconhece
+      // frases bem específicas tipo "consultar vendas" — e não
+      // conseguirem ser respondidas de jeito nenhum, mesmo com a
+      // data correta já disponível no prompt.
       //
-      // Corrigido: confiança abaixo de 0.75 agora é tratada como "não
-      // tenho certeza o bastante" — cai pro motor determinístico (mais
-      // simples e prévisível) em vez de seguir com um palpite fraco da
-      // IA generativa.
-      const MIN_LLM_CONFIDENCE = 0.75;
+      // Corrigido: o limite de 0.75 agora só se aplica a ações que
+      // ESCREVEM dado (create/update/add/set/delete/remove/cancel no
+      // id do intent) — onde agir sobre um palpite fraco tem risco de
+      // verdade. Consultas de leitura usam um limite bem mais baixo,
+      // só pra filtrar os casos em que a IA claramente não entendeu
+      // nada (confiança pertinho de zero).
+      const isWriteIntent = /\.(create|update|add|set|delete|remove|cancel)/i.test(
+        String(aiResult.intent),
+      );
+      const minConfidence = isWriteIntent ? 0.75 : 0.2;
 
-      if (aiResult.confidence < MIN_LLM_CONFIDENCE) {
+      if (aiResult.confidence < minConfidence) {
         intent = detectDeterministicIntent(input.message);
       } else {
         intent = {
