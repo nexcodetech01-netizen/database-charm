@@ -187,8 +187,61 @@ export const financeService = {
       .eq("company_id", companyId);
 
     if (filters.search.trim()) {
-      const s = `%${filters.search.trim()}%`;
-      q = q.or(`description.ilike.${s},notes.ilike.${s},reference_number.ilike.${s}`);
+      const term = filters.search.trim();
+      const s = `%${term}%`;
+
+      // BUG ENCONTRADO E CORRIGIDO (2026-08-31): a busca nunca
+      // encontrava nada digitando o NOME do cliente — ela olha só pro
+      // texto já salvo em description/notes/reference_number, e o
+      // nome do cliente é "descoberto" numa etapa separada, DEPOIS
+      // que essa consulta já rodou (não existe como coluna aqui pra
+      // comparar direto). Corrigido buscando ANTES quais vendas
+      // pertencem a um cliente com nome parecido (direto, ou via
+      // crediário), e incluindo essas vendas/parcelas no filtro.
+      const { saleIds: saleIdsByName, installmentIds: installmentIdsByName } = await (async () => {
+        const custRes = await supabase
+          .from("customers")
+          .select("id")
+          .eq("company_id", companyId)
+          .ilike("name", s);
+        const customerIds = (custRes.data ?? []).map((c) => c.id);
+        if (customerIds.length === 0) {
+          return { saleIds: [] as string[], installmentIds: [] as string[] };
+        }
+        const salesRes = await supabase.from("sales").select("id").in("customer_id", customerIds);
+        const saleIds = (salesRes.data ?? []).map((s2) => s2.id);
+        if (saleIds.length === 0) {
+          return { saleIds, installmentIds: [] as string[] };
+        }
+        const creditAccountsRes = await supabase
+          .from("credit_accounts")
+          .select("id")
+          .in("sale_id", saleIds);
+        const creditAccountIds = (creditAccountsRes.data ?? []).map((ca) => ca.id);
+        const installmentsRes = creditAccountIds.length
+          ? await supabase
+              .from("credit_installments")
+              .select("id")
+              .in("credit_account_id", creditAccountIds)
+          : { data: [] as { id: string }[] };
+        const installmentIds = (installmentsRes.data ?? []).map((i) => i.id);
+        return { saleIds, installmentIds };
+      })();
+
+      const orParts = [
+        `description.ilike.${s}`,
+        `notes.ilike.${s}`,
+        `reference_number.ilike.${s}`,
+      ];
+      if (saleIdsByName.length > 0) {
+        orParts.push(`and(source.eq.sale,reference_id.in.(${saleIdsByName.join(",")}))`);
+      }
+      if (installmentIdsByName.length > 0) {
+        orParts.push(
+          `and(source.eq.credit_payment,reference_id.in.(${installmentIdsByName.join(",")}))`,
+        );
+      }
+      q = q.or(orParts.join(","));
     }
     if (filters.type) q = q.eq("type", filters.type);
     if (filters.status) q = q.eq("status", filters.status);
