@@ -114,7 +114,13 @@ export function deriveEntryStatus(
   today: Date = new Date(),
 ): FinanceEntryStatus {
   if (row.status === "paid") return "paid";
-  if (row.status === "cancelled") return "cancelled";
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): mesmo bug já corrigido em
+  // `receivables.ts` (usado pela tela principal de Financeiro) — esse
+  // módulo v2 (usado pelas skills de Financeiro da Bella) tinha a
+  // MESMA lacuna, de forma independente: 'refunded' nunca era tratado
+  // como estado terminal, caindo no mesmo caminho de um pendente de
+  // verdade e podendo aparecer como "overdue" mesmo já resolvido.
+  if (row.status === "cancelled" || row.status === "refunded") return "cancelled";
   if (!row.due_date) return "pending";
   const due = new Date(`${row.due_date}T00:00:00`);
   const t = new Date(today);
