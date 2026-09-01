@@ -67,7 +67,30 @@ export function defineBaseSkill<S extends ZodObject<ZodRawShape>, TData>(
       };
 
       // 1) Validação Zod estrita.
-      const parsed = spec.schema.safeParse(payload);
+      //
+      // BUG ENCONTRADO E CORRIGIDO (2026-08-31): perguntas simples de
+      // leitura (ex.: "quem mais compra") vinham falhando com "Alguns
+      // campos precisam ser corrigidos" mesmo sem nenhum campo
+      // obrigatório faltando — porque a extração de parâmetros via IA
+      // generativa às vezes inclui algum campo extra que o schema da
+      // skill não conhece, e `.strict()` rejeita a chamada INTEIRA
+      // nesse caso.
+      //
+      // A correção NÃO é remover `.strict()` — essa trava é
+      // intencional e continua sendo obrigatória (`assertStrictSchema`
+      // abaixo garante isso, e é exigido pra impedir que uma skill
+      // aceite silenciosamente um campo inesperado que ela nunca leu).
+      // A correção certa é filtrar campos desconhecidos ANTES de
+      // validar: assim um campo extra e inofensivo vindo da IA é só
+      // ignorado, mas o `.strict()` continua protegendo o handler de
+      // qualquer coisa que o schema realmente não espera.
+      const knownKeys = new Set(Object.keys((spec.schema as ZodObject<ZodRawShape>).shape));
+      const sanitizedPayload: Record<string, unknown> = {};
+      for (const key of Object.keys(payload)) {
+        if (knownKeys.has(key)) sanitizedPayload[key] = payload[key];
+      }
+
+      const parsed = spec.schema.safeParse(sanitizedPayload);
       if (!parsed.success) {
         const missing: BellaSkillMissingField[] = parsed.error.issues.slice(0, 5).map((i) => ({
           field: String(i.path[0] ?? "input"),
