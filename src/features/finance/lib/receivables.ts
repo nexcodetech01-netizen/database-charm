@@ -52,7 +52,15 @@ function startOfToday(): number {
 export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
   if ((t as any).metadata && (t as any).metadata.reimbursement) return "reimbursement";
   if (t.status === "paid") return "paid";
-  if (t.status === "cancelled") return "cancelled";
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): faltava tratar
+  // status='refunded' (estornado) — sem isso, um lançamento
+  // corretamente estornado (ex.: venda cancelada, saldo de crediário
+  // substituído, etc.) caía no mesmo caminho de um pendente de
+  // verdade, e se o vencimento já tivesse passado, aparecia como
+  // "Vencido" na lista — como se ainda fosse cobrável, mesmo já
+  // resolvido no banco. Tratado igual a 'cancelled': nunca mais
+  // aparece como pendente/vencido/agendado.
+  if (t.status === "cancelled" || t.status === "refunded") return "cancelled";
   const today = startOfToday();
   const due = t.due_date
     ? new Date(t.due_date + "T00:00:00").getTime()
@@ -89,7 +97,16 @@ export function deriveGroupStatus(
   const siblings = groups.get(key);
   if (!siblings || siblings.length <= 1) return deriveRowStatus(t);
   const paid = siblings.filter((s) => s.status === "paid").length;
-  const pending = siblings.length - paid;
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): um lançamento
+  // 'cancelled'/'refunded' no mesmo grupo estava sendo contado como
+  // se ainda estivesse pendente (`siblings.length - paid` conta
+  // TUDO que não é 'paid'), fazendo um grupo já totalmente resolvido
+  // (ex.: entrada paga + lançamento original devidamente estornado)
+  // aparecer como "Parcial" por engano. Agora só conta como pendente
+  // o que realmente ainda pode ser cobrado.
+  const pending = siblings.filter(
+    (s) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "refunded",
+  ).length;
   if (paid > 0 && pending > 0) return "partial";
   return deriveRowStatus(t);
 }
@@ -134,13 +151,22 @@ export function summarize(
   t: TransactionWithMeta,
   siblings: TransactionWithMeta[] | null,
 ): ReceivableSummary {
-  const list = siblings && siblings.length > 0 ? siblings : [t];
-  const original = list.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-  const received = list
+  const rawList = siblings && siblings.length > 0 ? siblings : [t];
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): lançamentos
+  // 'cancelled'/'refunded' do mesmo grupo entravam na soma do "valor
+  // original" e na contagem de parcelas, inflando o total mostrado
+  // (ex.: um lançamento antigo já estornado, substituído por um novo
+  // com o valor certo, contava os dois valores juntos). Excluídos do
+  // resumo — um lançamento estornado não representa mais nada a
+  // cobrar nem a mostrar no total.
+  const list = rawList.filter((r) => r.status !== "cancelled" && r.status !== "refunded");
+  const effectiveList = list.length > 0 ? list : rawList;
+  const original = effectiveList.reduce((s, r) => s + Number(r.amount ?? 0), 0);
+  const received = effectiveList
     .filter((r) => r.status === "paid")
     .reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const balance = Math.max(0, original - received);
-  const paidCount = list.filter((r) => r.status === "paid").length;
+  const paidCount = effectiveList.filter((r) => r.status === "paid").length;
 
   // status do grupo
   let status: DisplayStatus;
@@ -155,6 +181,6 @@ export function summarize(
     dueDate: t.due_date,
     daysOverdue: daysOverdue(t),
     status,
-    installments: { total: list.length, paid: paidCount },
+    installments: { total: effectiveList.length, paid: paidCount },
   };
 }
