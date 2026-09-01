@@ -45,7 +45,35 @@ export function buildInterpretUserPrompt(
     requiresConfirmation: s.requiresConfirmation,
   }));
 
+  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): o prompt nunca informava
+  // qual é a data de HOJE — sem isso, o GPT não tem como calcular
+  // corretamente períodos relativos ("este mês", "essa semana",
+  // "ontem"), e pode usar uma data completamente errada baseada só no
+  // que ele "acha" que é hoje. Isso fazia perguntas como "quanto vendi
+  // esse mês" devolverem "nenhum pedido encontrado" mesmo havendo
+  // vendas reais no período — o intervalo de datas calculado pelo GPT
+  // não batia com o período real.
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    .toISOString()
+    .slice(0, 10);
+  const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    .toISOString()
+    .slice(0, 10);
+  const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+    .toISOString()
+    .slice(0, 10);
+
   return [
+    "DATA DE HOJE (use isso pra calcular qualquer período relativo — nunca invente ou suponha outra data):",
+    JSON.stringify({
+      hoje: todayIso,
+      inicio_deste_mes: firstDayOfMonth,
+      inicio_do_mes_passado: firstDayOfLastMonth,
+      fim_do_mes_passado: lastDayOfLastMonth,
+    }, null, 2),
+    "",
     "CATÁLOGO DE SKILLS DISPONÍVEIS:",
     JSON.stringify(catalog, null, 2),
     "",
