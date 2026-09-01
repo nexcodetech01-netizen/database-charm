@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Busca a última compra efetivada (status received) de um produto com um fornecedor específico.
@@ -17,7 +16,18 @@ export const getLastPurchaseInfo = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { companyId, productId, supplierId, productName, sku } = data;
 
-    let query = supabase
+    // BUG ENCONTRADO E CORRIGIDO (2026-08-31): usava o cliente
+    // genérico do navegador rodando do servidor — sem sessão nenhuma,
+    // roda como anônimo. Além de provavelmente sempre voltar vazio
+    // (RLS bloqueando), não tinha nenhuma verificação de que quem
+    // chamou essa função realmente pertence ao `companyId` recebido
+    // (que vem direto do cliente). Trocado pro cliente administrativo,
+    // já que o filtro por `companyId` abaixo é a única coisa que
+    // restringe os dados retornados — mesmo padrão já corrigido em
+    // outras funções hoje.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let query = supabaseAdmin
       .from("purchase_items")
       .select(`
         unit_price,
