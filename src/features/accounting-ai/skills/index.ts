@@ -243,11 +243,26 @@ export const consultarProdutosSkill: AccountingSkill = {
     const res = deps?.summary?.products ?? (await productsProvider(companyId, deps));
     if (!res.data) return empty("produtos");
     const top = res.data.bestSellers[0];
+    // BUG ENCONTRADO E CORRIGIDO (2026-09-01): a mensagem só dizia
+    // QUANTOS produtos estavam sem giro ("Sem giro: 5"), nunca QUAIS
+    // — mesmo os dados (com nome de cada produto) já estando
+    // disponíveis em `res.data.stagnant`. Perguntar "quais produtos
+    // estão parados" merece uma resposta com os nomes, não só um
+    // número. Lista até 5 nomes; se houver mais, indica quantos além
+    // desses.
+    const stagnantNames = res.data.stagnant.slice(0, 5).map((p) => p.name);
+    const stagnantExtra = res.data.stagnant.length - stagnantNames.length;
+    const stagnantText =
+      res.data.stagnant.length === 0
+        ? "Nenhum produto sem giro."
+        : `Sem giro (${res.data.stagnant.length}): ${stagnantNames.join(", ")}${
+            stagnantExtra > 0 ? ` e mais ${stagnantExtra}` : ""
+          }.`;
     return {
       ok: true,
       text: top
-        ? `Produto campeão: ${top.name} (${formatCurrency(top.revenue)}). Sem giro: ${res.data.stagnant.length}.`
-        : `Sem vendas no período. Sem giro: ${res.data.stagnant.length}.`,
+        ? `Produto campeão: ${top.name} (${formatCurrency(top.revenue)}). ${stagnantText}`
+        : `Sem vendas no período. ${stagnantText}`,
       data: res.data,
     };
   },
