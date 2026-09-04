@@ -975,8 +975,8 @@ export function SaleForm({
           finalize,
         });
         const created = await createMut.mutateAsync({ ...payload, items });
-        savedId = created.id;
-        savedNumber = created.number ?? null;
+        savedId = created?.id ?? "";
+        savedNumber = created?.number ?? null;
         // eslint-disable-next-line no-console
         console.info("[sale-form] COMMIT create", {
           sale_id: savedId,

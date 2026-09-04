@@ -469,7 +469,8 @@ export const salesService = {
     try {
       if (rpcPeriod) {
         const { data, error } = await supabase.rpc("get_dashboard_metrics", { 
-          p_period: rpcPeriod
+          p_period: rpcPeriod,
+          p_company_id: companyId,
         });
         
         if (error) {

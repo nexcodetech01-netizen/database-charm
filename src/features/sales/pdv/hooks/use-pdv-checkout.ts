@@ -31,7 +31,11 @@ export function usePdvCheckout({ companyId, cashSessionId, onSuccess }: Options)
           companyId,
           cashSessionId,
           // Origem explícita: habilita venda de consumidor final (sem cliente).
-          create: (payload) => salesService.create(payload, { origin: "pdv" }),
+          create: async (payload) => {
+            const created = await salesService.create(payload, { origin: "pdv" });
+            if (!created) throw new Error("Falha ao criar a venda");
+            return created;
+          },
         });
 
         if (!result.ok) {
