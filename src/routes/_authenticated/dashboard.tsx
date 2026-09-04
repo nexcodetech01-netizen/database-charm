@@ -308,20 +308,7 @@ function DashboardPage() {
           <Button 
             variant={period === "yesterday" ? "default" : "outline"} 
             size="sm"
-            onClick={() => {
-              setPeriod("yesterday");
-              // Executa rigorosamente conforme solicitado (a query será disparada automaticamente pelo useSaleMetrics via period na queryKey)
-              void (async () => {
-                try {
-                  const { error } = await supabase.rpc("get_dashboard_metrics", { 
-                    p_period: "ontem"
-                  });
-                  if (error) console.error("RPC get_dashboard_metrics (yesterday) error:", error);
-                } catch (err) {
-                  console.error("Critical error calling get_dashboard_metrics (yesterday):", err);
-                }
-              })();
-            }}
+            onClick={() => setPeriod("yesterday")}
             className="flex-1 sm:flex-none"
           >
             Ontem
@@ -329,19 +316,7 @@ function DashboardPage() {
           <Button 
             variant={period === "month" ? "default" : "outline"} 
             size="sm"
-            onClick={() => {
-              setPeriod("month");
-              void (async () => {
-                try {
-                  const { error } = await supabase.rpc("get_dashboard_metrics", { 
-                    p_period: "mes"
-                  });
-                  if (error) console.error("RPC get_dashboard_metrics (month) error:", error);
-                } catch (err) {
-                  console.error("Critical error calling get_dashboard_metrics (month):", err);
-                }
-              })();
-            }}
+            onClick={() => setPeriod("month")}
             className="flex-1 sm:flex-none"
           >
             Este Mês
