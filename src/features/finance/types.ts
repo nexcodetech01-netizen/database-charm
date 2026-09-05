@@ -93,7 +93,17 @@ export interface SettleTransactionInput {
    * (positivo = desconto concedido, negativo = acréscimo cobrado).
    */
   settledAmount?: number | null;
+  /**
+   * "full" (padrão) = comportamento original: fecha o lançamento inteiro,
+   * diferença vira desconto/acréscimo.
+   * "partial" = paga só `settledAmount` agora e cria um novo lançamento
+   * pendente com o saldo restante, vencendo em `remainingDueDate`.
+   */
+  settlementMode?: "full" | "partial";
+  /** Vencimento do novo título com o saldo restante (obrigatório quando settlementMode = "partial" e sobra saldo). */
+  remainingDueDate?: string | null;
 }
+
 
 
 export interface CompleteSettlementInput {
