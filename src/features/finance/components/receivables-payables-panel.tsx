@@ -397,10 +397,10 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       da venda continua visível, só que como legenda, não como título. */}
                   <div className="min-w-0 flex-1 basis-52">
                     <p className="truncate text-sm font-semibold">
-                      {t.customer_name || t.description}
+                      {t.customer_name || t.supplier_name || t.description}
                     </p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                      {t.customer_name ? (
+                      {t.customer_name || t.supplier_name ? (
                         <span className="truncate">{t.description}</span>
                       ) : (
                         <span className="truncate">
