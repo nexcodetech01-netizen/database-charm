@@ -146,6 +146,8 @@ export interface TransactionWithMeta extends FinancialTransaction {
   account_name: string | null;
   category_name: string | null;
   customer_name: string | null;
+  /** Nome do fornecedor (compras) — equivalente a customer_name para pagáveis. */
+  supplier_name: string | null;
 }
 
 export interface FinanceOverview {
