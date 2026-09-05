@@ -7911,49 +7911,95 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      settle_financial_transaction: {
-        Args: {
-          _account_id: string
-          _notes?: string
-          _paid_at?: string
-          _payment_method: string
-          _settled_amount?: number
-          _transaction_id: string
-        }
-        Returns: {
-          account_id: string | null
-          amount: number
-          asaas_charge_id: string | null
-          bella_pay_charge_id: string | null
-          category_id: string | null
-          company_id: string
-          cost_center_id: string | null
-          created_at: string
-          created_by: string | null
-          description: string
-          discount_amount: number
-          due_date: string | null
-          id: string
-          notes: string | null
-          paid_at: string | null
-          payment_method: string | null
-          reference_id: string | null
-          reference_number: string | null
-          settlement_session_id: string | null
-          source: string
-          status: string
-          transaction_date: string
-          transfer_to_account_id: string | null
-          type: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "financial_transactions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      settle_financial_transaction:
+        | {
+            Args: {
+              _account_id: string
+              _notes?: string
+              _paid_at?: string
+              _payment_method: string
+              _settled_amount?: number
+              _transaction_id: string
+            }
+            Returns: {
+              account_id: string | null
+              amount: number
+              asaas_charge_id: string | null
+              bella_pay_charge_id: string | null
+              category_id: string | null
+              company_id: string
+              cost_center_id: string | null
+              created_at: string
+              created_by: string | null
+              description: string
+              discount_amount: number
+              due_date: string | null
+              id: string
+              notes: string | null
+              paid_at: string | null
+              payment_method: string | null
+              reference_id: string | null
+              reference_number: string | null
+              settlement_session_id: string | null
+              source: string
+              status: string
+              transaction_date: string
+              transfer_to_account_id: string | null
+              type: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "financial_transactions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _account_id: string
+              _notes?: string
+              _paid_at?: string
+              _payment_method: string
+              _remaining_due_date?: string
+              _settled_amount?: number
+              _settlement_mode?: string
+              _transaction_id: string
+            }
+            Returns: {
+              account_id: string | null
+              amount: number
+              asaas_charge_id: string | null
+              bella_pay_charge_id: string | null
+              category_id: string | null
+              company_id: string
+              cost_center_id: string | null
+              created_at: string
+              created_by: string | null
+              description: string
+              discount_amount: number
+              due_date: string | null
+              id: string
+              notes: string | null
+              paid_at: string | null
+              payment_method: string | null
+              reference_id: string | null
+              reference_number: string | null
+              settlement_session_id: string | null
+              source: string
+              status: string
+              transaction_date: string
+              transfer_to_account_id: string | null
+              type: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "financial_transactions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       simples_compute: {

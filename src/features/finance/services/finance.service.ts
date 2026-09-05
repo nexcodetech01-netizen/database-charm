@@ -590,11 +590,15 @@ export const financeService = {
       // A tela informa apenas a data; a hora é a do momento da baixa.
       _paid_at: toSettlementTimestamp(input.paidAt),
       _notes: input.notes?.trim() ? input.notes.trim() : undefined,
-      // Desconto/acréscimo: valor realmente recebido nesta baixa.
+      // Desconto/acréscimo (modo "full") ou valor pago agora (modo "partial").
       _settled_amount:
         typeof input.settledAmount === "number" && Number.isFinite(input.settledAmount)
           ? input.settledAmount
           : undefined,
+      _settlement_mode: input.settlementMode ?? "full",
+      _remaining_due_date: input.remainingDueDate ?? undefined,
+
+
 
     });
     if (error) {
