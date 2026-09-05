@@ -326,6 +326,30 @@ export const financeService = {
       installments.map((i) => [i.id, i.credit_account_id]),
     );
 
+    // Nome do fornecedor (compras) — mesma lógica em duas etapas usada acima
+    // pra cliente: `reference_id` de um lançamento `source = 'purchase'`
+    // aponta pra uma compra, e é a compra que tem o `supplier_id`. Sem isso,
+    // a tela de "Contas a Pagar" só tinha o código da compra (ex.: "Compra
+    // Nº PC-20260808-2235") pra mostrar, nunca o nome do fornecedor.
+    const purchaseIds = [
+      ...new Set(
+        rows.filter((r) => (r as any).source === "purchase" && (r as any).reference_id)
+          .map((r) => (r as any).reference_id as string),
+      ),
+    ];
+    const purchasesRes = purchaseIds.length
+      ? await supabase.from("purchases").select("id, supplier_id").in("id", purchaseIds)
+      : { data: [] as { id: string; supplier_id: string | null }[] };
+    const purchases = purchasesRes.data ?? [];
+    const supplierIds = [...new Set(purchases.map((p) => p.supplier_id).filter(Boolean))] as string[];
+    const suppliersRes = supplierIds.length
+      ? await supabase.from("product_suppliers").select("id, name").in("id", supplierIds)
+      : { data: [] as { id: string; name: string }[] };
+    const supplierNameById = new Map((suppliersRes.data ?? []).map((s) => [s.id, s.name]));
+    const supplierNameByPurchaseId = new Map(
+      purchases.map((p) => [p.id, p.supplier_id ? supplierNameById.get(p.supplier_id) ?? null : null]),
+    );
+
     return {
       rows: rows.map<TransactionWithMeta>((r) => {
         const cat = (r as any).category;
@@ -339,11 +363,16 @@ export const financeService = {
           const saleId = creditAccountId ? saleIdByCreditAccountId.get(creditAccountId) : undefined;
           customerName = saleId ? customerNameBySaleId.get(saleId) ?? null : null;
         }
+        let supplierName: string | null = null;
+        if (source === "purchase" && refId) {
+          supplierName = supplierNameByPurchaseId.get(refId) ?? null;
+        }
         return {
           ...r,
           account_name: (r as any).financial_accounts?.name ?? null,
           category_name: cat?.name ?? (r as any).category_name ?? null,
           customer_name: customerName,
+          supplier_name: supplierName,
         };
       }),
       total: count ?? 0,
