@@ -458,6 +458,7 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                   >
                     <PrimaryAction
                       display={display}
+                      rowStatus={t.status}
                       verb={meta.verb}
                       onReceive={() => handleReceive(t)}
                       onHistory={() => openDetails(t)}
@@ -531,18 +532,26 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
 
 function PrimaryAction({
   display,
+  rowStatus,
   verb,
   onReceive,
   onHistory,
   pending,
 }: {
   display: DisplayStatus;
+  /** Status real desta linha (não do grupo) — decide a ação; o badge continua usando `display`. */
+  rowStatus: string;
   verb: string;
   onReceive: () => void;
   onHistory: () => void;
   pending: boolean;
 }) {
-  if (display === "paid" || display === "cancelled") {
+  // Uma linha já liquidada (paga/cancelada/estornada) nunca oferece ação de
+  // pagamento, mesmo quando o GRUPO dela está "partial" (ex.: baixa parcial,
+  // onde a linha original paga convive com o novo título pendente do saldo).
+  const isRowSettled =
+    rowStatus === "paid" || rowStatus === "cancelled" || rowStatus === "refunded";
+  if (isRowSettled) {
     return (
       <Button size="sm" variant="outline" onClick={onHistory}>
         <History className="mr-1.5 h-4 w-4" />
