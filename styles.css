@@ -1,0 +1,646 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * NexOS Design System
+ * ---------------------------------
+ * Premium, minimal SaaS aesthetic — inspired by Linear, Stripe, Notion, Vercel.
+ * Palette locked: blue primary, cool neutral surfaces. Never orange or gold.
+ */
+
+@theme inline {
+  /* Radius scale — soft, restrained */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  /* Typography */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--destructive);
+  --color-danger-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Elevation — discreet, layered */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-md:
+    0 4px 6px -1px rgb(15 23 42 / 0.06), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+  --shadow-lg:
+    0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgb(15 23 42 / 0.10), 0 8px 10px -6px rgb(15 23 42 / 0.05);
+
+  /* Elevation tokens (UI.1.1) — the only four allowed levels.
+     surface → flat blocks · card → cards/painéis · floating → dropdowns/popovers ·
+     overlay → dialogs/sheets. */
+  --shadow-surface: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-floating:
+    0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.05);
+  --shadow-overlay:
+    0 20px 25px -5px rgb(15 23 42 / 0.10), 0 8px 10px -6px rgb(15 23 42 / 0.05);
+
+  /* Motion tokens (UI.1.1) */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --animate-duration-fast: 120ms;
+  --animate-duration-normal: 200ms;
+  --animate-duration-slow: 320ms;
+
+  /* Spacing tokens (UI.1.1) — densidade de blocos */
+  --spacing-compact: 0.5rem;
+  --spacing-normal: 0.75rem;
+  --spacing-comfortable: 1rem;
+  --spacing-relaxed: 1.5rem;
+
+  /* Status tokens (UI.1.1) — cor semântica única do NexOS.
+     Nunca usar emerald/green/red/yellow/rose/amber diretamente. */
+  --color-status-info: var(--status-info);
+  --color-status-info-foreground: var(--status-info-foreground);
+  --color-status-info-surface: var(--status-info-surface);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-success-surface: var(--status-success-surface);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-warning-surface: var(--status-warning-surface);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-danger-surface: var(--status-danger-surface);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-status-neutral-surface: var(--status-neutral-surface);
+  --color-status-critical: var(--status-critical);
+  --color-status-critical-foreground: var(--status-critical-foreground);
+  --color-status-critical-surface: var(--status-critical-surface);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-pending-surface: var(--status-pending-surface);
+  --color-status-processing: var(--status-processing);
+  --color-status-processing-foreground: var(--status-processing-foreground);
+  --color-status-processing-surface: var(--status-processing-surface);
+  --color-status-approved: var(--status-approved);
+  --color-status-approved-foreground: var(--status-approved-foreground);
+  --color-status-approved-surface: var(--status-approved-surface);
+  --color-status-rejected: var(--status-rejected);
+  --color-status-rejected-foreground: var(--status-rejected-foreground);
+  --color-status-rejected-surface: var(--status-rejected-surface);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+  --color-status-cancelled-surface: var(--status-cancelled-surface);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-foreground: var(--status-draft-foreground);
+  --color-status-draft-surface: var(--status-draft-surface);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Surfaces */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* Brand */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --primary-hover: #1d4ed8;
+
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
+
+  /* Feedback */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Status (UI.1.1) — base / texto / superfície suave */
+  --status-info: #2563eb;
+  --status-info-foreground: #ffffff;
+  --status-info-surface: #eff6ff;
+  --status-success: #16a34a;
+  --status-success-foreground: #ffffff;
+  --status-success-surface: #ecfdf5;
+  --status-warning: #b45309;
+  --status-warning-foreground: #ffffff;
+  --status-warning-surface: #fffbeb;
+  --status-danger: #dc2626;
+  --status-danger-foreground: #ffffff;
+  --status-danger-surface: #fef2f2;
+  --status-neutral: #64748b;
+  --status-neutral-foreground: #ffffff;
+  --status-neutral-surface: #f1f5f9;
+  --status-critical: #b91c1c;
+  --status-critical-foreground: #ffffff;
+  --status-critical-surface: #fee2e2;
+  --status-pending: #b45309;
+  --status-pending-foreground: #ffffff;
+  --status-pending-surface: #fffbeb;
+  --status-processing: #0ea5e9;
+  --status-processing-foreground: #ffffff;
+  --status-processing-surface: #f0f9ff;
+  --status-approved: #16a34a;
+  --status-approved-foreground: #ffffff;
+  --status-approved-surface: #ecfdf5;
+  --status-rejected: #dc2626;
+  --status-rejected-foreground: #ffffff;
+  --status-rejected-surface: #fef2f2;
+  --status-cancelled: #475569;
+  --status-cancelled-foreground: #ffffff;
+  --status-cancelled-surface: #f1f5f9;
+  --status-draft: #94a3b8;
+  --status-draft-foreground: #0f172a;
+  --status-draft-surface: #f8fafc;
+
+
+  /* Structural */
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563eb;
+
+  /* Charts — blue-forward, no orange/gold */
+  --chart-1: #2563eb;
+  --chart-2: #0ea5e9;
+  --chart-3: #6366f1;
+  --chart-4: #16a34a;
+  --chart-5: #64748b;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563eb;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --primary-hover: #2563eb;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --success: #22c55e;
+  --success-foreground: #04120a;
+  --warning: #f59e0b;
+  --warning-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* Status (UI.1.1) — dark */
+  --status-info: #3b82f6;
+  --status-info-foreground: #ffffff;
+  --status-info-surface: rgb(59 130 246 / 15%);
+  --status-success: #22c55e;
+  --status-success-foreground: #04120a;
+  --status-success-surface: rgb(34 197 94 / 15%);
+  --status-warning: #f59e0b;
+  --status-warning-foreground: #0f172a;
+  --status-warning-surface: rgb(245 158 11 / 15%);
+  --status-danger: #ef4444;
+  --status-danger-foreground: #ffffff;
+  --status-danger-surface: rgb(239 68 68 / 15%);
+  --status-neutral: #94a3b8;
+  --status-neutral-foreground: #0f172a;
+  --status-neutral-surface: rgb(148 163 184 / 15%);
+  --status-critical: #f87171;
+  --status-critical-foreground: #0f172a;
+  --status-critical-surface: rgb(248 113 113 / 18%);
+  --status-pending: #f59e0b;
+  --status-pending-foreground: #0f172a;
+  --status-pending-surface: rgb(245 158 11 / 15%);
+  --status-processing: #38bdf8;
+  --status-processing-foreground: #0f172a;
+  --status-processing-surface: rgb(56 189 248 / 15%);
+  --status-approved: #22c55e;
+  --status-approved-foreground: #04120a;
+  --status-approved-surface: rgb(34 197 94 / 15%);
+  --status-rejected: #ef4444;
+  --status-rejected-foreground: #ffffff;
+  --status-rejected-surface: rgb(239 68 68 / 15%);
+  --status-cancelled: #94a3b8;
+  --status-cancelled-foreground: #0f172a;
+  --status-cancelled-surface: rgb(148 163 184 / 12%);
+  --status-draft: #64748b;
+  --status-draft-foreground: #f8fafc;
+  --status-draft-surface: rgb(100 116 139 / 15%);
+
+  --border: rgb(255 255 255 / 8%);
+  --input: rgb(255 255 255 / 12%);
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #38bdf8;
+  --chart-3: #818cf8;
+  --chart-4: #22c55e;
+  --chart-5: #94a3b8;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgb(255 255 255 / 8%);
+  --sidebar-ring: #3b82f6;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  /* Consistent focus-visible ring across all interactive elements. */
+  :where(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* =========================================================
+ * Cupom Não Fiscal — layout + impressão térmica (58/80 mm)
+ * PAY-001.2 — usa apenas window.print() e CSS.
+ * ========================================================= */
+.receipt {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #000;
+  background: #fff;
+  padding: 8px 10px;
+  margin: 0 auto;
+  box-sizing: border-box !important;
+  overflow-wrap: break-word;
+}
+.receipt-58 {
+  width: 100% !important;
+  max-width: 240px !important;
+  padding: 0;
+}
+.receipt-80 {
+  width: 100% !important;
+  max-width: 380px !important;
+}
+
+.receipt * {
+  box-sizing: border-box !important;
+}
+
+.receipt-header {
+  text-align: center;
+  width: 100%;
+}
+.receipt-logo {
+  display: block;
+  margin: 0 auto 4px;
+  max-width: 180px;
+  max-height: 18mm;
+  object-fit: contain;
+  filter: grayscale(100%) contrast(140%);
+}
+.receipt-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  width: 100%;
+}
+.receipt-sub {
+  font-size: 9px;
+  width: 100%;
+}
+
+.receipt-badge {
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.receipt-divider {
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+  width: 100%;
+}
+
+.receipt-meta,
+.receipt-totals {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 10px;
+  width: 100%;
+}
+.receipt-row dt {
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+.receipt-row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.receipt-row-strong {
+  font-size: 13px;
+  font-weight: 700;
+  padding-top: 4px;
+  border-top: 1px solid #000;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.receipt-section-title {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  margin: 2px 0;
+  width: 100%;
+}
+
+.receipt-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.receipt-item {
+  margin: 2px 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  width: 100%;
+}
+.receipt-item-desc {
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+.receipt-item-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+}
+.receipt-item-total {
+  font-weight: 600;
+}
+
+.receipt-payment {
+  font-weight: 600;
+  font-size: 12px;
+  width: 100%;
+}
+
+.receipt-pix {
+  margin-top: 4px;
+  text-align: center;
+  page-break-inside: avoid;
+  width: 100%;
+}
+.receipt-pix-qr {
+  display: block;
+  margin: 4px auto;
+  max-width: 100%;
+  height: auto;
+}
+.receipt-pix-payload {
+  font-size: 9px;
+  overflow-wrap: break-word;
+  border: 1px dashed #000;
+  padding: 4px;
+  margin-top: 4px;
+  text-align: left;
+  width: 100%;
+}
+.receipt-pix-exp {
+  font-size: 10px;
+  margin-top: 4px;
+  width: 100%;
+}
+.receipt-pix-confirmed {
+  text-align: center;
+  font-weight: 700;
+  border: 2px solid #000;
+  padding: 6px;
+  margin: 6px 0;
+  letter-spacing: 0.05em;
+  width: 100%;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 11px;
+  padding-top: 4px;
+  width: 100%;
+}
+
+/* Impressão: mostra apenas .receipt-print-area, esconde app inteiro. */
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible !important;
+  }
+  .no-print,
+  .no-print-bg {
+    display: none !important;
+    background: transparent !important;
+  }
+  .receipt-print-area {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+  .receipt {
+    color: #000 !important;
+    background: #fff !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+
+
+/* Sidebar scrollbar — fina, escura translúcida, aparece só no hover/scroll. */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 200ms ease;
+}
+.sidebar-scroll:hover,
+.sidebar-scroll:focus-within {
+  scrollbar-color: color-mix(in oklab, var(--sidebar-foreground) 28%, transparent) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track,
+.sidebar-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 200ms ease;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb,
+.sidebar-scroll:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--sidebar-foreground) 28%, transparent);
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--sidebar-foreground) 45%, transparent);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
