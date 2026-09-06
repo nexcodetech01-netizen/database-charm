@@ -11,6 +11,7 @@ import {
   History,
   Calendar,
   Filter,
+  Repeat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -437,6 +438,11 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
                       overdueDays={display === "overdue" ? overdueDays : undefined}
                     />
                     {source === "bella_pay" ? <Zap className="h-3.5 w-3.5 text-primary" /> : null}
+                    {t.is_recurring ? (
+                      <span title="Conta recorrente — repete todo mês">
+                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                      </span>
+                    ) : null}
                     {reconciled ? <ShieldCheck className="h-3.5 w-3.5 text-success" /> : null}
                   </div>
 
