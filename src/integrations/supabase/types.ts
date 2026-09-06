@@ -2552,6 +2552,9 @@ export type Database = {
           notes: string | null
           paid_at: string | null
           payment_method: string | null
+          recurrence_day: number | null
+          recurring_parent_id: string | null
+          is_recurring: boolean
           reference_id: string | null
           reference_number: string | null
           settlement_session_id: string | null
@@ -2579,6 +2582,9 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          recurrence_day?: number | null
+          recurring_parent_id?: string | null
+          is_recurring?: boolean
           reference_id?: string | null
           reference_number?: string | null
           settlement_session_id?: string | null
@@ -2606,6 +2612,9 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          recurrence_day?: number | null
+          recurring_parent_id?: string | null
+          is_recurring?: boolean
           reference_id?: string | null
           reference_number?: string | null
           settlement_session_id?: string | null
