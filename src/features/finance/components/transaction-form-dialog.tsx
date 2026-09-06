@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -184,8 +184,17 @@ export function TransactionFormDialog({
   }, [categories, form.type]);
 
 
+  // FIX (2026-09-06): duplo clique em "Salvar" criava dois lançamentos
+  // idênticos — o botão fica desabilitado com base em createMut.isPending
+  // etc., mas esse estado só reflete na tela depois de um re-render do
+  // React; se a rede estiver lenta e o segundo clique acontecer antes
+  // disso, os dois cliques passam e criam duas movimentações iguais.
+  // Esse "ref" trava na hora, sem depender de re-renderização.
+  const isSubmittingRef = useRef(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmittingRef.current) return;
     if (!form.description.trim()) {
       toast.error("Informe a descrição");
       return;
@@ -263,6 +272,7 @@ export function TransactionFormDialog({
 
 
     try {
+      isSubmittingRef.current = true;
       console.log("[TransactionFormDialog] Enviando payload:", payload);
 
       if (isEdit && transaction) {
@@ -324,6 +334,8 @@ export function TransactionFormDialog({
       toast.error("Não foi possível salvar", {
         description: err.details || err.message || "Verifique o console para mais detalhes.",
       });
+    } finally {
+      isSubmittingRef.current = false;
     }
   }
 
