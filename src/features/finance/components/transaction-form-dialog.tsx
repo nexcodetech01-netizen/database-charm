@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,6 +111,8 @@ export function TransactionFormDialog({
     installment_count: 1,
     installment_interval_days: 30,
     first_installment_date: todayISO(),
+    is_recurring: false,
+    recurrence_day: 20,
   });
 
 
@@ -142,6 +145,8 @@ export function TransactionFormDialog({
         due_date: transaction.due_date ?? todayISO(),
         status: (transaction.status as TransactionStatus) ?? "pending",
         notes: transaction.notes ?? "",
+        is_recurring: (transaction as any).is_recurring ?? false,
+        recurrence_day: (transaction as any).recurrence_day ?? 20,
       });
 
     } else {
@@ -159,6 +164,8 @@ export function TransactionFormDialog({
         due_date: todayISO(),
         status: "pending",
         notes: initialIsReimbursement ? "Investimento do Dono" : "",
+        is_recurring: false,
+        recurrence_day: 20,
       }));
     }
   }, [open, transaction, defaultType, initialIsReimbursement, categories]);
@@ -241,6 +248,11 @@ export function TransactionFormDialog({
       installment_count: form.installment_count,
       installment_interval_days: form.installment_interval_days,
       first_installment_date: form.first_installment_date,
+      // Conta recorrente (ex.: DAS todo dia 20): só faz sentido pra
+      // pagamento à vista (não parcelado) e não é aplicável a
+      // transferência entre contas.
+      is_recurring: form.type !== "transfer" && form.payment_condition === "cash" ? form.is_recurring : false,
+      recurrence_day: form.type !== "transfer" && form.payment_condition === "cash" && form.is_recurring ? form.recurrence_day : null,
       metadata: paidWith === "personal" ? {
         reimbursement: true,
         installments: form.installment_count,
@@ -645,6 +657,42 @@ export function TransactionFormDialog({
                   </div>
                 )}
               </div>
+
+              {form.type !== "transfer" && form.payment_condition === "cash" && (
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="is_recurring"
+                      checked={form.is_recurring}
+                      onCheckedChange={(checked) =>
+                        setForm((f) => ({ ...f, is_recurring: checked === true }))
+                      }
+                    />
+                    <Label htmlFor="is_recurring" className="cursor-pointer font-normal">
+                      Conta recorrente (repete todo mês)
+                    </Label>
+                  </div>
+                  {form.is_recurring && (
+                    <div className="max-w-[200px]">
+                      <Label>Dia do vencimento (todo mês)</Label>
+                      <Select
+                        value={String(form.recurrence_day)}
+                        onValueChange={(v) => setForm((f) => ({ ...f, recurrence_day: Number(v) }))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                            <SelectItem key={d} value={String(d)}>{`Dia ${d}`}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Ao dar baixa (marcar como pago), o lançamento do mês seguinte é criado automaticamente, já pendente, com o mesmo valor.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {form.payment_condition === "installments" && (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
