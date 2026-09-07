@@ -495,6 +495,12 @@ export function SettleTransactionDialog({
                     {activeAccounts.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
                         {a.name}
+                        {/* FIX (2026-09-06): antes o menu só mostrava o
+                            nome da conta, sem indicar quais exigem caixa
+                            aberto pra receber (contas tipo "Caixa") — fácil
+                            escolher sem perceber, e só descobrir na hora
+                            que pede pra abrir o caixa. */}
+                        {a.type === "cash" ? " (exige caixa aberto)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
