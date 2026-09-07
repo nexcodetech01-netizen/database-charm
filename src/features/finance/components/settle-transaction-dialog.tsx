@@ -37,7 +37,7 @@ interface Props {
   transaction: FinancialTransaction | null;
   /** "Receber" | "Pagar" */
   verb?: string;
-  onSettled?: () => void;
+  onSettled?: (info: { isPartial: boolean }) => void;
   defaultPaymentMethod?: FinancePaymentMethod | "";
 }
 
@@ -227,7 +227,12 @@ export function SettleTransactionDialog({
       );
 
       onOpenChange(false);
-      onSettled?.();
+      // FIX (2026-09-06): antes não avisava quem chamou se a baixa foi
+      // parcial ou total — o checkout-dialog sempre forçava a venda pra
+      // "paid" mesmo numa baixa parcial, o que gerava um erro de
+      // validação ("status da venda não foi atualizado") já que a
+      // baixa em si (o dinheiro) já tinha sido registrada corretamente.
+      onSettled?.({ isPartial: isPartial && remainingAmount > 0 });
     } catch (err) {
       toast.error("Não foi possível registrar a baixa", {
         description: err instanceof Error ? err.message : undefined,

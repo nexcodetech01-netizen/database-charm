@@ -661,15 +661,22 @@ export function CheckoutDialog({
   }
 
   /** Executado apenas após a baixa concluída pela RPC. */
-  async function handleSettled() {
+  async function handleSettled(info?: { isPartial: boolean }) {
     setSettleTx(null);
     confirmedRef.current = true;
     setConfirmed(true);
+    // FIX (2026-09-06): antes forçava sempre "paid", mesmo numa baixa
+    // parcial — o que fazia essa chamada falhar (status inválido pra
+    // uma venda com saldo ainda em aberto) e mostrar "Baixa registrada,
+    // mas o status da venda não foi atualizado", mesmo o pagamento em
+    // si já tendo sido registrado corretamente.
+    const targetStatus = info?.isPartial ? "partially_paid" : "paid";
     try {
-      await setStatus.mutateAsync({ id: saleId, status: "paid" });
-      toast.success("Pagamento registrado com sucesso", {
-        description: saleNumber ? `Venda ${saleNumber} concluída.` : undefined,
-      });
+      await setStatus.mutateAsync({ id: saleId, status: targetStatus });
+      toast.success(
+        targetStatus === "partially_paid" ? "Pagamento parcial registrado" : "Pagamento registrado com sucesso",
+        { description: saleNumber ? `Venda ${saleNumber} ${targetStatus === "partially_paid" ? "atualizada" : "concluída"}.` : undefined },
+      );
       onPaid?.({ method });
       openCompletedDialog();
     } catch (e) {
@@ -1744,7 +1751,7 @@ export function CheckoutDialog({
         companyId={companyId}
         transaction={settleTx}
         verb="Receber"
-        onSettled={() => void handleSettled()}
+        onSettled={(info) => void handleSettled(info)}
         defaultPaymentMethod={
           method === "pix_manual"
             ? "pix"
