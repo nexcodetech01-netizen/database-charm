@@ -66,6 +66,19 @@ export function ReceiptDialog(props: Props) {
     }
 
     // Identifica todos os estilos da página (global + tailwind + custom)
+    // FIX (2026-09-06): a extração de cssRules() falha silenciosamente
+    // (retorna string vazia) para qualquer stylesheet de outra origem
+    // (ex.: fontes ou CSS servidos por CDN) — isso fazia o cupom
+    // imprimir sem NENHUM estilo aplicado, deixando o conteúdo
+    // efetivamente invisível (texto sem cor definida, elementos sem
+    // dimensão) mesmo com o HTML presente. Agora também copiamos os
+    // próprios <link rel="stylesheet"> da página pro <head> do iframe,
+    // o que faz o navegador carregar o CSS de verdade, sem depender de
+    // conseguir ler o conteúdo dele via JavaScript.
+    const stylesheetLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map((link) => (link as HTMLLinkElement).outerHTML)
+      .join("\n");
+
     const styles = Array.from(document.styleSheets)
       .map((sheet) => {
         try {
@@ -89,6 +102,7 @@ export function ReceiptDialog(props: Props) {
       <html>
         <head>
           <meta charset="utf-8">
+          ${stylesheetLinks}
           <style>
             ${styles}
             ${thermalPageStyle}

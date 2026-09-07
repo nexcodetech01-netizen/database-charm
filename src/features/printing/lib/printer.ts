@@ -153,27 +153,63 @@ function printOnce(html: string): Promise<void> {
         console.log("[printer.ts] Evento 'afterprint' disparado no iframe.");
       });
 
-      try {
-        // 3. Se o iframe recebe focus antes do print().
-        win.focus();
-        const hasFocus = doc?.hasFocus?.() ?? false; // document do iframe
-        const globalFocus = document.hasFocus(); // document principal
-        console.log(`[printer.ts] focus() chamado. iframe document.hasFocus: ${win.document.hasFocus()}, root document.hasFocus: ${globalFocus}`);
+      const triggerPrint = () => {
+        try {
+          // 3. Se o iframe recebe focus antes do print().
+          win.focus();
+          const hasFocus = doc?.hasFocus?.() ?? false; // document do iframe
+          const globalFocus = document.hasFocus(); // document principal
+          console.log(`[printer.ts] focus() chamado. iframe document.hasFocus: ${win.document.hasFocus()}, root document.hasFocus: ${globalFocus}`);
 
-        console.log("[printer.ts] Disparando window.print() no iframe isolado...");
-        
-        // 5. Se document.hasFocus() retorna true antes do window.print().
-        // (Já logado acima, mas sendo explícito aqui conforme pedido)
-        console.log(`[printer.ts] document.hasFocus() antes do print: ${document.hasFocus()}`);
+          console.log("[printer.ts] Disparando window.print() no iframe isolado...");
 
-        win.print();
-        console.log("[printer.ts] window.print() disparado com sucesso.");
-      } catch (err) {
-        // 6. Se existe alguma exceção assíncrona após o window.print().
-        console.error("[printer.ts] Exceção capturada durante/após window.print():", err);
-        throw err;
+          // 5. Se document.hasFocus() retorna true antes do window.print().
+          // (Já logado acima, mas sendo explícito aqui conforme pedido)
+          console.log(`[printer.ts] document.hasFocus() antes do print: ${document.hasFocus()}`);
+
+          win.print();
+          console.log("[printer.ts] window.print() disparado com sucesso.");
+        } catch (err) {
+          // 6. Se existe alguma exceção assíncrona após o window.print().
+          console.error("[printer.ts] Exceção capturada durante/após window.print():", err);
+          throw err;
+        }
+        cleanup();
+      };
+
+      // FIX (2026-09-06): iframe.onload dispara quando o HTML termina
+      // de ser interpretado, mas NÃO espera os <link rel="stylesheet">
+      // (adicionados pra corrigir estilo perdido) terminarem de
+      // carregar de verdade. Chamar print() nesse momento podia
+      // imprimir a página sem nenhum CSS aplicado — texto ou cor
+      // "sumindo" mesmo com o conteúdo presente. Agora esperamos cada
+      // link de estilo carregar (ou um tempo limite de segurança de
+      // 800ms) antes de disparar a impressão.
+      const linkEls = Array.from(win.document.querySelectorAll('link[rel="stylesheet"]'));
+      if (linkEls.length === 0) {
+        triggerPrint();
+      } else {
+        let remaining = linkEls.length;
+        let printed = false;
+        const proceed = () => {
+          if (printed) return;
+          printed = true;
+          triggerPrint();
+        };
+        const safetyTimer = win.setTimeout(proceed, 800);
+        linkEls.forEach((link) => {
+          const el = link as HTMLLinkElement;
+          const onDone = () => {
+            remaining -= 1;
+            if (remaining <= 0) {
+              win.clearTimeout(safetyTimer);
+              proceed();
+            }
+          };
+          el.addEventListener("load", onDone, { once: true });
+          el.addEventListener("error", onDone, { once: true });
+        });
       }
-      cleanup();
     };
 
     const doc = iframe.contentDocument;
