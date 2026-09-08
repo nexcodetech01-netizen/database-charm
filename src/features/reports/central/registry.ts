@@ -452,6 +452,11 @@ async function loadEstoqueAtual(ctx: ReportContext): Promise<ReportResult> {
     .select("id, name, sku, stock, min_stock, cost, price, status")
     .eq("company_id", ctx.companyId)
     .neq("status", "inactive")
+    // FIX (2026-09-07): "Estoque atual" mostrava TODOS os produtos,
+    // inclusive com estoque zerado — sem filtro nenhum disponível na
+    // tela pra esconder o que já acabou. Um relatório de "estoque
+    // atual" só faz sentido mostrando o que existe de verdade agora.
+    .gt("stock", 0)
     .order("name");
   if (error) throw error;
   const rows = (data ?? []).map((p) => ({
