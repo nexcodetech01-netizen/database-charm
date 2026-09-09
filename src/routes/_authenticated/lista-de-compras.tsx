@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { ShoppingCart, Plus, Trash2, X } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, X, Printer, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PageLayout, EmptyState } from "@/components/layout";
 import { toast } from "sonner";
+import { printHtmlDocument } from "@/features/printing";
 import {
   useShoppingList,
   useAddShoppingListItem,
@@ -89,11 +90,73 @@ function ShoppingListPage() {
     }
   }
 
+  function buildListText(): string {
+    if (pending.length === 0) return "Lista de compras vazia.";
+    const lines = pending.map(
+      (i) => `• ${i.name}${i.quantity > 1 ? ` (${i.quantity}x)` : ""}${i.notes ? ` — ${i.notes}` : ""}`,
+    );
+    return `*Lista de compras*\n\n${lines.join("\n")}`;
+  }
+
+  function handlePrint() {
+    if (pending.length === 0) {
+      toast.error("Sua lista está vazia, não tem nada pra imprimir.");
+      return;
+    }
+    const rows = pending
+      .map(
+        (i) => `
+          <tr>
+            <td style="padding:6px 4px;border-bottom:1px solid #ddd;width:24px;">☐</td>
+            <td style="padding:6px 4px;border-bottom:1px solid #ddd;">
+              ${i.name}${i.quantity > 1 ? ` <b>(${i.quantity}x)</b>` : ""}
+              ${i.notes ? `<div style="font-size:11px;color:#666;">${i.notes}</div>` : ""}
+            </td>
+          </tr>`,
+      )
+      .join("");
+    const html = `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px;">
+        <h2 style="margin-bottom: 4px;">Lista de compras</h2>
+        <p style="color:#666; font-size:12px; margin-top:0;">${new Date().toLocaleDateString("pt-BR")}</p>
+        <table style="width:100%; border-collapse: collapse; margin-top: 12px;">
+          ${rows}
+        </table>
+      </div>`;
+    void printHtmlDocument(html);
+  }
+
+  function handleShare() {
+    if (pending.length === 0) {
+      toast.error("Sua lista está vazia, não tem nada pra compartilhar.");
+      return;
+    }
+    const text = buildListText();
+    if (navigator.share) {
+      navigator.share({ title: "Lista de compras", text }).catch(() => {
+        // usuário cancelou o compartilhamento — não é erro
+      });
+    } else {
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
   return (
     <PageLayout
       icon={ShoppingCart}
       title="Lista de compras"
       meta={`${pending.length} pendente${pending.length === 1 ? "" : "s"}`}
+      actions={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="mr-1.5 h-4 w-4" /> Compartilhar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="mr-1.5 h-4 w-4" /> Imprimir
+          </Button>
+        </div>
+      }
       kpis={null}
     >
       <form onSubmit={handleAdd} className="mb-6 flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-end">
