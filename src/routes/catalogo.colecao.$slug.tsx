@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,20 @@ export const Route = createFileRoute("/catalogo/colecao/$slug")({
   notFoundComponent: () => <CollectionNotFoundState />,
 });
 
+// `notFound()` do TanStack Router só é reconhecido quando lançado dentro do
+// loader/beforeLoad da rota. Essa busca roda dentro do `queryFn` do
+// useQuery (client-side, pra refletir dados atualizados), então um 404 real
+// precisa de um erro próprio que o componente saiba distinguir de uma falha
+// de rede/servidor — senão a coleção "não existe" cai no mesmo estado de
+// "não conseguimos carregar", com botão de tentar novamente que não resolve
+// nada.
+class CollectionNotFoundError extends Error {
+  constructor() {
+    super("collection_not_found");
+    this.name = "CollectionNotFoundError";
+  }
+}
+
 async function fetchPublicCollection(
   slug: string,
   preview: boolean,
@@ -154,7 +168,7 @@ async function fetchPublicCollection(
   const res = await fetch(
     `/api/public/catalog/${encodeURIComponent(slug)}${qs}`,
   );
-  if (res.status === 404) throw notFound();
+  if (res.status === 404) throw new CollectionNotFoundError();
   if (!res.ok) throw new Error("Falha ao carregar a coleção");
   return res.json();
 }
@@ -182,12 +196,15 @@ function PublicCollectionPage() {
   const navigate = Route.useNavigate();
   const isPreview = search.preview === "1";
 
-  const { data, isLoading, isError, isFetching, refetch } = useQuery({
+  const { data, error, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["public-collection", slug, isPreview],
     queryFn: () => fetchPublicCollection(slug, isPreview),
     initialData: Route.useLoaderData().collection || undefined,
     staleTime: 60_000,
-    retry: 1,
+    // Não faz sentido tentar de novo automaticamente quando a coleção
+    // simplesmente não existe — só re-tenta em falhas de rede/servidor.
+    retry: (failureCount, err) =>
+      !(err instanceof CollectionNotFoundError) && failureCount < 1,
   });
 
   const [q, setQ] = useState(search.q);
@@ -293,6 +310,10 @@ function PublicCollectionPage() {
 
   if (isLoading) {
     return <CollectionSkeleton />;
+  }
+
+  if (error instanceof CollectionNotFoundError) {
+    return <CollectionNotFoundState />;
   }
 
   if (isError || !data) {
