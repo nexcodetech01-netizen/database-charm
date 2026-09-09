@@ -15,6 +15,7 @@ export const ROUTES = {
   inventoryReconciliation: "/estoque/reconciliacao",
   purchases: "/compras",
   suppliers: "/fornecedores",
+  shoppingList: "/lista-de-compras",
   imports: "/importacoes",
   customers: "/clientes",
   sales: "/vendas",

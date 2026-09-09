@@ -6241,6 +6241,56 @@ export type Database = {
           },
         ]
       }
+      shopping_list_items: {
+        Row: {
+          checked: boolean
+          checked_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          checked?: boolean
+          checked_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          checked?: boolean
+          checked_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales: {
         Row: {
           bella_pay_ref: string | null
