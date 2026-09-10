@@ -16,11 +16,30 @@ export function useShoppingList(companyId: string) {
 export function useAddShoppingListItem(companyId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; quantity?: number; notes?: string | null; productId?: string | null }) =>
-      shoppingListService.add({ companyId, ...input }),
+    mutationFn: (input: {
+      name: string;
+      quantity?: number;
+      notes?: string | null;
+      productId?: string | null;
+      estimatedPrice?: number | null;
+      category?: string | null;
+    }) => shoppingListService.add({ companyId, ...input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: shoppingListKeys.all(companyId) }),
   });
 }
+
+export function useUpdateShoppingListItemDetails(companyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...patch
+    }: { id: string; estimatedPrice?: number | null; category?: string | null }) =>
+      shoppingListService.updateDetails(id, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: shoppingListKeys.all(companyId) }),
+  });
+}
+
 
 export function useToggleShoppingListItem(companyId: string) {
   const qc = useQueryClient();
