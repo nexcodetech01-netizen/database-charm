@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { ShoppingCart, Plus, Trash2, X, Printer, Share2 } from "lucide-react";
@@ -14,7 +14,28 @@ import {
   useToggleShoppingListItem,
   useRemoveShoppingListItem,
   useClearCheckedShoppingList,
+  useUpdateShoppingListItemDetails,
 } from "@/features/shopping-list/hooks/use-shopping-list";
+import type { ShoppingListItem } from "@/features/shopping-list/services/shopping-list.service";
+
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+
+function itemTotal(item: ShoppingListItem) {
+  return item.estimated_price === null ? null : item.estimated_price * item.quantity;
+}
+
+function ItemPrice({ item }: { item: ShoppingListItem }) {
+  const total = itemTotal(item);
+  if (item.estimated_price === null || total === null) return null;
+  return (
+    <span className="font-normal text-muted-foreground">
+      {" — "}{currencyFormatter.format(item.estimated_price)}/un · {currencyFormatter.format(total)}
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/lista-de-compras")({
   beforeLoad: requirePermission("products.view"),
@@ -30,15 +51,41 @@ function ShoppingListPage() {
   const toggleMut = useToggleShoppingListItem(companyId);
   const removeMut = useRemoveShoppingListItem(companyId);
   const clearCheckedMut = useClearCheckedShoppingList(companyId);
+  const updateDetailsMut = useUpdateShoppingListItemDetails(companyId);
 
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [notes, setNotes] = useState("");
+  const [estimatedPrice, setEstimatedPrice] = useState("");
+  const [category, setCategory] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingPrice, setEditingPrice] = useState("");
+  const [editingCategory, setEditingCategory] = useState("");
 
   const pending = (items ?? []).filter((i) => !i.checked);
   const checked = (items ?? []).filter((i) => i.checked);
+  const categorySuggestions = useMemo(
+    () => Array.from(new Set((items ?? []).map((item) => item.category?.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [items],
+  );
+  const pendingGroups = useMemo(() => {
+    const groups = new Map<string, ShoppingListItem[]>();
+    for (const item of pending) {
+      const groupName = item.category?.trim() || "Sem categoria";
+      groups.set(groupName, [...(groups.get(groupName) ?? []), item]);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      if (a === "Sem categoria") return 1;
+      if (b === "Sem categoria") return -1;
+      return a.localeCompare(b);
+    });
+  }, [pending]);
+  const pendingWithPrice = pending.filter((item) => item.estimated_price !== null);
+  const checkedWithPrice = checked.filter((item) => item.estimated_price !== null);
+  const pendingTotal = pendingWithPrice.reduce((total, item) => total + (itemTotal(item) ?? 0), 0);
+  const checkedTotal = checkedWithPrice.reduce((total, item) => total + (itemTotal(item) ?? 0), 0);
 
-  async function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     try {
@@ -46,15 +93,101 @@ function ShoppingListPage() {
         name: name.trim(),
         quantity: Number(quantity) || 1,
         notes: notes.trim() || null,
+        estimatedPrice: estimatedPrice === "" ? null : Number(estimatedPrice),
+        category: category.trim() || null,
       });
       setName("");
       setQuantity("1");
       setNotes("");
+      setEstimatedPrice("");
+      setCategory("");
     } catch (err) {
       toast.error("Não foi possível adicionar", {
         description: err instanceof Error ? err.message : undefined,
       });
     }
+  }
+
+  function startEditing(item: ShoppingListItem) {
+    setEditingId(item.id);
+    setEditingPrice(item.estimated_price === null ? "" : String(item.estimated_price));
+    setEditingCategory(item.category ?? "");
+  }
+
+  async function saveDetails(id: string) {
+    try {
+      await updateDetailsMut.mutateAsync({
+        id,
+        estimatedPrice: editingPrice === "" ? null : Number(editingPrice),
+        category: editingCategory.trim() || null,
+      });
+      setEditingId(null);
+    } catch (err) {
+      toast.error("Não foi possível atualizar os detalhes", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    }
+  }
+
+  function renderItem(item: ShoppingListItem, purchased = false) {
+    const isEditing = editingId === item.id;
+    return (
+      <li key={item.id} className="flex items-start gap-3 p-3">
+        <Checkbox
+          className="mt-1"
+          checked={item.checked}
+          onCheckedChange={() => handleToggle(item.id, item.checked)}
+        />
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm font-medium ${purchased ? "line-through" : ""}`}>
+            {item.name}
+            {item.quantity > 1 ? ` (${item.quantity}x)` : ""}
+            <ItemPrice item={item} />
+          </p>
+          {item.notes ? <p className="text-xs text-muted-foreground">{item.notes}</p> : null}
+          {isEditing ? (
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                className="h-8 sm:w-40"
+                type="number"
+                min="0"
+                step="0.01"
+                value={editingPrice}
+                onChange={(event) => setEditingPrice(event.target.value)}
+                placeholder="Valor unitário"
+                aria-label="Valor estimado do item"
+              />
+              <Input
+                className="h-8 sm:w-48"
+                value={editingCategory}
+                onChange={(event) => setEditingCategory(event.target.value)}
+                placeholder="Categoria"
+                list="shopping-list-categories"
+                aria-label="Categoria do item"
+              />
+              <Button size="sm" type="button" onClick={() => saveDetails(item.id)} disabled={updateDetailsMut.isPending}>
+                Salvar
+              </Button>
+              <Button size="sm" type="button" variant="ghost" onClick={() => setEditingId(null)}>
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Button
+              className="mt-1 h-auto p-0 text-xs text-muted-foreground"
+              type="button"
+              variant="link"
+              onClick={() => startEditing(item)}
+            >
+              {item.category || "Sem categoria"} · Editar valor e categoria
+            </Button>
+          )}
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id)} aria-label={`Remover ${item.name}`}>
+          <X className="h-4 w-4" />
+        </Button>
+      </li>
+    );
   }
 
   async function handleToggle(id: string, current: boolean) {
@@ -157,10 +290,28 @@ function ShoppingListPage() {
           </Button>
         </div>
       }
-      kpis={null}
+      kpis={
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border p-4">
+            <p className="text-xs font-medium text-muted-foreground">Total estimado (pendente)</p>
+            <p className="mt-1 text-lg font-semibold">
+              {pendingWithPrice.length > 0 ? currencyFormatter.format(pendingTotal) : "Adicione valores pra ver o total estimado"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border p-4">
+            <p className="text-xs font-medium text-muted-foreground">Total comprado</p>
+            <p className="mt-1 text-lg font-semibold">
+              {checkedWithPrice.length > 0 ? currencyFormatter.format(checkedTotal) : "Adicione valores pra ver o total comprado"}
+            </p>
+          </div>
+        </div>
+      }
     >
-      <form onSubmit={handleAdd} className="mb-6 flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
+      <datalist id="shopping-list-categories">
+        {categorySuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+      </datalist>
+      <form onSubmit={handleAdd} className="mb-6 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_80px_minmax(160px,0.7fr)_150px_minmax(150px,0.6fr)_auto] lg:items-end">
+        <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">O que você quer comprar?</label>
           <Input
             value={name}
@@ -169,7 +320,7 @@ function ShoppingListPage() {
             autoFocus
           />
         </div>
-        <div className="w-full sm:w-24">
+        <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Qtd.</label>
           <Input
             type="number"
@@ -178,12 +329,32 @@ function ShoppingListPage() {
             onChange={(e) => setQuantity(e.target.value)}
           />
         </div>
-        <div className="w-full sm:w-56">
+        <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Observação (opcional)</label>
           <Input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Ex.: cor, fornecedor..."
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Valor estimado (R$)</label>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={estimatedPrice}
+            onChange={(event) => setEstimatedPrice(event.target.value)}
+            placeholder="0,00"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Categoria</label>
+          <Input
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            placeholder="Ex.: Aviamentos"
+            list="shopping-list-categories"
           />
         </div>
         <Button type="submit" disabled={!name.trim() || addMut.isPending}>
@@ -203,23 +374,23 @@ function ShoppingListPage() {
         <div className="space-y-6">
           <div>
             <h3 className="mb-2 text-sm font-medium text-muted-foreground">Pendentes ({pending.length})</h3>
-            <ul className="divide-y divide-border rounded-xl border border-border">
-              {pending.map((item) => (
-                <li key={item.id} className="flex items-center gap-3 p-3">
-                  <Checkbox checked={item.checked} onCheckedChange={() => handleToggle(item.id, item.checked)} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
-                      {item.name}
-                      {item.quantity > 1 ? ` (${item.quantity}x)` : ""}
-                    </p>
-                    {item.notes ? <p className="text-xs text-muted-foreground">{item.notes}</p> : null}
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4">
+              {pendingGroups.map(([groupName, groupItems]) => {
+                const pricedItems = groupItems.filter((item) => item.estimated_price !== null);
+                const subtotal = pricedItems.reduce((total, item) => total + (itemTotal(item) ?? 0), 0);
+                return (
+                  <section key={groupName}>
+                    <div className="mb-1.5 flex items-center justify-between px-1">
+                      <h4 className="text-sm font-semibold">{groupName}</h4>
+                      {pricedItems.length > 0 ? <span className="text-xs text-muted-foreground">Subtotal: {currencyFormatter.format(subtotal)}</span> : null}
+                    </div>
+                    <ul className="divide-y divide-border rounded-xl border border-border">
+                      {groupItems.map((item) => renderItem(item))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
           </div>
 
           {checked.length > 0 && (
@@ -231,20 +402,7 @@ function ShoppingListPage() {
                 </Button>
               </div>
               <ul className="divide-y divide-border rounded-xl border border-border opacity-60">
-                {checked.map((item) => (
-                  <li key={item.id} className="flex items-center gap-3 p-3">
-                    <Checkbox checked={item.checked} onCheckedChange={() => handleToggle(item.id, item.checked)} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium line-through">
-                        {item.name}
-                        {item.quantity > 1 ? ` (${item.quantity}x)` : ""}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
+                {checked.map((item) => renderItem(item, true))}
               </ul>
             </div>
           )}
