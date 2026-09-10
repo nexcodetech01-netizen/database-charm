@@ -333,7 +333,7 @@ function ShoppingListPage() {
             autoFocus
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Qtd.</label>
           <Input
             type="number"
@@ -342,7 +342,7 @@ function ShoppingListPage() {
             onChange={(e) => setQuantity(e.target.value)}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Observação (opcional)</label>
           <Input
             value={notes}
@@ -350,7 +350,7 @@ function ShoppingListPage() {
             placeholder="Ex.: cor, fornecedor..."
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Valor estimado (R$)</label>
           <Input
             type="number"
@@ -361,7 +361,7 @@ function ShoppingListPage() {
             placeholder="0,00"
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Categoria</label>
           <Input
             value={category}
@@ -370,9 +370,15 @@ function ShoppingListPage() {
             list="shopping-list-categories"
           />
         </div>
-        <Button type="submit" disabled={!name.trim() || addMut.isPending}>
-          <Plus className="mr-1.5 h-4 w-4" /> Adicionar
-        </Button>
+        <div className="flex justify-stretch sm:col-span-2 lg:col-span-3 lg:justify-end">
+          <Button
+            type="submit"
+            disabled={!name.trim() || addMut.isPending}
+            className="w-full lg:w-auto"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Adicionar
+          </Button>
+        </div>
       </form>
 
       {isLoading ? (
