@@ -249,25 +249,55 @@ function ShoppingListPage() {
       toast.error("Sua lista está vazia, não tem nada pra imprimir.");
       return;
     }
-    const rows = pending
-      .map(
-        (i) => `
-          <tr>
-            <td style="padding:6px 4px;border-bottom:1px solid #ddd;width:24px;">☐</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #ddd;">
-              ${i.name}${i.quantity > 1 ? ` <b>(${i.quantity}x)</b>` : ""}
-              ${i.notes ? `<div style="font-size:11px;color:#666;">${i.notes}</div>` : ""}
-            </td>
-          </tr>`,
-      )
+    const groupsHtml = pendingGroups
+      .map(([groupName, groupItems]) => {
+        const pricedItems = groupItems.filter((item) => item.estimated_price !== null);
+        const subtotal = pricedItems.reduce((total, item) => total + (itemTotal(item) ?? 0), 0);
+        const rows = groupItems
+          .map((i) => {
+            const total = itemTotal(i);
+            return `
+              <tr>
+                <td style="padding:6px 4px;border-bottom:1px solid #ddd;width:22px;vertical-align:top;">☐</td>
+                <td style="padding:6px 4px;border-bottom:1px solid #ddd;">
+                  ${i.name}${i.quantity > 1 ? ` <b>(${i.quantity}x)</b>` : ""}
+                  ${i.notes ? `<div style="font-size:11px;color:#666;">${i.notes}</div>` : ""}
+                </td>
+                <td style="padding:6px 4px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;font-size:12px;color:#444;">
+                  ${i.estimated_price !== null ? `${currencyFormatter.format(i.estimated_price)}/un` : "—"}
+                </td>
+                <td style="padding:6px 4px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;font-size:12px;font-weight:600;">
+                  ${total !== null ? currencyFormatter.format(total) : "—"}
+                </td>
+              </tr>`;
+          })
+          .join("");
+        return `
+          <div style="margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:12px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:0.04em;">${groupName}</span>
+              ${pricedItems.length > 0 ? `<span style="font-size:11px;color:#666;">Subtotal: ${currencyFormatter.format(subtotal)}</span>` : ""}
+            </div>
+            <table style="width:100%; border-collapse: collapse; margin-top: 6px;">
+              ${rows}
+            </table>
+          </div>`;
+      })
       .join("");
+    const totalHtml =
+      pendingWithPrice.length > 0
+        ? `
+        <div style="margin-top:16px;padding-top:10px;border-top:2px solid #333;display:flex;justify-content:space-between;font-size:14px;font-weight:700;">
+          <span>Total estimado</span>
+          <span>${currencyFormatter.format(pendingTotal)}</span>
+        </div>`
+        : "";
     const html = `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px;">
         <h2 style="margin-bottom: 4px;">Lista de compras</h2>
         <p style="color:#666; font-size:12px; margin-top:0;">${new Date().toLocaleDateString("pt-BR")}</p>
-        <table style="width:100%; border-collapse: collapse; margin-top: 12px;">
-          ${rows}
-        </table>
+        ${groupsHtml}
+        ${totalHtml}
       </div>`;
     void printHtmlDocument(html);
   }
