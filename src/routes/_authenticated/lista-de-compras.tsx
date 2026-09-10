@@ -323,8 +323,8 @@ function ShoppingListPage() {
       <datalist id="shopping-list-categories">
         {categorySuggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
       </datalist>
-      <form onSubmit={handleAdd} className="mb-6 grid gap-3 rounded-xl border border-border p-4 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_80px_minmax(160px,0.7fr)_150px_minmax(150px,0.6fr)_auto] lg:items-end">
-        <div>
+      <form onSubmit={handleAdd} className="mb-6 grid w-full grid-cols-1 gap-3 rounded-xl border border-border p-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="min-w-0 sm:col-span-2 lg:col-span-1">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">O que você quer comprar?</label>
           <Input
             value={name}
