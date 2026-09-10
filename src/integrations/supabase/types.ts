@@ -6533,11 +6533,13 @@ export type Database = {
       }
       shopping_list_items: {
         Row: {
+          category: string | null
           checked: boolean
           checked_at: string | null
           company_id: string
           created_at: string
           created_by: string | null
+          estimated_price: number | null
           id: string
           name: string
           notes: string | null
@@ -6546,11 +6548,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           checked?: boolean
           checked_at?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
+          estimated_price?: number | null
           id?: string
           name: string
           notes?: string | null
@@ -6559,11 +6563,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           checked?: boolean
           checked_at?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
+          estimated_price?: number | null
           id?: string
           name?: string
           notes?: string | null
