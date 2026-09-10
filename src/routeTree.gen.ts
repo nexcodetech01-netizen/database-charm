@@ -31,6 +31,7 @@ import { Route as AuthenticatedProcessamentosRouteImport } from './routes/_authe
 import { Route as AuthenticatedPdvRouteImport } from './routes/_authenticated/pdv'
 import { Route as AuthenticatedPainelExecutivoRouteImport } from './routes/_authenticated/painel-executivo'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
+import { Route as AuthenticatedListaDeComprasRouteImport } from './routes/_authenticated/lista-de-compras'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
@@ -233,6 +234,12 @@ const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedListaDeComprasRoute =
+  AuthenticatedListaDeComprasRouteImport.update({
+    id: '/lista-de-compras',
+    path: '/lista-de-compras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIndicadoresRoute =
   AuthenticatedIndicadoresRouteImport.update({
     id: '/indicadores',
@@ -771,6 +778,7 @@ export interface FileRoutesByFullPath {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
   '/marketing': typeof AuthenticatedMarketingRoute
   '/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
   '/pdv': typeof AuthenticatedPdvRoute
@@ -882,6 +890,7 @@ export interface FileRoutesByTo {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
   '/marketing': typeof AuthenticatedMarketingRoute
   '/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
   '/pdv': typeof AuthenticatedPdvRoute
@@ -994,6 +1003,7 @@ export interface FileRoutesById {
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/_authenticated/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
   '/_authenticated/painel-executivo': typeof AuthenticatedPainelExecutivoRoute
   '/_authenticated/pdv': typeof AuthenticatedPdvRoute
@@ -1107,6 +1117,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/importacoes'
     | '/indicadores'
+    | '/lista-de-compras'
     | '/marketing'
     | '/painel-executivo'
     | '/pdv'
@@ -1218,6 +1229,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/importacoes'
     | '/indicadores'
+    | '/lista-de-compras'
     | '/marketing'
     | '/painel-executivo'
     | '/pdv'
@@ -1329,6 +1341,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fornecedores'
     | '/_authenticated/importacoes'
     | '/_authenticated/indicadores'
+    | '/_authenticated/lista-de-compras'
     | '/_authenticated/marketing'
     | '/_authenticated/painel-executivo'
     | '/_authenticated/pdv'
@@ -1599,6 +1612,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/marketing'
       preLoaderRoute: typeof AuthenticatedMarketingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lista-de-compras': {
+      id: '/_authenticated/lista-de-compras'
+      path: '/lista-de-compras'
+      fullPath: '/lista-de-compras'
+      preLoaderRoute: typeof AuthenticatedListaDeComprasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/indicadores': {
@@ -2409,6 +2429,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRouteWithChildren
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
+  AuthenticatedListaDeComprasRoute: typeof AuthenticatedListaDeComprasRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
   AuthenticatedPainelExecutivoRoute: typeof AuthenticatedPainelExecutivoRoute
   AuthenticatedPdvRoute: typeof AuthenticatedPdvRoute
@@ -2475,6 +2496,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRouteWithChildren,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
+  AuthenticatedListaDeComprasRoute: AuthenticatedListaDeComprasRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
   AuthenticatedPainelExecutivoRoute: AuthenticatedPainelExecutivoRoute,
   AuthenticatedPdvRoute: AuthenticatedPdvRoute,

@@ -2549,12 +2549,12 @@ export type Database = {
           discount_amount: number
           due_date: string | null
           id: string
+          is_recurring: boolean
           notes: string | null
           paid_at: string | null
           payment_method: string | null
           recurrence_day: number | null
           recurring_parent_id: string | null
-          is_recurring: boolean
           reference_id: string | null
           reference_number: string | null
           settlement_session_id: string | null
@@ -2579,12 +2579,12 @@ export type Database = {
           discount_amount?: number
           due_date?: string | null
           id?: string
+          is_recurring?: boolean
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           recurrence_day?: number | null
           recurring_parent_id?: string | null
-          is_recurring?: boolean
           reference_id?: string | null
           reference_number?: string | null
           settlement_session_id?: string | null
@@ -2609,12 +2609,12 @@ export type Database = {
           discount_amount?: number
           due_date?: string | null
           id?: string
+          is_recurring?: boolean
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           recurrence_day?: number | null
           recurring_parent_id?: string | null
-          is_recurring?: boolean
           reference_id?: string | null
           reference_number?: string | null
           settlement_session_id?: string | null
@@ -2659,6 +2659,13 @@ export type Database = {
             columns: ["cost_center_id"]
             isOneToOne: false
             referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_recurring_parent_id_fkey"
+            columns: ["recurring_parent_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
             referencedColumns: ["id"]
           },
           {
@@ -6241,56 +6248,6 @@ export type Database = {
           },
         ]
       }
-      shopping_list_items: {
-        Row: {
-          checked: boolean
-          checked_at: string | null
-          company_id: string
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-          notes: string | null
-          product_id: string | null
-          quantity: number
-          updated_at: string
-        }
-        Insert: {
-          checked?: boolean
-          checked_at?: string | null
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-          notes?: string | null
-          product_id?: string | null
-          quantity?: number
-          updated_at?: string
-        }
-        Update: {
-          checked?: boolean
-          checked_at?: string | null
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-          notes?: string | null
-          product_id?: string | null
-          quantity?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shopping_list_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       sales: {
         Row: {
           bella_pay_ref: string | null
@@ -6570,6 +6527,69 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_list_items: {
+        Row: {
+          category: string | null
+          checked: boolean
+          checked_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          estimated_price: number | null
+          id: string
+          name: string
+          notes: string | null
+          product_id: string | null
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          checked?: boolean
+          checked_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          estimated_price?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          checked?: boolean
+          checked_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          estimated_price?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          product_id?: string | null
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -7495,9 +7515,12 @@ export type Database = {
           discount_amount: number
           due_date: string | null
           id: string
+          is_recurring: boolean
           notes: string | null
           paid_at: string | null
           payment_method: string | null
+          recurrence_day: number | null
+          recurring_parent_id: string | null
           reference_id: string | null
           reference_number: string | null
           settlement_session_id: string | null
@@ -7583,9 +7606,12 @@ export type Database = {
           discount_amount: number
           due_date: string | null
           id: string
+          is_recurring: boolean
           notes: string | null
           paid_at: string | null
           payment_method: string | null
+          recurrence_day: number | null
+          recurring_parent_id: string | null
           reference_id: string | null
           reference_number: string | null
           settlement_session_id: string | null
@@ -7875,9 +7901,12 @@ export type Database = {
           discount_amount: number
           due_date: string | null
           id: string
+          is_recurring: boolean
           notes: string | null
           paid_at: string | null
           payment_method: string | null
+          recurrence_day: number | null
+          recurring_parent_id: string | null
           reference_id: string | null
           reference_number: string | null
           settlement_session_id: string | null
@@ -7994,9 +8023,12 @@ export type Database = {
               discount_amount: number
               due_date: string | null
               id: string
+              is_recurring: boolean
               notes: string | null
               paid_at: string | null
               payment_method: string | null
+              recurrence_day: number | null
+              recurring_parent_id: string | null
               reference_id: string | null
               reference_number: string | null
               settlement_session_id: string | null
@@ -8039,9 +8071,12 @@ export type Database = {
               discount_amount: number
               due_date: string | null
               id: string
+              is_recurring: boolean
               notes: string | null
               paid_at: string | null
               payment_method: string | null
+              recurrence_day: number | null
+              recurring_parent_id: string | null
               reference_id: string | null
               reference_number: string | null
               settlement_session_id: string | null
