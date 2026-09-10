@@ -39,6 +39,16 @@ function ItemPrice({ item }: { item: ShoppingListItem }) {
 
 export const Route = createFileRoute("/_authenticated/lista-de-compras")({
   beforeLoad: requirePermission("products.view"),
+  head: () => ({
+    meta: [
+      { title: "Lista de compras | NexOS" },
+      { name: "description", content: "Organize itens, categorias e valores estimados da lista de compras." },
+      { property: "og:title", content: "Lista de compras | NexOS" },
+      { property: "og:description", content: "Organize itens, categorias e valores estimados da lista de compras." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ShoppingListPage,
 });
 
@@ -65,7 +75,10 @@ function ShoppingListPage() {
   const pending = (items ?? []).filter((i) => !i.checked);
   const checked = (items ?? []).filter((i) => i.checked);
   const categorySuggestions = useMemo(
-    () => Array.from(new Set((items ?? []).map((item) => item.category?.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    () => Array.from(new Set((items ?? []).flatMap((item) => {
+      const value = item.category?.trim();
+      return value ? [value] : [];
+    }))).sort((a, b) => a.localeCompare(b)),
     [items],
   );
   const pendingGroups = useMemo(() => {
