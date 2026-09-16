@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useCreateCategory, useUpdateCategory } from "../hooks/use-products";
+import { isValidNcm, normalizeNcm } from "../lib/fiscal-suggestions";
 import { toast } from "sonner";
 
 interface Props {
@@ -34,7 +35,7 @@ export function CategoryManagementDialog({ companyId, open, onOpenChange, catego
     if (category) {
       setName(category.name || "");
       setTargetMargin(category.target_margin_pct?.toString() || "");
-      setDefaultNcm(category.default_ncm || "");
+      setDefaultNcm(normalizeNcm(category.default_ncm) ?? "");
     } else {
       setName("");
       setTargetMargin("");
@@ -44,6 +45,13 @@ export function CategoryManagementDialog({ companyId, open, onOpenChange, catego
 
   const handleSave = async () => {
     if (!name.trim()) return;
+
+    if (defaultNcm && !isValidNcm(defaultNcm)) {
+      toast.error("NCM padrão inválido", {
+        description: "Informe 8 dígitos (sem pontos) ou deixe em branco.",
+      });
+      return;
+    }
 
     try {
       if (category) {
@@ -111,8 +119,9 @@ export function CategoryManagementDialog({ companyId, open, onOpenChange, catego
               <Input
                 id="cat-ncm"
                 placeholder="8 dígitos"
+                inputMode="numeric"
                 value={defaultNcm}
-                onChange={(e) => setDefaultNcm(e.target.value)}
+                onChange={(e) => setDefaultNcm(normalizeNcm(e.target.value) ?? "")}
               />
             </div>
           </div>
