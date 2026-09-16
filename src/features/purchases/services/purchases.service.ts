@@ -57,6 +57,7 @@ async function ensureProductsForItems(
         supplier_id: supplierId ?? null,
         category_id: categoryId,
         cost: Number(it.unit_price) || 0,
+        price: Number(it.unit_price) || 0,
         stock: 0,
         status: "active",
       })
