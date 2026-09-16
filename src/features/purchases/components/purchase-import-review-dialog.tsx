@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,16 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { PurchaseItemDraft } from "../types";
+import { useCategories } from "@/features/products/hooks/use-products";
+import { inferCategoryName } from "@/features/products/lib/infer-category";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   items: PurchaseItemDraft[];
   onConfirm: (items: PurchaseItemDraft[]) => void;
+  /** Necessário pra sugerir/listar categorias existentes da empresa. */
+  companyId: string;
 }
 
 export function PurchaseImportReviewDialog({
@@ -33,13 +37,29 @@ export function PurchaseImportReviewDialog({
   onOpenChange,
   items: initialItems,
   onConfirm,
+  companyId,
 }: Props) {
   const [items, setItems] = useState<PurchaseItemDraft[]>(initialItems);
+  const { data: existingCategories = [] } = useCategories(companyId);
 
-  // Sincroniza estado interno quando initialItems mudar (abertura do dialog)
-  if (items !== initialItems && open && items.length === 0) {
-     setItems(initialItems);
-  }
+  // Sincroniza estado interno quando initialItems mudar (abertura do dialog).
+  //
+  // CORRIGIDO (2026-09): também pré-preenche a categoria de cada item com
+  // um palpite (mesma inferência por palavra-chave usada ao salvar a
+  // compra), pra a pessoa só precisar corrigir os que não bateram — em vez
+  // de digitar do zero. Continua editável livremente: o que for digitado
+  // aqui tem prioridade sobre a inferência automática na hora de criar o
+  // produto (ver ensureProductsForItems em purchases.service.ts).
+  useEffect(() => {
+    if (!open) return;
+    setItems(
+      initialItems.map((it) => ({
+        ...it,
+        category_name: it.category_name ?? inferCategoryName(it.description) ?? "",
+      })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialItems]);
 
   function updateItem(index: number, patch: Partial<PurchaseItemDraft>) {
     setItems((prev) =>
@@ -62,15 +82,25 @@ export function PurchaseImportReviewDialog({
           </div>
           <DialogDescription>
             Confira as quantidades e preços extraídos pela IA. Você pode editar
-            a descrição se necessário.
+            a descrição e a categoria de cada item antes de confirmar.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Sugestões de autocompletar pro campo Categoria — reaproveita as
+            categorias já existentes na empresa, mas o campo aceita
+            qualquer texto (categoria nova é criada automaticamente). */}
+        <datalist id="purchase-import-category-options">
+          {existingCategories.map((c) => (
+            <option key={c.id} value={c.name} />
+          ))}
+        </datalist>
 
         <div className="flex-1 overflow-auto my-4 border rounded-md">
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
                 <TableHead>Produto / Descrição</TableHead>
+                <TableHead className="w-[160px]">Categoria</TableHead>
                 <TableHead className="w-[100px] text-right">Qtd. Real</TableHead>
                 <TableHead className="w-[130px] text-right">Custo Unit.</TableHead>
                 <TableHead className="w-[130px] text-right">Total</TableHead>
@@ -84,6 +114,17 @@ export function PurchaseImportReviewDialog({
                       value={it.description}
                       onChange={(e) =>
                         updateItem(idx, { description: e.target.value })
+                      }
+                      className="h-8 text-sm"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      list="purchase-import-category-options"
+                      value={it.category_name ?? ""}
+                      placeholder="Categoria"
+                      onChange={(e) =>
+                        updateItem(idx, { category_name: e.target.value })
                       }
                       className="h-8 text-sm"
                     />
@@ -120,7 +161,11 @@ export function PurchaseImportReviewDialog({
         <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg mb-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AlertCircle className="h-4 w-4" />
-            <span>Kits e pacotes foram fracionados automaticamente pela IA.</span>
+            <span>
+              Kits e pacotes foram fracionados automaticamente pela IA. Categoria
+              em branco vira "Outros" — categoria nova digitada aqui é criada
+              automaticamente ao confirmar.
+            </span>
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground uppercase font-semibold">Total Extraído</p>

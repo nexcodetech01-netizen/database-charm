@@ -65,6 +65,13 @@ export interface PurchaseItemDraft {
   unit?: string | null;
   stock_available?: number | null;
   last_cost?: number | null;
+  /**
+   * Nome de categoria escolhido/editado na tela de revisão da importação.
+   * Quando presente (não vazio), tem prioridade sobre a inferência
+   * automática por palavra-chave ao criar o produto — ver
+   * ensureProductsForItems em purchases.service.ts.
+   */
+  category_name?: string | null;
 }
 
 export function computeItemTotal(item: {
