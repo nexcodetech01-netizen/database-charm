@@ -7815,6 +7815,10 @@ export type Database = {
         Args: { _company_id: string; _competence: string; _growth?: number[] }
         Returns: Json
       }
+      recalculate_product_v2_price: {
+        Args: { _product_id: string }
+        Returns: undefined
+      }
       receive_credit_payment: { Args: { _input: Json }; Returns: Json }
       receive_purchase: {
         Args: { _purchase_id: string }

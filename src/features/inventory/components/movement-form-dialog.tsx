@@ -149,7 +149,7 @@ export function MovementFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-x-hidden overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova movimentação</DialogTitle>
           <DialogDescription>
@@ -162,8 +162,8 @@ export function MovementFormDialog({
           <div className="space-y-1.5">
             <Label>Produto</Label>
             {lockProduct ? (
-              <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
-                <span className="truncate">
+              <div className="flex h-10 min-w-0 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <span className="min-w-0 truncate">
                   {lockedProductLabel ?? selectedProduct?.name ?? "Produto selecionado"}
                 </span>
               </div>
@@ -342,12 +342,14 @@ function ProductCombobox({
           type="button"
           variant="outline"
           role="combobox"
-          className="w-full justify-between font-normal"
+          className="w-full min-w-0 justify-between font-normal"
         >
           {value ? (
-            <span className="truncate">
-              {label ?? "Produto selecionado"}
-              {sku ? <span className="ml-2 text-xs text-muted-foreground">{sku}</span> : null}
+            <span className="flex min-w-0 flex-1 items-center overflow-hidden">
+              <span className="truncate">{label ?? "Produto selecionado"}</span>
+              {sku ? (
+                <span className="ml-2 shrink-0 text-xs text-muted-foreground">{sku}</span>
+              ) : null}
             </span>
           ) : (
             <span className="text-muted-foreground">Selecione um produto</span>
