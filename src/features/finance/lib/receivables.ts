@@ -47,20 +47,29 @@ function startOfToday(): number {
 }
 
 /**
+ * BUG ENCONTRADO E CORRIGIDO (2026-08-31, generalizado em 2026-09-16):
+ * um lançamento financeiro 'refunded' (estornado) precisa ser tratado
+ * como encerrado no mesmo nível que 'cancelled' — nunca contar como
+ * pendente/vencido/agendado, nunca oferecer ações de Receber/Pagar/
+ * Cancelar. A checagem `status === "cancelled" || status === "refunded"`
+ * tinha sido corrigida aqui em deriveRowStatus, mas ficou faltando em
+ * outros 3 lugares do mesmo domínio (finance-query.service.ts,
+ * finance/lib/derive.ts, e as duas telas de ação sobre transações) —
+ * auditoria de 2026-09-16. Centralizando aqui pra próxima vez que
+ * alguém precisar dessa checagem usar esta função em vez de repetir a
+ * lista de status na mão.
+ */
+export function isTerminalTransactionStatus(status: string | null | undefined): boolean {
+  return status === "cancelled" || status === "refunded";
+}
+
+/**
  * Estado individual, sem contexto de grupo.
  */
 export function deriveRowStatus(t: TransactionWithMeta): DisplayStatus {
   if ((t as any).metadata && (t as any).metadata.reimbursement) return "reimbursement";
   if (t.status === "paid") return "paid";
-  // BUG ENCONTRADO E CORRIGIDO (2026-08-31): faltava tratar
-  // status='refunded' (estornado) — sem isso, um lançamento
-  // corretamente estornado (ex.: venda cancelada, saldo de crediário
-  // substituído, etc.) caía no mesmo caminho de um pendente de
-  // verdade, e se o vencimento já tivesse passado, aparecia como
-  // "Vencido" na lista — como se ainda fosse cobrável, mesmo já
-  // resolvido no banco. Tratado igual a 'cancelled': nunca mais
-  // aparece como pendente/vencido/agendado.
-  if (t.status === "cancelled" || t.status === "refunded") return "cancelled";
+  if (isTerminalTransactionStatus(t.status)) return "cancelled";
   const today = startOfToday();
   const due = t.due_date
     ? new Date(t.due_date + "T00:00:00").getTime()
@@ -105,7 +114,7 @@ export function deriveGroupStatus(
   // aparecer como "Parcial" por engano. Agora só conta como pendente
   // o que realmente ainda pode ser cobrado.
   const pending = siblings.filter(
-    (s) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "refunded",
+    (s) => s.status !== "paid" && !isTerminalTransactionStatus(s.status),
   ).length;
   if (paid > 0 && pending > 0) return "partial";
   return deriveRowStatus(t);
@@ -159,7 +168,7 @@ export function summarize(
   // com o valor certo, contava os dois valores juntos). Excluídos do
   // resumo — um lançamento estornado não representa mais nada a
   // cobrar nem a mostrar no total.
-  const list = rawList.filter((r) => r.status !== "cancelled" && r.status !== "refunded");
+  const list = rawList.filter((r) => !isTerminalTransactionStatus(r.status));
   const effectiveList = list.length > 0 ? list : rawList;
   const original = effectiveList.reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const received = effectiveList

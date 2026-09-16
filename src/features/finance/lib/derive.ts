@@ -4,6 +4,7 @@ import {
   companyDayKey,
   companyMonthKey,
 } from "./company-time";
+import { isTerminalTransactionStatus } from "./receivables";
 
 export interface MonthlyBucket {
   key: string; // YYYY-MM
@@ -109,7 +110,10 @@ export function buildDailyCashFlow(
   const index = new Map(buckets.map((b, i) => [b.key, i]));
 
   for (const t of tx) {
-    if (t.status === "cancelled") continue;
+    // CORRIGIDO (2026-09-16): só pulava 'cancelled' — uma transação
+    // 'refunded' (estornado) continuava entrando na entrada/saída do
+    // dia e no saldo acumulado do gráfico principal do Financeiro.
+    if (isTerminalTransactionStatus(t.status)) continue;
     if (t.type === "transfer") continue;
 
     let key: string | null = null;

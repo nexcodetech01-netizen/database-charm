@@ -1,8 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 
 export const associateVestuarioProductsFn = createServerFn({ method: "POST" })
   .handler(async () => {
+    // CORRIGIDO (2026-09-16): este arquivo importava o cliente Supabase
+    // genérico do navegador (@/integrations/supabase/client) mas roda
+    // inteiro no SERVIDOR (createServerFn) — rodava como usuário anônimo,
+    // então o RLS silenciosamente devolvia tudo vazio, sem erro nenhum.
+    // Mesmo bug já corrigido em vários outros arquivos do sistema (ver
+    // LIÇÕES ESTRUTURAIS do projeto). Import dinâmico porque este
+    // arquivo é um `*.functions.ts` — vai pro bundle do cliente também,
+    // então `supabaseAdmin` não pode ser importado no topo do arquivo.
+    const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
+
     const collectionId = "c1266d6d-66e0-4f51-872f-574f7678d43d";
     const companyId = "78bfccca-f3a5-4110-9983-13e073f3ba77";
 

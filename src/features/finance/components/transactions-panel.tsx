@@ -68,6 +68,7 @@ import { TransactionStatusBadge } from "./transaction-status-badge";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { TransactionDetailsDrawer } from "./transaction-details-drawer";
 import { SettleTransactionDialog } from "./settle-transaction-dialog";
+import { isTerminalTransactionStatus } from "../lib/receivables";
 
 const DEFAULT: TransactionListFilters = {
   search: "",
@@ -350,7 +351,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          {t.status !== "paid" && t.status !== "cancelled" && (
+                          {t.status !== "paid" && !isTerminalTransactionStatus(t.status) && (
                             <Button
                               size="icon"
                               variant="ghost"
@@ -389,7 +390,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                                 <DropdownMenuItem onClick={() => handleEdit(t)}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                                 </DropdownMenuItem>
-                                {t.status !== "paid" && t.status !== "cancelled" ? (
+                                {t.status !== "paid" && !isTerminalTransactionStatus(t.status) ? (
                                   <DropdownMenuItem
                                     onClick={() => {
                                       setSettling(t);
@@ -400,7 +401,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
                                     {t.source === "sale_return" ? "Reembolsar" : type === "income" ? "Receber" : "Pagar"}
                                   </DropdownMenuItem>
                                 ) : null}
-                                {t.status !== "cancelled" ? (
+                                {!isTerminalTransactionStatus(t.status) ? (
                                   <DropdownMenuItem
                                     onClick={() => handleStatus(t, "cancelled", "cancelada")}
                                   >
