@@ -68,7 +68,7 @@ export function useCreateProduct() {
   return useMutation({
     mutationFn: (input: ProductInsert) => productsService.create(input),
     onSuccess: async (data) => {
-      qc.invalidateQueries({ queryKey: productsKeys.all });
+      await qc.invalidateQueries({ queryKey: productsKeys.all, refetchType: "all" });
       
       const channels = (data?.sales_channels || []) as string[];
       if (channels.includes('catalog')) {
@@ -96,7 +96,7 @@ export function useUpdateProduct() {
       // Invalidação da listagem + detalhe do produto alterado.
       // Egress: só refazemos a busca da listagem que está montada na tela.
       await Promise.all([
-        qc.invalidateQueries({ queryKey: ["products", "list"] }),
+        qc.invalidateQueries({ queryKey: ["products", "list"], refetchType: "all" }),
         qc.invalidateQueries({ queryKey: productsKeys.metrics(updated?.company_id ?? "") }),
         qc.invalidateQueries({
           queryKey: productsKeys.detail(vars.id),
