@@ -58,6 +58,7 @@ async function ensureProductsForItems(
         category_id: categoryId,
         cost: Number(it.unit_price) || 0,
         price: Number(it.unit_price) || 0,
+        use_category_margin: false,
         stock: 0,
         status: "active",
       })
