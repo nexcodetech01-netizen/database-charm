@@ -266,14 +266,24 @@ export const purchasesService = {
       other_costs: Number(header.other_costs ?? 0),
     });
 
+    // O gatilho que dá entrada no estoque (apply_purchase_to_inventory) é
+    // "AFTER UPDATE OF status" — ele só dispara numa TRANSIÇÃO de status via
+    // UPDATE, nunca num INSERT. Se a compra já nascer com status "received"
+    // (ex.: importar um pedido já recebido e salvar direto como Recebida),
+    // o trigger nunca roda e o estoque fica travado em 0 pra sempre — sem
+    // nenhum erro visível. Por isso criamos sempre como rascunho aqui, e se
+    // o status pedido for outro, aplicamos DEPOIS pelo mesmo caminho da tela
+    // de detalhe (setStatus/RPC receive_purchase), que faz a transição via
+    // UPDATE de verdade e dispara o trigger corretamente.
+    const requestedStatus = String((header as { status?: string }).status ?? "draft");
+
     const { data: created, error } = await supabase
       .from("purchases")
-      .insert({ ...header, ...totals })
+      .insert({ ...header, ...totals, status: "draft" })
       .select()
       .single();
-    
-    if (error) throw error;
 
+    if (error) throw error;
 
     if (items.length > 0) {
       const rows = items.map((it, idx) => ({
@@ -290,6 +300,9 @@ export const purchasesService = {
       if (ierr) throw ierr;
     }
 
+    if (requestedStatus !== "draft") {
+      return purchasesService.setStatus(created.id, requestedStatus);
+    }
 
     return created;
   },
@@ -352,13 +365,24 @@ export const purchasesService = {
 
     // PRED-001 — Garantimos que o status enviado pelo usuário seja preservado
     // e não sobrescrito por valores default ou mutações indesejadas.
+    //
+    // O gatilho apply_purchase_to_inventory dispara em "AFTER UPDATE OF
+    // status" e lê os itens da compra NAQUELE exato momento. Se a troca de
+    // status (p.ex. rascunho -> recebida) fosse gravada ANTES de sincronizar
+    // os itens novos, o trigger rodaria com os itens antigos (ou nenhum, se
+    // a compra ainda não tinha itens) — estoque errado ou zerado, do mesmo
+    // jeito que em create(). Por isso: (1) o status sai do payload principal,
+    // (2) os itens são sincronizados primeiro, (3) a troca de status é
+    // aplicada por último, pelo mesmo caminho (setStatus/RPC
+    // receive_purchase) usado na tela de detalhe.
+    const requestedStatus = (header as { status?: string }).status;
+    const headerWithoutStatus = { ...(header as PurchaseUpdate) };
+    delete (headerWithoutStatus as { status?: string }).status;
+
     const updatePayload = {
-      ...(header as PurchaseUpdate),
+      ...headerWithoutStatus,
       ...totalsPatch,
     };
-
-    const updated = await updateRow("purchases", id, updatePayload);
-
 
     if (items) {
       const { error: delErr } = await supabase
@@ -381,6 +405,12 @@ export const purchasesService = {
         const { error: ierr } = await supabase.from("purchase_items").insert(rows);
         if (ierr) throw ierr;
       }
+    }
+
+    let updated = await updateRow("purchases", id, updatePayload);
+
+    if (requestedStatus !== undefined && requestedStatus !== updated.status) {
+      updated = await purchasesService.setStatus(id, requestedStatus);
     }
 
     return updated;
