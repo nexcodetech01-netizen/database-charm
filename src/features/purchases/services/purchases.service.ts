@@ -418,18 +418,24 @@ export const purchasesService = {
 
 
   async setStatus(id: string, status: string) {
-    // Recebimento é atômico: cria produtos faltantes e dispara triggers de
-    // estoque/financeiro dentro de uma única transação no Postgres. Se algo
-    // falhar (ex.: trigger de custo médio, permissão), tudo sofre rollback
-    // e nenhum estoque parcial é aplicado.
+    // CORRIGIDO (2026-09): esta função chamava a RPC `receive_purchase` pra
+    // marcar como recebida, mas essa função não está acessível no banco
+    // deste projeto agora — toda tentativa de salvar como "Recebida" falhava
+    // com 404 em /rest/v1/rpc/receive_purchase (function not found no
+    // PostgREST), mesmo a função existindo nas migrations do repositório —
+    // ou o cache de schema do PostgREST está desatualizado, ou a migration
+    // nunca rodou de fato no banco. De qualquer forma, isso travava 100% das
+    // compras marcadas como recebidas (tanto novas quanto edições).
+    //
+    // Trocado por um UPDATE direto: quem realmente aplica o estoque é o
+    // gatilho `trg_apply_purchase_to_inventory` (AFTER UPDATE OF status),
+    // que existe desde 13/07/2026 e não depende de nenhuma RPC. Isso
+    // pressupõe que os itens já têm product_id resolvido antes de receber —
+    // o que create()/update() já garantem via ensureProductsForItems.
+    const patch: PurchaseUpdate & { received_at?: string } = { status };
     if (status === "received") {
-      const { data, error } = await supabase.rpc("receive_purchase", {
-        _purchase_id: id,
-      });
-      if (error) throw error;
-      return data;
+      patch.received_at = new Date().toISOString();
     }
-    const patch: PurchaseUpdate = { status };
     return updateRow("purchases", id, patch);
   },
   async reprocessReceipt(id: string) {
