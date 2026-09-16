@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import type {
   FinanceOverview,
   FinancialAccountInsert,
@@ -384,7 +386,9 @@ export const financeService = {
    * todo lançamento nasce em aberto (`pending`) e a baixa é feita
    * exclusivamente pelo motor (`settle_financial_transaction`).
    */
-  async createTransaction(input: FinancialTransactionInsert) {
+  // CORRIGIDO (2026-09-16): mesmo motivo do parâmetro `client` em
+  // `overview` acima — opcional, todo o resto do sistema continua igual.
+  async createTransaction(input: FinancialTransactionInsert, client: SupabaseClient<Database> = supabase) {
     const parsed = financialTransactionCreateSchema.safeParse(input);
     if (!parsed.success) {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
@@ -416,7 +420,7 @@ export const financeService = {
       status: _status === "cancelled" ? "cancelled" : "pending",
     } as FinancialTransactionInsert;
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("financial_transactions")
       .insert(payload)
       .select()
@@ -780,20 +784,29 @@ export const financeService = {
 
 
   // ---------- Overview / Cash Flow ----------
-  async overview(companyId: string): Promise<FinanceOverview> {
+  // CORRIGIDO (2026-09-16): parâmetro `client` opcional — todo o resto do
+  // sistema continua chamando `overview(companyId)` sem passar nada, e
+  // recebe o mesmo cliente do navegador de sempre (nenhuma mudança de
+  // comportamento). Existe só pra permitir que quem chama a partir do
+  // SERVIDOR (as skills financeiras da Bella, via financeQueryService)
+  // passe explicitamente o cliente autenticado certo — sem isso, rodando
+  // no servidor com o cliente do navegador, o RLS silenciosamente
+  // devolve tudo vazio (mesmo bug já corrigido em vários outros lugares
+  // do sistema).
+  async overview(companyId: string, client: SupabaseClient<Database> = supabase): Promise<FinanceOverview> {
     const [accountsRes, txRes, todayRes, companyRes] = await Promise.all([
-      supabase
+      client
         .from("financial_accounts")
         .select("current_balance,status")
         .eq("company_id", companyId),
-      supabase
+      client
         .from("financial_transactions")
         .select("id,type,status,amount,transaction_date,due_date,description,paid_at,category_id")
         .eq("company_id", companyId)
         .neq("status", "cancelled"),
       // P2.4 — "hoje" no fuso horário da empresa (fonte da verdade no servidor)
-      supabase.rpc("company_today", { _company_id: companyId }),
-      supabase.from("companies").select("timezone").eq("id", companyId).maybeSingle(),
+      client.rpc("company_today", { _company_id: companyId }),
+      client.from("companies").select("timezone").eq("id", companyId).maybeSingle(),
     ]);
     if (accountsRes.error) throw accountsRes.error;
     if (txRes.error) throw txRes.error;
@@ -817,7 +830,7 @@ export const financeService = {
     const tx = txRes.data ?? [];
     
     // Pega as categorias para identificar taxas/deduções (ex: Bella Pay, Taxas Cartão, Estornos)
-    const { data: categories } = await supabase
+    const { data: categories } = await client
       .from("financial_categories")
       .select("id, name")
       .eq("company_id", companyId);

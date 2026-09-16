@@ -71,6 +71,12 @@ export const registerExpenseSkill: BellaSkill = {
     if (!amount) missing.push({ field: "amount", label: "Valor (R$)", type: "money" as const, required: true as const });
     if (missing.length) return skillResult.missing("Informe os dados da despesa.", missing);
 
+    // CORRIGIDO (2026-09-16, auditoria — achado #5): esta skill roda no
+    // SERVIDOR. financeService.createTransaction, sem cliente explícito,
+    // usa o cliente do navegador — sem sessão aqui, o RLS bloquearia o
+    // insert. Import dinâmico porque este arquivo pode ir pro bundle do
+    // cliente também (não termina em .functions.ts).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tx = await financeService.createTransaction({
       company_id: ctx.companyId,
       type: "expense",
@@ -83,7 +89,7 @@ export const registerExpenseSkill: BellaSkill = {
       created_by: ctx.userId ?? null,
       category_id: asString(payload.categoryId),
       account_id: asString(payload.accountId),
-    });
+    }, supabaseAdmin);
 
     return skillResult.success(
       `Despesa "${description}" registrada.`,
@@ -125,6 +131,10 @@ export const registerIncomeSkill: BellaSkill = {
     if (!amount) missing.push({ field: "amount", label: "Valor (R$)", type: "money" as const, required: true as const });
     if (missing.length) return skillResult.missing("Informe os dados da receita.", missing);
 
+    // CORRIGIDO (2026-09-16, auditoria — achado #5): mesmo motivo da
+    // skill de despesa acima — esta roda no servidor, precisa do
+    // cliente admin explícito.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tx = await financeService.createTransaction({
       company_id: ctx.companyId,
       type: "income",
@@ -137,7 +147,7 @@ export const registerIncomeSkill: BellaSkill = {
       created_by: ctx.userId ?? null,
       category_id: asString(payload.categoryId),
       account_id: asString(payload.accountId),
-    });
+    }, supabaseAdmin);
 
     return skillResult.success(
       `Receita "${description}" registrada.`,
@@ -224,7 +234,10 @@ export const getCashBalanceSkill: BellaSkill = {
   description: "Consulta o saldo financeiro atual da empresa.",
   canExecute: (ctx) => Boolean(ctx.companyId),
   async execute(_payload, ctx) {
-    const snap = await financeQueryService.snapshot(ctx.companyId);
+    // CORRIGIDO (2026-09-16, auditoria — achado #5): mesmo motivo das
+    // skills de despesa/receita acima.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const snap = await financeQueryService.snapshot(ctx.companyId, supabaseAdmin);
     const brl = (v: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
@@ -248,7 +261,9 @@ export const getReceivablesSkill: BellaSkill = {
   description: "Consulta os lançamentos pendentes de entrada.",
   canExecute: (ctx) => Boolean(ctx.companyId),
   async execute(_payload, ctx) {
-    const snap = await financeQueryService.snapshot(ctx.companyId);
+    // CORRIGIDO (2026-09-16, auditoria — achado #5): mesmo motivo acima.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const snap = await financeQueryService.snapshot(ctx.companyId, supabaseAdmin);
     const brl = (v: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
@@ -272,7 +287,9 @@ export const getPayablesSkill: BellaSkill = {
   description: "Consulta os lançamentos pendentes de saída.",
   canExecute: (ctx) => Boolean(ctx.companyId),
   async execute(_payload, ctx) {
-    const snap = await financeQueryService.snapshot(ctx.companyId);
+    // CORRIGIDO (2026-09-16, auditoria — achado #5): mesmo motivo acima.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const snap = await financeQueryService.snapshot(ctx.companyId, supabaseAdmin);
     const brl = (v: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 

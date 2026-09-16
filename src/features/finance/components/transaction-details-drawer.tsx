@@ -48,6 +48,7 @@ import { FINANCE_PAYMENT_METHOD_LABEL } from "../types";
 import { TransactionStatusBadge } from "./transaction-status-badge";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { SettleTransactionDialog } from "./settle-transaction-dialog";
+import { isTerminalTransactionStatus } from "../lib/receivables";
 
 
 interface Props {
@@ -421,7 +422,7 @@ export function TransactionDetailsDrawer({
 
           <div className="border-t border-border p-4">
             <div className="flex flex-wrap gap-2">
-              {t.status !== "paid" && t.status !== "cancelled" ? (
+              {t.status !== "paid" && !isTerminalTransactionStatus(t.status) ? (
                 <Button
                   size="sm"
                   onClick={() => setSettleOpen(true)}
@@ -469,7 +470,7 @@ export function TransactionDetailsDrawer({
                 <Printer className="mr-1.5 h-4 w-4" />
                 Imprimir
               </Button>
-              {t.status !== "cancelled" && t.status !== "paid" ? (
+              {!isTerminalTransactionStatus(t.status) && t.status !== "paid" ? (
                 <Button
                   size="sm"
                   variant="outline"
