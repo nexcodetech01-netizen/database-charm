@@ -74,8 +74,27 @@ async function ensureProductsForItems(
   return resolved;
 }
 
-
-
+/**
+ * Compara os itens já gravados no banco com os que vieram do formulário,
+ * ignorando ordem — usado só pra saber se uma edição numa compra "recebida"
+ * REALMENTE mexeu nos itens (e por isso deve ser bloqueada) ou se é só uma
+ * edição de campos do cabeçalho (frete, desconto, observações etc.), que
+ * não tem por que ser bloqueada.
+ */
+function itemsMatchPersisted(
+  current: { product_id: string | null; quantity: number; unit_price: number; discount: number | null }[],
+  incoming: PurchaseItemDraft[],
+): boolean {
+  if (current.length !== incoming.length) return false;
+  const cents = (v: number | null | undefined) => Math.round((Number(v) || 0) * 100);
+  const key = (row: { product_id: string | null; quantity: number; unit_price: number; discount: number | null }) =>
+    `${row.product_id ?? ""}|${cents(row.quantity)}|${cents(row.unit_price)}|${cents(row.discount)}`;
+  const a = current.map(key).sort();
+  const b = incoming
+    .map((it) => key({ product_id: it.product_id ?? null, quantity: it.quantity, unit_price: it.unit_price, discount: it.discount }))
+    .sort();
+  return a.every((v, i) => v === b[i]);
+}
 // P1.2 — Validação server-side na criação de compras.
 const purchaseItemSchema = z
   .object({
@@ -327,9 +346,17 @@ export const purchasesService = {
         .maybeSingle();
       if (statusErr) throw statusErr;
       if (currentStatus?.status === "received") {
-        throw new Error(
-          "Esta compra já foi recebida e o estoque já foi aplicado — os itens não podem mais ser editados. Use um ajuste de estoque para corrigir quantidades.",
-        );
+        const { data: currentItemRows, error: itemsErr } = await supabase
+          .from("purchase_items")
+          .select("product_id,quantity,unit_price,discount")
+          .eq("purchase_id", id);
+        if (itemsErr) throw itemsErr;
+
+        if (!itemsMatchPersisted(currentItemRows ?? [], rawItems)) {
+          throw new Error(
+            "Esta compra já foi recebida e o estoque já foi aplicado — os itens não podem mais ser editados. Use um ajuste de estoque para corrigir quantidades.",
+          );
+        }
       }
     }
 
