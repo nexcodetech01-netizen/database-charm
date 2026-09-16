@@ -186,6 +186,7 @@ export function ImportOrderDialog({ open, onOpenChange, companyId, onImport }: P
         open={reviewOpen}
         onOpenChange={setReviewOpen}
         items={itemsToReview}
+        companyId={companyId}
         onConfirm={(confirmedItems) => {
           onImport(confirmedItems);
           setReviewOpen(false);

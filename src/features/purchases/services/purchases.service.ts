@@ -38,13 +38,20 @@ async function ensureProductsForItems(
       continue;
     }
     const sku = (await generateNextSku(companyId, name)) ?? null;
-    // Inferência automática de categoria a partir do nome.
+    // Categoria: se a pessoa escolheu/editou uma na tela de revisão da
+    // importação (it.category_name), isso tem prioridade — só cai pra
+    // inferência automática por palavra-chave quando ela deixou em branco.
     let categoryId: string | null = null;
     try {
-      const { inferCategoryWithFallback } = await import("@/features/products/lib/infer-category");
       const { ensureCategoryByName } = await import("@/features/categories/lib/ensure-category");
-      const { name: catName } = inferCategoryWithFallback(name);
-      categoryId = await ensureCategoryByName(companyId, catName);
+      const manualCategoryName = (it.category_name ?? "").trim();
+      if (manualCategoryName) {
+        categoryId = await ensureCategoryByName(companyId, manualCategoryName);
+      } else {
+        const { inferCategoryWithFallback } = await import("@/features/products/lib/infer-category");
+        const { name: catName } = inferCategoryWithFallback(name);
+        categoryId = await ensureCategoryByName(companyId, catName);
+      }
     } catch {
       categoryId = null;
     }
