@@ -723,7 +723,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
                     {submitting ? (
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                     ) : null}
-                    {isEdit ? "Salvar alterações" : "Salvar rascunho"}
+                    {isEdit ? "Salvar alterações" : "Salvar"}
                   </Button>
                   {/* 
                     O botão de "Finalizar Compra" foi removido do formulário 
