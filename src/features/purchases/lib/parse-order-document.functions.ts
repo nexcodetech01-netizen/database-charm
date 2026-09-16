@@ -93,7 +93,13 @@ export const parseOrderDocument = createServerFn({ method: "POST" })
 
     try {
       const gateway = createLovableAiGatewayProvider(apiKey);
-      const model = gateway("google/gemini-2.0-flash");
+      // FIX (2026-09-07): "google/gemini-2.0-flash" estava falhando
+      // ("Não foi possível ler o arquivo agora") — provavelmente essa
+      // versão do modelo foi descontinuada no gateway de IA. Trocado
+      // pra "google/gemini-2.5-flash", a mesma versão que já funciona
+      // com sucesso em outro recurso do sistema (sugestões de anúncio
+      // pro Mercado Livre).
+      const model = gateway("google/gemini-2.5-flash");
       const { output } = await generateText({
         model,
         system,
