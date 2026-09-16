@@ -168,13 +168,6 @@ export function PricingForm({
     }
   }, [totalCost, setForm]);
 
-  // Efeito para garantir que a margem da categoria seja aplicada se o switch estiver ativo
-  useEffect(() => {
-    if (form.use_category_margin && categoryMargin !== null) {
-      recalculatePrice(categoryMargin, channelFeePct, channelFixedFee);
-    }
-  }, [form.use_category_margin, categoryMargin, totalCost, channelFeePct, channelFixedFee, recalculatePrice]);
-
   return (
     <div className="space-y-8">
       {/* SEÇÃO 1: Precificação Base */}
