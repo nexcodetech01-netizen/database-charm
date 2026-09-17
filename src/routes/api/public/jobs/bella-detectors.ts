@@ -11,7 +11,12 @@ import { enforceRateLimit } from "@/lib/rate-limit.server";
 import { runJob } from "@/lib/job-runs.server";
 import { requireServiceKey } from "@/lib/job-admin.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { criticalStockDetector, outOfStockDetector } from "@/features/bella-ai/events/detectors/inventory.detectors";
+import {
+  criticalStockDetector,
+  outOfStockDetector,
+  possibleDuplicateProductDetector,
+  type DuplicateProductGroup,
+} from "@/features/bella-ai/events/detectors/inventory.detectors";
 import { overdueInvoiceDetector } from "@/features/bella-ai/events/detectors/finance.detectors";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
@@ -41,6 +46,7 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
           const results = {
             inventory: { processed: 0, emitted: 0 },
             finance: { processed: 0, emitted: 0 },
+            duplicates: { processed: 0, emitted: 0 },
             errors: [] as string[],
           };
 
@@ -124,6 +130,41 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
 
               } catch (err: any) {
                 results.errors.push(`Finance Error (${tenantId}): ${err.message}`);
+              }
+
+              // --- EXECUÇÃO DUPLICATAS ---
+              // Reaproveita preview_duplicate_products (já existe desde a
+              // ferramenta de limpeza retroativa, 20260801220144) — mesmo
+              // agrupamento por nome normalizado usado no aviso da tela de
+              // compra (find_products_by_name_key). Aqui roda periodicamente
+              // sobre TODO o catálogo, não só nos itens de uma compra nova.
+              try {
+                const { data: dupGroups, error: dupError } = await supabaseAdmin.rpc(
+                  "preview_duplicate_products",
+                  { _company_id: tenantId },
+                );
+
+                if (dupError) throw dupError;
+
+                const groups: DuplicateProductGroup[] = (dupGroups ?? []).map((g) => {
+                  const dups = Array.isArray(g.duplicates) ? (g.duplicates as { name?: string }[]) : [];
+                  return {
+                    nameKey: g.name_key,
+                    keeperId: g.keeper_id,
+                    keeperName: g.keeper_name,
+                    duplicateCount: dups.length,
+                    duplicateNames: dups.map((d) => d.name ?? "?"),
+                  };
+                });
+
+                const resDup = possibleDuplicateProductDetector.detect(groups, { tenantId, now });
+                resDup.emit.forEach((evt) => {
+                  bellaEventEngine.emit(evt);
+                  results.duplicates.emitted++;
+                });
+                results.duplicates.processed += groups.length;
+              } catch (err: any) {
+                results.errors.push(`Duplicates Error (${tenantId}): ${err.message}`);
               }
             }
 

@@ -71,6 +71,64 @@ export const outOfStockDetector: BellaEventDetector<InventoryProductSnapshot[]> 
   },
 };
 
+/**
+ * Um grupo de possíveis duplicatas, no mesmo formato que
+ * `preview_duplicate_products` (banco) já devolve — a função SQL agrupa
+ * produtos pelo nome normalizado (mesma lógica usada por
+ * `find_products_by_name_key`, que avisa na hora de lançar uma compra) e
+ * escolhe automaticamente qual manter (`keeperId`). Este detector não
+ * reimplementa esse agrupamento — só decide, a partir dele, se vale
+ * emitir um evento.
+ */
+export interface DuplicateProductGroup {
+  nameKey: string;
+  keeperId: string;
+  keeperName: string;
+  duplicateCount: number;
+  duplicateNames: string[];
+}
+
+/**
+ * Detecta grupos de produtos possivelmente duplicados (mesmo nome
+ * normalizado) que já existem no catálogo — complementa o aviso que já
+ * acontece na hora de LANÇAR uma compra (purchase-items-editor /
+ * purchase-import-review-dialog): aqui a checagem é periódica e cobre
+ * duplicatas criadas por qualquer caminho (cadastro manual de produto,
+ * importação antiga, etc.), não só compra nova.
+ *
+ * Não tem "resolve" automático como os outros detectores de estoque: o
+ * agrupamento vem de uma consulta que só retorna grupos que SÃO
+ * duplicata agora — quando alguém mescla os produtos (ferramenta já
+ * existente merge_duplicate_products), o grupo simplesmente para de
+ * aparecer nas próximas execuções.
+ */
+export const possibleDuplicateProductDetector: BellaEventDetector<DuplicateProductGroup[]> = {
+  id: "inventory.possible_duplicate",
+  module: "inventory",
+  detect(groups, ctx): DetectorResult {
+    const emit: DetectorResult["emit"] = [];
+    for (const g of groups) {
+      if (g.duplicateCount <= 0) continue;
+      emit.push({
+        type: "inventory.possible_duplicate",
+        tenantId: ctx.tenantId,
+        payload: {
+          entityId: g.keeperId,
+          name: g.keeperName,
+          duplicateCount: g.duplicateCount,
+          duplicateNames: g.duplicateNames,
+        },
+        description:
+          g.duplicateCount === 1
+            ? `"${g.keeperName}" tem 1 possível duplicata (${g.duplicateNames[0]}) no catálogo.`
+            : `"${g.keeperName}" tem ${g.duplicateCount} possíveis duplicatas no catálogo.`,
+        source: "detector:inventory.possible_duplicate",
+      });
+    }
+    return { emit, resolve: [] };
+  },
+};
+
 export interface SlowMovingConfig {
   /** Dias sem venda para considerar parado. Default: 60. */
   minDaysWithoutSale?: number;
