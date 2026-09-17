@@ -180,7 +180,7 @@ function makeSession(partial: Partial<CashSession>): CashSession {
     operator_name: partial.operator_name ?? "Operador A",
     opening_balance: partial.opening_balance ?? 100,
     opening_note: null,
-    status: "open",
+    status: partial.status ?? "open",
     opened_at: partial.opened_at ?? new Date().toISOString(),
     closed_at: partial.closed_at ?? null,
     counted_cash: null,
@@ -326,7 +326,7 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
     const sumA = await computeSummaryFor(sessionA);
     const sumB = await computeSummaryFor(sessionB);
 
-    // O recebimento aparece SÓ no extrato de A, mesmo com B aberto na mesma janela.
+    // O recebimento aparece somente no extrato histórico ao qual foi vinculado.
     expect(sumA.receipts.map((r) => r.id)).toEqual(["r1"]);
     expect(sumB.receipts.map((r) => r.id)).toEqual([]);
   });
