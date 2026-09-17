@@ -7968,6 +7968,7 @@ export type Database = {
       search_products_unaccent: {
         Args: {
           company_id_param: string
+          include_inactive?: boolean
           limit_param?: number
           search_term: string
         }
