@@ -9,18 +9,17 @@ import type {
 
 export const cashKeys = {
   all: ["cash"] as const,
-  open: (companyId: string, operatorId: string) =>
-    ["cash", "open", companyId, operatorId] as const,
+  open: (companyId: string) => ["cash", "open", companyId] as const,
   list: (companyId: string) => ["cash", "list", companyId] as const,
   summary: (sessionId: string) => ["cash", "summary", sessionId] as const,
   movements: (sessionId: string) => ["cash", "movements", sessionId] as const,
 };
 
-export function useOpenCashSession(companyId: string, operatorId: string) {
+export function useOpenCashSession(companyId: string) {
   return useQuery({
-    queryKey: cashKeys.open(companyId, operatorId),
-    queryFn: () => cashService.getOpenSession(companyId, operatorId),
-    enabled: !!companyId && !!operatorId,
+    queryKey: cashKeys.open(companyId),
+    queryFn: () => cashService.getOpenSession(companyId),
+    enabled: !!companyId,
   });
 }
 

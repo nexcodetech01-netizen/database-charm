@@ -596,7 +596,7 @@ function DashboardPage() {
         density="comfortable"
       >
         <div className={SPACING_TOKENS.comfortable.stack}>
-          <CashClosingReminder companyId={company.id} operatorId={user.id} />
+          <CashClosingReminder companyId={company.id} />
           <WhatsAppUsageCard companyId={company.id} />
         </div>
       </Section>

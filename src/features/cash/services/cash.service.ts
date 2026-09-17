@@ -76,12 +76,11 @@ function isSettlementMovement(m: CashMovement): boolean {
 
 
 export const cashService = {
-  async getOpenSession(companyId: string, operatorId: string) {
+  async getOpenSession(companyId: string) {
     const { data, error } = await supabase
       .from("cash_sessions")
       .select("*")
       .eq("company_id", companyId)
-      .eq("operator_id", operatorId)
       .eq("status", "open")
       .maybeSingle();
     if (error) throw error;
@@ -110,16 +109,19 @@ export const cashService = {
   },
 
   async openSession(input: OpenSessionInput): Promise<CashSession> {
-    // Guarda de negócio: 1 caixa aberto por operador (garantido também por
+    // Guarda de negócio: 1 caixa aberto por empresa (garantido também por
     // unique index parcial no banco). Além disso, aplica a regra de
     // fechamento diário — um caixa aberto em um dia anterior precisa ser
     // fechado antes de abrir um novo.
-    const existing = await this.getOpenSession(input.companyId, input.operatorId);
+    const existing = await this.getOpenSession(input.companyId);
     if (existing) {
       if (isSessionStale(existing)) {
         throw new Error(staleSessionMessage(existing));
       }
-      throw new Error("Já existe um caixa aberto para este operador.");
+      const openedAt = new Date(existing.opened_at).toLocaleString("pt-BR");
+      throw new Error(
+        `Caixa já está aberto, aberto por ${existing.operator_name ?? "outro operador"} às ${openedAt}.`,
+      );
     }
 
     const { data, error } = await supabase
@@ -219,8 +221,7 @@ export const cashService = {
         // `settlement_session_id` nunca era preenchido e o fallback de
         // janela de tempo abaixo era ambíguo com múltiplos caixas abertos.
         // Agora settle_financial_transaction() grava settlement_session_id
-        // no momento da baixa (sessão do próprio operador, com fallback pra
-        // sessão mais recente só se ele não tiver nenhuma aberta). O `.or()`
+        // no momento da baixa (sessão aberta compartilhada da empresa). O `.or()`
         // abaixo permanece como fallback só para baixas antigas, anteriores
         // à migration, que ainda não têm settlement_session_id preenchido.
         .or(`settlement_session_id.eq.${session.id},and(paid_at.gte.${session.opened_at},paid_at.lte.${session.closed_at || new Date().toISOString()})`)

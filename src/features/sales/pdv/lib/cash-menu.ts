@@ -47,7 +47,7 @@ export type PdvCashMenuLabel = {
 
 /** Rótulo do botão: título + data/hora de abertura em linha secundária. */
 export function pdvCashMenuLabel(
-  session: { opened_at?: string | null } | null | undefined,
+  session: { opened_at?: string | null; operator_name?: string | null } | null | undefined,
 ): PdvCashMenuLabel {
   if (!session?.opened_at) {
     return { title: "Caixa Fechado", detail: null, open: false };
@@ -55,7 +55,7 @@ export function pdvCashMenuLabel(
   return {
     title: "Caixa Aberto",
     // "31/07/2026 às 10:43" -> "31/07/2026 • 10:43"
-    detail: formatOpenedAt(session.opened_at).replace(" às ", " • "),
+    detail: `${session.operator_name ?? "Operador"} • ${formatOpenedAt(session.opened_at).replace(" às ", " • ")}`,
     open: true,
   };
 }

@@ -107,7 +107,6 @@ export const executiveDashboardService = {
   async build(
     companyId: string,
     range: DateRange,
-    operatorId?: string,
   ): Promise<ExecutiveDashboardData> {
     // P2.4 — hoje/início do mês calculados no fuso da empresa (servidor).
     const [{ data: todayRpc }, { data: monthRpc }] = await Promise.all([
@@ -197,7 +196,7 @@ export const executiveDashboardService = {
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("status", "OVERDUE"),
-      operatorId ? openCashQuery.eq("operator_id", operatorId) : openCashQuery,
+      openCashQuery,
     ]);
 
     if (salesInRange.error) throw salesInRange.error;

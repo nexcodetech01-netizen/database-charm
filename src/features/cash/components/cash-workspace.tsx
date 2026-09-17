@@ -67,7 +67,7 @@ export function CashWorkspace({
   operatorId,
   operatorName,
 }: Props) {
-  const { data: openSession, isLoading } = useOpenCashSession(companyId, operatorId);
+  const { data: openSession, isLoading } = useOpenCashSession(companyId);
   const { data: sessions } = useCashSessions(companyId);
   // Isolamento de homologação — por padrão as vendas de teste ficam ocultas.
   const [hideTestSales, setHideTestSales] = useState(true);
@@ -226,6 +226,12 @@ export function CashWorkspace({
           )}
 
           <KpiSection>
+            <KpiCard
+              label="Aberto por"
+              value={openSession.operator_name ?? "Operador"}
+              hint={new Date(openSession.opened_at).toLocaleString("pt-BR")}
+              icon={Wallet}
+            />
             <KpiCard
               label="Saldo inicial"
               value={formatCurrency(Number(openSession.opening_balance ?? 0))}
@@ -392,8 +398,8 @@ export function CashWorkspace({
             <Wallet className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h3 className="text-lg font-semibold">Nenhum caixa aberto</h3>
             <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-              Abra o caixa para iniciar as operações do PDV. Apenas um caixa por operador
-              pode permanecer aberto.
+              Abra o caixa para iniciar as operações do PDV. Só pode haver um caixa aberto
+              por vez na empresa.
             </p>
           </Card>
         </>

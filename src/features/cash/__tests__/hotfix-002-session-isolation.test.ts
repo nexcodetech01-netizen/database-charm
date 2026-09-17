@@ -229,12 +229,14 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
     expect(csi?.val).toBe("sess-a");
   });
 
-  it("dois operadores, dois caixas, vendas simultâneas → nenhuma venda misturada", async () => {
-    // Sessão A (Operador A) e Sessão B (Operador B), mesma empresa.
+  it("caixas históricos consecutivos mantêm vendas e movimentos isolados", async () => {
+    // Sessão A já fechada e sessão B aberta depois, na mesma empresa.
     const sessionA = makeSession({
       id: "sess-a",
       operator_id: "op-a",
       opening_balance: 100,
+      status: "closed",
+      closed_at: "2026-08-01T18:00:00.000Z",
     });
     const sessionB = makeSession({
       id: "sess-b",
@@ -242,7 +244,7 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
       opening_balance: 200,
     });
 
-    // Vendas de A (cash 50 + pix 30) e B (cash 80 + credit_card 120)
+    // Vendas da sessão histórica A e da sessão atual B.
     salesBucket.push(
       { id: "s1", payment_method: "cash", grand_total: 50, status: "paid", cash_session_id: "sess-a" },
       { id: "s2", payment_method: "pix", grand_total: 30, status: "paid", cash_session_id: "sess-a" },
@@ -252,7 +254,7 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
       { id: "s5", payment_method: "cash", grand_total: 999, status: "paid", cash_session_id: null },
     );
 
-    // Suprimento em A e sangria em B.
+    // Suprimento histórico em A e sangria atual em B.
     movementsBucket.push(
       { session_id: "sess-a", type: "cash_in", amount: 20 },
       { session_id: "sess-b", type: "cash_out", amount: 15 },
@@ -261,7 +263,7 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
     const sumA = await computeSummaryFor(sessionA);
     const sumB = await computeSummaryFor(sessionB);
 
-    // Operador A: 2 vendas, R$ 80 total; cash 50; dinheiro esperado = 100 + 20 + 50 = 170
+    // Sessão A: 2 vendas, R$ 80 total; dinheiro esperado = 170.
     expect(sumA.salesCount).toBe(2);
     expect(sumA.salesTotal).toBe(80);
     expect(sumA.byMethod.cash.total).toBe(50);
@@ -271,7 +273,7 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
     expect(sumA.cashOut).toBe(0);
     expect(sumA.expectedCash).toBe(170);
 
-    // Operador B: 2 vendas, R$ 200 total; cash 80; dinheiro esperado = 200 - 15 + 80 = 265
+    // Sessão B: 2 vendas, R$ 200 total; dinheiro esperado = 265.
     expect(sumB.salesCount).toBe(2);
     expect(sumB.salesTotal).toBe(200);
     expect(sumB.byMethod.cash.total).toBe(80);
@@ -298,12 +300,16 @@ describe("HOTFIX-002 · computeSummary é isolado por cash_session_id", () => {
     expect(b.expectedCash).toBe(40);
   });
 
-  it("HOTFIX-002 parte 2: recebimento com settlement_session_id não vaza para outro caixa aberto na mesma janela", async () => {
+  it("HOTFIX-002 parte 2: recebimento não vaza para outra sessão histórica", async () => {
     const now = new Date();
     const openedAt = new Date(now.getTime() - 60 * 60 * 1000).toISOString(); // -1h
-    // As duas sessões estão abertas na MESMA janela de tempo — é exatamente
-    // o cenário que causava a ambiguidade antes da migration 20260812130000.
-    const sessionA = makeSession({ id: "sess-a", opening_balance: 0, opened_at: openedAt });
+    const sessionA = makeSession({
+      id: "sess-a",
+      opening_balance: 0,
+      opened_at: openedAt,
+      status: "closed",
+      closed_at: now.toISOString(),
+    });
     const sessionB = makeSession({ id: "sess-b", opening_balance: 0, opened_at: openedAt });
 
     // Baixa feita pelo Operador A, corretamente marcada com settlement_session_id.

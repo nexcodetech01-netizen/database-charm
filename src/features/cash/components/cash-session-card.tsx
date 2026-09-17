@@ -29,10 +29,7 @@ export function CashSessionCard({ companyId, companyName }: Props) {
     user?.email ??
     "Operador";
 
-  const { data: openSession, isLoading } = useOpenCashSession(
-    companyId,
-    operatorId,
-  );
+  const { data: openSession, isLoading } = useOpenCashSession(companyId);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [movement, setMovement] = useState<"cash_in" | "cash_out" | null>(null);
@@ -106,7 +103,7 @@ export function CashSessionCard({ companyId, companyName }: Props) {
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>
-                  Operador:{" "}
+                  Aberto por:{" "}
                   <span className="text-foreground">
                     {openSession.operator_name ?? operatorName}
                   </span>

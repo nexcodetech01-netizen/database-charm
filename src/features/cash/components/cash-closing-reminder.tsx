@@ -29,12 +29,10 @@ function isSameDay(a: Date, b: Date) {
  */
 export function CashClosingReminder({
   companyId,
-  operatorId,
 }: {
   companyId: string;
-  operatorId: string;
 }) {
-  const { data: session } = useOpenCashSession(companyId, operatorId);
+  const { data: session } = useOpenCashSession(companyId);
   const [dismissed, setDismissed] = useState(false);
   const [tick, setTick] = useState(0);
 
