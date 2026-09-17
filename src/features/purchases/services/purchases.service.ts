@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { generateNextSku } from "@/features/products/lib/sku-generator";
@@ -42,17 +43,22 @@ async function ensureProductsForItems(
     // importação (it.category_name), isso tem prioridade — só cai pra
     // inferência automática por palavra-chave quando ela deixou em branco.
     let categoryId: string | null = null;
+    const { ensureCategoryByName } = await import("@/features/categories/lib/ensure-category");
+    const { inferCategoryWithFallback } = await import("@/features/products/lib/infer-category");
+    const manualCategoryName = (it.category_name ?? "").trim();
+    const { name: inferredCategoryName } = inferCategoryWithFallback(name);
+    const categoryName = manualCategoryName || inferredCategoryName;
     try {
-      const { ensureCategoryByName } = await import("@/features/categories/lib/ensure-category");
-      const manualCategoryName = (it.category_name ?? "").trim();
-      if (manualCategoryName) {
-        categoryId = await ensureCategoryByName(companyId, manualCategoryName);
-      } else {
-        const { inferCategoryWithFallback } = await import("@/features/products/lib/infer-category");
-        const { name: catName } = inferCategoryWithFallback(name);
-        categoryId = await ensureCategoryByName(companyId, catName);
-      }
-    } catch {
+      categoryId = await ensureCategoryByName(companyId, categoryName);
+    } catch (categoryError) {
+      console.error("[Purchases] Falha ao definir categoria do produto importado", {
+        error: categoryError,
+        productName: name,
+        categoryName,
+      });
+      toast.error(
+        `Produto "${name}" criado, mas não foi possível definir a categoria "${categoryName}" automaticamente — defina manualmente na tela do produto.`,
+      );
       categoryId = null;
     }
     const { data: created, error } = await supabase
