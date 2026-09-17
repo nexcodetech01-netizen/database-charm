@@ -17,11 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { PurchaseItemDraft } from "../types";
 import { useCategories } from "@/features/products/hooks/use-products";
 import { inferCategoryName } from "@/features/products/lib/infer-category";
+import {
+  findProductsByNameKey,
+  type ProductNameMatch,
+} from "@/features/products/lib/product-matching";
 
 interface Props {
   open: boolean;
@@ -41,6 +45,13 @@ export function PurchaseImportReviewDialog({
 }: Props) {
   const [items, setItems] = useState<PurchaseItemDraft[]>(initialItems);
   const { data: existingCategories = [] } = useCategories(companyId);
+  // Sugestão de produto existente pra cada item importado (por nome
+  // normalizado) — mesma checagem da linha manual do editor de itens (ver
+  // purchase-items-editor.tsx), aqui rodada em lote na abertura do dialog.
+  // Evita que importar a mesma nota do mesmo fornecedor duas vezes crie
+  // produtos duplicados no catálogo.
+  const [matches, setMatches] = useState<Record<number, ProductNameMatch[]>>({});
+  const [dismissedMatches, setDismissedMatches] = useState<Record<number, boolean>>({});
 
   // Sincroniza estado interno quando initialItems mudar (abertura do dialog).
   //
@@ -58,13 +69,62 @@ export function PurchaseImportReviewDialog({
         category_name: it.category_name ?? inferCategoryName(it.description) ?? "",
       })),
     );
+    setMatches({});
+    setDismissedMatches({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialItems]);
+
+  // Checagem em lote, uma vez por abertura do dialog — roda sobre a
+  // descrição que a IA/XML extraiu, não a cada tecla digitada na revisão
+  // (essa tela não adiciona/remove linhas, só edita as existentes).
+  useEffect(() => {
+    if (!open || initialItems.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        initialItems.map(async (it, idx) => {
+          if (it.product_id || !it.description?.trim()) return null;
+          const found = await findProductsByNameKey(companyId, it.description);
+          return found.length > 0 ? ([idx, found] as const) : null;
+        }),
+      );
+      if (cancelled) return;
+      const next: Record<number, ProductNameMatch[]> = {};
+      entries.forEach((e) => {
+        if (e) next[e[0]] = e[1];
+      });
+      setMatches(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialItems, companyId]);
 
   function updateItem(index: number, patch: Partial<PurchaseItemDraft>) {
     setItems((prev) =>
       prev.map((it, i) => (i === index ? { ...it, ...patch } : it)),
     );
+  }
+
+  function linkMatch(index: number, m: ProductNameMatch) {
+    updateItem(index, {
+      product_id: m.id,
+      description: m.name,
+      sku: m.sku,
+      unit: m.unit,
+      stock_available: m.stock,
+      last_cost: m.cost,
+    });
+    setMatches((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  }
+
+  function dismissMatch(index: number) {
+    setDismissedMatches((d) => ({ ...d, [index]: true }));
   }
 
   const grandTotal = items.reduce(
@@ -117,6 +177,39 @@ export function PurchaseImportReviewDialog({
                       }
                       className="h-8 text-sm"
                     />
+                    {it.product_id ? (
+                      <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        Vinculado a produto existente — não cria duplicata.
+                      </div>
+                    ) : matches[idx]?.length > 0 &&
+                    !dismissedMatches[idx] ? (
+                      <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate">
+                          Já existe{" "}
+                          <strong className="font-semibold">
+                            {matches[idx][0].name}
+                          </strong>
+                          {matches[idx][0].sku ? ` (${matches[idx][0].sku})` : ""}{" "}
+                          no catálogo.
+                        </span>
+                        <button
+                          type="button"
+                          className="shrink-0 font-semibold underline underline-offset-2"
+                          onClick={() => linkMatch(idx, matches[idx][0])}
+                        >
+                          Vincular
+                        </button>
+                        <button
+                          type="button"
+                          className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
+                          onClick={() => dismissMatch(idx)}
+                        >
+                          Ignorar
+                        </button>
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell>
                     <Input

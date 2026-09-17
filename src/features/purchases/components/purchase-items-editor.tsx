@@ -8,12 +8,18 @@ import {
   ScanLine,
   PackageOpen,
   Upload,
+  AlertTriangle,
 } from "lucide-react";
 import { ImportOrderDialog } from "./import-order-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { applyProductSearch } from "@/features/products/lib/product-search";
+import {
+  findProductsByNameKey,
+  type ProductNameMatch,
+} from "@/features/products/lib/product-matching";
+import { productImageUrl } from "@/features/products/lib/product-image-url";
 
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
@@ -41,11 +47,9 @@ interface Props {
   disabledReason?: { title: string; description: string };
 }
 
-function publicImageUrl(path: string | null): string | null {
-  if (!path) return null;
-  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-  return data.publicUrl ?? null;
-}
+// URL pública de imagem de produto — ver product-image-url.ts pro porquê
+// disso ser um helper compartilhado e não reimplementado aqui.
+const publicImageUrl = productImageUrl;
 
 export function PurchaseItemsEditor({
   companyId,
@@ -155,6 +159,77 @@ export function PurchaseItemsEditor({
       apply: () => onChange(next),
       undo: () => onChange(prev),
     });
+    setManualMatches((m) => {
+      if (!(index in m)) return m;
+      const nextMatches = { ...m };
+      delete nextMatches[index];
+      return nextMatches;
+    });
+  }
+
+  // Sugestão de produto já existente — linha manual (a mesma checagem
+  // roda em lote na revisão de importação, ver purchase-import-review-dialog.tsx).
+  // Evita criar duplicata quando a pessoa digita o nome de um produto que
+  // já está no catálogo em vez de buscar e clicar nele.
+  const [manualMatches, setManualMatches] = useState<Record<number, ProductNameMatch[]>>({});
+  const [dismissedMatches, setDismissedMatches] = useState<Record<number, boolean>>({});
+  const matchTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      matchTimers.current.forEach((t) => clearTimeout(t));
+    };
+  }, []);
+
+  function handleManualDescriptionChange(index: number, name: string) {
+    updateItem(index, { description: name });
+    setDismissedMatches((d) => {
+      if (!(index in d)) return d;
+      const next = { ...d };
+      delete next[index];
+      return next;
+    });
+
+    const existingTimer = matchTimers.current.get(index);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    const trimmed = name.trim();
+    if (trimmed.length < 3) {
+      setManualMatches((m) => {
+        if (!(index in m)) return m;
+        const next = { ...m };
+        delete next[index];
+        return next;
+      });
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const matches = await findProductsByNameKey(companyId, trimmed);
+      setManualMatches((m) => ({ ...m, [index]: matches }));
+    }, 400);
+    matchTimers.current.set(index, timer);
+  }
+
+  function linkSuggestedProduct(index: number, m: ProductNameMatch) {
+    updateItem(index, {
+      product_id: m.id,
+      description: m.name,
+      sku: m.sku,
+      image_url: publicImageUrl(m.cover_image_path),
+      unit: m.unit,
+      stock_available: m.stock,
+      last_cost: m.cost,
+    });
+    setManualMatches((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  }
+
+  function dismissMatch(index: number) {
+    setDismissedMatches((d) => ({ ...d, [index]: true }));
   }
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -351,13 +426,46 @@ export function PurchaseItemsEditor({
                             }}
                             value={it.description}
                             onChange={(e) =>
-                              updateItem(idx, { description: e.target.value })
+                              handleManualDescriptionChange(idx, e.target.value)
                             }
                             onKeyDown={(e) => handleKeyDown(e, idx)}
                             placeholder="Descrição do item"
                             className="h-8 text-sm font-medium"
                           />
                         )}
+                        {!it.product_id &&
+                        manualMatches[idx]?.length > 0 &&
+                        !dismissedMatches[idx] ? (
+                          <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate">
+                              Já existe{" "}
+                              <strong className="font-semibold">
+                                {manualMatches[idx][0].name}
+                              </strong>
+                              {manualMatches[idx][0].sku
+                                ? ` (${manualMatches[idx][0].sku})`
+                                : ""}{" "}
+                              no catálogo — pode ser duplicata.
+                            </span>
+                            <button
+                              type="button"
+                              className="shrink-0 font-semibold underline underline-offset-2"
+                              onClick={() =>
+                                linkSuggestedProduct(idx, manualMatches[idx][0])
+                              }
+                            >
+                              Usar este
+                            </button>
+                            <button
+                              type="button"
+                              className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
+                              onClick={() => dismissMatch(idx)}
+                            >
+                              Ignorar
+                            </button>
+                          </div>
+                        ) : null}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
                           {it.sku ? (
                             <span className="font-mono opacity-60">{it.sku}</span>
