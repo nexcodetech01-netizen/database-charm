@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Package, ShoppingBag, PowerOff, Tag, Play, Pause, RefreshCw } from "lucide-react";
+import { Package, ShoppingBag, Power, PowerOff, Tag, Play, Pause, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -26,7 +26,7 @@ import { ProductStatusBadge } from "./product-status-badge";
 import { ProductThumb } from "./product-thumb";
 import { MercadoLivreBadge } from "./mercadolivre-badge";
 import { PublishToMercadoLivreDialog } from "./publish-to-ml-dialog";
-import { useSignedImageUrls, useDeactivateProduct } from "../hooks/use-products";
+import { useSignedImageUrls, useDeactivateProduct, useUpdateProduct } from "../hooks/use-products";
 import type { Product } from "../types";
 import { LabelPrintDialog } from "@/features/printing";
 import { updateMercadoLivreItem, syncProductToMercadoLivre } from "@/lib/mercadolivre-sync.functions";
@@ -50,6 +50,7 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
   const [labelTarget, setLabelTarget] = useState<Product | null>(null);
   const deactivate = useDeactivateProduct();
+  const updateProduct = useUpdateProduct();
   const updateMlItem = useServerFn(updateMercadoLivreItem);
   const syncMlItem = useServerFn(syncProductToMercadoLivre);
   const [isUpdatingMl, setIsUpdatingMl] = useState<string | null>(null);
@@ -295,7 +296,23 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
                   <PowerOff className="mr-2 h-4 w-4" />
                   Inativar produto
                 </DropdownMenuItem>
-              ) : null}
+              ) : (
+                <DropdownMenuItem
+                  disabled={updateProduct.isPending}
+                  onSelect={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await updateProduct.mutateAsync({ id: p.id, input: { status: "active" } });
+                      toast.success("Produto ativado");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Falha ao ativar produto");
+                    }
+                  }}
+                >
+                  <Power className="mr-2 h-4 w-4" />
+                  Ativar produto
+                </DropdownMenuItem>
+              )}
             </DataTableActions>
           </>
         );
