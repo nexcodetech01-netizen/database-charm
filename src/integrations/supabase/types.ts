@@ -7407,81 +7407,43 @@ export type Database = {
         }[]
       }
       can_view_platform_health: { Args: { _user_id: string }; Returns: boolean }
-      cancel_sale:
-        | {
-            Args: { _sale_id: string }
-            Returns: {
-              bella_pay_ref: string | null
-              cash_session_id: string | null
-              company_id: string
-              created_at: string
-              created_by: string | null
-              customer_id: string | null
-              deleted_at: string | null
-              discount: number
-              due_date: string | null
-              finance_ref: string | null
-              grand_total: number
-              id: string
-              installments: number | null
-              is_test: boolean
-              items_total: number
-              notes: string | null
-              number: string
-              paid_at: string | null
-              payment_confirmed_at: string | null
-              payment_method: string | null
-              sale_date: string
-              shipping: number
-              status: string
-              stock_applied: boolean
-              stock_reversed: boolean
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "sales"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: { _reason?: string; _sale_id: string }
-            Returns: {
-              bella_pay_ref: string | null
-              cash_session_id: string | null
-              company_id: string
-              created_at: string
-              created_by: string | null
-              customer_id: string | null
-              deleted_at: string | null
-              discount: number
-              due_date: string | null
-              finance_ref: string | null
-              grand_total: number
-              id: string
-              installments: number | null
-              is_test: boolean
-              items_total: number
-              notes: string | null
-              number: string
-              paid_at: string | null
-              payment_confirmed_at: string | null
-              payment_method: string | null
-              sale_date: string
-              shipping: number
-              status: string
-              stock_applied: boolean
-              stock_reversed: boolean
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "sales"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      cancel_sale: {
+        Args: { _reason?: string; _sale_id: string }
+        Returns: {
+          bella_pay_ref: string | null
+          cash_session_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deleted_at: string | null
+          discount: number
+          due_date: string | null
+          finance_ref: string | null
+          grand_total: number
+          id: string
+          installments: number | null
+          is_test: boolean
+          items_total: number
+          notes: string | null
+          number: string
+          paid_at: string | null
+          payment_confirmed_at: string | null
+          payment_method: string | null
+          sale_date: string
+          shipping: number
+          status: string
+          stock_applied: boolean
+          stock_reversed: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sales"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       category_name_key: { Args: { _name: string }; Returns: string }
       company_month_start: { Args: { _company_id: string }; Returns: string }
       company_monthly_revenue: {
@@ -7641,6 +7603,65 @@ export type Database = {
           _sku?: string
         }
         Returns: string
+      }
+      find_products_by_name_key: {
+        Args: {
+          company_id_param: string
+          limit_param?: number
+          name_param: string
+        }
+        Returns: {
+          barcode: string | null
+          brand: string | null
+          category_id: string | null
+          cest: string | null
+          channel_pricing_settings: Json
+          company_id: string
+          cost: number
+          cover_image_path: string | null
+          created_at: string
+          description: string | null
+          freight: number
+          height: number | null
+          id: string
+          image_url: string | null
+          insurance: number
+          last_purchase_cost: number | null
+          length: number | null
+          margin: number
+          margin_mode: string
+          min_stock: number
+          ml_item_id: string | null
+          ml_permalink: string | null
+          ml_published_at: string | null
+          ml_status: string | null
+          model: string | null
+          name: string
+          ncm: string | null
+          other_costs: number
+          packaging: number
+          price: number
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          sales_channel: string | null
+          sales_channels: string[] | null
+          sku: string | null
+          status: string
+          stock: number
+          supplier_id: string | null
+          tags: string[]
+          unit: string
+          updated_at: string
+          use_category_margin: boolean
+          video_url: string | null
+          weight: number | null
+          width: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       fiscal_allocate_nfe_number: {
         Args: {
@@ -7944,65 +7965,6 @@ export type Database = {
         Args: { _base_url: string; _secret: string }
         Returns: Json
       }
-      find_products_by_name_key: {
-        Args: {
-          company_id_param: string
-          limit_param?: number
-          name_param: string
-        }
-        Returns: {
-          barcode: string | null
-          brand: string | null
-          category_id: string | null
-          cest: string | null
-          channel_pricing_settings: Json
-          company_id: string
-          cost: number
-          cover_image_path: string | null
-          created_at: string
-          description: string | null
-          freight: number
-          height: number | null
-          id: string
-          image_url: string | null
-          insurance: number
-          last_purchase_cost: number | null
-          length: number | null
-          margin: number
-          margin_mode: string
-          min_stock: number
-          ml_item_id: string | null
-          ml_permalink: string | null
-          ml_published_at: string | null
-          ml_status: string | null
-          model: string | null
-          name: string
-          ncm: string | null
-          other_costs: number
-          packaging: number
-          price: number
-          product_type: Database["public"]["Enums"]["product_type"] | null
-          sales_channel: string | null
-          sales_channels: string[] | null
-          sku: string | null
-          status: string
-          stock: number
-          supplier_id: string | null
-          tags: string[]
-          unit: string
-          updated_at: string
-          use_category_margin: boolean
-          video_url: string | null
-          weight: number | null
-          width: number | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "products"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
       search_products_unaccent: {
         Args: {
           company_id_param: string
@@ -8062,101 +8024,54 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      settle_financial_transaction:
-        | {
-            Args: {
-              _account_id: string
-              _notes?: string
-              _paid_at?: string
-              _payment_method: string
-              _settled_amount?: number
-              _transaction_id: string
-            }
-            Returns: {
-              account_id: string | null
-              amount: number
-              asaas_charge_id: string | null
-              bella_pay_charge_id: string | null
-              category_id: string | null
-              company_id: string
-              cost_center_id: string | null
-              created_at: string
-              created_by: string | null
-              description: string
-              discount_amount: number
-              due_date: string | null
-              id: string
-              is_recurring: boolean
-              notes: string | null
-              paid_at: string | null
-              payment_method: string | null
-              recurrence_day: number | null
-              recurring_parent_id: string | null
-              reference_id: string | null
-              reference_number: string | null
-              settlement_session_id: string | null
-              source: string
-              status: string
-              transaction_date: string
-              transfer_to_account_id: string | null
-              type: string
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "financial_transactions"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              _account_id: string
-              _notes?: string
-              _paid_at?: string
-              _payment_method: string
-              _remaining_due_date?: string
-              _settled_amount?: number
-              _settlement_mode?: string
-              _transaction_id: string
-            }
-            Returns: {
-              account_id: string | null
-              amount: number
-              asaas_charge_id: string | null
-              bella_pay_charge_id: string | null
-              category_id: string | null
-              company_id: string
-              cost_center_id: string | null
-              created_at: string
-              created_by: string | null
-              description: string
-              discount_amount: number
-              due_date: string | null
-              id: string
-              is_recurring: boolean
-              notes: string | null
-              paid_at: string | null
-              payment_method: string | null
-              recurrence_day: number | null
-              recurring_parent_id: string | null
-              reference_id: string | null
-              reference_number: string | null
-              settlement_session_id: string | null
-              source: string
-              status: string
-              transaction_date: string
-              transfer_to_account_id: string | null
-              type: string
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "financial_transactions"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      settle_financial_transaction: {
+        Args: {
+          _account_id: string
+          _notes?: string
+          _paid_at?: string
+          _payment_method: string
+          _remaining_due_date?: string
+          _settled_amount?: number
+          _settlement_mode?: string
+          _transaction_id: string
+        }
+        Returns: {
+          account_id: string | null
+          amount: number
+          asaas_charge_id: string | null
+          bella_pay_charge_id: string | null
+          category_id: string | null
+          company_id: string
+          cost_center_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          discount_amount: number
+          due_date: string | null
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          recurrence_day: number | null
+          recurring_parent_id: string | null
+          reference_id: string | null
+          reference_number: string | null
+          settlement_session_id: string | null
+          source: string
+          status: string
+          transaction_date: string
+          transfer_to_account_id: string | null
+          type: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "financial_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       simples_compute: {
