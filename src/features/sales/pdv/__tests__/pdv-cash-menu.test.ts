@@ -9,11 +9,14 @@ import {
 } from "../hooks/use-pdv-shortcuts";
 
 describe("PDV — menu operacional do caixa (UX)", () => {
-  it("rotula o caixa aberto com data e hora", () => {
-    const label = pdvCashMenuLabel({ opened_at: "2026-07-31T13:43:00.000Z" });
+  it("rotula o caixa aberto com operador, data e hora", () => {
+    const label = pdvCashMenuLabel({
+      opened_at: "2026-07-31T13:43:00.000Z",
+      operator_name: "Maria",
+    });
     expect(label.open).toBe(true);
     expect(label.title).toBe("Caixa Aberto");
-    expect(label.detail).toMatch(/^\d{2}\/\d{2}\/\d{4} • \d{2}:\d{2}$/);
+    expect(label.detail).toMatch(/^Maria • \d{2}\/\d{2}\/\d{4} • \d{2}:\d{2}$/);
   });
 
   it("rotula o caixa fechado sem detalhe", () => {

@@ -866,7 +866,7 @@ export function SaleForm({
 
     // HOTFIX-002: Caixa isolado por sessão.
     // Ao abrir o Checkout (finalize), a venda precisa ser vinculada à sessão
-    // de caixa aberta do operador. Sem caixa aberto: bloqueia a criação.
+    // de caixa aberta da empresa. Sem caixa aberto: bloqueia a criação.
     let cashSessionId: string | null = isEdit ? (sale?.cash_session_id ?? null) : null;
     if (!isEdit) {
       if (!user?.id) {
@@ -876,7 +876,7 @@ export function SaleForm({
         return;
       }
       try {
-        const openSession = await cashService.getOpenSession(companyId, user.id);
+        const openSession = await cashService.getOpenSession(companyId);
         // eslint-disable-next-line no-console
         console.info("[sale-form] ETAPA caixa", {
           companyId,

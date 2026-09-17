@@ -435,7 +435,10 @@ export function PDVScreen({
     return (
       <>
         <div className="space-y-4">
-          <PDVHeader openedAt={session?.opened_at} />
+          <PDVHeader
+            openedAt={session?.opened_at}
+            operatorName={session?.operator_name}
+          />
           <Card className="flex flex-col items-center gap-3 p-10 text-center">
             <Wallet className="h-6 w-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">{access.message}</p>
@@ -466,7 +469,11 @@ export function PDVScreen({
   return (
     <>
       <div className="mb-4">
-        <PDVHeader openedAt={session?.opened_at} companyId={companyId} />
+        <PDVHeader
+          openedAt={session?.opened_at}
+          operatorName={session?.operator_name}
+          companyId={companyId}
+        />
       </div>
       <PDVWorkspace
         operationBar={

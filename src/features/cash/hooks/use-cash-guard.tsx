@@ -42,7 +42,7 @@ export function useCashGuard({ companyId, accountName }: Options) {
       // Verificação prévia (usada quando a operação não é idempotente):
       // evita executar metade do fluxo antes de o motor recusar.
       if (opts?.preCheck && user?.id) {
-        const session = await cashService.getOpenSession(companyId, user.id);
+        const session = await cashService.getOpenSession(companyId);
         if (!session) {
           pendingRef.current = () => action();
           setPromptOpen(true);

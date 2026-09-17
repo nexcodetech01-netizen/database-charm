@@ -66,7 +66,7 @@ export function OpenSessionDialog({
         <DialogHeader>
           <DialogTitle>Abrir caixa</DialogTitle>
           <DialogDescription>
-            Registre o troco inicial disponível. Apenas 1 caixa aberto por operador.
+            Registre o troco inicial disponível. Apenas 1 caixa aberto por empresa.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">

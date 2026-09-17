@@ -37,7 +37,7 @@ export function usePdvCash({
   cashMenu: React.ReactNode;
   cashDialogs: React.ReactNode;
 } {
-  const { data: session, isLoading } = useOpenCashSession(companyId, operatorId);
+  const { data: session, isLoading } = useOpenCashSession(companyId);
   const [promptOpen, setPromptOpen] = useState(false);
   const [openSessionOpen, setOpenSessionOpen] = useState(false);
   const [closeCashOpen, setCloseCashOpen] = useState(false);

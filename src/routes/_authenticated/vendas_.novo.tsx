@@ -38,10 +38,7 @@ function NewSalePage() {
   const { company, user } = Route.useRouteContext();
   const { productId, inboxId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data: openSession, isLoading } = useOpenCashSession(
-    company.id,
-    user.id,
-  );
+  const { data: openSession, isLoading } = useOpenCashSession(company.id);
   const operatorName =
     (user.user_metadata?.full_name as string | undefined) ??
     user.email ??
