@@ -104,7 +104,11 @@ function monthStartISO(): string {
 }
 
 export const executiveDashboardService = {
-  async build(companyId: string, range: DateRange): Promise<ExecutiveDashboardData> {
+  async build(
+    companyId: string,
+    range: DateRange,
+    operatorId?: string,
+  ): Promise<ExecutiveDashboardData> {
     // P2.4 — hoje/início do mês calculados no fuso da empresa (servidor).
     const [{ data: todayRpc }, { data: monthRpc }] = await Promise.all([
       supabase.rpc("company_today", { _company_id: companyId }),
@@ -115,6 +119,11 @@ export const executiveDashboardService = {
     const monthStart =
       (typeof monthRpc === "string" && monthRpc) || monthStartISO();
     const { fromTs, toTs } = rangeToTimestamp(range);
+    const openCashQuery = supabase
+      .from("cash_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("status", "open");
 
     const [
       salesInRange,
@@ -188,11 +197,7 @@ export const executiveDashboardService = {
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("status", "OVERDUE"),
-      supabase
-        .from("cash_sessions")
-        .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("status", "open"),
+      operatorId ? openCashQuery.eq("operator_id", operatorId) : openCashQuery,
     ]);
 
     if (salesInRange.error) throw salesInRange.error;
