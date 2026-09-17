@@ -103,6 +103,7 @@ export const productsService = {
             search_term: filters.search.trim(),
             company_id_param: companyId,
             limit_param: filters.pageSize * filters.page, // Garantir o range
+             include_inactive: filters.includeInactive ?? false,
           },
         );
 
