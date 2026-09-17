@@ -134,7 +134,7 @@ export function PurchaseImportReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -159,11 +159,11 @@ export function PurchaseImportReviewDialog({
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
-                <TableHead>Produto / Descrição</TableHead>
-                <TableHead className="w-[160px]">Categoria</TableHead>
-                <TableHead className="w-[100px] text-right">Qtd. Real</TableHead>
-                <TableHead className="w-[130px] text-right">Custo Unit.</TableHead>
-                <TableHead className="w-[130px] text-right">Total</TableHead>
+                <TableHead className="min-w-[280px]">Produto / Descrição</TableHead>
+                <TableHead className="w-[140px]">Categoria</TableHead>
+                <TableHead className="w-[90px] text-right">Qtd. Real</TableHead>
+                <TableHead className="w-[120px] text-right">Custo Unit.</TableHead>
+                <TableHead className="w-[120px] text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -184,30 +184,34 @@ export function PurchaseImportReviewDialog({
                       </div>
                     ) : matches[idx]?.length > 0 &&
                     !dismissedMatches[idx] ? (
-                      <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">
-                          Já existe{" "}
-                          <strong className="font-semibold">
-                            {matches[idx][0].name}
-                          </strong>
-                          {matches[idx][0].sku ? ` (${matches[idx][0].sku})` : ""}{" "}
-                          no catálogo.
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                        <span className="flex min-w-0 items-start gap-1.5">
+                          <AlertTriangle className="mt-[1px] h-3.5 w-3.5 shrink-0" />
+                          <span className="min-w-0 break-words">
+                            Já existe{" "}
+                            <strong className="font-semibold">
+                              {matches[idx][0].name}
+                            </strong>
+                            {matches[idx][0].sku ? ` (${matches[idx][0].sku})` : ""}{" "}
+                            no catálogo.
+                          </span>
                         </span>
-                        <button
-                          type="button"
-                          className="shrink-0 font-semibold underline underline-offset-2"
-                          onClick={() => linkMatch(idx, matches[idx][0])}
-                        >
-                          Vincular
-                        </button>
-                        <button
-                          type="button"
-                          className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
-                          onClick={() => dismissMatch(idx)}
-                        >
-                          Ignorar
-                        </button>
+                        <span className="ml-auto flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            className="font-semibold underline underline-offset-2"
+                            onClick={() => linkMatch(idx, matches[idx][0])}
+                          >
+                            Vincular
+                          </button>
+                          <button
+                            type="button"
+                            className="text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
+                            onClick={() => dismissMatch(idx)}
+                          >
+                            Ignorar
+                          </button>
+                        </span>
                       </div>
                     ) : null}
                   </TableCell>
