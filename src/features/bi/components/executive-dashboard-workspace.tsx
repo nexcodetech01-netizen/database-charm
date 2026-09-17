@@ -45,6 +45,7 @@ import { rangeFromPreset } from "@/features/reports/utils/date-range";
 import { ROUTES } from "@/config/routes";
 import { useExecutiveDashboard } from "../hooks/use-executive-dashboard";
 import { useAccounts } from "@/features/finance/hooks/use-finance";
+import { useAuth } from "@/providers/auth-provider";
 
 type DashPreset =
   | "today"
@@ -106,9 +107,10 @@ const PIE_COLORS = ["#2563EB", "#16A34A", "#F59E0B", "#EF4444", "#8B5CF6", "#0EA
 
 export function ExecutiveDashboardWorkspace({ companyId }: { companyId: string }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [preset, setPreset] = useState<DashPreset>("last_30_days");
   const [range, setRange] = useState<DateRange>(() => computeRange("last_30_days"));
-  const { data, isLoading, error } = useExecutiveDashboard(companyId, range);
+  const { data, isLoading, error } = useExecutiveDashboard(companyId, range, user?.id);
   const { data: accounts } = useAccounts(companyId);
   const availableCash = (accounts || [])
     .filter((a: any) => a.status === 'active')
@@ -519,7 +521,7 @@ function AlertsGrid({
     },
     {
       key: "cash",
-      label: "Caixa aberto",
+      label: "Seu caixa aberto",
       count: alerts?.openCashSessions ?? 0,
       icon: Wallet,
       tone: "info",
