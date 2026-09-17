@@ -876,7 +876,7 @@ export const salesService = {
     const trimmed = (reason ?? "").trim();
     const { data, error } = await supabase.rpc("cancel_sale", {
       _sale_id: id,
-      _reason: trimmed.length > 0 ? trimmed : null,
+      _reason: trimmed.length > 0 ? trimmed : undefined,
     });
     if (error) throw new Error(getSupabaseErrorMessage(error), { cause: error });
     if (!data) throw new Error("A venda não foi cancelada.");
