@@ -62,7 +62,13 @@ export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CustomerInsert) => customersService.create(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: customersKeys.all }),
+    onSuccess: () =>
+      qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      }),
   });
 }
 
@@ -75,7 +81,12 @@ export function useUpdateCustomer() {
       // Atualiza o cache do detalhe com a linha retornada para refletir na hora,
       // e invalida (aguardando) para revalidar listas/métricas/360 antes do consumidor navegar.
       if (updated) qc.setQueryData(customersKeys.detail(vars.id), updated);
-      await qc.invalidateQueries({ queryKey: customersKeys.all });
+      await qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      });
     },
   });
 }
@@ -84,21 +95,39 @@ export function useArchiveCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => customersService.archive(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: customersKeys.all }),
+    onSuccess: () =>
+      qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      }),
   });
 }
 export function useRestoreCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => customersService.restore(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: customersKeys.all }),
+    onSuccess: () =>
+      qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      }),
   });
 }
 export function useDeleteCustomer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => customersService.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: customersKeys.all }),
+    onSuccess: () =>
+      qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      }),
   });
 }
 
@@ -109,7 +138,12 @@ export function useCreateInteraction() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: customersKeys.interactions(vars.customer_id) });
       qc.invalidateQueries({ queryKey: customersKeys.detail(vars.customer_id) });
-      qc.invalidateQueries({ queryKey: customersKeys.all });
+      qc.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey.some(
+            (key) => typeof key === "string" && key.toLowerCase().includes("customer"),
+          ),
+      });
     },
   });
 }
