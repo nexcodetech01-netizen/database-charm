@@ -12,4 +12,5 @@ export { ReportDialog } from "./components/report-dialog";
 export { SessionReport } from "./components/session-report";
 export { CashClosingReminder } from "./components/cash-closing-reminder";
 export { RequireOpenCashDialog } from "./components/require-open-cash-dialog";
+export { PendingCashReconciliations } from "./components/pending-cash-reconciliations";
 export { useCashGuard, isCashClosedError } from "./hooks/use-cash-guard";
