@@ -4456,6 +4456,70 @@ export type Database = {
           },
         ]
       }
+      pending_cash_reconciliations: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          id: string
+          movement_type: string
+          reason: string | null
+          reference_id: string
+          reference_number: string | null
+          resolved_at: string | null
+          resolved_session_id: string | null
+          source: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          id?: string
+          movement_type: string
+          reason?: string | null
+          reference_id: string
+          reference_number?: string | null
+          resolved_at?: string | null
+          resolved_session_id?: string | null
+          source: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          movement_type?: string
+          reason?: string | null
+          reference_id?: string
+          reference_number?: string | null
+          resolved_at?: string | null
+          resolved_session_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_cash_reconciliations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_cash_reconciliations_resolved_session_id_fkey"
+            columns: ["resolved_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_cash_reconciliations_resolved_session_id_fkey"
+            columns: ["resolved_session_id"]
+            isOneToOne: false
+            referencedRelation: "view_cash_session_summary"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           action: string
@@ -7945,6 +8009,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_pending_cash_reconciliation: {
+        Args: { _reconciliation_id: string }
+        Returns: {
+          amount: number
+          company_id: string
+          created_at: string
+          id: string
+          movement_type: string
+          reason: string | null
+          reference_id: string
+          reference_number: string | null
+          resolved_at: string | null
+          resolved_session_id: string | null
+          source: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pending_cash_reconciliations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       reverse_financial_transaction: {
         Args: { _notes?: string; _transaction_id: string }
         Returns: {
@@ -7983,6 +8069,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reverse_purchase_finance: {
+        Args: { _purchase_id: string; _reason?: string }
+        Returns: number
       }
       reverse_sale_finance: {
         Args: { _reason?: string; _sale_id: string }

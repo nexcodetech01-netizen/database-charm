@@ -13,6 +13,7 @@ export const cashKeys = {
   list: (companyId: string) => ["cash", "list", companyId] as const,
   summary: (sessionId: string) => ["cash", "summary", sessionId] as const,
   movements: (sessionId: string) => ["cash", "movements", sessionId] as const,
+  pending: (companyId: string) => ["cash", "pending", companyId] as const,
 };
 
 export function useOpenCashSession(companyId: string) {
@@ -27,6 +28,14 @@ export function useCashSessions(companyId: string) {
   return useQuery({
     queryKey: cashKeys.list(companyId),
     queryFn: () => cashService.listSessions(companyId),
+    enabled: !!companyId,
+  });
+}
+
+export function usePendingCashReconciliations(companyId: string) {
+  return useQuery({
+    queryKey: cashKeys.pending(companyId),
+    queryFn: () => cashService.listPendingReconciliations(companyId),
     enabled: !!companyId,
   });
 }
@@ -55,6 +64,15 @@ export function useRegisterCashMovement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: RegisterMovementInput) => cashService.registerMovement(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: cashKeys.all }),
+  });
+}
+
+export function useResolvePendingCashReconciliation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reconciliationId: string) =>
+      cashService.resolvePendingReconciliation(reconciliationId),
     onSuccess: () => qc.invalidateQueries({ queryKey: cashKeys.all }),
   });
 }

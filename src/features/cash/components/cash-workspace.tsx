@@ -31,6 +31,7 @@ import {
   useCashSessions,
   useCashSummary,
   useOpenCashSession,
+  usePendingCashReconciliations,
 } from "../hooks/use-cash";
 import { CASH_METHOD_LABEL, type CashPaymentMethodKey } from "../types";
 import { isSessionStale, staleSessionMessage } from "../lib/session-day";
@@ -39,6 +40,7 @@ import { MovementDialog } from "./movement-dialog";
 import { CloseSessionDialog } from "./close-session-dialog";
 import { ReportDialog } from "./report-dialog";
 import { CashHelpCard } from "./cash-help-card";
+import { PendingCashReconciliations } from "./pending-cash-reconciliations";
 import { useAccounts } from "@/features/finance/hooks/use-finance";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -69,6 +71,7 @@ export function CashWorkspace({
 }: Props) {
   const { data: openSession, isLoading } = useOpenCashSession(companyId);
   const { data: sessions } = useCashSessions(companyId);
+  const { data: pendingReconciliations = [] } = usePendingCashReconciliations(companyId);
   // Isolamento de homologação — por padrão as vendas de teste ficam ocultas.
   const [hideTestSales, setHideTestSales] = useState(true);
   const { data: summary } = useCashSummary(openSession, !hideTestSales);
@@ -207,6 +210,10 @@ export function CashWorkspace({
         </Alert>
       ) : null}
       <CashHelpCard />
+      <PendingCashReconciliations
+        items={pendingReconciliations}
+        openSession={openSession}
+      />
       {openSession ? (
         <>
 

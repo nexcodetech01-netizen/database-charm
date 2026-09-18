@@ -7,6 +7,7 @@ import type {
   CashSummary,
   CloseSessionInput,
   OpenSessionInput,
+  PendingCashReconciliation,
   RegisterMovementInput,
 } from "../types";
 import { emptyByMethod } from "../types";
@@ -148,6 +149,33 @@ export const cashService = {
       .order("created_at", { ascending: true });
     if (error) throw error;
     return (data ?? []) as CashMovement[];
+  },
+
+  async listPendingReconciliations(
+    companyId: string,
+  ): Promise<PendingCashReconciliation[]> {
+    const { data, error } = await supabase
+      .from("pending_cash_reconciliations")
+      .select(
+        "id,company_id,source,reference_id,reference_number,amount,movement_type,reason,created_at,resolved_at,resolved_session_id",
+      )
+      .eq("company_id", companyId)
+      .is("resolved_at", null)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as PendingCashReconciliation[];
+  },
+
+  async resolvePendingReconciliation(
+    reconciliationId: string,
+  ): Promise<PendingCashReconciliation> {
+    const { data, error } = await supabase.rpc(
+      "resolve_pending_cash_reconciliation",
+      { _reconciliation_id: reconciliationId },
+    );
+    if (error) throw error;
+    if (!data) throw new Error("Pendência de caixa não encontrada.");
+    return data as PendingCashReconciliation;
   },
 
   async registerMovement(input: RegisterMovementInput): Promise<CashMovement> {

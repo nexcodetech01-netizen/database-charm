@@ -4,6 +4,7 @@ export type CashSession = Tables<"cash_sessions">;
 export type CashSessionInsert = TablesInsert<"cash_sessions">;
 export type CashMovement = Tables<"cash_movements">;
 export type CashMovementInsert = TablesInsert<"cash_movements">;
+export type PendingCashReconciliation = Tables<"pending_cash_reconciliations">;
 
 export type CashSessionStatus = "open" | "closed";
 export type CashMovementType = "cash_in" | "cash_out";
