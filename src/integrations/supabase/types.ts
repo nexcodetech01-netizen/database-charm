@@ -7445,6 +7445,41 @@ export type Database = {
         }
       }
       category_name_key: { Args: { _name: string }; Returns: string }
+      close_cash_session: {
+        Args: {
+          _closing_note?: string
+          _counted_cash: number
+          _session_id: string
+        }
+        Returns: {
+          by_method: Json | null
+          cash_in_total: number | null
+          cash_out_total: number | null
+          closed_at: string | null
+          closing_note: string | null
+          company_id: string
+          counted_cash: number | null
+          created_at: string
+          difference: number | null
+          expected_cash: number | null
+          id: string
+          opened_at: string
+          opening_balance: number
+          opening_note: string | null
+          operator_id: string
+          operator_name: string | null
+          sales_count: number | null
+          sales_total: number | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "cash_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       company_month_start: { Args: { _company_id: string }; Returns: string }
       company_monthly_revenue: {
         Args: { _company_id: string; _competence: string }
