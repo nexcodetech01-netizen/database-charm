@@ -312,7 +312,7 @@ export const cashService = {
       .rpc("close_cash_session", {
         _session_id: input.sessionId,
         _counted_cash: input.countedCash,
-        ...(input.closingNote !== undefined
+        ...(typeof input.closingNote === "string"
           ? { _closing_note: input.closingNote }
           : {}),
       });
