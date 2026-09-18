@@ -43,7 +43,19 @@ vi.mock("@/integrations/supabase/client", () => {
       from: vi.fn((table) => {
         if (table === "view_cash_session_summary") return viewMock;
         return genericMock;
-      })
+      }),
+      rpc: vi.fn().mockResolvedValue({
+        data: {
+          id: "sess-1",
+          company_id: "comp-1",
+          status: "closed",
+          opened_at: "2026-09-18T10:00:00.000Z",
+          closed_at: "2026-09-18T18:00:00.000Z",
+          counted_cash: 330,
+          expected_cash: 330,
+        },
+        error: null,
+      }),
     }
   };
 });
@@ -57,5 +69,21 @@ describe("Cash Single Source of Truth", () => {
     expect(summary.salesTotal).toBe(500);
     expect(summary.openingBalance).toBe(100);
     expect(supabase.from).toHaveBeenCalledWith("view_cash_session_summary");
+  });
+
+  it("closes through the atomic database function before loading details", async () => {
+    const result = await cashService.closeSession({
+      sessionId: "sess-1",
+      countedCash: 330,
+      closingNote: "Conferido",
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("close_cash_session", {
+      _session_id: "sess-1",
+      _counted_cash: 330,
+      _closing_note: "Conferido",
+    });
+    expect(result.session.status).toBe("closed");
+    expect(result.summary.expectedCash).toBe(330);
   });
 });

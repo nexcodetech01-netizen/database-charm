@@ -308,34 +308,17 @@ export const cashService = {
   async closeSession(
     input: CloseSessionInput,
   ): Promise<{ session: CashSession; summary: CashSummary }> {
-    const current = await this.getSession(input.sessionId);
-    if (!current) throw new Error("Sessão não encontrada.");
-    if (current.status !== "open") throw new Error("Sessão já está fechada.");
-
-    // Snapshot do resumo no momento do fechamento.
-    const summary = await this.computeSummary(current);
-    const difference = Number(input.countedCash) - summary.expectedCash;
-
     const { data, error } = await supabase
-      .from("cash_sessions")
-      .update({
-        status: "closed",
-        closed_at: new Date().toISOString(),
-        counted_cash: input.countedCash,
-        expected_cash: summary.expectedCash,
-        difference,
-        closing_note: input.closingNote ?? null,
-        sales_count: summary.salesCount,
-        sales_total: summary.salesTotal,
-        cash_in_total: summary.cashIn,
-        cash_out_total: summary.cashOut,
-        by_method: JSON.parse(JSON.stringify(summary.byMethod)),
-      })
-      .eq("id", input.sessionId)
-      .eq("status", "open")
-      .select()
-      .single();
+      .rpc("close_cash_session", {
+        _session_id: input.sessionId,
+        _counted_cash: input.countedCash,
+        _closing_note: input.closingNote ?? null,
+      });
     if (error) throw error;
-    return { session: data as CashSession, summary };
+    if (!data) throw new Error("Sessão não encontrada.");
+
+    const session = data as CashSession;
+    const summary = await this.computeSummary(session);
+    return { session, summary };
   },
 };
