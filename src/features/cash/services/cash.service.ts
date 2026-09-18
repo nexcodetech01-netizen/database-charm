@@ -312,7 +312,9 @@ export const cashService = {
       .rpc("close_cash_session", {
         _session_id: input.sessionId,
         _counted_cash: input.countedCash,
-        _closing_note: input.closingNote ?? null,
+        ...(typeof input.closingNote === "string"
+          ? { _closing_note: input.closingNote }
+          : {}),
       });
     if (error) throw error;
     if (!data) throw new Error("Sessão não encontrada.");
