@@ -150,7 +150,12 @@ export function useCreateCategory(companyId: string) {
   return useMutation({
     mutationFn: (input: { name: string; targetMarginPct?: number; defaultNcm?: string }) => 
       categoriesService.create(companyId, input.name, input.targetMarginPct, input.defaultNcm),
-    onSuccess: () => qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+        qc.invalidateQueries({ queryKey: ["categories"] }),
+      ]);
+    },
   });
 }
 
@@ -159,7 +164,12 @@ export function useUpdateCategory(companyId: string) {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: { name?: string; target_margin_pct?: number; default_ncm?: string } }) =>
       categoriesService.update(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+        qc.invalidateQueries({ queryKey: ["categories"] }),
+      ]);
+    },
   });
 }
 
@@ -167,7 +177,12 @@ export function useDeleteCategory(companyId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => categoriesService.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: productsKeys.categories(companyId) }),
+        qc.invalidateQueries({ queryKey: ["categories"] }),
+      ]);
+    },
   });
 }
 
