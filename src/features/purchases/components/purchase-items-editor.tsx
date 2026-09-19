@@ -19,7 +19,7 @@ import {
   findProductsByNameKey,
   type ProductNameMatch,
 } from "@/features/products/lib/product-matching";
-import { productImageUrl } from "@/features/products/lib/product-image-url";
+import { productImagesService } from "@/features/products/services/product-images.service";
 
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
@@ -47,9 +47,8 @@ interface Props {
   disabledReason?: { title: string; description: string };
 }
 
-// URL pública de imagem de produto — ver product-image-url.ts pro porquê
-// disso ser um helper compartilhado e não reimplementado aqui.
-const publicImageUrl = productImageUrl;
+/** O bucket product-images é privado; as miniaturas sempre usam URLs assinadas. */
+const signedUrlCache = new Map<string, string>();
 
 export function PurchaseItemsEditor({
   companyId,
@@ -63,8 +62,11 @@ export function PurchaseItemsEditor({
   const [showResults, setShowResults] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [brokenImages, setBrokenImages] = useState<Record<string, true>>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
   const rowRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  const activeSignRef = useRef(0);
 
 
   useEffect(() => {
@@ -86,8 +88,7 @@ export function PurchaseItemsEditor({
       }
 
 
-      setOptions(
-        (data ?? []).map((p) => ({
+      const mapped: ProductOption[] = (data ?? []).map((p) => ({
           id: p.id,
           name: p.name,
           sku: p.sku,
@@ -95,11 +96,47 @@ export function PurchaseItemsEditor({
           stock: p.stock != null ? Number(p.stock) : null,
           unit: p.unit ?? null,
           cover_image_path: p.cover_image_path,
-        })),
-      );
+        }));
+      setOptions(mapped);
+
+      const paths = mapped.flatMap((product) => {
+        const path = product.cover_image_path;
+        return path && !signedUrlCache.has(path) ? [path] : [];
+      });
+      const cached: Record<string, string> = {};
+      for (const product of mapped) {
+        const path = product.cover_image_path;
+        const cachedUrl = path ? signedUrlCache.get(path) : undefined;
+        if (path && cachedUrl) cached[path] = cachedUrl;
+      }
+      if (Object.keys(cached).length > 0) {
+        setSignedUrls((previous) => ({ ...previous, ...cached }));
+      }
+      if (paths.length === 0) return;
+
+      const token = ++activeSignRef.current;
+      try {
+        const signed = await productImagesService.signedUrls(paths);
+        if (token !== activeSignRef.current) return;
+        const next: Record<string, string> = {};
+        for (const image of signed) {
+          if (image.path && image.signedUrl) {
+            signedUrlCache.set(image.path, image.signedUrl);
+            next[image.path] = image.signedUrl;
+          }
+        }
+        setSignedUrls((previous) => ({ ...previous, ...next }));
+      } catch {
+        // O ícone de produto permanece visível quando a assinatura falha.
+      }
     }, 250);
     return () => clearTimeout(timer);
   }, [query, companyId, enabled]);
+
+  function resolveImageUrl(path: string | null | undefined): string | null {
+    if (!path) return null;
+    return signedUrls[path] ?? signedUrlCache.get(path) ?? null;
+  }
 
   function addProduct(p: ProductOption) {
     const newItem = {
@@ -109,7 +146,7 @@ export function PurchaseItemsEditor({
       unit_price: p.cost ?? 0,
       discount: 0,
       sku: p.sku,
-      image_url: publicImageUrl(p.cover_image_path),
+      image_url: resolveImageUrl(p.cover_image_path),
       unit: p.unit,
       stock_available: p.stock,
       last_cost: p.cost,
@@ -211,12 +248,29 @@ export function PurchaseItemsEditor({
     matchTimers.current.set(index, timer);
   }
 
-  function linkSuggestedProduct(index: number, m: ProductNameMatch) {
+  async function linkSuggestedProduct(index: number, m: ProductNameMatch) {
+    let imageUrl = resolveImageUrl(m.cover_image_path);
+    const imagePath = m.cover_image_path;
+    if (!imageUrl && imagePath) {
+      try {
+        const [signed] = await productImagesService.signedUrls([imagePath]);
+        if (signed?.signedUrl) {
+          signedUrlCache.set(imagePath, signed.signedUrl);
+          setSignedUrls((previous) => ({
+            ...previous,
+            [imagePath]: signed.signedUrl,
+          }));
+          imageUrl = signed.signedUrl;
+        }
+      } catch {
+        // O item será vinculado com o placeholder quando a assinatura falhar.
+      }
+    }
     updateItem(index, {
       product_id: m.id,
       description: m.name,
       sku: m.sku,
-      image_url: publicImageUrl(m.cover_image_path),
+      image_url: imageUrl,
       unit: m.unit,
       stock_available: m.stock,
       last_cost: m.cost,
@@ -319,7 +373,8 @@ export function PurchaseItemsEditor({
           <div className="absolute inset-x-3 z-20 mt-1 rounded-md border border-border bg-popover shadow-lg sm:inset-x-4">
             <ul className="max-h-80 overflow-y-auto py-1">
               {options.map((p) => {
-                const img = publicImageUrl(p.cover_image_path);
+                const img = resolveImageUrl(p.cover_image_path);
+                const isBroken = img ? brokenImages[img] === true : false;
                 return (
                   <li key={p.id}>
                     <button
@@ -329,11 +384,15 @@ export function PurchaseItemsEditor({
                       className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-accent"
                     >
                       <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
-                        {img ? (
+                        {img && !isBroken ? (
                           <img
                             src={img}
                             alt={p.name}
+                            loading="lazy"
                             className="h-full w-full object-cover"
+                            onError={() =>
+                              setBrokenImages((previous) => ({ ...previous, [img]: true }))
+                            }
                           />
                         ) : (
                           <Package className="h-4 w-4 text-muted-foreground" />
@@ -382,8 +441,8 @@ export function PurchaseItemsEditor({
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm">
+        <div className="flex-1 overflow-x-auto overflow-y-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 z-10 bg-muted/60 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left">Produto</th>
@@ -399,11 +458,20 @@ export function PurchaseItemsEditor({
                 <tr key={idx} className="hover:bg-muted/20">
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-start gap-2">
-                      {it.image_url ? (
+                      {it.image_url && !brokenImages[it.image_url] ? (
                         <img
                           src={it.image_url}
                           alt=""
+                          loading="lazy"
                           className="mt-0.5 h-9 w-9 shrink-0 rounded border border-border object-cover"
+                          onError={() => {
+                            const imageUrl = it.image_url;
+                            if (!imageUrl) return;
+                            setBrokenImages((previous) => ({
+                              ...previous,
+                              [imageUrl]: true,
+                            }));
+                          }}
                         />
                       ) : it.product_id ? (
                         <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded border border-border bg-muted">
