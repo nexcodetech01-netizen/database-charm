@@ -44,10 +44,7 @@ export function DraftAutosave({ savedAt, recovery }: Props) {
 
       {recovery ? (
         <AlertDialog open={recovery.open} onOpenChange={recovery.onOpenChange}>
-          <AlertDialogContent
-            onEscapeKeyDown={(e) => e.preventDefault()}
-            onPointerDownOutside={(e) => e.preventDefault()}
-          >
+          <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()}>
             <AlertDialogHeader>
               <AlertDialogTitle>{recovery.title}</AlertDialogTitle>
               <AlertDialogDescription>
