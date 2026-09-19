@@ -137,17 +137,26 @@ export const saveCategoryPolicy = createServerFn({ method: "POST" })
             .execute({ companyId: data.companyId, input: data.input, actor });
 
     // Espelha as margens nas colunas lidas pelo Motor Comercial V2, para que
-    // política (UI) e motor jamais divirjam. Best-effort: não bloqueia o save.
+    // política (UI) e motor jamais divirjam. O save só é confirmado após o espelhamento.
     try {
       const { categoryMarginColumns } =
         await import("@/features/pricing/lib/category-margin-mirror");
-      await context.supabase
+      const { data: mirroredCategory, error: mirrorError } = await context.supabase
         .from("product_categories")
         .update(categoryMarginColumns(data.input))
         .eq("id", data.input.categoryId)
-        .eq("company_id", data.companyId);
+        .eq("company_id", data.companyId)
+        .select("id")
+        .maybeSingle();
+
+      if (mirrorError) throw mirrorError;
+      if (!mirroredCategory) {
+        throw new Error(
+          "Não foi possível espelhar as margens: categoria não encontrada na empresa.",
+        );
+      }
     } catch (err) {
-      console.warn("[category-policy] falha ao espelhar margens da categoria", err);
+      throw err;
     }
 
     return result;
