@@ -99,9 +99,10 @@ export function PurchaseItemsEditor({
         }));
       setOptions(mapped);
 
-      const paths = mapped
-        .map((p) => p.cover_image_path)
-        .filter((path): path is string => Boolean(path) && !signedUrlCache.has(path));
+      const paths = mapped.flatMap((product) => {
+        const path = product.cover_image_path;
+        return path && !signedUrlCache.has(path) ? [path] : [];
+      });
       const cached: Record<string, string> = {};
       for (const product of mapped) {
         const path = product.cover_image_path;
@@ -249,14 +250,15 @@ export function PurchaseItemsEditor({
 
   async function linkSuggestedProduct(index: number, m: ProductNameMatch) {
     let imageUrl = resolveImageUrl(m.cover_image_path);
-    if (!imageUrl && m.cover_image_path) {
+    const imagePath = m.cover_image_path;
+    if (!imageUrl && imagePath) {
       try {
-        const [signed] = await productImagesService.signedUrls([m.cover_image_path]);
+        const [signed] = await productImagesService.signedUrls([imagePath]);
         if (signed?.signedUrl) {
-          signedUrlCache.set(m.cover_image_path, signed.signedUrl);
+          signedUrlCache.set(imagePath, signed.signedUrl);
           setSignedUrls((previous) => ({
             ...previous,
-            [m.cover_image_path]: signed.signedUrl,
+            [imagePath]: signed.signedUrl,
           }));
           imageUrl = signed.signedUrl;
         }
