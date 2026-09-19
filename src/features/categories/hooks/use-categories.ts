@@ -45,7 +45,12 @@ export function useCreateCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CategoryInsert) => categoriesService.create(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+        qc.invalidateQueries({ queryKey: ["product-categories"] }),
+      ]);
+    },
   });
 }
 
@@ -54,7 +59,12 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: CategoryUpdate }) =>
       categoriesService.update(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+        qc.invalidateQueries({ queryKey: ["product-categories"] }),
+      ]);
+    },
   });
 }
 
@@ -62,7 +72,12 @@ export function useArchiveCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => categoriesService.archive(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+        qc.invalidateQueries({ queryKey: ["product-categories"] }),
+      ]);
+    },
   });
 }
 
@@ -70,6 +85,11 @@ export function useRestoreCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => categoriesService.restore(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: categoriesKeys.all }),
+        qc.invalidateQueries({ queryKey: ["product-categories"] }),
+      ]);
+    },
   });
 }
