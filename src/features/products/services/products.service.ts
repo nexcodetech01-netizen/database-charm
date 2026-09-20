@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
+import { bumpSkuSuffix, isSkuUniqueViolation } from "../lib/sku-generator";
 import type { Product, ProductInsert, ProductListFilters, ProductUpdate } from "../types";
 
 // P1.2 — Validação server-side na criação de produto.
@@ -250,12 +251,24 @@ export const productsService = {
     }
 
     const { composition, stock, ...insertPayload } = input as ProductInsert & { stock?: number };
-    const { data, error } = await supabase
-      .from("products")
-      .insert(insertPayload as any)
-      .select()
-      .single();
-    if (error) throw error;
+    let pendingPayload = { ...insertPayload };
+    let data: any = null;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const result = await supabase
+        .from("products")
+        .insert(pendingPayload as any)
+        .select()
+        .single();
+      if (!result.error) {
+        data = result.data;
+        break;
+      }
+      if (!isSkuUniqueViolation(result.error) || !pendingPayload.sku || attempt === 4) {
+        throw result.error;
+      }
+      pendingPayload = { ...pendingPayload, sku: bumpSkuSuffix(pendingPayload.sku) };
+    }
+    if (!data) throw new Error("Não foi possível gerar um SKU único para o produto.");
     
     // RESTAURAR PUBLICAÇÃO AUTOMÁTICA (2026-08-19):
     // Se o produto é 'active' e tem 'catalog' nos canais de venda,
@@ -269,7 +282,7 @@ export const productsService = {
     // certo, mas a associação à coleção podia falhar silenciosamente
     // (rede, corrida de dados, etc.) sem avisar ninguém. Agora
     // aguardamos o resultado e avisamos com um toast se falhar.
-    if (data?.id && data.status === 'active' && (insertPayload.sales_channels as string[])?.includes('catalog')) {
+    if (data.id && data.status === 'active' && (pendingPayload.sales_channels as string[])?.includes('catalog')) {
       const MAIN_COLLECTION_SLUG = 'tg-style-catalogue';
       try {
         const { loadPublicCollection } = await import("@/features/catalog/lib/public-collection.functions");

@@ -2,7 +2,11 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
-import { generateNextSku } from "@/features/products/lib/sku-generator";
+import {
+  bumpSkuSuffix,
+  generateNextSku,
+  isSkuUniqueViolation,
+} from "@/features/products/lib/sku-generator";
 import type {
   PurchaseInsert,
   PurchaseItemDraft,
@@ -38,7 +42,7 @@ async function ensureProductsForItems(
       resolved.push(it);
       continue;
     }
-    const sku = (await generateNextSku(companyId, name)) ?? null;
+    let sku = (await generateNextSku(companyId, name)) ?? null;
     // Categoria: se a pessoa escolheu/editou uma na tela de revisão da
     // importação (it.category_name), isso tem prioridade — só cai pra
     // inferência automática por palavra-chave quando ela deixou em branco.
@@ -61,23 +65,34 @@ async function ensureProductsForItems(
       );
       categoryId = null;
     }
-    const { data: created, error } = await supabase
-      .from("products")
-      .insert({
-        company_id: companyId,
-        name,
-        sku,
-        supplier_id: supplierId ?? null,
-        category_id: categoryId,
-        cost: Number(it.unit_price) || 0,
-        price: Number(it.unit_price) || 0,
-        use_category_margin: false,
-        stock: 0,
-        status: "active",
-      })
-      .select("id,sku")
-      .single();
-    if (error) throw error;
+    let created: { id: string; sku: string | null } | null = null;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const result = await supabase
+        .from("products")
+        .insert({
+          company_id: companyId,
+          name,
+          sku,
+          supplier_id: supplierId ?? null,
+          category_id: categoryId,
+          cost: Number(it.unit_price) || 0,
+          price: Number(it.unit_price) || 0,
+          use_category_margin: false,
+          stock: 0,
+          status: "active",
+        })
+        .select("id,sku")
+        .single();
+      if (!result.error) {
+        created = result.data;
+        break;
+      }
+      if (!isSkuUniqueViolation(result.error) || !sku || attempt === 4) {
+        throw result.error;
+      }
+      sku = bumpSkuSuffix(sku);
+    }
+    if (!created) throw new Error(`Não foi possível gerar um SKU único para "${name}".`);
     resolved.push({
       ...it,
       product_id: created.id,
