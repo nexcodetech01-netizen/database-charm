@@ -1,5 +1,33 @@
 import { supabase } from "@/integrations/supabase/client";
 
+type PostgrestLikeError = {
+  code?: string | null;
+  message?: string | null;
+  details?: string | null;
+  hint?: string | null;
+};
+
+/** Reconhece somente a colisão do índice único de SKU por empresa. */
+export function isSkuUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as PostgrestLikeError;
+  if (candidate.code !== "23505") return false;
+  return [candidate.message, candidate.details, candidate.hint]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes("products_company_sku_unique_idx");
+}
+
+/** Incrementa o sufixo numérico final sem perder zeros à esquerda. */
+export function bumpSkuSuffix(sku: string): string {
+  const match = sku.match(/^(.*?)(\d+)$/);
+  if (!match) return `${sku}-002`;
+  const prefix = match[1] ?? "";
+  const digits = match[2] ?? "0";
+  return `${prefix}${String(Number(digits) + 1).padStart(digits.length, "0")}`;
+}
+
 /**
  * Gerador automático de SKU no padrão CATEGORIA-MODELO-COR-SEQUENCIAL.
  *
