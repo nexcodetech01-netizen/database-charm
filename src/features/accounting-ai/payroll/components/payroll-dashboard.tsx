@@ -65,7 +65,7 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
         label: "Reserva financeira",
         icon: PiggyBank,
         value: a?.reserve.available ? formatCurrency(a.reserve.recommended) : "—",
-        hint: "Reserva de segurança",
+        hint: "Custo de reposição de estoque (30 dias)",
       },
       {
         label: "Caixa disponível",
@@ -187,10 +187,11 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
                 <strong> Motor Financeiro</strong> para verificar compromissos futuros.
               </p>
               <ul className="list-inside list-disc space-y-1">
-                <li>Política de 30% do lucro para pró-labore.</li>
-                <li>Reserva mínima de 20% do lucro ou saídas de 30 dias.</li>
-                <li>Consideração de impostos a pagar ({formatCurrency(advice?.commitments.taxes || 0)}).</li>
-                <li>Comprometimento imediato: {formatCurrency(advice?.commitments.total || 0)}.</li>
+                <li>Recomendado: 30% do lucro apurado no período (linha à parte — pode incluir vendas ainda não recebidas).</li>
+                <li>Máximo seguro: caixa disponível menos contas a pagar previstas para os próximos 30 dias menos o custo estimado para repor o estoque vendido nos últimos 30 dias.</li>
+                <li>Contas a pagar nos próximos 30 dias: {formatCurrency(advice?.commitments.total || 0)}.</li>
+                <li>Reserva para reposição de estoque: {formatCurrency(advice?.reserve.recommended || 0)}.</li>
+                <li>Impostos previstos (informativo, já cobertos se lançados como conta a pagar): {formatCurrency(advice?.commitments.taxes || 0)}.</li>
                 <li>Saúde financeira atual: {advice?.risk.score}/100.</li>
               </ul>
               <div className="mt-4 p-3 rounded-lg border bg-primary/5 text-primary text-xs">
@@ -239,3 +240,4 @@ export function PayrollDashboard({ summary, advice, loading }: PayrollDashboardP
     </div>
   );
 }
+

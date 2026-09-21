@@ -786,8 +786,18 @@ const distribuicaoAcimaLucro: AuditRule = {
   label: "Distribuição acima do lucro",
   severity: "critical",
   run: (d) => {
+    // CORRIGIDO (2026-09-21, auditoria de pró-labore — achado #2): o
+    // regex só reconhecia "distribuição"/"dividendo" na descrição. A
+    // retirada que o botão de pró-labore da Bella cria é sempre descrita
+    // como "Pró-labore" (ver payroll/actions.ts), que nunca batia aqui —
+    // uma retirada de qualquer tamanho, feita pelo próprio sistema, nunca
+    // disparava este alerta crítico. Agora reconhece as duas descrições.
     const distributed = d.transactions
-      .filter((t) => t.type === "expense" && DISTRIBUICAO_RX.test(t.description))
+      .filter(
+        (t) =>
+          t.type === "expense" &&
+          (DISTRIBUICAO_RX.test(t.description) || PROLABORE_RX.test(t.description)),
+      )
       .reduce((sum, t) => sum + t.amount, 0);
     const profit = d.netProfit;
     const excede = profit !== null && distributed > 0 && distributed > profit;
@@ -893,3 +903,4 @@ export const AUDIT_CATEGORY_LABELS: Record<AuditCategory, string> = {
   tributario: "Tributário",
   contabil: "Contábil",
 };
+
