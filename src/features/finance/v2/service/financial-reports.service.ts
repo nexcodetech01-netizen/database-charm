@@ -14,6 +14,7 @@ import { AccountsReceivableRepository } from "../repository/receivables.reposito
 import { AccountsPayableRepository } from "../repository/payables.repository";
 import { CashFlowRepository } from "../repository/cashflow.repository";
 import { CashFlowService } from "./cashflow.service";
+import { financeQueryService } from "@/features/finance/services/finance-query.service";
 
 export class FinancialReportsService extends BaseService {
   private readonly ar: AccountsReceivableRepository;
@@ -58,17 +59,27 @@ export class FinancialReportsService extends BaseService {
   }
 
   /**
-   * Recomendação prudencial de pró-labore. Nunca sugere valor > (saldo + net)
-   * e sempre reserva `reserveMonths * despesa_media_mensal` como colchão.
+   * Recomendação prudencial de pró-labore.
+   *
+   * CORRIGIDO (2026-09-21, auditoria de pró-labore — achado #3): a versão
+   * anterior comparava com as despesas JÁ PAGAS no mês corrente — no início
+   * do mês (dia 1 a 5), quase nada tinha sido pago ainda, então a reserva
+   * calculada ficava perto de zero e o sistema liberava quase todo o caixa
+   * como "seguro". O teto seguro agora vem sempre de
+   * `compute_prolabore_safe_amount` (mesma fonte usada pelo Advisor e pelo
+   * botão de retirada) — caixa menos contas a pagar previstas pros
+   * próximos 30 dias menos custo de reposição do estoque vendido nos
+   * últimos 30 dias. `reserveMonths` deixou de ser usado no cálculo do
+   * teto (mantido só na assinatura por compatibilidade).
    */
-  async proLabore(reserveMonths = 3): Promise<ProLaboreRecommendation> {
+  async proLabore(_reserveMonths = 3): Promise<ProLaboreRecommendation> {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
 
-    const [position, paidRows] = await Promise.all([
-      this.cash.cashPosition(),
+    const [paidRows, safe] = await Promise.all([
       this.cash.paidBetween(firstDay, nextMonth),
+      financeQueryService.proLaboreSafeAmount(this.companyId, this.supabase),
     ]);
 
     let monthIncome = 0;
@@ -79,22 +90,21 @@ export class FinancialReportsService extends BaseService {
       else if (r.type === "expense") monthExpense += v;
     }
     const net = monthIncome - monthExpense;
-    const reserveTarget = Math.max(0, monthExpense * reserveMonths);
-    const buffer = Math.max(0, position.totalBalance - reserveTarget);
-    const suggestedMax = Math.max(0, Math.min(net, buffer));
-    const safe = suggestedMax > 0;
-    const reason = safe
-      ? `Sugestão baseada em receita líquida do mês (R$ ${net.toFixed(2)}) e reserva de ${reserveMonths} mês(es).`
-      : "Sem margem prudencial: saldo insuficiente após reserva ou mês negativo.";
+    const reserveTarget = safe.payables30d + safe.restockReserve30d;
+    const suggestedMax = safe.safeAmount;
+    const safeFlag = suggestedMax > 0;
+    const reason = safeFlag
+      ? `Sugestão baseada no caixa disponível (R$ ${safe.cashBalance.toFixed(2)}), descontando contas a pagar dos próximos 30 dias (R$ ${safe.payables30d.toFixed(2)}) e o custo de reposição do estoque vendido (R$ ${safe.restockReserve30d.toFixed(2)}).`
+      : "Sem margem segura: caixa insuficiente após separar contas a pagar previstas e o custo de reposição de estoque.";
 
     return {
       monthIncome,
       monthExpense,
       netMonth: net,
-      currentBalance: position.totalBalance,
+      currentBalance: safe.cashBalance,
       reserveTarget,
       suggestedMax,
-      safe,
+      safe: safeFlag,
       reason,
     };
   }
