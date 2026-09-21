@@ -21,7 +21,7 @@ import { makeTestServices } from "./fixtures";
  */
 const CONTRACT: Record<string, string[]> = {
   accounting: ["dre", "balanceSheet", "kpis", "monthlyEvolution"],
-  finance: ["snapshot"],
+  finance: ["snapshot", "proLaboreSafeAmount"],
   sales: ["metrics", "products", "customers"],
   inventory: ["metrics", "ledgerAudit"],
   fiscal: [

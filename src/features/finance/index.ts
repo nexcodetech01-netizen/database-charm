@@ -1,7 +1,7 @@
 export * from "./types";
 export { financeService } from "./services/finance.service";
 export { financeQueryService } from "./services/finance-query.service";
-export type { FinanceSnapshot } from "./services/finance-query.service";
+export type { FinanceSnapshot, ProlaboreSafeAmount } from "./services/finance-query.service";
 export * from "./hooks/use-finance";
 export { FinanceMetrics } from "./components/finance-metrics";
 export { CashFlowPanel } from "./components/cash-flow-panel";
