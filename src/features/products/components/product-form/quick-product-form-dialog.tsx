@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useCategories, useCreateProduct } from "../../hooks/use-products";
 import { generateNextSku } from "../../lib/sku-generator";
+import { findDuplicateProduct } from "../../lib/product-dedupe";
 
 interface CreatedComponent {
   id: string;
@@ -66,6 +67,20 @@ export function QuickProductFormDialog({ companyId, open, onOpenChange, onCreate
       toast.error("Informe o nome do produto.");
       return;
     }
+
+    const duplicate = await findDuplicateProduct(companyId, { name: name.trim() });
+    if (duplicate) {
+      const confirmed =
+        typeof window !== "undefined" &&
+        window.confirm(
+          `Já existe um produto com o mesmo nome nessa empresa: "${duplicate.name}"` +
+            (duplicate.sku ? ` (SKU ${duplicate.sku})` : "") +
+            ". Criar mesmo assim um produto novo e separado?",
+        );
+
+      if (!confirmed) return;
+    }
+
     setSubmitting(true);
     try {
       const category = categories?.find((c: any) => c.id === categoryId);
