@@ -304,6 +304,13 @@ export function makeTestServices(opts: FixtureOptions = {}): AccountingAiService
       monthlyEvolution: async () => [{ label: "01/2026", dre: testDre }],
     },
     finance: {
+      proLaboreSafeAmount: async () => ({
+        cashBalance: 5000,
+        payables30d: 1500,
+        restockReserve30d: 1000,
+        safeAmount: 2500,
+        asOf: "2026-01-20",
+      }),
       snapshot: async () => {
         if (opts.breakFinance) throw new Error("financeiro indisponível");
         return {
