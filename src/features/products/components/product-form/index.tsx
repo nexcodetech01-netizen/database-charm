@@ -156,6 +156,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<{ id: string; name: string } | null>(null);
   const [uploadingMainImage, setUploadingMainImage] = useState(false);
+  const [removingMainImage, setRemovingMainImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [suggestingTags, setSuggestingTags] = useState(false);
@@ -486,6 +487,26 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     finally { setUploadingVideo(false); }
   };
 
+  const handleRemoveMainImage = useCallback(async () => {
+    if (!product?.id) return;
+    setRemovingMainImage(true);
+    try {
+      await updateProduct.mutateAsync({
+        id: product.id,
+        input: { cover_image_path: null, image_url: null } as ProductUpdate,
+      });
+      if (currentMainImage) {
+        await productImagesService.remove(currentMainImage.id, currentMainImage.path);
+      }
+      await qc.invalidateQueries({ queryKey: productsKeys.images(product.id) });
+      toast.success("Foto principal removida");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao remover a foto principal");
+    } finally {
+      setRemovingMainImage(false);
+    }
+  }, [product?.id, currentMainImage, updateProduct, qc]);
+
   const handleFetchLastPurchase = useCallback(async () => {
     if (!form.supplier_id) return;
 
@@ -770,9 +791,15 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       
       const savedId = isEdit ? product.id : (saved?.id as string);
 
-      // Se enviamos uma nova imagem principal para um novo produto, criar o registro na product_images
-      if (mainImageFile && !isEdit && savedId) {
-        await productImagesService.createRecord(companyId, savedId, cover_image_path!, 0);
+      // A galeria é a fonte da pré-visualização. Em edições, a nova capa entra
+      // na posição zero e as fotos anteriores são deslocadas para trás.
+      if (mainImageFile && savedId && cover_image_path) {
+        if (isEdit) {
+          await productImagesService.promoteNewMainImage(companyId, savedId, cover_image_path);
+        } else {
+          await productImagesService.createRecord(companyId, savedId, cover_image_path, 0);
+        }
+        await qc.invalidateQueries({ queryKey: productsKeys.images(savedId) });
       }
 
       toast.success(isEdit ? "Atualizado" : "Criado");
@@ -904,6 +931,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               setMainImageFile={setMainImageFile}
               uploadingMainImage={uploadingMainImage}
               currentMainImageUrl={currentMainImageUrl || ""}
+              onRemoveMainImage={isEdit ? handleRemoveMainImage : undefined}
+              removingMainImage={removingMainImage}
               uploadingVideo={uploadingVideo}
               onVideoUpload={handleVideoUpload}
             />

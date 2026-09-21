@@ -1,8 +1,6 @@
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Video, X, Upload, Smartphone, Globe, Loader2 } from "lucide-react";
+import { Video, X } from "lucide-react";
 import { ProductImageUploader } from "../../product-image-uploader";
 import { ProductMainImagePicker } from "../../product-main-image-picker";
 import { SALES_CHANNEL_OPTIONS } from "../../../types";
@@ -16,6 +14,8 @@ interface MultimediaFormProps {
   setMainImageFile: (file: File | null) => void;
   uploadingMainImage?: boolean;
   currentMainImageUrl: string | null;
+  onRemoveMainImage?: () => void | Promise<void>;
+  removingMainImage?: boolean;
   uploadingVideo: boolean;
   onVideoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -29,6 +29,8 @@ export function MultimediaForm({
   setMainImageFile,
   uploadingMainImage,
   currentMainImageUrl,
+  onRemoveMainImage,
+  removingMainImage,
   uploadingVideo,
   onVideoUpload,
 }: MultimediaFormProps) {
@@ -37,45 +39,13 @@ export function MultimediaForm({
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-4">
           <Label className="text-base font-semibold">Imagem Principal</Label>
-          <div className="aspect-square max-w-[300px] relative rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/30 flex flex-col items-center justify-center overflow-hidden">
-            {uploadingMainImage ? (
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                <p className="text-xs font-medium text-muted-foreground">Enviando imagem...</p>
-              </div>
-            ) : mainImageFile || currentMainImageUrl ? (
-              <>
-                <img
-                  src={mainImageFile ? URL.createObjectURL(mainImageFile) : currentMainImageUrl!}
-                  alt="Preview"
-                  className="h-full w-full object-contain p-2"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                  onClick={() => {
-                    setMainImageFile(null);
-                    // Nota: a remoção física no bucket acontece no save do form principal
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <div className="text-center p-6 space-y-2">
-                <Upload className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground font-medium">Clique para selecionar</p>
-                <p className="text-[10px] text-muted-foreground/60">PNG, JPG ou WEBP (Max 5MB)</p>
-                <input
-                  type="file"
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  accept="image/*"
-                  onChange={(e) => setMainImageFile(e.target.files?.[0] || null)}
-                />
-              </div>
-            )}
-          </div>
+          <ProductMainImagePicker
+            currentUrl={currentMainImageUrl}
+            file={mainImageFile}
+            onFileChange={setMainImageFile}
+            onRemoveCurrent={onRemoveMainImage}
+            disabled={uploadingMainImage || removingMainImage}
+          />
         </div>
 
         <div className="space-y-6">
