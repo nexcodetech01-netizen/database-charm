@@ -1,3 +1,0 @@
-- [x] Criar proteção de código de barras por empresa no banco
-- [x] Traduzir colisões no cadastro comum e na Bella/CSV
-- [x] Validar migração, tipos, testes e build
