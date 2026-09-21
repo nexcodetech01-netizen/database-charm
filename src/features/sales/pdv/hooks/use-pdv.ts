@@ -23,6 +23,9 @@ export type UsePDV = {
   stockIssues: StockInsufficiency<SaleItemDraft>[];
   /** Contagem de unidades no carrinho. */
   itemCount: number;
+  /** Se um desconto acima do limite já foi autorizado por um gerente. */
+  discountOverride: boolean;
+  setDiscountOverride: (value: boolean) => void;
   addProduct: (product: PDVProductOption, quantity?: number) => void;
   removeItem: (uiKey: string) => void;
   setItemQuantity: (uiKey: string, quantity: number) => void;
@@ -51,6 +54,7 @@ export function usePDV(companyId: string): UsePDV {
   );
   const [search, setSearch] = useState("");
   const [policy] = useDiscountPolicy(companyId);
+  const [discountOverride, setDiscountOverride] = useState(false);
 
   const totals = useMemo(() => SaleEngine.computeTotals(state), [state]);
 
@@ -59,10 +63,10 @@ export function usePDV(companyId: string): UsePDV {
       SaleEngine.evaluateDiscount({
         state,
         policy,
-        overrideApproved: false,
+        overrideApproved: discountOverride,
         totals,
       }),
-    [state, policy, totals],
+    [state, policy, totals, discountOverride],
   );
 
   const stockIssues = useMemo(
@@ -139,6 +143,7 @@ export function usePDV(companyId: string): UsePDV {
   const clear = useCallback(() => {
     dispatch({ type: "RESET", state: { number: nextPdvSaleNumber() } });
     setSearch("");
+    setDiscountOverride(false);
   }, []);
 
   return {
@@ -149,6 +154,8 @@ export function usePDV(companyId: string): UsePDV {
     discount,
     stockIssues,
     itemCount,
+    discountOverride,
+    setDiscountOverride,
     addProduct,
     removeItem,
     setItemQuantity,
