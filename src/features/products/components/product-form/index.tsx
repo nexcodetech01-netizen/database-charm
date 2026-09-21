@@ -18,6 +18,7 @@ import { toTitleCasePtBr } from "@/lib/text-format";
 import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
+import { findDuplicateProduct } from "../../lib/product-dedupe";
 import { suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
@@ -692,6 +693,32 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       composition: finalComposition,
     };
 
+    if (!product?.id) {
+      const duplicate = await findDuplicateProduct(companyId, {
+        name: payload.name,
+        sku: payload.sku,
+        barcode: payload.barcode,
+      });
+
+      if (duplicate) {
+        const field =
+          duplicate.matchedBy === "sku"
+            ? "SKU"
+            : duplicate.matchedBy === "barcode"
+              ? "código de barras"
+              : "nome";
+        const confirmed =
+          typeof window !== "undefined" &&
+          window.confirm(
+            `Já existe um produto com o mesmo ${field} nessa empresa: "${duplicate.name}"` +
+              (duplicate.sku ? ` (SKU ${duplicate.sku})` : "") +
+              ". Criar mesmo assim um produto novo e separado?",
+          );
+
+        if (!confirmed) return;
+      }
+    }
+
     try {
       // 1. Se houver imagem principal pendente, enviar ANTES de salvar o produto
       // para garantir que temos o path para o cover_image_path
@@ -706,13 +733,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
           const tempId = product?.id || crypto.randomUUID();
           const path = await productImagesService.upload(companyId, tempId, mainImageFile);
           cover_image_path = path;
-          
-          // CORREÇÃO: Gerar e salvar a URL pública explicitamente na coluna image_url
-          const { data: publicData } = supabase.storage
-            .from(productImagesService.bucket)
-            .getPublicUrl(path);
-          
-          image_url = publicData.publicUrl;
+          image_url = null;
         } catch (err) {
           console.error("Erro no upload da imagem:", err);
           throw new Error("Erro no upload da imagem. Verifique o tamanho do arquivo.");
@@ -724,7 +745,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       const finalPayload: ProductUpdate = {
         ...payload,
         cover_image_path,
-        image_url: image_url || undefined, // Incluímos a URL pública no payload para salvar na products.image_url
+        image_url: image_url || undefined,
       } as ProductUpdate;
 
       // O banco bloqueia alteração direta de "stock" em produtos SIMPLES já
