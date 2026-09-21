@@ -59,7 +59,7 @@ function resolveSources(input: AdvisorInput): {
     taxes: input.taxes ?? s?.taxes.data ?? null,
     payroll: input.payroll ?? s?.payroll.data ?? null,
     health: input.health ?? s?.health.data?.financial ?? null,
-    prolaboreSafe: input.prolaboreSafe ?? s?.prolaboreSafe.data ?? null,
+    prolaboreSafe: input.prolaboreSafe ?? s?.prolaboreSafe?.data ?? null,
   };
 }
 
