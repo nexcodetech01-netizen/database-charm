@@ -11,6 +11,7 @@ import { cashCoverageDays } from "../insights";
 import { makeNotification } from "./helpers";
 import { unavailableProviders } from "./providers";
 import { companyDayStartUtc, companyDayKey } from "@/lib/time/company-day";
+import { isNthBusinessDayOfMonth } from "../lib/helpers";
 import type { BellaNotification, ProactiveContext, ProactiveRule } from "./types";
 
 /** Variação mínima (%) para considerar movimento relevante. */
@@ -317,6 +318,35 @@ export const prolaboreAcimaRule: ProactiveRule = (ctx) => {
   });
 };
 
+/**
+ * PDV-021 — lembrete no 5º dia útil do mês pra avaliar o pró-labore.
+ *
+ * Não é um agendamento/push de verdade (o NexOS não tem cron/notificação
+ * fora do app): a regra dispara quando a Bella Contadora é aberta NAQUELE
+ * dia (comparando `ctx.createdAt`, já no fuso da empresa). Não considera
+ * feriados — apenas fins de semana.
+ */
+export const prolaboreQuintoDiaUtilRule: ProactiveRule = (ctx) => {
+  const advice = ctx.advice;
+  if (!advice || !advice.available) return null;
+  if (!isNthBusinessDayOfMonth(companyDayKey(ctx.createdAt), 5)) return null;
+
+  const safe = advice.withdrawal.safeAmount;
+  return makeNotification({
+    id: "prolabore_quinto_dia_util",
+    category: "financeiro",
+    severity: safe > 0 ? "info" : "warning",
+    title: "5º dia útil: hora de avaliar o pró-labore",
+    message:
+      safe > 0
+        ? `Hoje é o 5º dia útil do mês. Valor seguro para retirada hoje: ${formatCurrency(safe)}.`
+        : "Hoje é o 5º dia útil do mês, mas o caixa não tem folga segura para retirada agora.",
+    recommendation: "Revise o valor antes de registrar a retirada do mês.",
+    action: "ajustar_prolabore",
+    createdAt: ctx.createdAt,
+  });
+};
+
 export const retiradaRiscoRule: ProactiveRule = (ctx) => {
   const advice = ctx.advice;
   if (!advice || !advice.available) return null;
@@ -453,6 +483,7 @@ export const PROACTIVE_RULES: ProactiveRule[] = [
   muitasDespesasRule,
   impostoProximoRule,
   prolaboreAcimaRule,
+  prolaboreQuintoDiaUtilRule,
   retiradaRiscoRule,
   dadosIncompletosRule,
   motivoQuedaLucroRule,
@@ -472,3 +503,4 @@ export function runRule(
     return null;
   }
 }
+

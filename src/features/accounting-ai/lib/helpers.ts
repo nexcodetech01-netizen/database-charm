@@ -36,6 +36,32 @@ export function previousDayISO(dateISO: string): string {
   return ref.toISOString().slice(0, 10);
 }
 
+/**
+ * `true` quando `dateISO` (YYYY-MM-DD) é o n-ésimo dia útil (seg-sex) do
+ * mês. Puro, sem fuso (a data já deve vir resolvida no fuso da empresa —
+ * ver `companyDayKey` em `@/lib/time`). Não considera feriados: não há
+ * calendário de feriados nesta camada, então um feriado em dia de semana
+ * ainda conta como "útil" aqui.
+ */
+export function isNthBusinessDayOfMonth(dateISO: string, n: number): boolean {
+  const [y, m] = dateISO.split("-").map(Number);
+  const year = y ?? 1970;
+  const month = (m ?? 1) - 1;
+  let count = 0;
+  for (let day = 1; day <= 31; day++) {
+    const d = new Date(Date.UTC(year, month, day));
+    if (d.getUTCMonth() !== month) break;
+    const dow = d.getUTCDay();
+    if (dow !== 0 && dow !== 6) {
+      count++;
+      if (count === n) {
+        return `${year}-${pad(month + 1)}-${pad(day)}` === dateISO;
+      }
+    }
+  }
+  return false;
+}
+
 /** Mês imediatamente anterior ao período informado. */
 export function previousMonthPeriod(period: AccountingPeriod): AccountingPeriod {
   const [y, m] = period.start.split("-").map(Number);
@@ -85,3 +111,4 @@ export function ratio(part: number, total: number): number {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
