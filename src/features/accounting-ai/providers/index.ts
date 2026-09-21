@@ -23,6 +23,7 @@ import type {
   PayrollSuggestion,
   ProductRanking,
   ProfitAnalysis,
+  ProlaboreSafeSnapshot,
   ProviderResult,
   RevenueSnapshot,
   TaxSummary,
@@ -310,6 +311,23 @@ export async function payrollProvider(
     const dre = await services.accounting.dre(companyId, period);
     return suggestPayroll(period, dre.netProfit);
   }, "Sugestão indicativa — não grava nada no Financeiro.");
+}
+
+export async function prolaboreSafeProvider(
+  companyId: string,
+  deps?: ProviderDeps,
+): Promise<ProviderResult<ProlaboreSafeSnapshot>> {
+  const { services } = resolve(deps);
+  return readSafely("finance", async () => {
+    const safe = await services.finance.proLaboreSafeAmount(companyId);
+    return {
+      cashBalance: safe.cashBalance,
+      payables30d: safe.payables30d,
+      restockReserve30d: safe.restockReserve30d,
+      safeAmount: safe.safeAmount,
+      asOf: safe.asOf,
+    };
+  }, "Teto seguro único — caixa menos contas a pagar (30 dias) menos custo de reposição de estoque (30 dias).");
 }
 
 export async function healthProvider(

@@ -48,6 +48,7 @@ describe('auditFinancialClosing', () => {
     products: { available: false, data: null, source: 'reports', generatedAt: '' },
     customers: { available: false, data: null, source: 'reports', generatedAt: '' },
     payroll: { available: true, data: { suggestedAmount: 1000, basis: 2000, suggestedRate: 50, reserveAmount: 500, reserveRate: 25, distributableProfit: 1500, confident: true, rationale: 'OK', period: { start: '2026-07-01', end: '2026-07-31' } }, source: 'accounting', generatedAt: '' },
+    prolaboreSafe: { available: true, data: { cashBalance: 5000, payables30d: 1000, restockReserve30d: 1500, safeAmount: 2500, asOf: '2026-07-31' }, source: 'finance', generatedAt: '' },
     health: { 
       available: true, 
       data: { 

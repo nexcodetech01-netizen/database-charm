@@ -15,6 +15,7 @@ import {
   payrollProvider,
   productsProvider,
   profitProvider,
+  prolaboreSafeProvider,
   revenueProvider,
   taxesProvider,
   ticketProvider,
@@ -46,6 +47,7 @@ export async function buildAccountingSummary(
     customers,
     payroll,
     health,
+    prolaboreSafe,
   ] = await Promise.all([
     revenueProvider(companyId, scoped),
     todayProvider(companyId, scoped),
@@ -62,6 +64,7 @@ export async function buildAccountingSummary(
     customersProvider(companyId, scoped),
     payrollProvider(companyId, scoped),
     healthProvider(companyId, scoped),
+    prolaboreSafeProvider(companyId, scoped),
   ]);
 
   return {
@@ -83,5 +86,6 @@ export async function buildAccountingSummary(
     customers,
     payroll,
     health,
+    prolaboreSafe,
   };
 }

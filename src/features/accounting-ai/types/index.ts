@@ -164,6 +164,20 @@ export interface BusinessHealth {
   warnings: string[];
 }
 
+/**
+ * Teto seguro único de pró-labore (PDV-021) — caixa disponível menos
+ * contas a pagar previstas pros próximos 30 dias, menos o custo estimado
+ * pra repor o estoque vendido nos últimos 30 dias. Sempre calculado no
+ * banco (`compute_prolabore_safe_amount`) — nunca recalculado aqui.
+ */
+export interface ProlaboreSafeSnapshot {
+  cashBalance: number;
+  payables30d: number;
+  restockReserve30d: number;
+  safeAmount: number;
+  asOf: string;
+}
+
 /** Faturamento do dia — vindo das métricas de vendas já existentes. */
 export interface DailyRevenue {
   date: string;
@@ -211,4 +225,5 @@ export interface AccountingSummary {
   customers: ProviderResult<CustomerSnapshot>;
   payroll: ProviderResult<PayrollSuggestion>;
   health: ProviderResult<BusinessHealth>;
+  prolaboreSafe: ProviderResult<ProlaboreSafeSnapshot>;
 }
