@@ -23,6 +23,7 @@ export {
   muitasDespesasRule,
   impostoProximoRule,
   prolaboreAcimaRule,
+  prolaboreQuintoDiaUtilRule,
   retiradaRiscoRule,
   dadosIncompletosRule,
 } from "./rules";
