@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useDiscountPolicy } from "../../lib/discounts";
 import { usePDV } from "../hooks/use-pdv";
 import { usePdvCash } from "../hooks/use-pdv-cash";
 import { usePdvCheckout } from "../hooks/use-pdv-checkout";
@@ -133,6 +144,7 @@ export function PDVScreen({
   const catalog = usePdvCatalogIndex(companyId);
 
   const pdv = usePDV(companyId);
+  const [discountPolicy] = useDiscountPolicy(companyId);
   const {
     access,
     session,
@@ -224,6 +236,8 @@ export function PDVScreen({
   const [saleNotesOpen, setSaleNotesOpen] = useState(false);
   const [suspendedOpen, setSuspendedOpen] = useState(false);
   const [checkoutConfirmationOpen, setCheckoutConfirmationOpen] = useState(false);
+  const [discountApprovalOpen, setDiscountApprovalOpen] = useState(false);
+  const [managerName, setManagerName] = useState("");
 
 
   const handleAddProduct = useCallback(
@@ -314,6 +328,24 @@ export function PDVScreen({
     pdv.state.items.length > 0 && !pendingSale && !completed;
 
   const handleCheckoutIntent = () => {
+    // A política é validada antes da confirmação de cliente, evitando que
+    // qualquer caminho de finalização contorne o limite configurado.
+    if (pdv.discount.kind === "exceeds") {
+      if (pdv.discount.enforcement === "block") {
+        toast.error("Desconto acima do limite", {
+          description: `O limite é ${discountPolicy.maxPercent}%.`,
+        });
+        return;
+      }
+      if (pdv.discount.enforcement === "request_manager") {
+        toast.error("Este desconto exige autorização", {
+          description: "Solicite a autorização do gerente para prosseguir.",
+        });
+        setDiscountApprovalOpen(true);
+        return;
+      }
+    }
+
     if (!pdv.state.customerId) {
       setCheckoutConfirmationOpen(true);
     } else {
@@ -688,6 +720,58 @@ export function PDVScreen({
           </AlertDialogContent>
         </AlertDialog>
       </Suspense>
+
+      <Dialog
+        open={discountApprovalOpen}
+        onOpenChange={(open) => {
+          setDiscountApprovalOpen(open);
+          if (!open) setManagerName("");
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Autorizar desconto acima do limite</DialogTitle>
+            <DialogDescription>
+              Este desconto ultrapassa {discountPolicy.maxPercent}%. Informe o
+              nome do gerente que autorizou para prosseguir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label className="text-xs text-muted-foreground">Nome do gerente</Label>
+            <Input
+              autoFocus
+              value={managerName}
+              onChange={(event) => setManagerName(event.target.value)}
+              placeholder="Ex.: Ana Souza"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setDiscountApprovalOpen(false);
+                setManagerName("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={managerName.trim().length < 2}
+              onClick={() => {
+                pdv.setDiscountOverride(true);
+                setDiscountApprovalOpen(false);
+                toast.success("Desconto autorizado", {
+                  description: `Autorizado por ${managerName.trim()}.`,
+                });
+              }}
+            >
+              Autorizar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {cashDialogs}
 
