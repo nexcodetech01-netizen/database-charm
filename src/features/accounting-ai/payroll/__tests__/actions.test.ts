@@ -96,16 +96,37 @@ describe("emitProlaboreWithdrawal", () => {
     expect(settle.accountId).toBe("acc-1");
   });
 
-  it("avisa quando o valor pedido ultrapassa o teto seguro, mas ainda registra", async () => {
+  it("recusa valor acima do teto sem confirmação e motivo", async () => {
     createAndSettleTransaction.mockClear();
     const result = await emitProlaboreWithdrawal(
       { companyId: "c1", accountId: "acc-1", amount: 999999 },
       { summary: fakeSummary },
     );
+    expect(result.ok).toBe(false);
+    expect(result.exceededSafeAmount).toBe(true);
+    expect(result.requiresConfirmation).toBe(true);
+    expect(result.message).toMatch(/confirme|motivo/i);
+    expect(createAndSettleTransaction).not.toHaveBeenCalled();
+  });
+
+  it("registra valor acima do teto somente com confirmação e motivo válido", async () => {
+    createAndSettleTransaction.mockClear();
+    const result = await emitProlaboreWithdrawal(
+      {
+        companyId: "c1",
+        accountId: "acc-1",
+        amount: 999999,
+        confirmExceeds: true,
+        exceedReason: "Despesa pessoal urgente",
+      },
+      { summary: fakeSummary },
+    );
     expect(result.ok).toBe(true);
     expect(result.exceededSafeAmount).toBe(true);
-    expect(result.message).toMatch(/passa|ultrapassa|Atenção/i);
     expect(createAndSettleTransaction).toHaveBeenCalledTimes(1);
+    const [input] = createAndSettleTransaction.mock.calls[0];
+    expect(input.notes).toMatch(/ACIMA DO TETO SEGURO/);
+    expect(input.notes).toMatch(/Despesa pessoal urgente/);
   });
 
   it("rejeita valor zero ou negativo sem chamar o motor financeiro", async () => {
