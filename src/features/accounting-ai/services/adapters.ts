@@ -44,6 +44,7 @@ export const accountingAdapter: AccountingPort = {
 
 export const financeAdapter: FinancePort = {
   snapshot: (companyId) => financeQueryService.snapshot(companyId),
+  proLaboreSafeAmount: (companyId) => financeQueryService.proLaboreSafeAmount(companyId),
 };
 
 export const salesAdapter: SalesPort = {

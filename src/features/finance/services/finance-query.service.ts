@@ -26,6 +26,20 @@ export interface FinanceSnapshot {
   hasData: boolean;
 }
 
+/**
+ * Teto seguro único de pró-labore — fonte única do número, calculada no
+ * banco por `compute_prolabore_safe_amount` (ver migration
+ * 20260921120000_add_prolabore_safe_amount_rpc.sql). Nenhum consumidor
+ * deve recalcular isso client-side.
+ */
+export interface ProlaboreSafeAmount {
+  cashBalance: number;
+  payables30d: number;
+  restockReserve30d: number;
+  safeAmount: number;
+  asOf: string;
+}
+
 export const financeQueryService = {
   // CORRIGIDO (2026-09-16, auditoria de duplicação de lógica — achado
   // #5): este serviço é chamado tanto pela UI do navegador quanto pelas
@@ -99,6 +113,36 @@ export const financeQueryService = {
       overdueAmount,
       forecast30d: { incoming, outgoing, net: incoming - outgoing },
       hasData,
+    };
+  },
+
+  /**
+   * Teto seguro de retirada de pró-labore — sempre lido do banco
+   * (`compute_prolabore_safe_amount`), nunca recalculado aqui. Ver
+   * `client` opcional: mesma razão do `snapshot()` acima — chamadas do
+   * servidor (skills da Bella) passam `supabaseAdmin` explicitamente.
+   */
+  async proLaboreSafeAmount(
+    companyId: string,
+    client: SupabaseClient<Database> = supabase,
+  ): Promise<ProlaboreSafeAmount> {
+    const { data, error } = await client.rpc("compute_prolabore_safe_amount", {
+      _company_id: companyId,
+    });
+    if (error) throw error;
+    const row = (data ?? {}) as {
+      cash_balance?: number;
+      payables_30d?: number;
+      restock_cost_30d?: number;
+      safe_amount?: number;
+      as_of?: string;
+    };
+    return {
+      cashBalance: Number(row.cash_balance ?? 0),
+      payables30d: Number(row.payables_30d ?? 0),
+      restockReserve30d: Number(row.restock_cost_30d ?? 0),
+      safeAmount: Number(row.safe_amount ?? 0),
+      asOf: row.as_of ?? "",
     };
   },
 };

@@ -9,7 +9,7 @@ import type {
   DreReport,
   FinancialKpis,
 } from "@/features/accounting";
-import type { FinanceSnapshot } from "@/features/finance";
+import type { FinanceSnapshot, ProlaboreSafeAmount } from "@/features/finance";
 import type { CustomersReport, ProductsReport } from "@/features/reports";
 import type {
   CompanyTaxProfile,
@@ -32,6 +32,8 @@ export interface AccountingPort {
 
 export interface FinancePort {
   snapshot(companyId: string): Promise<FinanceSnapshot>;
+  /** Teto seguro único de pró-labore — sempre lido do banco, nunca recalculado. */
+  proLaboreSafeAmount(companyId: string): Promise<ProlaboreSafeAmount>;
 }
 
 export interface SalesPort {
@@ -269,5 +271,3 @@ export interface AccountingAiServices {
   readonly audit: AuditPort;
   readonly explanation: ExplanationPort;
 }
-
-
