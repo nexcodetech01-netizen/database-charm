@@ -53,6 +53,26 @@ export const productImagesService = {
     return data;
   },
 
+  /** Insere uma nova foto principal e preserva a ordem das fotos existentes. */
+  async promoteNewMainImage(companyId: string, productId: string, path: string) {
+    const { data: images, error: listError } = await supabase
+      .from("product_images")
+      .select("id, position")
+      .eq("product_id", productId)
+      .order("position", { ascending: false });
+    if (listError) throw listError;
+
+    for (const image of images ?? []) {
+      const { error } = await supabase
+        .from("product_images")
+        .update({ position: Number(image.position ?? 0) + 1 })
+        .eq("id", image.id);
+      if (error) throw error;
+    }
+
+    return this.createRecord(companyId, productId, path, 0);
+  },
+
   async updateFraming(
     id: string,
     framing: { focal_x: number; focal_y: number; zoom: number },
