@@ -361,6 +361,18 @@ export const purchasesService = {
   ) {
     const { items: rawItems, ...header } = input;
 
+    // Reaproveita na edição a mesma validação de itens usada na criação.
+    // Isso impede que quantidades zeradas cheguem ao cálculo de recebimento.
+    if (rawItems) {
+      const parsedItems = z
+        .array(purchaseItemSchema)
+        .min(1, "Inclua ao menos um item na compra.")
+        .safeParse(rawItems);
+      if (!parsedItems.success) {
+        throw new Error(parsedItems.error.issues.map((i) => i.message).join(" · "));
+      }
+    }
+
     // Trava de integridade de estoque: uma vez "recebida", o gatilho que dá
     // entrada no estoque (apply_purchase_to_inventory) já rodou e só roda
     // uma vez (guardado por stock_applied). Editar os itens depois disso
