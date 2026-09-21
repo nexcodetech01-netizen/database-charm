@@ -14,6 +14,7 @@ import type {
   CashSnapshot,
   FinancialHealth,
   PayrollSuggestion,
+  ProlaboreSafeSnapshot,
   TaxSummary,
 } from "../types";
 import {
@@ -49,6 +50,7 @@ function resolveSources(input: AdvisorInput): {
   taxes: TaxSummary | null;
   payroll: PayrollSuggestion | null;
   health: FinancialHealth | null;
+  prolaboreSafe: ProlaboreSafeSnapshot | null;
 } {
   const s = input.summary ?? null;
   return {
@@ -57,6 +59,7 @@ function resolveSources(input: AdvisorInput): {
     taxes: input.taxes ?? s?.taxes.data ?? null,
     payroll: input.payroll ?? s?.payroll.data ?? null,
     health: input.health ?? s?.health.data?.financial ?? null,
+    prolaboreSafe: input.prolaboreSafe ?? s?.prolaboreSafe.data ?? null,
   };
 }
 
@@ -112,40 +115,62 @@ function unavailableAdvice(missing: string[], requested: number | null): Financi
 
 /** Motor principal — puro e determinístico. */
 export function buildFinancialAdvice(input: AdvisorInput): FinancialAdvice {
-  const { cash, cashFlow, taxes, payroll, health } = resolveSources(input);
+  const { cash, cashFlow, taxes, payroll, health, prolaboreSafe } = resolveSources(input);
   const requested =
     typeof input.requestedAmount === "number" && Number.isFinite(input.requestedAmount)
       ? round2(Math.max(0, input.requestedAmount))
       : null;
 
   const missing: string[] = [];
-  if (!cash) missing.push("caixa");
+  if (!cash && !prolaboreSafe) missing.push("caixa");
   if (!cashFlow) missing.push("fluxo de caixa");
   if (!taxes) missing.push("impostos previstos");
   if (!payroll) missing.push("pró-labore sugerido");
   if (!health) missing.push("saúde financeira");
 
-  const available = availableCash(cash);
-  const commitments = buildCommitments(cash, taxes, cashFlow);
+  // PDV-021 — teto seguro único: quando o snapshot já veio calculado
+  // (compute_prolabore_safe_amount), ele é a fonte de caixa/compromissos/
+  // reserva — substitui a heurística antiga (cashFlow.outgoing × política
+  // de payroll), que ficava inconsistente com o restante do sistema.
+  const available = prolaboreSafe ? round2(prolaboreSafe.cashBalance) : availableCash(cash);
+  const commitments: Commitments | null = prolaboreSafe
+    ? {
+        payable: round2(prolaboreSafe.payables30d),
+        taxes: round2(Math.max(0, taxes?.taxAmount ?? 0)),
+        projectedOutgoing: 0,
+        total: round2(prolaboreSafe.payables30d),
+      }
+    : buildCommitments(cash, taxes, cashFlow);
 
   // Sem caixa apurado não há como recomendar nada.
   if (available === null || commitments === null) {
     return unavailableAdvice(missing, requested);
   }
 
-  const reserveParts = reserveAmount(payroll, cashFlow);
-  const reserve: ReserveAnalysis = {
-    available: true,
-    recommended: reserveParts.recommended,
-    fromPayroll: reserveParts.fromPayroll,
-    operational: reserveParts.operational,
-    rationale:
-      reserveParts.recommended === 0
-        ? "Sem lucro apurado e sem saídas previstas: nenhuma reserva calculável."
-        : reserveParts.fromPayroll >= reserveParts.operational
-          ? "Reserva derivada do lucro apurado no período."
-          : "Reserva derivada das saídas previstas para os próximos dias.",
-  };
+  const reserve: ReserveAnalysis = prolaboreSafe
+    ? {
+        available: true,
+        recommended: round2(prolaboreSafe.restockReserve30d),
+        fromPayroll: 0,
+        operational: round2(prolaboreSafe.restockReserve30d),
+        rationale:
+          "Reserva para repor o estoque vendido nos últimos 30 dias (custo dos produtos, não o preço de venda).",
+      }
+    : (() => {
+        const reserveParts = reserveAmount(payroll, cashFlow);
+        return {
+          available: true,
+          recommended: reserveParts.recommended,
+          fromPayroll: reserveParts.fromPayroll,
+          operational: reserveParts.operational,
+          rationale:
+            reserveParts.recommended === 0
+              ? "Sem lucro apurado e sem saídas previstas: nenhuma reserva calculável."
+              : reserveParts.fromPayroll >= reserveParts.operational
+                ? "Reserva derivada do lucro apurado no período."
+                : "Reserva derivada das saídas previstas para os próximos dias.",
+        };
+      })();
 
   const rawAmount = round2(Math.max(0, available - commitments.total));
   const safeAmount = round2(Math.max(0, rawAmount - reserve.recommended));

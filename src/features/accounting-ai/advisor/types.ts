@@ -11,6 +11,7 @@ import type {
   CashSnapshot,
   FinancialHealth,
   PayrollSuggestion,
+  ProlaboreSafeSnapshot,
   TaxSummary,
 } from "../types";
 
@@ -89,6 +90,12 @@ export interface AdvisorInput {
   taxes?: TaxSummary | null;
   payroll?: PayrollSuggestion | null;
   health?: FinancialHealth | null;
+  /**
+   * Teto seguro único de pró-labore (PDV-021). Quando presente, o Advisor
+   * usa este valor como fonte de `commitments`/`reserve`/`withdrawal.safeAmount`
+   * em vez da heurística antiga baseada só em `cash`/`cashFlow`/`payroll`.
+   */
+  prolaboreSafe?: ProlaboreSafeSnapshot | null;
   /** Valor que o usuário deseja retirar (opcional). */
   requestedAmount?: number | null;
 }
