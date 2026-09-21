@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import {
   Select,
@@ -47,12 +48,16 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
   const { data: accounts } = useAccounts(companyId);
   const [accountId, setAccountId] = useState("");
   const [amount, setAmount] = useState(0);
+  const [exceedReason, setExceedReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const safeAmount = advice?.withdrawal.safeAmount ?? 0;
 
   useEffect(() => {
-    if (open) setAmount(safeAmount);
+    if (open) {
+      setAmount(safeAmount);
+      setExceedReason("");
+    }
   }, [open, safeAmount]);
 
   useEffect(() => {
@@ -62,6 +67,8 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
   }, [accounts, accountId]);
 
   const exceeds = amount > safeAmount;
+  // Precisa bater com MIN_EXCEED_REASON_LENGTH em payroll/actions.ts.
+  const reasonOk = exceedReason.trim().length >= 5;
 
   async function handleConfirm() {
     if (!accountId) {
@@ -72,6 +79,10 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
       toast.error("Informe um valor maior que zero.");
       return;
     }
+    if (exceeds && !reasonOk) {
+      toast.error("Informe o motivo pra retirar acima do teto seguro.");
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await emitProlaboreWithdrawal({
@@ -79,6 +90,8 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
         accountId,
         amount,
         createdBy: user?.id ?? null,
+        confirmExceeds: exceeds,
+        exceedReason: exceeds ? exceedReason.trim() : null,
       });
       if (result.ok) {
         toast.success(result.message);
@@ -126,6 +139,21 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
             )}
           </div>
 
+          {exceeds && (
+            <div className="space-y-2">
+              <Label>Motivo pra retirar acima do teto seguro</Label>
+              <Textarea
+                value={exceedReason}
+                onChange={(e) => setExceedReason(e.target.value)}
+                placeholder="Ex.: despesa pessoal urgente, ciente do impacto no caixa."
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Obrigatório pra confirmar uma retirada acima do valor seguro apurado.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Conta de origem</Label>
             <Select value={accountId} onValueChange={setAccountId}>
@@ -147,7 +175,10 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={submitting || !accountId}>
+          <Button
+            onClick={handleConfirm}
+            disabled={submitting || !accountId || (exceeds && !reasonOk)}
+          >
             {submitting ? "Registrando..." : "Confirmar retirada"}
           </Button>
         </DialogFooter>

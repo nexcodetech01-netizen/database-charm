@@ -10,16 +10,28 @@
  * "paga" diretamente.
  *
  * O valor de reserva mínima (quanto precisa ficar em caixa para compras/
- * operação) já é calculado pelo advisor (`buildFinancialAdvice`) — esta
- * ação não recalcula nada, só usa o `safeAmount` já apurado como valor
- * padrão sugerido, e deixa claro no aviso de retorno se o valor pedido
- * ultrapassa esse teto seguro.
+ * operação) já é calculado pelo advisor (`buildFinancialAdvice`), que por
+ * sua vez lê o teto seguro único do banco (`compute_prolabore_safe_amount`)
+ * — esta ação não recalcula nada.
+ *
+ * CORRIGIDO (2026-09-21, auditoria de pró-labore — achados #1 e #6):
+ *  - #1: antes, pedir um valor acima do teto seguro só gerava um aviso —
+ *    a retirada era registrada do mesmo jeito. Agora, exceder o teto exige
+ *    confirmação explícita (`confirmExceeds: true`) + um motivo por
+ *    escrito (`exceedReason`, mínimo 5 caracteres); sem isso a função
+ *    devolve `ok:false` e NADA é registrado.
+ *  - #6: a data da retirada usava `new Date().toISOString()` (UTC) — uma
+ *    retirada feita à noite (horário de Brasília) podia cair no dia
+ *    seguinte, e perto da virada do mês isso distorcia o fechamento. Agora
+ *    usa `companyDayKey`, a mesma fonte única de data local já usada pelo
+ *    resto do Financeiro.
  */
 import { financeService } from "@/features/finance/services/finance.service";
 import { buildAccountingSummary } from "../providers/summary";
 import { buildFinancialAdvice } from "../advisor/engine";
 import type { ProviderDeps } from "../providers";
 import type { FinancePaymentMethod } from "@/features/finance/types";
+import { companyDayKey } from "@/lib/time";
 
 export interface EmitProlaboreInput {
   companyId: string;
@@ -29,6 +41,10 @@ export interface EmitProlaboreInput {
   paymentMethod?: FinancePaymentMethod;
   notes?: string | null;
   createdBy?: string | null;
+  /** Confirmação explícita para retirar acima do teto seguro apurado. */
+  confirmExceeds?: boolean;
+  /** Motivo (mínimo 5 caracteres) — obrigatório quando `confirmExceeds`. */
+  exceedReason?: string | null;
 }
 
 export interface EmitProlaboreResult {
@@ -37,8 +53,12 @@ export interface EmitProlaboreResult {
   amount: number;
   safeAmount: number;
   exceededSafeAmount: boolean;
+  /** `true` quando o pedido foi recusado só por faltar confirmação/motivo. */
+  requiresConfirmation?: boolean;
   transactionId?: string;
 }
+
+const MIN_EXCEED_REASON_LENGTH = 5;
 
 export async function emitProlaboreWithdrawal(
   input: EmitProlaboreInput,
@@ -71,7 +91,24 @@ export async function emitProlaboreWithdrawal(
   }
 
   const exceededSafeAmount = amount > safeAmount;
-  const today = new Date().toISOString().slice(0, 10);
+  const exceedReason = (input.exceedReason ?? "").trim();
+
+  if (exceededSafeAmount && (!input.confirmExceeds || exceedReason.length < MIN_EXCEED_REASON_LENGTH)) {
+    return {
+      ok: false,
+      message: `Esse valor passa ${formatBRL(amount - safeAmount)} do teto seguro (${formatBRL(safeAmount)}). Confirme explicitamente e informe o motivo pra registrar mesmo assim.`,
+      amount,
+      safeAmount,
+      exceededSafeAmount: true,
+      requiresConfirmation: true,
+    };
+  }
+
+  const today = companyDayKey(new Date());
+  const baseNotes = input.notes?.trim() || "Registrado via Bella Contadora.";
+  const notes = exceededSafeAmount
+    ? `${baseNotes} · ACIMA DO TETO SEGURO (${formatBRL(safeAmount)} apurado) · Motivo: ${exceedReason}`
+    : baseNotes;
 
   const created = await financeService.createAndSettleTransaction(
     {
@@ -83,7 +120,7 @@ export async function emitProlaboreWithdrawal(
       due_date: today,
       account_id: input.accountId,
       source: "manual",
-      notes: input.notes ?? "Registrado via Bella Contadora.",
+      notes,
       created_by: input.createdBy ?? null,
     },
     {
