@@ -15,6 +15,7 @@ import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
 import {
   findDuplicateProduct,
+  isBarcodeUniqueViolation,
   type DuplicateCandidate,
   type DuplicateProduct,
 } from "../../lib/product-dedupe";
@@ -138,7 +139,12 @@ export class ProductRepository {
       .insert(input)
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      if (isBarcodeUniqueViolation(error)) {
+        throw new Error("Já existe outro produto com esse código de barras nessa empresa.");
+      }
+      throw error;
+    }
     return data as Product;
   }
 

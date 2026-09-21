@@ -41,6 +41,23 @@ function escapeLike(value: string): string {
   return value.replace(/[%_\\]/g, (m) => `\\${m}`);
 }
 
+/** Reconhece a colisão do índice único de código de barras por empresa. */
+export function isBarcodeUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as {
+    code?: string | null;
+    message?: string | null;
+    details?: string | null;
+    hint?: string | null;
+  };
+  if (candidate.code !== "23505") return false;
+  return [candidate.message, candidate.details, candidate.hint]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes("products_company_barcode_unique_idx");
+}
+
 /**
  * Padrão `ilike` para nomes: separadores (espaços, hífens e travessões)
  * viram curinga, de modo que "Arthur - Preto" case com "Arthur — Preto".

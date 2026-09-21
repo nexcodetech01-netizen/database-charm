@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
 import { bumpSkuSuffix, isSkuUniqueViolation } from "../lib/sku-generator";
+import { isBarcodeUniqueViolation } from "../lib/product-dedupe";
 import type { Product, ProductInsert, ProductListFilters, ProductUpdate } from "../types";
 
 // P1.2 — Validação server-side na criação de produto.
@@ -262,6 +263,11 @@ export const productsService = {
       if (!result.error) {
         data = result.data;
         break;
+      }
+      if (isBarcodeUniqueViolation(result.error)) {
+        throw new Error(
+          "Já existe outro produto com esse código de barras nessa empresa. Confira o cadastro antes de tentar de novo.",
+        );
       }
       if (!isSkuUniqueViolation(result.error) || !pendingPayload.sku || attempt === 4) {
         throw result.error;

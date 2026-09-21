@@ -5,7 +5,11 @@
  * "Arthur Preto" sejam considerados o MESMO produto (sem duplicata).
  */
 import { describe, it, expect } from "vitest";
-import { findDuplicateProduct, normalizeForMatch } from "../product-dedupe";
+import {
+  findDuplicateProduct,
+  isBarcodeUniqueViolation,
+  normalizeForMatch,
+} from "../product-dedupe";
 
 interface Row {
   id: string;
@@ -81,6 +85,22 @@ const baseRow: Row = {
 };
 
 describe("product-dedupe — hífen e travessão", () => {
+  it("reconhece somente a violação do índice único de código de barras", () => {
+    expect(
+      isBarcodeUniqueViolation({
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "products_company_barcode_unique_idx"',
+      }),
+    ).toBe(true);
+    expect(
+      isBarcodeUniqueViolation({
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "products_company_sku_unique_idx"',
+      }),
+    ).toBe(false);
+    expect(isBarcodeUniqueViolation({ code: "23503" })).toBe(false);
+  });
+
   it("normalizeForMatch trata -, – e — como espaço", () => {
     expect(normalizeForMatch("Arthur - Preto")).toBe("arthur preto");
     expect(normalizeForMatch("Arthur – Preto")).toBe("arthur preto");
