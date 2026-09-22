@@ -1533,44 +1533,6 @@ export type Database = {
           },
         ]
       }
-      company_brand_kit: {
-        Row: {
-          company_id: string
-          font_family: string | null
-          id: string
-          logo_url: string | null
-          primary_color: string | null
-          secondary_color: string | null
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          font_family?: string | null
-          id?: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          font_family?: string | null
-          id?: string
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_brand_kit_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       company_inventory_settings: {
         Row: {
           allow_sale_without_cost: boolean
@@ -6903,113 +6865,6 @@ export type Database = {
           },
         ]
       }
-      video_jobs: {
-        Row: {
-          company_id: string
-          created_at: string
-          error_message: string | null
-          external_render_id: string | null
-          id: string
-          input_payload: Json | null
-          output_video_url: string | null
-          product_id: string | null
-          requested_by: string
-          status: string
-          template_id: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          error_message?: string | null
-          external_render_id?: string | null
-          id?: string
-          input_payload?: Json | null
-          output_video_url?: string | null
-          product_id?: string | null
-          requested_by: string
-          status?: string
-          template_id: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          error_message?: string | null
-          external_render_id?: string | null
-          id?: string
-          input_payload?: Json | null
-          output_video_url?: string | null
-          product_id?: string | null
-          requested_by?: string
-          status?: string
-          template_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "video_jobs_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "video_jobs_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "video_jobs_requested_by_fkey"
-            columns: ["requested_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "video_jobs_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "video_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      video_templates: {
-        Row: {
-          active: boolean
-          aspect_ratio: string | null
-          category: string | null
-          creatomate_template_id: string
-          description: string | null
-          id: string
-          name: string
-          thumbnail_url: string | null
-        }
-        Insert: {
-          active?: boolean
-          aspect_ratio?: string | null
-          category?: string | null
-          creatomate_template_id: string
-          description?: string | null
-          id?: string
-          name: string
-          thumbnail_url?: string | null
-        }
-        Update: {
-          active?: boolean
-          aspect_ratio?: string | null
-          category?: string | null
-          creatomate_template_id?: string
-          description?: string | null
-          id?: string
-          name?: string
-          thumbnail_url?: string | null
-        }
-        Relationships: []
-      }
       whatsapp_cart_sessions: {
         Row: {
           company_id: string
@@ -7947,7 +7802,6 @@ export type Database = {
         Args: { p_company_id: string; p_period?: string }
         Returns: Json
       }
-      get_my_tenant_id: { Args: never; Returns: string }
       has_permission: {
         Args: {
           _company_id: string
@@ -7973,7 +7827,6 @@ export type Database = {
           unit_cost: number
         }[]
       }
-      is_platform_admin: { Args: never; Returns: boolean }
       knowledge_match_chunks: {
         Args: {
           match_count?: number
