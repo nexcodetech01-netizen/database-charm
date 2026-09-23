@@ -29,7 +29,9 @@ export async function buildAccountingSummary(
   deps?: ProviderDeps,
 ): Promise<AccountingSummary> {
   const period = deps?.period ?? currentPeriod();
-  const scoped: ProviderDeps = { ...deps, period };
+  // Novo a cada resumo: evita consultas repetidas durante esta agregação sem
+  // reaproveitar dados entre aberturas da Bella.
+  const scoped: ProviderDeps = { ...deps, period, cache: new Map() };
 
   const [
     revenue,
