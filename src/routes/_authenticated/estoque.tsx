@@ -32,6 +32,22 @@ import { useInterestSummary } from "@/features/interests";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
   beforeLoad: requirePermission("inventory.view"),
+  head: () => ({
+    meta: [
+      { title: "Estoque — NexOS" },
+      {
+        name: "description",
+        content: "Gerencie produtos, movimentações, alertas e sugestões de reposição do estoque.",
+      },
+      { property: "og:title", content: "Estoque — NexOS" },
+      {
+        property: "og:description",
+        content: "Gerencie produtos, movimentações, alertas e sugestões de reposição do estoque.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: InventoryPage,
 });
 
