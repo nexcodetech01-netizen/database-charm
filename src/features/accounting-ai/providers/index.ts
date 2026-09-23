@@ -26,6 +26,7 @@ import type {
   ProfitAnalysis,
   ProlaboreSafeSnapshot,
   ProviderResult,
+  RestockSuggestionsSnapshot,
   RevenueSnapshot,
   TaxSummary,
   TicketSnapshot,
@@ -365,6 +366,24 @@ export async function prolaboreSafeProvider(
   }, "Teto seguro único — caixa menos contas a pagar (30 dias) menos custo de reposição de estoque (30 dias).");
 }
 
+/**
+ * Sugestão de reposição (2026-09-23): quanto comprar de cada produto,
+ * olhando a velocidade de venda dos últimos 60 dias — não só "abaixo do
+ * mínimo". Sempre calculada no banco (`compute_restock_suggestions`);
+ * apenas sugere, nunca cria pedido de compra.
+ */
+export async function restockSuggestionsProvider(
+  companyId: string,
+  deps?: ProviderDeps,
+): Promise<ProviderResult<RestockSuggestionsSnapshot>> {
+  const { services } = resolve(deps);
+  return readSafely(
+    "inventory",
+    async () => services.inventory.restockSuggestions(companyId),
+    "Sugestão com base na venda dos últimos 60 dias — não considera sazonalidade nem prazo de entrega do fornecedor.",
+  );
+}
+
 export async function healthProvider(
   companyId: string,
   deps?: ProviderDeps,
@@ -453,3 +472,4 @@ export async function trendsProvider(
     };
   });
 }
+
