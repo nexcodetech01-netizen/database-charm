@@ -146,6 +146,12 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
         stagnant: [{ id: "p3", name: "Produto C", sku: "C", stock: 7 }],
       }),
       ledgerAudit: async () => [],
+      restockSuggestions: async () => ({
+        lookbackDays: 60,
+        coverageDays: 30,
+        asOf: "2026-01-20",
+        items: [],
+      }),
     },
     fiscal: makeTestFiscalPort(),
     cash: {

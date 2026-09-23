@@ -69,6 +69,7 @@ export const salesAdapter: SalesPort = {
 export const inventoryAdapter: InventoryPort = {
   metrics: (companyId) => inventoryService.metrics(companyId),
   ledgerAudit: (companyId) => inventoryService.ledgerAudit(companyId),
+  restockSuggestions: (companyId) => inventoryService.restockSuggestions(companyId),
 };
 
 export const fiscalAdapter: FiscalPort = {
