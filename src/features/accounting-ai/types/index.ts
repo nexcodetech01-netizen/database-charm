@@ -178,6 +178,32 @@ export interface ProlaboreSafeSnapshot {
   asOf: string;
 }
 
+/** Um item da sugestão de reposição — ver `RestockSuggestionsSnapshot`. */
+export interface RestockSuggestionItem {
+  productId: string;
+  name: string;
+  sku: string | null;
+  stock: number;
+  minStock: number;
+  qtySold60d: number;
+  avgDailyVelocity: number;
+  suggestedQty: number;
+}
+
+/**
+ * Sugestão de reposição por giro de venda (2026-09-23) — quanto comprar de
+ * cada produto, olhando quanto vendeu nos últimos `lookbackDays` dias, não
+ * só "abaixo do mínimo". Sempre calculado no banco
+ * (`compute_restock_suggestions`) — nunca recalculado aqui. Só sugere:
+ * nenhum pedido de compra é criado a partir disso.
+ */
+export interface RestockSuggestionsSnapshot {
+  lookbackDays: number;
+  coverageDays: number;
+  asOf: string | null;
+  items: RestockSuggestionItem[];
+}
+
 /** Faturamento do dia — vindo das métricas de vendas já existentes. */
 export interface DailyRevenue {
   date: string;
@@ -226,4 +252,6 @@ export interface AccountingSummary {
   payroll: ProviderResult<PayrollSuggestion>;
   health: ProviderResult<BusinessHealth>;
   prolaboreSafe: ProviderResult<ProlaboreSafeSnapshot>;
+  restockSuggestions: ProviderResult<RestockSuggestionsSnapshot>;
 }
+
