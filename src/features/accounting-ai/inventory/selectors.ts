@@ -28,6 +28,7 @@ import type {
   BellaInventoryOptions,
   BellaInventoryProductLike,
   BellaInventoryRecommendation,
+  BellaInventoryRestockSuggestion,
   BellaInventoryView,
 } from "./types";
 
@@ -491,6 +492,32 @@ export function buildInventoryRecommendations(
     }));
 }
 
+/**
+ * Sugestão de reposição — leitura direta de `summary.restockSuggestions`
+ * (RPC `compute_restock_suggestions`). Nenhum cálculo novo aqui, só mapeia
+ * pro formato do painel e monta o link de navegação por produto.
+ */
+export function buildRestockSuggestions(
+  summary: AccountingSummary | null | undefined,
+  limit = 8,
+): BellaInventoryRestockSuggestion[] {
+  const snapshot = summary?.restockSuggestions.available
+    ? summary.restockSuggestions.data
+    : null;
+  const items = snapshot?.items ?? [];
+  return items.slice(0, Math.max(0, limit)).map((it) => ({
+    id: it.productId,
+    name: it.name,
+    sku: it.sku,
+    stock: it.stock,
+    minStock: it.minStock,
+    qtySold60d: it.qtySold60d,
+    avgDailyVelocity: it.avgDailyVelocity,
+    suggestedQty: it.suggestedQty,
+    link: inventoryProductLink(it.productId),
+  }));
+}
+
 export function buildInventoryHealth(
   summary: AccountingSummary | null | undefined,
 ): BellaInventoryHealth | null {
@@ -534,6 +561,8 @@ export function buildBellaInventoryView(
       insights,
       options.recommendationLimit ?? 5,
     ),
+    restockSuggestions: buildRestockSuggestions(summary, options.restockLimit ?? 8),
     missing,
   };
 }
+

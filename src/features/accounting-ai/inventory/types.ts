@@ -143,6 +143,23 @@ export interface BellaInventoryRecommendation {
   link: BellaInventoryLink;
 }
 
+/**
+ * Sugestão de reposição (2026-09-23) — vem de `summary.restockSuggestions`
+ * (RPC `compute_restock_suggestions`). Olha a venda dos últimos 60 dias,
+ * não só "abaixo do mínimo". Só sugere: nenhum botão cria pedido de compra.
+ */
+export interface BellaInventoryRestockSuggestion {
+  id: string;
+  name: string;
+  sku: string | null;
+  stock: number;
+  minStock: number;
+  qtySold60d: number;
+  avgDailyVelocity: number;
+  suggestedQty: number;
+  link: BellaInventoryLink;
+}
+
 export interface BellaInventoryHealth {
   level: HealthLevel;
   score: number;
@@ -158,6 +175,7 @@ export interface BellaInventoryView {
   health: BellaInventoryHealth | null;
   alerts: BellaInventoryAlert[];
   recommendations: BellaInventoryRecommendation[];
+  restockSuggestions: BellaInventoryRestockSuggestion[];
   missing: string[];
 }
 
@@ -172,6 +190,8 @@ export interface BellaInventoryInput {
 export interface BellaInventoryOptions {
   alertLimit?: number;
   recommendationLimit?: number;
+  /** Quantos itens da sugestão de reposição mostrar. Padrão 8. */
+  restockLimit?: number;
   /** Referência temporal determinística (testes). */
   now?: string;
   /** Fator sobre o mínimo para "próximo do mínimo". Padrão 1.2. */
@@ -179,3 +199,4 @@ export interface BellaInventoryOptions {
 }
 
 export type BellaInventoryActionId = NotificationActionId | InsightActionId;
+

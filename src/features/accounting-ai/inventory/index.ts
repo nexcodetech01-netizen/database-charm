@@ -16,3 +16,4 @@ export { BellaInventoryRecommendations } from "./bella-inventory-recommendations
 export type { BellaInventoryRecommendationsProps } from "./bella-inventory-recommendations";
 export { BellaInventoryActions } from "./bella-inventory-actions";
 export type { BellaInventoryActionsProps } from "./bella-inventory-actions";
+
