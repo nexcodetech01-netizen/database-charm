@@ -66,7 +66,7 @@ function InventoryPage() {
   });
   
   // State para Aba 1 (Produtos)
-  const [productFilters, setProductFilters] = useState<ProductListFilters>(DEFAULT_PRODUCT_FILTERS);
+  const [productFilters, setProductFilters] = useState(DEFAULT_PRODUCT_FILTERS);
   const debouncedProductSearch = useDebouncedValue(productFilters.search, 300);
   const effectiveProductFilters = useMemo(
     () => ({ ...productFilters, search: debouncedProductSearch }),
@@ -74,7 +74,7 @@ function InventoryPage() {
   );
 
   // State para Aba 2 (Movimentações)
-  const [movementFilters, setMovementFilters] = useState<MovementListFilters>(DEFAULT_MOVEMENT_FILTERS);
+  const [movementFilters, setMovementFilters] = useState(DEFAULT_MOVEMENT_FILTERS);
   const debouncedMovementSearch = useDebouncedValue(movementFilters.search, 300);
   const effectiveMovementFilters = useMemo(
     () => ({ ...movementFilters, search: debouncedMovementSearch }),
