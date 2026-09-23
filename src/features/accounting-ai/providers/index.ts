@@ -6,6 +6,7 @@
  *  - nenhum provider recalcula imposto, custo, estoque ou resultado;
  *  - toda leitura passa pelas portas (`AccountingAiServices`).
  */
+import type { DreReport, FinancialKpis } from "@/features/accounting";
 import type { AuditSnapshot } from "../audit/types";
 import type { ExplanationSnapshot } from "../explanation/types";
 import type {
@@ -67,6 +68,12 @@ export interface ProviderDeps {
   auditSnapshot?: ProviderResult<AuditSnapshot> | null;
   /** Sprint 7.3 — retrato de explicações já lido (evita releitura por pergunta). */
   explanation?: ProviderResult<ExplanationSnapshot> | null;
+  /**
+   * Cache válido somente durante uma chamada de `buildAccountingSummary()`.
+   * Compartilha DRE e KPIs idênticos entre providers concorrentes sem manter
+   * dados entre aberturas da Bella. Providers isolados continuam sem cache.
+   */
+  cache?: Map<string, Promise<unknown>>;
 }
 
 function resolve(deps?: ProviderDeps) {
@@ -76,13 +83,41 @@ function resolve(deps?: ProviderDeps) {
   };
 }
 
+function periodCacheKey(prefix: string, companyId: string, period: AccountingPeriod): string {
+  return `${prefix}:${companyId}:${period.start}:${period.end}`;
+}
+
+function cachedDre(
+  companyId: string,
+  period: AccountingPeriod,
+  services: AccountingAiServices,
+  cache?: Map<string, Promise<unknown>>,
+): Promise<DreReport> {
+  if (!cache) return services.accounting.dre(companyId, period);
+  const key = periodCacheKey("dre", companyId, period);
+  if (!cache.has(key)) cache.set(key, services.accounting.dre(companyId, period));
+  return cache.get(key) as Promise<DreReport>;
+}
+
+function cachedKpis(
+  companyId: string,
+  period: AccountingPeriod,
+  services: AccountingAiServices,
+  cache?: Map<string, Promise<unknown>>,
+): Promise<FinancialKpis> {
+  if (!cache) return services.accounting.kpis(companyId, period);
+  const key = periodCacheKey("kpis", companyId, period);
+  if (!cache.has(key)) cache.set(key, services.accounting.kpis(companyId, period));
+  return cache.get(key) as Promise<FinancialKpis>;
+}
+
 export async function revenueProvider(
   companyId: string,
   deps?: ProviderDeps,
 ): Promise<ProviderResult<RevenueSnapshot>> {
   const { services, period } = resolve(deps);
   return readSafely("accounting", async () => {
-    const dre = await services.accounting.dre(companyId, period);
+    const dre = await cachedDre(companyId, period, services, deps?.cache);
     return {
       period,
       grossRevenue: dre.grossRevenue,
@@ -98,7 +133,7 @@ export async function profitProvider(
 ): Promise<ProviderResult<ProfitAnalysis>> {
   const { services, period } = resolve(deps);
   return readSafely("accounting", async () => {
-    const dre = await services.accounting.dre(companyId, period);
+    const dre = await cachedDre(companyId, period, services, deps?.cache);
     return {
       period,
       grossProfit: dre.grossProfit,
@@ -120,8 +155,8 @@ export async function expensesProvider(
   const { services, period } = resolve(deps);
   return readSafely("accounting", async () => {
     const [dre, kpis] = await Promise.all([
-      services.accounting.dre(companyId, period),
-      services.accounting.kpis(companyId, period),
+      cachedDre(companyId, period, services, deps?.cache),
+      cachedKpis(companyId, period, services, deps?.cache),
     ]);
     return {
       period,
@@ -254,7 +289,7 @@ export async function marginProvider(
 ): Promise<ProviderResult<MarginSnapshot>> {
   const { services, period } = resolve(deps);
   return readSafely("accounting", async () => {
-    const kpis = await services.accounting.kpis(companyId, period);
+    const kpis = await cachedKpis(companyId, period, services, deps?.cache);
     return {
       period,
       grossMargin: kpis.grossMargin,
@@ -308,7 +343,7 @@ export async function payrollProvider(
 ): Promise<ProviderResult<PayrollSuggestion>> {
   const { services, period } = resolve(deps);
   return readSafely("accounting", async () => {
-    const dre = await services.accounting.dre(companyId, period);
+    const dre = await cachedDre(companyId, period, services, deps?.cache);
     return suggestPayroll(period, dre.netProfit);
   }, "Sugestão indicativa — não grava nada no Financeiro.");
 }
@@ -337,8 +372,8 @@ export async function healthProvider(
   const { services, period } = resolve(deps);
   const result = await readSafely("accounting", async () => {
     const [kpis, dre] = await Promise.all([
-      services.accounting.kpis(companyId, period),
-      services.accounting.dre(companyId, period),
+      cachedKpis(companyId, period, services, deps?.cache),
+      cachedDre(companyId, period, services, deps?.cache),
     ]);
     const financial = computeFinancialHealth({
       liquidity: kpis.currentLiquidity,
@@ -401,7 +436,7 @@ export async function trendsProvider(
         .metrics(companyId, dayPeriod(previousDayISO(date)))
         .then((m) => m.paidTotal as number | null)
         .catch(() => null),
-      services.accounting.dre(companyId, period),
+      cachedDre(companyId, period, services, deps?.cache),
       services.accounting.dre(companyId, previous).catch(() => null),
     ]);
 
