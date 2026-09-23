@@ -7603,6 +7603,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: Json
       }
+      compute_restock_suggestions: {
+        Args: { _company_id: string }
+        Returns: Json
+      }
       create_credit_sale: { Args: { _input: Json }; Returns: Json }
       create_sale_return: { Args: { _input: Json }; Returns: Json }
       credit_resolve_account: {
