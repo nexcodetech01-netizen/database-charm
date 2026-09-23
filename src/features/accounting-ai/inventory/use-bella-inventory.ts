@@ -27,7 +27,7 @@ export function useBellaInventory(
   const metrics = useInventoryMetrics(companyId ?? "");
   const movements = useRecentMovements(companyId ?? "", 20);
 
-  const { alertLimit, recommendationLimit, nearMinFactor } = options;
+  const { alertLimit, recommendationLimit, restockLimit, nearMinFactor } = options;
 
   const view = useMemo(
     () =>
@@ -37,9 +37,9 @@ export function useBellaInventory(
           metrics: (metrics.data ?? null) as BellaInventoryMetricsLike | null,
           movements: (movements.data ?? null) as readonly BellaInventoryMovementLike[] | null,
         },
-        { alertLimit, recommendationLimit, nearMinFactor },
+        { alertLimit, recommendationLimit, restockLimit, nearMinFactor },
       ),
-    [summary, metrics.data, movements.data, alertLimit, recommendationLimit, nearMinFactor],
+    [summary, metrics.data, movements.data, alertLimit, recommendationLimit, restockLimit, nearMinFactor],
   );
 
   return {
@@ -47,3 +47,4 @@ export function useBellaInventory(
     isLoading: summaryLoading || metrics.isLoading || movements.isLoading,
   };
 }
+
