@@ -23,7 +23,7 @@ const CONTRACT: Record<string, string[]> = {
   accounting: ["dre", "balanceSheet", "kpis", "monthlyEvolution"],
   finance: ["snapshot", "proLaboreSafeAmount"],
   sales: ["metrics", "products", "customers"],
-  inventory: ["metrics", "ledgerAudit"],
+  inventory: ["metrics", "ledgerAudit", "restockSuggestions"],
   fiscal: [
     "monthlyRevenue",
     "apportionments",
