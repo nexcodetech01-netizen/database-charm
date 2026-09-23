@@ -379,7 +379,7 @@ export function makeTestServices(opts: FixtureOptions = {}): AccountingAiService
       restockSuggestions: async () => ({
         lookbackDays: 60,
         coverageDays: 30,
-        asOf: "2026-01-20",
+        asOf: testToday,
         items: [],
       }),
     },
@@ -399,3 +399,4 @@ export function makeSummary(opts: FixtureOptions = {}): Promise<AccountingSummar
     today: testToday,
   });
 }
+
