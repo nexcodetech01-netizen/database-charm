@@ -101,6 +101,49 @@ export const inventoryService = {
     };
   },
 
+  /**
+   * Sugestão de reposição (2026-09-23): quanto comprar de cada produto,
+   * olhando a velocidade de venda dos últimos 60 dias (não só "abaixo do
+   * mínimo"). Só leitura — não cria pedido de compra nem lançamento nenhum.
+   * Ver o comentário da migration `compute_restock_suggestions` pra fórmula.
+   */
+  async restockSuggestions(companyId: string) {
+    const { data, error } = await supabase.rpc("compute_restock_suggestions", {
+      _company_id: companyId,
+    });
+    if (error) throw error;
+    const payload = (data ?? {}) as {
+      lookback_days?: number;
+      coverage_days?: number;
+      as_of?: string | null;
+      items?: Array<{
+        product_id: string;
+        name: string;
+        sku: string | null;
+        stock: number;
+        min_stock: number;
+        qty_sold_60d: number;
+        avg_daily_velocity: number;
+        suggested_qty: number;
+      }>;
+    };
+    return {
+      lookbackDays: Number(payload.lookback_days ?? 60),
+      coverageDays: Number(payload.coverage_days ?? 30),
+      asOf: payload.as_of ?? null,
+      items: (payload.items ?? []).map((it) => ({
+        productId: it.product_id,
+        name: it.name,
+        sku: it.sku,
+        stock: Number(it.stock ?? 0),
+        minStock: Number(it.min_stock ?? 0),
+        qtySold60d: Number(it.qty_sold_60d ?? 0),
+        avgDailyVelocity: Number(it.avg_daily_velocity ?? 0),
+        suggestedQty: Number(it.suggested_qty ?? 0),
+      })),
+    };
+  },
+
   // ============================================================
   // Sprint P0 — Razão de estoque, reconciliação e política de custo
   // ============================================================
