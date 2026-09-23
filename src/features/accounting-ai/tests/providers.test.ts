@@ -150,7 +150,18 @@ function makeServices(overrides: Partial<AccountingAiServices> = {}): Accounting
         lookbackDays: 60,
         coverageDays: 30,
         asOf: "2026-01-20",
-        items: [],
+        items: [
+          {
+            productId: "p2",
+            name: "Produto B",
+            sku: "B",
+            stock: 1,
+            minStock: 5,
+            qtySold60d: 12,
+            avgDailyVelocity: 0.2,
+            suggestedQty: 5,
+          },
+        ],
       }),
     },
     fiscal: makeTestFiscalPort(),
@@ -272,3 +283,4 @@ describe("accounting-ai · providers", () => {
     expect(Object.keys(summary)).toContain("payroll");
   });
 });
+
