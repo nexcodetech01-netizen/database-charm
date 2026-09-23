@@ -14,6 +14,8 @@ export { BellaInventoryAlerts } from "./bella-inventory-alerts";
 export type { BellaInventoryAlertsProps } from "./bella-inventory-alerts";
 export { BellaInventoryRecommendations } from "./bella-inventory-recommendations";
 export type { BellaInventoryRecommendationsProps } from "./bella-inventory-recommendations";
+export { BellaInventoryRestockSuggestions } from "./bella-inventory-restock-suggestions";
+export type { BellaInventoryRestockSuggestionsProps } from "./bella-inventory-restock-suggestions";
 export { BellaInventoryActions } from "./bella-inventory-actions";
 export type { BellaInventoryActionsProps } from "./bella-inventory-actions";
 

@@ -9,6 +9,7 @@ import { BellaChatPanel } from "../components";
 import { BellaInventoryActions } from "./bella-inventory-actions";
 import { BellaInventoryAlerts } from "./bella-inventory-alerts";
 import { BellaInventoryRecommendations } from "./bella-inventory-recommendations";
+import { BellaInventoryRestockSuggestions } from "./bella-inventory-restock-suggestions";
 import { BellaInventorySummary } from "./bella-inventory-summary";
 import { inventoryLinks } from "./links";
 import { useBellaInventory } from "./use-bella-inventory";
@@ -76,6 +77,11 @@ export function BellaInventoryPanel({ companyId, className }: BellaInventoryPane
 
         <BellaInventoryRecommendations
           recommendations={view.recommendations}
+          loading={isLoading}
+        />
+
+        <BellaInventoryRestockSuggestions
+          suggestions={view.restockSuggestions}
           loading={isLoading}
         />
 
