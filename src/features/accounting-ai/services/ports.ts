@@ -63,6 +63,22 @@ export interface InventoryPort {
     stagnant: { id: string; name: string; sku: string | null; stock: number }[];
   }>;
   ledgerAudit(companyId: string): Promise<any[]>;
+  /** Sugestão de reposição por giro de venda (2026-09-23) — ver `RestockSuggestionsSnapshot`. */
+  restockSuggestions(companyId: string): Promise<{
+    lookbackDays: number;
+    coverageDays: number;
+    asOf: string | null;
+    items: {
+      productId: string;
+      name: string;
+      sku: string | null;
+      stock: number;
+      minStock: number;
+      qtySold60d: number;
+      avgDailyVelocity: number;
+      suggestedQty: number;
+    }[];
+  }>;
 }
 
 export interface FiscalPort {
