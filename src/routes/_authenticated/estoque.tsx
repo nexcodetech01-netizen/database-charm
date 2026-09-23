@@ -32,22 +32,6 @@ import { useInterestSummary } from "@/features/interests";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
   beforeLoad: requirePermission("inventory.view"),
-  head: () => ({
-    meta: [
-      { title: "Estoque — NexOS" },
-      {
-        name: "description",
-        content: "Gerencie produtos, movimentações, alertas e sugestões de reposição do estoque.",
-      },
-      { property: "og:title", content: "Estoque — NexOS" },
-      {
-        property: "og:description",
-        content: "Gerencie produtos, movimentações, alertas e sugestões de reposição do estoque.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
   component: InventoryPage,
 });
 
@@ -82,7 +66,7 @@ function InventoryPage() {
   });
   
   // State para Aba 1 (Produtos)
-  const [productFilters, setProductFilters] = useState<ProductListFilters>(DEFAULT_PRODUCT_FILTERS);
+  const [productFilters, setProductFilters] = useState(DEFAULT_PRODUCT_FILTERS);
   const debouncedProductSearch = useDebouncedValue(productFilters.search, 300);
   const effectiveProductFilters = useMemo(
     () => ({ ...productFilters, search: debouncedProductSearch }),
@@ -90,7 +74,7 @@ function InventoryPage() {
   );
 
   // State para Aba 2 (Movimentações)
-  const [movementFilters, setMovementFilters] = useState<MovementListFilters>(DEFAULT_MOVEMENT_FILTERS);
+  const [movementFilters, setMovementFilters] = useState(DEFAULT_MOVEMENT_FILTERS);
   const debouncedMovementSearch = useDebouncedValue(movementFilters.search, 300);
   const effectiveMovementFilters = useMemo(
     () => ({ ...movementFilters, search: debouncedMovementSearch }),
