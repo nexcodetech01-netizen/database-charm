@@ -19,4 +19,6 @@ export type PDVProductOption = {
   stock: number | null;
   unit: string | null;
   image_url: string | null;
+  /** Caminho no Storage (bucket privado) — fonte principal da foto do produto. */
+  cover_image_path: string | null;
 };

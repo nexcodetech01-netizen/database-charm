@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { ImageIcon, Minus, Package, Plus, ShoppingCart, XCircle, Tag, MessageSquare, MoreVertical, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { computeItemTotal, type SaleItemDraft } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useSignedImageUrls } from "@/features/products/hooks/use-products";
+import { withoutImageTransform } from "@/features/products/services/product-images.service";
 
 type Props = {
   items: SaleItemDraft[];
@@ -35,6 +37,8 @@ type RowProps = {
   item: SaleItemDraft;
   uiKey: string;
   active: boolean;
+  /** Foto já resolvida (URL assinada do Storage, ou `image_url` como fallback). */
+  imageSrc: string | null;
   readOnly?: boolean;
   onQuantityChange: (uiKey: string, quantity: number) => void;
   onRemove: (uiKey: string) => void;
@@ -53,6 +57,7 @@ const PDVCartRow = memo(function PDVCartRow({
   item,
   uiKey,
   active,
+  imageSrc,
   readOnly,
   onQuantityChange,
   onRemove,
@@ -91,12 +96,19 @@ const PDVCartRow = memo(function PDVCartRow({
     >
       {/* Imagem do Produto (Compacta) */}
       <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded border bg-background shadow-sm">
-        {item.image_url ? (
+        {imageSrc ? (
           <img
-            src={item.image_url}
+            src={imageSrc}
             alt={item.description}
             loading="lazy"
             className="h-full w-full object-cover"
+            onError={(e) => {
+              // Se a transformação de imagem não estiver disponível no plano,
+              // cai para a URL original do objeto assinado.
+              const img = e.currentTarget;
+              const original = withoutImageTransform(img.src);
+              if (original !== img.src) img.src = original;
+            }}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-muted/20">
@@ -250,6 +262,28 @@ export function PDVCart({
 }: Props) {
   const totalItemsCount = items.reduce((acc, it) => acc + (it.quantity || 0), 0);
 
+  // Fotos ficam no Storage (bucket privado) como `cover_image_path` — a
+  // maioria dos produtos cadastrados pelo app usa esse caminho, não o
+  // `image_url` legado. Resolve todas as URLs assinadas do carrinho de uma
+  // vez só (uma consulta, não uma por item).
+  const coverPaths = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          items
+            .map((it) => it.cover_image_path)
+            .filter((path): path is string => !!path),
+        ),
+      ),
+    [items],
+  );
+  const { data: signedCovers = [] } = useSignedImageUrls(coverPaths, 128);
+  const signedByPath = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const entry of signedCovers) map.set(entry.path, entry.signedUrl);
+    return map;
+  }, [signedCovers]);
+
   return (
     <div className="flex flex-col rounded-xl border border-slate-700/50 bg-slate-900 shadow-md overflow-hidden h-full">
       <div className="flex items-center justify-between border-b border-slate-700/50 bg-slate-800/30 px-4 py-2.5">
@@ -289,12 +323,16 @@ export function PDVCart({
           <ul className={`${PDV_LAYOUT.cartScroll} p-3`}>
             {items.map((item) => {
               const key = item.ui_key ?? item.product_id ?? item.description;
+              const imageSrc = item.cover_image_path
+                ? (signedByPath.get(item.cover_image_path) ?? null)
+                : (item.image_url ?? null);
               return (
                 <PDVCartRow
                   key={key}
                   uiKey={key}
                   item={item}
                   active={activeKey === key}
+                  imageSrc={imageSrc}
                   readOnly={readOnly}
                   onQuantityChange={onQuantityChange}
                   onRemove={onRemove}

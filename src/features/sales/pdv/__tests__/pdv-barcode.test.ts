@@ -21,6 +21,7 @@ const product: PDVProductOption & { barcode?: string | null } = {
   stock: 10,
   unit: "UN",
   image_url: null,
+  cover_image_path: null,
 };
 
 function deps(

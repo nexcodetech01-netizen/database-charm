@@ -79,6 +79,8 @@ export function usePdvProductSearch(companyId: string, term: string) {
           stock: p.stock != null ? Number(p.stock) : null,
           unit: p.unit ?? null,
           image_url: (p as { image_url?: string | null }).image_url ?? null,
+          cover_image_path:
+            (p as { cover_image_path?: string | null }).cover_image_path ?? null,
         }));
         cache.set(key, mapped);
         return mapped;

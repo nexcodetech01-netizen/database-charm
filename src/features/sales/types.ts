@@ -133,6 +133,8 @@ export interface SaleItemDraft {
   // Transient (não persistidos em sale_items — usados apenas para UX)
   sku?: string | null;
   image_url?: string | null;
+  /** Caminho no Storage (bucket privado) — fonte principal da foto; resolvido via URL assinada. */
+  cover_image_path?: string | null;
   unit_cost?: number | null;
   stock_available?: number | null;
   unit?: string | null;
