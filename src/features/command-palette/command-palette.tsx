@@ -87,6 +87,27 @@ export function CommandPalette({ companyId }: { companyId: string }) {
     let cancelled = false;
 
     void (async () => {
+      const searchProducts = async () => {
+        const result = await supabase.rpc("search_products_unaccent", {
+          search_term: term,
+          company_id_param: companyId,
+          limit_param: 5,
+        });
+        return result.data ?? [];
+      };
+
+      const searchSales = async () => {
+        if (!/\d/.test(term)) return [];
+        const result = await supabase
+          .from("sales")
+          .select("id, number, status, grand_total")
+          .eq("company_id", companyId)
+          .ilike("number", `%${term}%`)
+          .order("sale_date", { ascending: false })
+          .limit(5);
+        return result.data ?? [];
+      };
+
       const [customersResult, productsResult, salesResult] = await Promise.all([
         customersService
           .list(companyId, {
@@ -100,25 +121,8 @@ export function CommandPalette({ companyId }: { companyId: string }) {
             pageSize: 5,
           })
           .catch(() => ({ rows: [] as { id: string; name: string; phone: string | null }[] })),
-        supabase
-          .rpc("search_products_unaccent", {
-            search_term: term,
-            company_id_param: companyId,
-            limit_param: 5,
-          })
-          .then((result) => result.data ?? [])
-          .catch(() => []),
-        /\d/.test(term)
-          ? supabase
-              .from("sales")
-              .select("id, number, status, grand_total")
-              .eq("company_id", companyId)
-              .ilike("number", `%${term}%`)
-              .order("sale_date", { ascending: false })
-              .limit(5)
-              .then((result) => result.data ?? [])
-              .catch(() => [])
-          : Promise.resolve([]),
+        searchProducts().catch(() => []),
+        searchSales().catch(() => []),
       ]);
 
       if (cancelled) return;
