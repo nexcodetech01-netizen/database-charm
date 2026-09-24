@@ -78,6 +78,7 @@ export function usePdvProductSearch(companyId: string, term: string) {
           cost: p.cost != null ? Number(p.cost) : null,
           stock: p.stock != null ? Number(p.stock) : null,
           unit: p.unit ?? null,
+          image_url: (p as { image_url?: string | null }).image_url ?? null,
         }));
         cache.set(key, mapped);
         return mapped;

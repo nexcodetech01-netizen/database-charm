@@ -28,7 +28,7 @@ async function fetchPdvCatalog(
 ): Promise<PdvSearchOption[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,name,sku,barcode,brand,price,cost,stock,unit")
+    .select("id,name,sku,barcode,brand,price,cost,stock,unit,image_url")
     .eq("company_id", companyId)
     .eq("status", "active")
     .order("name")
@@ -104,5 +104,6 @@ function mapProduct(p: any): PdvSearchOption {
     cost: p.cost != null ? Number(p.cost) : null,
     stock: p.stock != null ? Number(p.stock) : null,
     unit: p.unit ?? null,
+    image_url: p.image_url ?? null,
   };
 }

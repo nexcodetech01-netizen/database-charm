@@ -18,4 +18,5 @@ export type PDVProductOption = {
   cost: number | null;
   stock: number | null;
   unit: string | null;
+  image_url: string | null;
 };

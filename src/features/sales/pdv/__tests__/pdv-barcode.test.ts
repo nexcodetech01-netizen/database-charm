@@ -20,6 +20,7 @@ const product: PDVProductOption & { barcode?: string | null } = {
   cost: 20,
   stock: 10,
   unit: "UN",
+  image_url: null,
 };
 
 function deps(

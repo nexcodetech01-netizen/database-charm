@@ -13,6 +13,7 @@ const PRODUCT: PDVProductOption = {
   cost: 40,
   stock: 5,
   unit: "UN",
+  image_url: null,
 };
 
 describe("PDV — carrinho sobre o SaleStore", () => {
