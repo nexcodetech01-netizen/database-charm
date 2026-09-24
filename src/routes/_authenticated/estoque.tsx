@@ -180,13 +180,15 @@ function InventoryPage() {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <LowStockAlerts
-              items={metrics.data?.belowMin ?? []}
-              waitingByProduct={waitingByProduct}
-            />
-            <StagnantProducts items={metrics.data?.stagnant ?? []} />
+          <div className="space-y-6">
             <InventoryMetrics companyId={company.id} />
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <LowStockAlerts
+                items={metrics.data?.belowMin ?? []}
+                waitingByProduct={waitingByProduct}
+              />
+              <StagnantProducts items={metrics.data?.stagnant ?? []} />
+            </div>
           </div>
           
           <div className="space-y-4">
