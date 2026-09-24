@@ -403,6 +403,35 @@ export function buildInventoryAlerts(
     });
   }
 
+  // Copiloto: cruza os mais vendidos com a sugestão de compra (RPC
+  // compute_restock_suggestions) — nenhum cálculo novo, só conecta dois
+  // dados que já existiam isolados em cards separados. Limitado a 2 pra
+  // não tomar o painel inteiro de alertas de campeão de venda.
+  const restockItems = input.summary?.restockSuggestions.available
+    ? (input.summary.restockSuggestions.data?.items ?? [])
+    : [];
+  if (products && restockItems.length > 0) {
+    const restockByProduct = new Map(restockItems.map((it) => [it.productId, it]));
+    let topSellerMatches = 0;
+    for (const seller of products.bestSellers) {
+      if (topSellerMatches >= 2) break;
+      const restock = restockByProduct.get(seller.id);
+      if (!restock || restock.suggestedQty <= 0) continue;
+      topSellerMatches += 1;
+      alerts.push({
+        id: `campeao_estoque_baixo_${seller.id}`,
+        severity: "critical",
+        title: "Produto campeão com estoque baixo",
+        message: `"${seller.name}" é um dos mais vendidos do período (${seller.quantity.toLocaleString(
+          "pt-BR",
+        )} un.) — sugestão de comprar mais ${restock.suggestedQty.toLocaleString("pt-BR")} un. pra não ficar sem.`,
+        recommendation: "Prepare a reposição antes que o produto que mais vende fique parado.",
+        source: "inventory",
+        link: inventoryProductLink(seller.id),
+      });
+    }
+  }
+
   const noSales = (products?.worstSellers ?? []).filter((p) => p.quantity <= 0);
   if (noSales.length > 0) {
     alerts.push({
