@@ -32,6 +32,7 @@ const CAMISETA: PdvSearchOption = {
   cost: 40,
   stock: 10,
   unit: "UN",
+  image_url: null,
 };
 
 const CANECA: PdvSearchOption = {
