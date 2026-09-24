@@ -408,7 +408,7 @@ export function buildInventoryAlerts(
   // dados que já existiam isolados em cards separados. Limitado a 2 pra
   // não tomar o painel inteiro de alertas de campeão de venda.
   const restockItems = input.summary?.restockSuggestions.available
-    ? input.summary.restockSuggestions.data.items
+    ? (input.summary.restockSuggestions.data?.items ?? [])
     : [];
   if (products && restockItems.length > 0) {
     const restockByProduct = new Map(restockItems.map((it) => [it.productId, it]));
