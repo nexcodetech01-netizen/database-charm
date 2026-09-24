@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { NextActionProvider } from "@/components/feedback/next-action-provider";
 import { PaymentConfirmedListener } from "@/components/feedback/payment-confirmed-listener";
 import { NotificationLogPanel } from "@/features/diagnostics/components/notification-log-panel";
+import { CommandPalette } from "@/features/command-palette";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const { company } = Route.useRouteContext();
   return (
     <NextActionProvider>
       <PaymentConfirmedListener />
@@ -43,6 +45,7 @@ function AuthenticatedLayout() {
         <Outlet />
         <NotificationLogPanel />
       </AppLayout>
+      <CommandPalette companyId={company.id} />
     </NextActionProvider>
   );
 }
