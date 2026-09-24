@@ -18,10 +18,13 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { customersService } from "@/features/customers";
 import { formatCurrency } from "@/lib/format";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+const CMDK_HINT_SEEN_KEY = "nexos:cmdk-hint-seen";
 
 type ResultItem = {
   id: string;
@@ -59,6 +62,33 @@ export function CommandPalette({ companyId }: { companyId: string }) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener(EVENT_OPEN, onExternalOpen);
     };
+  }, []);
+
+  // Aviso único (por navegador) pra quem nunca viu a busca rápida —
+  // sem isso, nada na tela avisa que o atalho existe.
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem(CMDK_HINT_SEEN_KEY) === "1";
+    } catch {
+      // localStorage indisponível (modo privado etc.) — não trava nada.
+    }
+    if (seen) return;
+
+    const timer = setTimeout(() => {
+      toast("Busca rápida disponível", {
+        description:
+          "Aperte Ctrl+K (ou Cmd+K no Mac) a qualquer momento, ou clique na busca no topo da tela.",
+        duration: 8000,
+      });
+      try {
+        window.localStorage.setItem(CMDK_HINT_SEEN_KEY, "1");
+      } catch {
+        // idem — só não repete o aviso se não conseguir salvar.
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
