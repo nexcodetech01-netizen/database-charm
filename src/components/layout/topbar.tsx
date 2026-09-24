@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { openCommandPalette } from "@/features/command-palette";
 import { NotificationSettingsPanel } from "@/components/settings/notification-settings-panel";
 import { useNotificationSettings } from "@/hooks/use-notification-settings";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -369,7 +370,13 @@ export function Topbar() {
         <input
           type="search"
           placeholder="Buscar no NexOS..."
-          className="h-9 w-full rounded-md border border-input bg-card pl-9 pr-16 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          readOnly
+          onFocus={(event) => {
+            event.currentTarget.blur();
+            openCommandPalette();
+          }}
+          onClick={openCommandPalette}
+          className="h-9 w-full cursor-pointer rounded-md border border-input bg-card pl-9 pr-16 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
         />
         <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
           ⌘K
