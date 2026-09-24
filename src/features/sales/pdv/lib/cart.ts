@@ -24,6 +24,7 @@ export function toCartItem(
     unit_cost: product.cost != null ? Number(product.cost) : null,
     stock_available: product.stock != null ? Number(product.stock) : null,
     image_url: product.image_url ?? null,
+    cover_image_path: product.cover_image_path ?? null,
   };
 }
 

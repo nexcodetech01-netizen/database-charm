@@ -28,7 +28,7 @@ export function usePdvBarcode({ companyId, onProduct }: Options) {
     async (code: string) => {
       let q = supabase
         .from("products")
-        .select("id,name,sku,barcode,price,cost,stock,unit,image_url")
+        .select("id,name,sku,barcode,price,cost,stock,unit,image_url,cover_image_path")
         .eq("company_id", companyId)
         .eq("status", "active");
       q = applyProductSearch(q, code, { salesChannel: "loja_fisica" });
@@ -43,6 +43,8 @@ export function usePdvBarcode({ companyId, onProduct }: Options) {
         stock: p.stock != null ? Number(p.stock) : null,
         unit: p.unit ?? null,
         image_url: (p as { image_url?: string | null }).image_url ?? null,
+        cover_image_path:
+          (p as { cover_image_path?: string | null }).cover_image_path ?? null,
       }));
     },
     [companyId],
