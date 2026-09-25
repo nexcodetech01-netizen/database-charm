@@ -1,0 +1,1 @@
+ALTER FUNCTION public.apply_pdv_payment_pricing(uuid, text, integer, jsonb) SECURITY INVOKER;
