@@ -9,6 +9,7 @@ import { BaseService } from "@/features/bella-ai/agent/infrastructure/base-servi
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import { computeSuggestedPrice } from "@/features/pricing/official";
 import { fetchPricingInputs } from "@/features/pricing/data/pricing-inputs";
+import { hasRealBarcode, normalizeBarcode } from "../../lib/barcode";
 
 import type { Product, ProductInsert } from "../../types";
 import {
@@ -87,7 +88,7 @@ export class ProductService extends BaseService {
       if (inputPrice != null && inputPrice > 0) patch.price = inputPrice;
       if (cost > 0) patch.cost = cost;
       if (input.sku?.trim() && !duplicate.sku) patch.sku = input.sku.trim();
-      if (input.barcode?.trim() && !duplicate.barcode) patch.barcode = input.barcode.trim();
+      if (hasRealBarcode(input.barcode) && !hasRealBarcode(duplicate.barcode)) patch.barcode = normalizeBarcode(input.barcode);
 
       const updated = Object.keys(patch).length
         ? await this.repo.update(duplicate.id, patch as never)
