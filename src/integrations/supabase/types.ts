@@ -7485,6 +7485,15 @@ export type Database = {
         Returns: number
       }
       accounting_seed_chart: { Args: { _company_id: string }; Returns: number }
+      apply_pdv_payment_pricing: {
+        Args: {
+          _cash_items: Json
+          _installments: number
+          _payment_method: string
+          _sale_id: string
+        }
+        Returns: Json
+      }
       bella_pay_apply_webhook_result: {
         Args: { _event_id: string; _finalize: Json; _intent: Json }
         Returns: Json
