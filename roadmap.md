@@ -11,3 +11,5 @@
 - [x] Considerar desconto por item nos totais à vista e no cartão do PDV
 - [x] Preservar a tela do Mercado Livre em falhas transitórias de renovação
 - [x] Repetir a gravação de preço na confirmação após falha anterior
+- [x] Bloquear código de barras duplicado com mensagem e ações amigáveis
+- [x] Evitar erro cru de código de barras nos fluxos de produto e importação

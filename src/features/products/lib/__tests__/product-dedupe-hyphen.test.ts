@@ -7,6 +7,7 @@
 import { describe, it, expect } from "vitest";
 import {
   findDuplicateProduct,
+  formatBarcodeDuplicateMessage,
   isBarcodeUniqueViolation,
   normalizeForMatch,
 } from "../product-dedupe";
@@ -99,6 +100,12 @@ describe("product-dedupe — hífen e travessão", () => {
       }),
     ).toBe(false);
     expect(isBarcodeUniqueViolation({ code: "23503" })).toBe(false);
+  });
+
+  it("monta a mensagem amigável com produto e SKU", () => {
+    expect(formatBarcodeDuplicateMessage("789123", baseRow)).toBe(
+      "O código de barras 789123 já está no produto 'Arthur - Preto' (SKU ART-PRETO).",
+    );
   });
 
   it("normalizeForMatch trata -, – e — como espaço", () => {
