@@ -10,8 +10,6 @@ export const DEFAULT_CARD_PRICE_CONFIG: CardPriceConfig = {
   active: true,
 };
 
-const ceilCents = (value: number) => Math.ceil((value - Number.EPSILON) * 100) / 100;
-
 export function calcPrecoCartao(
   precoAvista: number,
   config: CardPriceConfig = DEFAULT_CARD_PRICE_CONFIG,
@@ -19,16 +17,19 @@ export function calcPrecoCartao(
   const cash = Number(precoAvista);
   const fee = Number(config.cardFeePercent);
   if (!Number.isFinite(cash) || cash <= 0) return 0;
-  if (!config.active || !Number.isFinite(fee) || fee <= 0) return ceilCents(cash);
-  if (fee >= 100) return ceilCents(cash);
-  return ceilCents(cash / (1 - fee / 100));
+  const cashCents = Math.round(cash * 100);
+  if (!config.active || !Number.isFinite(fee) || fee <= 0 || fee >= 100) return cashCents / 100;
+  const feeBasisPoints = Math.round(fee * 100);
+  const denominator = 10000 - feeBasisPoints;
+  if (denominator <= 0) return cashCents / 100;
+  return Math.ceil((cashCents * 10000) / denominator) / 100;
 }
 
 export function calcParcela(precoCartao: number, parcelas: number): number {
   const total = Number(precoCartao);
   const count = Math.max(1, Math.trunc(Number(parcelas) || 1));
   if (!Number.isFinite(total) || total <= 0) return 0;
-  return ceilCents(total / count);
+  return Math.ceil(Math.round(total * 100) / count) / 100;
 }
 
 export function calcTotalCartaoPdv(

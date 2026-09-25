@@ -20,6 +20,7 @@ interface Row {
   barcode: string | null;
   price: number | null;
   cost: number | null;
+  status: string | null;
 }
 
 /** Converte um padrão `ilike` (com % como curinga) em RegExp case-insensitive. */
@@ -84,6 +85,7 @@ const baseRow: Row = {
   barcode: null,
   price: 199.9,
   cost: 100,
+  status: "active",
 };
 
 describe("product-dedupe — hífen e travessão", () => {
@@ -126,6 +128,15 @@ describe("product-dedupe — hífen e travessão", () => {
   it("monta a mensagem amigável com produto e SKU", () => {
     expect(formatBarcodeDuplicateMessage("789123", baseRow)).toBe(
       "O código de barras 789123 já está no produto 'Arthur - Preto' (SKU ART-PRETO).",
+    );
+  });
+
+  it("avisa quando o código pertence a um produto inativo", async () => {
+    const { client } = makeClient([{ ...baseRow, barcode: "789123", status: "inactive" }]);
+    const found = await findDuplicateProduct("c1", { barcode: "789123" }, undefined, client);
+    expect(found?.status).toBe("inactive");
+    expect(formatBarcodeDuplicateMessage("789123", found)).toBe(
+      "O código de barras 789123 já está no produto 'Arthur - Preto' (SKU ART-PRETO) (produto inativo).",
     );
   });
 
