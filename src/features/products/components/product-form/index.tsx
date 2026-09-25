@@ -8,6 +8,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEntityForm } from "@/hooks/use-entity-form";
 import { useDraft } from "@/hooks/use-draft";
@@ -18,7 +28,11 @@ import { toTitleCasePtBr } from "@/lib/text-format";
 import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
-import { findDuplicateProduct } from "../../lib/product-dedupe";
+import {
+  findDuplicateProduct,
+  formatBarcodeDuplicateMessage,
+  type DuplicateProduct,
+} from "../../lib/product-dedupe";
 import { suggestProductFromPhoto, suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
@@ -162,6 +176,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [suggestingFromPhoto, setSuggestingFromPhoto] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [barcodeDuplicate, setBarcodeDuplicate] = useState<{
+    barcode: string;
+    product: DuplicateProduct;
+  } | null>(null);
 
   const [form, setForm] = useEntityForm(product, (p) => {
     const seed = p ?? duplicateOf;
@@ -628,6 +646,22 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       return toast.error("Verifique os campos obrigatórios");
     }
 
+    const normalizedBarcode = form.barcode.trim();
+    const originalBarcode = product?.barcode?.trim() ?? "";
+    const hasRealBarcode = normalizedBarcode !== "" && normalizedBarcode.toUpperCase() !== "SEM GTIN";
+    const barcodeChanged = !isEdit || normalizedBarcode !== originalBarcode;
+    if (hasRealBarcode && barcodeChanged) {
+      const duplicate = await findDuplicateProduct(
+        companyId,
+        { barcode: normalizedBarcode },
+        product?.id,
+      );
+      if (duplicate?.matchedBy === "barcode") {
+        setBarcodeDuplicate({ barcode: normalizedBarcode, product: duplicate });
+        return;
+      }
+    }
+
     // Para kits: o estoque E o custo de cada componente exibidos em tela
     // são uma "foto" tirada no momento em que o componente foi
     // adicionado ao kit (ou no carregamento da edição) — podem ficar
@@ -761,16 +795,13 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       const duplicate = await findDuplicateProduct(companyId, {
         name: payload.name,
         sku: payload.sku,
-        barcode: payload.barcode,
       });
 
       if (duplicate) {
         const field =
           duplicate.matchedBy === "sku"
             ? "SKU"
-            : duplicate.matchedBy === "barcode"
-              ? "código de barras"
-              : "nome";
+            : "nome";
         const confirmed =
           typeof window !== "undefined" &&
           window.confirm(
@@ -1031,6 +1062,48 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         onCreate={(name) => createCategory.mutateAsync({ name })}
         isPending={createCategory.isPending}
       />
+      <AlertDialog
+        open={barcodeDuplicate !== null}
+        onOpenChange={(open) => {
+          if (!open) setBarcodeDuplicate(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Código de barras já cadastrado</AlertDialogTitle>
+            <AlertDialogDescription>
+              {barcodeDuplicate
+                ? formatBarcodeDuplicateMessage(barcodeDuplicate.barcode, barcodeDuplicate.product)
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setForm((current) => ({ ...current, barcode: "" }));
+                setBarcodeDuplicate(null);
+                setTab("estoque");
+                requestAnimationFrame(() => document.getElementById("barcode")?.focus());
+              }}
+            >
+              Limpar código
+            </Button>
+            <AlertDialogAction
+              onClick={() => {
+                if (!barcodeDuplicate) return;
+                navigate({
+                  to: "/produtos/$productId",
+                  params: { productId: barcodeDuplicate.product.id },
+                });
+              }}
+            >
+              Abrir produto
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

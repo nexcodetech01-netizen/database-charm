@@ -4,7 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
 import { bumpSkuSuffix, isSkuUniqueViolation } from "../lib/sku-generator";
-import { isBarcodeUniqueViolation } from "../lib/product-dedupe";
+import {
+  formatBarcodeDuplicateMessage,
+  isBarcodeUniqueViolation,
+} from "../lib/product-dedupe";
 import type { Product, ProductInsert, ProductListFilters, ProductUpdate } from "../types";
 
 // P1.2 — Validação server-side na criação de produto.
@@ -265,9 +268,7 @@ export const productsService = {
         break;
       }
       if (isBarcodeUniqueViolation(result.error)) {
-        throw new Error(
-          "Já existe outro produto com esse código de barras nessa empresa. Confira o cadastro antes de tentar de novo.",
-        );
+        throw new Error(formatBarcodeDuplicateMessage(String(pendingPayload.barcode ?? "informado")));
       }
       if (!isSkuUniqueViolation(result.error) || !pendingPayload.sku || attempt === 4) {
         throw result.error;
@@ -448,9 +449,12 @@ export const productsService = {
 
       return updated;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      const normalizedError = isBarcodeUniqueViolation(err)
+        ? new Error(formatBarcodeDuplicateMessage(String(safeInputWithoutComp.barcode ?? "informado")))
+        : err;
+      const msg = normalizedError instanceof Error ? normalizedError.message : "Erro desconhecido";
       toast.error(`Falha ao salvar: ${msg}`);
-      throw err;
+      throw normalizedError;
     }
   },
 

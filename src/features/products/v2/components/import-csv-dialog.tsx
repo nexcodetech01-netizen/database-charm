@@ -72,6 +72,7 @@ export function ImportCsvDialog({ companyId, onImported }: ImportCsvDialogProps)
     const svc = new ProductService(ctx);
     let ok = 0;
     let failed = 0;
+    const failureMessages = new Set<string>();
     for (const row of rows) {
       try {
         await svc.create({
@@ -85,12 +86,20 @@ export function ImportCsvDialog({ companyId, onImported }: ImportCsvDialogProps)
           description: row.description ?? null,
         });
         ok++;
-      } catch {
+      } catch (error) {
         failed++;
+        failureMessages.add(
+          error instanceof Error ? error.message : `Não foi possível importar '${row.name}'.`,
+        );
       }
     }
     setImporting(false);
     toast.success(`${ok} produto(s) importado(s).${failed ? ` ${failed} falharam.` : ""}`);
+    if (failureMessages.size > 0) {
+      toast.error("Alguns produtos não foram importados.", {
+        description: Array.from(failureMessages).slice(0, 3).join(" · "),
+      });
+    }
     setOpen(false);
     setRows([]);
     setIssues([]);

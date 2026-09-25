@@ -27,6 +27,18 @@ export interface DuplicateProduct {
   matchedBy: "sku" | "barcode" | "name";
 }
 
+export function formatBarcodeDuplicateMessage(
+  barcode: string,
+  product?: Pick<DuplicateProduct, "name" | "sku"> | null,
+): string {
+  if (!product) {
+    return `O código de barras ${barcode} já está em outro produto desta empresa.`;
+  }
+  return `O código de barras ${barcode} já está no produto '${product.name}'${
+    product.sku ? ` (SKU ${product.sku})` : ""
+  }.`;
+}
+
 /** Normaliza texto para comparação: trim, hífens/travessões como espaço, colapso e minúsculas. */
 export function normalizeForMatch(value?: string | null): string {
   return (value ?? "")
