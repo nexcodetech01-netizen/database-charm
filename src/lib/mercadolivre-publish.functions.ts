@@ -13,6 +13,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { integrationFetch } from "@/lib/http-client.server";
 import { resolveCompanyId } from "@/lib/company-resolver.server";
+import { hasRealBarcode } from "@/features/products/lib/barcode";
 
 export const mlAttributeSchema = z
   .object({
@@ -613,9 +614,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
     // GTIN: envia o EAN apenas quando cadastrado e válido.
     // Caso contrário, envia EMPTY_GTIN_REASON para não perder qualidade.
     const rawBarcode = (productBarcode ?? "").trim();
-    const isInvalidGtin = !rawBarcode || 
-      /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(rawBarcode) || 
-      /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(rawBarcode);
+    const isInvalidGtin = !hasRealBarcode(rawBarcode) ||
+      /^(n[aã]o\s*aplic[aá]vel|non-applicable)$/i.test(rawBarcode);
 
     if (!isInvalidGtin) {
       baseAttrs.push({ id: "GTIN", value_name: rawBarcode });
@@ -650,9 +650,8 @@ export const publishProductToMercadoLivre = createServerFn({ method: "POST" })
         const vid = typeof a.value_id === "string" ? a.value_id.trim() : "";
         
         if (a.id === "GTIN") {
-          const isInvalid = !v || 
-            /^(SEM\s*GTIN|SEM\s*EAN)$/i.test(v) || 
-            /^(n[aã]o\s*aplic[aá]vel|n\/?a)$/i.test(v);
+          const isInvalid = !hasRealBarcode(v) ||
+            /^(n[aã]o\s*aplic[aá]vel|non-applicable)$/i.test(v);
           if (isInvalid) return false;
         }
 

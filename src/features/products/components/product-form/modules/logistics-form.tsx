@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Search } from "lucide-react";
 import { RequiredLabel } from "@/components/ui/required-label";
+import { hasRealBarcode, NO_BARCODE } from "../../../lib/barcode";
 
 interface LogisticsFormProps {
   form: any;
@@ -63,12 +64,15 @@ export function LogisticsForm({
             size="icon"
             type="button"
             onClick={onEanLookup}
-            disabled={eanLoading}
+            disabled={eanLoading || !hasRealBarcode(form.barcode)}
             title="Buscar por EAN"
           >
             <Search className={`h-4 w-4 ${eanLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
+        <Button type="button" variant="link" size="sm" className="h-auto px-0" onClick={() => setForm((s: any) => ({ ...s, barcode: NO_BARCODE }))}>
+          Sem código de barras
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:col-span-2">

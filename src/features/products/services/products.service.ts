@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import { applyProductSearch } from "../lib/product-search";
+import { normalizeBarcode } from "../lib/barcode";
 import { bumpSkuSuffix, isSkuUniqueViolation } from "../lib/sku-generator";
 import {
   formatBarcodeDuplicateMessage,
@@ -255,7 +256,7 @@ export const productsService = {
     }
 
     const { composition, stock, ...insertPayload } = input as ProductInsert & { stock?: number };
-    let pendingPayload = { ...insertPayload };
+    let pendingPayload = { ...insertPayload, barcode: normalizeBarcode(insertPayload.barcode) };
     let data: any = null;
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const result = await supabase
@@ -357,6 +358,9 @@ export const productsService = {
     // O valor digitado pelo usuário tem prioridade absoluta e é gravado diretamente.
     
     const { composition, ...safeInputWithoutComp } = input;
+    if (Object.prototype.hasOwnProperty.call(safeInputWithoutComp, "barcode")) {
+      safeInputWithoutComp.barcode = normalizeBarcode(safeInputWithoutComp.barcode);
+    }
     
     try {
       const { data: updated, error } = await supabase

@@ -27,6 +27,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toTitleCasePtBr } from "@/lib/text-format";
 import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
+import { hasRealBarcode, normalizeBarcode } from "../../lib/barcode";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import {
   findDuplicateProduct,
@@ -447,11 +448,11 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   };
 
   const handleEanLookup = async () => {
-    const code = form.barcode.trim();
-    if (!code || code === "SEM GTIN") return;
+    const code = normalizeBarcode(form.barcode);
+    if (!hasRealBarcode(code)) return;
     setEanLoading(true);
     try {
-      const result = await lookupEan({ data: { barcode: code } });
+      const result = await lookupEan({ data: { barcode: code ?? "" } });
       if (result.found) {
         setForm(prev => ({
           ...prev,
@@ -646,11 +647,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       return toast.error("Verifique os campos obrigatórios");
     }
 
-    const normalizedBarcode = form.barcode.trim();
-    const originalBarcode = product?.barcode?.trim() ?? "";
-    const hasRealBarcode = normalizedBarcode !== "" && normalizedBarcode.toUpperCase() !== "SEM GTIN";
+    const normalizedBarcode = normalizeBarcode(form.barcode) ?? "";
+    const originalBarcode = normalizeBarcode(product?.barcode) ?? "";
     const barcodeChanged = !isEdit || normalizedBarcode !== originalBarcode;
-    if (hasRealBarcode && barcodeChanged) {
+    if (hasRealBarcode(normalizedBarcode) && barcodeChanged) {
       const duplicate = await findDuplicateProduct(
         companyId,
         { barcode: normalizedBarcode },
@@ -754,7 +754,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
     const payload: ProductUpdate = {
       name: toTitleCasePtBr(form.name),
       sku: form.sku.trim(),
-      barcode: form.barcode.trim(),
+      barcode: normalizedBarcode,
       ncm: normalizeNcm(form.ncm),
       cest: normalizeCest(form.cest),
       brand: toTitleCasePtBr(form.brand),

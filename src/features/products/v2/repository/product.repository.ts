@@ -13,6 +13,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { Product, ProductInsert, ProductUpdate } from "../../types";
+import { normalizeBarcode } from "../../lib/barcode";
 import {
   findDuplicateProduct,
   formatBarcodeDuplicateMessage,
@@ -137,7 +138,7 @@ export class ProductRepository {
     // company_id é responsabilidade do Service (nunca do payload do usuário)
     const { data, error } = await this.supabase
       .from("products")
-      .insert(input)
+      .insert({ ...input, barcode: normalizeBarcode(input.barcode) })
       .select()
       .single();
     if (error) {
@@ -161,6 +162,9 @@ export class ProductRepository {
   async update(id: string, patch: ProductUpdate): Promise<Product> {
     const safe = { ...patch } as ProductUpdate & { stock?: unknown };
     delete safe.stock;
+    if (Object.prototype.hasOwnProperty.call(safe, "barcode")) {
+      safe.barcode = normalizeBarcode(safe.barcode);
+    }
     const { data, error } = await this.supabase
       .from("products")
       .update(safe)

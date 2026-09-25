@@ -10,6 +10,7 @@
  * exclusivamente pelo motor oficial (`inventory_movements`).
  */
 import { supabase } from "@/integrations/supabase/client";
+import { hasRealBarcode, normalizeBarcode } from "./barcode";
 
 export interface DuplicateCandidate {
   name?: string | null;
@@ -96,11 +97,11 @@ export async function findDuplicateProduct(
 
   const checks: Array<{ column: "sku" | "barcode" | "name"; value: string }> = [];
   const sku = (candidate.sku ?? "").trim();
-  const barcode = (candidate.barcode ?? "").trim();
+  const barcode = normalizeBarcode(candidate.barcode);
   const name = normalizeForMatch(candidate.name);
 
   if (sku) checks.push({ column: "sku", value: escapeLike(sku) });
-  if (barcode) checks.push({ column: "barcode", value: escapeLike(barcode) });
+  if (hasRealBarcode(barcode)) checks.push({ column: "barcode", value: escapeLike(barcode ?? "") });
   if (name) checks.push({ column: "name", value: namePattern(name) });
   if (checks.length === 0) return null;
 

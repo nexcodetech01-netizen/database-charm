@@ -8,6 +8,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { hasRealBarcode, normalizeBarcode } from "./barcode";
 
 export interface FiscalHistorySuggestion {
   ncm: string | null;
@@ -86,8 +87,8 @@ export const fiscalSuggestionService = {
     companyId: string,
     barcode: string,
   ): Promise<FiscalHistorySuggestion | null> {
-    const code = barcode.trim();
-    if (!companyId || code.length < 8) return null;
+    const code = normalizeBarcode(barcode);
+    if (!companyId || !hasRealBarcode(code) || !code || code.length < 8) return null;
 
     const { data, error } = await supabase
       .from("products")

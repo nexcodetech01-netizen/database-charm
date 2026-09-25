@@ -9,6 +9,7 @@ import { BaseService } from "@/features/bella-ai/agent/infrastructure/base-servi
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import { computeSuggestedPrice } from "@/features/pricing/official";
 import { fetchPricingInputs } from "@/features/pricing/data/pricing-inputs";
+import { hasRealBarcode, normalizeBarcode } from "../../lib/barcode";
 
 import type { Product, ProductInsert } from "../../types";
 import {
@@ -66,6 +67,7 @@ export class ProductService extends BaseService {
   }
 
   async create(input: CreateProductInput): Promise<Product> {
+    const barcode = normalizeBarcode(input.barcode);
     const inputPrice = typeof input.price === "number" ? input.price : null;
     if (inputPrice != null && inputPrice < 0)
       throw new Error("Preço não pode ser negativo.");
@@ -78,7 +80,7 @@ export class ProductService extends BaseService {
     const duplicate = await this.repo.findDuplicate({
       name: input.name,
       sku: input.sku ?? null,
-      barcode: input.barcode ?? null,
+      barcode,
     });
 
     if (duplicate) {
@@ -87,7 +89,7 @@ export class ProductService extends BaseService {
       if (inputPrice != null && inputPrice > 0) patch.price = inputPrice;
       if (cost > 0) patch.cost = cost;
       if (input.sku?.trim() && !duplicate.sku) patch.sku = input.sku.trim();
-      if (input.barcode?.trim() && !duplicate.barcode) patch.barcode = input.barcode.trim();
+      if (hasRealBarcode(barcode) && !hasRealBarcode(duplicate.barcode)) patch.barcode = barcode;
 
       const updated = Object.keys(patch).length
         ? await this.repo.update(duplicate.id, patch as never)
@@ -143,7 +145,7 @@ export class ProductService extends BaseService {
       supplier_id: input.supplierId ?? null,
       description: input.description ?? null,
       min_stock: input.minStock ?? 0,
-      barcode: input.barcode ?? null,
+      barcode,
     } as ProductInsert;
 
     const product = await this.repo.insert(payload);

@@ -2,6 +2,11 @@ import { describe, it, expect } from "vitest";
 import { parseProductsCsv } from "../csv/product-csv";
 
 describe("parseProductsCsv", () => {
+  it("normaliza ausência de EAN durante a importação", () => {
+    const { rows, issues } = parseProductsCsv("name;price;barcode\nProduto;10; SEM   CÓDIGO ");
+    expect(issues).toHaveLength(0);
+    expect(rows[0].barcode).toBe("SEM GTIN");
+  });
   it("parseia CSV mínimo (name, price)", () => {
     const csv = "name,price\nCaneta Azul,3.5\nCaderno,12.9";
     const { rows, issues } = parseProductsCsv(csv);

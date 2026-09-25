@@ -13,3 +13,6 @@
 - [x] Repetir a gravação de preço na confirmação após falha anterior
 - [x] Bloquear código de barras duplicado com mensagem e ações amigáveis
 - [x] Evitar erro cru de código de barras nos fluxos de produto e importação
+- [x] Normalizar ausência de código em todos os cadastros, validações e importações
+- [x] Converter códigos de ausência existentes sem alterar códigos vazios
+- [x] Conferir e listar produtos com código vazio

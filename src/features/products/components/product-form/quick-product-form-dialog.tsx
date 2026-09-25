@@ -22,6 +22,7 @@ import {
 import { useCategories, useCreateProduct } from "../../hooks/use-products";
 import { generateNextSku } from "../../lib/sku-generator";
 import { findDuplicateProduct } from "../../lib/product-dedupe";
+import { NO_BARCODE } from "../../lib/barcode";
 
 interface CreatedComponent {
   id: string;
@@ -96,6 +97,7 @@ export function QuickProductFormDialog({ companyId, open, onOpenChange, onCreate
         status: "active",
         product_type: "simple",
         sku,
+        barcode: NO_BARCODE,
         unit: "UN",
       } as any);
 

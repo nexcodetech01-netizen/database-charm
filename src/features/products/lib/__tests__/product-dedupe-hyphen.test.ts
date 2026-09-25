@@ -11,6 +11,7 @@ import {
   isBarcodeUniqueViolation,
   normalizeForMatch,
 } from "../product-dedupe";
+import { hasRealBarcode, normalizeBarcode } from "../barcode";
 
 interface Row {
   id: string;
@@ -86,6 +87,26 @@ const baseRow: Row = {
 };
 
 describe("product-dedupe — hífen e travessão", () => {
+  it.each(["ISENTO", "  isento  ", "sem codigo", " SÉM   CÓDIGO ", "sem ean", "sem gtin", "N/A", "na", "0"])(
+    "normaliza %s para ausência de código",
+    (value) => {
+      expect(normalizeBarcode(value)).toBe("SEM GTIN");
+      expect(hasRealBarcode(value)).toBe(false);
+    },
+  );
+
+  it("mantém códigos reais e valores vazios legados", () => {
+    expect(normalizeBarcode(" 7891234567890 ")).toBe("7891234567890");
+    expect(hasRealBarcode("7891234567890")).toBe(true);
+    expect(normalizeBarcode(null)).toBeNull();
+    expect(normalizeBarcode(" ")).toBe("");
+  });
+
+  it("não pesquisa o marcador de ausência como duplicata", async () => {
+    const { client, calls } = makeClient([{ ...baseRow, barcode: "SEM GTIN" }]);
+    expect(await findDuplicateProduct("c1", { barcode: "ISENTO" }, undefined, client)).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
   it("reconhece somente a violação do índice único de código de barras", () => {
     expect(
       isBarcodeUniqueViolation({
