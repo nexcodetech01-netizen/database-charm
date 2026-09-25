@@ -14,7 +14,7 @@ import {
   tryDecryptToken,
   MetaSecretMissingError,
 } from "./meta-crypto.server";
-import { integrationFetch } from "@/lib/http-client.server";
+import { integrationFetch, parseRetryAfter } from "@/lib/http-client.server";
 
 const AUTH_HOST = "https://auth.mercadolivre.com.br/authorization";
 const TOKEN_URL = "https://api.mercadolibre.com/oauth/token";
@@ -52,6 +52,26 @@ interface MLTokenResponse {
   refresh_token: string;
 }
 
+export class MLTokenRefreshError extends Error {
+  readonly status: number;
+  readonly body: string;
+  readonly retryAfterMs: number | null;
+
+  constructor(params: { status: number; body: string; retryAfterMs?: number | null }) {
+    super(`ML refresh failed (${params.status}): ${params.body.slice(0, 300)}`);
+    this.name = "MLTokenRefreshError";
+    this.status = params.status;
+    this.body = params.body;
+    this.retryAfterMs = params.retryAfterMs ?? null;
+  }
+}
+
+export function isMLRefreshAuthorizationError(error: unknown): boolean {
+  if (!(error instanceof MLTokenRefreshError)) return false;
+  if (error.status === 401 || error.status === 403) return true;
+  return error.status === 400 && /"?invalid_grant"?/i.test(error.body);
+}
+
 export async function exchangeCodeForToken(params: {
   clientId: string;
   clientSecret: string;
@@ -76,7 +96,7 @@ export async function exchangeCodeForToken(params: {
       },
       body: new URLSearchParams(payload),
     },
-    { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
+    { integration: "mercadolivre:token", timeoutMs: 12_000, maxAttempts: 1 },
   );
   const text = await res.text();
   
@@ -117,7 +137,11 @@ export async function refreshAccessToken(params: {
     if (res.status === 401 || res.status === 403) {
       console.warn(`[ML_REFRESH_AUTH_EXPIRED] HTTP ${res.status}`);
     }
-    throw new Error(`ML refresh failed (${res.status}): ${text.slice(0, 300)}`);
+    throw new MLTokenRefreshError({
+      status: res.status,
+      body: text,
+      retryAfterMs: parseRetryAfter(res.headers.get("retry-after")),
+    });
   }
   return JSON.parse(text) as MLTokenResponse;
 }
@@ -339,6 +363,7 @@ export async function ensureFreshAccessToken(
   supabase: AnySupabase,
   companyId: string,
   userId: string,
+  options?: { force?: boolean },
 ): Promise<void> {
   const row = await readSummaryRow(supabase, companyId);
   if (!row?.access_token_encrypted || !row.refresh_token_encrypted) return;
@@ -350,7 +375,7 @@ export async function ensureFreshAccessToken(
   // Se o token for de 1970 ou inválido, tratamos como expirado e forçamos o refresh se possível
   const expiresInSeconds = expiresAt > 0 ? Math.floor((expiresAt - now) / 1000) : -1;
   
-  if (expiresInSeconds > REFRESH_THRESHOLD_SECONDS) return;
+  if (!options?.force && expiresInSeconds > REFRESH_THRESHOLD_SECONDS) return;
 
   const clientSecret = tryDecryptToken(row.client_secret_encrypted);
   const refreshToken = tryDecryptToken(row.refresh_token_encrypted);
@@ -370,32 +395,19 @@ export async function ensureFreshAccessToken(
     });
     await upsertTokens({ companyId, userId, token, supabase });
   } catch (err) {
-    // Refresh falhou (token revogado, credenciais inválidas, provider fora).
-    // Marca a integração como expirada explicitamente para que a UI possa
-    // pedir reautorização em vez de tentar publicar com um token stale.
     const message = err instanceof Error ? err.message : String(err);
-    const looksAuthError =
-      /\b(400|401|invalid_grant|invalid_client|unauthorized)\b/i.test(message);
-    console.warn("[mercadolivre] auto-refresh failed", message);
-    try {
-      await supabase
-        .from(TABLE)
-        .update({
-          // Força o cálculo de status "expired" em getIntegrationSummary
-          token_expires_at: new Date(0).toISOString(),
-          // Sinaliza que o refresh não é mais possível sem reautorização
-          ...(looksAuthError
-            ? { access_token_encrypted: null, refresh_token_encrypted: null }
-            : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("company_id", companyId);
-    } catch (persistErr) {
-      console.warn(
-        "[mercadolivre] failed to mark integration expired",
-        persistErr instanceof Error ? persistErr.message : persistErr,
-      );
+    if (isMLRefreshAuthorizationError(err)) {
+      console.warn("[mercadolivre] autorização expirada no refresh", message);
+      await markReconnectRequired(supabase, companyId, { clearTokens: true });
+      return;
     }
+    const retryAfterMs = err instanceof MLTokenRefreshError ? err.retryAfterMs : null;
+    console.warn(
+      "[mercadolivre] falha transitória no auto-refresh; integração preservada",
+      message,
+      retryAfterMs === null ? "" : `retry-after=${retryAfterMs}ms`,
+    );
+    throw err;
   }
 }
 

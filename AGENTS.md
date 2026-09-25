@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- O PDV relaciona preços de checkout à posição de `sale_items`, porque produtos repetidos e itens avulsos não têm identidade única por produto.
+- O refresh token do Mercado Livre nunca é repetido automaticamente, porque é de uso único e uma resposta perdida pode já tê-lo consumido.

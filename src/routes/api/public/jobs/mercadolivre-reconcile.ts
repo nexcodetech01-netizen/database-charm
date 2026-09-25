@@ -42,12 +42,13 @@ export const Route = createFileRoute("/api/public/jobs/mercadolivre-reconcile")(
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { decryptToken } = await import("@/lib/meta-crypto.server");
+          const { ensureFreshAccessToken } = await import("@/lib/mercadolivre.server");
           const { integrationFetch } = await import("@/lib/http-client.server");
           const { recordDeadLetter } = await import("@/lib/dead-letter.server");
 
           const { data, error } = await supabaseAdmin
             .from("mercadolivre_integrations")
-            .select("company_id, ml_user_id, access_token_encrypted")
+            .select("company_id, ml_user_id, access_token_encrypted, connected_by")
             .not("access_token_encrypted", "is", null);
           if (error) {
             return Response.json({ ok: false, error: error.message }, { status: 500 });
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/api/public/jobs/mercadolivre-reconcile")(
             company_id: string;
             ml_user_id: string | null;
             access_token_encrypted: string | null;
+            connected_by: string | null;
           }>;
 
           const since = new Date(Date.now() - WINDOW_HOURS * 3_600_000).toISOString();
@@ -66,20 +68,50 @@ export const Route = createFileRoute("/api/public/jobs/mercadolivre-reconcile")(
           for (const row of rows) {
             if (!row.ml_user_id || !row.access_token_encrypted) continue;
             try {
-              const token = decryptToken(row.access_token_encrypted);
               const url = new URL(`${ML_API}/orders/search`);
               url.searchParams.set("seller", row.ml_user_id);
               url.searchParams.set("order.status", "paid");
               url.searchParams.set("order.date_created.from", since);
               url.searchParams.set("limit", "50");
 
-              const res = await integrationFetch(
+              const readCurrentToken = async () => {
+                const { data: current, error: currentError } = await supabaseAdmin
+                  .from("mercadolivre_integrations")
+                  .select("access_token_encrypted")
+                  .eq("company_id", row.company_id)
+                  .maybeSingle();
+                if (currentError) throw currentError;
+                const encrypted = (current as { access_token_encrypted?: string | null } | null)
+                  ?.access_token_encrypted;
+                if (!encrypted) throw new Error("Token do Mercado Livre indisponível após renovação.");
+                return decryptToken(encrypted);
+              };
+              const searchOrders = (token: string) => integrationFetch(
                 url,
                 { headers: { Authorization: `Bearer ${token}` } },
                 { integration: "mercadolivre", timeoutMs: 15_000, maxAttempts: 3 },
               );
+
+              await ensureFreshAccessToken(
+                supabaseAdmin as never,
+                row.company_id,
+                row.connected_by ?? "",
+              );
+              let token = await readCurrentToken();
+              let res = await searchOrders(token);
+              if (res.status === 401) {
+                await ensureFreshAccessToken(
+                  supabaseAdmin as never,
+                  row.company_id,
+                  row.connected_by ?? "",
+                  { force: true },
+                );
+                token = await readCurrentToken();
+                res = await searchOrders(token);
+              }
               if (!res.ok) {
-                throw new Error(`orders/search HTTP ${res.status}`);
+                const body = await res.text();
+                throw new Error(`orders/search HTTP ${res.status}: ${body.slice(0, 1000)}`);
               }
               const payload = (await res.json()) as MLSearchResult;
 
