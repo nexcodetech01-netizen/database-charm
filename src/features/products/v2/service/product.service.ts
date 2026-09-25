@@ -89,7 +89,7 @@ export class ProductService extends BaseService {
       if (inputPrice != null && inputPrice > 0) patch.price = inputPrice;
       if (cost > 0) patch.cost = cost;
       if (input.sku?.trim() && !duplicate.sku) patch.sku = input.sku.trim();
-      if (hasRealBarcode(input.barcode) && !hasRealBarcode(duplicate.barcode)) patch.barcode = normalizeBarcode(input.barcode);
+      if (hasRealBarcode(barcode) && !hasRealBarcode(duplicate.barcode)) patch.barcode = barcode;
 
       const updated = Object.keys(patch).length
         ? await this.repo.update(duplicate.id, patch as never)
