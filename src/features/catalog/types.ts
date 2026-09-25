@@ -62,6 +62,8 @@ export interface PublicCollection extends CollectionVisibility {
   status: CollectionStatus;
   company_name: string;
   installment_max: number | null;
+  card_fee_percent: number;
+  card_price_active: boolean;
   cta: CatalogCta;
   cta_mode: CtaMode;
   whatsapp_phone: string | null;
@@ -103,6 +105,8 @@ export interface PublicProductDetail extends CollectionVisibility {
   };
   company_name: string;
   installment_max: number | null;
+  card_fee_percent: number;
+  card_price_active: boolean;
   pix_discount_percent: number | null;
   cta: CatalogCta;
   cta_mode: CtaMode;

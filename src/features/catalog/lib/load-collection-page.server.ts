@@ -44,6 +44,8 @@ export type CollectionPagePayload = {
   status: string;
   company_name: string;
   installment_max: number | null;
+  card_fee_percent: number;
+  card_price_active: boolean;
   cta: "whatsapp" | "entrada" | "comprar_agora" | "none";
   cta_mode: "whatsapp" | "entrada" | "comprar_agora";
   whatsapp_phone: string | null;
@@ -143,7 +145,7 @@ async function loadCollectionPagePayloadInner(params: {
     return { ok: false, status: 404, error: "not_found" };
   }
 
-  const [{ data: company }, { data: payCfg }, { data: items }] = await Promise.all([
+  const [{ data: company }, { data: payCfg }, { data: cardCfg }, { data: items }] = await Promise.all([
     supabaseAdmin
       .from("companies")
       .select("id, name, whatsapp, phone")
@@ -154,6 +156,11 @@ async function loadCollectionPagePayloadInner(params: {
       .select("credit_card_max_installments, connection_status")
       .eq("company_id", col.company_id)
       .maybeSingle<{ credit_card_max_installments: number | null; connection_status: string | null }>(),
+    supabaseAdmin
+      .from("company_card_price_config")
+      .select("card_fee_percent,max_installments,active")
+      .eq("company_id", col.company_id)
+      .maybeSingle<{ card_fee_percent: number | null; max_installments: number | null; active: boolean | null }>(),
     supabaseAdmin
       .from("product_collection_items")
       .select(
@@ -199,7 +206,9 @@ async function loadCollectionPagePayloadInner(params: {
     cover_url: col.cover_url,
     status: col.status,
     company_name: company?.name ?? "",
-    installment_max: payCfg?.credit_card_max_installments ?? null,
+    installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+    card_fee_percent: Number(cardCfg?.card_fee_percent ?? 2.88),
+    card_price_active: cardCfg?.active ?? true,
     cta,
     cta_mode: ctaMode,
     whatsapp_phone: whatsapp || null,
