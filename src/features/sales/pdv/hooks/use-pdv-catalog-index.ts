@@ -40,7 +40,12 @@ async function fetchPdvCatalog(
 export function usePdvCatalogIndex(
   companyId: string,
   enabled = true,
-): PdvCatalogIndex & { isSyncing: boolean; isInitialLoading: boolean } {
+): PdvCatalogIndex & {
+  isSyncing: boolean;
+  isInitialLoading: boolean;
+  /** Catálogo completo já carregado — usado pela sugestão de venda casada. */
+  products: PdvSearchOption[];
+} {
   const queryClient = useQueryClient();
 
   // 1. Carregamento do lote inicial (rápido)
@@ -90,6 +95,7 @@ export function usePdvCatalogIndex(
     ...index,
     isSyncing,
     isInitialLoading,
+    products,
   };
 }
 
@@ -106,5 +112,6 @@ function mapProduct(p: any): PdvSearchOption {
     unit: p.unit ?? null,
     image_url: p.image_url ?? null,
     cover_image_path: p.cover_image_path ?? null,
+    brand: (p as { brand?: string | null }).brand ?? null,
   };
 }

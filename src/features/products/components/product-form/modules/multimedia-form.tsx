@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Video, X } from "lucide-react";
+import { Sparkles, Video, X } from "lucide-react";
 import { ProductImageUploader } from "../../product-image-uploader";
 import { ProductMainImagePicker } from "../../product-main-image-picker";
 import { SALES_CHANNEL_OPTIONS } from "../../../types";
@@ -18,6 +18,8 @@ interface MultimediaFormProps {
   removingMainImage?: boolean;
   uploadingVideo: boolean;
   onVideoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSuggestFromPhoto?: () => void;
+  suggestingFromPhoto?: boolean;
 }
 
 export function MultimediaForm({
@@ -33,12 +35,30 @@ export function MultimediaForm({
   removingMainImage,
   uploadingVideo,
   onVideoUpload,
+  onSuggestFromPhoto,
+  suggestingFromPhoto,
 }: MultimediaFormProps) {
   return (
     <div className="space-y-8">
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-4">
-          <Label className="text-base font-semibold">Imagem Principal</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">Imagem Principal</Label>
+            {onSuggestFromPhoto && (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={onSuggestFromPhoto}
+                disabled={!mainImageFile || suggestingFromPhoto}
+                title={!mainImageFile ? "Selecione uma foto para poder sugerir" : undefined}
+                className="h-7 gap-1 px-2 text-[10px]"
+              >
+                <Sparkles className={`h-3 w-3 ${suggestingFromPhoto ? "animate-spin" : ""}`} />
+                Sugerir descrição e tags com a foto
+              </Button>
+            )}
+          </div>
           <ProductMainImagePicker
             currentUrl={currentMainImageUrl}
             file={mainImageFile}

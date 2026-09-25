@@ -19,7 +19,7 @@ import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import { findDuplicateProduct } from "../../lib/product-dedupe";
-import { suggestProductTags } from "../../lib/tag-suggestions.functions";
+import { suggestProductFromPhoto, suggestProductTags } from "../../lib/tag-suggestions.functions";
 import { syncProductIdealMargin } from "@/features/pricing/lib/product-pricing.functions";
 import { usePricingInputs } from "@/features/pricing/hooks/use-pricing-inputs";
 import { evaluateOfficialPrice, computeSuggestedPrice, effectiveFeePct, worstCaseFee } from "@/features/pricing/official";
@@ -160,6 +160,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [suggestingTags, setSuggestingTags] = useState(false);
+  const [suggestingFromPhoto, setSuggestingFromPhoto] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useEntityForm(product, (p) => {
@@ -198,6 +199,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
   const updateProduct = useUpdateProduct();
   const createCategory = useCreateCategory(companyId);
   const suggestTagsFn = useServerFn(suggestProductTags);
+  const suggestFromPhotoFn = useServerFn(suggestProductFromPhoto);
   const lookupEan = useServerFn(lookupProductByEan);
   const fetchLastPurchase = useServerFn(getLastPurchaseInfo);
   const { data: operationalDefaults } = useOperationalDefaults(companyId);
@@ -472,6 +474,47 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       toast.error("Erro ao sugerir tags");
     } finally {
       setSuggestingTags(false);
+    }
+  };
+
+  // Botão "Sugerir com foto" — mesmo motor de visão já usado na leitura de
+  // pedidos de compra por IA, agora lendo a foto principal do produto pra
+  // preencher descrição + tags automaticamente.
+  const handleSuggestFromPhoto = async () => {
+    if (!mainImageFile) {
+      toast.error("Selecione uma foto primeiro.");
+      return;
+    }
+    setSuggestingFromPhoto(true);
+    try {
+      const dataUrl = await fileToDataUrl(mainImageFile);
+      const result = await suggestFromPhotoFn({
+        data: {
+          dataUrl,
+          name: form.name || null,
+          category: categoryName || null,
+          brand: form.brand || null,
+          existingTags: form.tags,
+        },
+      });
+      setSuggestedTags(result.tags);
+      if (result.description) {
+        if (form.description.trim()) {
+          toast.info("A descrição já tinha texto — sugestão gerada: " + result.description, {
+            duration: 15000,
+          });
+        } else {
+          setForm((s: any) => ({ ...s, description: result.description }));
+        }
+      }
+      if (!result.tags.length && !result.description) {
+        toast.info("Nenhuma sugestão encontrada para essa foto.");
+      }
+    } catch (err) {
+      console.error("[handleSuggestFromPhoto]", err);
+      toast.error(err instanceof Error ? err.message : "Erro ao analisar a foto");
+    } finally {
+      setSuggestingFromPhoto(false);
     }
   };
 
@@ -935,6 +978,8 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
               removingMainImage={removingMainImage}
               uploadingVideo={uploadingVideo}
               onVideoUpload={handleVideoUpload}
+              onSuggestFromPhoto={handleSuggestFromPhoto}
+              suggestingFromPhoto={suggestingFromPhoto}
             />
           </TabsContent>
 
@@ -988,4 +1033,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       />
     </div>
   );
+}
+
+/** Lê um File do input e devolve como data URL — mesmo helper já duplicado em outros pontos do app (import de pedidos, certificado fiscal, etc.). */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }

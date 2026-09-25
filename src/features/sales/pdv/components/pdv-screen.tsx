@@ -55,6 +55,8 @@ import {
   PDV_DISCOUNT_INPUT_ID,
 } from "../hooks/use-pdv-shortcuts";
 import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
+import { usePdvUpsell } from "../hooks/use-pdv-upsell";
+import { PDVUpsellStrip } from "./pdv-upsell-strip";
 import { pdvCashBlockedAction } from "../lib/cash-access";
 
 // Componentes pesados ou utilizados apenas após eventos carregados sob demanda (Sprint RC.1.3).
@@ -144,6 +146,7 @@ export function PDVScreen({
   const catalog = usePdvCatalogIndex(companyId);
 
   const pdv = usePDV(companyId);
+  const upsell = usePdvUpsell(catalog.products, pdv.state.items);
   const [discountPolicy] = useDiscountPolicy(companyId);
   const {
     access,
@@ -543,6 +546,14 @@ export function PDVScreen({
               onEditAddition={setEditingAdditionItem}
               onEditNotes={setEditingNotesItem}
             />
+
+            {!cartLocked && (
+              <PDVUpsellStrip
+                key={upsell.forProductId ?? "none"}
+                suggestions={upsell.suggestions}
+                onAdd={handleAddProduct}
+              />
+            )}
 
             {pdv.stockIssues.length > 0 && (
               <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive">

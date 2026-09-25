@@ -72,6 +72,8 @@ export function createSearchCache<T>({
 export type PdvSearchOption = PDVProductOption & {
   barcode?: string | null;
   reference?: string | null;
+  /** Marca — usada apenas para ranquear sugestões de venda casada. */
+  brand?: string | null;
 };
 
 function eq(a: string | null | undefined, term: string): boolean {
