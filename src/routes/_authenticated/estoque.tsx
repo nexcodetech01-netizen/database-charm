@@ -148,6 +148,7 @@ function InventoryPage() {
             onReset={() => setProductFilters(DEFAULT_PRODUCT_FILTERS)}
           />
           <ProductTable
+            companyId={company.id}
             rows={products.data?.rows ?? []}
             total={products.data?.total ?? 0}
             isLoading={products.isLoading}

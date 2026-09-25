@@ -18,6 +18,8 @@ export type ProductPagePayload = {
   collection: { id: string; slug: string; name: string };
   company_name: string;
   installment_max: number | null;
+  card_fee_percent: number;
+  card_price_active: boolean;
   pix_discount_percent: null;
   cta: "whatsapp" | "entrada" | "comprar_agora" | "none";
   cta_mode: "whatsapp" | "entrada" | "comprar_agora";
@@ -91,7 +93,7 @@ export async function loadProductPagePayload(params: {
     .maybeSingle();
   if (!link) return { ok: false, status: 404, error: "not_found" };
 
-  const [{ data: prod }, { data: images }, { data: company }, { data: payCfg }] = await Promise.all([
+  const [{ data: prod }, { data: images }, { data: company }, { data: payCfg }, { data: cardCfg }] = await Promise.all([
     supabaseAdmin
       .from("products")
       .select(
@@ -115,6 +117,11 @@ export async function loadProductPagePayload(params: {
       .select("credit_card_max_installments, connection_status")
       .eq("company_id", col.company_id)
       .maybeSingle<{ credit_card_max_installments: number | null; connection_status: string | null }>(),
+    supabaseAdmin
+      .from("company_card_price_config")
+      .select("card_fee_percent,max_installments,active")
+      .eq("company_id", col.company_id)
+      .maybeSingle<{ card_fee_percent: number | null; max_installments: number | null; active: boolean | null }>(),
   ]);
 
   if (!prod || prod.status !== "active" || (prod as any).sales_channels?.includes("catalog") === false) {
@@ -220,7 +227,9 @@ export async function loadProductPagePayload(params: {
     images: outImages,
     collection: { id: col.id, slug: col.slug, name: col.name },
     company_name: company?.name ?? "",
-    installment_max: payCfg?.credit_card_max_installments ?? null,
+    installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+    card_fee_percent: Number(cardCfg?.card_fee_percent ?? 2.88),
+    card_price_active: cardCfg?.active ?? true,
     pix_discount_percent: null,
     cta,
     cta_mode: ctaMode,

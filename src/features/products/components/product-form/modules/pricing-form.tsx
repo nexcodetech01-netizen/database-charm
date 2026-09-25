@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { RequiredLabel } from "@/components/ui/required-label";
 import { computeOfficialPricing } from "@/features/pricing/official/official-pricing";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
+import { useAuth } from "@/providers/auth-provider";
+import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
+import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
+import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
 
 interface PricingFormProps {
   form: any;
@@ -41,6 +45,9 @@ export function PricingForm({
   onFetchLastPurchase,
   operationalDefaults,
 }: PricingFormProps) {
+  const { user } = useAuth();
+  const { companyId } = useResolvedCompanyId(user?.id);
+  const { data: cardConfig } = useCardPriceConfig(companyId);
   const num = (v: any) => {
     if (typeof v === "number") return v;
     const normalized = String(v ?? "").replace(",", ".").replace(/[^\d.-]/g, "");
@@ -67,6 +74,8 @@ export function PricingForm({
   // LÓGICA RÍGIDA: Custo Total Efetivo é a soma de todos os componentes
   const totalCost = cost + freight + packaging + insurance + other;
   const price = num(form.price);
+  const cardPrice = cardConfig ? calcPrecoCartao(price, cardConfig) : price;
+  const cardInstallment = cardConfig ? calcParcela(cardPrice, cardConfig.maxInstallments) : price;
   const desiredMargin = num(form.margin);
 
   // CORREÇÃO ("tela tremendo ao alterar a margem alvo", 2026-08-21):
@@ -334,7 +343,7 @@ export function PricingForm({
           )}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <RequiredLabel htmlFor="price" required className="text-xs font-bold text-slate-300">Preço de Venda Final</RequiredLabel>
+                <RequiredLabel htmlFor="price" required className="text-xs font-bold text-slate-300">Preço à vista</RequiredLabel>
                 <Badge className={cn("text-[9px] font-black uppercase py-0.5 px-2 tracking-tighter shadow-none border-none", status.color)}>
                   {status.label}: {margin.toFixed(2)}%
                 </Badge>
@@ -361,6 +370,11 @@ export function PricingForm({
                 }}
               />
               {errors.price && <p className="text-xs text-destructive font-medium">{errors.price}</p>}
+              {cardConfig?.active ? (
+                <p className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+                  No cartão: <strong>{formatCurrency(cardPrice)}</strong> (até {cardConfig.maxInstallments}x de {formatCurrency(cardInstallment)})
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -627,6 +627,11 @@ export function PDVScreen({
             amount={(pendingSale ?? completed)!.total}
             subtotal={pdv.totals.items_total}
             discount={pdv.state.discount}
+            pdvCashItems={pdv.state.items.map((item) => ({
+              product_id: item.product_id,
+              unit_price: item.original_unit_price ?? item.unit_price,
+              quantity: item.quantity,
+            }))}
             onPaid={(info) =>
               handlePaid((pendingSale ?? completed)!.id, info?.method)
             }

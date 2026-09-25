@@ -28,7 +28,8 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency, getInstallmentPlan, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
+import { formatCurrency, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
+import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import type {
@@ -625,7 +626,12 @@ function PublicCollectionPage() {
             >
               {visible.map((p) => {
                 const outOfStock = p.stock <= 0;
-                const plan = getInstallmentPlan(p.price);
+                const cardPrice = calcPrecoCartao(p.price, {
+                  cardFeePercent: data.card_fee_percent,
+                  maxInstallments: data.installment_max ?? 3,
+                  active: data.card_price_active,
+                });
+                const installment = calcParcela(cardPrice, data.installment_max ?? 3);
                 const availability = resolveAvailability(p.stock, {
                   presale: isPreview,
                 });
@@ -683,11 +689,11 @@ function PublicCollectionPage() {
                                     className="text-lg font-black tracking-tight text-foreground"
                                     style={{ fontFamily: 'Montserrat, sans-serif' }}
                                   >
-                                    {formatCurrency(p.price)}
+                                    {formatCurrency(p.price)} à vista
                                   </div>
-                                  {data.show_installments && plan && (
+                                  {data.show_installments && data.card_price_active && (
                                     <div className="text-[10px] text-muted-foreground font-semibold">
-                                      {plan.label}
+                                      ou {formatCurrency(cardPrice)} em até {data.installment_max ?? 3}x de {formatCurrency(installment)} no cartão
                                     </div>
                                   )}
                                 </div>
@@ -796,13 +802,13 @@ function PublicCollectionPage() {
                             className="text-lg font-black tracking-tight text-foreground"
                             style={{ fontFamily: 'Montserrat, sans-serif' }}
                           >
-                            {formatCurrency(p.price)}
+                            {formatCurrency(p.price)} à vista
                           </div>
                         )}
-                        {data.show_installments && data.show_price && plan && (
+                        {data.show_installments && data.show_price && data.card_price_active && (
                           <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                             <span className="h-1 w-1 rounded-full bg-primary/40" />
-                            {plan.label}
+                            ou {formatCurrency(cardPrice)} em até {data.installment_max ?? 3}x de {formatCurrency(installment)} no cartão
                           </div>
                         )}
                       </div>

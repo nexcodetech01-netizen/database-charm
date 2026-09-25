@@ -18,6 +18,7 @@ export function toCartItem(
     description: product.name,
     quantity,
     unit_price: product.price != null ? Number(product.price) : 0,
+    original_unit_price: product.price != null ? Number(product.price) : 0,
     discount: 0,
     sku: product.sku ?? null,
     unit: product.unit ?? null,

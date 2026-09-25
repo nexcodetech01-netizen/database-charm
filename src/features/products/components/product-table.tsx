@@ -30,6 +30,8 @@ import { useSignedImageUrls, useDeactivateProduct, useUpdateProduct } from "../h
 import type { Product } from "../types";
 import { LabelPrintDialog } from "@/features/printing";
 import { updateMercadoLivreItem, syncProductToMercadoLivre } from "@/lib/mercadolivre-sync.functions";
+import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
+import { calcPrecoCartao } from "@/lib/pricing/card-price";
 
 type Row = Product & {
   category?: { id: string; name: string } | null;
@@ -37,6 +39,7 @@ type Row = Product & {
 };
 
 interface Props {
+  companyId?: string;
   rows: Row[];
   isLoading: boolean;
   total: number;
@@ -45,7 +48,7 @@ interface Props {
   onPageChange: (page: number) => void;
 }
 
-export function ProductTable({ rows, isLoading, total, page, pageSize, onPageChange }: Props) {
+export function ProductTable({ companyId, rows, isLoading, total, page, pageSize, onPageChange }: Props) {
   const [publishTarget, setPublishTarget] = useState<Product | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
   const [labelTarget, setLabelTarget] = useState<Product | null>(null);
@@ -54,6 +57,7 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
   const updateMlItem = useServerFn(updateMercadoLivreItem);
   const syncMlItem = useServerFn(syncProductToMercadoLivre);
   const [isUpdatingMl, setIsUpdatingMl] = useState<string | null>(null);
+  const cardConfigQ = useCardPriceConfig(companyId);
 
   const handleUpdateMlStatus = async (productId: string, status: "active" | "paused") => {
     setIsUpdatingMl(productId);
@@ -163,10 +167,19 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
       },
       {
         id: "price",
-        header: "Preço",
+        header: "Preços",
         align: "right",
         className: "tabular-nums",
-        cell: (p) => formatCurrency(Number(p.price)),
+        cell: (p) => (
+          <div className="flex flex-col items-end">
+            <span>{formatCurrency(Number(p.price))} à vista</span>
+            {cardConfigQ.data?.active ? (
+              <span className="text-xs text-muted-foreground">
+                {formatCurrency(calcPrecoCartao(Number(p.price), cardConfigQ.data))} no cartão
+              </span>
+            ) : null}
+          </div>
+        ),
       },
       {
         id: "stock",
@@ -205,7 +218,7 @@ export function ProductTable({ rows, isLoading, total, page, pageSize, onPageCha
         cell: (p) => <ProductStatusBadge status={p.status} />,
       },
     ],
-    [urlByPath],
+    [urlByPath, cardConfigQ.data],
   );
 
   return (
