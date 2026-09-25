@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calcParcela,
   calcPrecoCartao,
+  calcTotalAvistaPdv,
   calcTotalCartaoPdv,
   DEFAULT_CARD_PRICE_CONFIG,
 } from "./card-price";
@@ -22,7 +23,7 @@ describe("preço no cartão", () => {
   describe("total do PDV no cartão", () => {
     it("calcula R$ 51,48 e três parcelas de R$ 17,16 para um item de R$ 49,99", () => {
       const total = calcTotalCartaoPdv(
-        [{ unit_price: 49.99, quantity: 1 }],
+        [{ unit_price: 49.99, quantity: 1, discount: 0 }],
         0,
         0,
         DEFAULT_CARD_PRICE_CONFIG,
@@ -34,7 +35,7 @@ describe("preço no cartão", () => {
 
     it("calcula R$ 102,97 para um item de R$ 100,00", () => {
       expect(calcTotalCartaoPdv(
-        [{ unit_price: 100, quantity: 1 }],
+        [{ unit_price: 100, quantity: 1, discount: 0 }],
         0,
         0,
         DEFAULT_CARD_PRICE_CONFIG,
@@ -43,7 +44,7 @@ describe("preço no cartão", () => {
 
     it("usa o preço efetivo alterado no carrinho", () => {
       expect(calcTotalCartaoPdv(
-        [{ unit_price: 80, quantity: 2 }],
+        [{ unit_price: 80, quantity: 2, discount: 0 }],
         0,
         0,
         DEFAULT_CARD_PRICE_CONFIG,
@@ -52,11 +53,18 @@ describe("preço no cartão", () => {
 
     it("subtrai o desconto geral depois de reprecificar os itens", () => {
       expect(calcTotalCartaoPdv(
-        [{ unit_price: 100, quantity: 1 }],
+        [{ unit_price: 100, quantity: 1, discount: 0 }],
         10,
         0,
         DEFAULT_CARD_PRICE_CONFIG,
       )).toBe(92.97);
+    });
+
+    it("subtrai o desconto do item em cada linha como a função SQL", () => {
+      const items = [{ unit_price: 100, quantity: 1, discount: 10 }];
+
+      expect(calcTotalAvistaPdv(items, 0, 0)).toBe(90);
+      expect(calcTotalCartaoPdv(items, 0, 0, DEFAULT_CARD_PRICE_CONFIG)).toBe(92.97);
     });
   });
 });

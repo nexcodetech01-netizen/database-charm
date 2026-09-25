@@ -11,3 +11,4 @@
 
 - O PDV relaciona preços de checkout à posição de `sale_items`, porque produtos repetidos e itens avulsos não têm identidade única por produto.
 - O refresh token do Mercado Livre nunca é repetido automaticamente, porque é de uso único e uma resposta perdida pode já tê-lo consumido.
+- Os totais à vista e no cartão do PDV usam as funções compartilhadas de `card-price.ts`, para manter a tela alinhada à fórmula SQL por linha.

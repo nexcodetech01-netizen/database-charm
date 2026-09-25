@@ -8,3 +8,6 @@
 - [x] Preservar integração Mercado Livre em falhas transitórias de renovação
 - [x] Renovar token na reconciliação e repetir uma vez após HTTP 401
 - [x] Remover a faixa “Combina com” do PDV
+- [x] Considerar desconto por item nos totais à vista e no cartão do PDV
+- [x] Preservar a tela do Mercado Livre em falhas transitórias de renovação
+- [x] Repetir a gravação de preço na confirmação após falha anterior

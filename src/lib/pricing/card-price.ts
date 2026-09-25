@@ -32,16 +32,37 @@ export function calcParcela(precoCartao: number, parcelas: number): number {
 }
 
 export function calcTotalCartaoPdv(
-  items: Array<{ unit_price: number; quantity: number }>,
+  items: Array<{ unit_price: number; quantity: number; discount: number }>,
   desconto: number,
   frete: number,
   config: CardPriceConfig = DEFAULT_CARD_PRICE_CONFIG,
 ): number {
   const subtotal = items.reduce((sum, item) => {
     const quantity = Number(item.quantity);
-    return sum + calcPrecoCartao(item.unit_price, config) * (
-      Number.isFinite(quantity) && quantity > 0 ? quantity : 0
-    );
+    const discount = Number(item.discount);
+    const lineTotal = calcPrecoCartao(item.unit_price, config)
+      * (Number.isFinite(quantity) && quantity > 0 ? quantity : 0)
+      - (Number.isFinite(discount) ? discount : 0);
+    return sum + Math.max(0, lineTotal);
+  }, 0);
+  const normalizedDiscount = Number.isFinite(Number(desconto)) ? Number(desconto) : 0;
+  const normalizedShipping = Number.isFinite(Number(frete)) ? Number(frete) : 0;
+  return Math.max(0, subtotal - normalizedDiscount + normalizedShipping);
+}
+
+export function calcTotalAvistaPdv(
+  items: Array<{ unit_price: number; quantity: number; discount: number }>,
+  desconto: number,
+  frete: number,
+): number {
+  const subtotal = items.reduce((sum, item) => {
+    const unitPrice = Number(item.unit_price);
+    const quantity = Number(item.quantity);
+    const discount = Number(item.discount);
+    const lineTotal = (Number.isFinite(unitPrice) ? unitPrice : 0)
+      * (Number.isFinite(quantity) && quantity > 0 ? quantity : 0)
+      - (Number.isFinite(discount) ? discount : 0);
+    return sum + Math.max(0, lineTotal);
   }, 0);
   const normalizedDiscount = Number.isFinite(Number(desconto)) ? Number(desconto) : 0;
   const normalizedShipping = Number.isFinite(Number(frete)) ? Number(frete) : 0;
