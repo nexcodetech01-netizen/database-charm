@@ -16,6 +16,6 @@
 - [x] Normalizar ausência de código em todos os cadastros, validações e importações
 - [x] Converter códigos de ausência existentes sem alterar códigos vazios
 - [x] Conferir e listar produtos com código vazio
-- [ ] Alinhar arredondamento do cartão com valores em centavos e testar toda a faixa solicitada
-- [ ] Indicar produto inativo na mensagem de código duplicado
-- [ ] Excluir o marcador SEM GTIN da busca por código de barras
+- [x] Alinhar arredondamento do cartão com valores em centavos e testar toda a faixa solicitada
+- [x] Indicar produto inativo na mensagem de código duplicado
+- [x] Excluir o marcador SEM GTIN da busca por código de barras
