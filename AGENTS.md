@@ -14,3 +14,5 @@
 - Os totais à vista e no cartão do PDV usam as funções compartilhadas de `card-price.ts`, para manter a tela alinhada à fórmula SQL por linha.
 - Violações do índice único de código de barras devem virar mensagens amigáveis; o índice nunca deve ser removido ou afrouxado.
 - Valores que representam ausência de código de barras passam pelo normalizador compartilhado antes de deduplicação e persistência, preservando códigos reais e NULL legado.
+- O preço no cartão usa centavos inteiros e taxa em pontos-base, para evitar divergência de centavos com o cálculo numeric do banco.
+- A busca de produtos ignora `SEM GTIN` no campo de código de barras, para não retornar produtos sem código em consultas por esse marcador.

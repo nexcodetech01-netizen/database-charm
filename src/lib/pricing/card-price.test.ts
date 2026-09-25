@@ -16,6 +16,22 @@ describe("preço no cartão", () => {
     expect(calcParcela(102.97, 3)).toBe(34.33);
   });
 
+  it("não soma um centavo nos valores exatos do banco", () => {
+    expect(calcPrecoCartao(48.56)).toBe(50);
+    expect(calcPrecoCartao(97.12)).toBe(100);
+    expect(calcParcela(50, 3)).toBe(16.67);
+  });
+
+  it("coincide com a fórmula inteira para cada centavo de R$ 0,01 a R$ 1.000,00", () => {
+    const feeBasisPoints = Math.round(DEFAULT_CARD_PRICE_CONFIG.cardFeePercent * 100);
+    for (let cashCents = 1; cashCents <= 100000; cashCents++) {
+      const expectedCents = Math.floor(
+        (cashCents * 10000 + (10000 - feeBasisPoints) - 1) / (10000 - feeBasisPoints),
+      );
+      expect(calcPrecoCartao(cashCents / 100)).toBe(expectedCents / 100);
+    }
+  });
+
   it("mantém o preço à vista quando a configuração está inativa", () => {
     expect(calcPrecoCartao(100, { ...DEFAULT_CARD_PRICE_CONFIG, active: false })).toBe(100);
   });

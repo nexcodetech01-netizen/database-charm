@@ -25,19 +25,20 @@ export interface DuplicateProduct {
   barcode: string | null;
   price: number | null;
   cost: number | null;
+  status: string | null;
   matchedBy: "sku" | "barcode" | "name";
 }
 
 export function formatBarcodeDuplicateMessage(
   barcode: string,
-  product?: Pick<DuplicateProduct, "name" | "sku"> | null,
+  product?: Pick<DuplicateProduct, "name" | "sku"> & Partial<Pick<DuplicateProduct, "status">> | null,
 ): string {
   if (!product) {
     return `O código de barras ${barcode} já está em outro produto desta empresa.`;
   }
   return `O código de barras ${barcode} já está no produto '${product.name}'${
     product.sku ? ` (SKU ${product.sku})` : ""
-  }.`;
+  }${product.status === "inactive" ? " (produto inativo)" : ""}.`;
 }
 
 /** Normaliza texto para comparação: trim, hífens/travessões como espaço, colapso e minúsculas. */
@@ -108,7 +109,7 @@ export async function findDuplicateProduct(
   for (const check of checks) {
     let q = client
       .from("products")
-      .select("id, name, sku, barcode, price, cost")
+      .select("id, name, sku, barcode, price, cost, status")
       .eq("company_id", companyId)
       .ilike(check.column, check.value)
       .order("created_at", { ascending: true })
@@ -127,6 +128,7 @@ export async function findDuplicateProduct(
         barcode: row.barcode ?? null,
         price: row.price ?? null,
         cost: row.cost ?? null,
+        status: row.status ?? null,
         matchedBy: check.column,
       };
     }
