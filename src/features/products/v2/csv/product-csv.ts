@@ -7,6 +7,7 @@
  * chama `ProductService.create` linha a linha, respeitando RLS/RBAC.
  */
 import { z } from "zod";
+import { normalizeBarcode } from "../../lib/barcode";
 
 export const ParsedProductRowSchema = z
   .object({
@@ -149,7 +150,7 @@ export function parseProductsCsv(input: string, opts: ParseOptions = {}): CsvPar
         const n = parseNumber(raw);
         if (n !== undefined) record[key] = n;
       } else {
-        record[key] = raw;
+        record[key] = key === "barcode" ? normalizeBarcode(raw) : raw;
       }
     }
     const parsed = ParsedProductRowSchema.safeParse(record);

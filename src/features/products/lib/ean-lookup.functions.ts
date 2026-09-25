@@ -12,12 +12,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { hasRealBarcode, normalizeBarcode } from "./barcode";
 
 const Input = z.object({
-  barcode: z
-    .string()
-    .trim()
-    .regex(/^\d{8,14}$/, "Código de barras deve ter entre 8 e 14 dígitos."),
+  barcode: z.string().trim(),
 });
 
 export interface EanLookupResult {
@@ -55,12 +53,11 @@ export const lookupProductByEan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => Input.parse(v))
   .handler(async ({ data }): Promise<EanLookupResult> => {
-    const { integrationFetchJson } = await import("@/lib/http-client.server");
-
+    const barcode = normalizeBarcode(data.barcode);
     const empty: EanLookupResult = {
       found: false,
       source: "Open Food Facts",
-      barcode: data.barcode,
+      barcode: barcode ?? "",
       name: null,
       brand: null,
       quantity: null,
@@ -68,9 +65,15 @@ export const lookupProductByEan = createServerFn({ method: "POST" })
       categories: [],
     };
 
+    if (!hasRealBarcode(barcode)) return empty;
+    if (!barcode || !/^\d{8,14}$/.test(barcode)) {
+      throw new Error("Código de barras deve ter entre 8 e 14 dígitos.");
+    }
+    const { integrationFetchJson } = await import("@/lib/http-client.server");
+
     try {
       const json = await integrationFetchJson<OffResponse>(
-        `https://world.openfoodfacts.org/api/v2/product/${data.barcode}.json?fields=product_name,product_name_pt,generic_name,brands,quantity,image_front_url,image_url,categories`,
+        `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_pt,generic_name,brands,quantity,image_front_url,image_url,categories`,
         { method: "GET", headers: { "User-Agent": "NexOS-ERP/1.0 (product-registration)" } },
         { integration: "openfoodfacts", timeoutMs: 8_000, maxAttempts: 2 },
       );

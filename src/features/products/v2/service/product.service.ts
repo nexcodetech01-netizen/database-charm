@@ -67,6 +67,7 @@ export class ProductService extends BaseService {
   }
 
   async create(input: CreateProductInput): Promise<Product> {
+    const barcode = normalizeBarcode(input.barcode);
     const inputPrice = typeof input.price === "number" ? input.price : null;
     if (inputPrice != null && inputPrice < 0)
       throw new Error("Preço não pode ser negativo.");
@@ -79,7 +80,7 @@ export class ProductService extends BaseService {
     const duplicate = await this.repo.findDuplicate({
       name: input.name,
       sku: input.sku ?? null,
-      barcode: input.barcode ?? null,
+      barcode,
     });
 
     if (duplicate) {
@@ -144,7 +145,7 @@ export class ProductService extends BaseService {
       supplier_id: input.supplierId ?? null,
       description: input.description ?? null,
       min_stock: input.minStock ?? 0,
-      barcode: input.barcode ?? null,
+      barcode,
     } as ProductInsert;
 
     const product = await this.repo.insert(payload);
