@@ -20,4 +20,4 @@
 - [x] Indicar produto inativo na mensagem de código duplicado
 - [x] Excluir o marcador SEM GTIN da busca por código de barras
 - [x] Proteger a busca SQL por empresa e remover execução pública
-- [ ] Auditar funções SECURITY DEFINER com identificadores de empresa ou entidades vinculadas
+- [x] Auditar funções SECURITY DEFINER com identificadores de empresa ou entidades vinculadas
