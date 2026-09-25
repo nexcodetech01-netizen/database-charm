@@ -249,6 +249,8 @@ export function CheckoutDialog({
 
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
+  const [effectiveAmount, setEffectiveAmount] = useState(initialAmount);
+  const amount = effectiveAmount;
   // BUG-001 — guarda por ref evita re-entrada por stale closure no polling.
   const confirmedRef = useRef(false);
   // Impede callbacks tardios de polling/realtime depois de "Voltar aos itens".
@@ -288,8 +290,6 @@ export function CheckoutDialog({
   const navigate = useNavigate();
   const { data: bellaConfig } = useBellaPayConfig(companyId);
   const { data: cardPriceConfig } = useCardPriceConfig(companyId);
-  const [effectiveAmount, setEffectiveAmount] = useState(initialAmount);
-  const amount = effectiveAmount;
 
   const [cardFixedFee] = useCardFixedFee(companyId);
   const { snapshots: feeSnapshots } = useBellaFeeCatalog(companyId);
