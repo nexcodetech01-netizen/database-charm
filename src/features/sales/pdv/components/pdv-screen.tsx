@@ -572,11 +572,13 @@ export function PDVScreen({
               />
             </Suspense>
             <PDVSummary
+              companyId={companyId}
               items={pdv.state.items}
               totals={pdv.totals}
               itemCount={pdv.itemCount}
               lineCount={pdv.state.items.length}
               discountValue={pdv.state.discount}
+              shipping={pdv.state.shipping}
               discount={pdv.discount}
               onDiscountChange={pdv.setDiscount}
               changeDue={

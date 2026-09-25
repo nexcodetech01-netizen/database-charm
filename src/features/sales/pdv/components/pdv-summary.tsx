@@ -7,8 +7,11 @@ import { formatCurrency } from "@/lib/format";
 import { computeSaleMetrics, type SaleItemDraft } from "../../types";
 import type { SaleTotals } from "../../engine/types";
 import { type DiscountEvaluation } from "../../lib/discounts";
+import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
+import { calcParcela, calcTotalCartaoPdv } from "@/lib/pricing/card-price";
 
 type Props = {
+  companyId: string;
   items: SaleItemDraft[];
   totals: SaleTotals;
   /** Quantidade total de unidades no carrinho. */
@@ -16,6 +19,7 @@ type Props = {
   /** Quantidade de linhas (itens distintos). */
   lineCount?: number;
   discountValue: number;
+  shipping?: number;
   discount: DiscountEvaluation;
   onDiscountChange: (value: number) => void;
   /** Troco — exibido apenas em pagamento em dinheiro. */
@@ -71,21 +75,30 @@ function Row({
  * SaleEngine. Nenhum total é recalculado aqui.
  */
 export function PDVSummary({
+  companyId,
   items,
   totals,
   itemCount,
   lineCount,
   discountValue,
+  shipping = 0,
   discount,
   onDiscountChange,
   changeDue,
   readOnly,
   onOpenNotes,
 }: Props) {
+  const { data: cardPriceConfig } = useCardPriceConfig(companyId);
   const hint = discountHint(discount);
   const { profit, margin, hasCost } = computeSaleMetrics(items, discountValue);
   const isNegative = profit < 0;
   const hasNotes = items.some(it => !!it.notes);
+  const cardTotal = cardPriceConfig?.active && items.length > 0
+    ? calcTotalCartaoPdv(items, discountValue, shipping, cardPriceConfig)
+    : null;
+  const cardInstallment = cardTotal != null && cardPriceConfig
+    ? calcParcela(cardTotal, cardPriceConfig.maxInstallments)
+    : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -172,6 +185,15 @@ export function PDVSummary({
             {formatCurrency(totals.grand_total)}
           </p>
         </div>
+
+        {cardTotal != null && cardInstallment != null && cardPriceConfig && (
+          <p
+            data-testid="pdv-card-total"
+            className="mt-1.5 px-3 text-right text-xs font-medium tabular-nums text-slate-500"
+          >
+            No cartão: {formatCurrency(cardTotal)} · até {cardPriceConfig.maxInstallments}x de {formatCurrency(cardInstallment)}
+          </p>
+        )}
 
         <div className="mt-2 flex items-center justify-between px-1">
           <Button
