@@ -203,7 +203,7 @@ interface Props {
   /** Informa ao formulário pai enquanto o rollback pending → draft está ativo. */
   onReturnToItemsStateChange?: (returning: boolean) => void;
   /** Itens do PDV com preço à vista, usados para persistir o valor efetivamente cobrado. */
-  pdvCashItems?: Array<{ product_id: string | null; unit_price: number }>;
+  pdvCashItems?: Array<{ product_id: string | null; unit_price: number; quantity: number }>;
   onPdvPricingChange?: (pricing: { amount: number; method: UiCheckoutMethod; installments: number }) => void;
 }
 
@@ -227,7 +227,7 @@ export function CheckoutDialog({
   saleId,
   saleNumber,
   customerId,
-  amount,
+  amount: initialAmount,
   subtotal,
   discount,
   shipping,
@@ -288,7 +288,8 @@ export function CheckoutDialog({
   const navigate = useNavigate();
   const { data: bellaConfig } = useBellaPayConfig(companyId);
   const { data: cardPriceConfig } = useCardPriceConfig(companyId);
-  const [effectiveAmount, setEffectiveAmount] = useState(amount);
+  const [effectiveAmount, setEffectiveAmount] = useState(initialAmount);
+  const amount = effectiveAmount;
 
   const [cardFixedFee] = useCardFixedFee(companyId);
   const { snapshots: feeSnapshots } = useBellaFeeCatalog(companyId);
@@ -304,7 +305,7 @@ export function CheckoutDialog({
   const saldoValue = Math.max(0, effectiveAmount - entradaValue);
   const chargeableAmount = entradaValue > 0 ? saldoValue : effectiveAmount;
 
-  useEffect(() => setEffectiveAmount(amount), [amount, saleId]);
+  useEffect(() => setEffectiveAmount(initialAmount), [initialAmount, saleId]);
 
   useEffect(() => {
     if (!open || !pdvCashItems?.length) return;
@@ -316,7 +317,7 @@ export function CheckoutDialog({
         : item.unit_price,
     }));
     const nextSubtotal = nextItems.reduce((sum, item, index) => {
-      const quantity = Number((pdvCashItems[index] as { quantity?: number }).quantity ?? 1);
+      const quantity = Number(pdvCashItems[index].quantity ?? 1);
       return sum + item.unit_price * quantity;
     }, 0);
     const nextAmount = Math.max(0, nextSubtotal - Number(discount ?? 0) + Number(shipping ?? 0));
@@ -403,14 +404,14 @@ export function CheckoutDialog({
         pixKey: key,
         recipientName: companyQuery.data?.pix_recipient_name ?? companyQuery.data?.name ?? "RECEBEDOR",
         recipientCity: companyQuery.data?.pix_recipient_city ?? "BRASIL",
-        effectiveAmount,
+        amount,
         txid: saleNumber?.replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || undefined,
         description: saleNumber ? `Venda ${saleNumber}` : undefined,
       });
     } catch {
       return null;
     }
-  }, [method, companyQuery.data, effectiveAmount, saleNumber]);
+  }, [method, companyQuery.data, amount, saleNumber]);
 
   // QR Code (data URL PNG) — regenerado quando o payload muda.
   const [ownPixQrDataUrl, setOwnPixQrDataUrl] = useState<string | null>(null);
@@ -1382,7 +1383,7 @@ export function CheckoutDialog({
                               {n}x {n === 1 ? "à vista" : ""}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {formatCurrency(preview.installmentValue)}
+                              {formatCurrency(pdvCashItems?.length ? calcParcela(amount, n) : preview.installmentValue)}
                             </div>
                           </button>
                         );
