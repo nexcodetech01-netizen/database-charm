@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const searchInputSchema = z.object({
   companyId: z.string().uuid(),
@@ -12,15 +13,10 @@ const searchInputSchema = z.object({
  * Use this to ignore accents on both search term and database content.
  */
 export const searchProductsUnaccent = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => searchInputSchema.parse(data))
-  .handler(async ({ data }) => {
-    // BUG ENCONTRADO E CORRIGIDO (2026-08-31): mesmo padrão de outras
-    // funções corrigidas hoje — usava o cliente genérico do navegador
-    // rodando do servidor, sem sessão nenhuma, e sem nenhuma
-    // verificação de que quem chamou pertence ao `companyId` recebido
-    // (vem direto do cliente). Trocado pro cliente administrativo.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: products, error } = await supabaseAdmin.rpc("search_products_unaccent", {
+  .handler(async ({ data, context }) => {
+    const { data: products, error } = await context.supabase.rpc("search_products_unaccent", {
       search_term: data.term,
       company_id_param: data.companyId,
       limit_param: data.limit,

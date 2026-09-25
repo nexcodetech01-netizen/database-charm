@@ -16,3 +16,4 @@
 - Valores que representam ausência de código de barras passam pelo normalizador compartilhado antes de deduplicação e persistência, preservando códigos reais e NULL legado.
 - O preço no cartão usa centavos inteiros e taxa em pontos-base, para evitar divergência de centavos com o cálculo numeric do banco.
 - A busca de produtos ignora `SEM GTIN` no campo de código de barras, para não retornar produtos sem código em consultas por esse marcador.
+- A pesquisa autenticada de produtos usa o cliente do usuário e checagem de empresa no SQL, pois o cliente administrativo contornaria o isolamento multiempresa.
