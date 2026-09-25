@@ -1533,6 +1533,44 @@ export type Database = {
           },
         ]
       }
+      company_card_price_config: {
+        Row: {
+          active: boolean
+          card_fee_percent: number
+          company_id: string
+          created_at: string
+          id: string
+          max_installments: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          card_fee_percent?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          max_installments?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          card_fee_percent?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          max_installments?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_card_price_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_inventory_settings: {
         Row: {
           allow_sale_without_cost: boolean
