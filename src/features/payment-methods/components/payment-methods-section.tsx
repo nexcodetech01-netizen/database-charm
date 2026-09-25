@@ -22,6 +22,14 @@ import {
 } from "../hooks/use-payment-methods";
 import { paymentMethodsService } from "../services/payment-methods.service";
 import type { PaymentMethodFee } from "../types";
+import { useCardPriceConfig, useSaveCardPriceConfig } from "../hooks/use-card-price-config";
+import {
+  calcParcela,
+  calcPrecoCartao,
+  DEFAULT_CARD_PRICE_CONFIG,
+  type CardPriceConfig,
+} from "@/lib/pricing/card-price";
+import { formatCurrency } from "@/lib/format";
 
 type Row = {
   id: string;
@@ -58,12 +66,19 @@ export function PaymentMethodsSection() {
 
   const { companyId, isLoading: companyLoading } = useResolvedCompanyId(user?.id);
   const feesQ = usePaymentMethodFees(companyId);
+  const cardConfigQ = useCardPriceConfig(companyId);
+  const saveCardConfig = useSaveCardPriceConfig(companyId);
 
   const [rows, setRows] = useState<Row[]>([]);
+  const [cardConfig, setCardConfig] = useState<CardPriceConfig>(DEFAULT_CARD_PRICE_CONFIG);
+  const [cardDirty, setCardDirty] = useState(false);
 
   useEffect(() => {
     if (feesQ.data) setRows(feesQ.data.map(toRow));
   }, [feesQ.data]);
+  useEffect(() => {
+    if (cardConfigQ.data) setCardConfig(cardConfigQ.data);
+  }, [cardConfigQ.data]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -92,8 +107,10 @@ export function PaymentMethodsSection() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...mut(r), dirty: true } : r)));
 
   const dirtyCount = rows.filter((r) => r.dirty).length;
+  const sampleCardPrice = calcPrecoCartao(100, cardConfig);
+  const sampleInstallment = calcParcela(sampleCardPrice, cardConfig.maxInstallments);
 
-  if (companyLoading || feesQ.isLoading) {
+  if (companyLoading || feesQ.isLoading || cardConfigQ.isLoading) {
     return (
       <Card>
         <CardContent className="space-y-3 p-6">
@@ -117,6 +134,83 @@ export function PaymentMethodsSection() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Preço no cartão</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Repasse a taxa da maquininha sem reduzir o valor líquido recebido.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="card-fee">Taxa do cartão (%)</Label>
+              <Input
+                id="card-fee"
+                type="number"
+                min={0}
+                max={99.99}
+                step="0.01"
+                value={cardConfig.cardFeePercent}
+                onChange={(event) => {
+                  setCardConfig((current) => ({ ...current, cardFeePercent: num(event.target.value) }));
+                  setCardDirty(true);
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="card-installments">Máximo de parcelas</Label>
+              <Input
+                id="card-installments"
+                type="number"
+                min={1}
+                max={12}
+                value={cardConfig.maxInstallments}
+                onChange={(event) => {
+                  setCardConfig((current) => ({
+                    ...current,
+                    maxInstallments: Math.min(12, Math.max(1, Math.trunc(Number(event.target.value) || 1))),
+                  }));
+                  setCardDirty(true);
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-2 pb-2">
+              <Switch
+                checked={cardConfig.active}
+                onCheckedChange={(active) => {
+                  setCardConfig((current) => ({ ...current, active }));
+                  setCardDirty(true);
+                }}
+              />
+              <span className="text-sm">{cardConfig.active ? "Ativo" : "Inativo"}</span>
+            </div>
+          </div>
+          <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+            Produto de {formatCurrency(100)} à vista → {formatCurrency(sampleCardPrice)} no cartão
+            {cardConfig.active ? ` (até ${cardConfig.maxInstallments}x de ${formatCurrency(sampleInstallment)})` : ""}.
+            Você recebe {formatCurrency(100)} após a taxa.
+          </p>
+          <div className="flex justify-end">
+            <Button
+              disabled={!cardDirty || saveCardConfig.isPending}
+              onClick={() =>
+                saveCardConfig.mutate(cardConfig, {
+                  onSuccess: () => {
+                    setCardDirty(false);
+                    toast.success("Preço no cartão atualizado");
+                  },
+                  onError: (error) =>
+                    toast.error(error instanceof Error ? error.message : "Falha ao salvar"),
+                })
+              }
+            >
+              {saveCardConfig.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+              Salvar preço no cartão
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-start gap-3">

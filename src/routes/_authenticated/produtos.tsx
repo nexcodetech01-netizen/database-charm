@@ -77,6 +77,7 @@ function ProductsPage() {
       />
 
       <ProductTable
+        companyId={company.id}
         rows={data?.rows ?? []}
         total={data?.total ?? 0}
         isLoading={isLoading}
