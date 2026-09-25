@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Package, Share2, Copy, X } from "lucide-react";
-import { formatCurrency, getInstallmentPlan } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
 import { toast } from "sonner";
 import { getQuickViewProduct } from "../lib/quick-view.functions";
 import { FramedImage } from "@/components/media/framed-image";
@@ -147,16 +148,24 @@ export function QuickViewDialog({
                   className="text-3xl font-black text-primary tracking-tighter"
                   style={{ fontFamily: 'Montserrat, sans-serif' }}
                 >
-                  {formatCurrency(product.product.price)}
+                  {formatCurrency(product.product.price)} à vista
                 </div>
                 {product.product.stock > 0 && (
                   <AvailabilityBadge kind={resolveAvailability(product.product.stock)} />
                 )}
               </div>
 
-              {getInstallmentPlan(product.product.price) && (
+              {product.product.card_price_active && (
                 <Badge variant="secondary" className="mt-2 w-fit bg-primary/10 text-primary border-none">
-                  {getInstallmentPlan(product.product.price)?.label}
+                  ou {formatCurrency(calcPrecoCartao(product.product.price, {
+                    cardFeePercent: product.product.card_fee_percent,
+                    maxInstallments: product.product.installment_max ?? 3,
+                    active: product.product.card_price_active,
+                  }))} em até {product.product.installment_max ?? 3}x de {formatCurrency(calcParcela(calcPrecoCartao(product.product.price, {
+                    cardFeePercent: product.product.card_fee_percent,
+                    maxInstallments: product.product.installment_max ?? 3,
+                    active: product.product.card_price_active,
+                  }), product.product.installment_max ?? 3))} no cartão
                 </Badge>
               )}
 

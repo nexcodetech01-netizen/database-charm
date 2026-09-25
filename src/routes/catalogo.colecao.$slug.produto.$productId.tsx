@@ -28,7 +28,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency, getInstallmentPlan } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
 import type { PublicProductDetail } from "@/features/catalog/types";
 import { loadPublicProduct } from "@/features/catalog/lib/public-product.functions";
 import {
@@ -242,7 +243,14 @@ function PublicProductPage() {
   }
 
   const installmentPlan = useMemo(
-    () => (data ? getInstallmentPlan(data.price) : null),
+    () => data?.card_price_active ? {
+      total: calcPrecoCartao(data.price, {
+        cardFeePercent: data.card_fee_percent,
+        maxInstallments: data.installment_max ?? 3,
+        active: data.card_price_active,
+      }),
+      count: data.installment_max ?? 3,
+    } : null,
     [data],
   );
 
@@ -397,7 +405,7 @@ function PublicProductPage() {
 
           <div className="mt-3 flex items-center gap-2">
             {data.show_price && (
-              <div className="text-3xl font-bold">{formatCurrency(data.price)}</div>
+              <div className="text-3xl font-bold">{formatCurrency(data.price)} à vista</div>
             )}
             {showAvailabilityBadge && (
               <AvailabilityBadge kind={availability} />
@@ -409,7 +417,7 @@ function PublicProductPage() {
               variant="secondary"
               className="mt-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
             >
-              {installmentPlan.label}
+              ou {formatCurrency(installmentPlan.total)} em até {installmentPlan.count}x de {formatCurrency(calcParcela(installmentPlan.total, installmentPlan.count))} no cartão
             </Badge>
           )}
           {data.show_price && data.pix_discount_percent && data.pix_discount_percent > 0 && (
