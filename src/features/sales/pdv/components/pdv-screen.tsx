@@ -233,6 +233,7 @@ export function PDVScreen({
         product_id: item.product_id,
         unit_price: item.unit_price,
         quantity: item.quantity,
+        discount: item.discount,
         position,
       })),
     [pdv.state.items],

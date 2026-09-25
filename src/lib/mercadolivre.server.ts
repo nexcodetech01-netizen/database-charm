@@ -435,13 +435,22 @@ export async function getIntegrationSummary(
   }
 
   const shouldAutoRefresh = options?.autoRefresh !== false && Boolean(options?.userId);
+  let transientRefreshFailure = false;
   if (shouldAutoRefresh && row.access_token_encrypted && row.refresh_token_encrypted) {
     const seconds = row.token_expires_at
       ? Math.floor((new Date(row.token_expires_at).getTime() - Date.now()) / 1000)
       : null;
     if (seconds !== null && seconds <= REFRESH_THRESHOLD_SECONDS) {
-      await ensureFreshAccessToken(supabase, companyId, options!.userId!);
-      row = (await readSummaryRow(supabase, companyId)) ?? row;
+      try {
+        await ensureFreshAccessToken(supabase, companyId, options?.userId ?? "");
+        row = (await readSummaryRow(supabase, companyId)) ?? row;
+      } catch (error) {
+        transientRefreshFailure = true;
+        console.warn(
+          "[mercadolivre] falha transitória no refresh do resumo; usando dados atuais",
+          error instanceof Error ? error.message : error,
+        );
+      }
     }
   }
 
@@ -454,7 +463,8 @@ export async function getIntegrationSummary(
   let status: MLIntegrationStatus = "disconnected";
   if (!hasCredentials) status = "disconnected";
   else if (!connected) status = "credentials_only";
-  else if (expiresInSeconds !== null && expiresInSeconds <= 0) status = "expired";
+  else if (expiresInSeconds !== null && expiresInSeconds <= 0 && !transientRefreshFailure) status = "expired";
+  else if (transientRefreshFailure) status = "connected";
   else if (expiresInSeconds !== null && expiresInSeconds < 60 * 60 * 24) status = "expiring_soon";
   else status = "connected";
 

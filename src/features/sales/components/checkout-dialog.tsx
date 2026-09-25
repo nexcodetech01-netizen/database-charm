@@ -60,7 +60,11 @@ import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
-import { calcParcela, calcTotalCartaoPdv } from "@/lib/pricing/card-price";
+import {
+  calcParcela,
+  calcTotalAvistaPdv,
+  calcTotalCartaoPdv,
+} from "@/lib/pricing/card-price";
 import {
   useCreateCreditSale,
   CREDIT_PAYMENT_METHOD_OPTIONS,
@@ -207,6 +211,7 @@ interface Props {
     product_id: string | null;
     unit_price: number;
     quantity: number;
+    discount: number;
     position: number;
   }>;
   onPdvPricingChange?: (pricing: { amount: number; method: UiCheckoutMethod; installments: number }) => void;
@@ -340,13 +345,7 @@ export function CheckoutDialog({
 
     const nextAmount = method === "credit_card" && cardPriceConfig?.active
       ? calcTotalCartaoPdv(pdvCashItems, discount ?? 0, shipping ?? 0, cardPriceConfig)
-      : Math.max(
-          0,
-          pdvCashItems.reduce(
-            (sum, item) => sum + item.unit_price * Number(item.quantity ?? 1),
-            0,
-          ) - Number(discount ?? 0) + Number(shipping ?? 0),
-        );
+      : calcTotalAvistaPdv(pdvCashItems, discount ?? 0, shipping ?? 0);
     setEffectiveAmount(nextAmount);
     onPdvPricingChange?.({ amount: nextAmount, method, installments });
 
@@ -377,6 +376,13 @@ export function CheckoutDialog({
 
   async function ensurePdvPricingReady(): Promise<boolean> {
     if (!pdvCashItems?.length) return true;
+    const key = pricingKey();
+    if (pricingErrorRef.current?.key === key) {
+      pricingErrorRef.current = null;
+      if (pricingRequestRef.current?.key === key) {
+        pricingRequestRef.current = null;
+      }
+    }
     try {
       await applyPdvPricing();
       return true;
