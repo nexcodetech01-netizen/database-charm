@@ -55,8 +55,6 @@ import {
   PDV_DISCOUNT_INPUT_ID,
 } from "../hooks/use-pdv-shortcuts";
 import { usePdvCatalogIndex } from "../hooks/use-pdv-catalog-index";
-import { usePdvUpsell } from "../hooks/use-pdv-upsell";
-import { PDVUpsellStrip } from "./pdv-upsell-strip";
 import { pdvCashBlockedAction } from "../lib/cash-access";
 
 // Componentes pesados ou utilizados apenas após eventos carregados sob demanda (Sprint RC.1.3).
@@ -146,7 +144,6 @@ export function PDVScreen({
   const catalog = usePdvCatalogIndex(companyId);
 
   const pdv = usePDV(companyId);
-  const upsell = usePdvUpsell(catalog.products, pdv.state.items);
   const [discountPolicy] = useDiscountPolicy(companyId);
   const {
     access,
@@ -229,6 +226,16 @@ export function PDVScreen({
   const effectiveActiveKey = useMemo(
     () => resolveActiveCartKey(pdv.state.items, activeKey),
     [pdv.state.items, activeKey],
+  );
+  const pdvCashItems = useMemo(
+    () =>
+      pdv.state.items.map((item, position) => ({
+        product_id: item.product_id,
+        unit_price: item.unit_price,
+        quantity: item.quantity,
+        position,
+      })),
+    [pdv.state.items],
   );
 
   // Estados para diálogos de item
@@ -547,14 +554,6 @@ export function PDVScreen({
               onEditNotes={setEditingNotesItem}
             />
 
-            {!cartLocked && (
-              <PDVUpsellStrip
-                key={upsell.forProductId ?? "none"}
-                suggestions={upsell.suggestions}
-                onAdd={handleAddProduct}
-              />
-            )}
-
             {pdv.stockIssues.length > 0 && (
               <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive">
                 Há {pdv.stockIssues.length} item(ns) com quantidade acima do
@@ -627,11 +626,7 @@ export function PDVScreen({
             amount={(pendingSale ?? completed)!.total}
             subtotal={pdv.totals.items_total}
             discount={pdv.state.discount}
-            pdvCashItems={pdv.state.items.map((item) => ({
-              product_id: item.product_id,
-              unit_price: item.original_unit_price ?? item.unit_price,
-              quantity: item.quantity,
-            }))}
+            pdvCashItems={pdvCashItems}
             onPaid={(info) =>
               handlePaid((pendingSale ?? completed)!.id, info?.method)
             }

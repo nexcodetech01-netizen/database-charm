@@ -203,7 +203,12 @@ interface Props {
   /** Informa ao formulário pai enquanto o rollback pending → draft está ativo. */
   onReturnToItemsStateChange?: (returning: boolean) => void;
   /** Itens do PDV com preço à vista, usados para persistir o valor efetivamente cobrado. */
-  pdvCashItems?: Array<{ product_id: string | null; unit_price: number; quantity: number }>;
+  pdvCashItems?: Array<{
+    product_id: string | null;
+    unit_price: number;
+    quantity: number;
+    position: number;
+  }>;
   onPdvPricingChange?: (pricing: { amount: number; method: UiCheckoutMethod; installments: number }) => void;
 }
 
@@ -255,6 +260,13 @@ export function CheckoutDialog({
   const confirmedRef = useRef(false);
   // Impede callbacks tardios de polling/realtime depois de "Voltar aos itens".
   const returningToItemsRef = useRef(false);
+  const initialPricingKey = `${saleId}:pix_manual:1`;
+  const lastAppliedPricingRef = useRef(initialPricingKey);
+  const pricingRequestRef = useRef<{
+    key: string;
+    promise: Promise<void>;
+  } | null>(null);
+  const pricingErrorRef = useRef<{ key: string; error: Error } | null>(null);
 
   // FIN-BAIXA — baixa financeira única (SettleTransactionDialog → RPC).
   const [settleTx, setSettleTx] = useState<FinancialTransaction | null>(null);
@@ -307,11 +319,27 @@ export function CheckoutDialog({
 
   useEffect(() => setEffectiveAmount(initialAmount), [initialAmount, saleId]);
 
-  useEffect(() => {
-    if (!open || !pdvCashItems?.length) return;
+  function pricingKey(): string {
+    const normalizedInstallments = method === "credit_card"
+      ? Math.max(1, Math.trunc(installments || 1))
+      : 1;
+    return `${saleId}:${method}:${normalizedInstallments}`;
+  }
+
+  function applyPdvPricing(): Promise<void> {
+    const key = pricingKey();
+    if (!pdvCashItems?.length || lastAppliedPricingRef.current === key) {
+      return Promise.resolve();
+    }
+    if (pricingRequestRef.current?.key === key) {
+      return pricingRequestRef.current.promise;
+    }
+    if (pricingErrorRef.current?.key === key) {
+      return Promise.reject(pricingErrorRef.current.error);
+    }
+
     const card = method === "credit_card" && cardPriceConfig?.active;
     const nextItems = pdvCashItems.map((item) => ({
-      product_id: item.product_id,
       unit_price: card && cardPriceConfig
         ? calcPrecoCartao(item.unit_price, cardPriceConfig)
         : item.unit_price,
@@ -323,15 +351,66 @@ export function CheckoutDialog({
     const nextAmount = Math.max(0, nextSubtotal - Number(discount ?? 0) + Number(shipping ?? 0));
     setEffectiveAmount(nextAmount);
     onPdvPricingChange?.({ amount: nextAmount, method, installments });
-    void supabase.rpc("apply_pdv_payment_pricing", {
-      _sale_id: saleId,
-      _payment_method: method,
-      _installments: installments,
-      _cash_items: pdvCashItems,
-    }).then(({ error }) => {
-      if (error) toast.error("Não foi possível atualizar o preço da venda.");
+
+    const previous = pricingRequestRef.current?.promise ?? Promise.resolve();
+    const promise = previous
+      .catch(() => undefined)
+      .then(async () => {
+        const { error } = await supabase.rpc("apply_pdv_payment_pricing", {
+          _sale_id: saleId,
+          _payment_method: method,
+          _installments: installments,
+          _cash_items: pdvCashItems,
+        });
+        if (error) throw new Error(error.message);
+        lastAppliedPricingRef.current = key;
+        pricingErrorRef.current = null;
+      })
+      .catch((error: unknown) => {
+        const normalized = error instanceof Error
+          ? error
+          : new Error("Não foi possível atualizar o preço da venda.");
+        pricingErrorRef.current = { key, error: normalized };
+        throw normalized;
+      });
+    pricingRequestRef.current = { key, promise };
+    return promise;
+  }
+
+  async function ensurePdvPricingReady(): Promise<boolean> {
+    if (!pdvCashItems?.length) return true;
+    try {
+      await applyPdvPricing();
+      return true;
+    } catch (error) {
+      toast.error("Não foi possível atualizar o preço da venda.", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+      return false;
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !open ||
+      !pdvCashItems?.length ||
+      confirmed ||
+      confirmedRef.current ||
+      showCompleted ||
+      (method === "credit_card" && !cardPriceConfig)
+    ) {
+      return;
+    }
+    if (lastAppliedPricingRef.current === pricingKey()) return;
+    void applyPdvPricing().catch((error: unknown) => {
+      toast.error("Não foi possível atualizar o preço da venda.", {
+        description: error instanceof Error ? error.message : undefined,
+      });
     });
-  }, [open, method, installments, pdvCashItems, cardPriceConfig, discount, shipping, saleId, onPdvPricingChange]);
+    // A chamada deve reagir somente à escolha de pagamento/parcelas e à
+    // disponibilidade inicial da configuração, nunca a renders do pai.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, method, installments, cardPriceConfig, confirmed, showCompleted, saleId]);
 
   const creditCardPreview = useMemo(() => {
     if (method !== "credit_card") return null;
@@ -450,6 +529,9 @@ export function CheckoutDialog({
       setCashReceivedStr("");
       setEntradaStr("");
       setAbsorbOverride(null);
+      lastAppliedPricingRef.current = `${saleId}:pix_manual:1`;
+      pricingRequestRef.current = null;
+      pricingErrorRef.current = null;
     }
   }, [open]);
 
@@ -876,6 +958,7 @@ export function CheckoutDialog({
       });
       return;
     }
+    if (!(await ensurePdvPricingReady())) return;
 
     // GROUP 1: À VISTA (BAIXA E CONCLUSÃO IMEDIATA)
     if (method === "pix_manual" || method === "cash" || method === "debit_card" || method === "credit_card") {
@@ -941,6 +1024,7 @@ export function CheckoutDialog({
   }
 
   async function handleConfirmCredit() {
+    if (!(await ensurePdvPricingReady())) return;
     const payload = {
       companyId,
       saleId,
