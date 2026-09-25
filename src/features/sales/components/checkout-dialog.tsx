@@ -339,7 +339,7 @@ export function CheckoutDialog({
     }
 
     const nextAmount = method === "credit_card" && cardPriceConfig?.active
-      ? calcTotalCartaoPdv(pdvCashItems, discount, shipping, cardPriceConfig)
+      ? calcTotalCartaoPdv(pdvCashItems, discount ?? 0, shipping ?? 0, cardPriceConfig)
       : Math.max(
           0,
           pdvCashItems.reduce(
