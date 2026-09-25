@@ -96,7 +96,7 @@ export async function exchangeCodeForToken(params: {
       },
       body: new URLSearchParams(payload),
     },
-    { integration: "mercadolivre:token", timeoutMs: 12_000, maxAttempts: 1 },
+    { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
   );
   const text = await res.text();
   
@@ -130,7 +130,9 @@ export async function refreshAccessToken(params: {
       },
       body,
     },
-    { integration: "mercadolivre:token", timeoutMs: 12_000, retryNonIdempotent: true },
+    // Refresh tokens são de uso único: nunca repetir automaticamente um POST
+    // cuja resposta pode ter se perdido após o provedor já o ter aceitado.
+    { integration: "mercadolivre:token", timeoutMs: 12_000, maxAttempts: 1 },
   );
   const text = await res.text();
   if (!res.ok) {
