@@ -60,7 +60,7 @@ import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
-import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
+import { calcParcela, calcTotalCartaoPdv } from "@/lib/pricing/card-price";
 import {
   useCreateCreditSale,
   CREDIT_PAYMENT_METHOD_OPTIONS,
@@ -338,17 +338,15 @@ export function CheckoutDialog({
       return Promise.reject(pricingErrorRef.current.error);
     }
 
-    const card = method === "credit_card" && cardPriceConfig?.active;
-    const nextItems = pdvCashItems.map((item) => ({
-      unit_price: card && cardPriceConfig
-        ? calcPrecoCartao(item.unit_price, cardPriceConfig)
-        : item.unit_price,
-    }));
-    const nextSubtotal = nextItems.reduce((sum, item, index) => {
-      const quantity = Number(pdvCashItems[index].quantity ?? 1);
-      return sum + item.unit_price * quantity;
-    }, 0);
-    const nextAmount = Math.max(0, nextSubtotal - Number(discount ?? 0) + Number(shipping ?? 0));
+    const nextAmount = method === "credit_card" && cardPriceConfig?.active
+      ? calcTotalCartaoPdv(pdvCashItems, discount, shipping, cardPriceConfig)
+      : Math.max(
+          0,
+          pdvCashItems.reduce(
+            (sum, item) => sum + item.unit_price * Number(item.quantity ?? 1),
+            0,
+          ) - Number(discount ?? 0) + Number(shipping ?? 0),
+        );
     setEffectiveAmount(nextAmount);
     onPdvPricingChange?.({ amount: nextAmount, method, installments });
 
