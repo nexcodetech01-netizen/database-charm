@@ -59,6 +59,8 @@ import { SettleTransactionDialog } from "@/features/finance/components/settle-tr
 import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
+import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
+import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
 import {
   useCreateCreditSale,
   CREDIT_PAYMENT_METHOD_OPTIONS,
@@ -200,6 +202,9 @@ interface Props {
   onContinueEditing?: () => void;
   /** Informa ao formulário pai enquanto o rollback pending → draft está ativo. */
   onReturnToItemsStateChange?: (returning: boolean) => void;
+  /** Itens do PDV com preço à vista, usados para persistir o valor efetivamente cobrado. */
+  pdvCashItems?: Array<{ product_id: string | null; unit_price: number }>;
+  onPdvPricingChange?: (pricing: { amount: number; method: UiCheckoutMethod; installments: number }) => void;
 }
 
 
@@ -231,6 +236,8 @@ export function CheckoutDialog({
   onNewSale,
   onContinueEditing,
   onReturnToItemsStateChange,
+  pdvCashItems,
+  onPdvPricingChange,
 }: Props) {
   const [method, setMethod] = useState<UiCheckoutMethod>("pix_manual");
   const [charge, setCharge] = useState<ChargeRow | null>(null);
@@ -280,6 +287,8 @@ export function CheckoutDialog({
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: bellaConfig } = useBellaPayConfig(companyId);
+  const { data: cardPriceConfig } = useCardPriceConfig(companyId);
+  const [effectiveAmount, setEffectiveAmount] = useState(amount);
 
   const [cardFixedFee] = useCardFixedFee(companyId);
   const { snapshots: feeSnapshots } = useBellaFeeCatalog(companyId);
@@ -290,10 +299,38 @@ export function CheckoutDialog({
   // Entrada parseada — nunca maior que o total, saldo nunca negativo.
   const entradaRaw = Number(entradaStr.replace(",", ".")) || 0;
   const entradaNegativa = entradaRaw < 0;
-  const entradaExcedeu = entradaRaw > amount;
-  const entradaValue = Math.min(Math.max(0, entradaRaw), amount);
-  const saldoValue = Math.max(0, amount - entradaValue);
-  const chargeableAmount = entradaValue > 0 ? saldoValue : amount;
+  const entradaExcedeu = entradaRaw > effectiveAmount;
+  const entradaValue = Math.min(Math.max(0, entradaRaw), effectiveAmount);
+  const saldoValue = Math.max(0, effectiveAmount - entradaValue);
+  const chargeableAmount = entradaValue > 0 ? saldoValue : effectiveAmount;
+
+  useEffect(() => setEffectiveAmount(amount), [amount, saleId]);
+
+  useEffect(() => {
+    if (!open || !pdvCashItems?.length) return;
+    const card = method === "credit_card" && cardPriceConfig?.active;
+    const nextItems = pdvCashItems.map((item) => ({
+      product_id: item.product_id,
+      unit_price: card && cardPriceConfig
+        ? calcPrecoCartao(item.unit_price, cardPriceConfig)
+        : item.unit_price,
+    }));
+    const nextSubtotal = nextItems.reduce((sum, item, index) => {
+      const quantity = Number((pdvCashItems[index] as { quantity?: number }).quantity ?? 1);
+      return sum + item.unit_price * quantity;
+    }, 0);
+    const nextAmount = Math.max(0, nextSubtotal - Number(discount ?? 0) + Number(shipping ?? 0));
+    setEffectiveAmount(nextAmount);
+    onPdvPricingChange?.({ amount: nextAmount, method, installments });
+    void supabase.rpc("apply_pdv_payment_pricing", {
+      _sale_id: saleId,
+      _payment_method: method,
+      _installments: installments,
+      _cash_items: pdvCashItems,
+    }).then(({ error }) => {
+      if (error) toast.error("Não foi possível atualizar o preço da venda.");
+    });
+  }, [open, method, installments, pdvCashItems, cardPriceConfig, discount, shipping, saleId, onPdvPricingChange]);
 
   const creditCardPreview = useMemo(() => {
     if (method !== "credit_card") return null;
@@ -366,14 +403,14 @@ export function CheckoutDialog({
         pixKey: key,
         recipientName: companyQuery.data?.pix_recipient_name ?? companyQuery.data?.name ?? "RECEBEDOR",
         recipientCity: companyQuery.data?.pix_recipient_city ?? "BRASIL",
-        amount,
+        effectiveAmount,
         txid: saleNumber?.replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || undefined,
         description: saleNumber ? `Venda ${saleNumber}` : undefined,
       });
     } catch {
       return null;
     }
-  }, [method, companyQuery.data, amount, saleNumber]);
+  }, [method, companyQuery.data, effectiveAmount, saleNumber]);
 
   // QR Code (data URL PNG) — regenerado quando o payload muda.
   const [ownPixQrDataUrl, setOwnPixQrDataUrl] = useState<string | null>(null);
