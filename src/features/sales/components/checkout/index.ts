@@ -4,6 +4,7 @@ export { CHECKOUT_METHODS, type CheckoutMethodOption } from "./methods";
 export {
   RECEIVED_CHARGE_STATUSES,
   isChargeReceived,
+  toSalePaymentMethod,
   type BillingType,
   type ChargeRow,
   type UiCheckoutMethod,
