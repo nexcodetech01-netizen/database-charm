@@ -37,6 +37,16 @@ import {
 import { useBellaSales } from "@/features/accounting-ai/sales/use-bella-sales";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
+/** Erro 23514 (check_violation) vindo do Postgres, direto ou em `cause`. */
+function isCheckViolation(error: unknown): boolean {
+  const code = (value: unknown) =>
+    value && typeof value === "object" && "code" in value
+      ? (value as { code?: unknown }).code
+      : undefined;
+  const cause = error instanceof Error ? error.cause : undefined;
+  return code(error) === "23514" || code(cause) === "23514";
+}
+
 export const Route = createFileRoute("/_authenticated/vendas")({
   beforeLoad: requirePermission("sales.view"),
   component: SalesPage,
@@ -228,6 +238,17 @@ function SalesPage() {
         toast.error(FISCAL_DELETE_BLOCKED_MESSAGE, {
           description:
             "Use 'Cancelar venda' e, se necessário, cancele a NF-e pelo módulo fiscal.",
+        });
+        return;
+      }
+      // trg_guard_sale_soft_delete: venda com pagamento, caixa ou crediário.
+      if (isCheckViolation(e) && s.status !== "cancelled") {
+        toast.error("Esta venda não pode ser excluída", {
+          description: e instanceof Error ? e.message : undefined,
+          action: {
+            label: "Cancelar venda",
+            onClick: () => void handleStatus(s, "cancelled", "cancelada"),
+          },
         });
         return;
       }

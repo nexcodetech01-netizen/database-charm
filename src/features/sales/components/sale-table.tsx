@@ -192,17 +192,24 @@ export function SaleTable({
                             <Ban className="mr-2 h-4 w-4" /> Cancelar
                           </DropdownMenuItem>
                         ) : null}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive font-medium"
-                          onClick={() => {
-                            if (confirm(`Deseja excluir permanentemente esta venda/teste "${s.number}"?`)) {
-                              onDelete(s);
-                            }
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Venda
-                        </DropdownMenuItem>
+                        {/* Venda paga não vai para a lixeira: o caminho é "Cancelar",
+                            que estorna financeiro, caixa e estoque. O banco também
+                            bloqueia (trg_guard_sale_soft_delete). */}
+                        {s.status !== "paid" && s.status !== "partially_paid" ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive font-medium"
+                              onClick={() => {
+                                if (confirm(`Excluir a venda "${s.number}"? Ela vai para a lixeira.`)) {
+                                  onDelete(s);
+                                }
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Venda
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
