@@ -55,20 +55,12 @@ export const productImagesService = {
 
   /** Insere uma nova foto principal e preserva a ordem das fotos existentes. */
   async promoteNewMainImage(companyId: string, productId: string, path: string) {
-    const { data: images, error: listError } = await supabase
-      .from("product_images")
-      .select("id, position")
-      .eq("product_id", productId)
-      .order("position", { ascending: false });
-    if (listError) throw listError;
-
-    for (const image of images ?? []) {
-      const { error } = await supabase
-        .from("product_images")
-        .update({ position: Number(image.position ?? 0) + 1 })
-        .eq("id", image.id);
-      if (error) throw error;
-    }
+    // Desloca todas as fotos numa única instrução no banco (antes: um
+    // UPDATE por foto, em sequência).
+    const { error } = await supabase.rpc("shift_product_image_positions", {
+      _product_id: productId,
+    });
+    if (error) throw error;
 
     return this.createRecord(companyId, productId, path, 0);
   },

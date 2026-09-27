@@ -8216,6 +8216,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      shift_product_image_positions: {
+        Args: { _product_id: string }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       simples_compute: {
