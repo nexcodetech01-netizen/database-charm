@@ -14,7 +14,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { authService } from "@/features/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMobileNav } from "./mobile-nav-context";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useEffectEvent, useState, useRef } from "react";
 import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
@@ -206,134 +206,148 @@ export function Topbar() {
     }
   };
 
+  // 1) Hidratação das notificações persistidas — só quando a empresa muda.
+  //    Antes rodava junto com a assinatura abaixo e era refeita (com nova
+  //    chamada ao servidor) sempre que as configurações de notificação
+  //    carregavam ou mudavam.
+  useEffect(() => {
+    if (!companyId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = (await getUnreadFn({ data: { companyId } })) as any;
+        const unread = Array.isArray(response) ? response : [];
+        if (cancelled || unread.length === 0) return;
+
+        addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
+        for (const notif of unread) {
+          const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
+          if (!meta) continue;
+          const severity = (notif.metadata as any)?.severity || meta.defaultSeverity;
+          bellaEventRegistry.upsert({
+            id: notif.id,
+            tenantId: notif.company_id,
+            type: notif.event_type as any,
+            module: meta.module,
+            severity,
+            priority: priorityFromSeverity(severity),
+            title: notif.title,
+            description: notif.message,
+            payload: notif.metadata || {},
+            createdAt: new Date(notif.created_at),
+            source: "persistence:hydration",
+          });
+        }
+        updateCount();
+      } catch (err) {
+        console.warn("[Topbar] Erro na hidratação de notificações:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // updateCount/addLog são estáveis o suficiente; a hidratação só deve
+    // acontecer ao trocar de empresa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, getUnreadFn]);
+
+  // Handlers lidos sempre com as settings/rotas mais recentes, sem precisar
+  // refazer as assinaturas abaixo (React 19.2 — useEffectEvent).
+  const onEventCreated = useEffectEvent((event: BellaEvent) => {
+    // No navegador, o Topbar cuida da persistência.
+    const payload = event.payload as any;
+    saveNotificationFn({
+      data: {
+        companyId: event.tenantId,
+        eventType: event.type,
+        title: event.title,
+        message: event.description,
+        referenceId: payload?.entityId || payload?.ticketId || null,
+        metadata: payload,
+      },
+    }).catch((err) => {
+      console.warn("[Topbar] Falha na persistência via hook:", err);
+    });
+
+    updateCount();
+
+    const config = settings[event.type];
+    if (!config) return;
+
+    const ticketId: string | undefined = payload?.ticketId;
+    if (ticketId && notifiedIdsRef.current.has(ticketId)) return;
+    if (ticketId) notifiedIdsRef.current.add(ticketId);
+
+    if (config.sound && audioRef.current) {
+      audioRef.current.play().catch((err) => {
+        addLog('[TOPBAR-NOTIF]', `falha ao tocar som (provável bloqueio de autoplay do navegador): ${err?.message || err}`);
+      });
+    }
+
+    const title = event.title || "Nova notificação";
+    const description = event.description || "";
+    const target = ticketId ? "/comercial/inbox-whatsapp" : routeForEvent(event);
+
+    toast.success(title, {
+      description,
+      action: {
+        label: "Ver",
+        onClick: () => {
+          void markAlertAsRead(event);
+          navigate({ to: target });
+        },
+      },
+    });
+
+    if (config.browser) {
+      notify(title, {
+        body: description,
+        tag: ticketId || undefined,
+        type: event.type,
+      } as any);
+    }
+  });
+
+  const onInboxMessage = useEffectEvent((msg: any) => {
+    if (msg.type === "CATALOG_ORDER_RECEIVED") {
+      updateCount();
+    } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
+      bellaEventRegistry.resolveByPayload({
+        tenantId: companyId || "",
+        type: "catalog.order.received",
+        payload: { entityId: msg.payload.ticketId },
+      });
+      updateCount();
+    } else if (msg.type === "SYNC_COUNT") {
+      setCatalogOrdersCount(msg.payload.count);
+    }
+  });
+
+  const onRegistryResolved = useEffectEvent(() => updateCount());
+
+  // 2) Assinaturas (registry + BroadcastChannel) — só quando a empresa muda.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     bellaEventRegistry.start();
+    onRegistryResolved();
 
-    const hydrateRegistry = async () => {
-      if (!companyId) return;
-
-      try {
-        const unreadResponse = (await getUnreadFn({
-          data: { companyId: companyId }
-        })) as any;
-
-        const unread = Array.isArray(unreadResponse) ? unreadResponse : [];
-
-        if (unread && unread.length > 0) {
-          addLog('[TOPBAR-NOTIF]', `hydrating registry with ${unread.length} persistent notifications`);
-
-          unread.forEach((notif: any) => {
-            const meta = (BELLA_EVENT_CATALOG as any)[notif.event_type];
-            if (!meta) return;
-
-            const severity = (notif.metadata as any)?.severity || meta.defaultSeverity;
-
-            bellaEventRegistry.upsert({
-              id: notif.id,
-              tenantId: notif.company_id,
-              type: notif.event_type as any,
-              module: meta.module,
-              severity: severity,
-              priority: priorityFromSeverity(severity),
-              title: notif.title,
-              description: notif.message,
-              payload: notif.metadata || {},
-              createdAt: new Date(notif.created_at),
-              source: "persistence:hydration"
-            });
-          });
-
-          updateCount();
-        }
-      } catch (err) {
-        console.warn("[Topbar] Erro na hidratação de notificações:", err);
-      }
-    };
-
-    updateCount();
-    void hydrateRegistry();
-
-    // Listener para o Registry: no navegador, o Topbar cuida da persistência
     const unsubscribe = bellaEventRegistry.subscribe((entry, event) => {
-      if (entry.action === "created") {
-        // CORREÇÃO: Persiste no banco usando o hook do componente
-        const payload = event.payload as any;
-        saveNotificationFn({
-          data: {
-            companyId: event.tenantId,
-            eventType: event.type,
-            title: event.title,
-            message: event.description,
-            referenceId: payload?.entityId || payload?.ticketId || null,
-            metadata: payload
-          }
-        }).catch(err => {
-          console.warn("[Topbar] Falha na persistência via hook:", err);
-        });
-
-        const ticketId = (event.payload as any)?.ticketId;
-        updateCount();
-
-        const config = settings[event.type];
-        if (!config) return;
-
-        if (ticketId && notifiedIdsRef.current.has(ticketId)) return;
-        if (ticketId) notifiedIdsRef.current.add(ticketId);
-
-        if (config.sound && audioRef.current) {
-          audioRef.current.play().catch((err) => {
-            addLog('[TOPBAR-NOTIF]', `falha ao tocar som (provável bloqueio de autoplay do navegador): ${err?.message || err}`);
-          });
-        }
-
-        const title = event.title || "Nova notificação";
-        const description = event.description || "";
-
-        toast.success(title, {
-          description,
-          action: ticketId
-            ? { label: "Ver", onClick: () => { markAlertAsRead(event); navigate({ to: "/comercial/inbox-whatsapp" }); } }
-            : { label: "Ver", onClick: () => { markAlertAsRead(event); navigate({ to: routeForEvent(event) }); } }
-        });
-
-        if (config.browser) {
-          notify(title, {
-            body: description,
-            tag: ticketId || undefined,
-            type: event.type
-          } as any);
-        }
-      } else if (entry.action === "resolved" || entry.action === "expired") {
-        updateCount();
-      }
+      if (entry.action === "created") onEventCreated(event);
+      else if (entry.action === "resolved" || entry.action === "expired") onRegistryResolved();
     });
 
     const channel = getInboxChannel();
-    const handleMessage = (event: MessageEvent) => {
-      const msg = event.data;
-      if (msg.type === "CATALOG_ORDER_RECEIVED") {
-        updateCount();
-      } else if (msg.type === "CATALOG_ORDER_RESOLVED") {
-        bellaEventRegistry.resolveByPayload({
-          tenantId: companyId || "",
-          type: "catalog.order.received",
-          payload: { entityId: msg.payload.ticketId }
-        });
-        updateCount();
-      } else if (msg.type === "SYNC_COUNT") {
-        setCatalogOrdersCount(msg.payload.count);
-      }
-    };
-
+    const handleMessage = (event: MessageEvent) => onInboxMessage(event.data);
     channel?.addEventListener("message", handleMessage);
 
     return () => {
       unsubscribe();
       channel?.removeEventListener("message", handleMessage);
     };
-  }, [companyId, settings, navigate, notify, getUnreadFn, saveNotificationFn]);
+  }, [companyId]);
 
   const displayName = (user?.user_metadata?.full_name as string | undefined) || user?.email || "Você";
   const initials = displayName.split(" ").slice(0, 2).map((s) => s[0]?.toUpperCase()).join("") || "U";
