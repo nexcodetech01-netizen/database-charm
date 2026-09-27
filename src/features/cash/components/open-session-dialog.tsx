@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { useOpenCash } from "../hooks/use-cash";
 
 interface Props {
@@ -31,15 +32,16 @@ export function OpenSessionDialog({
   operatorName,
   onOpened,
 }: Props) {
-  const [balance, setBalance] = useState("0");
+  // Valor numérico direto: o BRLCurrencyInput cuida da formatação (R$ 0,00),
+  // então não há parsing de texto que possa falhar com "R$" ou milhar.
+  const [balance, setBalance] = useState(0);
   const [note, setNote] = useState("");
   const { mutateAsync, isPending } = useOpenCash();
 
   const now = new Date();
 
   async function submit() {
-    const value = Number(balance.replace(",", "."));
-    if (Number.isNaN(value) || value < 0) {
+    if (!Number.isFinite(balance) || balance < 0) {
       toast.error("Saldo inicial inválido.");
       return;
     }
@@ -48,10 +50,10 @@ export function OpenSessionDialog({
         companyId,
         operatorId,
         operatorName,
-        openingBalance: value,
+        openingBalance: balance,
         openingNote: note.trim() || null,
       });
-      setBalance("0");
+      setBalance(0);
       setNote("");
       onOpenChange(false);
       onOpened?.();
@@ -82,13 +84,11 @@ export function OpenSessionDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="opening-balance">Troco inicial (R$)</Label>
-            <Input
+            <BRLCurrencyInput
               id="opening-balance"
-              inputMode="decimal"
               value={balance}
-              onChange={(e) => setBalance(e.target.value)}
+              onValueChange={setBalance}
               onFocus={(e) => e.currentTarget.select()}
-              placeholder="0,00"
             />
             <p className="text-xs text-muted-foreground">
               Informe apenas o dinheiro físico disponível para troco. Se não houver
