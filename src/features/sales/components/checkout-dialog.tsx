@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import QRCode from "qrcode";
 import {
   AlertCircle,
   ArrowLeft,
@@ -25,13 +24,20 @@ import {
   type ChargeRow,
   type UiCheckoutMethod,
 } from "./checkout";
-import { generatePixBRCode } from "../lib/pix-brcode";
 import {
   buildPixMessage,
   copyToClipboard,
   openWhatsApp,
-  toWhatsAppNumber,
 } from "../lib/checkout-messages";
+import {
+  cashGuardQueryKey,
+  useCashSessionGuard,
+  useChargeRealtime,
+  useCheckoutContacts,
+  useCheckoutPricing,
+  useOwnPix,
+  useSalePaidRealtime,
+} from "../hooks/checkout";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -64,11 +70,7 @@ import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
-import {
-  calcParcela,
-  calcTotalAvistaPdv,
-  calcTotalCartaoPdv,
-} from "@/lib/pricing/card-price";
+import { calcParcela } from "@/lib/pricing/card-price";
 import {
   useCreateCreditSale,
   CREDIT_PAYMENT_METHOD_OPTIONS,
@@ -157,19 +159,10 @@ export function CheckoutDialog({
 
   // PDV-010 — parcelamento (apenas cartão de crédito). Padrão: 1x.
   const [installments, setInstallments] = useState<number>(1);
-  const [effectiveAmount, setEffectiveAmount] = useState(initialAmount);
-  const amount = effectiveAmount;
   // BUG-001 — guarda por ref evita re-entrada por stale closure no polling.
   const confirmedRef = useRef(false);
   // Impede callbacks tardios de polling/realtime depois de "Voltar aos itens".
   const returningToItemsRef = useRef(false);
-  const initialPricingKey = `${saleId}:pix_manual:1`;
-  const lastAppliedPricingRef = useRef(initialPricingKey);
-  const pricingRequestRef = useRef<{
-    key: string;
-    promise: Promise<void>;
-  } | null>(null);
-  const pricingErrorRef = useRef<{ key: string; error: Error } | null>(null);
 
   // FIN-BAIXA — baixa financeira única (SettleTransactionDialog → RPC).
   const [settleTx, setSettleTx] = useState<FinancialTransaction | null>(null);
@@ -178,12 +171,6 @@ export function CheckoutDialog({
   // FIN-001 — Dinheiro: valor recebido para cálculo de troco.
   const [cashReceivedStr, setCashReceivedStr] = useState<string>("");
   
-  // Efeito para preencher automaticamente o valor recebido em Dinheiro
-  useEffect(() => {
-    if (method === "cash" && !confirmed && !showCompleted) {
-      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    }
-  }, [method, amount, confirmed, showCompleted, setCashReceivedStr]);
 
   // FIN-001 — Entrada opcional (parcial): quando > 0, a cobrança é gerada
   // apenas pelo saldo restante, com vencimento configurável.
@@ -212,107 +199,36 @@ export function CheckoutDialog({
   const absorb =
     absorbOverride ?? Boolean(bellaConfig?.credit_card_absorb_fee);
 
+  const { amount, ensurePricingReady } = useCheckoutPricing({
+    open,
+    saleId,
+    initialAmount,
+    method,
+    installments,
+    discount,
+    shipping,
+    pdvCashItems,
+    cardPriceConfig,
+    onPdvPricingChange,
+    confirmed,
+    confirmedRef,
+    showCompleted,
+  });
+
+  // Efeito para preencher automaticamente o valor recebido em Dinheiro
+  useEffect(() => {
+    if (method === "cash" && !confirmed && !showCompleted) {
+      setCashReceivedStr(amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [method, amount, confirmed, showCompleted, setCashReceivedStr]);
+
   // Entrada parseada — nunca maior que o total, saldo nunca negativo.
   const entradaRaw = Number(entradaStr.replace(",", ".")) || 0;
   const entradaNegativa = entradaRaw < 0;
-  const entradaExcedeu = entradaRaw > effectiveAmount;
-  const entradaValue = Math.min(Math.max(0, entradaRaw), effectiveAmount);
-  const saldoValue = Math.max(0, effectiveAmount - entradaValue);
-  const chargeableAmount = entradaValue > 0 ? saldoValue : effectiveAmount;
-
-  useEffect(() => setEffectiveAmount(initialAmount), [initialAmount, saleId]);
-
-  function pricingKey(): string {
-    const normalizedInstallments = method === "credit_card"
-      ? Math.max(1, Math.trunc(installments || 1))
-      : 1;
-    return `${saleId}:${method}:${normalizedInstallments}`;
-  }
-
-  function applyPdvPricing(): Promise<void> {
-    const key = pricingKey();
-    if (!pdvCashItems?.length || lastAppliedPricingRef.current === key) {
-      return Promise.resolve();
-    }
-    if (pricingRequestRef.current?.key === key) {
-      return pricingRequestRef.current.promise;
-    }
-    if (pricingErrorRef.current?.key === key) {
-      return Promise.reject(pricingErrorRef.current.error);
-    }
-
-    const nextAmount = method === "credit_card" && cardPriceConfig?.active
-      ? calcTotalCartaoPdv(pdvCashItems, discount ?? 0, shipping ?? 0, cardPriceConfig)
-      : calcTotalAvistaPdv(pdvCashItems, discount ?? 0, shipping ?? 0);
-    setEffectiveAmount(nextAmount);
-    onPdvPricingChange?.({ amount: nextAmount, method, installments });
-
-    const previous = pricingRequestRef.current?.promise ?? Promise.resolve();
-    const promise = previous
-      .catch(() => undefined)
-      .then(async () => {
-        const { error } = await supabase.rpc("apply_pdv_payment_pricing", {
-          _sale_id: saleId,
-          _payment_method: toSalePaymentMethod(method),
-          _installments: installments,
-          _cash_items: pdvCashItems,
-        });
-        if (error) throw new Error(error.message);
-        lastAppliedPricingRef.current = key;
-        pricingErrorRef.current = null;
-      })
-      .catch((error: unknown) => {
-        const normalized = error instanceof Error
-          ? error
-          : new Error("Não foi possível atualizar o preço da venda.");
-        pricingErrorRef.current = { key, error: normalized };
-        throw normalized;
-      });
-    pricingRequestRef.current = { key, promise };
-    return promise;
-  }
-
-  async function ensurePdvPricingReady(): Promise<boolean> {
-    if (!pdvCashItems?.length) return true;
-    const key = pricingKey();
-    if (pricingErrorRef.current?.key === key) {
-      pricingErrorRef.current = null;
-      if (pricingRequestRef.current?.key === key) {
-        pricingRequestRef.current = null;
-      }
-    }
-    try {
-      await applyPdvPricing();
-      return true;
-    } catch (error) {
-      toast.error("Não foi possível atualizar o preço da venda.", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-      return false;
-    }
-  }
-
-  useEffect(() => {
-    if (
-      !open ||
-      !pdvCashItems?.length ||
-      confirmed ||
-      confirmedRef.current ||
-      showCompleted ||
-      (method === "credit_card" && !cardPriceConfig)
-    ) {
-      return;
-    }
-    if (lastAppliedPricingRef.current === pricingKey()) return;
-    void applyPdvPricing().catch((error: unknown) => {
-      toast.error("Não foi possível atualizar o preço da venda.", {
-        description: error instanceof Error ? error.message : undefined,
-      });
-    });
-    // A chamada deve reagir somente à escolha de pagamento/parcelas e à
-    // disponibilidade inicial da configuração, nunca a renders do pai.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, method, installments, cardPriceConfig, confirmed, showCompleted, saleId]);
+  const entradaExcedeu = entradaRaw > amount;
+  const entradaValue = Math.min(Math.max(0, entradaRaw), amount);
+  const saldoValue = Math.max(0, amount - entradaValue);
+  const chargeableAmount = entradaValue > 0 ? saldoValue : amount;
 
   const creditCardPreview = useMemo(() => {
     if (method !== "credit_card") return null;
@@ -328,91 +244,18 @@ export function CheckoutDialog({
 
 
 
-  // Dados do cliente (nome/telefone) para composição das mensagens de compartilhamento.
-  const customerQuery = useQuery({
-    queryKey: ["checkout-customer", customerId],
-    enabled: open && !!customerId,
-    staleTime: 60_000,
-    queryFn: async () => {
-      if (!customerId) return null;
-      const { data, error } = await supabase
-        .from("customers")
-        .select("name,phone,whatsapp")
-        .eq("id", customerId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as { name: string | null; phone: string | null; whatsapp: string | null } | null;
-    },
+  const { customerName, whatsappNumber, company, companyName } = useCheckoutContacts({
+    open,
+    customerId,
+    companyId,
   });
 
-  // Nome da empresa + dados PIX Próprio para saudação/geração do BR Code.
-  const companyQuery = useQuery({
-    queryKey: ["checkout-company", companyId],
-    enabled: open && !!companyId,
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select(
-          "name,pix_key,pix_key_type,pix_recipient_name,pix_recipient_city",
-        )
-        .eq("id", companyId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as {
-        name: string | null;
-        pix_key: string | null;
-        pix_key_type: string | null;
-        pix_recipient_name: string | null;
-        pix_recipient_city: string | null;
-      } | null;
-    },
+  const { payload: ownPixPayload, qrDataUrl: ownPixQrDataUrl } = useOwnPix({
+    enabled: method === "pix_manual",
+    company,
+    amount,
+    saleNumber,
   });
-
-  const customerName = customerQuery.data?.name ?? null;
-  const customerPhone =
-    customerQuery.data?.whatsapp ?? customerQuery.data?.phone ?? null;
-  const whatsappNumber = toWhatsAppNumber(customerPhone);
-  const companyName = companyQuery.data?.name ?? null;
-
-  // PIX Próprio — payload BR Code (copia-e-cola) gerado a partir da chave do lojista.
-  const ownPixPayload = useMemo(() => {
-    if (method !== "pix_manual") return null;
-    const key = companyQuery.data?.pix_key?.trim();
-    if (!key) return null;
-    try {
-      return generatePixBRCode({
-        pixKey: key,
-        recipientName: companyQuery.data?.pix_recipient_name ?? companyQuery.data?.name ?? "RECEBEDOR",
-        recipientCity: companyQuery.data?.pix_recipient_city ?? "BRASIL",
-        amount,
-        txid: saleNumber?.replace(/[^A-Za-z0-9]/g, "").slice(0, 25) || undefined,
-        description: saleNumber ? `Venda ${saleNumber}` : undefined,
-      });
-    } catch {
-      return null;
-    }
-  }, [method, companyQuery.data, amount, saleNumber]);
-
-  // QR Code (data URL PNG) — regenerado quando o payload muda.
-  const [ownPixQrDataUrl, setOwnPixQrDataUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    if (!ownPixPayload) {
-      setOwnPixQrDataUrl(null);
-      return;
-    }
-    QRCode.toDataURL(ownPixPayload, { margin: 1, width: 256, errorCorrectionLevel: "M" })
-      .then((url) => {
-        if (!cancelled) setOwnPixQrDataUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setOwnPixQrDataUrl(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ownPixPayload]);
 
 
 
@@ -431,9 +274,6 @@ export function CheckoutDialog({
       setCashReceivedStr("");
       setEntradaStr("");
       setAbsorbOverride(null);
-      lastAppliedPricingRef.current = `${saleId}:pix_manual:1`;
-      pricingRequestRef.current = null;
-      pricingErrorRef.current = null;
     }
   }, [open]);
 
@@ -457,42 +297,7 @@ export function CheckoutDialog({
     !confirmed;
 
   // Realtime da cobrança — atualiza status/QR/URL sem polling.
-  useEffect(() => {
-    if (!shouldPoll || !charge?.id) return;
-    const chargeId = charge.id;
-    const channel = supabase
-      .channel(`checkout-charge-${chargeId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "bella_pay_charges",
-          filter: `id=eq.${chargeId}`,
-        },
-        (payload) => {
-          const next = (payload.new ?? {}) as Partial<ChargeRow>;
-          setCharge((prev) => {
-            if (!prev) return prev;
-            if (
-              prev.status === next.status &&
-              prev.invoice_url === next.invoice_url &&
-              prev.payment_link === next.payment_link &&
-              prev.pix_qr_code === next.pix_qr_code &&
-              prev.pix_payload === next.pix_payload &&
-              prev.billing_type === next.billing_type
-            ) {
-              return prev;
-            }
-            return { ...prev, ...next } as ChargeRow;
-          });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [shouldPoll, charge?.id]);
+  useChargeRealtime(shouldPoll ? (charge?.id ?? null) : null, setCharge);
 
 
 
@@ -500,65 +305,17 @@ export function CheckoutDialog({
   // o operador está no checkout, bloqueamos qualquer nova ação de finalização.
   // O guard do banco também recusaria (trg_enforce_sale_open_cash_upd), mas
   // aqui damos feedback imediato e evitamos a chamada à API do Asaas.
-  const { data: cashStillOpen } = useQuery({
-    queryKey: ["checkout", "cash-open", saleId],
-    enabled: open && !confirmed,
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-    queryFn: async () => {
-      const { data: s, error } = await supabase
-        .from("sales")
-        .select("cash_session_id")
-        .eq("id", saleId)
-        .maybeSingle();
-      if (error) throw error;
-      if (!s?.cash_session_id) return false;
-      const { data: sess, error: e2 } = await supabase
-        .from("cash_sessions")
-        .select("status")
-        .eq("id", s.cash_session_id)
-        .maybeSingle();
-      if (e2) throw e2;
-      return sess?.status === "open";
-    },
-  });
-  const cashClosed = cashStillOpen === false;
+  const cashClosed = useCashSessionGuard(saleId, open && !confirmed);
 
 
   // BUG-002 (Payment Link) — Realtime como caminho preferencial. Evita a
   // janela de até 3s do poll, e é praticamente instantâneo quando o
   // webhook grava sales.status='paid'.
-  useEffect(() => {
-    if (!open || !saleId || confirmed) return;
-    const channel = supabase
-      .channel(`checkout-sale-${saleId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "sales",
-          filter: `id=eq.${saleId}`,
-        },
-        (payload) => {
-          const next = (payload.new ?? {}) as { status?: string };
-          if (
-            next.status === "paid" &&
-            !confirmedRef.current &&
-            !returningToItemsRef.current
-          ) {
-            onWebhookConfirmed();
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-    // onWebhookConfirmed é estável o suficiente (usa refs); não incluir
-    // para evitar re-subscribe a cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, saleId, confirmed]);
+  useSalePaidRealtime(saleId, open && !confirmed, () => {
+    if (!confirmedRef.current && !returningToItemsRef.current) {
+      void onWebhookConfirmed();
+    }
+  });
 
   /**
    * Persiste no cabeçalho da venda o meio de pagamento efetivo e o número
@@ -792,8 +549,7 @@ export function CheckoutDialog({
 
     returningToItemsRef.current = true;
     onReturnToItemsStateChange?.(true);
-    void qc.cancelQueries({ queryKey: ["checkout", "sale-poll", saleId] });
-    void qc.cancelQueries({ queryKey: ["checkout", "cash-open", saleId] });
+    void qc.cancelQueries({ queryKey: cashGuardQueryKey(saleId) });
 
     returnToSaleItems({
       prepareEditor: onContinueEditing,
@@ -846,7 +602,7 @@ export function CheckoutDialog({
       });
       return;
     }
-    if (!(await ensurePdvPricingReady())) return;
+    if (!(await ensurePricingReady())) return;
 
     // GROUP 1: À VISTA (BAIXA E CONCLUSÃO IMEDIATA)
     if (method === "pix_manual" || method === "cash" || method === "debit_card" || method === "credit_card") {
@@ -912,7 +668,7 @@ export function CheckoutDialog({
   }
 
   async function handleConfirmCredit() {
-    if (!(await ensurePdvPricingReady())) return;
+    if (!(await ensurePricingReady())) return;
     const payload = {
       companyId,
       saleId,
