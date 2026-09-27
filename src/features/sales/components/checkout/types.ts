@@ -26,3 +26,12 @@ export const RECEIVED_CHARGE_STATUSES: ReadonlySet<string> = new Set([
 export function isChargeReceived(status: string | null | undefined): boolean {
   return RECEIVED_CHARGE_STATUSES.has(String(status));
 }
+
+/**
+ * Converte o método da UI para o valor aceito em `sales.payment_method`.
+ * "boleto" é só uma variação visual do link de pagamento (billingType
+ * UNDEFINED) e não existe na constraint `sales_payment_method_check`.
+ */
+export function toSalePaymentMethod(method: UiCheckoutMethod): CheckoutMethod {
+  return method === "boleto" ? "payment_link" : method;
+}

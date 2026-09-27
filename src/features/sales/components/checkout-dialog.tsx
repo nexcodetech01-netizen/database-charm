@@ -20,6 +20,7 @@ import {
   ChargeView,
   SummaryLine,
   isChargeReceived,
+  toSalePaymentMethod,
   type BillingType,
   type ChargeRow,
   type UiCheckoutMethod,
@@ -252,7 +253,7 @@ export function CheckoutDialog({
       .then(async () => {
         const { error } = await supabase.rpc("apply_pdv_payment_pricing", {
           _sale_id: saleId,
-          _payment_method: method,
+          _payment_method: toSalePaymentMethod(method),
           _installments: installments,
           _cash_items: pdvCashItems,
         });
@@ -568,15 +569,7 @@ export function CheckoutDialog({
   async function persistPaymentSelection() {
     try {
       const paymentMethod =
-        method === "pending_payment"
-          ? null
-          : method === "cash"
-            ? "cash"
-            : method === "debit_card"
-              ? "debit_card"
-              : method === "credit_card"
-                ? "credit_card"
-                : method;
+        method === "pending_payment" ? null : toSalePaymentMethod(method);
       const inst = method === "credit_card" ? Math.max(1, Math.trunc(installments || 1)) : 1;
       await supabase
         .from("sales")
