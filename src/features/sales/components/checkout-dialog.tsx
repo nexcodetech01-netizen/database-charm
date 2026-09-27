@@ -1,32 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import QRCode from "qrcode";
-import { refreshPixQrCode } from "@/features/bella-pay/lib/bella-pay.functions";
 import {
   AlertCircle,
-  Banknote,
-  Barcode,
+  ArrowLeft,
   CheckCircle2,
   Copy,
-  CreditCard,
-  ExternalLink,
-  HandCoins,
-  Link as LinkIcon,
   Loader2,
   MessageCircle,
-  ArrowLeft,
-  QrCode,
   Wallet,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptDialog } from "./receipt-dialog";
 import { SaleCompletedDialog } from "./sale-completed-dialog";
+import {
+  CHECKOUT_METHODS,
+  ChargeView,
+  SummaryLine,
+  isChargeReceived,
+  type BillingType,
+  type ChargeRow,
+  type UiCheckoutMethod,
+} from "./checkout";
 import { generatePixBRCode } from "../lib/pix-brcode";
-
-
+import {
+  buildPixMessage,
+  copyToClipboard,
+  openWhatsApp,
+  toWhatsAppNumber,
+} from "../lib/checkout-messages";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -41,7 +45,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { useCreateAsaasCharge, useBellaPayConfig } from "@/features/bella-pay";
@@ -77,101 +80,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-/** UI-only: "boleto" reaproveita o fluxo de link (billingType UNDEFINED). */
-export type UiCheckoutMethod = CheckoutMethod | "boleto";
-
-
-
-function onlyDigits(v: string | null | undefined): string {
-  return (v ?? "").replace(/\D+/g, "");
-}
-
-/**
- * Normaliza telefone para uso no wa.me (E.164 sem "+").
- * Considera padrão brasileiro (DDD + número) e prepende 55 quando ausente.
- */
-function toWhatsAppNumber(phone: string | null | undefined): string | null {
-  const d = onlyDigits(phone);
-  if (!d) return null;
-  if (d.length === 10 || d.length === 11) return `55${d}`;
-  if (d.length === 12 || d.length === 13) return d;
-  return d.length >= 10 ? d : null;
-}
-
-function buildPixMessage(params: {
-  customerName?: string | null;
-  companyName?: string | null;
-  amount: number;
-  pixPayload: string;
-}): string {
-  const nome = params.customerName?.trim() || "cliente";
-  const empresa = params.companyName?.trim() || "nossa loja";
-  return [
-    `Olá, ${nome}!`,
-    "",
-    `Segue sua cobrança da ${empresa}.`,
-    "",
-    `Valor: ${formatCurrency(params.amount)}`,
-    "",
-    "PIX Copia e Cola:",
-    params.pixPayload,
-    "",
-    "Caso prefira, utilize o QR Code exibido.",
-    "",
-    "Obrigado pela preferência!",
-  ].join("\n");
-}
-
-function buildLinkMessage(params: {
-  customerName?: string | null;
-  amount: number;
-  paymentLink: string;
-}): string {
-  const nome = params.customerName?.trim() || "cliente";
-  return [
-    `Olá, ${nome}!`,
-    "",
-    "Segue seu link para pagamento:",
-    params.paymentLink,
-    "",
-    `Valor: ${formatCurrency(params.amount)}`,
-    "",
-    "Obrigado pela preferência!",
-  ].join("\n");
-}
-
-async function copyToClipboard(value: string, successLabel: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(value);
-    toast.success(successLabel);
-  } catch {
-    toast.error("Não foi possível copiar.");
-  }
-}
-
-function openWhatsApp(phone: string, message: string): void {
-  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank", "noopener,noreferrer");
-}
-
-type BillingType = "PIX" | "CREDIT_CARD" | "UNDEFINED";
-
-const METHODS: {
-  id: UiCheckoutMethod;
-  label: string;
-  icon: typeof QrCode;
-  hint: string;
-}[] = [
-  { id: "pix_manual", label: "Pix", icon: Wallet, hint: "Recebido direto na sua conta" },
-  { id: "credit_card", label: "Crédito", icon: CreditCard, hint: "Parcelado (Asaas)" },
-  { id: "payment_link", label: "Link", icon: LinkIcon, hint: "PIX + cartão + boleto" },
-  { id: "boleto", label: "Boleto", icon: Barcode, hint: "Boleto bancário (Asaas)" },
-  { id: "cash", label: "Dinheiro", icon: Banknote, hint: "Baixa imediata + troco" },
-  { id: "debit_card", label: "Débito", icon: CreditCard, hint: "Baixa manual" },
-  { id: "credit", label: "Crediário", icon: HandCoins, hint: "Venda a prazo na conta do cliente" },
-  { id: "pending_payment", label: "Pagamento Pendente", icon: Wallet, hint: "Venda finalizada. O pagamento será informado posteriormente." },
-];
-
+// Mantido para compatibilidade com `pdv/lib/payments.ts`.
+export type { UiCheckoutMethod };
 
 interface Props {
   open: boolean;
@@ -216,19 +126,6 @@ interface Props {
   }>;
   onPdvPricingChange?: (pricing: { amount: number; method: UiCheckoutMethod; installments: number }) => void;
 }
-
-
-interface ChargeRow {
-  id: string;
-  status: string;
-  invoice_url: string | null;
-  payment_link: string | null;
-  pix_qr_code: string | null;
-  pix_payload: string | null;
-  billing_type: string;
-}
-
-const RECEIVED = new Set(["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"]);
 
 export function CheckoutDialog({
   open,
@@ -661,12 +558,6 @@ export function CheckoutDialog({
     // para evitar re-subscribe a cada render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, saleId, confirmed]);
-  // FIX PIX-QR-PROD — em produção, o QR Code PIX pode não vir na criação
-  // da cobrança (Asaas leva alguns instantes). Consulta o endpoint
-  // `/payments/:id/pixQrCode` até persistir o QR na cobrança. O polling
-  // principal (acima) já lê `pix_qr_code` do banco e re-renderiza sozinho.
-  const refreshPixQrFn = useServerFn(refreshPixQrCode);
-
 
   /**
    * Persiste no cabeçalho da venda o meio de pagamento efetivo e o número
@@ -1019,7 +910,7 @@ export function CheckoutDialog({
     }
 
     // Se já confirmado pelo webhook (Bella Pay), abrir conclusão
-    if (charge && RECEIVED.has(String(charge.status))) {
+    if (charge && isChargeReceived(charge.status)) {
       onWebhookConfirmed();
       openCompletedDialog();
     } else {
@@ -1200,7 +1091,7 @@ export function CheckoutDialog({
 
           {/* Métodos */}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {METHODS.map((m) => {
+            {CHECKOUT_METHODS.map((m) => {
               const Icon = m.icon;
               const active = method === m.id;
               return (
@@ -1893,144 +1784,3 @@ export function CheckoutDialog({
     </Dialog>
   );
 }
-
-
-function ChargeView({
-  charge,
-  method,
-  amount,
-  customerName,
-  companyName,
-  whatsappNumber,
-}: {
-  charge: ChargeRow;
-  method: CheckoutMethod;
-  amount: number;
-  customerName: string | null;
-  companyName: string | null;
-  whatsappNumber: string | null;
-}) {
-  const link = charge.invoice_url ?? charge.payment_link ?? null;
-  const received = RECEIVED.has(String(charge.status));
-
-  const pixMessage = null;
-
-  const linkMessage =
-    (method === "payment_link" || method === "credit_card") && link
-      ? buildLinkMessage({ customerName, amount, paymentLink: link })
-      : null;
-
-  const noPhoneTooltip = "Cliente sem WhatsApp cadastrado";
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <StatusPill status={charge.status} />
-        {!received ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" /> Aguardando confirmação…
-          </span>
-        ) : null}
-      </div>
-
-
-      {method === "payment_link" || method === "credit_card" ? (
-        link ? (
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" asChild>
-              <a href={link} target="_blank" rel="noreferrer noopener">
-                <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Abrir Link
-              </a>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => copyToClipboard(link, "Link copiado")}
-            >
-              <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar Link
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={!whatsappNumber || !linkMessage}
-              title={!whatsappNumber ? noPhoneTooltip : undefined}
-              onClick={() => {
-                if (whatsappNumber && linkMessage) {
-                  openWhatsApp(whatsappNumber, linkMessage);
-                }
-              }}
-            >
-              <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-              Compartilhar WhatsApp
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!linkMessage}
-              onClick={() => {
-                if (linkMessage) copyToClipboard(linkMessage, "Mensagem copiada");
-              }}
-            >
-              <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar Mensagem
-            </Button>
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground">
-            Link ainda não disponível.
-          </div>
-        )
-      ) : null}
-    </div>
-  );
-}
-
-
-function SummaryLine({
-  label,
-  value,
-  strong,
-  className,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex justify-between items-center",
-        strong ? "border-t pt-1 font-semibold text-foreground" : "text-muted-foreground",
-        className
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn("tabular-nums", strong ? "text-foreground text-base" : "")}>{value}</span>
-    </div>
-  );
-}
-
-
-
-function StatusPill({ status }: { status: string }) {
-  const s = String(status).toUpperCase();
-  const received = RECEIVED.has(s);
-  const overdue = s === "OVERDUE";
-  const canceled = ["CANCELED", "REFUNDED"].includes(s);
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "font-mono text-[10px]",
-        received && "border-emerald-500/40 bg-emerald-500/10 text-emerald-600",
-        overdue && "border-amber-500/40 bg-amber-500/10 text-amber-600",
-        canceled && "border-destructive/40 bg-destructive/10 text-destructive",
-      )}
-    >
-      {s}
-    </Badge>
-  );
-}
-
