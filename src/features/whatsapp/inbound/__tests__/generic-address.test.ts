@@ -8,8 +8,10 @@ describe("Checkout Endereço (Correção Genérica)", () => {
   const cart: CartSession = {
     companyId,
     phone,
-    items: [],
-    total: 0,
+        // Carrinho precisa ter itens: com carrinho vazio o checkout encerra
+    // antes de chegar no passo de endereço.
+    items: [{ productId: "p1", name: "Produto", qty: 1, unitPrice: 10, subtotal: 10 }],
+    total: 10,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
