@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { formatCustomerAddress, type CheckoutCustomer } from "../checkout-session";
 
 describe("formatCustomerAddress (Bug Fix Verification)", () => {
-  it("Deve adicionar 'Rua' se o logradouro for 'Frederico Melle' (Exigência do usuário)", () => {
+  // O prefixo "Rua" não é mais inventado pelo formatador: quando o cliente
+  // informa CEP, o logradouro completo vem do ViaCEP (ver generic-address).
+  it("não inventa tipo de logradouro quando a rua vem sem prefixo", () => {
     const customer: CheckoutCustomer = {
       fullName: "Test User",
       personType: "pf",
@@ -19,7 +21,7 @@ describe("formatCustomerAddress (Bug Fix Verification)", () => {
     };
 
     const result = formatCustomerAddress(customer);
-    expect(result).toBe("Rua Frederico Melle, 145 — Vila Espanha — Tupã/SP — 17607-100");
+    expect(result).toBe("Frederico Melle, 145 — Vila Espanha — Tupã/SP — 17607-100");
   });
 
   it("Deve formatar corretamente 'Rua Frederico Melle 145, 17607100'", () => {
