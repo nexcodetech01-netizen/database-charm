@@ -13,7 +13,7 @@
  */
 import { isBellaAgentEnabled } from "./config";
 import { detectDeterministicIntent, SUPPORTED_RUNTIME_INTENTS } from "./intent-engine";
-import { logAgentExecution } from "./execution-log";
+import { logAgentExecution } from "./execution-log.server";
 import { runAgent } from "./agent";
 import { BellaSkillRegistry } from "../skills/registry";
 import { bellaAIGateway, BellaAIGateway } from "../ai/gateway/BellaAIGateway";
