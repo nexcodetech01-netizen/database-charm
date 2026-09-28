@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { purchasesService } from "../services/purchases.service";
 import { productsKeys } from "@/features/products/hooks/use-products";
 import { inventoryKeys } from "@/features/inventory/hooks/use-inventory";
+import {
+  createRestockDraftPurchases,
+  type RestockSuggestionInput,
+} from "../services/restock-drafts";
 import type {
   PurchaseInsert,
   PurchaseItemDraft,
@@ -113,5 +117,20 @@ export function useDeletePurchase() {
     mutationFn: (id: string) => purchasesService.remove(id),
     onSuccess: () => invalidatePurchaseImpact(qc),
 
+  });
+}
+
+/** Cria pedidos de compra em rascunho a partir da sugestão de reposição. */
+export function useCreateRestockDrafts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      companyId,
+      suggestions,
+    }: {
+      companyId: string;
+      suggestions: readonly RestockSuggestionInput[];
+    }) => createRestockDraftPurchases(companyId, suggestions),
+    onSuccess: () => invalidatePurchaseImpact(qc),
   });
 }

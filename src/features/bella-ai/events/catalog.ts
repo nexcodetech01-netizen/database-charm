@@ -150,6 +150,13 @@ export const BELLA_EVENT_CATALOG: Record<BellaEventType, BellaEventTypeMeta> = {
     description: "Produto está com estoque zerado.",
     defaultRecommendation: "Gerar pedido de urgência.",
   },
+    "inventory.restock_summary": {
+    module: "inventory",
+    defaultSeverity: "info",
+    title: "Resumo quinzenal: mais vendidos e reposição",
+    description: "Produtos mais vendidos nos últimos 15 dias e quantos precisam de reposição.",
+    defaultRecommendation: "Revisar a sugestão de compra em Estoque.",
+  },
   "inventory.possible_duplicate": {
     module: "inventory",
     defaultSeverity: "info",

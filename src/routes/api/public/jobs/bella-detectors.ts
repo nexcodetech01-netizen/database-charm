@@ -20,6 +20,7 @@ import {
 import { overdueInvoiceDetector } from "@/features/bella-ai/events/detectors/finance.detectors";
 import { bellaEventEngine } from "@/features/bella-ai/events/BellaEventEngine";
 import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
+import { maybeSendBiweeklySummary } from "@/features/bella-ai/events/biweekly-summary.server";
 
 
 export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
@@ -46,7 +47,8 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
           const results = {
             inventory: { processed: 0, emitted: 0 },
             finance: { processed: 0, emitted: 0 },
-            duplicates: { processed: 0, emitted: 0 },
+                        duplicates: { processed: 0, emitted: 0 },
+            biweeklySummary: { emitted: 0 },
             errors: [] as string[],
           };
 
@@ -97,6 +99,17 @@ export const Route = createFileRoute("/api/public/jobs/bella-detectors")({
 
               } catch (err: any) {
                 results.errors.push(`Inventory Error (${tenantId}): ${err.message}`);
+              }
+
+                            // --- RESUMO QUINZENAL (mais vendidos + reposição) ---
+              // Roda a cada passada do job, mas só gera se o último resumo
+              // da empresa tiver mais de 15 dias.
+              try {
+                if (await maybeSendBiweeklySummary(tenantId, now)) {
+                  results.biweeklySummary.emitted++;
+                }
+              } catch (err: any) {
+                results.errors.push(`Biweekly Summary Error (${tenantId}): ${err.message}`);
               }
 
               // --- EXECUÇÃO FINANCEIRO ---

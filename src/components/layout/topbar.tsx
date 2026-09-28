@@ -47,7 +47,8 @@ function routeForEvent(event: BellaEvent): string {
       return "/comercial/inbox-whatsapp";
     case "inventory.min_stock_reached":
     case "inventory.out_of_stock":
-    case "inventory.slow_moving":
+        case "inventory.slow_moving":
+    case "inventory.restock_summary":
       return "/estoque";
     case "finance.invoice.overdue":
     case "finance.cashflow.negative":
