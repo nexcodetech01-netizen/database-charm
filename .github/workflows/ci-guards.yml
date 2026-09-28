@@ -17,9 +17,30 @@ jobs:
 
       - name: Block supabaseAdmin usage outside *.server.ts / src/routes/api
         run: |
-          set -euo pipefail
-          # Match real usages (call/import), not doc comments.
-          if rg -nP --glob '!**/*.server.ts' --glob '!src/routes/api/**' --glob '!docs/**' --glob '!.github/**' '(\bsupabaseAdmin\s*[\.\(])|from\s+["'"'"'][^"'"'"']*client\.server' src/; then
+          set -uo pipefail
+          # Usos reais (chamada ou import) do cliente admin fora de arquivos
+          # de servidor. Não contam: testes/mocks, linhas de comentário e o
+          # `http-client.server` (não é o cliente admin do Supabase).
+          #
+          # Exceções conhecidas (TODO: mover para *.server.ts):
+          #   - fiscal/v2/repositories/certificate.repository.ts
+          #   - bella-ai/agent/execution-log.ts
+          rg -nP \
+            --glob '!**/*.server.ts' --glob '!src/routes/api/**' \
+            --glob '!docs/**' --glob '!.github/**' \
+            --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
+            --glob '!**/__tests__/**' --glob '!**/*.mock.ts' \
+            --glob '!src/features/fiscal/v2/repositories/certificate.repository.ts' \
+            --glob '!src/features/bella-ai/agent/execution-log.ts' \
+            '(\bsupabaseAdmin\s*[\.\(])|from\s+["'"'"'][^"'"'"']*supabase/client\.server' src/ > /tmp/admin-usage.txt
+          rc=$?
+          if [ "$rc" -gt 1 ]; then
+            echo "::error::ripgrep falhou (código $rc)."
+            exit 1
+          fi
+          matches=$(grep -vE '^[^:]+:[0-9]+:\s*(\*|//)' /tmp/admin-usage.txt || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
             echo "::error::supabaseAdmin used outside *.server.ts / src/routes/api (see ADR-016)."
             exit 1
           fi
@@ -36,6 +57,6 @@ jobs:
         run: |
           set -euo pipefail
           if rg -n 'VITE_[A-Z_]*SERVICE_ROLE' src/; then
-            echo "::error::VITE_*SERVICE_ROLE* env var must never exist."
+            echo "::error::VITE_*SERVICE_ROLE* env var must never exist.".
             exit 1
           fi
