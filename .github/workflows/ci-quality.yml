@@ -1,0 +1,50 @@
+name: CI Quality
+
+# Checagem de tipos (TypeScript) e testes unitários (Vitest) em toda PR
+# e em todo push na main. Complementa o ci-guards (segredos) e o e2e.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck-and-test:
+    name: Typecheck + testes unitários
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # O bun.lock gerado pelo Lovable aponta parte dos pacotes para o cache
+      # privado do Lovable (*-npm.pkg.dev/lovable-core-prod), que recusa
+      # downloads fora do ambiente deles (403). Os pacotes são os mesmos do
+      # npm público, então trocamos a URL só dentro do runner — o arquivo
+      # do repositório não é alterado.
+      - name: Apontar lockfile para o npm público
+        run: |
+          sed -i -E 's#https://[a-z0-9-]+-npm\.pkg\.dev/lovable-core-prod/sandbox-npm-cache/#https://registry.npmjs.org/#g' bun.lock
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Checagem de tipos
+        run: bunx tsc --noEmit -p tsconfig.json
+
+      # Não bloqueia por enquanto: há 26 testes antigos falhando (WhatsApp,
+      # skills v2, auditoria, compras, OpenAI), sem relação com vendas/caixa.
+      # Quando forem corrigidos, remova o continue-on-error para os testes
+      # também passarem a barrar PRs.
+      - name: Testes unitários
+        run: bun run test
+        continue-on-error: true
