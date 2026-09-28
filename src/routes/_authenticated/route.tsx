@@ -7,17 +7,27 @@ import { PaymentConfirmedListener } from "@/components/feedback/payment-confirme
 import { NotificationLogPanel } from "@/features/diagnostics/components/notification-log-panel";
 import { CommandPalette } from "@/features/command-palette";
 
+type CurrentCompany = Awaited<ReturnType<typeof companyService.getCurrentUserCompany>>;
+
+const currentCompanyKey = (userId: string) => ["auth", "current-company", userId] as const;
+
+/** Após isso, a empresa é revalidada em segundo plano na próxima navegação. */
+const COMPANY_STALE_MS = 30_000;
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  // Layout persistente: só reavalia auth/company a cada 5 min ou quando
-  // o router for invalidado (sign-in/out, mudança de contexto).
-  // Sem isto, cada clique no menu dispara supabase.auth.getUser() +
-  // consulta de empresa antes de renderizar a próxima rota.
-  staleTime: 5 * 60_000,
-  shouldReload: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+  // O beforeLoad roda em TODA navegação (o staleTime de rota só vale para
+  // loaders). Por isso ele precisa ser barato: nada de rede no caminho
+  // comum — só na primeira carga.
+  beforeLoad: async ({ context }) => {
+    // getSession lê a sessão salva no aparelho, sem ida ao servidor de
+    // autenticação (getUser fazia essa ida a cada clique). A segurança dos
+    // dados não depende disto: o banco valida o token em cada consulta (RLS).
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) throw redirect({ to: "/auth" });
 
     // If the user arrived through an invite, finish that flow before any
     // company/onboarding check — an invited member has no owned company.
@@ -28,10 +38,42 @@ export const Route = createFileRoute("/_authenticated")({
       }
     }
 
-    const company = await companyService.getCurrentUserCompany(data.user.id);
-    if (!company) throw redirect({ to: "/onboarding" });
+    // Empresa: cache no QueryClient. Com cache, a navegação não espera a
+    // rede e a revalidação acontece em segundo plano (edições nas
+    // configurações da empresa aparecem na navegação seguinte).
+    const { queryClient } = context;
+    const key = currentCompanyKey(user.id);
+    const fetchCompany = () => companyService.getCurrentUserCompany(user.id);
 
-    return { user: data.user, company };
+    let company = queryClient.getQueryData<CurrentCompany>(key);
+    if (company) {
+      void queryClient.prefetchQuery({
+        queryKey: key,
+        queryFn: fetchCompany,
+        staleTime: COMPANY_STALE_MS,
+        // Sem observadores esta query seria descartada em 5 min (gcTime
+        // padrão) e a navegação voltaria a esperar a rede.
+        gcTime: Infinity,
+      });
+    } else {
+      company = await queryClient.fetchQuery({
+        queryKey: key,
+        queryFn: fetchCompany,
+        staleTime: COMPANY_STALE_MS,
+        // Sem observadores esta query seria descartada em 5 min (gcTime
+        // padrão) e a navegação voltaria a esperar a rede.
+        gcTime: Infinity,
+      });
+    }
+
+    if (!company) {
+      // Não guarda "sem empresa": após o onboarding a próxima checagem
+      // precisa ir ao banco.
+      queryClient.removeQueries({ queryKey: key });
+      throw redirect({ to: "/onboarding" });
+    }
+
+    return { user, company };
   },
   component: AuthenticatedLayout,
 });
