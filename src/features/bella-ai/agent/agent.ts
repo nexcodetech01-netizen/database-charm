@@ -9,7 +9,7 @@
  */
 import { canExecuteSkill } from "./permission-engine";
 import { planFromIntent } from "./planner";
-import { logAgentExecution } from "./execution-log";
+import { logAgentExecution } from "./execution-log.server";
 import type { AgentContext, AgentIntent, AgentResponse, AgentStepResult, AgentPlan } from "./types";
 
 export interface RunAgentInput {

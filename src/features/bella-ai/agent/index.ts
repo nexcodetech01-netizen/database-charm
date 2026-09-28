@@ -9,7 +9,8 @@ export * from "./types";
 export * from "./infrastructure";
 export { canExecuteSkill, hasPermission, getSkillPermissionSpec } from "./permission-engine";
 export { planFromIntent } from "./planner";
-export { logAgentExecution } from "./execution-log";
+// logAgentExecution usa o cliente admin (service role) e fica fora do barrel:
+// importe de "./execution-log.server" apenas em código de servidor.
 export {
   fetchAgentMetrics,
   type AgentMetricsSummary,
