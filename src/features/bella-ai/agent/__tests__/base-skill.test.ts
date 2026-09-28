@@ -96,4 +96,44 @@ describe("defineBaseSkill", () => {
     });
     expect(second.ok).toBe(true);
   });
+
+  // Contrato desde 2026-08-31: campos que o schema não conhece (a IA às
+  // vezes inventa) são descartados antes da validação — a pergunta não é
+  // mais rejeitada inteira. O .strict() continua protegendo o handler.
+  it("ignora campo desconhecido e o handler nunca o recebe", async () => {
+    let received: unknown = null;
+    const skill = defineBaseSkill({
+      id: "test.extra",
+      name: "extra",
+      module: "customer",
+      description: "",
+      schema,
+      requiredPermissions: ["customers.view"],
+      handler: async (input) => {
+        received = input;
+        return { ok: true, code: "success", message: "ok" };
+      },
+    });
+    const res = await skill.run({
+      payload: { name: "Ana", campoInventado: 1 } as never,
+      ctx: ctxWith([], true),
+    });
+    expect(res.ok).toBe(true);
+    expect(received).toEqual({ name: "Ana" });
+  });
+
+  it("campo conhecido inválido continua sendo rejeitado", async () => {
+    const skill = defineBaseSkill({
+      id: "test.invalid",
+      name: "invalid",
+      module: "customer",
+      description: "",
+      schema,
+      requiredPermissions: ["customers.view"],
+      handler: async () => ({ ok: true, code: "success", message: "ok" }),
+    });
+    const res = await skill.run({ payload: { name: "" }, ctx: ctxWith([], true) });
+    expect(res.ok).toBe(false);
+    expect(res.code).toBe("missing_fields");
+  });
 });

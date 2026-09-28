@@ -37,7 +37,9 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       cart: mockCart,
       text: "João Silva"
     });
-    expect(res2.session.buyerName).toBe("João Silva");
+        // O nome vai para customer.fullName (buyerName ficou só para pedidos
+    // vindos do site — ver commercial-inbox.ts).
+    expect(res2.session.customer.fullName).toBe("João Silva");
     expect(res2.session.step).toBe("WAITING_DOCUMENT");
     expect(res2.text).toContain("CPF");
 
@@ -107,7 +109,9 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
     expect(res1.session.step).toBe("WAITING_DOCUMENT");
   });
 
-  it("BUG REPORT: Deve aceitar 'dinheiro' e avançar para o nome", async () => {
+    // Desde a pergunta de troco, "dinheiro" passa por WAITING_CHANGE_INFO
+  // antes de pedir o nome.
+  it("BUG REPORT: Deve aceitar 'dinheiro', perguntar o troco e avançar para o nome", async () => {
     let session = createCheckoutSession("comp-1", "5511999999999");
     session.step = "WAITING_PAYMENT_METHOD";
     session.fulfillment = "delivery";
@@ -118,12 +122,20 @@ describe("advanceCheckout - Fluxo Reestruturado", () => {
       text: "dinheiro"
     });
     
-    expect(res1.session.payment).toBe("cash");
-    expect(res1.session.step).toBe("WAITING_CUSTOMER_NAME");
-    expect(res1.text).toContain("Qual é o seu nome completo?");
-    
-    const res2 = await advanceCheckout({
+        expect(res1.session.payment).toBe("cash");
+    expect(res1.session.step).toBe("WAITING_CHANGE_INFO");
+    expect(res1.text).toContain("troco");
+
+    const resTroco = await advanceCheckout({
       session: res1.session,
+      cart: mockCart,
+      text: "não"
+    });
+    expect(resTroco.session.step).toBe("WAITING_CUSTOMER_NAME");
+    expect(resTroco.text).toContain("Qual é o seu nome completo?");
+
+    const res2 = await advanceCheckout({
+      session: resTroco.session,
       cart: mockCart,
       text: "Tiele Thais M Andriani"
     });

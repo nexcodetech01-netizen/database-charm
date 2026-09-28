@@ -266,13 +266,14 @@ describe("Fiscal v2 Skills — smoke", () => {
     expect(res.message).toMatch(/autorizada/);
   });
 
-  it("schema estrito rejeita campos desconhecidos", async () => {
+    it("campo desconhecido é ignorado, não rejeita a consulta", async () => {
+    // Campos desconhecidos são ignorados desde 2026-08-31 (ver
+    // base-skill.test.ts): a pergunta não é mais rejeitada por isso.
     const ctx = makeCtx(fakeSupabase({}));
     const res = await fiscalSearchSkill.run({
       payload: { foo: "bar" } as unknown as Record<string, unknown>,
       ctx,
     });
-    expect(res.ok).toBe(false);
-    expect(res.code).toBe("missing_fields");
+    expect(res.code).not.toBe("missing_fields");
   });
 });

@@ -197,11 +197,13 @@ describe("Finance v2 Skills — smoke", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("rejeita input com campo desconhecido (schema estrito)", async () => {
+    it("campo desconhecido é ignorado, não rejeita a consulta", async () => {
+    // Campos desconhecidos são ignorados desde 2026-08-31 (ver
+    // base-skill.test.ts): a pergunta não é mais rejeitada por isso.
     const ctx = makeCtx(fakeSupabase({}));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await financeReceivablesSkill.run({ payload: { foo: "bar" } as any, ctx });
-    expect(res.ok).toBe(false);
+    expect(res.code).not.toBe("missing_fields");
   });
 
   it("todas as skills declaram ao menos uma permissão", () => {

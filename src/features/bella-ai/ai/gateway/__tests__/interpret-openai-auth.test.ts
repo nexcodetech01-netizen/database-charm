@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { interpretWithOpenAI } from "../interpret-openai.functions";
 import { assertCompanyAccess, CompanyAccessError } from "@/lib/company-resolver.server";
 import { z } from "zod";
@@ -42,6 +42,15 @@ describe("interpretWithOpenAI - Cenários de Segurança e Contexto", () => {
   const validUuid = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   const otherUuid = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
   const validMessage = "Olá";
+
+    // A função exige OPENAI_API_KEY antes de chamar a API (falha com
+  // OPENAI_NOT_CONFIGURED sem ela). Chave falsa: a chamada é simulada.
+  beforeEach(() => {
+    vi.stubEnv("OPENAI_API_KEY", "sk-test");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 
   // Helper para simular resposta da OpenAI
   const mockOpenAISuccess = () => {

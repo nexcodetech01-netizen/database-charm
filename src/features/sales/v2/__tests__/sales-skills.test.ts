@@ -16,6 +16,18 @@ import {
 
 type Row = Record<string, unknown>;
 
+// As consultas de leitura (SalesRepository.list e AnalyticsRepository)
+// usam o cliente administrativo desde 2026-09-01 — ver o comentário em
+// repository/sales.repository.ts. O mock aponta esse cliente para o mesmo
+// supabase falso do teste.
+const adminClient = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock("@/integrations/supabase/client.server", () => ({
+  get supabaseAdmin() {
+    return adminClient.current;
+  },
+}));
+
+
 function makeSupabase(
   opts: {
     productRows?: Row[];
@@ -70,6 +82,7 @@ function makeSupabase(
     },
   } as unknown as import("@supabase/supabase-js").SupabaseClient;
 
+    adminClient.current = supabase;
   return { supabase, state };
 }
 
@@ -103,7 +116,9 @@ describe("SalesV2 Skills", () => {
     expect(res.code).toBe("not_allowed");
   });
 
-  it("sale.create rejeita payload com campo extra (strict)", async () => {
+    it("sale.create ignora campo extra e segue para a confirmação", async () => {
+    // Campos desconhecidos são ignorados desde 2026-08-31 (ver
+    // base-skill.test.ts): a pergunta não é mais rejeitada por isso.
     const { supabase } = makeSupabase();
     const ctx = makeCtx(["sales.create"], supabase);
     const res = await saleCreateSkill.run({
@@ -112,10 +127,8 @@ describe("SalesV2 Skills", () => {
         camposEstranhos: true,
       } as never,
       ctx,
-      confirmed: true,
     });
-    expect(res.ok).toBe(false);
-    expect(res.code).toBe("missing_fields");
+    expect(res.code).toBe("needs_confirmation");
   });
 
   it("sale.create exige confirmação por ser destrutiva", async () => {
