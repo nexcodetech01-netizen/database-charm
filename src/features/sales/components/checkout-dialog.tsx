@@ -1,23 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
-  Copy,
-  Loader2,
-  MessageCircle,
-  Wallet,
-  XCircle,
-} from "lucide-react";
 import { toast } from "sonner";
 import { ReceiptDialog } from "./receipt-dialog";
 import { SaleCompletedDialog } from "./sale-completed-dialog";
 import {
-  CHECKOUT_METHODS,
   ChargeView,
-  SummaryLine,
+  CheckoutFooter,
+  CheckoutSummary,
+  CreditConfigDialog,
+  MethodSelector,
   isChargeReceived,
   toSalePaymentMethod,
   type BillingType,
@@ -25,10 +17,15 @@ import {
   type UiCheckoutMethod,
 } from "./checkout";
 import {
-  buildPixMessage,
-  copyToClipboard,
-  openWhatsApp,
-} from "../lib/checkout-messages";
+  CardChargePanel,
+  CashPanel,
+  ConfirmedPanel,
+  CreditBlockedAlert,
+  CreditPanel,
+  DebitPanel,
+  PendingPanel,
+  PixManualPanel,
+} from "./checkout/panels";
 import {
   cashGuardQueryKey,
   useCashSessionGuard,
@@ -43,26 +40,16 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { parseCurrency } from "@/lib/masks";
 import { useCreateAsaasCharge, useBellaPayConfig } from "@/features/bella-pay";
-import {
-  computeCreditCardCharge,
-  CREDIT_CARD_ALLOWED_INSTALLMENTS,
-  SETTLEMENT_DAYS_PIX,
-} from "@/features/bella-pay/lib/credit-card-fee";
+import { computeCreditCardCharge } from "@/features/bella-pay/lib/credit-card-fee";
 import { useCardFixedFee } from "@/features/bella-pay/lib/card-fixed-fee";
 import { useBellaFeeCatalog } from "@/features/bella-pay/lib/fee-catalog";
-import { BellaInlineSuggestion } from "@/features/bella-ai/components/bella-inline-suggestion";
 import { useSetSaleStatus } from "../hooks/use-sales";
 import { salesService } from "../services/sales.service";
 import { SettleTransactionDialog } from "@/features/finance/components/settle-transaction-dialog";
@@ -70,18 +57,7 @@ import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
-import { calcParcela } from "@/lib/pricing/card-price";
-import {
-  useCreateCreditSale,
-  CREDIT_PAYMENT_METHOD_OPTIONS,
-} from "@/features/credit";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useCreateCreditSale } from "@/features/credit";
 
 // Mantido para compatibilidade com `pdv/lib/payments.ts`.
 export type { UiCheckoutMethod };
@@ -223,7 +199,7 @@ export function CheckoutDialog({
   }, [method, amount, confirmed, showCompleted, setCashReceivedStr]);
 
   // Entrada parseada — nunca maior que o total, saldo nunca negativo.
-  const entradaRaw = Number(entradaStr.replace(",", ".")) || 0;
+  const entradaRaw = parseCurrency(entradaStr);
   const entradaNegativa = entradaRaw < 0;
   const entradaExcedeu = entradaRaw > amount;
   const entradaValue = Math.min(Math.max(0, entradaRaw), amount);
@@ -742,6 +718,18 @@ export function CheckoutDialog({
   }
 
 
+  // Handlers estáveis para os componentes memoizados.
+  const selectMethod = useCallback((next: UiCheckoutMethod) => {
+    setMethod(next);
+    setCharge(null);
+    setCashReceivedStr("");
+  }, []);
+
+  const switchToPix = useCallback(() => {
+    setMethod("pix_manual");
+    setCharge(null);
+  }, []);
+
   const showAsaasFlow =
     method === "credit_card" || method === "payment_link" || method === "boleto";
 
@@ -750,7 +738,8 @@ export function CheckoutDialog({
     method === "boleto" ? "payment_link" : method;
 
   // ---- FIN-001 — Dinheiro (troco) ----
-  const cashReceived = Math.max(0, Number(cashReceivedStr.replace(",", ".")) || 0);
+  // parseCurrency entende "1.234,56": o valor autopreenchido tem separador de milhar.
+  const cashReceived = Math.max(0, parseCurrency(cashReceivedStr));
   const cashChange = Math.max(0, cashReceived - amount);
   const cashShort = Math.max(0, amount - cashReceived);
   const canConfirmCash = method !== "cash" || cashReceived >= amount;
@@ -782,483 +771,78 @@ export function CheckoutDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto pr-2 px-5 py-4 space-y-4">
-        {/* Valor */}
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Total a receber
-          </div>
-          <div className="mt-1 text-4xl font-bold tabular-nums text-gray-100">
-            {formatCurrency(amount)}
-          </div>
+        <CheckoutSummary
+          amount={amount}
+          subtotal={subtotal}
+          discount={discount}
+          shipping={shipping}
+          entradaValue={entradaValue}
+          saldoValue={saldoValue}
+          saldoDueDate={saldoDueDate}
+        />
 
-          {/* FIN-001 — resumo em tempo real (subtotal, desconto, frete, entrada, saldo) */}
-          {(subtotal != null || discount != null || shipping != null || entradaValue > 0) ? (
-            <div className="mt-3 space-y-1 border-t border-border/60 pt-3 text-xs">
-              {subtotal != null ? (
-                <SummaryLine label="Subtotal" value={formatCurrency(subtotal)} />
-              ) : null}
-              {discount != null && discount > 0 ? (
-                <SummaryLine label="Desconto" value={`-${formatCurrency(discount)}`} />
-              ) : null}
-              {shipping != null && shipping > 0 ? (
-                <SummaryLine label="Frete" value={`+${formatCurrency(shipping)}`} />
-              ) : null}
-              <SummaryLine label="Total da Venda" value={formatCurrency(amount)} strong />
-              {entradaValue > 0 ? (
-                <>
-                  <SummaryLine label="Valor Pago (Entrada)" value={formatCurrency(entradaValue)} className="text-success" />
-                  <SummaryLine label="Saldo Devedor / Restante" value={formatCurrency(saldoValue)} strong className="text-destructive font-bold" />
-                  <div className="flex justify-between text-[11px] text-muted-foreground">
-                    <span>Vencimento do saldo</span>
-                    <span>{new Date(saldoDueDate + "T00:00:00").toLocaleDateString("pt-BR")}</span>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+        {method === "credit" && !customerId ? (
+          <CreditBlockedAlert onSelectCustomer={handleContinueEditing} />
+        ) : null}
 
-
-        {method === "credit" && !customerId && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5">
-            <div className="flex items-center gap-3 text-destructive mb-2">
-              <AlertCircle className="h-6 w-6" />
-              <h3 className="font-bold">Crediário Bloqueado</h3>
-            </div>
-            <p className="text-sm text-destructive font-medium mb-3">
-              Para vender no crediário, selecione um cliente cadastrado.
-            </p>
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              onClick={handleContinueEditing}
-            >
-              <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
-            </Button>
-          </div>
-        )}
-
-          {/* Métodos */}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {CHECKOUT_METHODS.map((m) => {
-              const Icon = m.icon;
-              const active = method === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  disabled={!!charge && !confirmed}
-                  onClick={() => {
-                    setMethod(m.id);
-                    setCharge(null);
-                    setCashReceivedStr("");
-                  }}
-                  className={cn(
-                    "flex items-start gap-3 rounded-lg border p-3 text-left transition",
-                    active
-                      ? "border-primary bg-blue-600/5 ring-1 ring-primary"
-                      : "border-border hover:border-primary/50 hover:bg-muted/40",
-                    charge && !confirmed ? "opacity-60" : "",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "grid h-9 w-9 shrink-0 place-items-center rounded-md",
-                      active ? "bg-blue-600 text-gray-100-foreground" : "bg-muted",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold">{m.label}</div>
-                    <div className="text-[11px] text-muted-foreground">{m.hint}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <MethodSelector
+            method={method}
+            locked={!!charge && !confirmed}
+            onSelect={selectMethod}
+          />
 
           {/* Painel dinâmico por método */}
           <div className="rounded-xl border border-border p-4 mb-6">
           {confirmed ? (
-            <div className="flex items-center gap-3 text-emerald-600">
-              <CheckCircle2 className="h-6 w-6" />
-              <div>
-                <div className="text-sm font-semibold">Pagamento confirmado</div>
-                <div className="text-xs text-muted-foreground">
-                  Clique em Concluir venda para imprimir o cupom.
-                </div>
-              </div>
-            </div>
+            <ConfirmedPanel />
           ) : method === "cash" ? (
-            <div className="space-y-3">
-              <div>
-                <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Valor recebido
-                </Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder={formatCurrency(amount)}
-                  value={cashReceivedStr}
-                  onChange={(e) => setCashReceivedStr(e.target.value)}
-                  className="text-lg tabular-nums"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-md bg-muted/40 p-2">
-                  <div className="text-muted-foreground">Total</div>
-                  <div className="font-semibold tabular-nums">{formatCurrency(amount)}</div>
-                </div>
-                <div
-                  className={cn(
-                    "rounded-md p-2",
-                    cashShort > 0 ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-                  )}
-                >
-                  <div className="opacity-80">{cashShort > 0 ? "Falta" : "Troco"}</div>
-                  <div className="font-semibold tabular-nums">
-                    {formatCurrency(cashShort > 0 ? cashShort : cashChange)}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CashPanel
+              amount={amount}
+              cashReceivedStr={cashReceivedStr}
+              onCashReceivedChange={setCashReceivedStr}
+              cashShort={cashShort}
+              cashChange={cashChange}
+            />
           ) : method === "debit_card" ? (
-            <div className="space-y-2 text-xs">
-              <div className="text-sm text-muted-foreground">
-                Baixa manual do débito (sem TEF integrado).
-              </div>
-              {debitSnapshot ? (
-                <div className="space-y-1 rounded-md bg-muted/40 p-3">
-                  <SummaryLine label="Valor da venda" value={formatCurrency(amount)} />
-                  <SummaryLine
-                    label={`Taxa (${debitSnapshot.percent}%${debitSnapshot.fixed ? ` + ${formatCurrency(debitSnapshot.fixed)}` : ""})`}
-                    value={`-${formatCurrency(debitFee)}`}
-                  />
-                  <SummaryLine label="Você receberá" value={formatCurrency(debitNet)} strong />
-                </div>
-              ) : null}
-            </div>
-
+            <DebitPanel
+              amount={amount}
+              debitSnapshot={debitSnapshot}
+              debitFee={debitFee}
+              debitNet={debitNet}
+            />
           ) : method === "pix_manual" ? (
-            <div className="space-y-3">
-              {!ownPixPayload ? (
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
-                  Configure a <strong>Chave PIX</strong> e o <strong>Nome / Cidade do recebedor</strong> em
-                  {" "}<em>Configurações → Empresa → PIX Próprio</em> para gerar o QR Code.
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-                  {ownPixQrDataUrl ? (
-                    <img
-                      src={ownPixQrDataUrl}
-                      alt="QR Code PIX Próprio"
-                      className="h-48 w-48 rounded-md border border-border bg-white p-2"
-                    />
-                  ) : (
-                    <div className="grid h-48 w-48 place-items-center rounded-md border border-border bg-muted/30">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="text-xs text-muted-foreground">
-                      PIX recebido direto na conta do lojista — sem intermediário.
-                      Confirme o recebimento ao visualizar o depósito no banco.
-                    </div>
-                    <div className="max-h-24 overflow-hidden break-all rounded-md border border-border bg-muted/40 p-2 font-mono text-[10px]">
-                      {ownPixPayload}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(ownPixPayload, "PIX copiado")}
-                      >
-                        <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar PIX
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={!whatsappNumber}
-                        title={!whatsappNumber ? "Cliente sem WhatsApp cadastrado" : undefined}
-                        onClick={() => {
-                          if (!whatsappNumber) return;
-                          openWhatsApp(
-                            whatsappNumber,
-                            buildPixMessage({
-                              customerName,
-                              companyName,
-                              amount,
-                              pixPayload: ownPixPayload,
-                            }),
-                          );
-                        }}
-                      >
-                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                        Compartilhar WhatsApp
-                      </Button>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      Após visualizar o pagamento no seu banco, clique em
-                      <strong> Confirmar pagamento</strong> para dar baixa no estoque
-                      e no financeiro.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
+            <PixManualPanel
+              ownPixPayload={ownPixPayload}
+              ownPixQrDataUrl={ownPixQrDataUrl}
+              whatsappNumber={whatsappNumber}
+              customerName={customerName}
+              companyName={companyName}
+              amount={amount}
+            />
           ) : method === "credit" ? (
-            <div className="space-y-4">
-              {!customerId ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-center">
-                  <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
-                  <p className="text-sm font-medium text-destructive">
-                    Selecione um cliente para habilitar o crediário.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="rounded-lg bg-blue-600/5 p-4 border border-primary/20">
-                    <p className="text-sm text-gray-100 font-medium mb-1">Fluxo de Crediário</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Ao clicar em <strong>Abrir Crediário</strong>, você poderá definir o parcelamento, data de vencimento e registrar entradas parciais.
-                    </p>
-                  </div>
-                  
-                  <div className="rounded-lg border border-border p-4 space-y-2 bg-muted/20">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Cliente:</span>
-                      <span className="font-semibold">{customerName || "Não identificado"}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Valor a parcelar:</span>
-                      <span className="font-bold text-gray-100">{formatCurrency(amount)}</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
+            <CreditPanel customerId={customerId} customerName={customerName} amount={amount} />
           ) : showAsaasFlow && !charge ? (
-            <div className="space-y-3">
-              <div className="text-sm text-muted-foreground">
-
-                {method === "credit_card"
-                    ? "Escolha o parcelamento e gere a cobrança. O cliente pagará em ambiente seguro."
-                    : method === "boleto"
-                      ? "Gera boleto bancário via Asaas. Compensação em até 2 dias úteis após pagamento."
-                      : "Gera link de pagamento (PIX, cartão ou boleto) para compartilhar."}
-              </div>
-
-
-              {method === "credit_card" && creditCardPreview ? (
-                <div className="space-y-3 rounded-md border p-3">
-                  {/* FIN-001 — Switch "Loja absorve a taxa" (override de sessão) */}
-                  <div className="flex items-start justify-between gap-3 rounded-md bg-muted/40 p-3">
-                    <div className="min-w-0">
-                      <Label htmlFor="absorb-fee" className="text-sm font-medium">
-                        Loja absorve a taxa
-                      </Label>
-                      <p className="text-[11px] text-muted-foreground">
-                        {absorb
-                          ? "A taxa sai do seu lucro. O cliente paga o preço cheio."
-                          : "A taxa é somada ao valor cobrado do cliente."}
-                      </p>
-                    </div>
-                    <Switch
-                      id="absorb-fee"
-                      checked={absorb}
-                      onCheckedChange={(v) => setAbsorbOverride(v)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="mb-1.5 block text-xs uppercase tracking-wide text-muted-foreground">
-                      Parcelamento
-                    </Label>
-                    <div className="flex gap-2">
-                      {CREDIT_CARD_ALLOWED_INSTALLMENTS.filter(
-                        (n) =>
-                          n <=
-                          Number(
-                            bellaConfig?.credit_card_max_installments ?? 3,
-                          ),
-                      ).map((n) => {
-                        const preview = computeCreditCardCharge(chargeableAmount, n, {
-                          absorb,
-                          feePercent: Number(
-                            bellaConfig?.credit_card_fee_percent ?? 0,
-                          ),
-                          maxInstallments: Number(
-                            bellaConfig?.credit_card_max_installments ?? 3,
-                          ),
-                          fixedFee: cardFixedFee,
-                        });
-                        const selected = installments === n;
-                        return (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => setInstallments(n)}
-                            className={`flex-1 rounded-md border px-3 py-2 text-left text-sm transition ${
-                              selected
-                                ? "border-primary bg-blue-600/5"
-                                : "border-border hover:bg-muted/50"
-                            }`}
-                          >
-                            <div className="font-medium">
-                              {n}x {n === 1 ? "à vista" : ""}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatCurrency(pdvCashItems?.length ? calcParcela(amount, n) : preview.installmentValue)}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* PDV-014 — Resumo inteligente. Sempre mostra líquido e recebimento. */}
-                  <div className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
-                    {absorb ? (
-                      <>
-                        <SummaryLine
-                          label="Produto"
-                          value={formatCurrency(creditCardPreview.originalValue)}
-                        />
-                        <SummaryLine
-                          label="Taxa"
-                          value={`+${formatCurrency(creditCardPreview.addedFee)}`}
-                        />
-                        <SummaryLine
-                          label="Total cobrado do cliente"
-                          value={formatCurrency(creditCardPreview.chargedValue)}
-                          strong
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <SummaryLine
-                          label="Valor da venda"
-                          value={formatCurrency(creditCardPreview.chargedValue)}
-                        />
-                        <SummaryLine
-                          label="Taxa"
-                          value={`-${formatCurrency(creditCardPreview.processorFee)}`}
-                        />
-                        <SummaryLine
-                          label="Você receberá"
-                          value={formatCurrency(creditCardPreview.netValue)}
-                          strong
-                        />
-                      </>
-                    )}
-                    <div className="mt-1 flex justify-between border-t pt-1 text-muted-foreground">
-                      <span>Recebimento</span>
-                      <span>{creditCardPreview.settlementDays} dias</span>
-                    </div>
-                    <div className="pt-1 text-center text-[11px] text-muted-foreground">
-                      {creditCardPreview.installmentCount}x de{" "}
-                      {formatCurrency(creditCardPreview.installmentValue)}
-                    </div>
-                  </div>
-
-                  {/* Bella — sugestão contextual */}
-                  {creditCardPreview.processorFee >= 5 ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-primary/30 bg-blue-600/5 p-3 text-xs">
-                      <div>
-                        <div className="font-medium text-gray-100">Bella sugere</div>
-                        <p className="mt-0.5 text-muted-foreground">
-                          Esta venda perde{" "}
-                          <strong className="text-foreground">
-                            {formatCurrency(creditCardPreview.processorFee)}
-                          </strong>{" "}
-                          em taxas. PIX recebe em {SETTLEMENT_DAYS_PIX} dia
-                          {SETTLEMENT_DAYS_PIX > 1 ? "s" : ""}, sem taxa.
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setMethod("pix_manual");
-                          setCharge(null);
-                        }}
-                      >
-                        Alterar para PIX
-                      </Button>
-                    </div>
-                  ) : null}
-
-                  {/* FIN-001 — Aviso de absorção da taxa */}
-                  {absorb && creditCardPreview.processorFee > 0 ? (
-                    <BellaInlineSuggestion
-                      tone="warning"
-                      title="Loja absorvendo a taxa"
-                      message={`Lucro reduzido em ${formatCurrency(creditCardPreview.processorFee)} devido à absorção da taxa.`}
-                      action={{
-                        label: "Repassar ao cliente",
-                        onClick: () => setAbsorbOverride(false),
-                      }}
-                    />
-                  ) : null}
-                </div>
-              ) : null}
-
-
-              <Button
-                type="button"
-                onClick={handleGenerate}
-                disabled={
-                  generating ||
-                  createCharge.isPending ||
-                  entradaExcedeu ||
-                  chargeableAmount <= 0
-                }
-              >
-                {generating || createCharge.isPending ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : null}
-                Gerar cobrança {entradaValue > 0 ? `de ${formatCurrency(saldoValue)}` : ""}
-              </Button>
-            </div>
-
+            <CardChargePanel
+              method={method}
+              amount={amount}
+              chargeableAmount={chargeableAmount}
+              installments={installments}
+              onInstallmentsChange={setInstallments}
+              absorb={absorb}
+              onAbsorbChange={setAbsorbOverride}
+              creditCardPreview={creditCardPreview}
+              bellaConfig={bellaConfig}
+              cardFixedFee={cardFixedFee}
+              hasPdvItems={!!pdvCashItems?.length}
+              entradaExcedeu={entradaExcedeu}
+              entradaValue={entradaValue}
+              saldoValue={saldoValue}
+              isGenerating={generating || createCharge.isPending}
+              onGenerate={handleGenerate}
+              onSwitchToPix={switchToPix}
+            />
           ) : method === "pending_payment" ? (
-            <div className="space-y-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-5">
-              <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-500">
-                <Wallet className="h-6 w-6" />
-                <h3 className="font-bold">Pagamento Pendente</h3>
-              </div>
-              
-              {!customerId ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
-                    Para utilizar esta forma de pagamento é necessário selecionar um cliente.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-yellow-500/50 hover:bg-yellow-500/20"
-                    onClick={handleContinueEditing}
-                  >
-                    <ArrowLeft className="mr-1.5 h-4 w-4" /> Selecionar Cliente
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    A venda será finalizada com status <span className="font-semibold text-foreground">Pendente</span>.
-                    O estoque será baixado imediatamente e um título será criado no <span className="font-semibold text-foreground">Contas a Receber</span>.
-                  </p>
-                  <div className="rounded-lg bg-background/50 p-3 text-xs border border-yellow-500/20">
-                    O pagamento poderá ser informado posteriormente na tela de detalhes da venda ou no módulo financeiro.
-                  </div>
-                </>
-              )}
-            </div>
-
+            <PendingPanel customerId={customerId} onSelectCustomer={handleContinueEditing} />
           ) : charge ? (
             <ChargeView
               charge={charge}
@@ -1269,198 +853,52 @@ export function CheckoutDialog({
               whatsappNumber={whatsappNumber}
             />
           ) : null}
-
           </div>
         </div>
 
-
-        <DialogFooter className="sticky bottom-0 z-10 shrink-0 border-t bg-background px-5 py-3 sm:flex-row gap-2">
-          <div className="flex w-full gap-2">
-            {onContinueEditing && !confirmed ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={handleContinueEditing}
-                title="Fecha o pagamento e volta para editar os itens desta venda"
-              >
-                <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="ghost"
-              className="flex-1"
-              onClick={requestClose}
-              disabled={setStatus.isPending}
-            >
-              <XCircle className="mr-1.5 h-4 w-4" /> Fechar
-            </Button>
-            <Button
-              type="button"
-              className={cn(
-                "flex-[2] min-w-[180px]",
-                method === "credit" && !confirmed && customerId && "bg-blue-600 hover:bg-blue-600/90 text-gray-100-foreground font-bold shadow-md"
-              )}
-              onClick={handleConfirm}
-              disabled={
-                setStatus.isPending ||
-                createCredit.isPending ||
-                openingSettle ||
-                (!confirmed && cashClosed) ||
-                (method === "cash" && !confirmed && !canConfirmCash) ||
-                (method === "pix_manual" && !confirmed && !ownPixPayload) ||
-                ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
-              }
-            >
-              {setStatus.isPending || createCredit.isPending || openingSettle ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="mr-1.5 h-4 w-4" />
-              )}
-              {confirmed
-                ? "Concluído"
-                : method === "pix_manual"
-                  ? "Confirmar Pagamento (Pix)"
-                  : method === "cash"
-                    ? "Confirmar Recebimento (Dinheiro)"
-                    : method === "debit_card"
-                      ? "Confirmar Débito"
-                      : method === "credit"
-                        ? "Avançar para Crediário (F5)"
-                        : method === "pending_payment"
-                          ? "Criar Venda Pendente"
-                          : "Confirmar Pagamento (F5)"}
-            </Button>
-          </div>
-        </DialogFooter>
+        <CheckoutFooter
+          method={method}
+          confirmed={confirmed}
+          customerId={customerId}
+          canGoBack={!!onContinueEditing}
+          busy={setStatus.isPending || createCredit.isPending || openingSettle}
+          closeDisabled={setStatus.isPending}
+          confirmDisabled={
+            setStatus.isPending ||
+            createCredit.isPending ||
+            openingSettle ||
+            (!confirmed && cashClosed) ||
+            (method === "cash" && !confirmed && !canConfirmCash) ||
+            (method === "pix_manual" && !confirmed && !ownPixPayload) ||
+            ((method === "credit" || method === "pending_payment") && !confirmed && !customerId)
+          }
+          onBack={handleContinueEditing}
+          onClose={requestClose}
+          onConfirm={handleConfirm}
+        />
       </DialogContent>
 
-      <Dialog open={showCreditConfig} onOpenChange={setShowCreditConfig}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Configuração do Crediário</DialogTitle>
-            <DialogDescription>
-              Defina os termos de pagamento para esta venda.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Valor da Entrada (R$)</Label>
-                <Input
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={entradaStr}
-                  onChange={(e) => setEntradaStr(e.target.value)}
-                  className={cn((entradaExcedeu || entradaNegativa) && "border-destructive focus-visible:ring-destructive")}
-                />
-                {entradaExcedeu && (
-                  <p className="text-[10px] text-destructive font-medium">
-                    A entrada não pode ser maior que o total ({formatCurrency(amount)}).
-                  </p>
-                )}
-                {entradaNegativa && (
-                  <p className="text-[10px] text-destructive font-medium">
-                    O valor da entrada não pode ser negativo.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Nº de Parcelas</Label>
-                <Select
-                  value={String(installmentsCount)}
-                  onValueChange={(v) => setInstallmentsCount(Number(v))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}x
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {entradaValue > 0 && (
-              <div className="space-y-2">
-                <Label>Forma de Pagamento da Entrada</Label>
-                <Select value={creditDownMethod} onValueChange={setCreditDownMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Primeiro Vencimento</Label>
-                <Input
-                  type="date"
-                  value={saldoDueDate}
-                  onChange={(e) => setSaldoDueDate(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Observações</Label>
-                <Input
-                  value={creditNotes}
-                  onChange={(e) => setCreditNotes(e.target.value)}
-                  placeholder="Opcional"
-                />
-              </div>
-            </div>
-
-            {/* Resumo Visual */}
-            <div className="rounded-lg bg-blue-600/5 p-3 border border-primary/10 text-xs">
-              <div className="flex justify-between mb-1">
-                <span className="text-muted-foreground">Valor total da venda:</span>
-                <span className="font-medium text-gray-100">{formatCurrency(amount)}</span>
-              </div>
-              {entradaValue > 0 && (
-                <div className="flex justify-between mb-1">
-                  <span className="text-muted-foreground">Entrada:</span>
-                  <span className="font-medium text-emerald-500">-{formatCurrency(entradaValue)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-semibold text-gray-100 border-t border-primary/10 pt-1 mt-1">
-                <span>{installmentsCount} parcelas de:</span>
-                <span>{formatCurrency(saldoValue / installmentsCount)}</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2 italic">
-                Serão geradas {installmentsCount} {installmentsCount === 1 ? 'parcela' : 'parcelas'} de {formatCurrency(saldoValue / installmentsCount)} 
-                {" "}com 1º vencimento em {new Date(saldoDueDate + "T12:00:00").toLocaleDateString('pt-BR')}.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowCreditConfig(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleConfirmCredit} 
-              disabled={openingSettle || entradaExcedeu || entradaNegativa}
-            >
-              {openingSettle && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar Crediário (F5)
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreditConfigDialog
+        open={showCreditConfig}
+        onOpenChange={setShowCreditConfig}
+        amount={amount}
+        entradaStr={entradaStr}
+        onEntradaChange={setEntradaStr}
+        entradaValue={entradaValue}
+        entradaExcedeu={entradaExcedeu}
+        entradaNegativa={entradaNegativa}
+        saldoValue={saldoValue}
+        installmentsCount={installmentsCount}
+        onInstallmentsCountChange={setInstallmentsCount}
+        creditDownMethod={creditDownMethod}
+        onCreditDownMethodChange={setCreditDownMethod}
+        saldoDueDate={saldoDueDate}
+        onSaldoDueDateChange={setSaldoDueDate}
+        creditNotes={creditNotes}
+        onCreditNotesChange={setCreditNotes}
+        submitting={openingSettle}
+        onConfirm={handleConfirmCredit}
+      />
 
       <ReceiptDialog
         open={showReceipt}
