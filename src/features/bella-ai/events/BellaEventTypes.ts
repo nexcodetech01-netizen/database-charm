@@ -43,7 +43,8 @@ export type BellaEventType =
   | "inventory.min_stock_reached"
   | "inventory.slow_moving"
   | "inventory.out_of_stock"
-  | "inventory.possible_duplicate"
+    | "inventory.possible_duplicate"
+  | "inventory.restock_summary"
   // ============ Vendas ============
   | "sales.goal_reached"
   | "sales.above_average"

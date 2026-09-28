@@ -8237,6 +8237,15 @@ export type Database = {
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }
+      top_selling_products: {
+        Args: { _company_id: string; _days?: number; _limit?: number }
+        Returns: {
+          name: string
+          product_id: string
+          quantity: number
+          revenue: number
+        }[]
+      }
       user_has_company_access: {
         Args: { _company_id: string }
         Returns: boolean

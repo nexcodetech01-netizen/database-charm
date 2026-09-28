@@ -80,7 +80,8 @@ export function BellaInventoryPanel({ companyId, className }: BellaInventoryPane
           loading={isLoading}
         />
 
-        <BellaInventoryRestockSuggestions
+                <BellaInventoryRestockSuggestions
+          companyId={companyId}
           suggestions={view.restockSuggestions}
           loading={isLoading}
         />
