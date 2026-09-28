@@ -1,3 +1,5 @@
+// @vitest-environment node
+// audit.server.ts só roda no servidor: sem `window`, como em produção.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getRequest } = vi.hoisted(() => ({

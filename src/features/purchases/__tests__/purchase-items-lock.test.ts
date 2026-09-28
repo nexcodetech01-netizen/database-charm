@@ -36,8 +36,14 @@ vi.mock("@/integrations/supabase/client", () => {
     };
     return q;
   }
-  function purchaseItemsQuery() {
+    function purchaseItemsQuery() {
     return {
+      // O service compara os itens gravados com os novos: só bloqueia se
+      // houver mudança. Aqui a compra não tem itens gravados, então
+      // qualquer item enviado conta como edição.
+      select() {
+        return { eq: () => Promise.resolve({ data: [], error: null }) };
+      },
       delete() {
         return { eq: () => Promise.resolve({ error: null }) };
       },
@@ -63,11 +69,14 @@ vi.mock("@/services/supabase.service", () => ({
 
 import { purchasesService } from "../services/purchases.service";
 
+// O service valida product_id como UUID antes de checar a trava.
+const PRODUCT_ID = "00000000-0000-4000-8000-000000000001";
+
 describe("purchasesService.update · trava de itens após recebida", () => {
   it("rejeita editar itens de uma compra já recebida", async () => {
     await expect(
       purchasesService.update("p-received", {
-        items: [{ product_id: "prod-1", quantity: 5, unit_price: 10, description: "x", discount: 0 } as any],
+        items: [{ product_id: PRODUCT_ID, quantity: 5, unit_price: 10, description: "x", discount: 0 } as any],
       }),
     ).rejects.toThrow(/já foi recebida/i);
   });
@@ -75,7 +84,7 @@ describe("purchasesService.update · trava de itens após recebida", () => {
   it("permite editar itens de uma compra ainda pendente", async () => {
     await expect(
       purchasesService.update("p-pending", {
-        items: [{ product_id: "prod-1", quantity: 5, unit_price: 10, description: "x", discount: 0 } as any],
+        items: [{ product_id: PRODUCT_ID, quantity: 5, unit_price: 10, description: "x", discount: 0 } as any],
       }),
     ).resolves.not.toThrow();
   });

@@ -104,16 +104,16 @@ describe("StockV2 Skills", () => {
     expect(res.code).toBe("not_allowed");
   });
 
-  it("stock.add rejeita payload inválido (strict)", async () => {
-    const { supabase } = makeSupabase();
+    it("stock.add ignora campo extra e segue para a confirmação", async () => {
+    // Campos desconhecidos são ignorados desde 2026-08-31 (ver
+    // base-skill.test.ts): a pergunta não é mais rejeitada por isso.
+    const { supabase } = makeSupabase({ productMaybe: PRODUCT });
     const ctx = makeCtx(["inventory.update"], supabase);
     const res = await stockAddSkill.run({
       payload: { productId: PRODUCT.id, quantity: 5, algoEstranho: 1 },
       ctx,
-      confirmed: true,
     });
-    expect(res.ok).toBe(false);
-    expect(res.code).toBe("missing_fields");
+    expect(res.code).toBe("needs_confirmation");
   });
 
   it("stock.add exige confirmação por ser destrutiva", async () => {

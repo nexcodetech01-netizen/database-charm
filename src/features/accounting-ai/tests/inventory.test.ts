@@ -281,14 +281,12 @@ describe("accounting-ai · estoque · chat", () => {
     expect(detectIntent("Qual produto mais vendido?").intent).toBe("consultar_produtos");
   });
 
-  it("planeja apenas skills já existentes", () => {
+    // Desde 2026-08-27 a intenção de estoque consulta só produtos: as skills
+  // genéricas (alertas, recomendações, notificações) misturavam caixa e
+  // recebíveis na resposta. Ver chat/planner.ts.
+  it("planeja apenas a skill de produtos", () => {
     const plan = planIntent(detectIntent("Como está meu estoque?"));
-    expect(plan.shape).toBe("composite");
-    expect(plan.steps.map((s) => s.skillId)).toEqual([
-      "consultar_produtos",
-      "consultar_alertas",
-      "consultar_recomendacoes",
-      "consultar_notificacoes",
-    ]);
+    expect(plan.shape).toBe("single");
+    expect(plan.steps.map((s) => s.skillId)).toEqual(["consultar_produtos"]);
   });
 });

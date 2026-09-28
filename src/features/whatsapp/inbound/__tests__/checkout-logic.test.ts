@@ -5,8 +5,10 @@ import { saveCartSession, resetCartSessions } from "../cart-session.server";
 import type { CartSession } from "../cart-session";
 import { supabaseAdminMock } from "./session-store.mock";
 
-vi.mock("@/integrations/supabase/client.server", () => ({
-  supabaseAdmin: supabaseAdminMock,
+// Factory assíncrona: o vi.mock é içado para o topo do arquivo, antes dos
+// imports — referenciar `supabaseAdminMock` direto quebrava a suíte.
+vi.mock("@/integrations/supabase/client.server", async () => ({
+  supabaseAdmin: (await import("./session-store.mock")).supabaseAdminMock,
 }));
 
 describe("Checkout Logic Tests (A-G)", () => {

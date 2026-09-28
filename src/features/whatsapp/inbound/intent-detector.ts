@@ -62,7 +62,10 @@ export function parseWebsiteCatalogOrder(text: string): WebsiteCatalogOrder | nu
   if (!isOrder) return null;
 
   const items: WebsiteCatalogOrderItem[] = [];
-  const itemRegex = /• (.*?) — (\d+) un\. — (R\$ [\d,.]+)/g;
+    // Aceita a linha do item com ou sem marcador ("• ", "- ", "* ") no
+  // início: o formato do site variou ao longo do tempo, e um item sem o
+  // "•" fazia o pedido inteiro cair em "não consegui identificar os itens".
+  const itemRegex = /^[ \t]*(?:[•*-][ \t]*)?(.+?) — (\d+) un\. — (R\$ [\d,.]+)/gm;
   let match: RegExpExecArray | null;
   while ((match = itemRegex.exec(t)) !== null) {
     if (match[1] && match[2] && match[3]) {

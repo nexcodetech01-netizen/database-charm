@@ -99,15 +99,18 @@ describe("ProductV2 Skills", () => {
     expect(res.code).toBe("not_allowed");
   });
 
-  it("product.create rejeita payload inválido (schema strict)", async () => {
-    const { supabase } = makeSupabase();
+    it("product.create ignora campo desconhecido", async () => {
+    // Campos desconhecidos são ignorados desde 2026-08-31 (ver
+    // base-skill.test.ts): a pergunta não é mais rejeitada por isso.
+    const { supabase } = makeSupabase({
+      insertRow: { id: "p1", name: "P", price: 10 },
+    });
     const ctx = makeCtx(["products.create"], supabase);
     const res = await productCreateSkill.run({
       payload: { name: "P", price: 10, campoDesconhecido: 1 },
       ctx,
     });
-    expect(res.ok).toBe(false);
-    expect(res.code).toBe("missing_fields");
+    expect(res.code).not.toBe("missing_fields");
   });
 
   it("product.create sucesso com dados válidos", async () => {
@@ -142,7 +145,7 @@ describe("ProductV2 Skills", () => {
       // sem confirmed
     });
     expect(res.ok).toBe(false);
-    expect(res.code).toBe("invalid_payload"); // pipeline usa esse code p/ confirmação
+        expect(res.code).toBe("needs_confirmation");
     expect(res.message).toMatch(/confirmar/i);
   });
 

@@ -21,7 +21,15 @@ vi.mock("@/integrations/supabase/client.server", () => {
             } else if (table === "whatsapp_cart_sessions") {
                store[`cart:${data.phone}`] = data.session_data;
             }
-            return Promise.resolve({ data, error: null });
+                        // O router hoje faz upsert(...).select("id").single() ao criar
+            // o contato: além de "await" direto, o retorno precisa aceitar
+            // o encadeamento.
+            const result: any = Promise.resolve({ data, error: null });
+            result.select = () => ({
+              single: () => Promise.resolve({ data: { id: "id-1", ...data }, error: null }),
+              maybeSingle: () => Promise.resolve({ data: { id: "id-1", ...data }, error: null }),
+            });
+            return result;
           }),
           insert: vi.fn().mockReturnThis(),
           delete: vi.fn().mockReturnThis(),
@@ -77,7 +85,8 @@ describe("Final Fix Verification: Greeting and Freight", () => {
     const sentText = (whatsappServer.sendWhatsAppText as any).mock.calls[0][0].text;
     
     // Verifica saudação (conforme America/Sao_Paulo)
-    expect(sentText).toMatch(/(Bom dia|Boa tarde|Boa noite)!/);
+    // Saudação atual: "Olá, boa tarde! 😊"
+    expect(sentText).toMatch(/(bom dia|boa tarde|boa noite)!/i);
     expect(sentText).toContain("Recebi seu pedido do catálogo! 🛍️");
     expect(sentText).toContain("Qual forma de pagamento você prefere? 😊");
   });
