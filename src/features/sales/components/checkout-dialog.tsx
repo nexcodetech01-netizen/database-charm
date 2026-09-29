@@ -175,7 +175,7 @@ export function CheckoutDialog({
   const absorb =
     absorbOverride ?? Boolean(bellaConfig?.credit_card_absorb_fee);
 
-  const { amount, ensurePricingReady } = useCheckoutPricing({
+    const { amount, ensurePricingReady, restoreCashPricing } = useCheckoutPricing({
     open,
     saleId,
     initialAmount,
@@ -493,8 +493,21 @@ export function CheckoutDialog({
    * Se houver cobrança Bella Pay aguardando pagamento, mantém "pending"
    * — o operador pode retomar/cancelar a cobrança no detalhe da venda.
    */
+    /** Fechou sem pagar: não deixa a taxa do cartão gravada no rascunho. */
+  async function restoreCashPricingSafely() {
+    try {
+      await restoreCashPricing();
+    } catch (error) {
+      console.error("[checkout] falha ao restaurar preço à vista", { saleId, error });
+      toast.error("Não foi possível voltar a venda ao preço à vista", {
+        description: "Ao reabrir, selecione a forma de pagamento de novo antes de finalizar.",
+      });
+    }
+  }
+
   async function requestClose() {
     if (!confirmed && !charge) {
+      await restoreCashPricingSafely();
       try {
         await setStatus.mutateAsync({ id: saleId, status: "draft" });
       } catch (error) {
@@ -532,7 +545,8 @@ export function CheckoutDialog({
       closeCheckout: () => onOpenChange(false),
       rollbackSaleStatus:
         !confirmed && !charge
-          ? async () => {
+                    ? async () => {
+              await restoreCashPricingSafely();
               await setStatus.mutateAsync({ id: saleId, status: "draft" });
               qc.setQueryData(["sales", "detail", saleId], (current: unknown) =>
                 current && typeof current === "object"

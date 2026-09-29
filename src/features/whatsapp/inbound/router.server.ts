@@ -8,6 +8,7 @@ import { recordConfirmedOrder } from "./commercial-inbox.server";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
 import { emitAgentEvent } from "../../bella-ai/agent/infrastructure/event-bus";
 import { makeSecurityContext } from "../../bella-ai/agent/infrastructure/context";
+import { applyWhatsAppStatus } from "./message-status";
 
 /**
  * NEXOS_ROUTER_BUILD_ID is used for runtime validation of the deployed bundle.
@@ -17,7 +18,14 @@ export const NEXOS_ROUTER_BUILD_ID = "CFzzUNqT";
 
 const phoneVariants = (waId: string) => [waId, waId.replace("@s.whatsapp.net", "")];
 
-export async function handleWhatsAppInboundPayload({ db, msg, tenant, startedAt }: any) {
+export async function handleWhatsAppInboundPayload({ db, msg, status, tenant, startedAt }: any) {
+  // Evento só de status (enviado/entregue/lido/falhou) de uma mensagem
+  // nossa: não há mensagem nova para processar.
+  if (!msg) {
+    if (status) await applyWhatsAppStatus({ db, status, tenant });
+    return;
+  }
+
   const variants = phoneVariants(msg.waContactId);
   const canonical = variants.find((v) => v.startsWith("55") && v.length === 13) ?? msg.waContactId;
 
