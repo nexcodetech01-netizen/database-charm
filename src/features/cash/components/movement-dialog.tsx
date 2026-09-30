@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
+import { parseCurrency } from "@/lib/masks";
 import { useRegisterCashMovement, useCashSummary } from "../hooks/use-cash";
 import type { CashMovementType, CashSession } from "../types";
 
@@ -47,7 +48,8 @@ export function MovementDialog({
   const label = type === "cash_in" ? "Suprimento" : "Sangria";
 
   async function submit() {
-    const value = Number(amount.replace(",", "."));
+        // parseCurrency entende "1.234,56" (antes o separador de milhar virava NaN).
+    const value = parseCurrency(amount);
     if (Number.isNaN(value) || value <= 0) {
       toast.error("Valor inválido.");
       return;

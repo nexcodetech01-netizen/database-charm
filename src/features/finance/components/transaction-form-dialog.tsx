@@ -311,6 +311,25 @@ export function TransactionFormDialog({
       }
       console.log("[TransactionFormDialog] Enviando payload:", payload);
 
+            // Transferência nova: move os dois saldos de verdade (antes só gravava
+      // o lançamento e os saldos não mudavam).
+      if (!isEdit && form.type === "transfer") {
+        await financeService.transferBetweenAccounts({
+          companyId,
+          fromAccountId: form.account_id,
+          toAccountId: form.transfer_to_account_id,
+          amount: Number(payload.amount),
+          date: form.transaction_date || todayISO(),
+          description: form.description || null,
+        });
+        void qc.invalidateQueries({ queryKey: ["finance"] });
+        toast.success("Transferência registrada", {
+          description: "O valor saiu de uma conta e entrou na outra.",
+        });
+        onOpenChange(false);
+        return;
+      }
+
       if (isEdit && transaction) {
         const { company_id: _c, source: _s, status: _st, ...update } = payload;
         void _c;
