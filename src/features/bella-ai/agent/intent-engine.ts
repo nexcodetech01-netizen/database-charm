@@ -27,8 +27,9 @@ export const SUPPORTED_RUNTIME_INTENTS = [
   "finance.cash_balance",
   "finance.receivable",
   "finance.payable",
-  "sale.search",
+    "sale.search",
   "sale.best_customer",
+  "sale.products_sold",
   // Sprint 003 — Estoque
   "stock.add",
   "stock.remove",
@@ -62,6 +63,38 @@ function captureAfter(text: string, verbs: RegExp): string | null {
   if (!m) return null;
   const tail = text.slice(m.index! + m[0].length).trim();
   return tail.length > 0 ? tail : null;
+}
+
+
+// ---- sale.products_sold -------------------------------------------------
+const PRODUCTS_SOLD_PATTERNS: RegExp[] = [
+  /\bquant[oa]s? (?:unidades? (?:de |do |da |dos |das )?)?(.+?) (?:eu |nos |a gente )?(?:vendi|vendemos|vendeu|foram vendid[oa]s|sairam)\b/,
+  /\b(?:quais|que) (.+?) (?:eu |nos )?(?:mais )?(?:vendi|vendemos|venderam|mais venderam|mais saem|mais sairam)\b/,
+  /\b(?:vendas|venda) (?:de|do|da|dos|das) (.+?)(?: (?:esse|este|no|do|neste|nesse|em|mes|semana|ultimos)\b|\?|$)/,
+];
+
+const TERM_STOPWORDS = /\b(?:eu|nos|meus?|minhas?|os|as|o|a|de|do|da|dos|das|produtos?|itens?)\b/g;
+
+function extractProductsSold(text: string): Record<string, unknown> {
+  let term: string | null = null;
+  for (const pattern of PRODUCTS_SOLD_PATTERNS) {
+    const m = text.match(pattern);
+    if (m?.[1]) {
+      term = m[1];
+      break;
+    }
+  }
+  const cleaned = (term ?? "")
+    .replace(/\b(?:esse|este|nesse|neste|no|do) (?:mes|mês|semana|ano)\b.*$/, "")
+    .replace(TERM_STOPWORDS, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const period = /\bmes passado\b|\bultimo mes\b/.test(text)
+    ? "last_month"
+    : /\bultimos 30 dias\b|\b30 dias\b/.test(text)
+      ? "last_30_days"
+      : "this_month";
+  return cleaned.length >= 2 ? { term: cleaned, period } : { period };
 }
 
 const RULES: Rule[] = [
@@ -164,6 +197,14 @@ const RULES: Rule[] = [
       /\bsugestao de reposicao\b/,
     ],
     confidence: 0.9,
+  },
+    // sale.products_sold — "quantos perfumes vendi esse mês?"
+  // Antes de sale.search: essas perguntas caíam na lista de pedidos.
+  {
+    intent: "sale.products_sold",
+    patterns: PRODUCTS_SOLD_PATTERNS,
+    extract: extractProductsSold,
+    confidence: 0.92,
   },
   // sale.search — consultar vendas
   {
