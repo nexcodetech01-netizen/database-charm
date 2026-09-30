@@ -89,7 +89,7 @@ import { Route as AuthenticatedComercialInboxWhatsappRouteImport } from './route
 import { Route as AuthenticatedClientesNovoRouteImport } from './routes/_authenticated/clientes_.novo'
 import { Route as AuthenticatedClientesCustomerIdRouteImport } from './routes/_authenticated/clientes_.$customerId'
 import { Route as AuthenticatedBellaPayTestRouteImport } from './routes/_authenticated/bella-pay.test'
-import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from './routes/_authenticated/bella-contadora.fechamento-mensal'
+import { Route as AuthenticatedBellaContadoraFechamentoMensalRouteImport } from './routes/_authenticated/bella-contadora_.fechamento-mensal'
 import { Route as AuthenticatedProdutosProductIdIndexRouteImport } from './routes/_authenticated/produtos_.$productId.index'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp.webhook'
@@ -565,9 +565,9 @@ const AuthenticatedBellaPayTestRoute =
   } as any)
 const AuthenticatedBellaContadoraFechamentoMensalRoute =
   AuthenticatedBellaContadoraFechamentoMensalRouteImport.update({
-    id: '/fechamento-mensal',
-    path: '/fechamento-mensal',
-    getParentRoute: () => AuthenticatedBellaContadoraRoute,
+    id: '/bella-contadora_/fechamento-mensal',
+    path: '/bella-contadora/fechamento-mensal',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProdutosProductIdIndexRoute =
   AuthenticatedProdutosProductIdIndexRouteImport.update({
@@ -760,7 +760,7 @@ export interface FileRoutesByFullPath {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -872,7 +872,7 @@ export interface FileRoutesByTo {
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
+  '/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
@@ -985,7 +985,7 @@ export interface FileRoutesById {
   '/_authenticated/bella': typeof AuthenticatedBellaRoute
   '/_authenticated/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
   '/_authenticated/bella-conhecimento': typeof AuthenticatedBellaConhecimentoRoute
-  '/_authenticated/bella-contadora': typeof AuthenticatedBellaContadoraRouteWithChildren
+  '/_authenticated/bella-contadora': typeof AuthenticatedBellaContadoraRoute
   '/_authenticated/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/_authenticated/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
@@ -1018,7 +1018,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/rastreio/$trackingCode': typeof RastreioTrackingCodeRoute
   '/rastreio/': typeof RastreioIndexRoute
-  '/_authenticated/bella-contadora/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
+  '/_authenticated/bella-contadora_/fechamento-mensal': typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   '/_authenticated/bella-pay/test': typeof AuthenticatedBellaPayTestRoute
   '/_authenticated/clientes_/$customerId': typeof AuthenticatedClientesCustomerIdRouteWithChildren
   '/_authenticated/clientes_/novo': typeof AuthenticatedClientesNovoRoute
@@ -1356,7 +1356,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/rastreio/$trackingCode'
     | '/rastreio/'
-    | '/_authenticated/bella-contadora/fechamento-mensal'
+    | '/_authenticated/bella-contadora_/fechamento-mensal'
     | '/_authenticated/bella-pay/test'
     | '/_authenticated/clientes_/$customerId'
     | '/_authenticated/clientes_/novo'
@@ -2020,12 +2020,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBellaPayTestRouteImport
       parentRoute: typeof AuthenticatedBellaPayRoute
     }
-    '/_authenticated/bella-contadora/fechamento-mensal': {
-      id: '/_authenticated/bella-contadora/fechamento-mensal'
-      path: '/fechamento-mensal'
+    '/_authenticated/bella-contadora_/fechamento-mensal': {
+      id: '/_authenticated/bella-contadora_/fechamento-mensal'
+      path: '/bella-contadora/fechamento-mensal'
       fullPath: '/bella-contadora/fechamento-mensal'
       preLoaderRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRouteImport
-      parentRoute: typeof AuthenticatedBellaContadoraRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/produtos_/$productId/': {
       id: '/_authenticated/produtos_/$productId/'
@@ -2240,21 +2240,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedBellaContadoraRouteChildren {
-  AuthenticatedBellaContadoraFechamentoMensalRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRoute
-}
-
-const AuthenticatedBellaContadoraRouteChildren: AuthenticatedBellaContadoraRouteChildren =
-  {
-    AuthenticatedBellaContadoraFechamentoMensalRoute:
-      AuthenticatedBellaContadoraFechamentoMensalRoute,
-  }
-
-const AuthenticatedBellaContadoraRouteWithChildren =
-  AuthenticatedBellaContadoraRoute._addFileChildren(
-    AuthenticatedBellaContadoraRouteChildren,
-  )
-
 interface AuthenticatedBellaPayRouteChildren {
   AuthenticatedBellaPayTestRoute: typeof AuthenticatedBellaPayTestRoute
 }
@@ -2411,7 +2396,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBellaRoute: typeof AuthenticatedBellaRoute
   AuthenticatedBellaAgentDebugRoute: typeof AuthenticatedBellaAgentDebugRoute
   AuthenticatedBellaConhecimentoRoute: typeof AuthenticatedBellaConhecimentoRoute
-  AuthenticatedBellaContadoraRoute: typeof AuthenticatedBellaContadoraRouteWithChildren
+  AuthenticatedBellaContadoraRoute: typeof AuthenticatedBellaContadoraRoute
   AuthenticatedBellaPayRoute: typeof AuthenticatedBellaPayRouteWithChildren
   AuthenticatedBellaProcessosRoute: typeof AuthenticatedBellaProcessosRoute
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
@@ -2440,6 +2425,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSaudePlataformaRoute: typeof AuthenticatedSaudePlataformaRoute
   AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
+  AuthenticatedBellaContadoraFechamentoMensalRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRoute
   AuthenticatedClientesCustomerIdRoute: typeof AuthenticatedClientesCustomerIdRouteWithChildren
   AuthenticatedClientesNovoRoute: typeof AuthenticatedClientesNovoRoute
   AuthenticatedComercialInboxWhatsappRoute: typeof AuthenticatedComercialInboxWhatsappRoute
@@ -2477,8 +2463,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBellaRoute: AuthenticatedBellaRoute,
   AuthenticatedBellaAgentDebugRoute: AuthenticatedBellaAgentDebugRoute,
   AuthenticatedBellaConhecimentoRoute: AuthenticatedBellaConhecimentoRoute,
-  AuthenticatedBellaContadoraRoute:
-    AuthenticatedBellaContadoraRouteWithChildren,
+  AuthenticatedBellaContadoraRoute: AuthenticatedBellaContadoraRoute,
   AuthenticatedBellaPayRoute: AuthenticatedBellaPayRouteWithChildren,
   AuthenticatedBellaProcessosRoute: AuthenticatedBellaProcessosRoute,
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
@@ -2507,6 +2492,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSaudePlataformaRoute: AuthenticatedSaudePlataformaRoute,
   AuthenticatedVendasRoute: AuthenticatedVendasRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
+  AuthenticatedBellaContadoraFechamentoMensalRoute:
+    AuthenticatedBellaContadoraFechamentoMensalRoute,
   AuthenticatedClientesCustomerIdRoute:
     AuthenticatedClientesCustomerIdRouteWithChildren,
   AuthenticatedClientesNovoRoute: AuthenticatedClientesNovoRoute,
