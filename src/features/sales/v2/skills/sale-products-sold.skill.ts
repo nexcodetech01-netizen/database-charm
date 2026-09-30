@@ -29,15 +29,23 @@ export const saleProductsSoldSkill = defineBaseSkill({
   requiredPermissions: ["sales.view"],
   destructive: false,
   async handler(input, ctx) {
-    const period = resolveSoldPeriod(input.period ?? "this_month");
-    const { data, error } = await (ctx.supabase.rpc as any)("products_sold_summary", {
-      _company_id: ctx.companyId,
-      _term: input.term,
-      _start: period.start,
-      _end: period.end,
-    });
-    if (error) {
-      return skillResult.error(`Não consegui consultar as vendas: ${error.message}`);
+        const period = resolveSoldPeriod(input.period ?? "this_month");
+    let data: unknown[];
+    try {
+      // Import dinâmico: o repositório é só de servidor (cliente admin).
+      const { fetchProductsSoldSummary } = await import(
+        "../repository/products-sold.repository.server"
+      );
+      data = await fetchProductsSoldSummary({
+        companyId: ctx.companyId,
+        term: input.term,
+        start: period.start,
+        end: period.end,
+      });
+    } catch (err) {
+      return skillResult.error(
+        `Não consegui consultar as vendas: ${err instanceof Error ? err.message : "erro desconhecido"}`,
+      );
     }
     const rows = ((data ?? []) as ProductSoldRow[]).map((r) => ({
       ...r,
