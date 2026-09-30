@@ -4,7 +4,12 @@ import type { CategoryTotal } from "../lib/withdrawal-split";
 
 export interface MonthlySummary {
   month: string;
+    /** Tudo que foi vendido no mês (pago ou não). */
   revenue: number;
+  /** Vendas pagas (total ou parcialmente). */
+  received_revenue: number;
+  /** Vendas pendentes (fiado, crediário, pagamento pendente). */
+  pending_revenue: number;
   sales_count: number;
   refunds: number;
   cogs: number;
@@ -49,7 +54,9 @@ export function useMonthlySummary(companyId: string | undefined, month: string) 
           : [];
       return {
         month: String(raw.month ?? month),
-        revenue: toNumber(raw.revenue),
+                revenue: toNumber(raw.revenue),
+        received_revenue: toNumber(raw.received_revenue),
+        pending_revenue: toNumber(raw.pending_revenue),
         sales_count: toNumber(raw.sales_count),
         refunds: toNumber(raw.refunds),
         cogs: toNumber(raw.cogs),
