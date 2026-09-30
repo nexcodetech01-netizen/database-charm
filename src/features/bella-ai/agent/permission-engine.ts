@@ -70,7 +70,12 @@ const SKILL_PERMISSION_MAP: Record<string, SkillPermissionSpec> = {
   },
 
   // Vendas
-  "sale.search": { skillId: "sale.search", requires: ["sales.view"], destructive: false },
+    "sale.search": { skillId: "sale.search", requires: ["sales.view"], destructive: false },
+  "sale.products_sold": {
+    skillId: "sale.products_sold",
+    requires: ["sales.view"],
+    destructive: false,
+  },
   "sale.best_customer": {
     skillId: "sale.best_customer",
     requires: ["reports.view"],

@@ -29,7 +29,8 @@ const INTENT_TO_SKILL: Record<string, string> = {
   "finance.receivable": "finance.get_receivables",
   "finance.payable": "finance.get_payables",
   "sale.search": "sale.search",
-  "sale.best_customer": "sale.best_customer",
+    "sale.best_customer": "sale.best_customer",
+  "sale.products_sold": "sale.products_sold",
   // Sprint 003 — Estoque
   "stock.add": "stock.add",
   "stock.remove": "stock.remove",

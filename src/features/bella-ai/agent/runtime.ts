@@ -92,10 +92,15 @@ export async function handleWithAgentRuntime(
   }
 
   // Fase 2 — Tentativa via LLM (Nova Ordem: LLM -> Determinístico)
-  let intent: AgentIntent | null = null;
+    let intent: AgentIntent | null = null;
   let aiResult: AIResult | null = null;
-  
-  try {
+
+  // "Quantos perfumes vendi?": a regra determinística é mais precisa que a
+  // IA, que costumava escolher sale.search e listar pedidos.
+  const pinned = detectDeterministicIntent(input.message);
+  if (pinned?.id === "sale.products_sold") intent = pinned;
+
+  if (!intent) try {
     aiResult = await gateway.interpret({
       userMessage: input.message,
       // BUG CORRIGIDO: `companyName` estava recebendo o valor de
