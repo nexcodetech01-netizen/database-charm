@@ -129,12 +129,27 @@ export function MonthlyClosingSummary({ companyId }: { companyId: string }) {
               <Skeleton className="h-40 w-full" />
             ) : (
               <>
-                <Line
-                  label="Vendas"
+                                <Line
+                  label="Vendas do mês"
                   value={summary.revenue}
                   sign="+"
-                  hint={`${summary.sales_count} venda${summary.sales_count === 1 ? "" : "s"} paga${summary.sales_count === 1 ? "" : "s"}`}
+                  hint={`${summary.sales_count} venda${summary.sales_count === 1 ? "" : "s"}, pagas ou não`}
                 />
+                <ul className="ml-[1.125rem] space-y-0.5 pb-1">
+                  <li className="flex justify-between text-xs text-muted-foreground">
+                    <span>já recebido</span>
+                    <span className="tabular-nums">{formatCurrency(summary.received_revenue)}</span>
+                  </li>
+                  <li
+                    className={cn(
+                      "flex justify-between text-xs",
+                      summary.pending_revenue > 0 ? "text-amber-600" : "text-muted-foreground",
+                    )}
+                  >
+                    <span>a receber</span>
+                    <span className="tabular-nums">{formatCurrency(summary.pending_revenue)}</span>
+                  </li>
+                </ul>
                 {summary.refunds > 0 ? (
                   <Line label="Devoluções" value={summary.refunds} sign="−" />
                 ) : null}
@@ -142,7 +157,7 @@ export function MonthlyClosingSummary({ companyId }: { companyId: string }) {
                   label="Custo dos produtos vendidos"
                   value={summary.cogs}
                   sign="−"
-                  hint="O que as peças vendidas custaram para vocês"
+                                    hint="O que as peças vendidas no mês custaram para vocês"
                 />
                 <Line label="Despesas da loja" value={summary.expenses_total} sign="−" />
                 {summary.expenses.length > 0 ? (

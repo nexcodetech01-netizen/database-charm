@@ -1,38 +1,19 @@
-import {
-  Boxes,
-  Calculator,
-  Coins,
-  HandCoins,
-  HeartPulse,
-  PiggyBank,
-  Receipt,
-  ShoppingCart,
-  TrendingDown,
-  TrendingUp,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { CalendarCheck, Calculator, HandCoins, TrendingUp, Wallet } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { PageLayout } from "@/components/layout";
 import { formatCurrency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/design";
 import {
-  AdvisorCard,
-  AlertCard,
   BellaChatPanel,
   BellaNotificationCenter,
-
   BellaBriefCard,
   FinancialCard,
   IndicatorCard,
-  InsightCard,
-  InsightsPanel,
   SummaryGrid,
-  TrendBadge,
 } from "../components";
 import { useEffect, useMemo } from "react";
 import { useBellaDashboard } from "../hooks/use-bella-dashboard";
-import { healthLabel } from "../lib/health";
 import { accountingQueries } from "../queries";
 import { buildAccountingInsights } from "../insights";
 import { buildFinancialAdvice } from "../advisor";
@@ -43,20 +24,17 @@ import {
   buildBellaNotifications,
   useBellaNotifications,
 } from "../proactive";
-import type { AccountingSummary, ProviderResult, TrendComparison } from "../types";
-import { useAccounts } from "@/features/finance/hooks/use-finance";
+import type { AccountingSummary } from "../types";
+import { useFinancialCategories } from "@/features/finance/hooks/use-finance";
+import {
+  useMonthlySummary,
+  useWithdrawalCapacity,
+} from "../monthly-closing/hooks/use-monthly-summary";
+import { partnerNamesFrom, planWithdrawals } from "../monthly-closing/lib/withdrawal-split";
 
 const pct = (v: number) => `${v.toFixed(2).replace(".", ",")}%`;
 
-function money<T>(result: ProviderResult<T> | undefined, pick: (data: T) => number) {
-  if (!result?.available || !result.data) return { unavailable: true, value: "—" };
-  return { unavailable: false, value: formatCurrency(pick(result.data)) };
-}
 
-function count<T>(result: ProviderResult<T> | undefined, pick: (data: T) => number) {
-  if (!result?.available || !result.data) return { unavailable: true, value: "—" };
-  return { unavailable: false, value: String(pick(result.data)) };
-}
 
 export interface BellaContadoraDashboardProps {
   companyId: string;
@@ -65,103 +43,65 @@ export interface BellaContadoraDashboardProps {
 export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardProps) {
   // Sprint 7.2.1: uma única leitura resolve summary + tributário + auditoria
   // em paralelo (Promise.all no BellaContext), sem waterfalls entre blocos.
-  const { summary, tax, audit, isLoading, refetch } = useBellaDashboard(companyId);
-  const { data: financialAccounts } = useAccounts(companyId);
-  const availableCash = (financialAccounts || [])
-    .filter((a: any) => a.status === 'active')
-    .reduce((sum: number, a: any) => sum + (Number(a.current_balance) || 0), 0);
+    const { summary, tax, audit, isLoading } = useBellaDashboard(companyId);
   const s = (summary ?? undefined) as AccountingSummary | undefined;
 
 
-  const trends = s?.trends.data;
-  const health = s?.health.data;
+  // Números do topo = mesma fonte do Fechamento do mês (monthly_closing_summary
+  // + compute_prolabore_safe_amount). Antes vinham da DRE contábil, do saldo e
+  // de fórmulas próprias, e não batiam com o fechamento.
+  const month = currentMonthKey();
+  const monthSummaryQ = useMonthlySummary(companyId, month);
+  const capacityQ = useWithdrawalCapacity(companyId, true);
+  const { data: financialCategories } = useFinancialCategories(companyId);
+  const monthSummary = monthSummaryQ.data;
+  const capacity = capacityQ.data;
+  const withdrawalPlan = useMemo(
+    () =>
+      planWithdrawals({
+        partnerNames: partnerNamesFrom((financialCategories ?? []).map((c) => c.name)),
+        withdrawals: monthSummary?.withdrawals ?? [],
+        safeAmount: capacity?.safe_amount ?? null,
+        cashBalance: capacity?.cash_balance ?? 0,
+      }),
+    [financialCategories, monthSummary, capacity],
+  );
+  const perPartner = withdrawalPlan.partners[0]?.available ?? 0;
+  const cardsLoading = monthSummaryQ.isLoading || capacityQ.isLoading;
 
-  const cards = useMemo<{
-    label: string;
-    icon: typeof Wallet;
-    value: string;
-    unavailable: boolean;
-    hint?: string;
-    trend?: TrendComparison | null;
-    highlight?: boolean;
-  }[]>(() => [
+  const cards = [
     {
-      label: "Receita hoje",
+      label: "Vendas do mês",
       icon: TrendingUp,
-      ...money(s?.today, (d) => d.total),
-      hint: s?.today.data ? `${s.today.data.count} venda(s) hoje` : undefined,
-      trend: trends?.todayVsYesterday ?? null,
+      value: monthSummary ? formatCurrency(monthSummary.revenue) : "—",
+      hint: monthSummary
+        ? `Recebido ${formatCurrency(monthSummary.received_revenue)} · a receber ${formatCurrency(monthSummary.pending_revenue)}`
+        : undefined,
     },
     {
-      label: "Receita do mês",
-      icon: TrendingUp,
-      ...money(s?.revenue, (d) => d.netRevenue),
-      hint: "Receita líquida do período",
-      trend: trends?.monthVsPreviousRevenue ?? null,
-    },
-    {
-      label: "Lucro bruto",
-      icon: Coins,
-      ...money(s?.profit, (d) => d.grossProfit),
-      hint: s?.profit.data ? pct(s.profit.data.grossMargin) : undefined,
-    },
-    {
-      label: "Lucro líquido",
+      label: "Lucro do mês",
       icon: Calculator,
-      ...money(s?.profit, (d) => d.netProfit),
-      hint: s?.profit.data ? pct(s.profit.data.netMargin) : undefined,
-      trend: trends?.monthVsPreviousProfit ?? null,
+      value: monthSummary ? formatCurrency(monthSummary.profit) : "—",
+      hint: "Vendas − custo das peças − despesas",
       highlight: true,
     },
-    { label: "Caixa disponível", icon: Wallet, unavailable: false, value: formatCurrency(availableCash), hint: "Saldo atual das contas" },
     {
-      label: "Contas a pagar",
-      icon: TrendingDown,
-      ...money(s?.cash, (d) => d.payable),
+      label: "Dinheiro nas contas",
+      icon: Wallet,
+      value: capacity ? formatCurrency(capacity.cash_balance) : "—",
+      hint: "Banco + gaveta",
     },
     {
-      label: "Contas a receber",
+      label: "Pode retirar agora",
       icon: HandCoins,
-      ...money(s?.cash, (d) => d.receivable),
-      hint: s?.cash.data ? `Vencidas ${formatCurrency(s.cash.data.receivableOverdue)}` : undefined,
+      value: capacity ? formatCurrency(withdrawalPlan.availableTotal) : "—",
+      hint: capacity
+        ? withdrawalPlan.partners.length > 1
+          ? `${formatCurrency(perPartner)} para cada sócia`
+          : undefined
+        : undefined,
     },
-    {
-      label: "Ticket médio",
-      icon: ShoppingCart,
-      ...money(s?.ticket, (d) => d.averageTicket),
-      hint: s?.ticket.data ? `${s.ticket.data.salesCount} vendas` : undefined,
-    },
-    {
-      label: "Estoque",
-      icon: Boxes,
-      ...money(s?.inventory, (d) => d.inventoryValue),
-      hint: s?.inventory.data ? `${s.inventory.data.productCount} produtos` : undefined,
-    },
-    {
-      label: "Produtos sem giro",
-      icon: PiggyBank,
-      ...count(s?.inventory, (d) => d.stagnantCount),
-      hint: s?.inventory.data ? `${s.inventory.data.belowMinCount} abaixo do mínimo` : undefined,
-    },
-    {
-      label: "Clientes ativos",
-      icon: Users,
-      ...count(s?.customers, (d) => d.active),
-      hint: s?.customers.data ? `${s.customers.data.total} cadastrados` : undefined,
-    },
-    {
-      label: "Saúde financeira",
-      icon: HeartPulse,
-      unavailable: !health,
-      value: health ? `${healthLabel(health)} · ${health.score}/100` : "—",
-    },
-    {
-      label: "Impostos",
-      icon: Receipt,
-      ...money(s?.taxes, (d) => d.taxAmount),
-      hint: s?.taxes.data ? `Competência ${s.taxes.data.competence}` : undefined,
-    },
-  ], [s, trends, health, availableCash]);
+  ];
 
   const insights = useMemo(() => buildAccountingInsights(s), [s]);
   const advice = useMemo(() => (s ? buildFinancialAdvice({ summary: s }) : null), [s]);
@@ -173,13 +113,18 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
   useEffect(() => {
     bellaNotificationStore.setNotifications(proactive);
   }, [proactive]);
-  const { notifications, dismiss } = useBellaNotifications();
+    const { notifications: allNotifications, dismiss } = useBellaNotifications();
+  // Pró-labore usa outra fórmula e conflitava com o "Pode retirar agora".
+  const notifications = useMemo(
+    () => allNotifications.filter((n) => !n.id.startsWith("prolabore")),
+    [allNotifications],
+  );
 
   const stagnant = s?.products.data?.stagnant ?? [];
   const champions = s?.products.data?.bestSellers ?? [];
   const worst = s?.products.data?.worstSellers ?? [];
   const topCustomers = s?.customers.data?.topCustomers ?? [];
-  const warnings = health?.warnings ?? [];
+  
 
   const highlights = useMemo(
     () =>
@@ -197,197 +142,150 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
 
   return (
     <PageLayout
-      title="Bella Certification Dashboard"
+      title="Bella Contadora"
       icon={Calculator}
-      description="Cockpit executivo de prontidão operacional e saúde gerencial da empresa."
+      description="Como está a loja este mês e o que precisa da sua atenção."
       meta={
-        <div className="flex gap-2 items-center">
-          {s?.period && (
-            <StatusBadge status="neutral" appearance="outline" className="font-normal">
-              {s.period.label ?? `${s.period.start} → ${s.period.end}`}
-            </StatusBadge>
-          )}
-          <StatusBadge 
-            status={s?.health.data?.level === "healthy" ? "success" : s?.health.data?.level === "attention" ? "warning" : "error"}
-            appearance="solid"
-            className="uppercase font-bold text-[10px]"
-          >
-            {s?.health.data ? healthLabel(s.health.data) : "Auditoria pendente"}
-          </StatusBadge>
-        </div>
+        <Button asChild size="sm">
+          <Link to="/bella-contadora/fechamento-mensal">
+            <CalendarCheck className="mr-1.5 h-4 w-4" /> Fechamento do mês
+          </Link>
+        </Button>
       }
       kpis={
         <SummaryGrid columns={4}>
           {cards.map((c) => (
             <FinancialCard
-              key={String(c.label)}
+              key={c.label}
               label={c.label}
               value={c.value}
               hint={c.hint}
-              trend={c.trend !== undefined ? <TrendBadge trend={c.trend} /> : undefined}
               icon={c.icon}
-              loading={isLoading}
-              unavailable={c.unavailable}
+              loading={cardsLoading}
+              unavailable={!cardsLoading && c.value === "—"}
               highlight={c.highlight}
             />
           ))}
         </SummaryGrid>
       }
     >
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-3 lg:col-span-2">
-          <BellaNotificationCenter
-            notifications={notifications}
-            loading={isLoading}
-            limit={5}
-            onDismiss={dismiss}
-          />
+      <div className="mx-auto max-w-4xl space-y-4">
+        <BellaNotificationCenter
+          notifications={notifications}
+          loading={isLoading}
+          limit={6}
+          onDismiss={dismiss}
+        />
 
-          <BellaBriefCard summary={s} loading={isLoading} />
+        <BellaChatPanel companyId={companyId} />
 
-          <BellaTaxBlock companyId={companyId} preloaded={tax} loading={isLoading} />
+        <details className="group rounded-2xl border bg-card">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold">
+            <span className="group-open:hidden">▸ Ver mais detalhes</span>
+            <span className="hidden group-open:inline">▾ Ocultar detalhes</span>
+            <span className="ml-2 font-normal text-muted-foreground">
+              resumo, impostos, auditoria, indicadores e rankings
+            </span>
+          </summary>
+          <div className="space-y-3 border-t p-3">
+            <BellaBriefCard summary={s} loading={isLoading} />
 
-          <BellaAuditBlock companyId={companyId} preloaded={audit} loading={isLoading} />
+            <BellaAuditBlock companyId={companyId} preloaded={audit} loading={isLoading} />
 
-          <BellaChatPanel companyId={companyId} />
+            <BellaTaxBlock companyId={companyId} preloaded={tax} loading={isLoading} />
 
-          <AdvisorCard
-            advice={advice}
-            loading={isLoading}
-            companyId={companyId}
-            onWithdrawalCompleted={() => refetch()}
-          />
+            <Card className="rounded-2xl">
+              <CardContent className="space-y-3 p-4">
+                <p className="text-sm font-semibold">Indicadores do período</p>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <IndicatorCard
+                    label="Margem líquida"
+                    value={s?.margin.data ? pct(s.margin.data.netMargin) : "—"}
+                    loading={isLoading}
+                  />
+                  <IndicatorCard
+                    label="Margem EBITDA"
+                    value={s?.margin.data ? pct(s.margin.data.ebitdaMargin) : "—"}
+                    loading={isLoading}
+                  />
+                  <IndicatorCard
+                    label="Ticket médio"
+                    value={s?.ticket.data ? formatCurrency(s.ticket.data.averageTicket) : "—"}
+                    reference={s?.ticket.data ? `${s.ticket.data.salesCount} vendas` : undefined}
+                    loading={isLoading}
+                  />
+                  <IndicatorCard
+                    label="Ponto de equilíbrio"
+                    value={s?.margin.data ? formatCurrency(s.margin.data.breakEven) : "—"}
+                    loading={isLoading}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
+            <Card className="rounded-2xl">
+              <CardContent className="grid gap-4 p-4 sm:grid-cols-3">
+                <RankingList title="Produtos campeões" empty="Sem vendas registradas no período."
+                  items={champions.map((p) => ({ id: p.id, name: p.name, value: formatCurrency(p.revenue) }))} />
+                <RankingList title="Menos vendidos" empty="Sem ranking disponível no período."
+                  items={worst.map((p) => ({ id: p.id, name: p.name, value: formatCurrency(p.revenue) }))} />
+                <RankingList title="Produtos sem giro" empty="Nenhum produto parado identificado."
+                  items={stagnant.map((p) => ({ id: p.id, name: p.name, value: String(p.stock) }))} />
+              </CardContent>
+            </Card>
 
-          <InsightsPanel insights={insights} loading={isLoading} />
-
-          <Card className="rounded-2xl">
-            <CardContent className="space-y-3 p-4">
-              <p className="text-sm font-semibold">Indicadores do período</p>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <IndicatorCard
-                  label="Margem líquida"
-                  value={s?.margin.data ? pct(s.margin.data.netMargin) : "—"}
-                  loading={isLoading}
-                />
-                <IndicatorCard
-                  label="Margem EBITDA"
-                  value={s?.margin.data ? pct(s.margin.data.ebitdaMargin) : "—"}
-                  loading={isLoading}
-                />
-                <IndicatorCard
-                  label="Ticket médio"
-                  value={s?.ticket.data ? formatCurrency(s.ticket.data.averageTicket) : "—"}
-                  reference={s?.ticket.data ? `${s.ticket.data.salesCount} vendas` : undefined}
-                  loading={isLoading}
-                />
-                <IndicatorCard
-                  label="Ponto de equilíbrio"
-                  value={s?.margin.data ? formatCurrency(s.margin.data.breakEven) : "—"}
-                  loading={isLoading}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl">
-            <CardContent className="grid gap-4 p-4 sm:grid-cols-3">
-              <div>
-                <p className="text-sm font-semibold">Produtos campeões</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {champions.length === 0 ? (
-                    <li>Sem vendas registradas no período.</li>
-                  ) : (
-                    champions.map((p) => (
-                      <li key={p.id} className="flex justify-between gap-3">
-                        <span className="truncate">{p.name}</span>
-                        <span className="tabular-nums">{formatCurrency(p.revenue)}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Menos vendidos</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {worst.length === 0 ? (
-                    <li>Sem ranking disponível no período.</li>
-                  ) : (
-                    worst.map((p) => (
-                      <li key={p.id} className="flex justify-between gap-3">
-                        <span className="truncate">{p.name}</span>
-                        <span className="tabular-nums">{formatCurrency(p.revenue)}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Produtos sem giro</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {stagnant.length === 0 ? (
-                    <li>Nenhum produto parado identificado.</li>
-                  ) : (
-                    stagnant.map((p) => (
-                      <li key={p.id} className="flex justify-between gap-3">
-                        <span className="truncate">{p.name}</span>
-                        <span className="tabular-nums">{p.stock}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl">
-            <CardContent className="grid gap-4 p-4 sm:grid-cols-2">
-              <div>
-                <p className="text-sm font-semibold">Melhores clientes</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {topCustomers.length === 0 ? (
-                    <li>Sem clientes com compras no período.</li>
-                  ) : (
-                    topCustomers.map((c) => (
-                      <li key={c.id} className="flex justify-between gap-3">
-                        <span className="truncate">{c.name}</span>
-                        <span className="tabular-nums">{formatCurrency(c.revenue)}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Consultas da Bella</p>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {highlights.length === 0 ? (
-                    <li>Sem dados no período.</li>
-                  ) : (
-                    highlights.map((h) => <li key={h.id}>{h.text}</li>)
-                  )}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-3">
-          <InsightCard
-            title={
-              health ? `Saúde do negócio: ${healthLabel(health)} (${health.score}/100)` : "Saúde do negócio"
-            }
-            description={
-              health?.highlights.length
-                ? health.highlights.join(" ")
-                : "A Bella lê apenas os motores existentes: sem lançamentos no período, não há diagnóstico."
-            }
-            footer="Fonte: motor contábil, financeiro, fiscal, estoque e vendas."
-          />
-          {warnings.slice(0, 4).map((w) => (
-            <AlertCard key={w} title={w} tone="warning" />
-          ))}
-        </div>
+            <Card className="rounded-2xl">
+              <CardContent className="grid gap-4 p-4 sm:grid-cols-2">
+                <RankingList title="Melhores clientes" empty="Sem clientes com compras no período."
+                  items={topCustomers.map((c) => ({ id: c.id, name: c.name, value: formatCurrency(c.revenue) }))} />
+                <div>
+                  <p className="text-sm font-semibold">Consultas da Bella</p>
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {highlights.length === 0 ? (
+                      <li>Sem dados no período.</li>
+                    ) : (
+                      highlights.map((h) => <li key={h.id}>{h.text}</li>)
+                    )}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </details>
       </div>
     </PageLayout>
   );
+}
+
+function RankingList({
+  title,
+  empty,
+  items,
+}: {
+  title: string;
+  empty: string;
+  items: { id: string; name: string; value: string }[];
+}) {
+  return (
+    <div>
+      <p className="text-sm font-semibold">{title}</p>
+      <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+        {items.length === 0 ? (
+          <li>{empty}</li>
+        ) : (
+          items.map((item) => (
+            <li key={item.id} className="flex justify-between gap-3">
+              <span className="truncate">{item.name}</span>
+              <span className="tabular-nums">{item.value}</span>
+            </li>
+          ))
+        )}
+      </ul>
+    </div>
+  );
+}
+
+function currentMonthKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
