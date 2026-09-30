@@ -7,7 +7,8 @@ import { SaleCompletedDialog } from "./sale-completed-dialog";
 import {
   ChargeView,
   CheckoutFooter,
-  CheckoutSummary,
+    CheckoutSummary,
+  checkoutMethodsFor,
   CreditConfigDialog,
   MethodSelector,
   isChargeReceived,
@@ -22,7 +23,8 @@ import {
   ConfirmedPanel,
   CreditBlockedAlert,
   CreditPanel,
-  DebitPanel,
+    MachinePaymentPanel,
+
   PendingPanel,
   PixManualPanel,
 } from "./checkout/panels";
@@ -49,7 +51,8 @@ import { parseCurrency } from "@/lib/masks";
 import { useCreateAsaasCharge, useBellaPayConfig } from "@/features/bella-pay";
 import { computeCreditCardCharge } from "@/features/bella-pay/lib/credit-card-fee";
 import { useCardFixedFee } from "@/features/bella-pay/lib/card-fixed-fee";
-import { useBellaFeeCatalog } from "@/features/bella-pay/lib/fee-catalog";
+import { usePaymentMethodFees } from "@/features/payment-methods/hooks/use-payment-methods";
+import { machineFeeKey } from "../lib/settlement-account";
 import { useSetSaleStatus } from "../hooks/use-sales";
 import { salesService } from "../services/sales.service";
 import { SettleTransactionDialog } from "@/features/finance/components/settle-transaction-dialog";
@@ -171,7 +174,7 @@ export function CheckoutDialog({
   const { data: cardPriceConfig } = useCardPriceConfig(companyId);
 
   const [cardFixedFee] = useCardFixedFee(companyId);
-  const { snapshots: feeSnapshots } = useBellaFeeCatalog(companyId);
+    const { data: paymentMethodFees } = usePaymentMethodFees(companyId);
 
   const absorb =
     absorbOverride ?? Boolean(bellaConfig?.credit_card_absorb_fee);
@@ -207,10 +210,17 @@ export function CheckoutDialog({
   const saldoValue = Math.max(0, amount - entradaValue);
   const chargeableAmount = entradaValue > 0 ? saldoValue : amount;
 
-    // Parcelas permitidas: limite do Asaas + valor mínimo para parcelar da
-  // empresa (abaixo dele o crédito é só 1x).
+      // Sem Asaas conectado, "Crédito" é o crédito na maquininha e Link/Boleto
+  // não aparecem.
+  const asaasConnected = bellaConfig?.connection_status === "connected";
+  const methodOptions = useMemo(() => checkoutMethodsFor({ asaasConnected }), [asaasConnected]);
+
+  // Parcelas permitidas: limite do Asaas (ou da configuração do cartão, na
+  // maquininha) + valor mínimo para parcelar (abaixo dele é só 1x).
   const maxAllowedInstallments = maxInstallmentsFor(chargeableAmount, {
-    maxInstallments: Number(bellaConfig?.credit_card_max_installments ?? 3),
+    maxInstallments: asaasConnected
+      ? Number(bellaConfig?.credit_card_max_installments ?? 3)
+      : Number(cardPriceConfig?.maxInstallments ?? 3),
     minInstallmentAmount: cardPriceConfig?.minInstallmentAmount ?? 0,
   });
 
@@ -607,7 +617,13 @@ export function CheckoutDialog({
     if (!(await ensurePricingReady())) return;
 
     // GROUP 1: À VISTA (BAIXA E CONCLUSÃO IMEDIATA)
-    if (method === "pix_manual" || method === "cash" || method === "debit_card" || method === "credit_card") {
+        if (
+      method === "pix_manual" ||
+      method === "pix" ||
+      method === "cash" ||
+      method === "debit_card" ||
+      method === "credit_card"
+    ) {
       if (method === "pix_manual" && !ownPixPayload) {
         toast.error("Configure a chave PIX em Configurações → Empresa antes de usar PIX Próprio.");
         return;
@@ -756,8 +772,8 @@ export function CheckoutDialog({
     setCharge(null);
   }, []);
 
-  const showAsaasFlow =
-    method === "credit_card" || method === "payment_link" || method === "boleto";
+    const showAsaasFlow =
+    (method === "credit_card" && asaasConnected) || method === "payment_link" || method === "boleto";
 
   // Método efetivo repassado a componentes que só conhecem CheckoutMethod.
   const effectiveMethod: CheckoutMethod =
@@ -770,13 +786,21 @@ export function CheckoutDialog({
   const cashShort = Math.max(0, amount - cashReceived);
   const canConfirmCash = method !== "cash" || cashReceived >= amount;
 
-  // ---- FIN-001 — Taxas informativas (débito e PIX) ----
-  const debitSnapshot = feeSnapshots.find((s) => s.method === "debit_card");
-  const pixSnapshot = feeSnapshots.find((s) => s.method === "pix");
-  const debitFee = debitSnapshot
-    ? amount * (debitSnapshot.percent / 100) + debitSnapshot.fixed
-    : 0;
-  const debitNet = Math.max(0, amount - debitFee);
+    // ---- Maquininha: taxa pela tabela de Formas de pagamento ----
+  // Mesma tabela usada na baixa (salesService.autoSettleSale), que lança a
+  // taxa como despesa na conta da maquininha.
+  const machineFeeRow = (() => {
+    const key = machineFeeKey(method, installments);
+    const row = key ? (paymentMethodFees ?? []).find((f) => f.method_key === key) : undefined;
+    return row && row.active !== false
+      ? { percent: Number(row.fee_percent) || 0, fixed: Number(row.fee_fixed) || 0 }
+      : null;
+  })();
+  const machineInstallmentOptions = Array.from(
+    { length: maxAllowedInstallments },
+    (_, i) => i + 1,
+  );
+
 
 
   return (
@@ -811,8 +835,9 @@ export function CheckoutDialog({
           <CreditBlockedAlert onSelectCustomer={handleContinueEditing} />
         ) : null}
 
-          <MethodSelector
+                    <MethodSelector
             method={method}
+            methods={methodOptions}
             locked={!!charge && !confirmed}
             onSelect={selectMethod}
           />
@@ -829,12 +854,26 @@ export function CheckoutDialog({
               cashShort={cashShort}
               cashChange={cashChange}
             />
-          ) : method === "debit_card" ? (
-            <DebitPanel
+                    ) : method === "debit_card" ? (
+            <MachinePaymentPanel
+              instruction="Passe o débito na maquininha e confirme aqui."
               amount={amount}
-              debitSnapshot={debitSnapshot}
-              debitFee={debitFee}
-              debitNet={debitNet}
+              fee={machineFeeRow}
+            />
+          ) : method === "pix" ? (
+            <MachinePaymentPanel
+              instruction="Cobre o PIX pela maquininha e confirme aqui quando o cliente pagar."
+              amount={amount}
+              fee={machineFeeRow}
+            />
+          ) : method === "credit_card" && !asaasConnected ? (
+            <MachinePaymentPanel
+              instruction="Passe o crédito na maquininha com o mesmo número de parcelas e confirme aqui."
+              amount={amount}
+              fee={machineFeeRow}
+              installmentOptions={machineInstallmentOptions}
+              installments={installments}
+              onInstallmentsChange={setInstallments}
             />
           ) : method === "pix_manual" ? (
             <PixManualPanel

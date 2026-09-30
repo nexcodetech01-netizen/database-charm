@@ -5,3 +5,4 @@ export { CreditBlockedAlert, CreditPanel } from "./credit-panel";
 export { DebitPanel } from "./debit-panel";
 export { PendingPanel } from "./pending-panel";
 export { PixManualPanel } from "./pix-manual-panel";
+export { MachinePaymentPanel, type MachineFee } from "./machine-payment-panel";

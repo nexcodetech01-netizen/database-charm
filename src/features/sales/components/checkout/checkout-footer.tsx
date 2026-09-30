@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 import type { UiCheckoutMethod } from "./types";
 
 const CONFIRM_LABEL: Partial<Record<UiCheckoutMethod, string>> = {
-  pix_manual: "Confirmar Pagamento (Pix)",
+    pix_manual: "Confirmar Pagamento (Pix)",
+  pix: "Confirmar Pix (maquininha)",
   cash: "Confirmar Recebimento (Dinheiro)",
-  debit_card: "Confirmar Débito",
+    debit_card: "Confirmar Débito",
+  credit_card: "Confirmar Crédito",
   credit: "Avançar para Crediário (F5)",
   pending_payment: "Criar Venda Pendente",
 };

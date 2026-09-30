@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { pickSettlementAccount } from "../lib/settlement-account";
+import {
+  machineFeeAmount,
+  machineFeeKey,
+  pickSettlementAccount,
+} from "../lib/settlement-account";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import type { Tables } from "@/integrations/supabase/types";
@@ -980,25 +984,28 @@ export const salesService = {
 
     // 2. Conta pela forma de pagamento: dinheiro → Caixa; PIX/cartão → Banco.
     //    Ver lib/settlement-account.ts.
-    const [{ data: companyConfig }, { data: accounts }] = await Promise.all([
+        const [{ data: companyConfig }, { data: accounts }, { data: saleInfo }] = await Promise.all([
       supabase
         .from("companies")
-        .select("pos_default_account_id")
+        .select("pos_default_account_id, card_machine_account_id")
         .eq("id", options.companyId)
         .maybeSingle(),
       supabase
         .from("financial_accounts")
         .select("id, type")
         .eq("company_id", options.companyId)
-        .eq("status", "active")
+                .eq("status", "active")
         .order("name", { ascending: true }),
+      supabase.from("sales").select("number, installments").eq("id", saleId).maybeSingle(),
     ]);
 
+    const cardMachineAccountId = companyConfig?.card_machine_account_id ?? null;
     const accountId =
       pickSettlementAccount(
         options.paymentMethod,
         accounts ?? [],
         companyConfig?.pos_default_account_id,
+        cardMachineAccountId,
       ) ?? tx.account_id;
 
     if (!accountId) {
@@ -1011,13 +1018,85 @@ export const salesService = {
       paymentMethod: (options.paymentMethod === "pix_manual" ? "pix" : options.paymentMethod) as any,
       accountId,
       paidAt: new Date().toISOString().slice(0, 10),
-      notes: "Baixa automática PDV",
+            notes: "Baixa automática PDV",
       settledAmount: Number(tx.amount),
     });
+
+    // 4. Maquininha: lança a taxa como despesa saindo da conta da maquininha,
+    //    para o saldo bater com o app da operadora e o lucro já descontar a
+    //    taxa. Best-effort: a venda já está paga, então uma falha aqui só avisa.
+    if (cardMachineAccountId && accountId === cardMachineAccountId) {
+      try {
+        await recordCardMachineFee({
+          companyId: options.companyId,
+          accountId,
+          paymentMethod: options.paymentMethod,
+          installments: saleInfo?.installments ?? null,
+          gross: Number(tx.amount),
+          saleNumber: saleInfo?.number ?? null,
+        });
+      } catch (err) {
+        console.warn("[sales] falha ao lançar a taxa da maquininha", err);
+      }
+    }
 
     return true;
   },
 };
+
+/** Lança a taxa da maquininha (payment_method_fees) como despesa paga. */
+async function recordCardMachineFee(input: {
+  companyId: string;
+  accountId: string;
+  paymentMethod: string;
+  installments: number | null;
+  gross: number;
+  saleNumber: string | null;
+}) {
+  const key = machineFeeKey(input.paymentMethod, input.installments);
+  if (!key) return;
+
+  const [{ data: feeRow }, { data: category }] = await Promise.all([
+    supabase
+      .from("payment_method_fees")
+      .select("fee_percent, fee_fixed, active")
+      .eq("company_id", input.companyId)
+      .eq("method_key", key)
+      .maybeSingle(),
+    supabase
+      .from("financial_categories")
+      .select("id")
+      .eq("company_id", input.companyId)
+      .eq("kind", "expense")
+      .eq("name", "Taxas e comissões")
+      .maybeSingle(),
+  ]);
+  if (!feeRow || feeRow.active === false) return;
+
+  const fee = machineFeeAmount(input.gross, feeRow);
+  if (fee <= 0) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { financeService } = await import("@/features/finance/services/finance.service");
+  const created = await financeService.createTransaction({
+    company_id: input.companyId,
+    type: "expense",
+    description: `Taxa maquininha${input.saleNumber ? ` — venda ${input.saleNumber}` : ""}`,
+    amount: fee,
+    account_id: input.accountId,
+    category_id: category?.id ?? null,
+    transaction_date: today,
+    due_date: today,
+    source: "manual",
+  } as never);
+  await financeService.settleTransaction((created as { id: string }).id, {
+    paymentMethod: (input.paymentMethod === "pix" ? "pix" : input.paymentMethod) as never,
+    accountId: input.accountId,
+    paidAt: today,
+    notes: "Taxa automática da maquininha",
+    settledAmount: fee,
+  });
+}
 
 /** Registra a tentativa bloqueada. Best-effort: nunca derruba o fluxo. */
 async function logBlockedDeletion(input: {
