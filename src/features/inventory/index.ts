@@ -10,3 +10,4 @@ export * from "./hooks/use-inventory";
 export { inventoryService } from "./services/inventory.service";
 export * from "./lib/ledger";
 export { InventoryReconciliationWorkspace } from "./components/reconciliation-workspace";
+export { useInventoryRealtime, invalidateStockQueries } from "./hooks/use-inventory-realtime";
