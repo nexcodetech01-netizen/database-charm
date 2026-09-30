@@ -1541,6 +1541,7 @@ export type Database = {
           created_at: string
           id: string
           max_installments: number
+          min_installment_amount: number
           updated_at: string
         }
         Insert: {
@@ -1550,6 +1551,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_installments?: number
+          min_installment_amount?: number
           updated_at?: string
         }
         Update: {
@@ -1559,6 +1561,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_installments?: number
+          min_installment_amount?: number
           updated_at?: string
         }
         Relationships: [

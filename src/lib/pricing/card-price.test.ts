@@ -5,6 +5,7 @@ import {
   calcTotalAvistaPdv,
   calcTotalCartaoPdv,
   DEFAULT_CARD_PRICE_CONFIG,
+  maxInstallmentsFor,
 } from "./card-price";
 
 describe("preço no cartão", () => {
@@ -82,5 +83,23 @@ describe("preço no cartão", () => {
       expect(calcTotalAvistaPdv(items, 0, 0)).toBe(90);
       expect(calcTotalCartaoPdv(items, 0, 0, DEFAULT_CARD_PRICE_CONFIG)).toBe(92.97);
     });
+  });
+});
+describe("maxInstallmentsFor — valor mínimo para parcelar", () => {
+  const config = { maxInstallments: 3, minInstallmentAmount: 100 };
+
+  it("abaixo do mínimo é só 1x", () => {
+    expect(maxInstallmentsFor(11.15, config)).toBe(1);
+    expect(maxInstallmentsFor(99.99, config)).toBe(1);
+  });
+
+  it("a partir do mínimo (inclusive) libera o máximo", () => {
+    expect(maxInstallmentsFor(100, config)).toBe(3);
+    expect(maxInstallmentsFor(250, config)).toBe(3);
+  });
+
+  it("sem mínimo configurado, qualquer valor parcela", () => {
+    expect(maxInstallmentsFor(10, { maxInstallments: 3 })).toBe(3);
+    expect(maxInstallmentsFor(10, { maxInstallments: 3, minInstallmentAmount: 0 })).toBe(3);
   });
 });

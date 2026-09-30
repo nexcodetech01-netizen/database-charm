@@ -18,6 +18,7 @@ export type ProductPagePayload = {
   collection: { id: string; slug: string; name: string };
   company_name: string;
   installment_max: number | null;
+  installment_min_amount: number;
   card_fee_percent: number;
   card_price_active: boolean;
   pix_discount_percent: null;
@@ -119,9 +120,14 @@ export async function loadProductPagePayload(params: {
       .maybeSingle<{ credit_card_max_installments: number | null; connection_status: string | null }>(),
     supabaseAdmin
       .from("company_card_price_config")
-      .select("card_fee_percent,max_installments,active")
+            .select("card_fee_percent,max_installments,active,min_installment_amount")
       .eq("company_id", col.company_id)
-      .maybeSingle<{ card_fee_percent: number | null; max_installments: number | null; active: boolean | null }>(),
+      .maybeSingle<{
+        card_fee_percent: number | null;
+        max_installments: number | null;
+        active: boolean | null;
+        min_installment_amount: number | null;
+      }>(),
   ]);
 
   if (!prod || prod.status !== "active" || (prod as any).sales_channels?.includes("catalog") === false) {
@@ -227,7 +233,8 @@ export async function loadProductPagePayload(params: {
     images: outImages,
     collection: { id: col.id, slug: col.slug, name: col.name },
     company_name: company?.name ?? "",
-    installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+        installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+    installment_min_amount: Number(cardCfg?.min_installment_amount ?? 0),
     card_fee_percent: Number(cardCfg?.card_fee_percent ?? 2.88),
     card_price_active: cardCfg?.active ?? true,
     pix_discount_percent: null,

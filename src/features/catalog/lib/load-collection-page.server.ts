@@ -44,6 +44,7 @@ export type CollectionPagePayload = {
   status: string;
   company_name: string;
   installment_max: number | null;
+  installment_min_amount: number;
   card_fee_percent: number;
   card_price_active: boolean;
   cta: "whatsapp" | "entrada" | "comprar_agora" | "none";
@@ -158,9 +159,14 @@ async function loadCollectionPagePayloadInner(params: {
       .maybeSingle<{ credit_card_max_installments: number | null; connection_status: string | null }>(),
     supabaseAdmin
       .from("company_card_price_config")
-      .select("card_fee_percent,max_installments,active")
+            .select("card_fee_percent,max_installments,active,min_installment_amount")
       .eq("company_id", col.company_id)
-      .maybeSingle<{ card_fee_percent: number | null; max_installments: number | null; active: boolean | null }>(),
+      .maybeSingle<{
+        card_fee_percent: number | null;
+        max_installments: number | null;
+        active: boolean | null;
+        min_installment_amount: number | null;
+      }>(),
     supabaseAdmin
       .from("product_collection_items")
       .select(
@@ -206,7 +212,8 @@ async function loadCollectionPagePayloadInner(params: {
     cover_url: col.cover_url,
     status: col.status,
     company_name: company?.name ?? "",
-    installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+        installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
+    installment_min_amount: Number(cardCfg?.min_installment_amount ?? 0),
     card_fee_percent: Number(cardCfg?.card_fee_percent ?? 2.88),
     card_price_active: cardCfg?.active ?? true,
     cta,

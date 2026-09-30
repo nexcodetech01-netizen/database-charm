@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, PAYMENT_CONDITIONS_LEGEND } from "@/lib/format";
-import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
+import { calcParcela, maxInstallmentsFor, calcPrecoCartao } from "@/lib/pricing/card-price";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import type {
@@ -631,7 +631,15 @@ function PublicCollectionPage() {
                   maxInstallments: data.installment_max ?? 3,
                   active: data.card_price_active,
                 });
-                const installment = calcParcela(cardPrice, data.installment_max ?? 3);
+                                const installmentCount = maxInstallmentsFor(cardPrice, {
+                  maxInstallments: data.installment_max ?? 3,
+                  minInstallmentAmount: data.installment_min_amount ?? 0,
+                });
+                const installment = calcParcela(cardPrice, installmentCount);
+                const installmentText =
+                  installmentCount > 1
+                    ? ` em até ${installmentCount}x de ${formatCurrency(installment)}`
+                    : "";
                 const availability = resolveAvailability(p.stock, {
                   presale: isPreview,
                 });
@@ -693,7 +701,7 @@ function PublicCollectionPage() {
                                   </div>
                                   {data.show_installments && data.card_price_active && (
                                     <div className="text-[10px] text-muted-foreground font-semibold">
-                                      ou {formatCurrency(cardPrice)} em até {data.installment_max ?? 3}x de {formatCurrency(installment)} no cartão
+                                      ou {formatCurrency(cardPrice)}{installmentText} no cartão
                                     </div>
                                   )}
                                 </div>
@@ -808,7 +816,7 @@ function PublicCollectionPage() {
                         {data.show_installments && data.show_price && data.card_price_active && (
                           <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
                             <span className="h-1 w-1 rounded-full bg-primary/40" />
-                            ou {formatCurrency(cardPrice)} em até {data.installment_max ?? 3}x de {formatCurrency(installment)} no cartão
+                            ou {formatCurrency(cardPrice)}{installmentText} no cartão
                           </div>
                         )}
                       </div>

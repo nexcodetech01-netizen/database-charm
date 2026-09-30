@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/format";
-import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
+import { calcParcela, maxInstallmentsFor, calcPrecoCartao } from "@/lib/pricing/card-price";
 import type { PublicProductDetail } from "@/features/catalog/types";
 import { loadPublicProduct } from "@/features/catalog/lib/public-product.functions";
 import {
@@ -242,17 +242,20 @@ function PublicProductPage() {
     }
   }
 
-  const installmentPlan = useMemo(
-    () => data?.card_price_active ? {
-      total: calcPrecoCartao(data.price, {
-        cardFeePercent: data.card_fee_percent,
-        maxInstallments: data.installment_max ?? 3,
-        active: data.card_price_active,
-      }),
-      count: data.installment_max ?? 3,
-    } : null,
-    [data],
-  );
+    const installmentPlan = useMemo(() => {
+    if (!data?.card_price_active) return null;
+    const total = calcPrecoCartao(data.price, {
+      cardFeePercent: data.card_fee_percent,
+      maxInstallments: data.installment_max ?? 3,
+      active: data.card_price_active,
+    });
+    // Abaixo do valor mínimo para parcelar, o cartão é só 1x.
+    const count = maxInstallmentsFor(total, {
+      maxInstallments: data.installment_max ?? 3,
+      minInstallmentAmount: data.installment_min_amount ?? 0,
+    });
+    return { total, count };
+  }, [data]);
 
   // Preserve filter context when returning to the collection
   const collectionSearch: Record<string, string | number> = {};
@@ -417,7 +420,11 @@ function PublicProductPage() {
               variant="secondary"
               className="mt-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
             >
-              ou {formatCurrency(installmentPlan.total)} em até {installmentPlan.count}x de {formatCurrency(calcParcela(installmentPlan.total, installmentPlan.count))} no cartão
+                            ou {formatCurrency(installmentPlan.total)}
+              {installmentPlan.count > 1
+                ? ` em até ${installmentPlan.count}x de ${formatCurrency(calcParcela(installmentPlan.total, installmentPlan.count))}`
+                : ""}{" "}
+              no cartão
             </Badge>
           )}
           {data.show_price && data.pix_discount_percent && data.pix_discount_percent > 0 && (
