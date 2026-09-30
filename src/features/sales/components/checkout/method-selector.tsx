@@ -1,23 +1,25 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { CHECKOUT_METHODS } from "./methods";
+import type { CheckoutMethodOption } from "./methods";
 import type { UiCheckoutMethod } from "./types";
 
 interface MethodSelectorProps {
-  method: UiCheckoutMethod;
+    method: UiCheckoutMethod;
+  methods: readonly CheckoutMethodOption[];
   /** Bloqueia a troca enquanto há cobrança gerada aguardando pagamento. */
   locked: boolean;
   onSelect: (method: UiCheckoutMethod) => void;
 }
 
 export const MethodSelector = memo(function MethodSelector({
-  method,
+    method,
+  methods,
   locked,
   onSelect,
 }: MethodSelectorProps) {
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      {CHECKOUT_METHODS.map((m) => {
+      {methods.map((m) => {
         const Icon = m.icon;
         const active = method === m.id;
         return (

@@ -1412,6 +1412,7 @@ export type Database = {
           city: string | null
           cnpj: string | null
           complement: string | null
+          card_machine_account_id: string | null
           created_at: string
           default_freight: number
           default_insurance: number
@@ -1451,6 +1452,7 @@ export type Database = {
           city?: string | null
           cnpj?: string | null
           complement?: string | null
+          card_machine_account_id?: string | null
           created_at?: string
           default_freight?: number
           default_insurance?: number
@@ -1490,6 +1492,7 @@ export type Database = {
           city?: string | null
           cnpj?: string | null
           complement?: string | null
+          card_machine_account_id?: string | null
           created_at?: string
           default_freight?: number
           default_insurance?: number
