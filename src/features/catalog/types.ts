@@ -50,7 +50,9 @@ export interface PublicCollectionProduct {
   stock: number;
   unit: string;
   cover_url: string | null;
-  installment_max?: number | null;
+    installment_max?: number | null;
+  /** Total no cartão a partir do qual pode parcelar (0 = sempre). */
+  installment_min_amount?: number | null;
 }
 
 export interface PublicCollection extends CollectionVisibility {
@@ -62,6 +64,7 @@ export interface PublicCollection extends CollectionVisibility {
   status: CollectionStatus;
   company_name: string;
   installment_max: number | null;
+  installment_min_amount?: number | null;
   card_fee_percent: number;
   card_price_active: boolean;
   cta: CatalogCta;
@@ -105,6 +108,7 @@ export interface PublicProductDetail extends CollectionVisibility {
   };
   company_name: string;
   installment_max: number | null;
+  installment_min_amount?: number | null;
   card_fee_percent: number;
   card_price_active: boolean;
   pix_discount_percent: number | null;

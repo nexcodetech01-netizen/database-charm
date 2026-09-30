@@ -57,6 +57,7 @@ import type { FinancialTransaction } from "@/features/finance/types";
 import type { CheckoutMethod } from "../types";
 import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
+import { maxInstallmentsFor } from "@/lib/pricing/card-price";
 import { useCreateCreditSale } from "@/features/credit";
 
 // Mantido para compatibilidade com `pdv/lib/payments.ts`.
@@ -205,6 +206,17 @@ export function CheckoutDialog({
   const entradaValue = Math.min(Math.max(0, entradaRaw), amount);
   const saldoValue = Math.max(0, amount - entradaValue);
   const chargeableAmount = entradaValue > 0 ? saldoValue : amount;
+
+    // Parcelas permitidas: limite do Asaas + valor mínimo para parcelar da
+  // empresa (abaixo dele o crédito é só 1x).
+  const maxAllowedInstallments = maxInstallmentsFor(chargeableAmount, {
+    maxInstallments: Number(bellaConfig?.credit_card_max_installments ?? 3),
+    minInstallmentAmount: cardPriceConfig?.minInstallmentAmount ?? 0,
+  });
+
+  useEffect(() => {
+    if (installments > maxAllowedInstallments) setInstallments(1);
+  }, [installments, maxAllowedInstallments]);
 
   const creditCardPreview = useMemo(() => {
     if (method !== "credit_card") return null;
@@ -845,7 +857,8 @@ export function CheckoutDialog({
               absorb={absorb}
               onAbsorbChange={setAbsorbOverride}
               creditCardPreview={creditCardPreview}
-              bellaConfig={bellaConfig}
+                            bellaConfig={bellaConfig}
+              maxInstallments={maxAllowedInstallments}
               cardFixedFee={cardFixedFee}
               hasPdvItems={!!pdvCashItems?.length}
               entradaExcedeu={entradaExcedeu}

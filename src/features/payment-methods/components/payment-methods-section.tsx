@@ -25,6 +25,7 @@ import type { PaymentMethodFee } from "../types";
 import { useCardPriceConfig, useSaveCardPriceConfig } from "../hooks/use-card-price-config";
 import {
   calcParcela,
+  maxInstallmentsFor,
   calcPrecoCartao,
   DEFAULT_CARD_PRICE_CONFIG,
   type CardPriceConfig,
@@ -108,7 +109,9 @@ export function PaymentMethodsSection() {
 
   const dirtyCount = rows.filter((r) => r.dirty).length;
   const sampleCardPrice = calcPrecoCartao(100, cardConfig);
-  const sampleInstallment = calcParcela(sampleCardPrice, cardConfig.maxInstallments);
+    const sampleMaxInstallments = maxInstallmentsFor(sampleCardPrice, cardConfig);
+  const sampleInstallment = calcParcela(sampleCardPrice, sampleMaxInstallments);
+  const minInstallmentAmount = cardConfig.minInstallmentAmount ?? 0;
 
   if (companyLoading || feesQ.isLoading || cardConfigQ.isLoading) {
     return (
@@ -142,7 +145,7 @@ export function PaymentMethodsSection() {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                    <div className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="card-fee">Taxa do cartão (%)</Label>
               <Input
@@ -175,6 +178,23 @@ export function PaymentMethodsSection() {
                 }}
               />
             </div>
+                        <div className="space-y-1.5">
+              <Label htmlFor="card-min-installment">Parcelar a partir de (R$)</Label>
+              <Input
+                id="card-min-installment"
+                type="number"
+                min={0}
+                step="0.01"
+                value={minInstallmentAmount}
+                onChange={(event) => {
+                  setCardConfig((current) => ({
+                    ...current,
+                    minInstallmentAmount: Math.max(0, num(event.target.value)),
+                  }));
+                  setCardDirty(true);
+                }}
+              />
+            </div>
             <div className="flex items-center gap-2 pb-2">
               <Switch
                 checked={cardConfig.active}
@@ -188,8 +208,13 @@ export function PaymentMethodsSection() {
           </div>
           <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
             Produto de {formatCurrency(100)} à vista → {formatCurrency(sampleCardPrice)} no cartão
-            {cardConfig.active ? ` (até ${cardConfig.maxInstallments}x de ${formatCurrency(sampleInstallment)})` : ""}.
+                        {cardConfig.active && sampleMaxInstallments > 1
+              ? ` (até ${sampleMaxInstallments}x de ${formatCurrency(sampleInstallment)})`
+              : ""}.
             Você recebe {formatCurrency(100)} após a taxa.
+            {minInstallmentAmount > 0
+              ? ` Vendas abaixo de ${formatCurrency(minInstallmentAmount)} no cartão são só 1x.`
+              : " Qualquer valor pode ser parcelado."}
           </p>
           <div className="flex justify-end">
             <Button

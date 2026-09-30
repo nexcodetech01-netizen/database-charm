@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Package, Share2, Copy, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
-import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
+import { calcParcela, maxInstallmentsFor, calcPrecoCartao } from "@/lib/pricing/card-price";
 import { toast } from "sonner";
 import { getQuickViewProduct } from "../lib/quick-view.functions";
 import { FramedImage } from "@/components/media/framed-image";
@@ -157,15 +157,21 @@ export function QuickViewDialog({
 
               {product.product.card_price_active && (
                 <Badge variant="secondary" className="mt-2 w-fit bg-primary/10 text-primary border-none">
-                  ou {formatCurrency(calcPrecoCartao(product.product.price, {
-                    cardFeePercent: product.product.card_fee_percent,
-                    maxInstallments: product.product.installment_max ?? 3,
-                    active: product.product.card_price_active,
-                  }))} em até {product.product.installment_max ?? 3}x de {formatCurrency(calcParcela(calcPrecoCartao(product.product.price, {
-                    cardFeePercent: product.product.card_fee_percent,
-                    maxInstallments: product.product.installment_max ?? 3,
-                    active: product.product.card_price_active,
-                  }), product.product.installment_max ?? 3))} no cartão
+                  {(() => {
+                    const cardPrice = calcPrecoCartao(product.product.price, {
+                      cardFeePercent: product.product.card_fee_percent,
+                      maxInstallments: product.product.installment_max ?? 3,
+                      active: product.product.card_price_active,
+                    });
+                    // Abaixo do valor mínimo para parcelar, o cartão é só 1x.
+                    const count = maxInstallmentsFor(cardPrice, {
+                      maxInstallments: product.product.installment_max ?? 3,
+                      minInstallmentAmount: product.product.installment_min_amount ?? 0,
+                    });
+                    return count > 1
+                      ? `ou ${formatCurrency(cardPrice)} em até ${count}x de ${formatCurrency(calcParcela(cardPrice, count))} no cartão`
+                      : `ou ${formatCurrency(cardPrice)} no cartão`;
+                  })()}
                 </Badge>
               )}
 

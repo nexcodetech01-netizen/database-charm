@@ -2,13 +2,32 @@ export type CardPriceConfig = {
   cardFeePercent: number;
   maxInstallments: number;
   active: boolean;
+  /** A partir deste total (no cartão) a venda pode ser parcelada. 0 = sempre. */
+  minInstallmentAmount?: number;
 };
 
 export const DEFAULT_CARD_PRICE_CONFIG: CardPriceConfig = {
   cardFeePercent: 2.88,
   maxInstallments: 3,
   active: true,
+  minInstallmentAmount: 0,
 };
+
+/**
+ * Máximo de parcelas para um total no cartão: abaixo do valor mínimo
+ * configurado é 1x (ainda com o preço de cartão). Mesma regra da RPC
+ * apply_pdv_payment_pricing — "a partir de" inclui o próprio valor.
+ */
+export function maxInstallmentsFor(
+  cardTotal: number,
+  config: Pick<CardPriceConfig, "maxInstallments" | "minInstallmentAmount"> = DEFAULT_CARD_PRICE_CONFIG,
+): number {
+  const max = Math.max(1, Math.trunc(Number(config.maxInstallments) || 1));
+  const min = Number(config.minInstallmentAmount ?? 0);
+  const total = Number(cardTotal);
+  if (Number.isFinite(min) && min > 0 && !(Number.isFinite(total) && total >= min)) return 1;
+  return max;
+}
 
 export function calcPrecoCartao(
   precoAvista: number,
@@ -73,8 +92,9 @@ export function calcTotalAvistaPdv(
 export function normalizeCardPriceConfig(
   row?: {
     card_fee_percent?: number | string | null;
-    max_installments?: number | string | null;
+        max_installments?: number | string | null;
     active?: boolean | null;
+    min_installment_amount?: number | string | null;
   } | null,
 ): CardPriceConfig {
   return {
@@ -83,6 +103,7 @@ export function normalizeCardPriceConfig(
       1,
       Math.trunc(Number(row?.max_installments ?? DEFAULT_CARD_PRICE_CONFIG.maxInstallments)),
     ),
-    active: row?.active ?? DEFAULT_CARD_PRICE_CONFIG.active,
+        active: row?.active ?? DEFAULT_CARD_PRICE_CONFIG.active,
+    minInstallmentAmount: Math.max(0, Number(row?.min_installment_amount ?? 0) || 0),
   };
 }

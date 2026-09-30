@@ -16,7 +16,7 @@ import { SuggestedPricesByChannelCard } from "@/features/pricing/components/sugg
 import { useAuth } from "@/providers/auth-provider";
 import { useResolvedCompanyId } from "@/hooks/use-resolved-company-id";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
-import { calcParcela, calcPrecoCartao } from "@/lib/pricing/card-price";
+import { calcParcela, maxInstallmentsFor, calcPrecoCartao } from "@/lib/pricing/card-price";
 
 interface PricingFormProps {
   form: any;
@@ -75,7 +75,8 @@ export function PricingForm({
   const totalCost = cost + freight + packaging + insurance + other;
   const price = num(form.price);
   const cardPrice = cardConfig ? calcPrecoCartao(price, cardConfig) : price;
-  const cardInstallment = cardConfig ? calcParcela(cardPrice, cardConfig.maxInstallments) : price;
+    const cardMaxInstallments = cardConfig ? maxInstallmentsFor(cardPrice, cardConfig) : 1;
+  const cardInstallment = cardConfig ? calcParcela(cardPrice, cardMaxInstallments) : price;
   const desiredMargin = num(form.margin);
 
   // CORREÇÃO ("tela tremendo ao alterar a margem alvo", 2026-08-21):
@@ -372,7 +373,10 @@ export function PricingForm({
               {errors.price && <p className="text-xs text-destructive font-medium">{errors.price}</p>}
               {cardConfig?.active ? (
                 <p className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">
-                  No cartão: <strong>{formatCurrency(cardPrice)}</strong> (até {cardConfig.maxInstallments}x de {formatCurrency(cardInstallment)})
+                                    No cartão: <strong>{formatCurrency(cardPrice)}</strong>
+                  {cardMaxInstallments > 1
+                    ? ` (até ${cardMaxInstallments}x de ${formatCurrency(cardInstallment)})`
+                    : " (1x)"}
                 </p>
               ) : null}
             </div>

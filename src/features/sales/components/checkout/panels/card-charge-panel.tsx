@@ -31,7 +31,9 @@ interface CardChargePanelProps {
       }
     | null
     | undefined;
-  cardFixedFee: number;
+    cardFixedFee: number;
+  /** Máximo de parcelas para este valor (limite do Asaas + mínimo para parcelar). */
+  maxInstallments: number;
   /** Venda do PDV: parcelas calculadas pelo preço de cartão já aplicado. */
   hasPdvItems: boolean;
   entradaExcedeu: boolean;
@@ -53,7 +55,8 @@ export function CardChargePanel({
   onAbsorbChange,
   creditCardPreview,
   bellaConfig,
-  cardFixedFee,
+    cardFixedFee,
+  maxInstallments,
   hasPdvItems,
   entradaExcedeu,
   entradaValue,
@@ -100,13 +103,7 @@ export function CardChargePanel({
               Parcelamento
             </Label>
             <div className="flex gap-2">
-              {CREDIT_CARD_ALLOWED_INSTALLMENTS.filter(
-                (n) =>
-                  n <=
-                  Number(
-                    bellaConfig?.credit_card_max_installments ?? 3,
-                  ),
-              ).map((n) => {
+                            {CREDIT_CARD_ALLOWED_INSTALLMENTS.filter((n) => n <= maxInstallments).map((n) => {
                 const preview = computeCreditCardCharge(chargeableAmount, n, {
                   absorb,
                   feePercent: Number(

@@ -154,8 +154,10 @@ describe("FASE 4 — taxas Asaas da empresa", () => {
     ).toBeCloseTo(1.99, 2);
   });
 
-  it("até R$ 100,00 permite somente 1x", () => {
-    expect(maxInstallmentsForAmount(INSTALLMENT_MIN_AMOUNT)).toBe(1);
+  it("abaixo de R$ 100,00 permite somente 1x; R$ 100,00 já parcela", () => {
+        // "A partir de": o valor mínimo já parcela.
+    expect(maxInstallmentsForAmount(INSTALLMENT_MIN_AMOUNT)).toBe(3);
+    expect(maxInstallmentsForAmount(INSTALLMENT_MIN_AMOUNT - 0.01)).toBe(1);
     expect(allowedInstallments(99.9)).toEqual([1]);
   });
 

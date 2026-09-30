@@ -62,9 +62,13 @@ export function buildFeeTable(
 
 export const EMPTY_FEE_TABLE: CompanyFeeTable = { rates: [] };
 
-/** Número máximo de parcelas permitido para um valor de venda. */
+/**
+ * Número máximo de parcelas permitido para um valor de venda.
+ * "A partir de" R$ 100: o próprio valor mínimo já parcela (decisão de
+ * 2026-09-30, mesma regra do PDV/checkout — ver maxInstallmentsFor).
+ */
 export function maxInstallmentsForAmount(amount: number): number {
-  return num(amount) > INSTALLMENT_MIN_AMOUNT ? MAX_INSTALLMENTS_NO_INTEREST : 1;
+  return num(amount) >= INSTALLMENT_MIN_AMOUNT ? MAX_INSTALLMENTS_NO_INTEREST : 1;
 }
 
 /** Opções de parcelamento válidas para um valor (1..N). */
