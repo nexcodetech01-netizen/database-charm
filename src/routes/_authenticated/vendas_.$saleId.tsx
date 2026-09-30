@@ -666,51 +666,53 @@ function SaleWorkspace({
                 className="border-0 bg-transparent py-10"
               />
             ) : (
-              <div className="overflow-x-auto">
-                <div className="min-w-[880px] divide-y divide-border">
-                  <div className="grid grid-cols-[1fr_120px_80px_120px_110px_130px_110px] gap-3 bg-muted/40 px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    <div>Produto</div>
-                    <div>SKU</div>
-                    <div className="text-right">Qtd.</div>
-                    <div className="text-right">Preço</div>
-                    <div className="text-right">Desc.</div>
-                    <div className="text-right">Subtotal</div>
-                    <div className="text-right">Lucro</div>
-                  </div>
-                  {sale.items.map((it) => (
-                    <div
-                      key={it.id}
-                      className="grid grid-cols-[1fr_120px_80px_120px_110px_130px_110px] gap-3 px-4 py-3 text-sm"
-                    >
-                      <div className="truncate">{it.description}</div>
-                      <div className="truncate font-mono text-xs text-muted-foreground">
-                        —
+              <ul className="divide-y divide-border">
+                {sale.items.map((it) => {
+                  const quantity = Number(it.quantity) || 0;
+                  const unitPrice = Number(it.unit_price) || 0;
+                  const discount = Number(it.discount) || 0;
+                  const total = Number(it.total) || 0;
+                  const cost = Number(it.total_cost) || 0;
+                  const profit = total - cost;
+                  const margin = total > 0 ? Math.round((profit / total) * 100) : null;
+                  const sku = it.product?.sku?.trim();
+                  return (
+                    <li key={it.id} className="flex items-start justify-between gap-4 px-4 py-3">
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        {/* Nome completo, quebrando linha — nunca cortado. */}
+                        <p className="break-words text-sm font-medium leading-snug">
+                          {it.description || it.product?.name || "Item sem descrição"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {sku ? <span className="font-mono">SKU {sku} · </span> : null}
+                          <span className="tabular-nums">
+                            {quantity} × {formatCurrency(unitPrice)}
+                          </span>
+                          {discount > 0 ? (
+                            <span className="tabular-nums"> · desconto {formatCurrency(discount)}</span>
+                          ) : null}
+                        </p>
+                        {cost > 0 ? (
+                          <p className="text-xs text-muted-foreground tabular-nums">
+                            Custo {formatCurrency(cost)} ·{" "}
+                            <span className={profit >= 0 ? "text-emerald-600" : "text-destructive"}>
+                              Lucro {formatCurrency(profit)}
+                              {margin !== null ? ` (${margin}%)` : ""}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="text-xs text-amber-600">Sem custo cadastrado — lucro não calculado</p>
+                        )}
                       </div>
-                      <div className="text-right tabular-nums">
-                        {Number(it.quantity)}
-                      </div>
-                      <div className="text-right tabular-nums">
-                        {formatCurrency(Number(it.unit_price))}
-                      </div>
-                      <div className="text-right tabular-nums">
-                        {formatCurrency(Number(it.discount))}
-                      </div>
-                      <div className="text-right tabular-nums font-medium">
-                        {formatCurrency(Number(it.total))}
-                      </div>
-                      <div className="text-right tabular-nums text-muted-foreground">
-                        —
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                      <p className="shrink-0 text-sm font-semibold tabular-nums">
+                        {formatCurrency(total)}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </Card>
-          <p className="mt-2 px-1 text-xs text-muted-foreground">
-            SKU e lucro por item entram junto com a leitura do Pricing Engine
-            na próxima Sprint.
-          </p>
         </TabsContent>
 
         <TabsContent value="cliente" className="mt-4 space-y-4">

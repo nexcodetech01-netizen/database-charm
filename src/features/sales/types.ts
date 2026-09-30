@@ -75,9 +75,14 @@ export interface SaleWithMeta extends Sale {
   settlement_paid_at: string | null;
 }
 
+/** Item com o SKU/nome atuais do produto (join no detalhe da venda). */
+export type SaleItemWithProduct = SaleItem & {
+  product?: { sku: string | null; name: string } | null;
+};
+
 export interface SaleWithItems extends Sale {
   customer_name: string | null;
-  items: SaleItem[];
+  items: SaleItemWithProduct[];
   metadata?: Record<string, any> | null;
 }
 

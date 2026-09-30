@@ -560,9 +560,9 @@ export const salesService = {
     if (error) throw error;
     if (!data) return null;
 
-    const { data: items, error: ierr } = await supabase
+        const { data: items, error: ierr } = await supabase
       .from("sale_items")
-      .select("*")
+      .select("*, product:products!sale_items_product_id_fkey(sku, name)")
       .eq("sale_id", id)
       .order("position", { ascending: true });
     if (ierr) throw ierr;
