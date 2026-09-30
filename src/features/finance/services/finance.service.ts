@@ -611,6 +611,33 @@ export const financeService = {
    * Não altera `sales.payment_method` — a sincronização com a venda continua
    * a cargo dos triggers existentes.
    */
+    /**
+   * Transferência entre contas: tira de uma e põe na outra (mesma transação
+   * no banco). Com `cashSessionId` e origem no Caixa, registra também a
+   * sangria na gaveta ("Depósito no banco").
+   */
+  async transferBetweenAccounts(input: {
+    companyId: string;
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+    date?: string;
+    description?: string | null;
+    cashSessionId?: string | null;
+  }): Promise<string> {
+    const { data, error } = await (supabase.rpc as any)("transfer_between_accounts", {
+      _company_id: input.companyId,
+      _from_account_id: input.fromAccountId,
+      _to_account_id: input.toAccountId,
+      _amount: input.amount,
+      _date: input.date ?? new Date().toISOString().slice(0, 10),
+      _description: input.description ?? null,
+      _cash_session_id: input.cashSessionId ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return data as string;
+  },
+
   async settleTransaction(id: string, input: SettleTransactionInput) {
     // Regra de negócio única (RPC): valida caixa aberto quando a conta é do
     // tipo Caixa, cria o cash_movement, atualiza o saldo da conta e baixa o

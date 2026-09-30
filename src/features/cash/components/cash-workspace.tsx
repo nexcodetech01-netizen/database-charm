@@ -37,13 +37,14 @@ import { CASH_METHOD_LABEL, type CashPaymentMethodKey } from "../types";
 import { isSessionStale, staleSessionMessage } from "../lib/session-day";
 import { OpenSessionDialog } from "./open-session-dialog";
 import { MovementDialog } from "./movement-dialog";
+import { DepositDialog } from "./deposit-dialog";
 import { CloseSessionDialog } from "./close-session-dialog";
 import { ReportDialog } from "./report-dialog";
 import { CashHelpCard } from "./cash-help-card";
 import { PendingCashReconciliations } from "./pending-cash-reconciliations";
 import { useAccounts } from "@/features/finance/hooks/use-finance";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Landmark } from "lucide-react";
 
 
 import { BellaInlineSuggestion } from "@/features/bella-ai/components/bella-inline-suggestion";
@@ -86,6 +87,7 @@ export function CashWorkspace({
 
   const [openDialog, setOpenDialog] = useState(false);
   const [movement, setMovement] = useState<"cash_in" | "cash_out" | null>(null);
+  const [depositing, setDepositing] = useState(false);
   const [closing, setClosing] = useState(false);
   const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
@@ -177,7 +179,14 @@ export function CashWorkspace({
                 onClick={() => setMovement("cash_out")}
                 className="gap-2"
               >
-                <MinusCircle className="h-4 w-4" /> Sangria
+                                <MinusCircle className="h-4 w-4" /> Sangria
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDepositing(true)}
+                className="gap-2"
+              >
+                <Landmark className="h-4 w-4" /> Depositar no banco
               </Button>
               <Button onClick={() => setClosing(true)} className="gap-2">
                 <DoorOpen className="h-4 w-4" /> Fechar caixa
@@ -513,6 +522,12 @@ export function CashWorkspace({
 
       {openSession && (
         <>
+                    <DepositDialog
+            open={depositing}
+            onOpenChange={setDepositing}
+            session={openSession}
+            companyId={companyId}
+          />
           <MovementDialog
             open={movement !== null}
             onOpenChange={(o) => !o && setMovement(null)}
