@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pickSettlementAccount } from "../lib/settlement-account";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
 import type { Tables } from "@/integrations/supabase/types";
@@ -977,52 +978,28 @@ export const salesService = {
     const tx = await this.openReceivableForSale(saleId);
     if (!tx) throw new Error("Título financeiro da venda não encontrado ou já baixado.");
 
-    // 2. Busca conta financeira padrão da empresa (tipo 'bank' ou 'cash' que esteja ativa)
-    // No PDV, o ideal é usar a conta associada à sessão de caixa da venda.
-    const { data: saleData } = await supabase
-      .from("sales")
-      .select("cash_session_id")
-      .eq("id", saleId)
-      .maybeSingle();
-
-    let accountId = tx.account_id;
-
-    if (!accountId) {
-      // 2.1 Prioriza a conta configurada na empresa especificamente para o PDV
-      const { data: companyConfig } = await supabase
+    // 2. Conta pela forma de pagamento: dinheiro → Caixa; PIX/cartão → Banco.
+    //    Ver lib/settlement-account.ts.
+    const [{ data: companyConfig }, { data: accounts }] = await Promise.all([
+      supabase
         .from("companies")
         .select("pos_default_account_id")
         .eq("id", options.companyId)
-        .maybeSingle();
-      
-      if (companyConfig?.pos_default_account_id) {
-        accountId = companyConfig.pos_default_account_id;
-      }
-    }
-
-    if (!accountId && saleData?.cash_session_id) {
-      // 2.2 Fallback para Bella Pay ou sessão de caixa
-      const { data: bellaConfig } = await supabase
-        .from("bella_pay_config")
-        .select("default_account_id")
-        .eq("company_id", options.companyId)
-        .maybeSingle();
-      
-      if (bellaConfig?.default_account_id) {
-        accountId = bellaConfig.default_account_id;
-      }
-    }
-
-    if (!accountId) {
-      const { data: accounts } = await supabase
+        .maybeSingle(),
+      supabase
         .from("financial_accounts")
-        .select("id")
+        .select("id, type")
         .eq("company_id", options.companyId)
         .eq("status", "active")
-        .order("type", { ascending: false }) // Prioriza 'cash' e 'bank' sobre 'credit_card'
-        .limit(1);
-      if (accounts && accounts.length > 0) accountId = accounts[0].id;
-    }
+        .order("name", { ascending: true }),
+    ]);
+
+    const accountId =
+      pickSettlementAccount(
+        options.paymentMethod,
+        accounts ?? [],
+        companyConfig?.pos_default_account_id,
+      ) ?? tx.account_id;
 
     if (!accountId) {
       throw new Error("Nenhuma conta financeira ativa configurada para receber o pagamento.");
