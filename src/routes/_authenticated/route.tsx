@@ -6,6 +6,7 @@ import { NextActionProvider } from "@/components/feedback/next-action-provider";
 import { PaymentConfirmedListener } from "@/components/feedback/payment-confirmed-listener";
 import { NotificationLogPanel } from "@/features/diagnostics/components/notification-log-panel";
 import { CommandPalette } from "@/features/command-palette";
+import { useInventoryRealtime } from "@/features/inventory/hooks/use-inventory-realtime";
 
 type CurrentCompany = Awaited<ReturnType<typeof companyService.getCurrentUserCompany>>;
 
@@ -80,6 +81,8 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { company } = Route.useRouteContext();
+  // Estoque igual para todas as pessoas da empresa, sem F5.
+  useInventoryRealtime(company.id);
   return (
     <NextActionProvider>
       <PaymentConfirmedListener />
