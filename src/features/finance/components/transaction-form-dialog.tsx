@@ -54,6 +54,11 @@ import {
   useUpdateTransaction,
 } from "../hooks/use-finance";
 import { useNextAction } from "@/components/feedback/next-action-provider";
+import { useQueryClient } from "@tanstack/react-query";
+import { financeService } from "../services/finance.service";
+
+/** Categorias sugeridas ainda não criadas na empresa (criadas ao salvar). */
+const STATIC_CATEGORY_PREFIX = "static:";
 import { useCashGuard } from "@/features/cash";
 
 
@@ -87,7 +92,8 @@ export function TransactionFormDialog({
   const createAndSettleMut = useCreateAndSettleTransaction();
   const updateMut = useUpdateTransaction();
   const { data: accounts } = useAccounts(companyId);
-  const { data: categories } = useFinancialCategories(companyId);
+    const { data: categories } = useFinancialCategories(companyId);
+  const qc = useQueryClient();
   const showNextAction = useNextAction();
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">("");
   const [installments, setInstallments] = useState(1);
@@ -173,9 +179,25 @@ export function TransactionFormDialog({
   const filteredCategories = useMemo(() => {
     if (form.type === "transfer") return [];
     
-    // Sprint 8.4: Se for despesa, usamos a lista estática (hardcoded)
+        // Despesas: categorias da empresa (tabela financial_categories).
+    // BUG CORRIGIDO (2026-09-30): antes a lista era fixa, gravada só como
+    // texto — e o serviço descartava esse texto, então TODA despesa ficava
+    // sem categoria e o fechamento não conseguia separar mercadoria,
+    // despesa da loja e retirada das sócias.
     if (form.type === "expense") {
-      return STATIC_FINANCIAL_CATEGORIES.map(name => ({ id: name, name, kind: "expense" as const }));
+      const companyExpense = (categories ?? []).filter(
+        (c) => c.kind === "expense" && c.status !== "inactive",
+      );
+      if (companyExpense.length > 0) {
+        return companyExpense.map((c) => ({ id: c.id, name: c.name, kind: "expense" as const }));
+      }
+      // Empresa ainda sem categorias: sugere a lista padrão e cria a
+      // categoria escolhida ao salvar.
+      return STATIC_FINANCIAL_CATEGORIES.map((name) => ({
+        id: `${STATIC_CATEGORY_PREFIX}${name}`,
+        name,
+        kind: "expense" as const,
+      }));
     }
 
     // Se for receita, mantemos as categorias do banco por enquanto
@@ -207,6 +229,12 @@ export function TransactionFormDialog({
       toast.error("Selecione as contas de origem e destino");
       return;
     }
+        if (form.type === "expense" && !form.category_id) {
+      toast.error("Escolha a categoria da despesa", {
+        description: "Retirada de sócia? Use Retirada — Tiele, Retirada — Gabriela ou Retirada — dividida.",
+      });
+      return;
+    }
     const settleOnCreate = !isEdit && form.status === "paid" && form.type !== "transfer";
     if (settleOnCreate && !paymentMethod) {
       toast.error("Selecione a forma de pagamento/recebimento da baixa");
@@ -221,12 +249,9 @@ export function TransactionFormDialog({
     let finalCategory = form.type === "transfer" ? null : form.category || null;
     let finalCategoryId = form.type === "transfer" ? null : form.category_id || null;
 
-    if (form.type === "expense") {
-      // Para despesas, salvamos apenas no campo de texto 'category'
-      finalCategoryId = null;
-      if (!finalCategory) {
-        finalCategory = "Outras Despesas Gerais";
-      }
+        if (form.type === "expense") {
+      // Categoria obrigatória (validada acima), sempre por id.
+      finalCategory = null;
     } else if (form.type === "income" && !finalCategoryId) {
       // Fallback para receitas (mantido do banco)
       const generalCategory = categories?.find(c => c.name.toLowerCase().includes("gerais") || c.name.toLowerCase().includes("geral"));
@@ -271,8 +296,19 @@ export function TransactionFormDialog({
     };
 
 
-    try {
+        try {
       isSubmittingRef.current = true;
+
+      // Categoria sugerida (empresa ainda sem categorias): cria agora.
+      if (payload.category_id?.startsWith(STATIC_CATEGORY_PREFIX)) {
+        const created = await financeService.createCategory({
+          company_id: companyId,
+          name: payload.category_id.slice(STATIC_CATEGORY_PREFIX.length),
+          kind: "expense",
+        });
+        payload.category_id = created.id;
+        void qc.invalidateQueries({ queryKey: ["finance"] });
+      }
       console.log("[TransactionFormDialog] Enviando payload:", payload);
 
       if (isEdit && transaction) {
@@ -534,9 +570,9 @@ export function TransactionFormDialog({
                       aria-expanded={categoryOpen}
                       className="w-full justify-between font-normal"
                     >
-                      {form.type === "expense" 
-                        ? (form.category || "Selecionar categoria...")
-                        : (form.category_id ? filteredCategories.find((c) => c.id === form.category_id)?.name : "Selecionar categoria...")}
+                                            {(form.category_id
+                        ? filteredCategories.find((c) => c.id === form.category_id)?.name
+                        : null) ?? "Selecionar categoria..."}
 
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -553,6 +589,7 @@ export function TransactionFormDialog({
                           Nenhuma categoria encontrada.
                         </CommandEmpty>
                         <CommandGroup>
+                                                    {form.type !== "expense" && (
                           <CommandItem
                             value="__none__"
                             onSelect={() => {
@@ -566,25 +603,22 @@ export function TransactionFormDialog({
                                 (!form.category_id && !form.category) ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            Sem categoria
+                                                        Sem categoria
                           </CommandItem>
+                          )}
                           {filteredCategories.map((cat) => (
                             <CommandItem
                               key={cat.id}
                               value={cat.name}
                               onSelect={() => {
-                                if (form.type === "expense") {
-                                  setForm({ ...form, category: cat.name, category_id: "" });
-                                } else {
-                                  setForm({ ...form, category_id: cat.id, category: "" });
-                                }
+                                                                setForm({ ...form, category_id: cat.id, category: "" });
                                 setCategoryOpen(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  (form.type === "expense" ? form.category === cat.name : form.category_id === cat.id)
+                                                                    form.category_id === cat.id
                                     ? "opacity-100"
                                     : "opacity-0"
                                 )}
@@ -599,7 +633,7 @@ export function TransactionFormDialog({
                 </Popover>
                 <p className="mt-1 text-[10px] text-muted-foreground">
                   {form.type === "expense" 
-                    ? "* Categorias de despesa são fixas e gravadas como texto."
+                                        ? "* Obrigatória. Compras para revender: Mercadoria. Dinheiro para vocês: Retirada."
                     : "* Classificação automática para 'Receitas Gerais' caso não informada."}
                 </p>
               </div>

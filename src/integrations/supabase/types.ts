@@ -7930,6 +7930,10 @@ export type Database = {
         }
         Returns: Json
       }
+      monthly_closing_summary: {
+        Args: { _company_id: string; _month: string }
+        Returns: Json
+      }
       nexos_jobs_status: { Args: never; Returns: Json }
       preview_duplicate_categories: {
         Args: { _company_id: string }
