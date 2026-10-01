@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { persistNotification } from "./persistence.server";
 import {
   BIWEEKLY_SUMMARY_DAYS,
@@ -7,6 +8,15 @@ import {
   buildBiweeklySummary,
   type TopSellingProduct,
 } from "./biweekly-summary";
+
+// A migration added this RPC after the checked-in Supabase types were generated.
+// Keep the local signature aligned with its RETURNS TABLE until types are regenerated.
+type TopSellingRpc = {
+  rpc: (
+    name: "top_selling_products",
+    args: { _company_id: string; _days: number; _limit: number },
+  ) => PromiseLike<{ data: TopSellingProduct[] | null; error: PostgrestError | null }>;
+};
 
 /**
  * Gera o resumo quinzenal da empresa se o último tiver mais de 15 dias.
@@ -31,7 +41,7 @@ export async function maybeSendBiweeklySummary(
   if ((count ?? 0) > 0) return false;
 
   const [topResult, restockResult] = await Promise.all([
-    supabaseAdmin.rpc("top_selling_products", {
+    (supabaseAdmin as unknown as TopSellingRpc).rpc("top_selling_products", {
       _company_id: companyId,
       _days: BIWEEKLY_SUMMARY_DAYS,
       _limit: BIWEEKLY_SUMMARY_TOP,
