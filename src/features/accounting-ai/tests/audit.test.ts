@@ -112,7 +112,18 @@ describe("Sprint 7.2 — verificações financeiras", () => {
     const finding = snapshot.findings.find(
       (f) => f.id === "fin_venda_paga_sem_lancamento",
     );
-    expect(finding?.entityIds).toContain("s-x");
+        expect(finding?.entityIds).toContain("s-x");
+  });
+
+  it("venda de crediário paga não é 'venda paga sem lançamento'", () => {
+    const snapshot = run({
+      sales: [makeAuditSale({ id: "s-cred", settledAt: null, paymentMethod: "credit" })],
+      transactions: [],
+    });
+    const finding = snapshot.findings.find(
+      (f) => f.id === "fin_venda_paga_sem_lancamento",
+    );
+    expect(finding?.entityIds ?? []).not.toContain("s-cred");
   });
 
   it("aponta recebimento duplicado", () => {
@@ -416,4 +427,6 @@ describe("Sprint 7.2 — chat, insights e notificações", () => {
     expect(auditQueries.problemasCriticos(null).available).toBe(false);
     expect(describeAudit(snapshot)).toMatch(/verifica/i);
   });
+
+  
 });

@@ -136,8 +136,10 @@ export interface AuditSaleRow {
   customerId: string | null;
   /** Baixa registrada na própria venda. */
   paidAt: string | null;
-  /** Liquidação financeira oficial (financial_transactions.paid_at). */
+    /** Liquidação financeira oficial (financial_transactions.paid_at). */
   settledAt: string | null;
+  /** Forma de pagamento da venda ("credit" = crediário). */
+  paymentMethod?: string | null;
 }
 
 export interface AuditCashSessionRow {
