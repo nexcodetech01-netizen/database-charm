@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { type AsaasEvent } from "@/features/bella-pay/lib/event-map";
 import {
@@ -14,14 +14,13 @@ import { enforceRateLimit } from "@/lib/rate-limit.server";
  * Bella Pay (Asaas) — Webhook receiver.
  * URL: /api/public/bella-pay/webhook/{token}
  *
- * HOTFIX-004D — Sem SUPABASE_SERVICE_ROLE_KEY.
- *   Todas as operações privilegiadas passam por 3 RPCs SECURITY DEFINER:
+  * As operações privilegiadas passam por 3 RPCs SECURITY DEFINER:
  *     • bella_pay_resolve_webhook_token
  *     • bella_pay_record_webhook_event
  *     • bella_pay_apply_webhook_result
- *   O client HTTP usa apenas SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY.
- *   Nenhuma tabela é aberta ao anon; a autorização de fato acontece pela
- *   posse do webhook_token na URL.
+ *   chamadas com o cliente de servidor (service role), depois de validar o
+ *   token da URL e o cabeçalho asaas-access-token. As RPCs NÃO são
+ *   executáveis por anon/authenticated (migration 20261002090000).
  *
  * Lógica de negócio (event-map, status-machine, value-check) permanece em
  * webhook-handler.ts / status-machine.ts / event-map.ts / value-check.ts.
@@ -54,32 +53,6 @@ function log(level: "info" | "warn" | "error", message: string, meta: LogMeta): 
   );
 }
 
-/** Cliente Supabase servidor com publishable key. Sem service role. */
-function createPublicClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) {
-    throw new Error(
-      `Missing Supabase env var(s): ${[!url && "SUPABASE_URL", !key && "SUPABASE_PUBLISHABLE_KEY"]
-        .filter(Boolean)
-        .join(", ")}`,
-    );
-  }
-  const isNewKey = key.startsWith("sb_publishable_") || key.startsWith("sb_secret_");
-  return createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (isNewKey && headers.get("Authorization") === `Bearer ${key}`) {
-          headers.delete("Authorization");
-        }
-        headers.set("apikey", key);
-        return fetch(input, { ...init, headers });
-      },
-    },
-  });
-}
 
 export const Route = createFileRoute("/api/public/bella-pay/webhook/$token")({
   server: {
@@ -134,9 +107,15 @@ export const Route = createFileRoute("/api/public/bella-pay/webhook/$token")({
           return new Response("Invalid access token", { status: 401 });
         }
 
-        let supabase: ReturnType<typeof createPublicClient>;
+                // Acesso de servidor (service role), como os outros webhooks.
+        // SEGURANÇA (2026-10-01): antes usava a chave pública e, para isso,
+        // as 3 RPCs eram executáveis por "anon" — qualquer pessoa com a
+        // chave pública podia chamar bella_pay_apply_webhook_result com IDs
+        // arbitrários e dar baixa em vendas. Agora só o servidor chama.
+        let supabase: SupabaseClient<Database>;
         try {
-          supabase = createPublicClient();
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          supabase = supabaseAdmin as unknown as SupabaseClient<Database>;
         } catch (err) {
           log("error", "Falha ao criar cliente Supabase", {
             requestId,
