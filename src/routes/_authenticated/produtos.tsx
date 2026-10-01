@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { BulkCostDialog } from "@/features/products/components/bulk-cost-dialog";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Package } from "lucide-react";
@@ -59,6 +60,7 @@ function ProductsPage() {
             createLabel="Novo produto"
             onCreate={() => navigate({ to: "/produtos/novo" })}
           >
+                        <BulkCostDialog companyId={company.id} />
             <BulkNcmDialog companyId={company.id} />
             <ImportCsvDialog companyId={company.id} />
           </ActionToolbar>
