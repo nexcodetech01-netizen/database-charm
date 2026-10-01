@@ -7,6 +7,14 @@ import { formatCurrency } from "@/lib/format";
 import { computeSaleMetrics, type SaleItemDraft } from "../../types";
 import type { SaleTotals } from "../../engine/types";
 import { type DiscountEvaluation } from "../../lib/discounts";
+import {
+  percentToValue,
+  readDiscountMode,
+  valueToPercent,
+  writeDiscountMode,
+  type DiscountMode,
+} from "../../lib/discount-mode";
+import { useEffect, useState } from "react";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
 import { calcParcela, maxInstallmentsFor, calcTotalCartaoPdv } from "@/lib/pricing/card-price";
 
@@ -88,7 +96,31 @@ export function PDVSummary({
   readOnly,
   onOpenNotes,
 }: Props) {
-  const { data: cardPriceConfig } = useCardPriceConfig(companyId);
+    const { data: cardPriceConfig } = useCardPriceConfig(companyId);
+  // Desconto em R$ ou %: a venda sempre recebe o valor em reais.
+  const [discountMode, setDiscountMode] = useState<DiscountMode>(readDiscountMode);
+  const [percentInput, setPercentInput] = useState(() =>
+    discountValue > 0 ? String(valueToPercent(totals.items_total, discountValue)) : "",
+  );
+  // Venda zerada/limpa: zera também o % digitado.
+  useEffect(() => {
+    if (!discountValue) setPercentInput("");
+  }, [discountValue]);
+    // Em %, o desconto acompanha o subtotal (ex.: adicionou um item).
+  useEffect(() => {
+    if (discountMode !== "percent" || !percentInput) return;
+    const next = percentToValue(totals.items_total, Number(percentInput) || 0);
+    if (next !== discountValue) onDiscountChange(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totals.items_total]);
+  function changeMode(mode: DiscountMode) {
+    if (mode === discountMode) return;
+    if (mode === "percent") {
+      setPercentInput(discountValue > 0 ? String(valueToPercent(totals.items_total, discountValue)) : "");
+    }
+    setDiscountMode(mode);
+    writeDiscountMode(mode);
+  }
   const hint = discountHint(discount);
   const { profit, margin, hasCost } = computeSaleMetrics(items, discountValue);
   const isNegative = profit < 0;
@@ -145,21 +177,57 @@ export function PDVSummary({
           <Row label="Subtotal" value={formatCurrency(totals.items_total)} strong />
 
           <div className="flex h-8 items-center justify-between gap-3">
-            <label htmlFor="pdv-discount" className="text-slate-500">
+                        <label htmlFor="pdv-discount" className="text-slate-500">
               Desconto
             </label>
-            <Input
-              id="pdv-discount"
-              type="number"
-              min={0}
-              step="0.01"
-              disabled={readOnly}
-              value={discountValue || ""}
-              onChange={(e) => onDiscountChange(Number(e.target.value) || 0)}
-              placeholder="0,00"
-              className="h-8 w-28 rounded-lg text-right text-sm font-medium tabular-nums"
-            />
+            <div className="flex items-center gap-1.5">
+              <div className="flex h-8 overflow-hidden rounded-lg border border-slate-700/60 text-xs">
+                {(["value", "percent"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    disabled={readOnly}
+                    onClick={() => changeMode(m)}
+                    className={cn(
+                      "px-2 font-semibold transition-colors",
+                      discountMode === m
+                        ? "bg-primary text-primary-foreground"
+                        : "text-slate-400 hover:bg-slate-800/60",
+                    )}
+                    aria-pressed={discountMode === m}
+                  >
+                    {m === "value" ? "R$" : "%"}
+                  </button>
+                ))}
+              </div>
+              <Input
+                id="pdv-discount"
+                type="number"
+                min={0}
+                max={discountMode === "percent" ? 100 : undefined}
+                step={discountMode === "percent" ? "0.1" : "0.01"}
+                disabled={readOnly}
+                value={discountMode === "percent" ? percentInput : discountValue || ""}
+                onChange={(e) => {
+                  if (discountMode === "percent") {
+                    setPercentInput(e.target.value);
+                    onDiscountChange(
+                      percentToValue(totals.items_total, Number(e.target.value) || 0),
+                    );
+                  } else {
+                    onDiscountChange(Number(e.target.value) || 0);
+                  }
+                }}
+                placeholder={discountMode === "percent" ? "0" : "0,00"}
+                className="h-8 w-24 rounded-lg text-right text-sm font-medium tabular-nums"
+              />
+            </div>
           </div>
+          {discountMode === "percent" && discountValue > 0 ? (
+            <p className="text-right text-xs text-slate-500 tabular-nums">
+              {percentInput || 0}% = {formatCurrency(discountValue)}
+            </p>
+          ) : null}
           {hint && (
             <p
               className={

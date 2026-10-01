@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { percentToValue, readDiscountMode, valueToPercent, writeDiscountMode } from "../../lib/discount-mode";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,8 +93,11 @@ export function PDVItemDiscountDialog({ item, open, onOpenChange, onConfirm, typ
   useEffect(() => {
     if (item) {
       const current = type === "discount" ? (item.discount || 0) : (item.addition || 0);
-      setInputValue(current);
-      setMode("value");
+            // Abre na última forma usada (R$ ou %); valor atual convertido.
+      const lastMode = readDiscountMode();
+      const gross = (item.unit_price || 0) * (item.quantity || 0);
+      setMode(lastMode);
+      setInputValue(lastMode === "percent" ? valueToPercent(gross, current) : current);
     }
   }, [item, open, type]);
 
@@ -104,11 +108,13 @@ export function PDVItemDiscountDialog({ item, open, onOpenChange, onConfirm, typ
   const grossTotal = originalPrice * quantity;
   
   let calculatedValue = 0;
-  if (mode === "value") {
-    calculatedValue = inputValue;
+    if (mode === "value") {
+    calculatedValue = Math.round((Number(inputValue) || 0) * 100) / 100;
   } else {
-    calculatedValue = (grossTotal * inputValue) / 100;
+    // Arredonda nos centavos (antes gravava frações como 2,995).
+    calculatedValue = percentToValue(grossTotal, inputValue);
   }
+  if (type === "discount") calculatedValue = Math.min(calculatedValue, grossTotal);
 
   const finalTotal = type === "discount" 
     ? Math.max(0, grossTotal - calculatedValue)
@@ -124,7 +130,19 @@ export function PDVItemDiscountDialog({ item, open, onOpenChange, onConfirm, typ
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-6 py-4">
-          <RadioGroup value={mode} onValueChange={(v: any) => setMode(v)} className="flex gap-4">
+          <RadioGroup
+            value={mode}
+            onValueChange={(v: any) => {
+              setMode(v);
+              writeDiscountMode(v);
+              setInputValue(
+                v === "percent"
+                  ? valueToPercent(grossTotal, calculatedValue)
+                  : calculatedValue,
+              );
+            }}
+            className="flex gap-4"
+          >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="value" id="mode-value" />
               <Label htmlFor="mode-value" className="cursor-pointer">Valor (R$)</Label>
