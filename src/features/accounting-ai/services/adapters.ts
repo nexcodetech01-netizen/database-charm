@@ -143,7 +143,8 @@ export const auditAdapter: AuditPort = {
       saleDate: s.sale_date ?? null,
       customerId: s.customer_id ?? null,
       paidAt: s.paid_at ?? null,
-      settledAt: s.settlement_paid_at ?? null,
+            settledAt: s.settlement_paid_at ?? null,
+      paymentMethod: s.payment_method ?? null,
     }));
   },
   async cashSessions(companyId, limit = 30) {

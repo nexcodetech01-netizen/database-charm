@@ -112,9 +112,13 @@ const vendaSemLancamento: AuditRule = {
       items: d.sales
         .filter(
           (s) =>
-            (s.status === "paid" || !!s.paidAt) &&
+                        (s.status === "paid" || !!s.paidAt) &&
             !s.settledAt &&
-            !referenced.has(s.id),
+            !referenced.has(s.id) &&
+            // Crediário: os pagamentos ficam ligados às parcelas
+            // (financial_transactions.source = 'credit_payment', reference_id =
+            // pagamento), não à venda. Não é venda sem lançamento.
+            s.paymentMethod !== "credit",
         )
         .map((s) => ({
           id: s.id,
