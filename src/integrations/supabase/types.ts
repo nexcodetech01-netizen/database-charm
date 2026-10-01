@@ -1409,10 +1409,10 @@ export type Database = {
         Row: {
           address: string | null
           address_number: string | null
+          card_machine_account_id: string | null
           city: string | null
           cnpj: string | null
           complement: string | null
-          card_machine_account_id: string | null
           created_at: string
           default_freight: number
           default_insurance: number
@@ -1449,10 +1449,10 @@ export type Database = {
         Insert: {
           address?: string | null
           address_number?: string | null
+          card_machine_account_id?: string | null
           city?: string | null
           cnpj?: string | null
           complement?: string | null
-          card_machine_account_id?: string | null
           created_at?: string
           default_freight?: number
           default_insurance?: number
@@ -1489,10 +1489,10 @@ export type Database = {
         Update: {
           address?: string | null
           address_number?: string | null
+          card_machine_account_id?: string | null
           city?: string | null
           cnpj?: string | null
           complement?: string | null
-          card_machine_account_id?: string | null
           created_at?: string
           default_freight?: number
           default_insurance?: number
@@ -1527,6 +1527,13 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_card_machine_account_id_fkey"
+            columns: ["card_machine_account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_pos_default_account_id_fkey"
             columns: ["pos_default_account_id"]
@@ -2729,6 +2736,74 @@ export type Database = {
           {
             foreignKeyName: "financial_transactions_transfer_to_account_id_fkey"
             columns: ["transfer_to_account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_transfers: {
+        Row: {
+          amount: number
+          cash_movement_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          from_account_id: string
+          id: string
+          to_account_id: string
+          transfer_date: string
+        }
+        Insert: {
+          amount: number
+          cash_movement_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          from_account_id: string
+          id?: string
+          to_account_id: string
+          transfer_date?: string
+        }
+        Update: {
+          amount?: number
+          cash_movement_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          from_account_id?: string
+          id?: string
+          to_account_id?: string
+          transfer_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transfers_cash_movement_id_fkey"
+            columns: ["cash_movement_id"]
+            isOneToOne: false
+            referencedRelation: "cash_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transfers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
             isOneToOne: false
             referencedRelation: "financial_accounts"
             referencedColumns: ["id"]
@@ -7666,12 +7741,12 @@ export type Database = {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
       }
-      debug_auth_info: {
-        Args: never
+      dashboard_revenue_between: {
+        Args: { p_company_id: string; p_end: string; p_start: string }
         Returns: {
-          jwt_company_id: string
-          profile_company_id: string
-          uid: string
+          gross_revenue: number
+          net_received: number
+          sales_count: number
         }[]
       }
       delete_sale: { Args: { _sale_id: string }; Returns: boolean }
@@ -7959,6 +8034,24 @@ export type Database = {
         Args: { _company_id: string }
         Returns: Json
       }
+      products_sold_summary: {
+        Args: {
+          _company_id: string
+          _end: string
+          _start: string
+          _term: string
+        }
+        Returns: {
+          category: string
+          name: string
+          product_id: string
+          quantity: number
+          revenue: number
+          sold_60d: number
+          stock: number
+          suggested_qty: number
+        }[]
+      }
       project_tax_scenarios: {
         Args: { _company_id: string; _competence: string; _growth?: number[] }
         Returns: Json
@@ -8178,6 +8271,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_product_costs: {
+        Args: { _backfill_sales?: boolean; _company_id: string; _items: Json }
+        Returns: Json
+      }
       settle_financial_transaction: {
         Args: {
           _account_id: string
@@ -8246,16 +8343,19 @@ export type Database = {
           usage_count: number
         }[]
       }
-      unaccent: { Args: { "": string }; Returns: string }
-      top_selling_products: {
-        Args: { _company_id: string; _days?: number; _limit?: number }
-        Returns: {
-          name: string
-          product_id: string
-          quantity: number
-          revenue: number
-        }[]
+      transfer_between_accounts: {
+        Args: {
+          _amount: number
+          _cash_session_id?: string
+          _company_id: string
+          _date?: string
+          _description?: string
+          _from_account_id: string
+          _to_account_id: string
+        }
+        Returns: string
       }
+      unaccent: { Args: { "": string }; Returns: string }
       user_has_company_access: {
         Args: { _company_id: string }
         Returns: boolean
