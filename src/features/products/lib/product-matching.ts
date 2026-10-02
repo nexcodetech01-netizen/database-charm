@@ -51,3 +51,39 @@ export async function findProductsByNameKey(
     cover_image_path: p.cover_image_path ?? null,
   }));
 }
+
+export interface SimilarProductMatch extends Omit<ProductNameMatch, "cover_image_path"> {
+  /** 0–1: semelhança do "miolo" do nome (sem perfume/masc/premium/50ml…). */
+  score: number;
+}
+
+/**
+ * Produtos PARECIDOS (não idênticos) — para o fornecedor que escreve o nome
+ * diferente do cadastro. Usado quando findProductsByNameKey não acha nada.
+ */
+export async function findSimilarProducts(
+  companyId: string,
+  name: string,
+  limit = 3,
+): Promise<SimilarProductMatch[]> {
+  const trimmed = name.trim();
+  if (!trimmed || !companyId) return [];
+  const { data, error } = await (supabase.rpc as any)("find_similar_products", {
+    company_id_param: companyId,
+    name_param: trimmed,
+    limit_param: limit,
+  });
+  if (error) {
+    console.error("findSimilarProducts error:", error);
+    return [];
+  }
+  return ((data ?? []) as any[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    sku: p.sku ?? null,
+    cost: p.cost != null ? Number(p.cost) : null,
+    stock: p.stock != null ? Number(p.stock) : null,
+    unit: p.unit ?? null,
+    score: Number(p.score) || 0,
+  }));
+}
