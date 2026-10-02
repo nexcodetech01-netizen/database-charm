@@ -23,7 +23,9 @@ import type { PurchaseItemDraft } from "../types";
 import { useCategories } from "@/features/products/hooks/use-products";
 import { inferCategoryName } from "@/features/products/lib/infer-category";
 import {
-  findProductsByNameKey,
+    findProductsByNameKey,
+  findSimilarProducts,
+  type SimilarProductMatch,
   type ProductNameMatch,
 } from "@/features/products/lib/product-matching";
 
@@ -69,7 +71,8 @@ export function PurchaseImportReviewDialog({
         category_name: it.category_name ?? inferCategoryName(it.description) ?? "",
       })),
     );
-    setMatches({});
+        setMatches({});
+    setSimilars({});
     setDismissedMatches({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialItems]);
@@ -77,6 +80,10 @@ export function PurchaseImportReviewDialog({
   // Checagem em lote, uma vez por abertura do dialog — roda sobre a
   // descrição que a IA/XML extraiu, não a cada tecla digitada na revisão
   // (essa tela não adiciona/remove linhas, só edita as existentes).
+  // Sem nome igual no cadastro: sugere os PARECIDOS (o fornecedor quase
+  // nunca escreve igual — "Perfume Fem Atheeri PREMIUM 50ml" × "Perfume Atheeri").
+  const [similars, setSimilars] = useState<Record<number, SimilarProductMatch[]>>({});
+
   useEffect(() => {
     if (!open || initialItems.length === 0) return;
     let cancelled = false;
@@ -88,12 +95,26 @@ export function PurchaseImportReviewDialog({
           return found.length > 0 ? ([idx, found] as const) : null;
         }),
       );
-      if (cancelled) return;
+            if (cancelled) return;
       const next: Record<number, ProductNameMatch[]> = {};
       entries.forEach((e) => {
         if (e) next[e[0]] = e[1];
       });
       setMatches(next);
+
+      const similarEntries = await Promise.all(
+        initialItems.map(async (it, idx) => {
+          if (it.product_id || next[idx] || !it.description?.trim()) return null;
+          const found = await findSimilarProducts(companyId, it.description, 3);
+          return found.length > 0 ? ([idx, found] as const) : null;
+        }),
+      );
+      if (cancelled) return;
+      const nextSimilar: Record<number, SimilarProductMatch[]> = {};
+      similarEntries.forEach((e) => {
+        if (e) nextSimilar[e[0]] = e[1];
+      });
+      setSimilars(nextSimilar);
     })();
     return () => {
       cancelled = true;
@@ -107,7 +128,7 @@ export function PurchaseImportReviewDialog({
     );
   }
 
-  function linkMatch(index: number, m: ProductNameMatch) {
+    function linkMatch(index: number, m: ProductNameMatch | SimilarProductMatch) {
     updateItem(index, {
       product_id: m.id,
       description: m.name,
@@ -116,7 +137,12 @@ export function PurchaseImportReviewDialog({
       stock_available: m.stock,
       last_cost: m.cost,
     });
-    setMatches((prev) => {
+        setMatches((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+    setSimilars((prev) => {
       const next = { ...prev };
       delete next[index];
       return next;
@@ -212,6 +238,34 @@ export function PurchaseImportReviewDialog({
                             Ignorar
                           </button>
                         </span>
+                                            </div>
+                    ) : similars[idx]?.length > 0 && !dismissedMatches[idx] ? (
+                      <div className="mt-1 rounded-md border border-sky-300 bg-sky-50 px-2 py-1 text-[11px] text-sky-900 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
+                        <p className="font-medium">Parecido com um produto do cadastro:</p>
+                        <ul className="mt-0.5 space-y-0.5">
+                          {similars[idx].map((m) => (
+                            <li key={m.id} className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 break-words">
+                                <strong className="font-semibold">{m.name}</strong>
+                                {m.sku ? ` (${m.sku})` : ""} · {Math.round(m.score * 100)}% parecido
+                              </span>
+                              <button
+                                type="button"
+                                className="shrink-0 font-semibold underline underline-offset-2"
+                                onClick={() => linkMatch(idx, m)}
+                              >
+                                Vincular
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          type="button"
+                          className="mt-0.5 text-sky-700/70 hover:text-sky-900 dark:text-sky-300/70"
+                          onClick={() => dismissMatch(idx)}
+                        >
+                          Nenhum destes — é produto novo
+                        </button>
                       </div>
                     ) : null}
                   </TableCell>
