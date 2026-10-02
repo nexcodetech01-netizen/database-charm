@@ -31,7 +31,7 @@ export const CRT_BY_REGIME: Record<FiscalTaxRegime, readonly CrtValue[]> = {
 
 /** CRT sugerido ao trocar o regime na configuração. */
 export function defaultCrtForRegime(regime: FiscalTaxRegime): CrtValue {
-  return CRT_BY_REGIME[regime][0];
+  return CRT_BY_REGIME[regime]?.[0] ?? 1;
 }
 
 export function isValidCrt(crt: number | null | undefined): crt is CrtValue {
@@ -43,11 +43,12 @@ export function isCrtCoherent(
   regime: FiscalTaxRegime,
   crt: number | null | undefined,
 ): boolean {
-  return isValidCrt(crt) && CRT_BY_REGIME[regime].includes(crt);
+    // Regime desconhecido (dado antigo/fora do padrão) não pode derrubar a tela.
+  return isValidCrt(crt) && (CRT_BY_REGIME[regime] ?? []).includes(crt);
 }
 
 export function crtCoherenceMessage(regime: FiscalTaxRegime): string {
-  const allowed = CRT_BY_REGIME[regime].join(" ou ");
+    const allowed = (CRT_BY_REGIME[regime] ?? []).join(" ou ");
   const label: Record<FiscalTaxRegime, string> = {
     simples: "Simples Nacional",
     presumido: "Lucro Presumido",

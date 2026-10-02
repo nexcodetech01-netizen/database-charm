@@ -1175,8 +1175,14 @@ export const getFiscalSettings = createServerFn({ method: "POST" })
     const supabase = context.supabase as SB;
     const companyId = await resolveCompanyId(supabase, context.userId);
     await ensurePermission(supabase, context.userId, companyId, "fiscal.view");
-    const settings = await new TaxRepository(supabase).getSettings(companyId);
-    return settings;
+        const row = await new TaxRepository(supabase).getSettings(companyId);
+    // BUG CORRIGIDO (2026-10-01): devolvia a linha crua do banco (snake_case,
+    // ex.: tax_regime) e a tela esperava FiscalSettings (taxRegime). Com a
+    // configuração já salva, `taxRegime` chegava undefined e a tela de
+    // Configuração Fiscal quebrava ("reading 'includes'").
+    if (!row) return defaultSettings(companyId);
+    const hasCsc = await new StatusRepository(supabase).hasSecret(companyId, "csc_token");
+    return mapSettings(row as FiscalSettingsRow, hasCsc);
   });
 
 
