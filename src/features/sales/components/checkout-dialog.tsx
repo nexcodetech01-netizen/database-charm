@@ -218,9 +218,8 @@ export function CheckoutDialog({
   // Parcelas permitidas: limite do Asaas (ou da configuração do cartão, na
   // maquininha) + valor mínimo para parcelar (abaixo dele é só 1x).
   const maxAllowedInstallments = maxInstallmentsFor(chargeableAmount, {
-    maxInstallments: asaasConnected
-      ? Number(bellaConfig?.credit_card_max_installments ?? 3)
-      : Number(cardPriceConfig?.maxInstallments ?? 3),
+        // Crédito é sempre na maquininha: limite da configuração do cartão.
+    maxInstallments: Number(cardPriceConfig?.maxInstallments ?? 3),
     minInstallmentAmount: cardPriceConfig?.minInstallmentAmount ?? 0,
   });
 
@@ -773,7 +772,7 @@ export function CheckoutDialog({
   }, []);
 
     const showAsaasFlow =
-    (method === "credit_card" && asaasConnected) || method === "payment_link" || method === "boleto";
+        method === "payment_link" || method === "boleto";
 
   // Método efetivo repassado a componentes que só conhecem CheckoutMethod.
   const effectiveMethod: CheckoutMethod =
@@ -866,7 +865,7 @@ export function CheckoutDialog({
               amount={amount}
               fee={machineFeeRow}
             />
-          ) : method === "credit_card" && !asaasConnected ? (
+                    ) : method === "credit_card" ? (
             <MachinePaymentPanel
               instruction="Passe o crédito na maquininha com o mesmo número de parcelas e confirme aqui."
               amount={amount}

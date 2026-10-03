@@ -23,8 +23,10 @@ const ASAAS_ONLY: ReadonlySet<UiCheckoutMethod> = new Set(["payment_link", "bole
 /**
  * Formas de pagamento do checkout.
  *
- * Sem Asaas conectado, "Crédito" é o crédito na maquininha (baixa manual,
- * com parcelas) e Link/Boleto ficam ocultos — eles só existem pelo Asaas.
+  * "Crédito" é SEMPRE o crédito na maquininha (baixa manual, com parcelas).
+ * Com o Asaas conectado, o cartão pelo Asaas continua disponível pelo
+ * "Link" (o cliente escolhe PIX, cartão ou boleto). Sem Asaas, Link e
+ * Boleto ficam ocultos.
  */
 export function checkoutMethodsFor(options: { asaasConnected: boolean }): CheckoutMethodOption[] {
   const { asaasConnected } = options;
@@ -35,10 +37,10 @@ export function checkoutMethodsFor(options: { asaasConnected: boolean }): Checko
       id: "credit_card",
       label: "Crédito",
       icon: CreditCard,
-      hint: asaasConnected ? "Parcelado (Asaas)" : "Maquininha, com parcelas",
+            hint: "Maquininha, com parcelas",
     },
     { id: "debit_card", label: "Débito", icon: CreditCard, hint: "Maquininha" },
-    { id: "payment_link", label: "Link", icon: LinkIcon, hint: "PIX + cartão + boleto" },
+        { id: "payment_link", label: "Link", icon: LinkIcon, hint: "Asaas: PIX, cartão ou boleto" },
     { id: "boleto", label: "Boleto", icon: Barcode, hint: "Boleto bancário (Asaas)" },
     { id: "cash", label: "Dinheiro", icon: Banknote, hint: "Baixa imediata + troco" },
     { id: "credit", label: "Crediário", icon: HandCoins, hint: "Venda a prazo na conta do cliente" },
