@@ -107,16 +107,25 @@ export const shoppingListService = {
   },
 
   async remove(id: string): Promise<void> {
-    const { error } = await supabase.from("shopping_list_items").delete().eq("id", id);
+        const { data, error } = await supabase
+      .from("shopping_list_items")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) throw error;
+    // Sem permissão o banco não dá erro — só não apaga. Avisa em vez de fingir.
+    if (!data || data.length === 0) {
+      throw new Error("O item não foi excluído (sem permissão ou já removido).");
+    }
   },
 
   async clearChecked(companyId: string): Promise<void> {
     const { error } = await supabase
       .from("shopping_list_items")
       .delete()
-      .eq("company_id", companyId)
-      .eq("checked", true);
+            .eq("company_id", companyId)
+      .eq("checked", true)
+      .select("id");
     if (error) throw error;
   },
 };
