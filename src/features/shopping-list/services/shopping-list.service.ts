@@ -57,9 +57,28 @@ export const shoppingListService = {
 
   async updateDetails(
     id: string,
-    patch: { estimatedPrice?: number | null; category?: string | null },
+        patch: {
+      estimatedPrice?: number | null;
+      category?: string | null;
+      name?: string;
+      quantity?: number;
+      notes?: string | null;
+    },
   ): Promise<ShoppingListItem> {
-    const update: { estimated_price?: number | null; category?: string | null } = {};
+    const update: {
+      estimated_price?: number | null;
+      category?: string | null;
+      name?: string;
+      quantity?: number;
+      notes?: string | null;
+    } = {};
+    if (patch.name !== undefined) {
+      const name = patch.name.trim();
+      if (!name) throw new Error("O nome do item não pode ficar vazio.");
+      update.name = name;
+    }
+    if (patch.quantity !== undefined) update.quantity = Math.max(1, Number(patch.quantity) || 1);
+    if ("notes" in patch) update.notes = patch.notes?.trim() || null;
     if ("estimatedPrice" in patch) update.estimated_price = patch.estimatedPrice ?? null;
     if ("category" in patch) {
       const category = patch.category?.trim();

@@ -34,7 +34,14 @@ export function useUpdateShoppingListItemDetails(companyId: string) {
     mutationFn: ({
       id,
       ...patch
-    }: { id: string; estimatedPrice?: number | null; category?: string | null }) =>
+        }: {
+      id: string;
+      estimatedPrice?: number | null;
+      category?: string | null;
+      name?: string;
+      quantity?: number;
+      notes?: string | null;
+    }) =>
       shoppingListService.updateDetails(id, patch),
     onSuccess: () => qc.invalidateQueries({ queryKey: shoppingListKeys.all(companyId) }),
   });

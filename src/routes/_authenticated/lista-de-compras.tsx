@@ -1,7 +1,8 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { ShoppingCart, Plus, Trash2, X, Printer, Share2 } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, X, Printer, Share2, Pencil, MessageCircle } from "lucide-react";
+import { parseCurrency } from "@/lib/masks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,6 +27,23 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 function itemTotal(item: ShoppingListItem) {
   return item.estimated_price === null ? null : item.estimated_price * item.quantity;
 }
+
+/** Evita que texto digitado vire HTML na impressão. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** "15,50" ou "1.234,56" → número; vazio → null. */
+function parsePrice(raw: string): number | null {
+  if (!raw.trim()) return null;
+  return parseCurrency(raw);
+}
+
+const NO_SUPPLIER = "Sem fornecedor";
 
 function ItemPrice({ item }: { item: ShoppingListItem }) {
   const total = itemTotal(item);
@@ -69,8 +87,11 @@ function ShoppingListPage() {
   const [estimatedPrice, setEstimatedPrice] = useState("");
   const [category, setCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingPrice, setEditingPrice] = useState("");
+    const [editingPrice, setEditingPrice] = useState("");
   const [editingCategory, setEditingCategory] = useState("");
+  const [editingName, setEditingName] = useState("");
+  const [editingQuantity, setEditingQuantity] = useState("1");
+  const [editingNotes, setEditingNotes] = useState("");
 
   const pending = (items ?? []).filter((i) => !i.checked);
   const checked = (items ?? []).filter((i) => i.checked);
@@ -84,12 +105,12 @@ function ShoppingListPage() {
   const pendingGroups = useMemo(() => {
     const groups = new Map<string, ShoppingListItem[]>();
     for (const item of pending) {
-      const groupName = item.category?.trim() || "Sem categoria";
+            const groupName = item.category?.trim() || NO_SUPPLIER;
       groups.set(groupName, [...(groups.get(groupName) ?? []), item]);
     }
     return Array.from(groups.entries()).sort(([a], [b]) => {
-      if (a === "Sem categoria") return 1;
-      if (b === "Sem categoria") return -1;
+            if (a === NO_SUPPLIER) return 1;
+      if (b === NO_SUPPLIER) return -1;
       return a.localeCompare(b);
     });
   }, [pending]);
@@ -104,9 +125,9 @@ function ShoppingListPage() {
     try {
       await addMut.mutateAsync({
         name: name.trim(),
-        quantity: Number(quantity) || 1,
+                quantity: Math.max(1, Math.round(parseCurrency(quantity)) || 1),
         notes: notes.trim() || null,
-        estimatedPrice: estimatedPrice === "" ? null : Number(estimatedPrice),
+        estimatedPrice: parsePrice(estimatedPrice),
         category: category.trim() || null,
       });
       setName("");
@@ -123,15 +144,23 @@ function ShoppingListPage() {
 
   function startEditing(item: ShoppingListItem) {
     setEditingId(item.id);
-    setEditingPrice(item.estimated_price === null ? "" : String(item.estimated_price));
+        setEditingPrice(
+      item.estimated_price === null ? "" : String(item.estimated_price).replace(".", ","),
+    );
     setEditingCategory(item.category ?? "");
+    setEditingName(item.name);
+    setEditingQuantity(String(item.quantity));
+    setEditingNotes(item.notes ?? "");
   }
 
   async function saveDetails(id: string) {
     try {
-      await updateDetailsMut.mutateAsync({
+            await updateDetailsMut.mutateAsync({
         id,
-        estimatedPrice: editingPrice === "" ? null : Number(editingPrice),
+        name: editingName,
+        quantity: Math.max(1, Math.round(parseCurrency(editingQuantity)) || 1),
+        notes: editingNotes,
+        estimatedPrice: parsePrice(editingPrice),
         category: editingCategory.trim() || null,
       });
       setEditingId(null);
@@ -152,50 +181,77 @@ function ShoppingListPage() {
           onCheckedChange={() => handleToggle(item.id, item.checked)}
         />
         <div className="min-w-0 flex-1">
-          <p className={`text-sm font-medium ${purchased ? "line-through" : ""}`}>
-            {item.name}
-            {item.quantity > 1 ? ` (${item.quantity}x)` : ""}
-            <ItemPrice item={item} />
-          </p>
-          {item.notes ? <p className="text-xs text-muted-foreground">{item.notes}</p> : null}
           {isEditing ? (
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="grid gap-2 sm:grid-cols-6">
               <Input
-                className="h-8 sm:w-40"
-                type="number"
-                min="0"
-                step="0.01"
+                className="h-8 sm:col-span-3"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                placeholder="O que comprar"
+                aria-label="Nome do item"
+                autoFocus
+              />
+              <Input
+                className="h-8"
+                inputMode="numeric"
+                value={editingQuantity}
+                onChange={(e) => setEditingQuantity(e.target.value)}
+                placeholder="Qtd."
+                aria-label="Quantidade"
+              />
+              <Input
+                className="h-8 sm:col-span-2"
+                inputMode="decimal"
                 value={editingPrice}
-                onChange={(event) => setEditingPrice(event.target.value)}
-                placeholder="Valor unitário"
+                onChange={(e) => setEditingPrice(e.target.value)}
+                placeholder="Valor unitário (R$)"
                 aria-label="Valor estimado do item"
               />
               <Input
-                className="h-8 sm:w-48"
+                className="h-8 sm:col-span-3"
                 value={editingCategory}
-                onChange={(event) => setEditingCategory(event.target.value)}
-                placeholder="Categoria"
+                onChange={(e) => setEditingCategory(e.target.value)}
+                placeholder="Fornecedor"
                 list="shopping-list-categories"
-                aria-label="Categoria do item"
+                aria-label="Fornecedor"
               />
-              <Button size="sm" type="button" onClick={() => saveDetails(item.id)} disabled={updateDetailsMut.isPending}>
-                Salvar
-              </Button>
-              <Button size="sm" type="button" variant="ghost" onClick={() => setEditingId(null)}>
-                Cancelar
-              </Button>
+              <Input
+                className="h-8 sm:col-span-3"
+                value={editingNotes}
+                onChange={(e) => setEditingNotes(e.target.value)}
+                placeholder="Observação (cor, tamanho...)"
+                aria-label="Observação"
+              />
+              <div className="flex gap-2 sm:col-span-6">
+                <Button size="sm" type="button" onClick={() => saveDetails(item.id)} disabled={updateDetailsMut.isPending}>
+                  Salvar
+                </Button>
+                <Button size="sm" type="button" variant="ghost" onClick={() => setEditingId(null)}>
+                  Cancelar
+                </Button>
+              </div>
             </div>
           ) : (
-            <Button
-              className="mt-1 h-auto p-0 text-xs text-muted-foreground"
+            <button
               type="button"
-              variant="link"
+              className="block w-full text-left"
               onClick={() => startEditing(item)}
+              title="Clique para editar"
             >
-              {item.category || "Sem categoria"} · Editar valor e categoria
-            </Button>
+              <p className={`break-words text-sm font-medium ${purchased ? "line-through" : ""}`}>
+                {item.quantity > 1 ? <span className="tabular-nums">{item.quantity}× </span> : null}
+                {item.name}
+                <ItemPrice item={item} />
+              </p>
+              {item.notes ? <p className="text-xs text-muted-foreground">{item.notes}</p> : null}
+            </button>
           )}
         </div>
+        {!isEditing ? (
+          <Button variant="ghost" size="icon" onClick={() => startEditing(item)} aria-label={`Editar ${item.name}`}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        ) : null}
         <Button variant="ghost" size="icon" onClick={() => handleRemove(item.id)} aria-label={`Remover ${item.name}`}>
           <X className="h-4 w-4" />
         </Button>
@@ -236,12 +292,23 @@ function ShoppingListPage() {
     }
   }
 
+    function itemLine(i: ShoppingListItem): string {
+    return `• ${i.quantity}× ${i.name}${i.notes ? ` — ${i.notes}` : ""}`;
+  }
+
   function buildListText(): string {
     if (pending.length === 0) return "Lista de compras vazia.";
-    const lines = pending.map(
-      (i) => `• ${i.name}${i.quantity > 1 ? ` (${i.quantity}x)` : ""}${i.notes ? ` — ${i.notes}` : ""}`,
+    const blocks = pendingGroups.map(
+      ([groupName, groupItems]) => `*${groupName}*\n${groupItems.map(itemLine).join("\n")}`,
     );
-    return `*Lista de compras*\n\n${lines.join("\n")}`;
+    return `*Lista de compras*\n\n${blocks.join("\n\n")}`;
+  }
+
+  /** Pedido para um fornecedor só (ex.: mandar no WhatsApp dele). */
+  function shareGroup(groupName: string, groupItems: ShoppingListItem[]) {
+    const header = groupName === NO_SUPPLIER ? "Olá! Gostaria de fazer um pedido:" : `Olá! Pedido para ${groupName}:`;
+    const text = `${header}\n\n${groupItems.map(itemLine).join("\n")}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
 
   function handlePrint() {
@@ -260,8 +327,8 @@ function ShoppingListPage() {
               <tr>
                 <td style="padding:6px 4px;border-bottom:1px solid #ddd;width:22px;vertical-align:top;">☐</td>
                 <td style="padding:6px 4px;border-bottom:1px solid #ddd;">
-                  ${i.name}${i.quantity > 1 ? ` <b>(${i.quantity}x)</b>` : ""}
-                  ${i.notes ? `<div style="font-size:11px;color:#666;">${i.notes}</div>` : ""}
+                                    <b>${i.quantity}×</b> ${escapeHtml(i.name)}
+                  ${i.notes ? `<div style="font-size:11px;color:#666;">${escapeHtml(i.notes)}</div>` : ""}
                 </td>
                 <td style="padding:6px 4px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;font-size:12px;color:#444;">
                   ${i.estimated_price !== null ? `${currencyFormatter.format(i.estimated_price)}/un` : "—"}
@@ -275,7 +342,7 @@ function ShoppingListPage() {
         return `
           <div style="margin-top:14px;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;">
-              <span style="font-size:12px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:0.04em;">${groupName}</span>
+              <span style="font-size:12px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:0.04em;">${escapeHtml(groupName)}</span>
               ${pricedItems.length > 0 ? `<span style="font-size:11px;color:#666;">Subtotal: ${currencyFormatter.format(subtotal)}</span>` : ""}
             </div>
             <table style="width:100%; border-collapse: collapse; margin-top: 6px;">
@@ -365,9 +432,8 @@ function ShoppingListPage() {
         </div>
         <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Qtd.</label>
-          <Input
-            type="number"
-            min={1}
+                    <Input
+            inputMode="numeric"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
@@ -377,26 +443,24 @@ function ShoppingListPage() {
           <Input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex.: cor, fornecedor..."
+                        placeholder="Ex.: cor, tamanho..."
           />
         </div>
         <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Valor estimado (R$)</label>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
+                    <Input
+            inputMode="decimal"
             value={estimatedPrice}
             onChange={(event) => setEstimatedPrice(event.target.value)}
             placeholder="0,00"
           />
         </div>
         <div className="min-w-0">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Categoria</label>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Fornecedor</label>
           <Input
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            placeholder="Ex.: Aviamentos"
+            placeholder="Ex.: Salomão Distribuidora"
             list="shopping-list-categories"
           />
         </div>
@@ -430,8 +494,19 @@ function ShoppingListPage() {
                 return (
                   <section key={groupName}>
                     <div className="mb-1.5 flex items-center justify-between px-1">
-                      <h4 className="text-sm font-semibold">{groupName}</h4>
-                      {pricedItems.length > 0 ? <span className="text-xs text-muted-foreground">Subtotal: {currencyFormatter.format(subtotal)}</span> : null}
+                                            <h4 className="text-sm font-semibold">{groupName}</h4>
+                      <div className="flex items-center gap-3">
+                        {pricedItems.length > 0 ? <span className="text-xs text-muted-foreground">Subtotal: {currencyFormatter.format(subtotal)}</span> : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => shareGroup(groupName, groupItems)}
+                          title="Enviar o pedido deste fornecedor pelo WhatsApp"
+                        >
+                          <MessageCircle className="mr-1 h-3.5 w-3.5" /> Enviar pedido
+                        </Button>
+                      </div>
                     </div>
                     <ul className="divide-y divide-border rounded-xl border border-border">
                       {groupItems.map((item) => renderItem(item))}
