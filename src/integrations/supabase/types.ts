@@ -7861,6 +7861,22 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      find_similar_products: {
+        Args: {
+          company_id_param: string
+          limit_param?: number
+          name_param: string
+        }
+        Returns: {
+          cost: number
+          id: string
+          name: string
+          score: number
+          sku: string
+          stock: number
+          unit: string
+        }[]
+      }
       fiscal_allocate_nfe_number: {
         Args: {
           _company_id: string
@@ -8029,6 +8045,7 @@ export type Database = {
           name_key: string
         }[]
       }
+      product_core_name: { Args: { _name: string }; Returns: string }
       product_name_key: { Args: { _name: string }; Returns: string }
       products_inventory_metrics: {
         Args: { _company_id: string }

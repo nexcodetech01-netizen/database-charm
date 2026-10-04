@@ -87,6 +87,8 @@ import { Route as AuthenticatedMercadolivreCallbackRouteImport } from './routes/
 import { Route as AuthenticatedProdutosNovoRouteImport } from './routes/_authenticated/produtos_.novo'
 import { Route as AuthenticatedVendasSaleIdRouteImport } from './routes/_authenticated/vendas_.$saleId'
 import { Route as AuthenticatedVendasNovoRouteImport } from './routes/_authenticated/vendas_.novo'
+import { Route as ApiPublicRunMigrationV2RouteImport } from './routes/api.public.run-migration-v2'
+import { Route as ApiPublicRunMigrationV3RouteImport } from './routes/api.public.run-migration-v3'
 import { Route as CatalogoColecaoSlugRouteImport } from './routes/catalogo.colecao.$slug'
 import { Route as AuthenticatedClientesCustomerIdEditarRouteImport } from './routes/_authenticated/clientes_.$customerId.editar'
 import { Route as AuthenticatedComprasPurchaseIdIndexRouteImport } from './routes/_authenticated/compras_.$purchaseId.index'
@@ -552,6 +554,16 @@ const AuthenticatedVendasNovoRoute = AuthenticatedVendasNovoRouteImport.update({
   path: '/vendas/novo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicRunMigrationV2Route = ApiPublicRunMigrationV2RouteImport.update({
+  id: '/api/public/run-migration-v2',
+  path: '/api/public/run-migration-v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicRunMigrationV3Route = ApiPublicRunMigrationV3RouteImport.update({
+  id: '/api/public/run-migration-v3',
+  path: '/api/public/run-migration-v3',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogoColecaoSlugRoute = CatalogoColecaoSlugRouteImport.update({
   id: '/catalogo/colecao/$slug',
   path: '/catalogo/colecao/$slug',
@@ -810,6 +822,8 @@ export interface FileRoutesByFullPath {
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
+  '/api/public/run-migration-v2': typeof ApiPublicRunMigrationV2Route
+  '/api/public/run-migration-v3': typeof ApiPublicRunMigrationV3Route
   '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
   '/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/fiscal/': typeof AuthenticatedFiscalIndexRoute
@@ -919,6 +933,8 @@ export interface FileRoutesByTo {
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
+  '/api/public/run-migration-v2': typeof ApiPublicRunMigrationV2Route
+  '/api/public/run-migration-v3': typeof ApiPublicRunMigrationV3Route
   '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
   '/configuracoes': typeof AuthenticatedConfiguracoesIndexRoute
   '/fiscal': typeof AuthenticatedFiscalIndexRoute
@@ -1031,6 +1047,8 @@ export interface FileRoutesById {
   '/_authenticated/produtos_/novo': typeof AuthenticatedProdutosNovoRoute
   '/_authenticated/vendas_/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/_authenticated/vendas_/novo': typeof AuthenticatedVendasNovoRoute
+  '/api/public/run-migration-v2': typeof ApiPublicRunMigrationV2Route
+  '/api/public/run-migration-v3': typeof ApiPublicRunMigrationV3Route
   '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
   '/_authenticated/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/_authenticated/fiscal/': typeof AuthenticatedFiscalIndexRoute
@@ -1143,6 +1161,8 @@ export interface FileRouteTypes {
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
+    | '/api/public/run-migration-v2'
+    | '/api/public/run-migration-v3'
     | '/catalogo/colecao/$slug'
     | '/configuracoes/'
     | '/fiscal/'
@@ -1252,6 +1272,8 @@ export interface FileRouteTypes {
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
+    | '/api/public/run-migration-v2'
+    | '/api/public/run-migration-v3'
     | '/catalogo/colecao/$slug'
     | '/configuracoes'
     | '/fiscal'
@@ -1363,6 +1385,8 @@ export interface FileRouteTypes {
     | '/_authenticated/produtos_/novo'
     | '/_authenticated/vendas_/$saleId'
     | '/_authenticated/vendas_/novo'
+    | '/api/public/run-migration-v2'
+    | '/api/public/run-migration-v3'
     | '/catalogo/colecao/$slug'
     | '/_authenticated/configuracoes/'
     | '/_authenticated/fiscal/'
@@ -1411,6 +1435,8 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   RastreioIndexRoute: typeof RastreioIndexRoute
+  ApiPublicRunMigrationV2Route: typeof ApiPublicRunMigrationV2Route
+  ApiPublicRunMigrationV3Route: typeof ApiPublicRunMigrationV3Route
   CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRouteWithChildren
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
@@ -1980,6 +2006,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendasNovoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/run-migration-v2': {
+      id: '/api/public/run-migration-v2'
+      path: '/api/public/run-migration-v2'
+      fullPath: '/api/public/run-migration-v2'
+      preLoaderRoute: typeof ApiPublicRunMigrationV2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/run-migration-v3': {
+      id: '/api/public/run-migration-v3'
+      path: '/api/public/run-migration-v3'
+      fullPath: '/api/public/run-migration-v3'
+      preLoaderRoute: typeof ApiPublicRunMigrationV3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalogo/colecao/$slug': {
       id: '/catalogo/colecao/$slug'
       path: '/catalogo/colecao/$slug'
@@ -2542,6 +2582,8 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   RastreioIndexRoute: RastreioIndexRoute,
+  ApiPublicRunMigrationV2Route: ApiPublicRunMigrationV2Route,
+  ApiPublicRunMigrationV3Route: ApiPublicRunMigrationV3Route,
   CatalogoColecaoSlugRoute: CatalogoColecaoSlugRouteWithChildren,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
