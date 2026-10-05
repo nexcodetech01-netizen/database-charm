@@ -84,9 +84,11 @@ export async function runAgent(input: RunAgentInput): Promise<AgentResponse> {
     }
 
     // Agora o registry.execute cuida da confirmação interna via BaseSkill
-    const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
+        const result = await BellaSkillRegistry.execute(step.skillId, step.payload, {
       companyId: ctx.companyId,
       userId: ctx.userId ?? null,
+      permissions: ctx.permissions,
+      isOwner: ctx.isOwner,
       supabase: ctx.supabase, // Propaga o cliente injetado
     }, confirmed);
     

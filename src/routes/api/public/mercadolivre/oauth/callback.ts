@@ -31,7 +31,12 @@ async function exchange(params: {
     upsertTokens,
   } = await import("@/lib/mercadolivre.server");
 
-  const payload = verifyState(params.state);
+    const payload = verifyState(params.state);
+  // Uso único: o mesmo state não pode ser reapresentado (auditoria 04/10).
+  const { consumeOAuthNonce } = await import("@/lib/oauth-nonce.server");
+  if (!(await consumeOAuthNonce(payload.nonce, payload.userId, "mercadolivre"))) {
+    throw new Error("Este link de autorização já foi usado. Conecte o Mercado Livre novamente.");
+  }
   const authenticatedClient = await getAuthenticatedClient(
     params.request,
     payload.userId,

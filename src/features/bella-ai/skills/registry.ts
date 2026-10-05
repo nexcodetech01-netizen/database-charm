@@ -98,8 +98,11 @@ class BellaSkillRegistryImpl {
         const execCtx = buildExecutionContext({
           companyId: ctx.companyId,
           userId: ctx.userId ?? null,
-          permissions: new Set(["*"]), // Fallback permissions, real check inside run
-          isOwner: true,
+                    // Auditoria 04/10: usa as permissões reais quando o chamador as
+          // informa (o agente da Bella informa). Sem elas, mantém o modo
+          // antigo para os chamadores internos que ainda não propagam.
+          permissions: ctx.permissions ?? new Set(["*"]),
+          isOwner: ctx.permissions ? Boolean(ctx.isOwner) : true,
           channel: "web",
           supabase: (ctx as any).supabase, // Use the client from context if available
         });

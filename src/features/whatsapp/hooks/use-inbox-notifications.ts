@@ -8,9 +8,15 @@ export function useBrowserNotifications() {
     typeof Notification !== "undefined" ? Notification.permission : "default"
   );
   const [history, setHistory] = useState<{ id: string; title: string; body: string; at: number; ticketId?: string; type?: string; read?: boolean }[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem("nexos:notification-history");
-    return saved ? JSON.parse(saved) : [];
+        if (typeof window === "undefined") return [];
+    // Auditoria 04/10: navegador sem armazenamento ou dado corrompido não
+    // pode derrubar a área de notificações.
+    try {
+      const parsed = JSON.parse(localStorage.getItem("nexos:notification-history") ?? "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
   
   const lastNotifyTimeRef = useRef<number>(0);
@@ -20,13 +26,21 @@ export function useBrowserNotifications() {
   // Estados de filtros e paginação
   const [filterType, setFilterType] = useState<string>("all");
   const [filterRead, setFilterRead] = useState<boolean | "all">("all");
-  const [page, setPage] = useState(1);
+    const [page, setPage] = useState(1);
+  // Filtro mudou: volta para a primeira página (a antiga podia passar do fim).
+  useEffect(() => {
+    setPage(1);
+  }, [filterType, filterRead]);
   const itemsPerPage = 10;
 
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("nexos:notification-history", JSON.stringify(history.slice(0, 50)));
+            try {
+        localStorage.setItem("nexos:notification-history", JSON.stringify(history.slice(0, 50)));
+      } catch {
+        /* navegador sem armazenamento: o histórico só não persiste */
+      }
     }
   }, [history]);
 
