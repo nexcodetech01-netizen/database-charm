@@ -18,6 +18,13 @@ import type { BellaModuleKey } from "../providers/modules/base";
 export interface BellaSkillContext {
   companyId: string;
   userId?: string | null;
+  /**
+   * Permissões reais do usuário. Quando informadas, a BaseSkill confere
+   * contra elas (defesa em profundidade). Chamadores internos antigos
+   * (eventos, copiloto, workflows) ainda não as informam.
+   */
+  permissions?: ReadonlySet<string>;
+  isOwner?: boolean;
 }
 
 /** Payload livre — a Skill valida os campos que precisa. */

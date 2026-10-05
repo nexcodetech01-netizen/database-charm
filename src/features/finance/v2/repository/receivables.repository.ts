@@ -37,9 +37,12 @@ export class AccountsReceivableRepository {
     if (filters.status === "overdue") {
       const today = new Date().toISOString().slice(0, 10);
       q = q.eq("status", "pending").lt("due_date", today);
-    } else if (filters.status === "partial") {
-      // Marca visual — sem coluna dedicada; delegamos ao consumidor.
-      q = q.eq("status", "pending");
+        } else if (filters.status === "partial") {
+      // Auditoria 04/10: antes trazia TODOS os pendentes. A baixa parcial
+      // grava o restante como um novo lançamento pendente com este sufixo
+      // na descrição (settle_financial_transaction) — é ele que identifica
+      // um recebível parcialmente pago.
+      q = q.eq("status", "pending").ilike("description", "%(saldo restante da baixa parcial)%");
     } else if (filters.status) {
       q = q.eq("status", filters.status);
     }
