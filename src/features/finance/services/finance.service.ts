@@ -830,7 +830,59 @@ export const financeService = {
   // no servidor com o cliente do navegador, o RLS silenciosamente
   // devolve tudo vazio (mesmo bug já corrigido em vários outros lugares
   // do sistema).
+    /**
+   * Indicadores do Financeiro, somados NO BANCO (RPC finance_overview).
+   *
+   * Auditoria 04/10 (achado 07): a versão antiga carregava todos os
+   * lançamentos para somar aqui — e a API devolve no máximo 1.000 linhas,
+   * então com mais lançamentos os números ficariam incompletos sem aviso.
+   * Se a função ainda não existir no banco, usa a versão antiga.
+   */
   async overview(companyId: string, client: SupabaseClient<Database> = supabase): Promise<FinanceOverview> {
+    const { data, error } = await (client.rpc as any)("finance_overview", { _company_id: companyId });
+    if (error) {
+      const missing = error.code === "PGRST202" || /finance_overview/.test(error.message ?? "");
+      if (missing) return this.overviewLegacy(companyId, client);
+      throw error;
+    }
+    const r = (data ?? {}) as Record<string, any>;
+    const n = (v: unknown) => Number(v ?? 0) || 0;
+    const list = (v: unknown) =>
+      (Array.isArray(v) ? v : []).map((t: any) => ({
+        id: String(t.id),
+        description: String(t.description ?? ""),
+        date: String(t.date ?? ""),
+        amount: n(t.amount),
+      }));
+    const currentBalance = n(r.current_balance);
+    const receivable = n(r.receivable);
+    const payable = n(r.payable);
+    const grossRevenue = n(r.gross_revenue);
+    const monthExpense = n(r.month_expense);
+    return {
+      currentBalance,
+      receivable,
+      receivableOverdue: n(r.receivable_overdue),
+      receivableDue30: n(r.receivable_due30),
+      receivableDue60Plus: n(r.receivable_due60_plus),
+      payable,
+      projected: currentBalance + receivable - payable,
+      monthIncome: grossRevenue,
+      monthExpense,
+      receiptsToday: n(r.receipts_today),
+      receiptsTodayCount: n(r.receipts_today_count),
+      pendingReceivable: n(r.pending_receivable),
+      pendingReceivableCount: n(r.pending_receivable_count),
+      upcomingIncome: list(r.upcoming_income),
+      upcomingExpense: list(r.upcoming_expense),
+      grossRevenue,
+      taxesAndDeductions: n(r.taxes_and_deductions),
+      monthProfit: grossRevenue - monthExpense,
+    };
+  },
+
+  /** Versão antiga (soma no navegador). Só usada se a RPC não existir. */
+  async overviewLegacy(companyId: string, client: SupabaseClient<Database> = supabase): Promise<FinanceOverview> {
     const [accountsRes, txRes, todayRes, companyRes] = await Promise.all([
       client
         .from("financial_accounts")
