@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyAccess } from "@/lib/company-resolver.server";
 
 /**
  * Rastreio de envios — feature nova (2026-08-21).
@@ -16,6 +18,9 @@ import { z } from "zod";
  */
 
 export const saveShipment = createServerFn({ method: "POST" })
+  // SEGURANÇA (revisão de 05/10): sem isto, qualquer um gravava envios em
+  // qualquer empresa (companyId vem do cliente e a gravação usa admin).
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z.object({
       companyId: z.string().uuid(),
@@ -33,8 +38,12 @@ export const saveShipment = createServerFn({ method: "POST" })
       estimatedDeliveryDays: z.number().nullable().optional(),
     }).parse(data),
   )
-  .handler(async ({ data }) => {
+    .handler(async ({ data, context }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertCompanyAccess(supabaseAdmin, userId, data.companyId);
 
     const { data: inserted, error } = await supabaseAdmin
       .from("shipments")
