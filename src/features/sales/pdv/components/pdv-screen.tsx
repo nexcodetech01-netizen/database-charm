@@ -290,8 +290,8 @@ export function PDVScreen({
     // But per instructions "Sem consultas novas. Reutilizar serviços existentes."
     // We can just use what's in the state.
     
-    import("../lib/suspended-sales").then(({ saveSuspendedSale }) => {
-      saveSuspendedSale(companyId, {
+        import("../lib/suspended-sales").then(({ saveSuspendedSale }) => {
+      const saved = saveSuspendedSale(companyId, {
         id: crypto.randomUUID(),
         number: pdv.state.number,
         timestamp: new Date().toISOString(),
@@ -299,8 +299,14 @@ export function PDVScreen({
         customerName: null, // UI handles this or we could fetch
         itemCount: pdv.itemCount,
         total: pdv.totals.grand_total,
-        state: pdv.state,
+                state: pdv.state,
       });
+      if (!saved) {
+        toast.error("Não foi possível suspender a venda", {
+          description: "O navegador recusou guardar a venda. O carrinho foi mantido.",
+        });
+        return;
+      }
       toast.success("Venda suspensa com sucesso");
       pdv.clear();
       setActiveKey(null);

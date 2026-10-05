@@ -113,25 +113,35 @@ export const financeService = {
     return data;
   },
   async updateAccount(id: string, input: FinancialAccountUpdate) {
-    // Ao atualizar o saldo inicial, precisamos garantir que o current_balance seja refletido
-    // No frontend, passamos o novo initial_balance. O servidor via trigger ou lógica manual
-    // deve atualizar o current_balance. Aqui fazemos um patch manual se initial_balance mudou.
-    const { data: current } = await supabase
-      .from("financial_accounts")
-      .select("initial_balance, current_balance")
-      .eq("id", id)
-      .single();
+    // SEGURANÇA/INTEGRIDADE (auditoria 04/10): antes lia o saldo e gravava o
+    // recalculado em duas requisições — uma baixa no meio se perdia. Agora a
+    // diferença do saldo inicial é aplicada numa única instrução no banco
+    // (RPC set_account_initial_balance).
+    const { initial_balance, current_balance: _ignored, ...rest } = input as FinancialAccountUpdate & {
+      current_balance?: number;
+    };
 
-    let payload = { ...input };
-    
-    if (input.initial_balance !== undefined && current) {
-      const diff = Number(input.initial_balance) - Number(current.initial_balance || 0);
-      payload.current_balance = Number(current.current_balance || 0) + diff;
+    if (initial_balance !== undefined && initial_balance !== null) {
+      const { error: rpcError } = await (supabase.rpc as any)("set_account_initial_balance", {
+        _account_id: id,
+        _initial_balance: Number(initial_balance),
+      });
+      if (rpcError) throw rpcError;
+    }
+
+    if (Object.keys(rest).length === 0) {
+      const { data, error } = await supabase
+        .from("financial_accounts")
+        .select()
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
     }
 
     const { data, error } = await supabase
       .from("financial_accounts")
-      .update(payload)
+      .update(rest)
       .eq("id", id)
       .select()
       .single();
