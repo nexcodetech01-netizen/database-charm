@@ -1,11 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyAccess } from "@/lib/company-resolver.server";
 
 /**
  * Busca a última compra efetivada (status received) de um produto com um fornecedor específico.
  * Retorna o custo unitário e o frete rateado gravado no item.
  */
 export const getLastPurchaseInfo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     companyId: z.string().uuid(),
     productId: z.string().uuid().optional().nullable(),
@@ -13,8 +16,13 @@ export const getLastPurchaseInfo = createServerFn({ method: "GET" })
     productName: z.string().optional().nullable(),
     sku: z.string().optional().nullable(),
   }).parse(data))
-  .handler(async ({ data }) => {
+    .handler(async ({ data, context }) => {
     const { companyId, productId, supplierId, productName, sku } = data;
+    // SEGURANÇA (auditoria 04/10): companyId vem do cliente e a consulta
+    // usa o cliente admin — sem esta checagem, qualquer um lia custo e
+    // frete das compras de outra empresa.
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
 
     // BUG ENCONTRADO E CORRIGIDO (2026-08-31): usava o cliente
     // genérico do navegador rodando do servidor — sem sessão nenhuma,
@@ -25,7 +33,9 @@ export const getLastPurchaseInfo = createServerFn({ method: "GET" })
     // já que o filtro por `companyId` abaixo é a única coisa que
     // restringe os dados retornados — mesmo padrão já corrigido em
     // outras funções hoje.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await assertCompanyAccess(supabaseAdmin, userId, companyId);
+
 
     let query = supabaseAdmin
       .from("purchase_items")

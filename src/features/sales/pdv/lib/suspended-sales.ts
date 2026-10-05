@@ -21,27 +21,46 @@ const STORAGE_KEY = "nexos_pdv_suspended_sales";
 
 export function getSuspendedSales(companyId: string): SuspendedSale[] {
   if (typeof window === "undefined") return [];
-  const raw = localStorage.getItem(`${STORAGE_KEY}_${companyId}`);
-  if (!raw) return [];
   try {
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(`${STORAGE_KEY}_${companyId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-export function saveSuspendedSale(companyId: string, sale: SuspendedSale): void {
-  const current = getSuspendedSales(companyId);
-  const updated = [sale, ...current];
-  localStorage.setItem(`${STORAGE_KEY}_${companyId}`, JSON.stringify(updated));
+/** Grava no navegador; false se o navegador recusar (cheio ou bloqueado). */
+function writeSuspended(companyId: string, sales: SuspendedSale[]): boolean {
+  try {
+    localStorage.setItem(`${STORAGE_KEY}_${companyId}`, JSON.stringify(sales));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function removeSuspendedSale(companyId: string, suspendedId: string): void {
-  const current = getSuspendedSales(companyId);
-  const updated = current.filter((s) => s.id !== suspendedId);
-  localStorage.setItem(`${STORAGE_KEY}_${companyId}`, JSON.stringify(updated));
+/**
+ * Suspende a venda (guarda no navegador). Retorna false se não conseguiu
+ * gravar — aí o PDV avisa e NÃO limpa o carrinho (auditoria 04/10: antes a
+ * falha era silenciosa).
+ */
+export function saveSuspendedSale(companyId: string, sale: SuspendedSale): boolean {
+  return writeSuspended(companyId, [sale, ...getSuspendedSales(companyId)]);
+}
+
+export function removeSuspendedSale(companyId: string, suspendedId: string): boolean {
+  return writeSuspended(
+    companyId,
+    getSuspendedSales(companyId).filter((s) => s.id !== suspendedId),
+  );
 }
 
 export function clearSuspendedSales(companyId: string): void {
-  localStorage.removeItem(`${STORAGE_KEY}_${companyId}`);
+  try {
+    localStorage.removeItem(`${STORAGE_KEY}_${companyId}`);
+  } catch {
+    /* navegador sem storage */
+  }
 }

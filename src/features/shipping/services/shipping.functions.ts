@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ShippingCalculatorSchema, ShippingOption, GenerateLabelSchema, LabelResult } from "../types";
 import { generateSuperfreteLabel } from "../lib/generate-superfrete-label";
 import { calculateSuperfreteShipping, type ShippingCalculationResult } from "../lib/calculate-superfrete-shipping";
@@ -20,8 +21,15 @@ export const calculateShipping = createServerFn({ method: "POST" })
 
 
 export const generateLabel = createServerFn({ method: "POST" })
+  // SEGURANÇA (auditoria 04/10): antes qualquer um, sem login, podia
+  // emitir etiqueta usando o token Superfrete do servidor (cobrado na
+  // conta). Agora exige usuário autenticado.
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => GenerateLabelSchema.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (!(context as { userId?: string }).userId) {
+      throw new Error("Unauthorized");
+    }
     // FIX (2026-08-18): antes fazia um fetch HTTP da própria aplicação
     // pra ela mesma (`/api/public/shipping/labels`), resolvendo a URL
     // com uma lógica pensada pro NAVEGADOR (`typeof window !==
