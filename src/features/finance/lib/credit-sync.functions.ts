@@ -1,11 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyAccess } from "@/lib/company-resolver.server";
 
 const inputSchema = z.object({ transactionId: z.string() });
 
 export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" })
+  // SEGURANÇA (revisão de 05/10): exige login e confere a empresa do
+  // lançamento antes de devolver qualquer dado.
+  .middleware([requireSupabaseAuth])
   .validator((input: unknown) => inputSchema.parse(input))
-  .handler(async ({ data: { transactionId } }) => {
+  .handler(async ({ data: { transactionId }, context }) => {
+    const userId = (context as { userId?: string }).userId;
+    if (!userId) throw new Error("Unauthorized");
     // BUG ENCONTRADO E CORRIGIDO (2026-08-31): essa função usava o
     // cliente Supabase genérico do navegador — funciona numa tela
     // normal (o navegador já tem sessão), mas rodando aqui do
@@ -25,7 +32,9 @@ export const getCreditInstallmentByTransaction = createServerFn({ method: "GET" 
       .eq("id", transactionId)
       .single();
 
-    if (txError || !tx) return null;
+        if (txError || !tx) return null;
+    await assertCompanyAccess(supabaseAdmin, userId, tx.company_id);
+
 
     // Se a origem for 'sale', verificamos se essa venda tem crediário.
     if (tx.source === "sale" && tx.reference_id) {
