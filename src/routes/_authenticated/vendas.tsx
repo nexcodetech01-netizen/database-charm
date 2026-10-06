@@ -1,4 +1,8 @@
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { creditService } from "@/features/credit/services/credit.service";
+import { ReceivePaymentDialog } from "@/features/credit/components/receive-payment-dialog";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Plus, ShoppingCart, AlertCircle } from "lucide-react";
@@ -121,11 +125,30 @@ function SalesPage() {
 
   const [settleSale, setSettleSale] = useState<SaleWithMeta | null>(null);
   const [settleTx, setSettleTx] = useState<FinancialTransaction | null>(null);
+  const [creditReceive, setCreditReceive] = useState<{
+    sale: SaleWithMeta;
+    accountId: string;
+    balance: number;
+  } | null>(null);
+  const qc = useQueryClient();
 
   const hasAlerts = view.alerts.length > 0;
 
-  async function handleMarkPaid(s: SaleWithMeta) {
+    async function handleMarkPaid(s: SaleWithMeta) {
     try {
+      // Crediário: o saldo é controlado pela conta de crediário (parcelas).
+      // Antes ia para a baixa genérica do Financeiro, que não abatia o
+      // crediário e terminava marcando a venda como paga.
+      const creditAccount = await creditService.getAccountBySale(s.id);
+      if (creditAccount && creditAccount.status !== "settled" && creditAccount.status !== "cancelled") {
+        setCreditReceive({
+          sale: s,
+          accountId: creditAccount.id,
+          balance: Number(creditAccount.balance) || 0,
+        });
+        return;
+      }
+
       const tx = await salesService.openReceivableForSale(s.id);
       if (!tx) {
         toast.error("Não foi possível localizar o título financeiro", {
@@ -142,13 +165,24 @@ function SalesPage() {
     }
   }
 
-  async function finishSalePaid(s: SaleWithMeta) {
-    try {
-      await setStatusMut.mutateAsync({ id: s.id, status: "paid" });
+    /**
+   * Depois da baixa, o próprio banco define o status da venda: "paga" se
+   * quitou, "parcialmente paga" se foi baixa parcial.
+   * BUG CORRIGIDO (2026-10-07): aqui se forçava "paga" sempre — uma baixa
+   * parcial virava venda paga, com o saldo restante ainda em aberto.
+   */
+  async function finishSaleSettled(s: SaleWithMeta) {
+    await qc.invalidateQueries({ queryKey: ["sales"] });
+    const { data: fresh } = await supabase
+      .from("sales")
+      .select("status")
+      .eq("id", s.id)
+      .maybeSingle();
+    if (fresh?.status === "paid") {
       showPaidNextAction(s);
-    } catch (e) {
-      toast.error("Baixa registrada, mas o status da venda não foi atualizado", {
-        description: e instanceof Error ? e.message : undefined,
+    } else if (fresh?.status === "partially_paid") {
+      toast.success("Baixa parcial registrada", {
+        description: "A venda fica como parcialmente paga até receber o saldo.",
       });
     }
   }
@@ -400,9 +434,27 @@ function SalesPage() {
           const s = settleSale;
           setSettleSale(null);
           setSettleTx(null);
-          if (s) void finishSalePaid(s);
+                    if (s) void finishSaleSettled(s);
         }}
-      />
+            />
+      {creditReceive ? (
+        <ReceivePaymentDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCreditReceive(null);
+          }}
+          companyId={company.id}
+          creditAccountId={creditReceive.accountId}
+          balance={creditReceive.balance}
+          saleId={creditReceive.sale.id}
+          customerId={creditReceive.sale.customer_id}
+          onPaid={() => {
+            const s = creditReceive.sale;
+            setCreditReceive(null);
+            void finishSaleSettled(s);
+          }}
+        />
+      ) : null}
     </PageLayout>
   );
 }
