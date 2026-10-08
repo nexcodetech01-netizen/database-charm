@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CreditReceivablesSection } from "@/features/finance/components/credit-receivables-section";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -215,6 +216,7 @@ function FinancePage() {
         </TabsContent>
 
         <TabsContent value="receivables" className="space-y-8">
+          <CreditReceivablesSection companyId={company.id} />
           <ReceivablesPayablesPanel companyId={company.id} kind="receivable" />
         </TabsContent>
 
