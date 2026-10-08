@@ -373,6 +373,31 @@ export const salesService = {
 
     const paidMap = settlementMap ?? (await loadSettlementMap(companyId, ids));
 
+    // Quanto falta receber nas parcialmente pagas: saldo do crediário, ou o
+    // que está pendente no Financeiro (vendas fora do crediário).
+    const partialIds = rows
+      .filter((r) => r.status === "partially_paid")
+      .map((r) => r.id as string);
+    const remainingMap = new Map<string, number>();
+    if (partialIds.length > 0) {
+      const [{ data: credit }, { data: pendingTx }] = await Promise.all([
+        supabase.from("credit_accounts").select("sale_id, balance").in("sale_id", partialIds),
+        supabase
+          .from("financial_transactions")
+          .select("reference_id, amount")
+          .eq("company_id", companyId)
+          .eq("type", "income")
+          .in("status", ["pending", "overdue"])
+          .in("reference_id", partialIds),
+      ]);
+      (pendingTx ?? []).forEach((t) => {
+        const key = t.reference_id as string;
+        remainingMap.set(key, (remainingMap.get(key) ?? 0) + Number(t.amount ?? 0));
+      });
+      // Crediário é a fonte da verdade quando existe.
+      (credit ?? []).forEach((c) => remainingMap.set(c.sale_id as string, Number(c.balance ?? 0)));
+    }
+
     const withMeta = rows.map((r) => {
       const id = r.id as string;
       const customerId = r.customer_id as string | null;
@@ -381,6 +406,7 @@ export const salesService = {
         customer_name: customerId ? (customerMap.get(customerId) ?? null) : null,
         items_count: counts.get(id) ?? 0,
         settlement_paid_at: paidMap.get(id) ?? null,
+        remaining_amount: remainingMap.has(id) ? remainingMap.get(id)! : null,
       };
     }) as unknown as SaleWithMeta[];
 
