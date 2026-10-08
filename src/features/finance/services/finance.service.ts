@@ -862,6 +862,8 @@ export const financeService = {
     return {
       currentBalance,
       receivable,
+      receivableSales: n(r.receivable_sales),
+      receivableCredit: n(r.receivable_credit),
       receivableOverdue: n(r.receivable_overdue),
       receivableDue30: n(r.receivable_due30),
       receivableDue60Plus: n(r.receivable_due60_plus),

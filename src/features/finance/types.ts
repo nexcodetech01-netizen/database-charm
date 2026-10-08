@@ -152,7 +152,12 @@ export interface TransactionWithMeta extends FinancialTransaction {
 
 export interface FinanceOverview {
   currentBalance: number;
+  /** Tudo que falta receber: títulos + parcelas do crediário. */
   receivable: number;
+  /** Só o que falta receber de vendas (títulos de venda + crediário). */
+  receivableSales?: number;
+  /** Só o crediário. */
+  receivableCredit?: number;
   /** Vencidos: due_date (fallback transaction_date) < hoje da empresa. */
   receivableOverdue: number;
   /** A vencer nos próximos 30 dias (hoje ≤ due_date ≤ hoje+30). */

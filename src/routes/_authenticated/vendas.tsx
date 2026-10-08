@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useFinanceOverview } from "@/features/finance/hooks/use-finance";
 import {
   PaymentReceiptDialog,
   type PaymentReceiptInfo,
@@ -118,6 +119,8 @@ function SalesPage() {
   
   const { data, isLoading } = useSalesList(company.id, effective);
   const metrics = useSaleMetrics(company.id, range, undefined, rangeKey === "today" ? "today" : undefined);
+  // "A receber" de verdade: mesma conta do Financeiro (títulos + crediário).
+  const overview = useFinanceOverview(company.id);
   const { view, isLoading: bellaLoading } = useBellaSales(company.id);
 
 
@@ -406,10 +409,22 @@ function SalesPage() {
               value={metrics.data ? formatCurrency(metrics.data.averageTicket) : "—"}
               loading={metrics.isLoading}
             />
+            {/* Antes este card se chamava "A Receber", mas somava as vendas PAGAS. */}
             <KpiCard
-              label="A Receber"
+              label="Recebido"
               value={metrics.data ? formatCurrency(metrics.data.paidTotal) : "—"}
+              hint="Vendas pagas no período"
               loading={metrics.isLoading}
+            />
+            <KpiCard
+              label="A receber"
+              value={overview.data?.receivableSales != null ? formatCurrency(overview.data.receivableSales) : "—"}
+              hint={
+                overview.data?.receivableCredit
+                  ? `inclui ${formatCurrency(overview.data.receivableCredit)} de crediário`
+                  : "Tudo que falta receber das vendas"
+              }
+              loading={overview.isLoading}
             />
           </KpiSection>
           {hasAlerts && (
