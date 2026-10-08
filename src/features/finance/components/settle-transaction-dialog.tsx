@@ -39,7 +39,12 @@ interface Props {
   transaction: FinancialTransaction | null;
   /** "Receber" | "Pagar" */
   verb?: string;
-  onSettled?: (info: { isPartial: boolean }) => void;
+  onSettled?: (info: {
+    isPartial: boolean;
+    amount?: number;
+    paymentMethod?: string;
+    paidAt?: string;
+  }) => void;
   defaultPaymentMethod?: FinancePaymentMethod | "";
 }
 
@@ -223,7 +228,12 @@ export function SettleTransactionDialog({
         void qc.invalidateQueries();
         toast.success(`Pagamento de ${formatCurrency(settledAmount)} registrado no crediário.`);
         onOpenChange(false);
-        onSettled?.({ isPartial: settledAmount < originalAmount - 0.009 });
+        onSettled?.({
+          isPartial: settledAmount < originalAmount - 0.009,
+          amount: settledAmount,
+          paymentMethod,
+          paidAt: new Date(paidAt + "T12:00:00").toISOString(),
+        });
       } catch (err) {
         toast.error("Não foi possível registrar o pagamento", {
           description: err instanceof Error ? err.message : undefined,
@@ -274,7 +284,12 @@ export function SettleTransactionDialog({
       // "paid" mesmo numa baixa parcial, o que gerava um erro de
       // validação ("status da venda não foi atualizado") já que a
       // baixa em si (o dinheiro) já tinha sido registrada corretamente.
-      onSettled?.({ isPartial: isPartial && remainingAmount > 0 });
+      onSettled?.({
+        isPartial: isPartial && remainingAmount > 0,
+        amount: settledAmount,
+        paymentMethod,
+        paidAt: new Date(paidAt + "T12:00:00").toISOString(),
+      });
     } catch (err) {
       toast.error("Não foi possível registrar a baixa", {
         description: err instanceof Error ? err.message : undefined,

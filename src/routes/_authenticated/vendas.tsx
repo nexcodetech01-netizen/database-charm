@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
+import {
+  PaymentReceiptDialog,
+  type PaymentReceiptInfo,
+} from "@/features/sales/components/payment-receipt-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { creditService } from "@/features/credit/services/credit.service";
 import { ReceivePaymentDialog } from "@/features/credit/components/receive-payment-dialog";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -131,6 +134,7 @@ function SalesPage() {
     balance: number;
   } | null>(null);
   const qc = useQueryClient();
+  const [receipt, setReceipt] = useState<PaymentReceiptInfo | null>(null);
 
   const hasAlerts = view.alerts.length > 0;
 
@@ -171,18 +175,23 @@ function SalesPage() {
    * BUG CORRIGIDO (2026-10-07): aqui se forçava "paga" sempre — uma baixa
    * parcial virava venda paga, com o saldo restante ainda em aberto.
    */
-  async function finishSaleSettled(s: SaleWithMeta) {
+  /**
+   * Depois de uma baixa (ou pagamento de crediário): mostra o comprovante
+   * para imprimir/mandar no WhatsApp. O status da venda é calculado pelo
+   * banco a partir do dinheiro. (Antes aparecia "Cliente recorrente", que é
+   * a tela de venda nova.)
+   */
+  async function finishSaleSettled(
+    s: SaleWithMeta,
+    paid?: { amount?: number; paymentMethod?: string; paidAt?: string },
+  ) {
     await qc.invalidateQueries({ queryKey: ["sales"] });
-    const { data: fresh } = await supabase
-      .from("sales")
-      .select("status")
-      .eq("id", s.id)
-      .maybeSingle();
-    if (fresh?.status === "paid") {
-      showPaidNextAction(s);
-    } else if (fresh?.status === "partially_paid") {
-      toast.success("Baixa parcial registrada", {
-        description: "A venda fica como parcialmente paga até receber o saldo.",
+    if (paid?.amount && paid.amount > 0) {
+      setReceipt({
+        saleId: s.id,
+        receivedAmount: paid.amount,
+        paymentMethod: paid.paymentMethod ?? null,
+        paidAt: paid.paidAt ?? null,
       });
     }
   }
@@ -430,11 +439,11 @@ function SalesPage() {
         companyId={company.id}
         transaction={settleTx}
         verb="Receber"
-        onSettled={() => {
+        onSettled={(info) => {
           const s = settleSale;
           setSettleSale(null);
           setSettleTx(null);
-                    if (s) void finishSaleSettled(s);
+          if (s) void finishSaleSettled(s, info);
         }}
             />
       {creditReceive ? (
@@ -448,13 +457,19 @@ function SalesPage() {
           balance={creditReceive.balance}
           saleId={creditReceive.sale.id}
           customerId={creditReceive.sale.customer_id}
-          onPaid={() => {
+          onPaid={(r) => {
             const s = creditReceive.sale;
             setCreditReceive(null);
-            void finishSaleSettled(s);
+            void finishSaleSettled(s, r);
           }}
         />
       ) : null}
+      <PaymentReceiptDialog
+        open={!!receipt}
+        onOpenChange={(o) => !o && setReceipt(null)}
+        companyId={company.id}
+        info={receipt}
+      />
     </PageLayout>
   );
 }
