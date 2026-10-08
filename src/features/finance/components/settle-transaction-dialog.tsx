@@ -24,6 +24,8 @@ import { useCashGuard } from "@/features/cash";
 import { useAccounts, useSettleTransaction } from "../hooks/use-finance";
 import { useCreditSync } from "../hooks/use-credit-sync";
 import { creditService } from "@/features/credit/services/credit.service";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   FINANCE_PAYMENT_METHOD_OPTIONS,
   type FinancePaymentMethod,
@@ -73,6 +75,7 @@ export function SettleTransactionDialog({
   const { data: accounts } = useAccounts(companyId);
   const settleMut = useSettleTransaction();
   const { data: creditInfo, isLoading: isCheckingCredit } = useCreditSync(transaction?.id);
+  const qc = useQueryClient();
 
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod | "">(defaultPaymentMethod);
   const [accountId, setAccountId] = useState("");
@@ -183,7 +186,64 @@ export function SettleTransactionDialog({
       toast.error("O valor final da baixa precisa ser maior que zero.");
       return;
     }
+    // Venda de crediário: o crediário é a fonte da verdade. Registra o
+    // pagamento SÓ no crediário (ele cria a entrada no Financeiro) e cancela
+    // este título, que é duplicado.
+    // BUG CORRIGIDO (08/10): antes dava baixa no título E registrava no
+    // crediário — o dinheiro entrava duas vezes (Erica, Anita, Elaine, Elza).
+    if (creditInfo?.creditAccountId) {
+      if (!isPartial && discountAmount > 0) {
+        toast.error("Desconto em venda de crediário", {
+          description: "Registre só o valor recebido (pagamento parcial); o saldo continua no crediário.",
+        });
+        return;
+      }
+      try {
+        const done = await runWithCashGuard(async () => {
+          await creditService.receivePayment({
+            companyId,
+            creditAccountId: creditInfo.creditAccountId,
+            amount: settledAmount,
+            paymentMethod,
+            paidAt: new Date(paidAt).toISOString(),
+            accountId,
+            notes: `Recebido pelo Financeiro${notes ? `: ${notes}` : ""}`,
+          });
+          const { error: cancelError } = await supabase
+            .from("financial_transactions")
+            .update({
+              status: "cancelled",
+              notes: `${transaction.notes ? `${transaction.notes} · ` : ""}Cancelado: venda controlada pelo crediário.`,
+            })
+            .eq("id", transaction.id);
+          if (cancelError) console.warn("[SettleTransactionDialog] título duplicado não cancelado", cancelError);
+          return true;
+        });
+        if (done === undefined) return;
+        void qc.invalidateQueries();
+        toast.success(`Pagamento de ${formatCurrency(settledAmount)} registrado no crediário.`);
+        onOpenChange(false);
+        onSettled?.({ isPartial: settledAmount < originalAmount - 0.009 });
+      } catch (err) {
+        toast.error("Não foi possível registrar o pagamento", {
+          description: err instanceof Error ? err.message : undefined,
+        });
+      }
+      return;
+    }
+
     try {
+      // Desconto numa venda: vira desconto DA VENDA (total ajustado), para
+      // ela fechar como paga. Antes ficava só na observação da baixa e a
+      // venda ficava "parcialmente paga" para sempre (Renata, Pato).
+      if (!isPartial && discountAmount > 0 && transaction.source === "sale" && transaction.reference_id) {
+        const { error: discountError } = await (supabase.rpc as any)("apply_sale_settlement_discount", {
+          _transaction_id: transaction.id,
+          _discount: discountAmount,
+        });
+        if (discountError) throw new Error(discountError.message);
+      }
+
       const result = await runWithCashGuard(() =>
         settleMut.mutateAsync({
           id: transaction.id,
@@ -198,24 +258,6 @@ export function SettleTransactionDialog({
           },
         }),
       );
-
-      // Se houver vínculo com crediário, liquida a parcela correspondente
-      if (result && creditInfo?.creditAccountId) {
-        try {
-          await creditService.receivePayment({
-            companyId,
-            creditAccountId: creditInfo.creditAccountId,
-            amount: settledAmount,
-            paymentMethod,
-            paidAt: new Date(paidAt).toISOString(),
-            accountId,
-            notes: `Baixa automática via Financeiro: ${notes}`.trim(),
-          });
-        } catch (creditErr) {
-          console.error("[SettleTransactionDialog] Erro ao sincronizar baixa com crediário:", creditErr);
-          // Não falha a baixa principal se a sincronização falhar, apenas loga.
-        }
-      }
 
       if (result === undefined) return;
       toast.success(
@@ -286,7 +328,9 @@ export function SettleTransactionDialog({
               <p className="text-xs text-muted-foreground">
                 {isPartial
                   ? "Paga só uma parte agora e cria um novo título pendente com o restante."
-                  : "Fecha o lançamento inteiro agora; qualquer diferença vira desconto/acréscimo."}
+                  : transaction?.source === "sale"
+                    ? "Fecha a venda agora; o desconto é abatido do total da venda."
+                    : "Fecha o lançamento inteiro agora; qualquer diferença vira desconto/acréscimo."}
               </p>
             </div>
 

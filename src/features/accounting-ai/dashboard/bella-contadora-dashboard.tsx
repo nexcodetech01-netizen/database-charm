@@ -1,4 +1,5 @@
 import { CalendarCheck, Calculator, HandCoins, TrendingUp, Wallet } from "lucide-react";
+import { FinanceConsistencyCard } from "@/features/finance/components/finance-consistency-card";
 import { Link } from "@tanstack/react-router";
 import { PageLayout } from "@/components/layout";
 import { formatCurrency } from "@/lib/format";
@@ -170,6 +171,8 @@ export function BellaContadoraDashboard({ companyId }: BellaContadoraDashboardPr
       }
     >
       <div className="mx-auto max-w-4xl space-y-4">
+        <FinanceConsistencyCard companyId={companyId} />
+
         <BellaNotificationCenter
           notifications={notifications}
           loading={isLoading}
