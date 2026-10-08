@@ -11,7 +11,7 @@ import {
 import {
   SALE_PAYMENT_METHODS,
   SALE_PAYMENT_STATUS_OPTIONS,
-  SALE_STATUS_OPTIONS,
+  SALE_LIST_STATUS_OPTIONS,
   type SaleListFilters,
 } from "../types";
 
@@ -50,7 +50,7 @@ export function SaleFilters({ companyId, filters, onChange, onReset }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Todos os status</SelectItem>
-            {SALE_STATUS_OPTIONS.map((o) => (
+            {SALE_LIST_STATUS_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}
               </SelectItem>

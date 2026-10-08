@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import {
   Receipt,
   MoreHorizontal,
@@ -25,8 +26,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SaleStatusBadge } from "./sale-status-badge";
-import { Badge } from "@/components/ui/badge";
+import { ReceivableStatusBadge } from "./receivable-status-badge";
+import { receivableView } from "../lib/receivable-state";
 import { TestSaleBadge } from "./test-sale-badge";
 import type { SaleWithMeta } from "../types";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
@@ -110,7 +111,16 @@ export function SaleTable({
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((s) => (
+              rows.map((s) => {
+                const view = receivableView({
+                  status: s.status,
+                  grandTotal: Number(s.grand_total),
+                  paymentMethod: s.payment_method ?? null,
+                  remaining: s.remaining_amount ?? null,
+                  nextDue: s.next_due_date ?? null,
+                  isCredit: !!s.is_credit,
+                });
+                return (
                 <TableRow key={s.id} className="group">
                   <TableCell className="py-4">
                     <Link
@@ -142,32 +152,21 @@ export function SaleTable({
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-medium py-4">
                     {formatCurrency(Number(s.grand_total))}
-                    {s.status === "partially_paid" && s.remaining_amount != null ? (
-                      <div className="mt-0.5 text-xs font-normal leading-tight">
-                        <span className="text-muted-foreground">
-                          pago {formatCurrency(Math.max(0, Number(s.grand_total) - s.remaining_amount))}
-                        </span>
-                        <br />
-                        <span className="font-medium text-amber-600">
-                          falta {formatCurrency(s.remaining_amount)}
-                        </span>
+                    {view.detail ? (
+                      <div
+                        className={cn(
+                          "mt-0.5 max-w-[220px] text-xs font-normal leading-tight",
+                          view.badge === "overdue" ? "text-destructive" : "text-muted-foreground",
+                        )}
+                      >
+                        {view.detail}
                       </div>
                     ) : null}
                   </TableCell>
                   <TableCell className="py-4">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <SaleStatusBadge status={s.status} />
+                      <ReceivableStatusBadge badge={view.badge} />
                       {s.is_test ? <TestSaleBadge compact /> : null}
-                      {(s.payment_method === "a_receber" || (s.status === "pending" && !s.payment_method)) &&
-                      s.status !== "cancelled" &&
-                      s.status !== "paid" ? (
-                        <Badge
-                          variant="outline"
-                          className="border-warning/30 bg-warning/10 text-warning"
-                        >
-                          {s.payment_method === "a_receber" ? "A Receber" : "Pagamento Pendente"}
-                        </Badge>
-                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -225,7 +224,8 @@ export function SaleTable({
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
