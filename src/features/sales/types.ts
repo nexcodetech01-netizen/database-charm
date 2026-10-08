@@ -22,6 +22,15 @@ export const SALE_STATUS_OPTIONS: { value: SaleStatus; label: string }[] = [
   { value: "cancelled", label: "Cancelada" },
 ];
 
+/** Filtro da lista de vendas: um selo por situação de pagamento. */
+export const SALE_LIST_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "paid", label: "Paga" },
+  { value: "receivable", label: "A receber" },
+  { value: "overdue", label: "Vencido" },
+  { value: "draft", label: "Rascunho" },
+  { value: "cancelled", label: "Cancelada" },
+];
+
 export type SalePaymentMethod =
   | "pix"
   | "pix_manual"
@@ -75,6 +84,9 @@ export interface SaleWithMeta extends Sale {
   settlement_paid_at: string | null;
   /** Parcialmente paga: quanto ainda falta receber. null nas demais. */
   remaining_amount?: number | null;
+  /** Próximo vencimento em aberto (YYYY-MM-DD). */
+  next_due_date?: string | null;
+  is_credit?: boolean;
 }
 
 /** Item com o SKU/nome atuais do produto (join no detalhe da venda). */

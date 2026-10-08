@@ -237,6 +237,12 @@ export const salesService = {
       }
     }
 
+    // "Vencido": em aberto com parcela/título vencido.
+    if (filters.status === "overdue") {
+      const overdue = await loadOverdueSaleIds(companyId);
+      includeIds = includeIds ? includeIds.filter((id) => overdue.has(id)) : Array.from(overdue);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const applyFilters = <T,>(builder: T): T => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -254,6 +260,8 @@ export const salesService = {
       if (filters.status) {
         if (filters.status === "!cancelled") {
           q = q.neq("status", "cancelled");
+        } else if (filters.status === "receivable" || filters.status === "overdue") {
+          q = q.in("status", ["pending", "partially_paid"]);
         } else {
           q = q.eq("status", filters.status);
         }
@@ -373,29 +381,18 @@ export const salesService = {
 
     const paidMap = settlementMap ?? (await loadSettlementMap(companyId, ids));
 
-    // Quanto falta receber nas parcialmente pagas: saldo do crediário, ou o
-    // que está pendente no Financeiro (vendas fora do crediário).
-    const partialIds = rows
-      .filter((r) => r.status === "partially_paid")
+    // Vendas em aberto: quanto falta, próximo vencimento e se é crediário.
+    const openIds = rows
+      .filter((r) => r.status === "pending" || r.status === "partially_paid")
       .map((r) => r.id as string);
     const remainingMap = new Map<string, number>();
-    if (partialIds.length > 0) {
-      const [{ data: credit }, { data: pendingTx }] = await Promise.all([
-        supabase.from("credit_accounts").select("sale_id, balance").in("sale_id", partialIds),
-        supabase
-          .from("financial_transactions")
-          .select("reference_id, amount")
-          .eq("company_id", companyId)
-          .eq("type", "income")
-          .in("status", ["pending", "overdue"])
-          .in("reference_id", partialIds),
-      ]);
-      (pendingTx ?? []).forEach((t) => {
-        const key = t.reference_id as string;
-        remainingMap.set(key, (remainingMap.get(key) ?? 0) + Number(t.amount ?? 0));
-      });
-      // Crediário é a fonte da verdade quando existe.
-      (credit ?? []).forEach((c) => remainingMap.set(c.sale_id as string, Number(c.balance ?? 0)));
+    const dueMap = new Map<string, string>();
+    const creditSet = new Set<string>();
+    if (openIds.length > 0) {
+      const info = await loadReceivableInfo(companyId, openIds);
+      info.remaining.forEach((v, k) => remainingMap.set(k, v));
+      info.nextDue.forEach((v, k) => dueMap.set(k, v));
+      info.credit.forEach((k) => creditSet.add(k));
     }
 
     const withMeta = rows.map((r) => {
@@ -407,6 +404,8 @@ export const salesService = {
         items_count: counts.get(id) ?? 0,
         settlement_paid_at: paidMap.get(id) ?? null,
         remaining_amount: remainingMap.has(id) ? remainingMap.get(id)! : null,
+        next_due_date: dueMap.get(id) ?? null,
+        is_credit: creditSet.has(id),
       };
     }) as unknown as SaleWithMeta[];
 
@@ -1156,3 +1155,85 @@ async function logBlockedDeletion(input: {
   }
 }
 
+/**
+ * Para vendas em aberto: quanto falta, próximo vencimento e quais são de
+ * crediário. Crediário é a fonte da verdade quando existe; senão, títulos
+ * pendentes do Financeiro.
+ */
+async function loadReceivableInfo(companyId: string, saleIds: string[]) {
+  const remaining = new Map<string, number>();
+  const nextDue = new Map<string, string>();
+  const credit = new Set<string>();
+
+  const [{ data: accounts }, { data: pendingTx }] = await Promise.all([
+    supabase.from("credit_accounts").select("id, sale_id, balance, status").in("sale_id", saleIds),
+    supabase
+      .from("financial_transactions")
+      .select("reference_id, amount, due_date, transaction_date")
+      .eq("company_id", companyId)
+      .eq("type", "income")
+      .in("status", ["pending", "overdue"])
+      .in("reference_id", saleIds),
+  ]);
+
+  (pendingTx ?? []).forEach((t) => {
+    const key = t.reference_id as string;
+    remaining.set(key, (remaining.get(key) ?? 0) + Number(t.amount ?? 0));
+    const due = (t.due_date ?? t.transaction_date) as string | null;
+    if (due && (!nextDue.has(key) || due < nextDue.get(key)!)) nextDue.set(key, due);
+  });
+
+  const accountToSale = new Map<string, string>();
+  (accounts ?? []).forEach((a) => {
+    const saleId = a.sale_id as string;
+    credit.add(saleId);
+    remaining.set(saleId, Number(a.balance ?? 0));
+    nextDue.delete(saleId);
+    accountToSale.set(a.id as string, saleId);
+  });
+
+  if (accountToSale.size > 0) {
+    const { data: installments } = await supabase
+      .from("credit_installments")
+      .select("credit_account_id, due_date")
+      .in("credit_account_id", Array.from(accountToSale.keys()))
+      .in("status", ["pending", "partially_paid"]);
+    (installments ?? []).forEach((i) => {
+      const saleId = accountToSale.get(i.credit_account_id as string);
+      const due = i.due_date as string | null;
+      if (saleId && due && (!nextDue.has(saleId) || due < nextDue.get(saleId)!)) nextDue.set(saleId, due);
+    });
+  }
+
+  return { remaining, nextDue, credit };
+}
+
+/** Ids das vendas em aberto com parcela de crediário ou título vencido. */
+async function loadOverdueSaleIds(companyId: string): Promise<Set<string>> {
+  const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const ids = new Set<string>();
+
+  const [{ data: inst }, { data: tx }] = await Promise.all([
+    supabase
+      .from("credit_installments")
+      .select("credit_account_id, credit_accounts!inner(sale_id)")
+      .eq("company_id", companyId)
+      .in("status", ["pending", "partially_paid"])
+      .lt("due_date", todayIso),
+    supabase
+      .from("financial_transactions")
+      .select("reference_id")
+      .eq("company_id", companyId)
+      .eq("type", "income")
+      .eq("source", "sale")
+      .in("status", ["pending", "overdue"])
+      .lt("due_date", todayIso),
+  ]);
+  (inst ?? []).forEach((i: any) => {
+    const saleId = i.credit_accounts?.sale_id;
+    if (saleId) ids.add(saleId);
+  });
+  (tx ?? []).forEach((t) => t.reference_id && ids.add(t.reference_id as string));
+  return ids;
+}
