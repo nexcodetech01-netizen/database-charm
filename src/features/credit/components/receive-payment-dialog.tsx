@@ -32,7 +32,13 @@ interface Props {
   balance: number;
   saleId?: string;
   customerId?: string | null;
-  onPaid?: (result: { balance: number; settled: boolean }) => void;
+  onPaid?: (result: {
+    balance: number;
+    settled: boolean;
+    amount: number;
+    paymentMethod: string;
+    paidAt: string;
+  }) => void;
 }
 
 /**
@@ -98,7 +104,16 @@ export function ReceivePaymentDialog({
             : `Saldo restante: ${formatCurrency(res.balance)}`,
         },
       );
-      onPaid?.({ balance: res.balance, settled: res.settled });
+      onPaid?.({
+        balance: res.balance,
+        settled: res.settled,
+        amount,
+        paymentMethod: method,
+        paidAt:
+          paidAt && paidAt !== new Date().toISOString().slice(0, 10)
+            ? new Date(paidAt + "T12:00:00").toISOString()
+            : new Date().toISOString(),
+      });
       onOpenChange(false);
     } catch (err) {
       const e = err as {

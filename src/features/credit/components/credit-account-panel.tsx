@@ -11,6 +11,10 @@ import {
   type CreditAccountStatus,
 } from "../types";
 import { ReceivePaymentDialog } from "./receive-payment-dialog";
+import {
+  PaymentReceiptDialog,
+  type PaymentReceiptInfo,
+} from "@/features/sales/components/payment-receipt-dialog";
 
 interface Props {
   saleId: string;
@@ -32,6 +36,7 @@ function methodLabel(v: string) {
 export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
   const { data, isLoading } = useCreditDetailBySale(saleId);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [receipt, setReceipt] = useState<PaymentReceiptInfo | null>(null);
 
   if (isLoading) {
     return (
@@ -215,6 +220,15 @@ export function CreditAccountPanel({ saleId, companyId, customerId }: Props) {
         balance={balance}
         saleId={saleId}
         customerId={customerId ?? account.customer_id}
+        onPaid={(r) =>
+          setReceipt({ saleId, receivedAmount: r.amount, paymentMethod: r.paymentMethod, paidAt: r.paidAt })
+        }
+      />
+      <PaymentReceiptDialog
+        open={!!receipt}
+        onOpenChange={(o) => !o && setReceipt(null)}
+        companyId={companyId}
+        info={receipt}
       />
     </div>
   );
