@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, Check, MessageCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { buildPaymentReminder, paymentReminderLink } from "@/features/finance/lib/payment-reminder";
 
 type Bucket = "overdue" | "today" | "next7";
 interface Cell {
@@ -22,7 +23,18 @@ interface Cell {
 interface DailySummary {
   today: string;
   cells: Partial<Record<`${"income" | "expense"}_${Bucket}`, Cell>>;
+  store?: { name: string | null; pix_key: string | null } | null;
   overdue_receivables: { label: string; person: string | null; due: string | null; days_late: number; amount: number }[];
+  /** vencidos, de hoje e dos próximos 7 dias (com WhatsApp do cliente) */
+  receivables_due?: {
+    label: string;
+    person: string | null;
+    phone: string | null;
+    due: string | null;
+    days_late: number;
+    bucket: Bucket;
+    amount: number;
+  }[];
   payables_due: { label: string; due: string | null; days_late: number; amount: number }[];
 }
 
@@ -59,20 +71,11 @@ export function hasAnythingDue(summary: Pick<DailySummary, "cells"> | null | und
   return Object.values(summary?.cells ?? {}).some((c) => (c?.count ?? 0) > 0);
 }
 
-/**
- * Resumo financeiro do dia: janela ao abrir o app, uma vez por dia.
- * A receber × A pagar em Vencido / Hoje / Próximos 7 dias, e as listas do
- * que pede ação. Não aparece se não houver nada vencendo.
- */
-export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const shouldCheck = !!companyId && !alreadyShownToday(companyId);
-
-  const { data } = useQuery({
+function useDailySummary(companyId: string, enabled: boolean) {
+  return useQuery({
     queryKey: ["finance", "daily-summary", companyId],
-    enabled: shouldCheck,
-    staleTime: 10 * 60_000,
+    enabled: !!companyId && enabled,
+    staleTime: 60_000,
     queryFn: async (): Promise<DailySummary | null> => {
       const { data, error } = await (supabase.rpc as any)("daily_finance_summary", {
         _company_id: companyId,
@@ -81,6 +84,25 @@ export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) 
       return data as DailySummary;
     },
   });
+}
+
+function dueText(r: { due: string | null; days_late: number }): string {
+  if (r.days_late > 0) return `${r.days_late} dia${r.days_late === 1 ? "" : "s"} de atraso`;
+  if (r.days_late === 0) return "vence hoje";
+  if (!r.due) return "";
+  const [, m, d] = r.due.split("-");
+  return `vence ${d}/${m}`;
+}
+
+/**
+ * Resumo financeiro do dia: janela ao abrir o app, uma vez por dia.
+ * A receber × A pagar em Vencido / Hoje / Próximos 7 dias, e as listas do
+ * que pede ação. Não aparece se não houver nada vencendo.
+ */
+export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) {
+  const [open, setOpen] = useState(false);
+  const [shouldCheck] = useState(() => !!companyId && !alreadyShownToday(companyId));
+  const { data } = useDailySummary(companyId, shouldCheck);
 
   useEffect(() => {
     if (shouldCheck && data && hasAnythingDue(data)) setOpen(true);
@@ -91,12 +113,69 @@ export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) 
     setOpen(false);
   }
 
+  if (!data) return null;
+  return <SummaryDialog data={data} open={open} onClose={close} />;
+}
+
+/** Botão "Resumo do dia" — abre o mesmo resumo quando quiser. */
+export function DailyFinanceSummaryButton({ companyId }: { companyId: string }) {
+  const [open, setOpen] = useState(false);
+  const { data, isFetching, refetch } = useDailySummary(companyId, open);
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={open && isFetching && !data}
+        onClick={() => {
+          setOpen(true);
+          void refetch();
+        }}
+      >
+        <CalendarClock className="mr-1.5 h-4 w-4" /> Resumo do dia
+      </Button>
+      {data ? <SummaryDialog data={data} open={open} onClose={() => setOpen(false)} /> : null}
+    </>
+  );
+}
+
+function SummaryDialog({
+  data,
+  open,
+  onClose,
+}: {
+  data: DailySummary;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const navigate = useNavigate();
+  const [reminded, setReminded] = useState<Set<number>>(() => new Set());
+
   function goTo(tab: "receivables" | "payables") {
-    close();
+    onClose();
     void navigate({ to: "/financeiro", search: { tab } as never });
   }
 
-  if (!data) return null;
+  const receivables =
+    data.receivables_due ??
+    data.overdue_receivables.map((r) => ({ ...r, phone: null, bucket: "overdue" as Bucket }));
+
+  function remind(idx: number) {
+    const r = receivables[idx];
+    const message = buildPaymentReminder({
+      customerName: r.person,
+      storeName: data.store?.name,
+      pixKey: data.store?.pix_key,
+      amount: Number(r.amount),
+      due: r.due,
+      daysLate: r.days_late,
+    });
+    const link = paymentReminderLink(r.phone, message);
+    if (!link) return;
+    window.open(link, "_blank", "noopener,noreferrer");
+    setReminded((prev) => new Set(prev).add(idx));
+  }
 
   const cell = (kind: "income" | "expense", b: Bucket) => data.cells[`${kind}_${b}`];
   const dateLabel = new Date(`${data.today}T12:00:00`).toLocaleDateString("pt-BR", {
@@ -106,8 +185,8 @@ export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) 
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <DialogContent className="sm:max-w-xl">
+    <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarClock className="h-5 w-5" /> Resumo financeiro · {dateLabel}
@@ -164,26 +243,64 @@ export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) 
           </table>
         </div>
 
-        {data.overdue_receivables.length > 0 ? (
+        {receivables.length > 0 ? (
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Vencidos a receber
+              A receber · vencidos e próximos 7 dias
             </p>
             <ul className="divide-y rounded-md border text-sm">
-              {data.overdue_receivables.map((r, idx) => (
-                <li key={idx} className="flex items-center justify-between gap-3 px-3 py-1.5">
-                  <span className="min-w-0 truncate">
-                    <span className="font-medium">{r.person ?? "Sem cliente"}</span>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {r.label} · {r.days_late} dia{r.days_late === 1 ? "" : "s"}
+              {receivables.map((r, idx) => {
+                const canRemind = !!r.person && !!paymentReminderLink(r.phone, "x");
+                const done = reminded.has(idx);
+                return (
+                  <li key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5">
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium">{r.person ?? "Sem cliente"}</span>
+                      <span className="text-muted-foreground"> · {r.label} · </span>
+                      <span
+                        className={cn(
+                          r.bucket === "overdue" && "text-destructive",
+                          r.bucket === "today" && "text-amber-600",
+                          r.bucket === "next7" && "text-muted-foreground",
+                        )}
+                      >
+                        {dueText(r)}
+                      </span>
                     </span>
-                  </span>
-                  <span className="shrink-0 font-semibold tabular-nums text-destructive">
-                    {formatCurrency(Number(r.amount))}
-                  </span>
-                </li>
-              ))}
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          "font-semibold tabular-nums",
+                          r.bucket === "overdue" && "text-destructive",
+                        )}
+                      >
+                        {formatCurrency(Number(r.amount))}
+                      </span>
+                      {r.person ? (
+                        <Button
+                          size="sm"
+                          variant={done ? "ghost" : "outline"}
+                          className="h-7 px-2 text-xs"
+                          disabled={!canRemind}
+                          title={
+                            canRemind
+                              ? "Abrir o WhatsApp com o lembrete pronto"
+                              : "Cliente sem WhatsApp cadastrado"
+                          }
+                          onClick={() => remind(idx)}
+                        >
+                          {done ? (
+                            <Check className="mr-1 h-3.5 w-3.5" />
+                          ) : (
+                            <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                          )}
+                          {done ? "Enviado" : "Lembrar"}
+                        </Button>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}
@@ -210,11 +327,15 @@ export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) 
           </div>
         ) : null}
 
+        {!hasAnythingDue(data) ? (
+          <p className="text-sm text-muted-foreground">Nada vencido, de hoje ou dos próximos 7 dias.</p>
+        ) : null}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => goTo("receivables")}>
             Abrir Financeiro
           </Button>
-          <Button onClick={close}>Ok, entendi</Button>
+          <Button onClick={onClose}>Ok, entendi</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

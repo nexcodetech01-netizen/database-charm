@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CreditReceivablesSection } from "@/features/finance/components/credit-receivables-section";
+import { DailyFinanceSummaryButton } from "@/features/finance/components/daily-finance-summary-dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -108,6 +109,7 @@ function FinancePage() {
       </div>
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
+        <DailyFinanceSummaryButton companyId={company.id} />
         <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
         </Button>
