@@ -135,7 +135,20 @@ export function ReceivablesPayablesPanel({ companyId, kind }: Props) {
   const [settleOpen, setSettleOpen] = useState(false);
   const [settling, setSettling] = useState<FinancialTransaction | null>(null);
 
-  const rows = data?.rows || [];
+  // O "Saldo do crediário" em aberto é só um espelho da parcela, que já
+  // aparece na seção de Crediário logo acima — mostrar os dois duplicava.
+  const rows = useMemo(
+    () =>
+      (data?.rows || []).filter(
+        (r) =>
+          !(
+            kind === "receivable" &&
+            (r as any).source === "credit_payment" &&
+            ["pending", "overdue", "partial"].includes(String(r.status))
+          ),
+      ),
+    [data?.rows, kind],
+  );
   const groups = useMemo(() => groupByReference(rows), [rows]);
 
   const enriched = useMemo(
