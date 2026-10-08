@@ -13,7 +13,7 @@ const MAP: Record<ReceivableBadge, { label: string; className: string }> = {
 export function ReceivableStatusBadge({ badge }: { badge: ReceivableBadge }) {
   const cfg = MAP[badge];
   return (
-    <Badge variant="outline" className={cfg.className}>
+    <Badge variant="outline" className={`whitespace-nowrap ${cfg.className}`}>
       {cfg.label}
     </Badge>
   );

@@ -23,8 +23,10 @@ export interface ReceivableInput {
 
 export interface ReceivableView {
   badge: ReceivableBadge;
-  /** Linha pequena abaixo do valor; null quando não há o que dizer. */
+  /** Linha curta abaixo do valor (tipo, vencimento); null quando não há. */
   detail: string | null;
+  /** "falta R$ X" — destacado, em linha própria; null quando não há. */
+  remainingText: string | null;
 }
 
 const OPEN = new Set(["pending", "partially_paid"]);
@@ -38,10 +40,16 @@ export function todayISO(now = new Date()): string {
 
 export function receivableView(input: ReceivableInput, today = todayISO()): ReceivableView {
   if (input.status === "paid" || input.status === "completed" || input.status === "invoiced") {
-    return { badge: "paid", detail: null };
+    return { badge: "paid", detail: null, remainingText: null };
   }
-  if (input.status === "cancelled") return { badge: "cancelled", detail: null };
-  if (!OPEN.has(input.status)) return { badge: "draft", detail: null };
+  if (input.status === "cancelled") return { badge: "cancelled", detail: null, remainingText: null };
+  if (!OPEN.has(input.status)) return { badge: "draft", detail: null, remainingText: null };
+
+  // Crediário quitado com a venda ainda em aberto (dado desatualizado):
+  // mostra como paga — não há nada a cobrar.
+  if (input.isCredit && input.remaining !== null && input.remaining <= 0.004) {
+    return { badge: "paid", detail: null, remainingText: null };
+  }
 
   const overdue = !!input.nextDue && input.nextDue < today;
   const remaining = input.remaining ?? input.grandTotal;
@@ -49,13 +57,14 @@ export function receivableView(input: ReceivableInput, today = todayISO()): Rece
   const parts: string[] = [];
 
   if (input.isCredit) parts.push("crediário");
-  else if (!input.paymentMethod || input.paymentMethod === "a_receber") parts.push("sem forma de pagamento");
-
-  if (paid > 0.004) parts.push(`pago ${brl(paid)}`);
+  else if (!input.paymentMethod || input.paymentMethod === "a_receber") parts.push("sem forma de pgto.");
 
   if (input.nextDue) parts.push(overdue ? `venceu ${ddmm(input.nextDue)}` : `vence ${ddmm(input.nextDue)}`);
+  else if (paid > 0.004) parts.push(`pago ${brl(paid)}`);
 
-  parts.push(`falta ${brl(remaining)}`);
-
-  return { badge: overdue ? "overdue" : "receivable", detail: parts.join(" · ") };
+  return {
+    badge: overdue ? "overdue" : "receivable",
+    detail: parts.length > 0 ? parts.join(" · ") : null,
+    remainingText: `falta ${brl(remaining)}`,
+  };
 }

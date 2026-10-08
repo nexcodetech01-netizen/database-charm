@@ -7,7 +7,7 @@ const t = (s: string) => s.replace(/\s/g, " ");
 
 describe("receivableView", () => {
   it("paga, cancelada e rascunho", () => {
-    expect(receivableView({ ...base, status: "paid" }, today)).toEqual({ badge: "paid", detail: null });
+    expect(receivableView({ ...base, status: "paid" }, today)).toEqual({ badge: "paid", detail: null, remainingText: null });
     expect(receivableView({ ...base, status: "cancelled" }, today).badge).toBe("cancelled");
     expect(receivableView({ ...base, status: "draft" }, today).badge).toBe("draft");
   });
@@ -18,7 +18,8 @@ describe("receivableView", () => {
       today,
     );
     expect(v.badge).toBe("receivable");
-    expect(t(v.detail!)).toBe("crediário · vence 23/10 · falta R$ 139,89");
+    expect(t(v.detail!)).toBe("crediário · vence 23/10");
+    expect(t(v.remainingText!)).toBe("falta R$ 139,89");
   });
 
   it("parcial: mostra quanto pagou e quanto falta", () => {
@@ -26,7 +27,8 @@ describe("receivableView", () => {
       { ...base, status: "partially_paid", grandTotal: 507.39, remaining: 157.39, isCredit: true, paymentMethod: "credit" },
       today,
     );
-    expect(t(v.detail!)).toBe("crediário · pago R$ 350,00 · falta R$ 157,39");
+    expect(t(v.detail!)).toBe("crediário · pago R$ 350,00");
+    expect(t(v.remainingText!)).toBe("falta R$ 157,39");
   });
 
   it("vencido quando a data passou", () => {
@@ -40,6 +42,15 @@ describe("receivableView", () => {
 
   it("sem forma de pagamento", () => {
     const v = receivableView({ ...base, status: "pending", grandTotal: 40, remaining: 40 }, today);
-    expect(t(v.detail!)).toBe("sem forma de pagamento · falta R$ 40,00");
+    expect(t(v.detail!)).toBe("sem forma de pgto.");
+    expect(t(v.remainingText!)).toBe("falta R$ 40,00");
+  });
+
+  it("crediário quitado com venda desatualizada aparece como paga", () => {
+    const v = receivableView(
+      { ...base, status: "partially_paid", grandTotal: 146, remaining: 0, isCredit: true, paymentMethod: "credit" },
+      today,
+    );
+    expect(v.badge).toBe("paid");
   });
 });
