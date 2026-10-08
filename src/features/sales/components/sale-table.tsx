@@ -155,11 +155,21 @@ export function SaleTable({
                     {view.detail ? (
                       <div
                         className={cn(
-                          "mt-0.5 max-w-[220px] text-xs font-normal leading-tight",
+                          "mt-0.5 whitespace-nowrap text-xs font-normal leading-tight",
                           view.badge === "overdue" ? "text-destructive" : "text-muted-foreground",
                         )}
                       >
                         {view.detail}
+                      </div>
+                    ) : null}
+                    {view.remainingText ? (
+                      <div
+                        className={cn(
+                          "whitespace-nowrap text-xs font-semibold leading-tight",
+                          view.badge === "overdue" ? "text-destructive" : "text-amber-500",
+                        )}
+                      >
+                        {view.remainingText}
                       </div>
                     ) : null}
                   </TableCell>
