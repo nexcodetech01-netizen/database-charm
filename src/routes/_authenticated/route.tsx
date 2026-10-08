@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, Outlet } from "@tanstack/react-router";
+import { DailyFinanceSummaryDialog } from "@/features/finance/components/daily-finance-summary-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { companyService } from "@/features/onboarding";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -91,6 +92,7 @@ function AuthenticatedLayout() {
         <NotificationLogPanel />
       </AppLayout>
       <CommandPalette companyId={company.id} />
+      <DailyFinanceSummaryDialog companyId={company.id} />
     </NextActionProvider>
   );
 }
