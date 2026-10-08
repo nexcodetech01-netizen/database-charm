@@ -73,6 +73,8 @@ export interface SaleWithMeta extends Sale {
    * (competência) nem com `sales.paid_at`.
    */
   settlement_paid_at: string | null;
+  /** Parcialmente paga: quanto ainda falta receber. null nas demais. */
+  remaining_amount?: number | null;
 }
 
 /** Item com o SKU/nome atuais do produto (join no detalhe da venda). */

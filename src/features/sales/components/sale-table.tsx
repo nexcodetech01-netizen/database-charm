@@ -142,6 +142,17 @@ export function SaleTable({
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-medium py-4">
                     {formatCurrency(Number(s.grand_total))}
+                    {s.status === "partially_paid" && s.remaining_amount != null ? (
+                      <div className="mt-0.5 text-xs font-normal leading-tight">
+                        <span className="text-muted-foreground">
+                          pago {formatCurrency(Math.max(0, Number(s.grand_total) - s.remaining_amount))}
+                        </span>
+                        <br />
+                        <span className="font-medium text-amber-600">
+                          falta {formatCurrency(s.remaining_amount)}
+                        </span>
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell className="py-4">
                     <div className="flex flex-wrap items-center gap-1.5">
