@@ -102,6 +102,7 @@ const groups: NavGroup[] = [
     items: [
       { title: "Financeiro", url: ROUTES.finance, icon: Wallet, status: "available", permission: "finance.view" },
       { title: "Caixa", url: ROUTES.cash, icon: Banknote, status: "available", permission: "finance.view" },
+      { title: "Histórico de alterações", url: ROUTES.history, icon: History, status: "available", permission: "audit.view" },
       { title: "Fiscal", url: ROUTES.fiscal, icon: FileCheck, status: "available", permission: "fiscal.view" },
       { title: "Saúde Fiscal", url: ROUTES.fiscalHealth, icon: HeartPulse, status: "available", permission: "fiscal.view" },
       { title: "Recalcular Preços", url: ROUTES.commercialRecalculate, icon: Calculator, status: "available", permission: "products.view" },
@@ -126,7 +127,6 @@ const groups: NavGroup[] = [
       { title: "Frete", url: ROUTES.shippingCalculator, icon: Truck, status: "available", permission: "reports.view" },
       { title: "Relatórios", url: ROUTES.reports, icon: BarChart3, status: "available", permission: "reports.view" },
       { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view" },
-      { title: "Histórico", url: ROUTES.history, icon: History, status: "available", permission: "audit.view" },
       { title: "Configurações", url: ROUTES.settings, icon: Settings, status: "available", permission: "settings.view" },
     ],
   },
