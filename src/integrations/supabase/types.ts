@@ -713,6 +713,137 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_reconciliation_marks: {
+        Row: {
+          account_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reconciled_until: string
+          statement_balance: number | null
+          system_balance: number | null
+        }
+        Insert: {
+          account_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reconciled_until: string
+          statement_balance?: number | null
+          system_balance?: number | null
+        }
+        Update: {
+          account_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reconciled_until?: string
+          statement_balance?: number | null
+          system_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_marks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_marks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_lines: {
+        Row: {
+          account_id: string
+          amount: number
+          company_id: string
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          direction: string
+          entry_date: string
+          id: string
+          line_hash: string
+          status: string
+          transaction_id: string | null
+          transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          company_id: string
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction: string
+          entry_date: string
+          id?: string
+          line_hash: string
+          status: string
+          transaction_id?: string | null
+          transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          company_id?: string
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction?: string
+          entry_date?: string
+          id?: string
+          line_hash?: string
+          status?: string
+          transaction_id?: string | null
+          transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bella_automation_runs: {
         Row: {
           actions_summary: Json
