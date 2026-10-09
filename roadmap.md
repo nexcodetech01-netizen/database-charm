@@ -23,4 +23,4 @@
 - [x] Auditar funções SECURITY DEFINER com identificadores de empresa ou entidades vinculadas
 
 - [x] Criar os seis arquivos reutilizáveis de auditoria sem alterar banco ou tipos gerados
-- [ ] Ligar histórico ao menu, financeiro, vendas e produtos e criar a página filtrável sem alterar banco
+- [x] Ligar histórico ao menu, financeiro, vendas e produtos e criar a página filtrável sem alterar banco
