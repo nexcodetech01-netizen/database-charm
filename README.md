@@ -59,3 +59,4 @@ Abaixo estão os comandos configurados via `package.json` para o ciclo de desenv
 1. **Padrões de Código:** Uso de `Prettier` e `ESLint` configurados (`.prettierrc`, `eslint.config.js`) para garantir consistência estilística em TypeScript.
 2. **Mudanças Arquiteturais:** Qualquer alteração no motor de precificação ou fluxos críticos deve ser precedida por uma nova ADR na pasta `/docs`.
 3. **Testes Obrigatórios:** Funcionalidades críticas do core da aplicação necessitam de cobertura correspondente em `tests/`.
+
