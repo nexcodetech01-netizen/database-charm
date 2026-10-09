@@ -39,6 +39,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFidelidadeRouteImport } from './routes/_authenticated/fidelidade'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedListaDeComprasRouteImport } from './routes/_authenticated/lista-de-compras'
@@ -275,6 +276,11 @@ const AuthenticatedFornecedoresRoute =
     path: '/fornecedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedImportacoesRoute =
   AuthenticatedImportacoesRouteImport.update({
     id: '/importacoes',
@@ -764,6 +770,7 @@ export interface FileRoutesByFullPath {
   '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -874,6 +881,7 @@ export interface FileRoutesByTo {
   '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -985,6 +993,7 @@ export interface FileRoutesById {
   '/_authenticated/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
   '/_authenticated/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -1097,6 +1106,7 @@ export interface FileRouteTypes {
     | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
+    | '/historico'
     | '/importacoes'
     | '/indicadores'
     | '/lista-de-compras'
@@ -1207,6 +1217,7 @@ export interface FileRouteTypes {
     | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
+    | '/historico'
     | '/importacoes'
     | '/indicadores'
     | '/lista-de-compras'
@@ -1317,6 +1328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fidelidade'
     | '/_authenticated/financeiro'
     | '/_authenticated/fornecedores'
+    | '/_authenticated/historico'
     | '/_authenticated/importacoes'
     | '/_authenticated/indicadores'
     | '/_authenticated/lista-de-compras'
@@ -1642,6 +1654,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/fornecedores'
       preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/importacoes': {
@@ -2372,6 +2391,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFidelidadeRoute: typeof AuthenticatedFidelidadeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRouteWithChildren
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
   AuthenticatedListaDeComprasRoute: typeof AuthenticatedListaDeComprasRoute
@@ -2439,6 +2459,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFidelidadeRoute: AuthenticatedFidelidadeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRouteWithChildren,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
   AuthenticatedListaDeComprasRoute: AuthenticatedListaDeComprasRoute,

@@ -19,3 +19,4 @@
 - A pesquisa autenticada de produtos usa o cliente do usuário e checagem de empresa no SQL, pois o cliente administrativo contornaria o isolamento multiempresa.
 
 - Keep audit readers, query hooks, and reusable history views in `src/features/audit`, using the browser Supabase client and existing audit authorization RPC; this preserves RLS and avoids duplicating database schema.
+- Mount record audit history through the shared audit feature, and guard the authenticated history page with the existing audit permission; this keeps screen integrations consistent with current authorization.

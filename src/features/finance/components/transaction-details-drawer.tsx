@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { BellaInlineSuggestion } from "@/features/bella-ai/components/bella-inline-suggestion";
 import { MoneyValue } from "@/components/layout/money-value";
+import { RecordHistory } from "@/features/audit";
 import {
   useSetTransactionStatus,
   useReverseTransaction,
@@ -417,6 +418,7 @@ export function TransactionDetailsDrawer({
                 </ul>
               </Section>
             ) : null}
+            <RecordHistory companyId={companyId} table="financial_transactions" recordId={t.id} />
           </div>
 
 
