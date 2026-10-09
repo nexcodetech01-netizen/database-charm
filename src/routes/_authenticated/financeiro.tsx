@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CreditReceivablesSection } from "@/features/finance/components/credit-receivables-section";
 import { DailyFinanceSummaryButton } from "@/features/finance/components/daily-finance-summary-dialog";
+import { BankReconciliationDialog } from "@/features/bank-reconciliation";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -9,6 +10,7 @@ import {
   ArrowUpCircle,
   LineChart,
   Plus,
+  FileCheck2,
   Minus,
   ArrowLeftRight,
   CheckCircle2,
@@ -49,7 +51,6 @@ import { BellaFinancePanel } from "@/features/accounting-ai/finance";
 import type { TransactionType } from "@/features/finance";
 import { formatCurrency } from "@/lib/format";
 
-
 const FINANCE_TABS = [
   "summary",
   "receivables",
@@ -85,11 +86,12 @@ function FinancePage() {
   const { data: accounts } = useAccounts(company.id);
   const [txOpen, setTxOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [statementOpen, setStatementOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
   const realAvailableCash = (accounts || [])
-    .filter((a: any) => a?.status === 'active')
+    .filter((a: any) => a?.status === "active")
     .reduce((acc: number, curr: any) => acc + (Number(curr?.current_balance) || 0), 0);
 
   const cashFlow = data ? (data.receivable || 0) - (data.payable || 0) : undefined;
@@ -110,6 +112,9 @@ function FinancePage() {
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
         <DailyFinanceSummaryButton companyId={company.id} />
+        <Button size="sm" variant="ghost" onClick={() => setStatementOpen(true)}>
+          <FileCheck2 className="mr-1.5 h-4 w-4" /> Conciliar extrato
+        </Button>
         <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
         </Button>
@@ -161,7 +166,6 @@ function FinancePage() {
         onClick={() => setTab("cashflow")}
       />
     </KpiSection>
-
   );
 
   const tabTriggerClass =
@@ -174,33 +178,28 @@ function FinancePage() {
       actions={actions}
       kpis={kpis}
     >
-
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as FinanceTab)}
-        className="space-y-8 pt-2"
-      >
+      <Tabs value={tab} onValueChange={(v) => setTab(v as FinanceTab)} className="space-y-8 pt-2">
         <TabsList className="mb-8 border-b border-border bg-transparent w-full justify-start rounded-none h-auto p-0 gap-8 overflow-x-auto no-scrollbar">
-          <TabsTrigger 
-            value="summary" 
+          <TabsTrigger
+            value="summary"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
             <LineChart className="h-4 w-4" /> Resumo
           </TabsTrigger>
-          <TabsTrigger 
-            value="receivables" 
+          <TabsTrigger
+            value="receivables"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
             <ArrowDownRight className="h-4 w-4" /> A Receber
           </TabsTrigger>
-          <TabsTrigger 
-            value="payables" 
+          <TabsTrigger
+            value="payables"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
             <ArrowUpRight className="h-4 w-4" /> A Pagar
           </TabsTrigger>
-          <TabsTrigger 
-            value="cashflow" 
+          <TabsTrigger
+            value="cashflow"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-0 text-sm font-semibold whitespace-nowrap gap-2"
           >
             <FileText className="h-4 w-4" /> Extrato de Movimentações
@@ -231,11 +230,7 @@ function FinancePage() {
         </TabsContent>
       </Tabs>
 
-      <GuidedTransactionDialog
-        open={txOpen}
-        onOpenChange={setTxOpen}
-        companyId={company.id}
-      />
+      <GuidedTransactionDialog open={txOpen} onOpenChange={setTxOpen} companyId={company.id} />
 
       <TransactionFormDialog
         open={transferOpen}
@@ -243,19 +238,17 @@ function FinancePage() {
         companyId={company.id}
         defaultType="transfer"
       />
+      <BankReconciliationDialog
+        companyId={company.id}
+        open={statementOpen}
+        onOpenChange={setStatementOpen}
+      />
     </PageLayout>
   );
 }
 
-
 function ReportsComingSoon() {
-  const items = [
-    "DRE",
-    "Fluxo de Caixa",
-    "Contas a Receber",
-    "Contas a Pagar",
-    "Exportações",
-  ];
+  const items = ["DRE", "Fluxo de Caixa", "Contas a Receber", "Contas a Pagar", "Exportações"];
   return (
     <Card className="overflow-hidden border-dashed">
       <CardContent className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-center">
@@ -290,15 +283,13 @@ function ReportsComingSoon() {
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Estamos preparando painéis exportáveis com filtros por período,
-            categoria e conta.
+            Estamos preparando painéis exportáveis com filtros por período, categoria e conta.
           </p>
         </div>
       </CardContent>
     </Card>
   );
 }
-
 
 function BellaPayCard() {
   const channels = [
@@ -322,8 +313,7 @@ function BellaPayCard() {
               </span>
             </div>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Cobre com PIX, cartão e links de pagamento. Conciliação
-              automática das transações.
+              Cobre com PIX, cartão e links de pagamento. Conciliação automática das transações.
             </p>
           </div>
         </div>
