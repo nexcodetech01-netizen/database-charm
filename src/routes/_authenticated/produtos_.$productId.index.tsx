@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FramedImage } from "@/components/media/framed-image";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
+import { RecordHistory } from "@/features/audit";
 import { ProductPricingSheet } from "@/features/pricing";
 import { ProductPricingIntelligenceCard } from "@/features/pricing/components/product-pricing-intelligence-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,6 +78,16 @@ import { formatCurrency, formatDateTime, formatNumber, formatPercent } from "@/l
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/produtos_/$productId/")({
+  head: () => ({
+    meta: [
+      { title: "Detalhes do produto — NexOS" },
+      { name: "description", content: "Dados, estoque, precificação e histórico de alterações do produto no NexOS." },
+      { property: "og:title", content: "Detalhes do produto — NexOS" },
+      { property: "og:description", content: "Consulte o cadastro, estoque e histórico do produto no NexOS." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: requirePermission("products.view"),
   component: ProductDetailPage,
 });
@@ -666,6 +677,7 @@ function ProductDetailPage() {
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-6">
+            <RecordHistory companyId={company.id} table="products" recordId={product.id} defaultOpen />
             {/* Movimentações */}
             <Section
               title="Movimentações"
