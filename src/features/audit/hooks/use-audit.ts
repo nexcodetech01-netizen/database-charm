@@ -6,7 +6,7 @@ export function useCanViewAudit(companyId: string | undefined) {
     queryKey: ["audit", "can-view", companyId],
     enabled: !!companyId,
     staleTime: 10 * 60_000,
-    queryFn: () => auditService.canView(companyId!),
+    queryFn: () => companyId ? auditService.canView(companyId) : Promise.resolve(false),
   });
 }
 
@@ -19,15 +19,11 @@ export function useAuditList(filters: AuditListFilters, enabled = true) {
   });
 }
 
-export function useRecordHistory(
-  table: string,
-  recordId: string | null | undefined,
-  enabled = true,
-) {
+export function useRecordHistory(table: string, recordId: string | null | undefined, enabled = true) {
   return useQuery({
     queryKey: ["audit", "record", table, recordId],
     enabled: enabled && !!recordId,
-    queryFn: () => auditService.forRecord(table, recordId!),
+    queryFn: () => recordId ? auditService.forRecord(table, recordId) : Promise.resolve([]),
   });
 }
 

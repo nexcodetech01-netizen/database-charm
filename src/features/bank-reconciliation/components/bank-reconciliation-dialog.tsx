@@ -1,51 +1,21 @@
 import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  ArrowLeftRight,
-  CheckCircle2,
-  ChevronDown,
-  FileUp,
-  Loader2,
-  Trash2,
-  Undo2,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, CheckCircle2, ChevronDown, FileUp, Loader2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { financeService, useAccounts, useFinancialCategories } from "@/features/finance";
 import { extractPdfRows } from "../lib/pdf-rows";
-import {
-  parseNubankStatement,
-  type ParsedStatement,
-  type StatementEntry,
-} from "../lib/nubank-statement";
+import { parseNubankStatement, type ParsedStatement, type StatementEntry } from "../lib/nubank-statement";
 import { analyzeStatement, type Analysis } from "../lib/analyze";
 import type { SystemMove } from "../lib/match";
-import {
-  addDays,
-  bankReconciliationService as svc,
-  type StoredLine,
-} from "../services/bank-reconciliation.service";
+import { addDays, bankReconciliationService as svc, type StoredLine } from "../services/bank-reconciliation.service";
 import { LaunchEntryDialog, type AccountLite, type CategoryLite } from "./launch-entry-dialog";
 
 type Move = SystemMove & { paymentMethod: string | null };
@@ -58,22 +28,12 @@ function br(day: string | null | undefined) {
 
 function Amount({ direction, value }: { direction: "in" | "out"; value: number }) {
   return (
-    <span
-      className={cn(
-        "shrink-0 text-sm font-semibold tabular-nums",
-        direction === "in" ? "text-emerald-600" : "text-foreground",
-      )}
-    >
+    <span className={cn("shrink-0 text-sm font-semibold tabular-nums", direction === "in" ? "text-status-success" : "text-foreground")}>
       {direction === "in" ? "+" : "−"} {formatCurrency(value)}
     </span>
   );
 }
 
-/**
- * Conciliação do extrato: sobe o PDF do banco, o sistema compara com os
- * lançamentos da conta e mostra o que bateu, o que só está no banco
- * (para lançar) e o que só está no sistema (para corrigir).
- */
 export function BankReconciliationDialog({
   companyId,
   open,
@@ -87,10 +47,7 @@ export function BankReconciliationDialog({
   const { data: accountsData = [] } = useAccounts(companyId);
   const { data: categoriesData = [] } = useFinancialCategories(companyId);
   const accounts = useMemo(
-    () =>
-      (accountsData as (AccountLite & { status: string; current_balance: number })[]).filter(
-        (a) => a.status === "active",
-      ),
+    () => (accountsData as (AccountLite & { status: string; current_balance: number })[]).filter((a) => a.status === "active"),
     [accountsData],
   );
   const categories = categoriesData as unknown as CategoryLite[];
@@ -116,13 +73,7 @@ export function BankReconciliationDialog({
 
   const analysis: Analysis | null = useMemo(() => {
     if (!statement || !fromDay) return null;
-    return analyzeStatement({
-      statement,
-      fromDay,
-      storedLines: lines,
-      moves,
-      currentBalance: balance,
-    });
+    return analyzeStatement({ statement, fromDay, storedLines: lines, moves, currentBalance: balance });
   }, [statement, fromDay, lines, moves, balance]);
 
   function reset() {
@@ -145,7 +96,6 @@ export function BankReconciliationDialog({
     setLines(ln);
     setBalance(acc ? Number(acc.current_balance) : null);
 
-    // Grava como conferido o que bateu agora (na próxima vez já vem pronto)
     const a = analyzeStatement({
       statement: st,
       fromDay: day,
@@ -185,9 +135,7 @@ export function BankReconciliationDialog({
       }
       const mark = await svc.lastMark(accountId);
       setLastMark(mark?.reconciled_until ?? null);
-      const start = mark
-        ? addDays(mark.reconciled_until, 1)
-        : (st.periodStart ?? st.entries[0].date);
+      const start = mark ? addDays(mark.reconciled_until, 1) : (st.periodStart ?? st.entries[0].date);
       setStatement(st);
       setFromDay(start);
       await loadData(start, st);
@@ -258,12 +206,7 @@ export function BankReconciliationDialog({
   }
 
   async function removeMove(m: Move) {
-    if (
-      !window.confirm(
-        `Excluir "${m.description}" (${formatCurrency(m.amount)})? O valor sai do saldo da conta.`,
-      )
-    )
-      return;
+    if (!window.confirm(`Excluir "${m.description}" (${formatCurrency(m.amount)})? O valor sai do saldo da conta.`)) return;
     setBusyId(m.id);
     try {
       await financeService.removeTransaction(m.id);
@@ -281,10 +224,7 @@ export function BankReconciliationDialog({
     const m = moving;
     setBusyId(m.id);
     try {
-      await financeService.reverseTransaction(
-        m.id,
-        "Conciliação do extrato: movido para outra conta",
-      );
+      await financeService.reverseTransaction(m.id, "Conciliação do extrato: movido para outra conta");
       try {
         await financeService.settleTransaction(m.id, {
           paymentMethod: (m.paymentMethod ?? "pix") as never,
@@ -377,8 +317,8 @@ export function BankReconciliationDialog({
           <DialogHeader>
             <DialogTitle>Conciliar extrato</DialogTitle>
             <DialogDescription>
-              Suba o extrato em PDF do banco. O sistema compara com os lançamentos da conta e mostra
-              o que falta lançar e o que está sobrando.
+              Suba o extrato em PDF do banco. O sistema compara com os lançamentos da conta e mostra o que falta lançar e o
+              que está sobrando.
             </DialogDescription>
           </DialogHeader>
 
@@ -402,46 +342,32 @@ export function BankReconciliationDialog({
                 </div>
                 <div className="space-y-1">
                   <Label>Extrato (PDF do Nubank PJ)</Label>
-                  <Input
-                    ref={fileRef}
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  />
+                  <Input ref={fileRef} type="file" accept="application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                No app do Nubank: Extrato → ícone de compartilhar → escolha o período → PDF.
-              </p>
+              <p className="text-xs text-muted-foreground">No app do Nubank: Extrato → ícone de compartilhar → escolha o período → PDF.</p>
               <DialogFooter>
                 <Button onClick={readStatement} disabled={!accountId || !file || loading}>
-                  {loading ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileUp className="mr-1.5 h-4 w-4" />
-                  )}
+                  {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileUp className="mr-1.5 h-4 w-4" />}
                   Ler extrato
                 </Button>
               </DialogFooter>
             </div>
           ) : analysis ? (
             <div className="space-y-5">
-              {/* Cabeçalho */}
               <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border p-3 text-sm">
                 <div className="min-w-0 space-y-0.5">
                   <p className="font-medium">
-                    {account?.name} · extrato de {br(statement.periodStart)} a{" "}
-                    {br(statement.periodEnd)}
+                    {account?.name} · extrato de {br(statement.periodStart)} a {br(statement.periodEnd)}
                   </p>
                   {analysis.statementReadOk ? (
-                    <p className="flex items-center gap-1 text-xs text-emerald-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Extrato lido por completo (
-                      {statement.entries.length} movimentos, saldos conferem)
+                    <p className="flex items-center gap-1 text-xs text-status-success">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Extrato lido por completo ({statement.entries.length} movimentos,
+                      saldos conferem)
                     </p>
                   ) : (
-                    <p className="flex items-center gap-1 text-xs text-amber-600">
-                      <AlertTriangle className="h-3.5 w-3.5" /> Algum movimento pode não ter sido
-                      lido — confira com o PDF.
+                    <p className="flex items-center gap-1 text-xs text-status-warning">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Algum movimento pode não ter sido lido — confira com o PDF.
                     </p>
                   )}
                 </div>
@@ -467,39 +393,25 @@ export function BankReconciliationDialog({
                 </p>
               ) : null}
 
-              {/* Saldos */}
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg border p-2">
-                  <p className="text-[11px] text-muted-foreground">
-                    Banco em {br(statement.periodEnd)}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">Banco em {br(statement.periodEnd)}</p>
                   <p className="text-sm font-semibold tabular-nums sm:text-base">
-                    {statement.closingBalance !== null
-                      ? formatCurrency(statement.closingBalance)
-                      : "—"}
+                    {statement.closingBalance !== null ? formatCurrency(statement.closingBalance) : "—"}
                   </p>
                 </div>
                 <div className="rounded-lg border p-2">
-                  <p className="text-[11px] text-muted-foreground">
-                    Sistema em {br(statement.periodEnd)}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">Sistema em {br(statement.periodEnd)}</p>
                   <p className="text-sm font-semibold tabular-nums sm:text-base">
-                    {analysis.systemBalanceAtEnd !== null
-                      ? formatCurrency(analysis.systemBalanceAtEnd)
-                      : "—"}
+                    {analysis.systemBalanceAtEnd !== null ? formatCurrency(analysis.systemBalanceAtEnd) : "—"}
                   </p>
                 </div>
-                <div
-                  className={cn(
-                    "rounded-lg border p-2",
-                    analysis.difference === 0 ? "border-emerald-500/40" : "border-amber-500/50",
-                  )}
-                >
+                <div className={cn("rounded-lg border p-2", analysis.difference === 0 ? "border-status-success/40" : "border-status-warning/50")}>
                   <p className="text-[11px] text-muted-foreground">Diferença</p>
                   <p
                     className={cn(
                       "text-sm font-semibold tabular-nums sm:text-base",
-                      analysis.difference === 0 ? "text-emerald-600" : "text-amber-600",
+                      analysis.difference === 0 ? "text-status-success" : "text-status-warning",
                     )}
                   >
                     {analysis.difference !== null ? formatCurrency(analysis.difference) : "—"}
@@ -513,7 +425,6 @@ export function BankReconciliationDialog({
                 </div>
               ) : null}
 
-              {/* Só no banco */}
               <section className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Só no banco · falta lançar ({analysis.bankOnly.length})
@@ -523,15 +434,10 @@ export function BankReconciliationDialog({
                 ) : (
                   <ul className="divide-y overflow-hidden rounded-lg border">
                     {analysis.bankOnly.map((b) => (
-                      <li
-                        key={b.hash}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5"
-                      >
+                      <li key={b.hash} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
                         <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto sm:flex-1">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
-                              {b.entry.counterparty || b.entry.kind}
-                            </p>
+                            <p className="truncate text-sm font-medium">{b.entry.counterparty || b.entry.kind}</p>
                             <p className="truncate text-xs text-muted-foreground">
                               {br(b.entry.date)} · {b.entry.kind}
                             </p>
@@ -539,12 +445,7 @@ export function BankReconciliationDialog({
                           <Amount direction={b.entry.direction} value={b.entry.amount} />
                         </div>
                         <div className="ml-auto flex shrink-0 gap-1.5">
-                          <Button
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setLaunching(b)}
-                            disabled={busyId === b.hash}
-                          >
+                          <Button size="sm" className="h-8" onClick={() => setLaunching(b)} disabled={busyId === b.hash}>
                             Lançar
                           </Button>
                           <Button
@@ -564,7 +465,6 @@ export function BankReconciliationDialog({
                 )}
               </section>
 
-              {/* Só no sistema */}
               <section className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Só no sistema · não passou no banco ({analysis.systemOnly.length})
@@ -574,20 +474,13 @@ export function BankReconciliationDialog({
                 ) : (
                   <ul className="divide-y overflow-hidden rounded-lg border">
                     {(analysis.systemOnly as Move[]).map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5"
-                      >
+                      <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
                         <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto sm:flex-1">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{m.description}</p>
                             <p className="truncate text-xs text-muted-foreground">
                               {br(m.date)}
-                              {m.kind === "transfer"
-                                ? " · transferência"
-                                : m.source
-                                  ? ` · ${sourceLabel(m.source)}`
-                                  : ""}
+                              {m.kind === "transfer" ? " · transferência" : m.source ? ` · ${sourceLabel(m.source)}` : ""}
                             </p>
                           </div>
                           <Amount direction={m.direction} value={m.amount} />
@@ -627,26 +520,21 @@ export function BankReconciliationDialog({
                 )}
               </section>
 
-              {/* Bateu agora */}
               <section className="space-y-2">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                   onClick={() => setShowMatched((s) => !s)}
                 >
-                  <ChevronDown
-                    className={cn("h-3.5 w-3.5 transition-transform", showMatched && "rotate-180")}
-                  />
-                  Bateu (
-                  {analysis.matched.length +
-                    analysis.done.filter((d) => d.status === "matched").length}
-                  )
-                </button>
+                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showMatched && "rotate-180")} />
+                  Bateu ({analysis.matched.length + analysis.done.filter((d) => d.status === "matched").length})
+                </Button>
                 {showMatched ? (
                   <ul className="divide-y overflow-hidden rounded-lg border">
                     {analysis.matched.map((m) => (
                       <li key={m.hash} className="flex items-center gap-3 px-3 py-2">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-status-success" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">{m.entry.counterparty || m.entry.kind}</p>
                           <p className="truncate text-xs text-muted-foreground">
@@ -660,34 +548,26 @@ export function BankReconciliationDialog({
                 ) : null}
               </section>
 
-              {/* Já conferidos */}
               {analysis.done.length > 0 ? (
                 <section className="space-y-2">
-                  <button
+                  <Button
                     type="button"
+                  variant="ghost"
                     className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                     onClick={() => setShowDone((s) => !s)}
                   >
-                    <ChevronDown
-                      className={cn("h-3.5 w-3.5 transition-transform", showDone && "rotate-180")}
-                    />
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showDone && "rotate-180")} />
                     Já conferidos ({analysis.done.length})
-                  </button>
+                  </Button>
                   {showDone ? (
                     <ul className="divide-y overflow-hidden rounded-lg border">
                       {analysis.done.map((d) => (
                         <li key={d.hash} className="flex items-center gap-3 px-3 py-2">
                           <Badge variant="outline" className="shrink-0 text-[10px] font-normal">
-                            {d.status === "matched"
-                              ? "bateu"
-                              : d.status === "created"
-                                ? "lançado"
-                                : "ignorado"}
+                            {d.status === "matched" ? "bateu" : d.status === "created" ? "lançado" : "ignorado"}
                           </Badge>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm">
-                              {d.entry.counterparty || d.entry.kind}
-                            </p>
+                            <p className="truncate text-sm">{d.entry.counterparty || d.entry.kind}</p>
                             <p className="text-xs text-muted-foreground">{br(d.entry.date)}</p>
                           </div>
                           <Amount direction={d.entry.direction} value={d.entry.amount} />
@@ -714,11 +594,7 @@ export function BankReconciliationDialog({
                 </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   {analysis.difference !== null && analysis.difference !== 0 && pending === 0 ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => void launchAdjustment()}
-                      disabled={loading}
-                    >
+                    <Button variant="outline" onClick={() => void launchAdjustment()} disabled={loading}>
                       Lançar ajuste de {formatCurrency(Math.abs(analysis.difference))}
                     </Button>
                   ) : null}
@@ -729,8 +605,8 @@ export function BankReconciliationDialog({
               </DialogFooter>
               {pending > 0 ? (
                 <p className="text-right text-xs text-muted-foreground">
-                  Resolva os {pending} itens acima antes de marcar como conferido — ou marque assim
-                  mesmo e continue na próxima.
+                  Resolva os {pending} itens acima antes de marcar como conferido — ou marque assim mesmo e continue na
+                  próxima.
                 </p>
               ) : null}
             </div>
@@ -757,16 +633,11 @@ export function BankReconciliationDialog({
           <DialogHeader>
             <DialogTitle>Mover para outra conta</DialogTitle>
             <DialogDescription>
-              {moving
-                ? `${moving.description} · ${formatCurrency(moving.amount)} · ${br(moving.date)}`
-                : null}
+              {moving ? `${moving.description} · ${formatCurrency(moving.amount)} · ${br(moving.date)}` : null}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
-            <Label>
-              Em qual conta esse dinheiro {moving?.direction === "in" ? "entrou" : "saiu"} de
-              verdade?
-            </Label>
+            <Label>Em qual conta esse dinheiro {moving?.direction === "in" ? "entrou" : "saiu"} de verdade?</Label>
             <Select value={moveTarget} onValueChange={setMoveTarget}>
               <SelectTrigger>
                 <SelectValue placeholder="Escolha a conta" />
@@ -789,10 +660,7 @@ export function BankReconciliationDialog({
             <Button variant="outline" onClick={() => setMoving(null)}>
               Cancelar
             </Button>
-            <Button
-              onClick={() => void confirmMove()}
-              disabled={!moveTarget || busyId === moving?.id}
-            >
+            <Button onClick={() => void confirmMove()} disabled={!moveTarget || busyId === moving?.id}>
               {busyId === moving?.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
               Mover
             </Button>

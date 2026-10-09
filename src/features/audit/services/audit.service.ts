@@ -9,9 +9,7 @@ export interface AuditListFilters {
   companyId: string;
   area?: AuditArea | "";
   actorId?: string | "";
-  /** yyyy-mm-dd */
   from?: string;
-  /** yyyy-mm-dd */
   to?: string;
   page: number;
   pageSize: number;
@@ -20,7 +18,7 @@ export interface AuditListFilters {
 export const auditService = {
   async canView(companyId: string): Promise<boolean> {
     const { data, error } = await db.rpc("can_view_audit", { _company_id: companyId });
-    if (error) return false; // função ainda não criada: esconde
+    if (error) return false;
     return data === true;
   },
 
@@ -43,14 +41,11 @@ export const auditService = {
     return { rows: (data ?? []) as AuditEntry[], total: count ?? 0 };
   },
 
-  /** Histórico de um registro e do que está "pendurado" nele (itens, financeiro). */
   async forRecord(table: string, recordId: string): Promise<AuditEntry[]> {
     const { data, error } = await db
       .from("audit_log")
       .select("*")
-      .or(
-        `and(table_name.eq.${table},record_id.eq.${recordId}),and(parent_table.eq.${table},parent_id.eq.${recordId})`,
-      )
+      .or(`and(table_name.eq.${table},record_id.eq.${recordId}),and(parent_table.eq.${table},parent_id.eq.${recordId})`)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(200);

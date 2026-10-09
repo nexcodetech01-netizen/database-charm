@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { BellaInlineSuggestion } from "@/features/bella-ai/components/bella-inline-suggestion";
 import { MoneyValue } from "@/components/layout/money-value";
+import { RecordHistory } from "@/features/audit";
 import {
   useSetTransactionStatus,
   useReverseTransaction,
@@ -46,7 +47,6 @@ import type {
 import { summarize, daysOverdue } from "../lib/receivables";
 import { FINANCE_PAYMENT_METHOD_LABEL } from "../types";
 import { TransactionStatusBadge } from "./transaction-status-badge";
-import { RecordHistory } from "@/features/audit";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { SettleTransactionDialog } from "./settle-transaction-dialog";
 import { isTerminalTransactionStatus } from "../lib/receivables";
@@ -418,7 +418,6 @@ export function TransactionDetailsDrawer({
                 </ul>
               </Section>
             ) : null}
-
             <RecordHistory companyId={companyId} table="financial_transactions" recordId={t.id} />
           </div>
 

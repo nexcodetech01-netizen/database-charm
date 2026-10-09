@@ -27,7 +27,6 @@ import { Route as AuthenticatedBellaContadoraRouteImport } from './routes/_authe
 import { Route as AuthenticatedBellaPayRouteImport } from './routes/_authenticated/bella-pay'
 import { Route as AuthenticatedBellaProcessosRouteImport } from './routes/_authenticated/bella-processos'
 import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
-import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedCampanhasRouteImport } from './routes/_authenticated/campanhas'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
@@ -40,6 +39,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFidelidadeRouteImport } from './routes/_authenticated/fidelidade'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedListaDeComprasRouteImport } from './routes/_authenticated/lista-de-compras'
@@ -214,11 +214,6 @@ const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
   path: '/caixa',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
-  id: '/historico',
-  path: '/historico',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCampanhasRoute = AuthenticatedCampanhasRouteImport.update({
   id: '/campanhas',
   path: '/campanhas',
@@ -281,6 +276,11 @@ const AuthenticatedFornecedoresRoute =
     path: '/fornecedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedImportacoesRoute =
   AuthenticatedImportacoesRouteImport.update({
     id: '/importacoes',
@@ -758,7 +758,6 @@ export interface FileRoutesByFullPath {
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
-  '/historico': typeof AuthenticatedHistoricoRoute
   '/campanhas': typeof AuthenticatedCampanhasRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -771,6 +770,7 @@ export interface FileRoutesByFullPath {
   '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -869,7 +869,6 @@ export interface FileRoutesByTo {
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
-  '/historico': typeof AuthenticatedHistoricoRoute
   '/campanhas': typeof AuthenticatedCampanhasRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -882,6 +881,7 @@ export interface FileRoutesByTo {
   '/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -981,7 +981,6 @@ export interface FileRoutesById {
   '/_authenticated/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/_authenticated/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
-  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/campanhas': typeof AuthenticatedCampanhasRoute
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -994,6 +993,7 @@ export interface FileRoutesById {
   '/_authenticated/fidelidade': typeof AuthenticatedFidelidadeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRouteWithChildren
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
   '/_authenticated/lista-de-compras': typeof AuthenticatedListaDeComprasRoute
@@ -1094,7 +1094,6 @@ export interface FileRouteTypes {
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
-    | '/historico'
     | '/campanhas'
     | '/categorias'
     | '/clientes'
@@ -1107,6 +1106,7 @@ export interface FileRouteTypes {
     | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
+    | '/historico'
     | '/importacoes'
     | '/indicadores'
     | '/lista-de-compras'
@@ -1205,7 +1205,6 @@ export interface FileRouteTypes {
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
-    | '/historico'
     | '/campanhas'
     | '/categorias'
     | '/clientes'
@@ -1218,6 +1217,7 @@ export interface FileRouteTypes {
     | '/fidelidade'
     | '/financeiro'
     | '/fornecedores'
+    | '/historico'
     | '/importacoes'
     | '/indicadores'
     | '/lista-de-compras'
@@ -1316,7 +1316,6 @@ export interface FileRouteTypes {
     | '/_authenticated/bella-pay'
     | '/_authenticated/bella-processos'
     | '/_authenticated/caixa'
-    | '/_authenticated/historico'
     | '/_authenticated/campanhas'
     | '/_authenticated/categorias'
     | '/_authenticated/clientes'
@@ -1329,6 +1328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fidelidade'
     | '/_authenticated/financeiro'
     | '/_authenticated/fornecedores'
+    | '/_authenticated/historico'
     | '/_authenticated/importacoes'
     | '/_authenticated/indicadores'
     | '/_authenticated/lista-de-compras'
@@ -1572,13 +1572,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCaixaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/historico': {
-      id: '/_authenticated/historico'
-      path: '/historico'
-      fullPath: '/historico'
-      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/campanhas': {
       id: '/_authenticated/campanhas'
       path: '/campanhas'
@@ -1661,6 +1654,13 @@ declare module '@tanstack/react-router' {
       path: '/fornecedores'
       fullPath: '/fornecedores'
       preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/importacoes': {
@@ -2379,7 +2379,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBellaPayRoute: typeof AuthenticatedBellaPayRouteWithChildren
   AuthenticatedBellaProcessosRoute: typeof AuthenticatedBellaProcessosRoute
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
-  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedCampanhasRoute: typeof AuthenticatedCampanhasRoute
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
@@ -2392,6 +2391,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFidelidadeRoute: typeof AuthenticatedFidelidadeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRouteWithChildren
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
   AuthenticatedListaDeComprasRoute: typeof AuthenticatedListaDeComprasRoute
@@ -2447,7 +2447,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBellaPayRoute: AuthenticatedBellaPayRouteWithChildren,
   AuthenticatedBellaProcessosRoute: AuthenticatedBellaProcessosRoute,
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
-  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedCampanhasRoute: AuthenticatedCampanhasRoute,
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
@@ -2460,6 +2459,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFidelidadeRoute: AuthenticatedFidelidadeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRouteWithChildren,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
   AuthenticatedListaDeComprasRoute: AuthenticatedListaDeComprasRoute,

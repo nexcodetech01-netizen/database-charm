@@ -9,14 +9,7 @@ const ACTION_TINT: Record<string, string> = {
   delete: "bg-destructive",
 };
 
-/** Uma linha do histórico: quem, quando, por onde e o que mudou. */
-export function AuditEntryItem({
-  entry,
-  compact = false,
-}: {
-  entry: AuditEntry;
-  compact?: boolean;
-}) {
+export function AuditEntryItem({ entry, compact = false }: { entry: AuditEntry; compact?: boolean }) {
   const lines = describeChanges(entry);
   const shown = compact && entry.action !== "update" ? lines.slice(0, 4) : lines;
   const when = new Date(entry.created_at).toLocaleString("pt-BR", {
@@ -29,12 +22,7 @@ export function AuditEntryItem({
 
   return (
     <li className="flex gap-3 py-2.5">
-      <span
-        className={cn(
-          "mt-1.5 h-2 w-2 shrink-0 rounded-full",
-          ACTION_TINT[entry.action] ?? "bg-muted-foreground",
-        )}
-      />
+      <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", ACTION_TINT[entry.action] ?? "bg-muted-foreground")} />
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
           <span className="font-medium">{describeEntry(entry)}</span>

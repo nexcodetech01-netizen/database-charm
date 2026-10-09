@@ -24,13 +24,7 @@ interface DailySummary {
   today: string;
   cells: Partial<Record<`${"income" | "expense"}_${Bucket}`, Cell>>;
   store?: { name: string | null; pix_key: string | null } | null;
-  overdue_receivables: {
-    label: string;
-    person: string | null;
-    due: string | null;
-    days_late: number;
-    amount: number;
-  }[];
+  overdue_receivables: { label: string; person: string | null; due: string | null; days_late: number; amount: number }[];
   /** vencidos, de hoje e dos próximos 7 dias (com WhatsApp do cliente) */
   receivables_due?: {
     label: string;
@@ -83,7 +77,6 @@ function useDailySummary(companyId: string, enabled: boolean) {
     enabled: !!companyId && enabled,
     staleTime: 60_000,
     queryFn: async (): Promise<DailySummary | null> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- função fora dos tipos gerados
       const { data, error } = await (supabase.rpc as any)("daily_finance_summary", {
         _company_id: companyId,
       });
@@ -147,7 +140,7 @@ export function DailyFinanceSummaryButton({ companyId }: { companyId: string }) 
   );
 }
 
-export function SummaryDialog({
+function SummaryDialog({
   data,
   open,
   onClose,
@@ -243,7 +236,7 @@ export function SummaryDialog({
                         <div className="truncate">{formatCurrency(c?.total ?? 0)}</div>
                         {has ? (
                           <div className="text-[11px] font-normal text-muted-foreground">
-                            {c!.count} {c!.count === 1 ? "conta" : "contas"}
+                            {c?.count} {c?.count === 1 ? "conta" : "contas"}
                           </div>
                         ) : null}
                       </td>
@@ -306,11 +299,7 @@ export function SummaryDialog({
                         }
                         onClick={() => remind(idx)}
                       >
-                        {done ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <MessageCircle className="h-4 w-4" />
-                        )}
+                        {done ? <Check className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                       </Button>
                     ) : (
                       <span className="w-8 shrink-0" />

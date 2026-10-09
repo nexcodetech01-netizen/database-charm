@@ -1,11 +1,8 @@
 import type { Direction, StatementEntry } from "./nubank-statement";
 
-/** Movimento já registrado no sistema para a conta (lançamento pago ou transferência). */
 export interface SystemMove {
-  /** id do lançamento ou da transferência */
   id: string;
   kind: "transaction" | "transfer";
-  /** yyyy-mm-dd (dia do pagamento / da transferência) */
   date: string;
   direction: Direction;
   amount: number;
@@ -24,21 +21,11 @@ function dayDiff(a: string, b: string): number {
   return Math.round(Math.abs(ms) / 86_400_000);
 }
 
-/**
- * Casa cada linha do extrato com um movimento do sistema de mesmo valor e
- * mesma direção, com data até `toleranceDays` de distância (a mais próxima
- * ganha). Cada movimento só é usado uma vez.
- */
-export function matchStatement(
-  entries: StatementEntry[],
-  moves: SystemMove[],
-  toleranceDays = 3,
-): MatchResult {
+export function matchStatement(entries: StatementEntry[], moves: SystemMove[], toleranceDays = 3): MatchResult {
   const used = new Set<string>();
   const matched: MatchResult["matched"] = [];
   const bankOnly: MatchResult["bankOnly"] = [];
 
-  // Primeiro os casamentos mais "certos" (mesmo dia), depois os de data próxima.
   const order = entries
     .map((entry, index) => ({ entry, index }))
     .sort((a, b) => a.entry.date.localeCompare(b.entry.date));
@@ -75,13 +62,11 @@ export function matchStatement(
   };
 }
 
-/** Identidade estável de uma linha do extrato (para lembrar o que já foi conferido). */
 export function entryHash(entry: StatementEntry, occurrence: number): string {
   const desc = entry.description.toLowerCase().replace(/\s+/g, " ").trim();
   return `${entry.date}|${entry.direction}|${entry.amount.toFixed(2)}|${desc}|${occurrence}`;
 }
 
-/** Hash de todas as linhas, numerando repetições idênticas no mesmo dia. */
 export function hashEntries(entries: StatementEntry[]): string[] {
   const seen = new Map<string, number>();
   return entries.map((e) => {
