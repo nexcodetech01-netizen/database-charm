@@ -4,6 +4,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { requirePermission } from "@/features/rbac";
 import { ProductPricingSheet } from "@/features/pricing";
 import { ProductPricingIntelligenceCard } from "@/features/pricing/components/product-pricing-intelligence-card";
+import { RecordHistory } from "@/features/audit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SuggestedPricesByChannelCard } from "@/features/pricing/components/suggested-prices-by-channel-card";
 import { AppliedMarginPolicyCard } from "@/features/pricing/components/applied-margin-policy-card";
@@ -666,6 +667,7 @@ function ProductDetailPage() {
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-6">
+            <RecordHistory companyId={company.id} table="products" recordId={product.id} defaultOpen />
             {/* Movimentações */}
             <Section
               title="Movimentações"
