@@ -186,20 +186,20 @@ function SummaryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-1rem)] grid-cols-1 gap-5 overflow-y-auto overflow-x-hidden p-4 sm:w-full sm:max-w-xl sm:p-6 [&>*]:min-w-0">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarClock className="h-5 w-5" /> Resumo financeiro · {dateLabel}
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CalendarClock className="h-5 w-5 shrink-0" /> Resumo financeiro · {dateLabel}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full table-fixed text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
-                <th className="px-3 py-2 text-left font-medium" />
+                <th className="w-[24%] px-3 py-2 text-left font-medium" />
                 {BUCKETS.map((b) => (
-                  <th key={b.key} className="px-3 py-2 text-right font-medium">
+                  <th key={b.key} className="px-2 py-2 text-right font-medium sm:px-3">
                     {b.label}
                   </th>
                 ))}
@@ -218,7 +218,7 @@ function SummaryDialog({
                   onClick={() => goTo(tab)}
                   title="Abrir no Financeiro"
                 >
-                  <td className="px-3 py-2 font-medium">{label}</td>
+                  <td className="px-3 py-2.5 text-[13px] font-medium sm:text-sm">{label}</td>
                   {BUCKETS.map((b) => {
                     const c = cell(kind, b.key);
                     const has = (c?.count ?? 0) > 0;
@@ -226,14 +226,19 @@ function SummaryDialog({
                       <td
                         key={b.key}
                         className={cn(
-                          "px-3 py-2 text-right tabular-nums",
-                          !has && "text-muted-foreground",
-                          has && b.key === "overdue" && "font-semibold text-destructive",
-                          has && b.key === "today" && "font-semibold text-amber-600",
+                          "px-2 py-2.5 text-right text-[13px] tabular-nums sm:px-3 sm:text-sm",
+                          !has && "text-muted-foreground/70",
+                          has && "font-semibold",
+                          has && b.key === "overdue" && "text-destructive",
+                          has && b.key === "today" && "text-amber-600",
                         )}
                       >
-                        {formatCurrency(c?.total ?? 0)}
-                        {has ? <span className="ml-1 text-xs font-normal">({c!.count})</span> : null}
+                        <div className="truncate">{formatCurrency(c?.total ?? 0)}</div>
+                        {has ? (
+                          <div className="text-[11px] font-normal text-muted-foreground">
+                            {c?.count} {c?.count === 1 ? "conta" : "contas"}
+                          </div>
+                        ) : null}
                       </td>
                     );
                   })}
@@ -244,91 +249,102 @@ function SummaryDialog({
         </div>
 
         {receivables.length > 0 ? (
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <section className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               A receber · vencidos e próximos 7 dias
-            </p>
-            <ul className="divide-y rounded-md border text-sm">
+            </h3>
+            <ul className="divide-y overflow-hidden rounded-lg border">
               {receivables.map((r, idx) => {
                 const canRemind = !!r.person && !!paymentReminderLink(r.phone, "x");
                 const done = reminded.has(idx);
                 return (
-                  <li key={idx} className="flex items-center justify-between gap-2 px-3 py-1.5">
-                    <span className="min-w-0 truncate">
-                      <span className="font-medium">{r.person ?? "Sem cliente"}</span>
-                      <span className="text-muted-foreground"> · {r.label} · </span>
-                      <span
+                  <li key={idx} className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{r.person ?? "Sem cliente"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{r.label}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p
                         className={cn(
-                          r.bucket === "overdue" && "text-destructive",
-                          r.bucket === "today" && "text-amber-600",
-                          r.bucket === "next7" && "text-muted-foreground",
-                        )}
-                      >
-                        {dueText(r)}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span
-                        className={cn(
-                          "font-semibold tabular-nums",
+                          "text-sm font-semibold tabular-nums",
                           r.bucket === "overdue" && "text-destructive",
                         )}
                       >
                         {formatCurrency(Number(r.amount))}
-                      </span>
-                      {r.person ? (
-                        <Button
-                          size="sm"
-                          variant={done ? "ghost" : "outline"}
-                          className="h-7 px-2 text-xs"
-                          disabled={!canRemind}
-                          title={
-                            canRemind
-                              ? "Abrir o WhatsApp com o lembrete pronto"
-                              : "Cliente sem WhatsApp cadastrado"
-                          }
-                          onClick={() => remind(idx)}
-                        >
-                          {done ? (
-                            <Check className="mr-1 h-3.5 w-3.5" />
-                          ) : (
-                            <MessageCircle className="mr-1 h-3.5 w-3.5" />
-                          )}
-                          {done ? "Enviado" : "Lembrar"}
-                        </Button>
-                      ) : null}
-                    </span>
+                      </p>
+                      <p
+                        className={cn(
+                          "text-xs",
+                          r.bucket === "overdue" && "text-destructive",
+                          r.bucket === "today" && "font-medium text-amber-600",
+                          r.bucket === "next7" && "text-muted-foreground",
+                        )}
+                      >
+                        {dueText(r)}
+                      </p>
+                    </div>
+                    {r.person ? (
+                      <Button
+                        size="icon"
+                        variant={done ? "ghost" : "outline"}
+                        className={cn("h-8 w-8 shrink-0", done && "text-emerald-600")}
+                        disabled={!canRemind}
+                        aria-label={done ? "Lembrete enviado" : "Enviar lembrete pelo WhatsApp"}
+                        title={
+                          !canRemind
+                            ? "Cliente sem WhatsApp cadastrado"
+                            : done
+                              ? "Lembrete enviado — clique para abrir de novo"
+                              : "Enviar lembrete pelo WhatsApp"
+                        }
+                        onClick={() => remind(idx)}
+                      >
+                        {done ? <Check className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                      </Button>
+                    ) : (
+                      <span className="w-8 shrink-0" />
+                    )}
                   </li>
                 );
               })}
             </ul>
-          </div>
+          </section>
         ) : null}
 
         {data.payables_due.length > 0 ? (
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              A pagar (vencido ou hoje)
-            </p>
-            <ul className="divide-y rounded-md border text-sm">
+          <section className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              A pagar · vencido ou hoje
+            </h3>
+            <ul className="divide-y overflow-hidden rounded-lg border">
               {data.payables_due.map((p, idx) => (
-                <li key={idx} className="flex items-center justify-between gap-3 px-3 py-1.5">
-                  <span className="min-w-0 truncate">
-                    {p.label}
-                    <span className="text-muted-foreground">
-                      {" "}
-                      · {p.days_late > 0 ? `venceu há ${p.days_late} dia${p.days_late === 1 ? "" : "s"}` : "vence hoje"}
-                    </span>
-                  </span>
-                  <span className="shrink-0 font-semibold tabular-nums">{formatCurrency(Number(p.amount))}</span>
+                <li key={idx} className="flex items-center gap-3 px-3 py-2.5">
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium">{p.label}</p>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-semibold tabular-nums">
+                      {formatCurrency(Number(p.amount))}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-xs",
+                        p.days_late > 0 ? "text-destructive" : "font-medium text-amber-600",
+                      )}
+                    >
+                      {p.days_late > 0
+                        ? `venceu há ${p.days_late} dia${p.days_late === 1 ? "" : "s"}`
+                        : "vence hoje"}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         ) : null}
 
         {!hasAnythingDue(data) ? (
-          <p className="text-sm text-muted-foreground">Nada vencido, de hoje ou dos próximos 7 dias.</p>
+          <p className="text-sm text-muted-foreground">
+            Nada vencido, de hoje ou dos próximos 7 dias.
+          </p>
         ) : null}
 
         <DialogFooter>
