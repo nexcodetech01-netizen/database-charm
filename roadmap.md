@@ -21,3 +21,5 @@
 - [x] Excluir o marcador SEM GTIN da busca por código de barras
 - [x] Proteger a busca SQL por empresa e remover execução pública
 - [x] Auditar funções SECURITY DEFINER com identificadores de empresa ou entidades vinculadas
+
+- [x] Criar os seis arquivos reutilizáveis de auditoria sem alterar banco ou tipos gerados
