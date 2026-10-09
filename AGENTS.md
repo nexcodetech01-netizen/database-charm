@@ -20,3 +20,4 @@
 
 - Keep audit readers, query hooks, and reusable history views in `src/features/audit`, using the browser Supabase client and existing audit authorization RPC; this preserves RLS and avoids duplicating database schema.
 - Mount record audit history through the shared audit feature, and guard the authenticated history page with the existing audit permission; this keeps screen integrations consistent with current authorization.
+- Keep statement parsing, matching and analysis as pure utilities in the bank-reconciliation feature, with PDF text extraction loaded in the browser; this separates review logic from persistence and browser-only PDF processing.
