@@ -31,6 +31,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RecordHistory } from "@/features/audit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -968,6 +969,9 @@ function SaleWorkspace({
               <SaleTimeline sale={sale} />
               <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
                 Última atualização: {formatDateTime(sale.updated_at)}
+              </div>
+              <div className="mt-4">
+                <RecordHistory companyId={companyId} table="sales" recordId={sale.id} defaultOpen />
               </div>
             </div>
           </Card>

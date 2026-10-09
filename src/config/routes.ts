@@ -22,6 +22,7 @@ export const ROUTES = {
   pdv: "/pdv",
   cash: "/caixa",
   finance: "/financeiro",
+  history: "/historico",
   fiscalHealth: "/financeiro/saude-fiscal",
   fiscal: "/fiscal",
   fiscalDocuments: "/fiscal/notas",

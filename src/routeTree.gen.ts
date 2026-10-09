@@ -27,6 +27,7 @@ import { Route as AuthenticatedBellaContadoraRouteImport } from './routes/_authe
 import { Route as AuthenticatedBellaPayRouteImport } from './routes/_authenticated/bella-pay'
 import { Route as AuthenticatedBellaProcessosRouteImport } from './routes/_authenticated/bella-processos'
 import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedCampanhasRouteImport } from './routes/_authenticated/campanhas'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
@@ -211,6 +212,11 @@ const AuthenticatedBellaProcessosRoute =
 const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
   id: '/caixa',
   path: '/caixa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCampanhasRoute = AuthenticatedCampanhasRouteImport.update({
@@ -752,6 +758,7 @@ export interface FileRoutesByFullPath {
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/campanhas': typeof AuthenticatedCampanhasRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -862,6 +869,7 @@ export interface FileRoutesByTo {
   '/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/caixa': typeof AuthenticatedCaixaRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/campanhas': typeof AuthenticatedCampanhasRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -973,6 +981,7 @@ export interface FileRoutesById {
   '/_authenticated/bella-pay': typeof AuthenticatedBellaPayRouteWithChildren
   '/_authenticated/bella-processos': typeof AuthenticatedBellaProcessosRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/campanhas': typeof AuthenticatedCampanhasRoute
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -1085,6 +1094,7 @@ export interface FileRouteTypes {
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
+    | '/historico'
     | '/campanhas'
     | '/categorias'
     | '/clientes'
@@ -1195,6 +1205,7 @@ export interface FileRouteTypes {
     | '/bella-pay'
     | '/bella-processos'
     | '/caixa'
+    | '/historico'
     | '/campanhas'
     | '/categorias'
     | '/clientes'
@@ -1305,6 +1316,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bella-pay'
     | '/_authenticated/bella-processos'
     | '/_authenticated/caixa'
+    | '/_authenticated/historico'
     | '/_authenticated/campanhas'
     | '/_authenticated/categorias'
     | '/_authenticated/clientes'
@@ -1558,6 +1570,13 @@ declare module '@tanstack/react-router' {
       path: '/caixa'
       fullPath: '/caixa'
       preLoaderRoute: typeof AuthenticatedCaixaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/campanhas': {
@@ -2360,6 +2379,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBellaPayRoute: typeof AuthenticatedBellaPayRouteWithChildren
   AuthenticatedBellaProcessosRoute: typeof AuthenticatedBellaProcessosRoute
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedCampanhasRoute: typeof AuthenticatedCampanhasRoute
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
@@ -2427,6 +2447,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBellaPayRoute: AuthenticatedBellaPayRouteWithChildren,
   AuthenticatedBellaProcessosRoute: AuthenticatedBellaProcessosRoute,
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedCampanhasRoute: AuthenticatedCampanhasRoute,
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
