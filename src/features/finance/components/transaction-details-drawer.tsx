@@ -418,6 +418,7 @@ export function TransactionDetailsDrawer({
                 </ul>
               </Section>
             ) : null}
+            <RecordHistory companyId={companyId} table="financial_transactions" recordId={t.id} />
           </div>
 
 
