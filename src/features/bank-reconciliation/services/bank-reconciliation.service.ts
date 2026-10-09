@@ -31,13 +31,8 @@ export interface NewLine {
   transfer_id?: string | null;
 }
 
-export interface AccountMoves {
-  moves: (SystemMove & { paymentMethod: string | null })[];
-}
-
 const TZ = "America/Sao_Paulo";
 
-/** Dia (yyyy-mm-dd) em São Paulo de um instante ISO. */
 export function spDay(iso: string): string {
   return new Date(iso).toLocaleDateString("sv-SE", { timeZone: TZ });
 }
@@ -49,7 +44,6 @@ export function addDays(day: string, n: number): string {
 }
 
 export const bankReconciliationService = {
-  /** Movimentos pagos/transferências da conta a partir de `fromDay` (inclusive). */
   async loadMoves(companyId: string, accountId: string, fromDay: string) {
     const [txRes, trRes] = await Promise.all([
       db
@@ -115,29 +109,18 @@ export const bankReconciliationService = {
   async saveLines(companyId: string, accountId: string, lines: NewLine[]) {
     if (lines.length === 0) return;
     const { error } = await db.from("bank_statement_lines").upsert(
-      lines.map((l) => ({
-        ...l,
-        company_id: companyId,
-        account_id: accountId,
-        updated_at: new Date().toISOString(),
-      })),
+      lines.map((l) => ({ ...l, company_id: companyId, account_id: accountId, updated_at: new Date().toISOString() })),
       { onConflict: "account_id,line_hash" },
     );
     if (error) throw error;
   },
 
   async removeLine(accountId: string, lineHash: string) {
-    const { error } = await db
-      .from("bank_statement_lines")
-      .delete()
-      .eq("account_id", accountId)
-      .eq("line_hash", lineHash);
+    const { error } = await db.from("bank_statement_lines").delete().eq("account_id", accountId).eq("line_hash", lineHash);
     if (error) throw error;
   },
 
-  async lastMark(
-    accountId: string,
-  ): Promise<{ reconciled_until: string; statement_balance: number | null } | null> {
+  async lastMark(accountId: string): Promise<{ reconciled_until: string; statement_balance: number | null } | null> {
     const { data, error } = await db
       .from("bank_reconciliation_marks")
       .select("reconciled_until, statement_balance")
@@ -145,7 +128,7 @@ export const bankReconciliationService = {
       .order("reconciled_until", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (error) return null; // tabela ainda não criada
+    if (error) return null;
     return data ?? null;
   },
 

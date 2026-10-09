@@ -17,3 +17,9 @@
 - O preço no cartão usa centavos inteiros e taxa em pontos-base, para evitar divergência de centavos com o cálculo numeric do banco.
 - A busca de produtos ignora `SEM GTIN` no campo de código de barras, para não retornar produtos sem código em consultas por esse marcador.
 - A pesquisa autenticada de produtos usa o cliente do usuário e checagem de empresa no SQL, pois o cliente administrativo contornaria o isolamento multiempresa.
+
+- Keep audit readers, query hooks, and reusable history views in `src/features/audit`, using the browser Supabase client and existing audit authorization RPC; this preserves RLS and avoids duplicating database schema.
+- Mount record audit history through the shared audit feature, and guard the authenticated history page with the existing audit permission; this keeps screen integrations consistent with current authorization.
+- Keep statement parsing, matching and analysis as pure utilities in the bank-reconciliation feature, with PDF text extraction loaded in the browser; this separates review logic from persistence and browser-only PDF processing.
+- Keep bank reconciliation persistence in its browser-client service and reuse financeService for launches; this preserves existing RLS and settlement behavior without duplicating schema or financial workflows.
+- Export the bank reconciliation dialog through its feature entry point and keep statement review state inside the dialog; this allows finance screens to mount the workflow without duplicating review logic.

@@ -18,18 +18,10 @@ export interface AuditEntry {
   created_at: string;
 }
 
-/** Áreas do filtro e as tabelas de cada uma. */
 export const AUDIT_AREAS = {
   financeiro: {
     label: "Financeiro",
-    tables: [
-      "financial_transactions",
-      "financial_accounts",
-      "financial_transfers",
-      "credit_accounts",
-      "credit_installments",
-      "credit_payments",
-    ],
+    tables: ["financial_transactions", "financial_accounts", "financial_transfers", "credit_accounts", "credit_installments", "credit_payments"],
   },
   caixa: { label: "Caixa", tables: ["cash_sessions", "cash_movements"] },
   vendas: { label: "Vendas", tables: ["sales", "sale_items"] },
@@ -55,140 +47,41 @@ const TABLE_LABEL: Record<string, string> = {
   inventory_movements: "Movimento de estoque",
 };
 
-const ACTION_LABEL: Record<AuditAction, string> = {
-  insert: "criou",
-  update: "alterou",
-  delete: "excluiu",
-};
+const ACTION_LABEL: Record<AuditAction, string> = { insert: "criou", update: "alterou", delete: "excluiu" };
 
 const FIELD_LABEL: Record<string, string> = {
-  amount: "Valor",
-  description: "Descrição",
-  status: "Situação",
-  type: "Tipo",
-  due_date: "Vencimento",
-  transaction_date: "Data",
-  paid_at: "Pago em",
-  payment_method: "Forma de pagamento",
-  account_id: "Conta",
-  category_id: "Categoria",
-  discount_amount: "Desconto na baixa",
-  notes: "Observações",
-  source: "Origem",
-  current_balance: "Saldo",
-  initial_balance: "Saldo inicial",
-  name: "Nome",
-  balance: "Saldo devedor",
-  paid_amount: "Valor pago",
-  grand_total: "Total",
-  items_total: "Total dos itens",
-  discount: "Desconto",
-  shipping: "Frete",
-  deleted_at: "Excluída em",
-  customer_id: "Cliente",
-  sale_date: "Data da venda",
-  quantity: "Quantidade",
-  unit_price: "Preço unitário",
-  total: "Total",
-  price: "Preço",
-  cost: "Custo",
-  stock: "Estoque",
-  min_stock: "Estoque mínimo",
-  sku: "SKU",
-  reason: "Motivo",
-  counted_cash: "Dinheiro contado",
-  difference: "Diferença",
-  opening_balance: "Abertura",
-  received_at: "Recebida em",
-  supplier_id: "Fornecedor",
+  amount: "Valor", description: "Descrição", status: "Situação", type: "Tipo", due_date: "Vencimento",
+  transaction_date: "Data", paid_at: "Pago em", payment_method: "Forma de pagamento", account_id: "Conta",
+  category_id: "Categoria", discount_amount: "Desconto na baixa", notes: "Observações", source: "Origem",
+  current_balance: "Saldo", initial_balance: "Saldo inicial", name: "Nome", balance: "Saldo devedor",
+  paid_amount: "Valor pago", grand_total: "Total", items_total: "Total dos itens", discount: "Desconto",
+  shipping: "Frete", deleted_at: "Excluída em", customer_id: "Cliente", sale_date: "Data da venda",
+  quantity: "Quantidade", unit_price: "Preço unitário", total: "Total", price: "Preço", cost: "Custo",
+  stock: "Estoque", min_stock: "Estoque mínimo", sku: "SKU", reason: "Motivo", counted_cash: "Dinheiro contado",
+  difference: "Diferença", opening_balance: "Abertura", received_at: "Recebida em", supplier_id: "Fornecedor",
 };
 
-/** Campos que não ajudam quem lê (ids técnicos, carimbos). */
 const HIDDEN_FIELDS = new Set([
-  "id",
-  "company_id",
-  "created_by",
-  "updated_at",
-  "created_at",
-  "reference_id",
-  "finance_ref",
-  "settlement_session_id",
-  "bella_pay_charge_id",
-  "asaas_charge_id",
-  "recurring_parent_id",
-  "cost_center_id",
-  "client_request_id",
-  "cash_session_id",
-  "sale_id",
-  "purchase_id",
-  "product_id",
-  "credit_account_id",
-  "installment_id",
-  "financial_transaction_id",
-  "session_id",
-  "transaction_id",
-  "user_id",
-  "operator_id",
-  "stock_applied",
-  "stock_reversed",
-  "position",
-  "is_recurring",
-  "is_test",
+  "id", "company_id", "created_by", "updated_at", "created_at", "reference_id", "finance_ref",
+  "settlement_session_id", "bella_pay_charge_id", "asaas_charge_id", "recurring_parent_id", "cost_center_id",
+  "client_request_id", "cash_session_id", "sale_id", "purchase_id", "product_id", "credit_account_id",
+  "installment_id", "financial_transaction_id", "session_id", "transaction_id", "user_id", "operator_id",
+  "stock_applied", "stock_reversed", "position", "is_recurring", "is_test",
 ]);
 
 const MONEY_FIELDS = new Set([
-  "amount",
-  "discount_amount",
-  "current_balance",
-  "initial_balance",
-  "balance",
-  "paid_amount",
-  "grand_total",
-  "items_total",
-  "discount",
-  "shipping",
-  "unit_price",
-  "total",
-  "price",
-  "cost",
-  "counted_cash",
-  "difference",
-  "opening_balance",
-  "original_amount",
-  "down_payment",
-  "unit_cost",
-  "total_cost",
-  "expected_cash",
-  "freight",
-  "other_costs",
-  "insurance",
+  "amount", "discount_amount", "current_balance", "initial_balance", "balance", "paid_amount", "grand_total",
+  "items_total", "discount", "shipping", "unit_price", "total", "price", "cost", "counted_cash", "difference",
+  "opening_balance", "original_amount", "down_payment", "unit_cost", "total_cost", "expected_cash", "freight",
+  "other_costs", "insurance",
 ]);
 
 const VALUE_LABEL: Record<string, string> = {
-  pending: "pendente",
-  overdue: "vencido",
-  partial: "parcial",
-  partially_paid: "parcialmente pago",
-  paid: "pago",
-  cancelled: "cancelado",
-  refunded: "estornado",
-  draft: "rascunho",
-  open: "aberto",
-  closed: "fechado",
-  settled: "quitado",
-  received: "recebida",
-  income: "entrada",
-  expense: "saída",
-  in: "entrada",
-  out: "saída",
-  cash: "dinheiro",
-  pix: "Pix",
-  pix_manual: "Pix",
-  credit_card: "cartão de crédito",
-  debit_card: "cartão de débito",
-  credit: "crediário",
-  active: "ativo",
-  inactive: "inativo",
+  pending: "pendente", overdue: "vencido", partial: "parcial", partially_paid: "parcialmente pago", paid: "pago",
+  cancelled: "cancelado", refunded: "estornado", draft: "rascunho", open: "aberto", closed: "fechado",
+  settled: "quitado", received: "recebida", income: "entrada", expense: "saída", in: "entrada", out: "saída",
+  cash: "dinheiro", pix: "Pix", pix_manual: "Pix", credit_card: "cartão de crédito", debit_card: "cartão de débito",
+  credit: "crediário", active: "ativo", inactive: "inativo",
 };
 
 export const VIA_LABEL: Record<string, string> = {
@@ -234,39 +127,18 @@ export interface AuditChangeLine {
   after: string;
 }
 
-/** Linhas legíveis do que mudou (ou do que foi criado/excluído). */
 export function describeChanges(entry: Pick<AuditEntry, "action" | "changes">): AuditChangeLine[] {
   const lines: AuditChangeLine[] = [];
   for (const [field, raw] of Object.entries(entry.changes ?? {})) {
     if (HIDDEN_FIELDS.has(field)) continue;
     if (entry.action === "update") {
       const diff = raw as { old?: unknown; new?: unknown } | null;
-      lines.push({
-        field,
-        label: fieldLabel(field),
-        before: formatAuditValue(field, diff?.old),
-        after: formatAuditValue(field, diff?.new),
-      });
+      lines.push({ field, label: fieldLabel(field), before: formatAuditValue(field, diff?.old), after: formatAuditValue(field, diff?.new) });
     } else {
       lines.push({ field, label: fieldLabel(field), after: formatAuditValue(field, raw) });
     }
   }
-  // Campos mais importantes primeiro
-  const order = [
-    "status",
-    "amount",
-    "grand_total",
-    "price",
-    "cost",
-    "stock",
-    "quantity",
-    "account_id",
-    "payment_method",
-    "due_date",
-    "paid_at",
-    "description",
-    "name",
-  ];
+  const order = ["status", "amount", "grand_total", "price", "cost", "stock", "quantity", "account_id", "payment_method", "due_date", "paid_at", "description", "name"];
   return lines.sort((a, b) => {
     const ia = order.indexOf(a.field);
     const ib = order.indexOf(b.field);
@@ -274,17 +146,10 @@ export function describeChanges(entry: Pick<AuditEntry, "action" | "changes">): 
   });
 }
 
-/** Frase curta: "Gabriela alterou Lançamento “shoope”". */
-export function describeEntry(
-  entry: Pick<AuditEntry, "action" | "table_name" | "label" | "actor_name" | "via">,
-): string {
+export function describeEntry(entry: Pick<AuditEntry, "action" | "table_name" | "label" | "actor_name" | "via">): string {
   const who =
     entry.actor_name ??
-    (entry.via === "servidor"
-      ? "Sistema (Bella/WhatsApp/automação)"
-      : entry.via === "banco"
-        ? "Ajuste direto no banco"
-        : "Sistema");
+    (entry.via === "servidor" ? "Sistema (Bella/WhatsApp/automação)" : entry.via === "banco" ? "Ajuste direto no banco" : "Sistema");
   const what = tableLabel(entry.table_name);
   const label = entry.label ? ` “${entry.label}”` : "";
   return `${who} ${ACTION_LABEL[entry.action] ?? entry.action} ${what.toLowerCase()}${label}`;

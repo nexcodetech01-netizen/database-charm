@@ -21,3 +21,10 @@
 - [x] Excluir o marcador SEM GTIN da busca por código de barras
 - [x] Proteger a busca SQL por empresa e remover execução pública
 - [x] Auditar funções SECURITY DEFINER com identificadores de empresa ou entidades vinculadas
+
+- [x] Criar os seis arquivos reutilizáveis de auditoria sem alterar banco ou tipos gerados
+- [x] Ligar histórico ao menu, financeiro, vendas e produtos e criar a página filtrável sem alterar banco
+- [x] Criar e validar os quatro arquivos de leitura e análise de extratos, sem alterar banco
+- [x] Criar serviço e diálogo de lançamento da conciliação sem alterar banco ou tipos gerados
+- [x] Criar o diálogo principal de conciliação fornecido e ativar a exportação de BankReconciliationDialog sem alterar banco
+- [x] Adicionar Conciliar extrato às ações do Financeiro e conectar o diálogo sem alterar banco

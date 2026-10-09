@@ -5,11 +5,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCanViewAudit, useRecordHistory } from "../hooks/use-audit";
 import { AuditEntryItem } from "./audit-entry-item";
 
-/**
- * "Histórico" de um registro (lançamento, venda, produto…), incluindo o que
- * está ligado a ele (itens da venda, títulos, movimentos de estoque).
- * Só aparece para quem tem permissão de ver o histórico.
- */
 export function RecordHistory({
   companyId,
   table,
@@ -53,7 +48,7 @@ export function RecordHistory({
             </p>
           ) : (
             <ul className="divide-y">
-              {data!.map((e) => (
+              {(data ?? []).map((e) => (
                 <AuditEntryItem key={e.id} entry={e} compact />
               ))}
             </ul>

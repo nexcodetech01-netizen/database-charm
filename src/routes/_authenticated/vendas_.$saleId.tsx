@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
+import { RecordHistory } from "@/features/audit";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -31,7 +32,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RecordHistory } from "@/features/audit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -102,6 +102,16 @@ import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
 
 
 export const Route = createFileRoute("/_authenticated/vendas_/$saleId")({
+  head: () => ({
+    meta: [
+      { title: "Detalhes da venda — NexOS" },
+      { name: "description", content: "Dados, pagamentos e histórico de alterações da venda no NexOS." },
+      { property: "og:title", content: "Detalhes da venda — NexOS" },
+      { property: "og:description", content: "Consulte dados, pagamentos e histórico da venda no NexOS." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: requirePermission("sales.view"),
   component: SaleDetailPage,
 });
@@ -970,9 +980,7 @@ function SaleWorkspace({
               <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
                 Última atualização: {formatDateTime(sale.updated_at)}
               </div>
-              <div className="mt-4">
-                <RecordHistory companyId={companyId} table="sales" recordId={sale.id} defaultOpen />
-              </div>
+              <div className="mt-4"><RecordHistory companyId={companyId} table="sales" recordId={sale.id} defaultOpen /></div>
             </div>
           </Card>
         </TabsContent>

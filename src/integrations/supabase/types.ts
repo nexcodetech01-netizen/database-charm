@@ -665,6 +665,185 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          changes: Json
+          company_id: string
+          created_at: string
+          id: number
+          label: string | null
+          parent_id: string | null
+          parent_table: string | null
+          record_id: string | null
+          table_name: string
+          via: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          changes?: Json
+          company_id: string
+          created_at?: string
+          id?: number
+          label?: string | null
+          parent_id?: string | null
+          parent_table?: string | null
+          record_id?: string | null
+          table_name: string
+          via: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          changes?: Json
+          company_id?: string
+          created_at?: string
+          id?: number
+          label?: string | null
+          parent_id?: string | null
+          parent_table?: string | null
+          record_id?: string | null
+          table_name?: string
+          via?: string
+        }
+        Relationships: []
+      }
+      bank_reconciliation_marks: {
+        Row: {
+          account_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reconciled_until: string
+          statement_balance: number | null
+          system_balance: number | null
+        }
+        Insert: {
+          account_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reconciled_until: string
+          statement_balance?: number | null
+          system_balance?: number | null
+        }
+        Update: {
+          account_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reconciled_until?: string
+          statement_balance?: number | null
+          system_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_marks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_marks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_lines: {
+        Row: {
+          account_id: string
+          amount: number
+          company_id: string
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          direction: string
+          entry_date: string
+          id: string
+          line_hash: string
+          status: string
+          transaction_id: string | null
+          transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          company_id: string
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction: string
+          entry_date: string
+          id?: string
+          line_hash: string
+          status: string
+          transaction_id?: string | null
+          transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          company_id?: string
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction?: string
+          entry_date?: string
+          id?: string
+          line_hash?: string
+          status?: string
+          transaction_id?: string | null
+          transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_lines_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bella_automation_runs: {
         Row: {
           actions_summary: Json
@@ -4338,6 +4517,27 @@ export type Database = {
           },
         ]
       }
+      oauth_state_nonces: {
+        Row: {
+          created_at: string
+          nonce: string
+          provider: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          nonce: string
+          provider?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          nonce?: string
+          provider?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           assignee: string | null
@@ -7575,6 +7775,10 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_sale_settlement_discount: {
+        Args: { _discount: number; _transaction_id: string }
+        Returns: undefined
+      }
       bella_pay_apply_webhook_result: {
         Args: { _event_id: string; _finalize: Json; _intent: Json }
         Returns: Json
@@ -7598,6 +7802,7 @@ export type Database = {
           environment: string
         }[]
       }
+      can_view_audit: { Args: { _company_id: string }; Returns: boolean }
       can_view_platform_health: { Args: { _user_id: string }; Returns: boolean }
       cancel_sale: {
         Args: { _reason?: string; _sale_id: string }
@@ -7735,12 +7940,23 @@ export type Database = {
         Args: { _company_id: string }
         Returns: Json
       }
+      compute_sale_payment_status: {
+        Args: { _sale_id: string; _total?: number }
+        Returns: {
+          has_money_trail: boolean
+          paid_at: string
+          received: number
+          remaining: number
+          status: string
+        }[]
+      }
       create_credit_sale: { Args: { _input: Json }; Returns: Json }
       create_sale_return: { Args: { _input: Json }; Returns: Json }
       credit_resolve_account: {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
       }
+      daily_finance_summary: { Args: { _company_id: string }; Returns: Json }
       dashboard_revenue_between: {
         Args: { p_company_id: string; p_end: string; p_start: string }
         Returns: {
@@ -7789,6 +8005,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finance_consistency_issues: {
+        Args: { _company_id: string }
+        Returns: {
+          customer: string
+          detail: string
+          problem: string
+          sale_id: string
+          sale_number: string
+          sale_status: string
+          total: number
+        }[]
+      }
+      finance_overview: { Args: { _company_id: string }; Returns: Json }
       financial_kpis: {
         Args: { _company_id: string; _end: string; _start: string }
         Returns: Json
@@ -8288,6 +8517,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_account_initial_balance: {
+        Args: { _account_id: string; _initial_balance: number }
+        Returns: undefined
+      }
       set_product_costs: {
         Args: { _backfill_sales?: boolean; _company_id: string; _items: Json }
         Returns: Json
@@ -8359,6 +8592,10 @@ export type Database = {
           similarity: number
           usage_count: number
         }[]
+      }
+      sync_sale_payment_status: {
+        Args: { _sale_id: string }
+        Returns: undefined
       }
       transfer_between_accounts: {
         Args: {

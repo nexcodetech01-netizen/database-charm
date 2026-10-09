@@ -7,22 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AUDIT_AREAS,
-  AuditEntryItem,
-  useAuditActors,
-  useAuditList,
-  type AuditArea,
-} from "@/features/audit";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AUDIT_AREAS, AuditEntryItem, useAuditActors, useAuditList, type AuditArea } from "@/features/audit";
 
 export const Route = createFileRoute("/_authenticated/historico")({
+  head: () => ({
+    meta: [
+      { title: "Histórico de alterações — NexOS" },
+      { name: "description", content: "Consulte alterações por área, responsável e período no NexOS." },
+      { property: "og:title", content: "Histórico de alterações — NexOS" },
+      { property: "og:description", content: "Histórico de alterações da empresa, com filtros por área, responsável e período." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: requirePermission("audit.view"),
   component: AuditPage,
 });
@@ -70,10 +68,7 @@ function AuditPage() {
         <div className="grid gap-3 rounded-md border p-3 sm:grid-cols-4">
           <div className="space-y-1">
             <Label className="text-xs">Área</Label>
-            <Select
-              value={area || ALL}
-              onValueChange={(v) => update(setArea)(v === ALL ? "" : (v as AuditArea))}
-            >
+            <Select value={area || ALL} onValueChange={(v) => update(setArea)(v === ALL ? "" : (v as AuditArea))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -89,10 +84,7 @@ function AuditPage() {
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Quem</Label>
-            <Select
-              value={actorId || ALL}
-              onValueChange={(v) => update(setActorId)(v === ALL ? "" : v)}
-            >
+            <Select value={actorId || ALL} onValueChange={(v) => update(setActorId)(v === ALL ? "" : v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -131,7 +123,7 @@ function AuditPage() {
             </div>
           ) : (
             <ul className={`divide-y ${isFetching ? "opacity-60" : ""}`}>
-              {data!.rows.map((e) => (
+              {(data?.rows ?? []).map((e) => (
                 <AuditEntryItem key={e.id} entry={e} />
               ))}
             </ul>
@@ -140,23 +132,13 @@ function AuditPage() {
 
         {pages > 1 ? (
           <div className="flex items-center justify-end gap-2 text-sm">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
+            <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Anterior
             </Button>
             <span className="tabular-nums text-muted-foreground">
               {page} / {pages}
             </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page >= pages}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
               Próxima
             </Button>
           </div>

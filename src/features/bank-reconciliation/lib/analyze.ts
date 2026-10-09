@@ -14,19 +14,12 @@ export interface ReviewItem {
 }
 
 export interface Analysis {
-  /** linhas do extrato antes do "conferir a partir de" (não mexemos) */
   outOfScope: number;
-  /** já conferidas em importações anteriores (ou agora) */
   done: (ReviewItem & { status: StoredLineLite["status"] })[];
-  /** bateram agora — serão gravadas como conferidas */
   matched: (ReviewItem & { move: SystemMove })[];
-  /** só no banco */
   bankOnly: ReviewItem[];
-  /** só no sistema (dentro do período conferido) */
   systemOnly: SystemMove[];
-  /** o extrato fecha: saldo inicial + movimentos = saldo final */
   statementReadOk: boolean;
-  /** saldo do sistema no último dia do extrato */
   systemBalanceAtEnd: number | null;
   difference: number | null;
 }
@@ -46,15 +39,12 @@ export function analyzeStatement(input: {
   const end = statement.periodEnd ?? statement.entries.at(-1)?.date ?? fromDay;
   const hashes = hashEntries(statement.entries);
   const stored = new Map(storedLines.map((l) => [l.line_hash, l]));
-  const linked = new Set(
-    storedLines.flatMap((l) => [l.transaction_id, l.transfer_id]).filter(Boolean) as string[],
-  );
+  const linked = new Set(storedLines.flatMap((l) => [l.transaction_id, l.transfer_id]).filter(Boolean) as string[]);
 
   const dayMinus3 = shift(fromDay, -3);
   const done: Analysis["done"] = [];
-  // `margin` = linhas dos 3 dias antes do "a partir de": só servem para casar
-  // com lançamentos do sistema feitos com atraso (ex.: pago dia 30, lançado
-  // dia 02) — nunca aparecem como "falta lançar".
+  // linhas dos 3 dias antes do "a partir de" só servem para casar com
+  // lançamentos feitos com atraso; nunca aparecem como "falta lançar".
   const open: (ReviewItem & { margin: boolean })[] = [];
   let outOfScope = 0;
   statement.entries.forEach((entry, i) => {
@@ -70,19 +60,10 @@ export function analyzeStatement(input: {
   });
 
   const dayPlus3 = shift(end, 3);
-  const candidates = moves.filter(
-    (m) => !linked.has(m.id) && m.date >= dayMinus3 && m.date <= dayPlus3,
-  );
-  const result = matchStatement(
-    open.map((o) => o.entry),
-    candidates,
-  );
+  const candidates = moves.filter((m) => !linked.has(m.id) && m.date >= dayMinus3 && m.date <= dayPlus3);
+  const result = matchStatement(open.map((o) => o.entry), candidates);
 
-  const matched = result.matched.map((m) => ({
-    entry: m.entry,
-    hash: open[m.index].hash,
-    move: m.move,
-  }));
+  const matched = result.matched.map((m) => ({ entry: m.entry, hash: open[m.index].hash, move: m.move }));
   const bankOnly = result.bankOnly
     .filter((b) => !open[b.index].margin)
     .map((b) => ({ entry: b.entry, hash: open[b.index].hash }));
@@ -96,9 +77,7 @@ export function analyzeStatement(input: {
 
   let systemBalanceAtEnd: number | null = null;
   if (currentBalance !== null) {
-    const after = moves
-      .filter((m) => m.date > end)
-      .reduce((s, m) => s + signed(m.direction, m.amount), 0);
+    const after = moves.filter((m) => m.date > end).reduce((s, m) => s + signed(m.direction, m.amount), 0);
     systemBalanceAtEnd = round2(currentBalance - after);
   }
   const difference =
@@ -106,16 +85,7 @@ export function analyzeStatement(input: {
       ? round2(systemBalanceAtEnd - statement.closingBalance)
       : null;
 
-  return {
-    outOfScope,
-    done,
-    matched,
-    bankOnly,
-    systemOnly,
-    statementReadOk,
-    systemBalanceAtEnd,
-    difference,
-  };
+  return { outOfScope, done, matched, bankOnly, systemOnly, statementReadOk, systemBalanceAtEnd, difference };
 }
 
 function shift(day: string, n: number): string {
