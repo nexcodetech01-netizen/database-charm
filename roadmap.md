@@ -25,3 +25,5 @@
 - [x] Criar os seis arquivos reutilizáveis de auditoria sem alterar banco ou tipos gerados
 - [x] Ligar histórico ao menu, financeiro, vendas e produtos e criar a página filtrável sem alterar banco
 - [x] Criar e validar os quatro arquivos de leitura e análise de extratos, sem alterar banco
+- [x] Criar serviço e diálogo de lançamento da conciliação sem alterar banco ou tipos gerados
+- [ ] Ativar a exportação de BankReconciliationDialog — aguarda o conteúdo do diálogo principal no próximo pedido
