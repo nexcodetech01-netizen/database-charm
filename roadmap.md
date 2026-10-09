@@ -27,3 +27,4 @@
 - [x] Criar e validar os quatro arquivos de leitura e análise de extratos, sem alterar banco
 - [x] Criar serviço e diálogo de lançamento da conciliação sem alterar banco ou tipos gerados
 - [x] Criar o diálogo principal de conciliação fornecido e ativar a exportação de BankReconciliationDialog sem alterar banco
+- [x] Adicionar Conciliar extrato às ações do Financeiro e conectar o diálogo sem alterar banco

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CreditReceivablesSection } from "@/features/finance/components/credit-receivables-section";
 import { DailyFinanceSummaryButton } from "@/features/finance/components/daily-finance-summary-dialog";
+import { BankReconciliationDialog } from "@/features/bank-reconciliation";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -23,6 +24,7 @@ import {
   ArrowUpRight,
   FileBarChart,
   FileText,
+  FileCheck2,
   Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,6 +68,16 @@ const FINANCE_TABS = [
 type FinanceTab = (typeof FINANCE_TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
+  head: () => ({
+    meta: [
+      { title: "Financeiro | NexOS" },
+      { name: "description", content: "Controle contas, recebimentos, pagamentos e conciliação de extratos no Financeiro do NexOS." },
+      { property: "og:title", content: "Financeiro | NexOS" },
+      { property: "og:description", content: "Controle contas, recebimentos, pagamentos e conciliação de extratos no Financeiro do NexOS." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: requirePermission("finance.view"),
   validateSearch: (search: Record<string, unknown>): { tab?: FinanceTab } => {
     const raw = typeof search.tab === "string" ? search.tab : undefined;
@@ -85,6 +97,7 @@ function FinancePage() {
   const { data: accounts } = useAccounts(company.id);
   const [txOpen, setTxOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [statementOpen, setStatementOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
@@ -110,6 +123,9 @@ function FinancePage() {
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
         <DailyFinanceSummaryButton companyId={company.id} />
+        <Button size="sm" variant="ghost" onClick={() => setStatementOpen(true)}>
+          <FileCheck2 className="mr-1.5 h-4 w-4" /> Conciliar extrato
+        </Button>
         <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
         </Button>
@@ -243,6 +259,7 @@ function FinancePage() {
         companyId={company.id}
         defaultType="transfer"
       />
+      <BankReconciliationDialog companyId={company.id} open={statementOpen} onOpenChange={setStatementOpen} />
     </PageLayout>
   );
 }
