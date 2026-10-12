@@ -52,3 +52,10 @@ describe("cupom do WhatsApp", () => {
     expect(t).toContain("*Status:* Pago");
   });
 });
+
+describe("data do cupom", () => {
+  it("data da venda (só dia) não volta um dia no fuso do Brasil", () => {
+    const t = buildReceiptText({ ...base, date: "2026-10-11" });
+    expect(t).toContain("*Data:* 11/10/2026");
+  });
+});
