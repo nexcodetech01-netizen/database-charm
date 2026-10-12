@@ -66,6 +66,7 @@ import { PurchaseItemsEditor } from "./purchase-items-editor";
 import { useDraft } from "@/hooks/use-draft";
 import { DRAFT_KEYS } from "@/lib/draft-storage";
 import { DraftAutosave } from "@/components/feedback/draft-autosave";
+import { companyDayKey } from "@/lib/time/company-day";
 
 interface Props {
   companyId: string;
@@ -101,7 +102,7 @@ const STATUS_TONE: Record<PurchaseStatus, string> = {
 };
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return companyDayKey(new Date());
 }
 
 function nextNumber() {

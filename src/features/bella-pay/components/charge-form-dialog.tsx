@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCreateAsaasCharge } from "../hooks/use-bella-pay";
 import type { BellaPayBillingType } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 interface Customer {
   id: string;
@@ -58,7 +59,7 @@ export function ChargeFormDialog({
   const [saleId, setSaleId] = useState<string>(defaultSaleId ?? "none");
   const [value, setValue] = useState<string>(defaultValue?.toString() ?? "");
   const [dueDate, setDueDate] = useState<string>(() =>
-    new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().slice(0, 10),
+    companyDayKey(new Date(Date.now() + 3 * 24 * 3600 * 1000)),
   );
   const [description, setDescription] = useState<string>("");
 

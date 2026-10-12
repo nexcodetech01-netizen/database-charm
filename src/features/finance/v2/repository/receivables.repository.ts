@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { FinancialTransactionRow } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 export interface ReceivablesFilters {
   status?: "pending" | "overdue" | "paid" | "partial" | "cancelled";
@@ -35,7 +36,7 @@ export class AccountsReceivableRepository {
       .eq("type", "income");
 
     if (filters.status === "overdue") {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = companyDayKey(new Date());
       q = q.eq("status", "pending").lt("due_date", today);
         } else if (filters.status === "partial") {
       // Auditoria 04/10: antes trazia TODOS os pendentes. A baixa parcial
@@ -89,7 +90,7 @@ export class AccountsReceivableRepository {
   }
 
   async sumOpen(): Promise<{ total: number; overdue: number }> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = companyDayKey(new Date());
     const { data, error } = await this.supabase
       .from("financial_transactions")
       .select("amount, due_date")

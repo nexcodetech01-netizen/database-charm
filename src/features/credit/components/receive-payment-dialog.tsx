@@ -23,6 +23,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { CREDIT_PAYMENT_METHOD_OPTIONS } from "../types";
 import { useReceiveCreditPayment } from "../hooks/use-credit";
+import { companyDayKey } from "@/lib/time/company-day";
 
 interface Props {
   open: boolean;
@@ -58,7 +59,7 @@ export function ReceivePaymentDialog({
   const [amountStr, setAmountStr] = useState<string>("");
   const [method, setMethod] = useState<string>("cash");
   const [paidAt, setPaidAt] = useState<string>(
-    () => new Date().toISOString().slice(0, 10),
+    () => companyDayKey(new Date()),
   );
   const [notes, setNotes] = useState<string>("");
 
@@ -68,7 +69,7 @@ export function ReceivePaymentDialog({
     if (open) {
       setAmountStr(balance > 0 ? balance.toFixed(2).replace(".", ",") : "");
       setMethod("cash");
-      setPaidAt(new Date().toISOString().slice(0, 10));
+      setPaidAt(companyDayKey(new Date()));
       setNotes("");
     }
   }, [open, balance]);
@@ -91,7 +92,7 @@ export function ReceivePaymentDialog({
         paymentMethod: method,
         // Data de hoje => a RPC registra o instante real da liquidação (now()).
         paidAt:
-          paidAt && paidAt !== new Date().toISOString().slice(0, 10)
+          paidAt && paidAt !== companyDayKey(new Date())
             ? new Date(paidAt + "T12:00:00").toISOString()
             : undefined,
         notes: notes.trim() || null,
@@ -110,7 +111,7 @@ export function ReceivePaymentDialog({
         amount,
         paymentMethod: method,
         paidAt:
-          paidAt && paidAt !== new Date().toISOString().slice(0, 10)
+          paidAt && paidAt !== companyDayKey(new Date())
             ? new Date(paidAt + "T12:00:00").toISOString()
             : new Date().toISOString(),
       });
