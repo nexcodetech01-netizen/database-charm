@@ -30,7 +30,7 @@ export const CREDIT_PAYMENT_METHOD_OPTIONS: {
   label: string;
 }[] = [
   { value: "cash", label: "Dinheiro" },
-  { value: "pix_manual", label: "PIX Próprio" },
+  { value: "pix_manual", label: "Pix" },
   { value: "debit_card", label: "Cartão de débito" },
   { value: "credit_card", label: "Cartão de crédito" },
   { value: "transfer", label: "Transferência" },
