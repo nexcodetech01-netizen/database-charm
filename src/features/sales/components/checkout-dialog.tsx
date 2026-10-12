@@ -62,6 +62,7 @@ import { returnToSaleItems } from "../lib/checkout-return";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
 import { maxInstallmentsFor } from "@/lib/pricing/card-price";
 import { useCreateCreditSale } from "@/features/credit";
+import { companyDayKey } from "@/lib/time/company-day";
 
 // Mantido para compatibilidade com `pdv/lib/payments.ts`.
 export type { UiCheckoutMethod };
@@ -157,7 +158,7 @@ export function CheckoutDialog({
   const [entradaStr, setEntradaStr] = useState<string>("");
   const [installmentsCount, setInstallmentsCount] = useState<number>(1);
   const [saldoDueDate, setSaldoDueDate] = useState<string>(
-    () => new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10),
+    () => companyDayKey(new Date(Date.now() + 30 * 24 * 3600 * 1000)),
   );
   // FIN-001 — Override de sessão para "quem paga a taxa" (crédito).
   const [absorbOverride, setAbsorbOverride] = useState<boolean | null>(null);
@@ -477,7 +478,7 @@ export function CheckoutDialog({
       const dueDate =
         entradaValue > 0
           ? saldoDueDate
-          : new Date(Date.now() + 24 * 3600 * 1000).toISOString().slice(0, 10);
+          : companyDayKey(new Date(Date.now() + 24 * 3600 * 1000));
       const created = await createCharge.mutateAsync({
         customerId,
         saleId,

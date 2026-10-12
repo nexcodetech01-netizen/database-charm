@@ -640,7 +640,7 @@ export const financeService = {
       _from_account_id: input.fromAccountId,
       _to_account_id: input.toAccountId,
       _amount: input.amount,
-      _date: input.date ?? new Date().toISOString().slice(0, 10),
+      _date: input.date ?? companyDayKey(new Date()),
       _description: input.description ?? null,
       _cash_session_id: input.cashSessionId ?? null,
     });
@@ -904,7 +904,7 @@ export const financeService = {
 
     const todayStr =
       (typeof todayRes.data === "string" && todayRes.data) ||
-      new Date().toISOString().slice(0, 10);
+      companyDayKey(new Date());
     const today = new Date(`${todayStr}T00:00:00`);
     const companyTz = companyRes.data?.timezone?.trim() || DEFAULT_COMPANY_TZ;
     // HOTFIX — "hoje" por INSTANTES (mesmo critério do Caixa), nunca por string.

@@ -30,6 +30,7 @@ import {
   findBlockingFiscalDocument,
 } from "../lib/fiscal-delete-guard";
 import { companyDayStartUtc, addDaysStr } from "@/lib/time";
+import { companyDayKey } from "@/lib/time/company-day";
 
 function getSupabaseErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
@@ -468,7 +469,7 @@ export const salesService = {
     ]);
     const todayISO =
       (typeof todayRpc === "string" && todayRpc) ||
-      new Date().toISOString().slice(0, 10);
+      companyDayKey(new Date());
     const monthStartISO =
       (typeof monthRpc === "string" && monthRpc) ||
       `${todayISO.slice(0, 7)}-01`;
@@ -1042,7 +1043,7 @@ export const salesService = {
     await financeService.settleTransaction(tx.id, {
       paymentMethod: (options.paymentMethod === "pix_manual" ? "pix" : options.paymentMethod) as any,
       accountId,
-      paidAt: new Date().toISOString().slice(0, 10),
+      paidAt: companyDayKey(new Date()),
             notes: "Baixa automática PDV",
       settledAmount: Number(tx.amount),
     });
@@ -1101,7 +1102,7 @@ async function recordCardMachineFee(input: {
   const fee = machineFeeAmount(input.gross, feeRow);
   if (fee <= 0) return;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = companyDayKey(new Date());
   const { financeService } = await import("@/features/finance/services/finance.service");
   const created = await financeService.createTransaction({
     company_id: input.companyId,

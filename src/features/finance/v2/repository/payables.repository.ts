@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExecutionContext } from "@/features/bella-ai/agent/infrastructure/context";
 import type { FinancialTransactionRow } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 export interface PayablesFilters {
   status?: "pending" | "overdue" | "paid" | "cancelled";
@@ -37,7 +38,7 @@ export class AccountsPayableRepository {
       .eq("type", "expense");
 
     if (filters.status === "overdue") {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = companyDayKey(new Date());
       q = q.eq("status", "pending").lt("due_date", today);
     } else if (filters.status) {
       q = q.eq("status", filters.status);
@@ -87,7 +88,7 @@ export class AccountsPayableRepository {
   }
 
   async sumOpen(): Promise<{ total: number; overdue: number }> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = companyDayKey(new Date());
     const { data, error } = await this.supabase
       .from("financial_transactions")
       .select("amount, due_date")

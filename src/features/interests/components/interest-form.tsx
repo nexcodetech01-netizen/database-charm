@@ -27,6 +27,7 @@ import {
   useInterestProductOptions,
 } from "../hooks/use-interest-options";
 import { INTEREST_CHANNEL_OPTIONS, type InterestChannel } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 const schema = z.object({
   productId: z.string().uuid({ message: "Selecione um produto." }),
@@ -72,7 +73,7 @@ export function InterestForm({
     customerName: customerName ?? "",
     phone: "",
     channel: "whatsapp" as InterestChannel,
-    interestDate: new Date().toISOString().slice(0, 10),
+    interestDate: companyDayKey(new Date()),
     notes: "",
   });
 

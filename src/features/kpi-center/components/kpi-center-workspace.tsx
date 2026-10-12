@@ -28,6 +28,7 @@ import type {
   IndicatorPriority,
   KpiCenterFilters,
 } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 interface Props {
   companyId: string;
@@ -76,8 +77,8 @@ const PRIORITY_LABEL: Record<IndicatorPriority, string> = {
 };
 
 export function KpiCenterWorkspace({ companyId }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
-  const from = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const today = companyDayKey(new Date());
+  const from = companyDayKey(new Date(Date.now() - 30 * 86_400_000));
 
   const [range, setRange] = useState({ from, to: today });
   const [categoryId, setCategoryId] = useState<string>("");

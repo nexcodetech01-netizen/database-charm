@@ -31,6 +31,7 @@ import {
   type FinancePaymentMethod,
   type FinancialTransaction,
 } from "../types";
+import { companyDayKey } from "@/lib/time/company-day";
 
 interface Props {
   open: boolean;
@@ -52,7 +53,7 @@ type DiscountType = "value" | "percent";
 type SettlementMode = "full" | "partial";
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return companyDayKey(new Date());
 }
 
 function round2(n: number) {

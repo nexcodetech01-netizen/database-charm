@@ -50,6 +50,7 @@ import { TransactionStatusBadge } from "./transaction-status-badge";
 import { TransactionFormDialog } from "./transaction-form-dialog";
 import { SettleTransactionDialog } from "./settle-transaction-dialog";
 import { isTerminalTransactionStatus } from "../lib/receivables";
+import { companyDayKey } from "@/lib/time/company-day";
 
 
 interface Props {
@@ -172,7 +173,7 @@ export function TransactionDetailsDrawer({
         amount: Number(t.amount ?? 0),
         type: t.type,
         status: "pending",
-        transaction_date: new Date().toISOString().slice(0, 10),
+        transaction_date: companyDayKey(new Date()),
         due_date: t.due_date,
         account_id: t.account_id,
         category_id: t.category_id,

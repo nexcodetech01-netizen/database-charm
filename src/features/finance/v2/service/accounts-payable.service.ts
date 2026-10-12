@@ -16,6 +16,7 @@ import {
   AccountsPayableRepository,
   type PayablesFilters,
 } from "../repository/payables.repository";
+import { companyDayKey } from "@/lib/time/company-day";
 
 export interface SettlePayableInput {
   paymentMethod: string;
@@ -45,7 +46,7 @@ export class AccountsPayableService extends BaseService {
       cost_center_id: input.costCenterId ?? null,
       account_id: input.accountId ?? null,
       due_date: input.dueDate ?? null,
-      transaction_date: input.transactionDate ?? new Date().toISOString().slice(0, 10),
+      transaction_date: input.transactionDate ?? companyDayKey(new Date()),
       notes: input.notes ?? null,
       source: input.purchaseId ? "purchase" : "manual",
       reference_id: input.purchaseId ?? null,

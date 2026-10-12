@@ -18,6 +18,7 @@ import {
   AccountsReceivableRepository,
   type ReceivablesFilters,
 } from "../repository/receivables.repository";
+import { companyDayKey } from "@/lib/time/company-day";
 
 export interface SettleReceivableInput {
   paymentMethod: string;
@@ -58,7 +59,7 @@ export class AccountsReceivableService extends BaseService {
         category_id: input.categoryId ?? null,
         account_id: input.accountId ?? null,
         due_date: due ? due.toISOString().slice(0, 10) : null,
-        transaction_date: input.transactionDate ?? new Date().toISOString().slice(0, 10),
+        transaction_date: input.transactionDate ?? companyDayKey(new Date()),
         notes: input.notes ?? null,
         source: input.saleId ? "sale" : "manual",
         reference_id: input.saleId ?? null,
