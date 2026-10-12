@@ -162,7 +162,7 @@ export function CheckoutDialog({
   // FIN-001 — Override de sessão para "quem paga a taxa" (crédito).
   const [absorbOverride, setAbsorbOverride] = useState<boolean | null>(null);
   // Crediário — método usado para receber a entrada (quando informada).
-  const [creditDownMethod, setCreditDownMethod] = useState<string>("cash");
+  const [creditDownMethod, setCreditDownMethod] = useState<string>("");
   const [creditNotes, setCreditNotes] = useState<string>("");
 
   const createCharge = useCreateAsaasCharge(companyId);
@@ -706,6 +706,11 @@ export function CheckoutDialog({
       invalid.push("downPayment");
     if (payload.downPayment > 0 && !payload.downPaymentMethod)
       invalid.push("downPaymentMethod");
+    if (invalid.length === 1 && invalid[0] === "downPaymentMethod") {
+      toast.error("Escolha a forma de pagamento da entrada (Pix, cartão ou dinheiro).");
+      setShowCreditConfig(true);
+      return;
+    }
     if (invalid.length) {
       toast.error("Não foi possível abrir o crediário", {
         description: `Campos inválidos: ${invalid.join(", ")}`,

@@ -70,9 +70,7 @@ export function CreditConfigDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Configuração do Crediário</DialogTitle>
-          <DialogDescription>
-            Defina os termos de pagamento para esta venda.
-          </DialogDescription>
+          <DialogDescription>Defina os termos de pagamento para esta venda.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
@@ -83,7 +81,10 @@ export function CreditConfigDialog({
                 placeholder="0,00"
                 value={entradaStr}
                 onChange={(e) => onEntradaChange(e.target.value)}
-                className={cn((entradaExcedeu || entradaNegativa) && "border-destructive focus-visible:ring-destructive")}
+                className={cn(
+                  (entradaExcedeu || entradaNegativa) &&
+                    "border-destructive focus-visible:ring-destructive",
+                )}
               />
               {entradaExcedeu && (
                 <p className="text-[10px] text-destructive font-medium">
@@ -117,23 +118,42 @@ export function CreditConfigDialog({
             </div>
           </div>
 
-          {entradaValue > 0 && (
-            <div className="space-y-2">
-              <Label>Forma de Pagamento da Entrada</Label>
-              <Select value={creditDownMethod} onValueChange={onCreditDownMethodChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Forma da entrada: sempre visível e sem valor pré-escolhido, para
+              ninguém confirmar "Dinheiro" sem querer quando foi Pix. */}
+          <div className="space-y-2">
+            <Label>Forma de pagamento da entrada</Label>
+            <Select
+              value={creditDownMethod || undefined}
+              onValueChange={onCreditDownMethodChange}
+              disabled={entradaValue <= 0}
+            >
+              <SelectTrigger
+                className={cn(
+                  entradaValue > 0 &&
+                    !creditDownMethod &&
+                    "border-amber-500 ring-1 ring-amber-500/40",
+                )}
+              >
+                <SelectValue
+                  placeholder={
+                    entradaValue > 0 ? "Escolha: Pix, cartão ou dinheiro" : "Sem entrada"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {CREDIT_PAYMENT_METHOD_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {entradaValue > 0 && !creditDownMethod ? (
+              <p className="text-[11px] text-amber-600">
+                Escolha como a entrada foi paga — define em qual conta o dinheiro entra.
+              </p>
+            ) : null}
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -164,7 +184,9 @@ export function CreditConfigDialog({
             {entradaValue > 0 && (
               <div className="flex justify-between mb-1">
                 <span className="text-muted-foreground">Entrada:</span>
-                <span className="font-medium text-emerald-500">-{formatCurrency(entradaValue)}</span>
+                <span className="font-medium text-emerald-500">
+                  -{formatCurrency(entradaValue)}
+                </span>
               </div>
             )}
             <div className="flex justify-between font-semibold text-gray-100 border-t border-primary/10 pt-1 mt-1">
@@ -172,8 +194,9 @@ export function CreditConfigDialog({
               <span>{formatCurrency(saldoValue / installmentsCount)}</span>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2 italic">
-              Serão geradas {installmentsCount} {installmentsCount === 1 ? 'parcela' : 'parcelas'} de {formatCurrency(saldoValue / installmentsCount)} 
-              {" "}com 1º vencimento em {new Date(saldoDueDate + "T12:00:00").toLocaleDateString('pt-BR')}.
+              Serão geradas {installmentsCount} {installmentsCount === 1 ? "parcela" : "parcelas"}{" "}
+              de {formatCurrency(saldoValue / installmentsCount)} com 1º vencimento em{" "}
+              {new Date(saldoDueDate + "T12:00:00").toLocaleDateString("pt-BR")}.
             </p>
           </div>
         </div>
@@ -181,9 +204,14 @@ export function CreditConfigDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button 
-            onClick={onConfirm} 
-            disabled={submitting || entradaExcedeu || entradaNegativa}
+          <Button
+            onClick={onConfirm}
+            disabled={
+              submitting ||
+              entradaExcedeu ||
+              entradaNegativa ||
+              (entradaValue > 0 && !creditDownMethod)
+            }
           >
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Confirmar Crediário (F5)
