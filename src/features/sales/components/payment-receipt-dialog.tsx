@@ -39,16 +39,17 @@ async function loadReceipt(
   companyId: string,
   info: PaymentReceiptInfo,
 ): Promise<{ data: PaymentReceiptData; phone: string | null }> {
-  const [{ data: company }, { data: sale }, { data: status }, { data: account }] = await Promise.all([
-    supabase.from("companies").select("*").eq("id", companyId).maybeSingle(),
-    supabase
-      .from("sales")
-      .select("number, grand_total, customer_id, customers(name, phone, whatsapp)")
-      .eq("id", info.saleId)
-      .maybeSingle(),
-    (supabase.rpc as any)("compute_sale_payment_status", { _sale_id: info.saleId }),
-    supabase.from("credit_accounts").select("id").eq("sale_id", info.saleId).maybeSingle(),
-  ]);
+  const [{ data: company }, { data: sale }, { data: status }, { data: account }] =
+    await Promise.all([
+      supabase.from("companies").select("*").eq("id", companyId).maybeSingle(),
+      supabase
+        .from("sales")
+        .select("number, grand_total, customer_id, customers(name, phone, whatsapp)")
+        .eq("id", info.saleId)
+        .maybeSingle(),
+      (supabase.rpc as any)("compute_sale_payment_status", { _sale_id: info.saleId }),
+      supabase.from("credit_accounts").select("id").eq("sale_id", info.saleId).maybeSingle(),
+    ]);
 
   let nextInstallments: PaymentReceiptData["nextInstallments"] = [];
   if (account?.id) {
@@ -67,8 +68,15 @@ async function loadReceipt(
   }
 
   const c = (company ?? {}) as Record<string, any>;
-  const customer = (sale as any)?.customers as { name?: string; phone?: string; whatsapp?: string } | null;
-  const st = (Array.isArray(status) ? status[0] : status) as { received?: number; remaining?: number } | null;
+  const customer = (sale as any)?.customers as {
+    name?: string;
+    phone?: string;
+    whatsapp?: string;
+  } | null;
+  const st = (Array.isArray(status) ? status[0] : status) as {
+    received?: number;
+    remaining?: number;
+  } | null;
   const total = Number(sale?.grand_total ?? 0);
   const remaining = st?.remaining != null ? Number(st.remaining) : 0;
 
@@ -124,7 +132,7 @@ export function PaymentReceiptDialog({ open, onOpenChange, companyId, info }: Pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="w-[calc(100vw-1rem)] grid-cols-1 p-4 sm:w-full sm:max-w-md sm:p-6 [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-500" /> Pagamento recebido
@@ -146,13 +154,13 @@ export function PaymentReceiptDialog({ open, onOpenChange, companyId, info }: Pr
                 <div key={label} className="flex justify-between gap-3">
                   <span className="text-muted-foreground">{label}</span>
                   <span
-                    className={
+                    className={`shrink-0 text-right ${
                       label === "Situação"
                         ? "font-semibold text-emerald-600"
                         : label === "Falta pagar"
                           ? "font-semibold text-amber-600"
                           : "tabular-nums"
-                    }
+                    }`}
                   >
                     {value}
                   </span>
@@ -161,10 +169,10 @@ export function PaymentReceiptDialog({ open, onOpenChange, companyId, info }: Pr
             </div>
             {view.installments.length > 0 ? (
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Próximas parcelas</p>
+                <p className="text-xs font-medium text-muted-foreground">Parcelas em aberto</p>
                 {view.installments.map(([label, value]) => (
-                  <div key={label} className="flex justify-between text-xs">
-                    <span>{label}</span>
+                  <div key={label} className="flex justify-between gap-3 text-xs">
+                    <span className="min-w-0 truncate">{label}</span>
                     <span className="tabular-nums">{value}</span>
                   </div>
                 ))}
@@ -180,11 +188,11 @@ export function PaymentReceiptDialog({ open, onOpenChange, companyId, info }: Pr
           </div>
         )}
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="outline" onClick={handleWhatsapp} disabled={!receipt}>
+        <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:space-x-0">
+          <Button variant="outline" className="w-full" onClick={handleWhatsapp} disabled={!receipt}>
             <MessageCircle className="mr-1.5 h-4 w-4" /> Enviar no WhatsApp
           </Button>
-          <Button onClick={handlePrint} disabled={!receipt}>
+          <Button className="w-full" onClick={handlePrint} disabled={!receipt}>
             <Printer className="mr-1.5 h-4 w-4" /> Imprimir comprovante
           </Button>
         </DialogFooter>

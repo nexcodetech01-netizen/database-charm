@@ -77,10 +77,10 @@ export function buildReceiptWhatsappText(data: PaymentReceiptData): string {
     "",
     `Total da venda: ${brl(data.saleTotal)}`,
     `Já pago: ${brl(data.totalPaid)}`,
-    isSettled(data) ? "Situação: *QUITADO* ✅" : `Falta pagar: *${brl(data.remaining)}*`,
+    isSettled(data) ? "Situação: *QUITADO*" : `Falta pagar: *${brl(data.remaining)}*`,
   ];
   if (!isSettled(data) && data.nextInstallments.length > 0) {
-    lines.push("", "Próximas parcelas:");
+    lines.push("", "Parcelas em aberto:");
     for (const i of data.nextInstallments) {
       lines.push(`• ${i.sequence}ª parcela – ${fmtDay(i.dueDate)} – ${brl(i.amount)}`);
     }
@@ -111,7 +111,7 @@ hr { border: 0; border-top: 1px dashed #000; margin: 4px 0; }
 </style></head><body>
 ${header.map((h, i) => `<div class="c${i === 0 ? " b" : ""}">${esc(h)}</div>`).join("")}
 <hr><table>${rows.map(row).join("")}</table>
-${installments.length ? `<hr><div class="b">Próximas parcelas</div><table>${installments.map(row).join("")}</table>` : ""}
+${installments.length ? `<hr><div class="b">Parcelas em aberto</div><table>${installments.map(row).join("")}</table>` : ""}
 <hr>${footer.map((f) => `<div class="c">${esc(f)}</div>`).join("")}
 </body></html>`;
 }
