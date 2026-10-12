@@ -68,6 +68,10 @@ export interface BuiltReceiptMessage {
 
 function fmtDate(iso?: string | null) {
   if (!iso) return "—";
+  // "2026-10-11" (só a data) não pode virar meia-noite UTC: no Brasil
+  // isso mostra o dia anterior.
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (day) return `${day[3]}/${day[2]}/${day[1]}`;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString("pt-BR");
 }
