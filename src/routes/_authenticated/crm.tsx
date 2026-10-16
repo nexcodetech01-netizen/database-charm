@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
+import { companyDayKey } from "@/lib/time/company-day";
 import {
   Download,
   Filter,
@@ -49,6 +50,22 @@ export const Route = createFileRoute("/_authenticated/crm")({
   component: CrmPage,
 });
 
+/** Primeiro dia (yyyy-mm-dd, fuso da loja) do período escolhido; null = sem filtro. */
+function periodStartKey(period: string): string | null {
+  const today = companyDayKey(new Date());
+  const [y, m, d] = today.split("-").map(Number);
+  const base = new Date(Date.UTC(y, m - 1, d, 12));
+  if (period === "7d" || period === "30d") {
+    base.setUTCDate(base.getUTCDate() - (period === "7d" ? 6 : 29));
+    return base.toISOString().slice(0, 10);
+  }
+  if (period === "quarter") {
+    const qMonth = Math.floor((m - 1) / 3) * 3 + 1;
+    return `${y}-${String(qMonth).padStart(2, "0")}-01`;
+  }
+  return null;
+}
+
 const PERIOD_OPTIONS = [
   { value: "all", label: "Qualquer período" },
   { value: "7d", label: "Últimos 7 dias" },
@@ -87,12 +104,15 @@ function CrmPage() {
   const stages = stagesQ.data ?? [];
   const allOpps = useMemo(() => oppsQ.data ?? [], [oppsQ.data]);
   const opps = useMemo(() => {
+    // Período = quando a oportunidade foi criada (no fuso da loja).
+    const fromKey = periodStartKey(period);
     return allOpps.filter((o) => {
       if (assignee !== "all" && o.assignee !== assignee) return false;
       if (source !== "all" && o.lead_source !== source) return false;
+      if (fromKey && companyDayKey(new Date(o.created_at)) < fromKey) return false;
       return true;
     });
-  }, [allOpps, assignee, source]);
+  }, [allOpps, assignee, source, period]);
 
   const assignees = useMemo(() => {
     const set = new Set<string>();

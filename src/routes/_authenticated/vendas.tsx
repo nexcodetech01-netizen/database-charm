@@ -117,7 +117,7 @@ function SalesPage() {
     [filters, debouncedSearch],
   );
   
-  const { data, isLoading } = useSalesList(company.id, effective);
+  const { data, isLoading, isError, refetch } = useSalesList(company.id, effective);
   const metrics = useSaleMetrics(company.id, range, undefined, rangeKey === "today" ? "today" : undefined);
   // "A receber" de verdade: mesma conta do Financeiro (títulos + crediário).
   const overview = useFinanceOverview(company.id);
@@ -378,6 +378,8 @@ function SalesPage() {
             rows={data?.rows ?? []}
             total={data?.total ?? 0}
             isLoading={isLoading}
+            isError={isError && !data}
+            onRetry={() => void refetch()}
             page={filters.page}
             pageSize={filters.pageSize}
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}

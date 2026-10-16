@@ -16,6 +16,8 @@ export interface BiKpis {
   netRevenue: number;
   /** Total retido pelas adquirentes/PIX no período. */
   paymentFees: number;
+  /** true quando as taxas não carregaram: líquido/lucro/margem não são confiáveis. */
+  feesUnavailable: boolean;
   /** Lucro líquido = netRevenue − COGS. */
   grossProfit: number;
   /** Margem líquida = grossProfit / netRevenue. */

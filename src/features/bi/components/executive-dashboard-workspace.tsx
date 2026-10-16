@@ -252,6 +252,16 @@ export function ExecutiveDashboardWorkspace({ companyId }: { companyId: string }
         </Card>
       ) : null}
 
+      {data?.kpis.feesUnavailable ? (
+        <Card>
+          <CardContent className="p-4 text-sm text-amber-700 dark:text-amber-400">
+            Não foi possível carregar as taxas das formas de pagamento. Receita
+            líquida, lucro e margem estão sem descontar as taxas — atualize a
+            página antes de usar esses números.
+          </CardContent>
+        </Card>
+      ) : null}
+
       <AlertsGrid alerts={data?.alerts} loading={isLoading} onNavigate={go} />
 
       <div className="grid gap-4 lg:grid-cols-2">

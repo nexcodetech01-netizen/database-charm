@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,6 +36,9 @@ import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 interface Props {
   rows: SaleWithMeta[];
   isLoading: boolean;
+  /** Falha ao carregar: mostra erro em vez de "nenhuma venda". */
+  isError?: boolean;
+  onRetry?: () => void;
   total: number;
   page: number;
   pageSize: number;
@@ -49,6 +53,8 @@ interface Props {
 export function SaleTable({
   rows,
   isLoading,
+  isError,
+  onRetry,
   total,
   page,
   pageSize,
@@ -95,6 +101,25 @@ export function SaleTable({
                   ))}
                 </TableRow>
               ))
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-16">
+                  <div role="alert" className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+                    <AlertTriangle className="h-8 w-8 text-destructive" />
+                    <p className="font-medium text-foreground">
+                      Não foi possível carregar as vendas
+                    </p>
+                    <p className="text-sm">
+                      Suas vendas não sumiram — a lista só não carregou. Verifique a internet e tente de novo.
+                    </p>
+                    {onRetry ? (
+                      <Button variant="outline" size="sm" className="mt-2" onClick={onRetry}>
+                        Tentar novamente
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-16">

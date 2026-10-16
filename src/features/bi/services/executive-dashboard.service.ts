@@ -30,6 +30,8 @@ export interface ExecKpis {
   netRevenueMonth: number;
   /** Total de taxas retidas pelas adquirentes/PIX no período. */
   paymentFees: number;
+  /** true quando as taxas não carregaram: líquido/lucro/margem não são confiáveis. */
+  feesUnavailable: boolean;
   avgTicket: number;
   /** Lucro líquido = receita líquida − COGS. */
   grossProfit: number;
@@ -216,7 +218,13 @@ export const executiveDashboardService = {
     ).length;
 
     // KPIs
-    const fees = await paymentMethodsService.list(companyId).catch(() => []);
+    // Se as taxas não carregarem, os números líquidos ficariam errados sem
+    // aviso — marcamos para a tela avisar.
+    let feesUnavailable = false;
+    const fees = await paymentMethodsService.list(companyId).catch(() => {
+      feesUnavailable = true;
+      return [];
+    });
     const feeFor = (s: {
       grand_total?: number | string | null;
       payment_method?: string | null;
@@ -292,6 +300,7 @@ export const executiveDashboardService = {
       netRevenueRange,
       netRevenueMonth,
       paymentFees,
+      feesUnavailable,
       avgTicket: sales.length > 0 ? revenueRange / sales.length : 0,
       grossProfit,
       margin,
