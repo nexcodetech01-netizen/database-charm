@@ -98,6 +98,7 @@ import { CreditAccountPanel, useCreditDetailBySale } from "@/features/credit";
 import { SaleFiscalCard } from "@/features/fiscal/v2/components/sale-fiscal-card";
 import { ShippingLabelPrintDialog } from "@/features/printing/components/ShippingLabelPrintDialog";
 import { getMercadoLivreOrderLabel } from "@/lib/mercadolivre.functions";
+import { ErrorState } from "@/components/layout/state-views";
 
 
 
@@ -119,7 +120,7 @@ export const Route = createFileRoute("/_authenticated/vendas_/$saleId")({
 function SaleDetailPage() {
   const { saleId } = Route.useParams();
   const { company } = Route.useRouteContext();
-  const { data: sale, isLoading } = useSale(saleId);
+  const { data: sale, isLoading, isError, refetch } = useSale(saleId);
   const { data: customer } = useCustomer(sale?.customer_id ?? "");
 
 
@@ -130,6 +131,18 @@ function SaleDetailPage() {
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+  // Falha de conexão/servidor não é "venda não encontrada".
+  if (isError && !sale) {
+    return (
+      <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+        <ErrorState
+          title="Não foi possível abrir esta venda"
+          description="A venda pode existir normalmente — o sistema só não conseguiu carregá-la agora. Verifique a internet e tente de novo."
+          onRetry={() => void refetch()}
+        />
       </div>
     );
   }

@@ -236,9 +236,11 @@ export const executivePanelService = {
     // Receita líquida sempre calculada sobre a venda inteira (taxa é da venda).
     // Quando filtrado por categoria/fornecedor a taxa não se prorratea entre
     // linhas — usamos o mesmo revenue bruto do escopo e reportamos taxa 0.
-    const fees = await paymentMethodsService
-      .list(companyId)
-      .catch(() => []);
+    let feesUnavailable = false;
+    const fees = await paymentMethodsService.list(companyId).catch(() => {
+      feesUnavailable = true;
+      return [];
+    });
     const totals = isFiltered
       ? { gross: revenue, fee: 0, net: revenue }
       : sumNetRevenue(paidSales, fees);
@@ -284,6 +286,7 @@ export const executivePanelService = {
       revenue,
       netRevenue,
       paymentFees,
+      feesUnavailable,
       grossProfit,
       grossMargin,
       avgTicket: salesCount > 0 ? revenue / salesCount : 0,

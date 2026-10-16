@@ -4,6 +4,7 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/layout/state-views";
 import { KpiSection, KpiCard } from "@/components/layout";
 import { ExportButtons } from "../components/export-buttons";
 import type { Row } from "../utils/export";
@@ -75,14 +76,6 @@ export function ReportViewer({ report, companyId, range, onBack }: Props) {
         </div>
       </div>
 
-      {query.isError ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-destructive">
-            Falha ao carregar o relatório.
-          </CardContent>
-        </Card>
-      ) : null}
-
       {query.data?.kpis && query.data.kpis.length > 0 ? (
         <KpiSection columns={(Math.min(4, Math.max(2, query.data.kpis.length)) as 2 | 3 | 4)}>
           {query.data.kpis.map((k) => (
@@ -96,7 +89,13 @@ export function ReportViewer({ report, companyId, range, onBack }: Props) {
           <CardTitle className="text-sm">Resultados</CardTitle>
         </CardHeader>
         <CardContent>
-          {query.isLoading || !query.data ? (
+          {query.isError && !query.data ? (
+            <ErrorState
+              title="Não foi possível carregar o relatório"
+              description="Verifique a internet e tente de novo. Se continuar, troque o período ou os filtros."
+              onRetry={() => void query.refetch()}
+            />
+          ) : query.isLoading || !query.data ? (
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />

@@ -14,6 +14,7 @@ import {
 } from "@/features/inventory";
 import { useProduct } from "@/features/products";
 import { formatCurrency } from "@/lib/format";
+import { ErrorState } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/estoque/produto/$productId")({
   beforeLoad: requirePermission("inventory.view"),
@@ -30,15 +31,41 @@ function ProductInventoryPage() {
   const p = product.data;
   const belowMin = p ? Number(p.stock) <= Number(p.min_stock) : false;
 
+  const backLink = (
+    <Button variant="ghost" size="sm" asChild>
+      <Link to="/estoque">
+        <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao estoque
+      </Link>
+    </Button>
+  );
+
+  // Sem produto, não dá para lançar movimentação: mostra o motivo e não
+  // deixa o botão "Nova movimentação" ativo.
+  if (!product.isLoading && !p) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-between">{backLink}</div>
+        {product.isError ? (
+          <ErrorState
+            title="Não foi possível carregar este produto"
+            description="O produto pode existir normalmente — o sistema só não conseguiu carregá-lo agora. Tente de novo."
+            onRetry={() => void product.refetch()}
+          />
+        ) : (
+          <ErrorState
+            title="Produto não encontrado"
+            description="Este produto não existe ou foi excluído. Volte ao estoque e escolha outro."
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/estoque">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar ao estoque
-          </Link>
-        </Button>
-        <Button onClick={() => setOpenForm(true)}>
+        {backLink}
+        <Button onClick={() => setOpenForm(true)} disabled={!p}>
           <Plus className="mr-1.5 h-4 w-4" /> Nova movimentação
         </Button>
       </div>
@@ -75,6 +102,13 @@ function ProductInventoryPage() {
         </CardContent>
       </Card>
 
+      {movements.isError && !movements.data ? (
+        <ErrorState
+          title="Não foi possível carregar as movimentações"
+          description="O histórico deste produto não carregou — isso não quer dizer que ele não tenha movimentações."
+          onRetry={() => void movements.refetch()}
+        />
+      ) : (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <MovementsTable
@@ -95,6 +129,7 @@ function ProductInventoryPage() {
           />
         </div>
       </div>
+      )}
 
       <MovementFormDialog
         open={openForm}

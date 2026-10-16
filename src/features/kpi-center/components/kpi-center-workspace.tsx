@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ClipboardList, Download, FileDown, ListChecks } from "lucide-react";
 
 import { PageLayout } from "@/components/layout/page-layout";
+import { ErrorState, LoadingState } from "@/components/layout/state-views";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -99,7 +100,7 @@ export function KpiCenterWorkspace({ companyId }: Props) {
     [companyId, range, categoryId, supplierId, priority, origin],
   );
 
-  const { data, isLoading } = useKpiCenter(filters);
+  const { data, isLoading, isError, refetch } = useKpiCenter(filters);
   const indicators = data?.indicators ?? [];
 
   const buckets = useMemo(() => {
@@ -144,7 +145,11 @@ export function KpiCenterWorkspace({ companyId }: Props) {
       description="Fila priorizada de ações operacionais — críticos primeiro."
       meta={
         <span className="text-xs text-muted-foreground">
-          {isLoading ? "Carregando…" : `${indicators.length} indicadores`}
+          {isLoading
+            ? "Carregando…"
+            : isError
+              ? "Erro ao carregar"
+              : `${indicators.length} indicadores`}
         </span>
       }
       actions={
@@ -225,6 +230,16 @@ export function KpiCenterWorkspace({ companyId }: Props) {
         </CardContent>
       </Card>
 
+      {isError ? (
+        <ErrorState
+          title="Não foi possível carregar os indicadores"
+          description="A lista abaixo ficaria vazia sem motivo — por isso não mostramos nada até carregar de novo."
+          onRetry={() => void refetch()}
+        />
+      ) : isLoading ? (
+        <LoadingState label="Calculando indicadores…" />
+      ) : (
+      <>
       {/* Resumo */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <SummaryTile label="Críticos" value={buckets.critical.length} tone="text-destructive" />
@@ -280,6 +295,8 @@ export function KpiCenterWorkspace({ companyId }: Props) {
           />
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </PageLayout>
   );
 }
