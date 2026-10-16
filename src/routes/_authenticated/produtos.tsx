@@ -45,7 +45,7 @@ function ProductsPage() {
     () => ({ ...filters, search: debouncedSearch }),
     [filters, debouncedSearch],
   );
-  const { data, isLoading } = useProductsList(company.id, effective);
+  const { data, isLoading, isError, refetch } = useProductsList(company.id, effective);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
@@ -83,6 +83,8 @@ function ProductsPage() {
         rows={data?.rows ?? []}
         total={data?.total ?? 0}
         isLoading={isLoading}
+        isError={isError && !data}
+        onRetry={() => void refetch()}
         page={filters.page}
         pageSize={filters.pageSize}
         onPageChange={(page) => setFilters((f) => ({ ...f, page }))}

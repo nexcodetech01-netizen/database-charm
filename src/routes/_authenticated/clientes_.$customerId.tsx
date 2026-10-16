@@ -36,6 +36,7 @@ import {
   useCustomer,
 } from "@/features/customers";
 import { CustomerCreditCard } from "@/features/credit";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$customerId")({
   beforeLoad: requirePermission("customers.view"),
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/clientes_/$customerId")({
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const { company } = Route.useRouteContext();
-  const { data: c, isLoading } = useCustomer(customerId);
+  const { data: c, isLoading, isError: loadError, refetch: retryLoad } = useCustomer(customerId);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
 
@@ -58,6 +59,9 @@ function CustomerDetailPage() {
         <Skeleton className="h-80 w-full rounded-xl" />
       </div>
     );
+  }
+  if (loadError && !c) {
+    return <LoadErrorPage what="este cliente" onRetry={() => void retryLoad()} />;
   }
   if (!c) {
     return (

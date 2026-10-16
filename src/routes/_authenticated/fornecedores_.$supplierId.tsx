@@ -37,6 +37,7 @@ import {
   PAYMENT_TERM_OPTIONS,
 } from "@/features/suppliers";
 import { formatDate, formatDateTime, formatCurrency, formatNumber } from "@/lib/format";
+import { ErrorState, LoadErrorPage, LoadingState } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/fornecedores_/$supplierId")({
   beforeLoad: requirePermission("suppliers.view"),
@@ -76,11 +77,26 @@ const PURCHASE_STATUS: Record<string, { label: string; tone: string }> = {
 function SupplierDetailPage() {
   const { supplierId } = Route.useParams();
   const { company } = Route.useRouteContext();
-  const { data: supplier, isLoading } = useSupplier(supplierId);
+  const { data: supplier, isLoading, isError: loadError, refetch: retryLoad } = useSupplier(supplierId);
   const [editOpen, setEditOpen] = useState(false);
-  const { data: products = [] } = useSupplierProducts(supplierId);
-  const { data: purchases = [] } = useSupplierPurchases(supplierId);
-  const { data: timeline = [] } = useSupplierTimeline(supplier ?? null);
+  const productsQ = useSupplierProducts(supplierId);
+  const purchasesQ = useSupplierPurchases(supplierId);
+  const timelineQ = useSupplierTimeline(supplier ?? null);
+  const products = productsQ.data ?? [];
+  const purchases = purchasesQ.data ?? [];
+  const timeline = timelineQ.data ?? [];
+  // Carregando/erro não podem aparecer como "nenhum registro".
+  const sectionState = (q: { isLoading: boolean; isError: boolean; data?: unknown; refetch: () => unknown }, what: string) =>
+    q.isLoading ? (
+      <LoadingState label="Carregando…" className="py-10" />
+    ) : q.isError && !q.data ? (
+      <ErrorState
+        title={`Não foi possível carregar ${what}`}
+        description="Tente de novo em instantes."
+        onRetry={() => void q.refetch()}
+        className="m-4 py-8"
+      />
+    ) : null;
 
   if (isLoading) {
     return (
@@ -89,6 +105,9 @@ function SupplierDetailPage() {
         <Skeleton className="h-64 w-full" />
       </div>
     );
+  }
+  if (loadError && !supplier) {
+    return <LoadErrorPage what="este fornecedor" onRetry={() => void retryLoad()} />;
   }
   if (!supplier) throw notFound();
 
@@ -244,7 +263,7 @@ function SupplierDetailPage() {
 
         <TabsContent value="purchases" className="mt-4">
           <Card title={`Histórico de compras (${purchases.length})`}>
-            {purchases.length === 0 ? (
+            {sectionState(purchasesQ, "as compras") ?? (purchases.length === 0 ? (
               <EmptyState
                 icon={ShoppingCart}
                 title="Nenhuma compra registrada"
@@ -289,13 +308,13 @@ function SupplierDetailPage() {
                   );
                 })}
               </div>
-            )}
+            ))}
           </Card>
         </TabsContent>
 
         <TabsContent value="products" className="mt-4">
           <Card title={`Produtos fornecidos (${supplier.products_count})`}>
-            {products.length === 0 ? (
+            {sectionState(productsQ, "os produtos") ?? (products.length === 0 ? (
               <EmptyState
                 icon={Package}
                 title="Nenhum produto vinculado"
@@ -328,13 +347,13 @@ function SupplierDetailPage() {
                   </Link>
                 ))}
               </div>
-            )}
+            ))}
           </Card>
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-4">
           <Card title="Linha do tempo">
-            {timeline.length === 0 ? (
+            {sectionState(timelineQ, "a linha do tempo") ?? (timeline.length === 0 ? (
               <EmptyState
                 icon={Clock}
                 title="Nenhum evento ainda"
@@ -360,7 +379,7 @@ function SupplierDetailPage() {
                   </li>
                 ))}
               </ol>
-            )}
+            ))}
           </Card>
         </TabsContent>
       </Tabs>

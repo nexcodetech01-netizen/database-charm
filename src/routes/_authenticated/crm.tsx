@@ -44,6 +44,7 @@ import {
   OPPORTUNITY_STATUS_OPTIONS,
   type Opportunity,
 } from "@/features/crm";
+import { ErrorState, LoadingState } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   beforeLoad: requirePermission("crm.view"),
@@ -268,6 +269,24 @@ function CrmPage() {
           </span>
         </CardHeader>
         <CardContent className="p-3 sm:p-4">
+          {(stagesQ.isError && !stagesQ.data) || (oppsQ.isError && !oppsQ.data) ? (
+            <ErrorState
+              title="Não foi possível carregar o funil"
+              description="Suas oportunidades não sumiram — o funil só não carregou. Tente de novo."
+              onRetry={() => {
+                void stagesQ.refetch();
+                void oppsQ.refetch();
+              }}
+            />
+          ) : stagesQ.isLoading || oppsQ.isLoading ? (
+            <LoadingState label="Carregando funil…" />
+          ) : stages.length === 0 ? (
+            <ErrorState
+              title="Nenhuma etapa no funil"
+              description="O funil precisa de etapas (ex.: Novo, Negociação, Ganho) para mostrar as oportunidades. Recarregue a página para criar as etapas padrão."
+              onRetry={() => void stagesQ.refetch()}
+            />
+          ) : (
           <OpportunityKanban
             stages={stages}
             opportunities={opps}
@@ -295,6 +314,7 @@ function CrmPage() {
             }}
             onQuickAction={() => notReady()}
           />
+          )}
         </CardContent>
       </Card>
 
@@ -303,7 +323,18 @@ function CrmPage() {
           <CardTitle className="text-sm font-semibold">Timeline recente</CardTitle>
         </CardHeader>
         <CardContent>
-          <CrmTimeline events={eventsQ.data ?? []} />
+          {eventsQ.isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Carregando histórico…</p>
+          ) : eventsQ.isError && !eventsQ.data ? (
+            <div role="alert" className="py-6 text-center text-sm text-muted-foreground">
+              Não foi possível carregar o histórico.{" "}
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => void eventsQ.refetch()}>
+                Tentar novamente
+              </Button>
+            </div>
+          ) : (
+            <CrmTimeline events={eventsQ.data ?? []} />
+          )}
         </CardContent>
       </Card>
 

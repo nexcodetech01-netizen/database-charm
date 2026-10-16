@@ -5,6 +5,7 @@ import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntityHeader, FormLayout, LoadingSurface } from "@/components/design";
 import { ProductForm, useProduct } from "@/features/products";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/produtos_/$productId/editar")({
   validateSearch: z.object({ price: z.coerce.number().positive().optional() }),
@@ -22,7 +23,7 @@ function EditProductPage() {
   const { productId } = Route.useParams();
   const { company } = Route.useRouteContext();
   const { price: suggestedPrice } = Route.useSearch();
-  const { data: product, isLoading } = useProduct(productId);
+  const { data: product, isLoading, isError: loadError, refetch: retryLoad } = useProduct(productId);
 
   if (isLoading) {
     return (
@@ -30,6 +31,9 @@ function EditProductPage() {
         <LoadingSurface variant="form" rows={8} />
       </div>
     );
+  }
+  if (loadError && !product) {
+    return <LoadErrorPage what="este produto" onRetry={() => void retryLoad()} />;
   }
   if (!product) throw notFound();
 

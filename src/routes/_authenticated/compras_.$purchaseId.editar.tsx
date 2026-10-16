@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PurchaseForm, usePurchase } from "@/features/purchases";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/editar")({
   beforeLoad: requirePermission("purchases.update"),
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/compras_/$purchaseId/edita
 function EditPurchasePage() {
   const { company } = Route.useRouteContext();
   const { purchaseId } = Route.useParams();
-  const { data: purchase, isLoading } = usePurchase(purchaseId);
+  const { data: purchase, isLoading, isError: loadError, refetch: retryLoad } = usePurchase(purchaseId);
 
   if (isLoading) {
     return (
@@ -20,6 +21,9 @@ function EditPurchasePage() {
         <Skeleton className="h-96 w-full" />
       </div>
     );
+  }
+  if (loadError && !purchase) {
+    return <LoadErrorPage what="esta compra" onRetry={() => void retryLoad()} />;
   }
   if (!purchase) throw notFound();
 

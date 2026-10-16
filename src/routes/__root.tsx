@@ -170,7 +170,10 @@ const legacyServiceWorkerResetScript = `(function(){if(!('serviceWorker' in navi
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
+    // O script de tema muda class/style do <html> antes do React carregar
+    // (de propósito, para não piscar claro→escuro). Isso é esperado, então
+    // avisamos o React para não acusar diferença só nesse elemento.
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: legacyServiceWorkerResetScript }} />
         <HeadContent />

@@ -43,7 +43,7 @@ function SuppliersPage() {
     () => ({ ...filters, search: debouncedSearch }),
     [filters, debouncedSearch],
   );
-  const { data, isLoading } = useSuppliersList(company.id, effective);
+  const { data, isLoading, isError, refetch } = useSuppliersList(company.id, effective);
   const metrics = useSupplierMetrics(company.id);
 
   const archiveMut = useArchiveSupplier();
@@ -128,6 +128,8 @@ function SuppliersPage() {
             rows={data?.rows ?? []}
             total={data?.total ?? 0}
             isLoading={isLoading}
+            isError={isError && !data}
+            onRetry={() => void refetch()}
             page={filters.page}
             pageSize={filters.pageSize}
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}

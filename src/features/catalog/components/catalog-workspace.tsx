@@ -38,13 +38,14 @@ import { CollectionFormDialog } from "./collection-form-dialog";
 import { CollectionEditorDrawer } from "./collection-editor-drawer";
 import { CatalogBellaHint } from "./catalog-bella-hint";
 import { offerUndo } from "@/lib/undo-manager";
+import { ErrorState } from "@/components/layout/state-views";
 
 interface Props {
   companyId: string;
 }
 
 export function CatalogWorkspace({ companyId }: Props) {
-  const { data: collections = [], isLoading } = useCollections(companyId);
+  const { data: collections = [], isLoading, isError, refetch, data: collectionsData } = useCollections(companyId);
   const create = useCreateCollection(companyId);
   const update = useUpdateCollection(companyId);
   const remove = useDeleteCollection(companyId);
@@ -94,6 +95,12 @@ export function CatalogWorkspace({ companyId }: Props) {
                 <Skeleton key={i} className="h-40 w-full" />
               ))}
             </div>
+          ) : isError && !collectionsData ? (
+            <ErrorState
+              title="Não foi possível carregar as coleções"
+              description="Suas coleções não sumiram — a lista só não carregou. Tente de novo."
+              onRetry={() => void refetch()}
+            />
           ) : collections.length === 0 ? (
             <EmptyState
               icon={LayoutGrid}

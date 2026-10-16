@@ -50,7 +50,7 @@ function PurchasesPage() {
     () => ({ ...filters, search: debouncedSearch }),
     [filters, debouncedSearch],
   );
-  const { data, isLoading } = usePurchasesList(company.id, effective);
+  const { data, isLoading, isError, refetch } = usePurchasesList(company.id, effective);
   const metrics = usePurchaseMetrics(company.id);
 
   const setStatusMut = useSetPurchaseStatus();
@@ -156,6 +156,8 @@ function PurchasesPage() {
             rows={data?.rows ?? []}
             total={data?.total ?? 0}
             isLoading={isLoading}
+            isError={isError && !data}
+            onRetry={() => void refetch()}
             page={filters.page}
             pageSize={filters.pageSize}
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}

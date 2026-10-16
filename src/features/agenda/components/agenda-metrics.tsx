@@ -3,7 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAgendaMetrics } from "../hooks/use-agenda";
 
 export function AgendaMetrics({ companyId }: { companyId: string }) {
-  const { data, isLoading } = useAgendaMetrics(companyId);
+  const { data, isLoading, isError } = useAgendaMetrics(companyId);
+  // Em erro mostra "—" (não 0): zero atrasados seria uma informação falsa.
+  const unknown = isLoading || (isError && !data);
 
   const items = [
     { label: "Hoje", value: data?.today ?? 0, icon: CalendarClock, tone: "text-primary" },
@@ -13,6 +15,12 @@ export function AgendaMetrics({ companyId }: { companyId: string }) {
   ];
 
   return (
+    <div className="space-y-2">
+    {isError && !data ? (
+      <p role="alert" className="text-xs text-destructive">
+        Não foi possível carregar os contadores da agenda.
+      </p>
+    ) : null}
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((it) => (
         <Card key={it.label} >
@@ -22,7 +30,7 @@ export function AgendaMetrics({ companyId }: { companyId: string }) {
                 {it.label}
               </p>
               <p className="mt-1.5 text-2xl font-semibold tracking-tight">
-                {isLoading ? "—" : it.value}
+                {unknown ? "—" : it.value}
               </p>
             </div>
             <div className={`rounded-lg bg-muted/60 p-2.5 ${it.tone}`}>
@@ -31,6 +39,7 @@ export function AgendaMetrics({ companyId }: { companyId: string }) {
           </CardContent>
         </Card>
       ))}
+    </div>
     </div>
   );
 }
