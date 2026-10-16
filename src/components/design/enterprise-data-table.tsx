@@ -79,6 +79,8 @@ export interface EnterpriseDataTableProps<T> {
   isLoading?: boolean;
   skeletonRows?: number;
   error?: ReactNode;
+  /** Com `error`, mostra o botão "Tentar novamente". */
+  onRetry?: () => void;
   empty?: {
     icon?: LucideIcon;
     title?: ReactNode;
@@ -337,6 +339,7 @@ export function EnterpriseDataTable<T>({
   isLoading = false,
   skeletonRows = 5,
   error,
+  onRetry,
   empty,
   onRowClick,
   isRowSelected,
@@ -406,6 +409,13 @@ export function EnterpriseDataTable<T>({
                     icon={AlertTriangle}
                     title="Não foi possível carregar os dados"
                     description={error}
+                    action={
+                      onRetry ? (
+                        <Button variant="outline" size="sm" onClick={onRetry}>
+                          Tentar novamente
+                        </Button>
+                      ) : undefined
+                    }
                   />
                 </TableCell>
               </TableRow>

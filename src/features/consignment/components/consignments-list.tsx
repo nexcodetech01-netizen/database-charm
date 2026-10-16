@@ -54,12 +54,7 @@ export function ConsignmentsList() {
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { pathname } = window.location;
-  const isListView = pathname === '/consignacoes' || pathname === '/consignacoes/';
-
-  if (!isListView) return null;
-
-  const { data: consignments = [], isLoading } = useQuery({
+  const { data: consignments = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['consignments', companyId],
     queryFn: () => ConsignmentService.listConsignments(companyId!),
     enabled: !!companyId,
@@ -217,6 +212,15 @@ export function ConsignmentsList() {
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 w-full rounded bg-slate-800/50 animate-pulse" />
             ))}
+          </div>
+        ) : isError && consignments.length === 0 ? (
+          <div role="alert" className="p-12 text-center text-slate-400">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+            <p className="font-medium text-white">Não foi possível carregar as consignações</p>
+            <p className="mt-1 text-sm">Os dados não sumiram — verifique a internet e tente de novo.</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => void refetch()}>
+              Tentar novamente
+            </Button>
           </div>
         ) : filteredConsignments.length === 0 ? (
           <div className="p-12 text-center text-slate-500">

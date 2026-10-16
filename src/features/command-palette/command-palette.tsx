@@ -43,6 +43,9 @@ export function CommandPalette({ companyId }: { companyId: string }) {
   const [customers, setCustomers] = useState<ResultItem[]>([]);
   const [products, setProducts] = useState<ResultItem[]>([]);
   const [sales, setSales] = useState<ResultItem[]>([]);
+  // Se alguma busca falhar, avisamos em vez de mostrar "Nada encontrado".
+  const [searchFailed, setSearchFailed] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -97,6 +100,8 @@ export function CommandPalette({ companyId }: { companyId: string }) {
       setCustomers([]);
       setProducts([]);
       setSales([]);
+      setSearchFailed(false);
+      setSearching(false);
     }
   }, [open]);
 
@@ -111,10 +116,18 @@ export function CommandPalette({ companyId }: { companyId: string }) {
       setCustomers([]);
       setProducts([]);
       setSales([]);
+      setSearchFailed(false);
+      setSearching(false);
       return;
     }
 
     let cancelled = false;
+    let failed = false;
+    setSearching(true);
+    const fail = <T,>(fallback: T) => (): T => {
+      failed = true;
+      return fallback;
+    };
 
     void (async () => {
       const searchProducts = async () => {
@@ -123,6 +136,7 @@ export function CommandPalette({ companyId }: { companyId: string }) {
           company_id_param: companyId,
           limit_param: 5,
         });
+        if (result.error) throw result.error;
         return result.data ?? [];
       };
 
@@ -135,6 +149,7 @@ export function CommandPalette({ companyId }: { companyId: string }) {
           .ilike("number", `%${term}%`)
           .order("sale_date", { ascending: false })
           .limit(5);
+        if (result.error) throw result.error;
         return result.data ?? [];
       };
 
@@ -150,12 +165,14 @@ export function CommandPalette({ companyId }: { companyId: string }) {
             page: 1,
             pageSize: 5,
           })
-          .catch(() => ({ rows: [] as { id: string; name: string; phone: string | null }[] })),
-        searchProducts().catch(() => []),
-        searchSales().catch(() => []),
+          .catch(fail({ rows: [] as { id: string; name: string; phone: string | null }[] })),
+        searchProducts().catch(fail([] as Awaited<ReturnType<typeof searchProducts>>)),
+        searchSales().catch(fail([] as Awaited<ReturnType<typeof searchSales>>)),
       ]);
 
       if (cancelled) return;
+      setSearching(false);
+      setSearchFailed(failed);
 
       setCustomers(
         customersResult.rows.map((customer) => ({
@@ -212,7 +229,17 @@ export function CommandPalette({ companyId }: { companyId: string }) {
         onValueChange={setQuery}
       />
       <CommandList>
-        {hasSearch && !hasResults && <CommandEmpty>Nada encontrado.</CommandEmpty>}
+        {hasSearch && searchFailed ? (
+          <div role="alert" className="px-3 py-2 text-xs text-destructive">
+            A busca falhou em parte — pode haver resultados que não apareceram. Tente de novo.
+          </div>
+        ) : null}
+        {hasSearch && !hasResults && !searchFailed && !searching && (
+          <CommandEmpty>Nada encontrado.</CommandEmpty>
+        )}
+        {hasSearch && !hasResults && searching ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">Buscando…</div>
+        ) : null}
 
         {!hasSearch && (
           <CommandGroup heading="Ações rápidas">

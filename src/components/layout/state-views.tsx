@@ -71,3 +71,26 @@ export function ErrorState({
     </div>
   );
 }
+
+/**
+ * Página inteira de erro de carregamento (detalhe/edição). Usada quando a
+ * busca falha — para não confundir com "não encontrado".
+ */
+export function LoadErrorPage({
+  what,
+  onRetry,
+}: {
+  /** ex.: "este cliente" */
+  what: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
+      <ErrorState
+        title={`Não foi possível abrir ${what}`}
+        description="O registro pode existir normalmente — o sistema só não conseguiu carregá-lo agora. Verifique a internet e tente de novo."
+        onRetry={onRetry}
+      />
+    </div>
+  );
+}

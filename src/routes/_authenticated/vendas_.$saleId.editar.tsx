@@ -9,6 +9,7 @@ import { PageLayout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SaleForm, useSale } from "@/features/sales";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/vendas_/$saleId/editar")({
   beforeLoad: requirePermission("sales.view"),
@@ -97,7 +98,7 @@ function EditSalePageBoundary() {
 function EditSalePage() {
   const { company } = Route.useRouteContext();
   const { saleId } = Route.useParams();
-  const { data: sale, isLoading } = useSale(saleId);
+  const { data: sale, isLoading, isError: loadError, refetch: retryLoad } = useSale(saleId);
 
   if (isLoading) {
     return (
@@ -105,6 +106,9 @@ function EditSalePage() {
         <Skeleton className="h-96 w-full" />
       </PageLayout>
     );
+  }
+  if (loadError && !sale) {
+    return <LoadErrorPage what="esta venda" onRetry={() => void retryLoad()} />;
   }
   if (!sale) throw notFound();
 

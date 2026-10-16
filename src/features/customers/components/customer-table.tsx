@@ -9,11 +9,15 @@ import {
 } from "@/components/design";
 import { CustomerStatusBadge } from "./customer-status-badge";
 import type { Customer } from "../types";
+import { loadErrorText } from "@/components/layout/table-error-row";
 
 interface Props {
   rows: Customer[];
   total: number;
   isLoading: boolean;
+  /** Falha ao carregar: mostra erro em vez de lista vazia. */
+  isError?: boolean;
+  onRetry?: () => void;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
@@ -31,6 +35,8 @@ export function CustomerTable({
   rows,
   total,
   isLoading,
+  isError,
+  onRetry,
   page,
   pageSize,
   onPageChange,
@@ -104,6 +110,8 @@ export function CustomerTable({
       columns={columns}
       getRowId={(c) => c.id}
       isLoading={isLoading}
+      error={isError ? loadErrorText("os clientes") : undefined}
+      onRetry={onRetry}
       skeletonRows={8}
       className="border-none shadow-none"
       empty={{

@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { RegisterSettlementDialog } from './register-settlement-dialog';
 import { EditConsignmentItemsDialog } from './edit-consignment-items-dialog';
 import { useAuth } from '@/providers/auth-provider';
+import { LoadErrorPage } from '@/components/layout/state-views';
 
 export function ConsignmentDetails() {
   const generateConsignmentPDFFn = useServerFn(generateConsignmentPDF);
@@ -49,7 +50,7 @@ export function ConsignmentDetails() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const { companyId } = useAuth();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['consignment', id],
     queryFn: () => ConsignmentService.getConsignment(id),
   });
@@ -113,7 +114,13 @@ export function ConsignmentDetails() {
     );
   }
 
-  if (error || !data) {
+  // PGRST116 = nenhuma linha: aí sim é "não encontrada"; o resto é falha.
+  const isMissing = (error as { code?: string } | null)?.code === 'PGRST116';
+  if (error && !data && !isMissing) {
+    return <LoadErrorPage what="esta consignação" onRetry={() => void refetch()} />;
+  }
+
+  if (!data) {
     return (
       <div className="p-8 text-center text-slate-500">
         <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-20" />

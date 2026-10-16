@@ -44,7 +44,7 @@ function CustomersPage() {
     () => ({ ...filters, search: debounced }),
     [filters, debounced],
   );
-  const { data, isLoading } = useCustomersList(company.id, effective);
+  const { data, isLoading, isError, refetch } = useCustomersList(company.id, effective);
 
   const archiveMut = useArchiveCustomer();
   const restoreMut = useRestoreCustomer();
@@ -122,6 +122,8 @@ function CustomersPage() {
             rows={data?.rows ?? []}
             total={data?.total ?? 0}
             isLoading={isLoading}
+            isError={isError && !data}
+            onRetry={() => void refetch()}
             page={filters.page}
             pageSize={filters.pageSize}
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}

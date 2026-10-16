@@ -39,7 +39,8 @@ export function CollectionEditorDrawer({
   collection,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const { data: items = [] } = useCollectionItems(collection?.id ?? null);
+  const itemsQ = useCollectionItems(collection?.id ?? null);
+  const items = itemsQ.data ?? [];
   const removeItem = useRemoveCollectionItem(companyId, collection?.id ?? "");
   const addProducts = useAddCollectionProducts(companyId);
 
@@ -191,11 +192,22 @@ export function CollectionEditorDrawer({
                     </div>
                   );
                 })}
-                {items.length === 0 && (
+                {itemsQ.isLoading ? (
+                  <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    Carregando produtos…
+                  </div>
+                ) : itemsQ.isError && !itemsQ.data ? (
+                  <div role="alert" className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    Não foi possível carregar os produtos desta coleção.{" "}
+                    <Button variant="link" size="sm" className="h-auto p-0" onClick={() => void itemsQ.refetch()}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : items.length === 0 ? (
                   <div className="px-3 py-8 text-center text-sm text-muted-foreground">
                     Nenhum produto ainda. Clique em “Adicionar”.
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           )}

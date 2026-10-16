@@ -29,10 +29,14 @@ import {
 import { PurchaseStatusBadge } from "./purchase-status-badge";
 import type { PurchaseWithMeta } from "../types";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { TableErrorRow } from "@/components/layout/table-error-row";
 
 interface Props {
   rows: PurchaseWithMeta[];
   isLoading: boolean;
+  /** Falha ao carregar: mostra erro em vez de lista vazia. */
+  isError?: boolean;
+  onRetry?: () => void;
   total: number;
   page: number;
   pageSize: number;
@@ -46,6 +50,8 @@ interface Props {
 export function PurchaseTable({
   rows,
   isLoading,
+  isError,
+  onRetry,
   total,
   page,
   pageSize,
@@ -82,6 +88,8 @@ export function PurchaseTable({
                   ))}
                 </TableRow>
               ))
+            ) : isError ? (
+              <TableErrorRow colSpan={7} what="as compras" onRetry={onRetry} />
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-16">

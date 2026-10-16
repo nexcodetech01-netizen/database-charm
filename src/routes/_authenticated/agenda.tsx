@@ -13,6 +13,7 @@ import {
   useAppointmentsRange,
 } from "@/features/agenda";
 import type { Appointment, CalendarView } from "@/features/agenda";
+import { ErrorState } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   beforeLoad: requirePermission("agenda.view"),
@@ -49,7 +50,7 @@ function AgendaPage() {
     };
   }, [view, cursor]);
 
-  const { data, isLoading } = useAppointmentsRange(company.id, range);
+  const { data, isLoading, isError, refetch } = useAppointmentsRange(company.id, range);
 
   return (
     <PageLayout
@@ -70,6 +71,13 @@ function AgendaPage() {
       }
       kpis={<AgendaMetrics companyId={company.id} />}
     >
+      {isError && !data ? (
+        <ErrorState
+          title="Não foi possível carregar a agenda"
+          description="Os horários podem estar ocupados — a agenda só não carregou. Não marque nada até carregar de novo."
+          onRetry={() => void refetch()}
+        />
+      ) : (
       <CalendarPanel
         view={view}
         onViewChange={setView}
@@ -87,6 +95,7 @@ function AgendaPage() {
           setSheetOpen(true);
         }}
       />
+      )}
 
       <AppointmentFormDialog
         open={formOpen}

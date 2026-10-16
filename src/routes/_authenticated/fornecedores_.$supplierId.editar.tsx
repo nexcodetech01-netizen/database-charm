@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SupplierForm, useSupplier } from "@/features/suppliers";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/fornecedores_/$supplierId/editar")({
   beforeLoad: requirePermission("suppliers.view"),
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/fornecedores_/$supplierId/
 function EditSupplierPage() {
   const { supplierId } = Route.useParams();
   const { company } = Route.useRouteContext();
-  const { data: supplier, isLoading } = useSupplier(supplierId);
+  const { data: supplier, isLoading, isError: loadError, refetch: retryLoad } = useSupplier(supplierId);
 
   if (isLoading) {
     return (
@@ -22,6 +23,9 @@ function EditSupplierPage() {
         <Skeleton className="h-96 w-full" />
       </div>
     );
+  }
+  if (loadError && !supplier) {
+    return <LoadErrorPage what="este fornecedor" onRetry={() => void retryLoad()} />;
   }
   if (!supplier) throw notFound();
 

@@ -25,6 +25,7 @@ import {
   useReprocessPurchaseReceipt,
 } from "@/features/purchases";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/compras_/$purchaseId")({
   beforeLoad: requirePermission("purchases.view"),
@@ -42,7 +43,7 @@ function PurchaseDetailPage() {
 
 function PurchaseDetails() {
   const { purchaseId } = Route.useParams();
-  const { data: purchase, isLoading } = usePurchase(purchaseId);
+  const { data: purchase, isLoading, isError: loadError, refetch: retryLoad } = usePurchase(purchaseId);
   const setStatus = useSetPurchaseStatus();
   const reprocess = useReprocessPurchaseReceipt();
 
@@ -81,6 +82,9 @@ function PurchaseDetails() {
         <Skeleton className="h-64 w-full" />
       </div>
     );
+  }
+  if (loadError && !purchase) {
+    return <LoadErrorPage what="esta compra" onRetry={() => void retryLoad()} />;
   }
   if (!purchase) throw notFound();
 

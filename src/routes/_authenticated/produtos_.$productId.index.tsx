@@ -76,6 +76,7 @@ import { ProductCostBreakdown } from "@/features/products/components/product-cos
 
 import { formatCurrency, formatDateTime, formatNumber, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/produtos_/$productId/")({
   head: () => ({
@@ -96,7 +97,7 @@ function ProductDetailPage() {
   const { productId } = Route.useParams();
   const { company } = Route.useRouteContext();
   const navigate = useNavigate();
-  const { data: product, isLoading } = useProduct(productId);
+  const { data: product, isLoading, isError: loadError, refetch: retryLoad } = useProduct(productId);
   const deleteProduct = useDeleteProduct();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -130,6 +131,9 @@ function ProductDetailPage() {
     );
   }
 
+  if (loadError && !product) {
+    return <LoadErrorPage what="este produto" onRetry={() => void retryLoad()} />;
+  }
   if (!product) throw notFound();
 
   const handleDelete = async () => {

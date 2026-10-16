@@ -32,6 +32,7 @@ import { LabelPrintDialog } from "@/features/printing";
 import { updateMercadoLivreItem, syncProductToMercadoLivre } from "@/lib/mercadolivre-sync.functions";
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
 import { calcPrecoCartao } from "@/lib/pricing/card-price";
+import { loadErrorText } from "@/components/layout/table-error-row";
 
 type Row = Product & {
   category?: { id: string; name: string } | null;
@@ -42,13 +43,16 @@ interface Props {
   companyId?: string;
   rows: Row[];
   isLoading: boolean;
+  /** Falha ao carregar: mostra erro em vez de lista vazia. */
+  isError?: boolean;
+  onRetry?: () => void;
   total: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
 }
 
-export function ProductTable({ companyId, rows, isLoading, total, page, pageSize, onPageChange }: Props) {
+export function ProductTable({ companyId, rows, isLoading, isError, onRetry, total, page, pageSize, onPageChange }: Props) {
   const [publishTarget, setPublishTarget] = useState<Product | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
   const [labelTarget, setLabelTarget] = useState<Product | null>(null);
@@ -227,6 +231,8 @@ export function ProductTable({ companyId, rows, isLoading, total, page, pageSize
       columns={columns}
       getRowId={(p) => p.id}
       isLoading={isLoading}
+      error={isError ? loadErrorText("os produtos") : undefined}
+      onRetry={onRetry}
       empty={{
         icon: Package,
         title: "Nenhum produto encontrado",

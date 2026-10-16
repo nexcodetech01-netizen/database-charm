@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Search, MapPin, Phone, FileText, Trash2, Edit } from 'lucide-react';
+import { Users, Plus, Search, MapPin, Phone, FileText, Trash2, Edit, AlertCircle } from 'lucide-react';
 import { ConsignmentService } from '@/features/consignment/services/consignment.service';
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export function ResellersList() {
     },
   });
 
-  const { data: resellers = [], isLoading } = useQuery({
+  const { data: resellers = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['resellers', companyId],
     queryFn: () => ConsignmentService.listResellers(companyId!),
     enabled: !!companyId,
@@ -195,6 +195,15 @@ export function ResellersList() {
           {[1, 2, 3].map(i => (
             <div key={i} className="h-48 rounded-2xl bg-slate-900/50 animate-pulse border border-slate-800" />
           ))}
+        </div>
+      ) : isError && resellers.length === 0 ? (
+        <div role="alert" className="bg-slate-900/50 rounded-2xl border border-slate-800 p-12 text-center">
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-white">Não foi possível carregar os revendedores</h3>
+          <p className="text-slate-500 mt-2">Os dados não sumiram — verifique a internet e tente de novo.</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => void refetch()}>
+            Tentar novamente
+          </Button>
         </div>
       ) : filteredResellers.length === 0 ? (
         <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-12 text-center">

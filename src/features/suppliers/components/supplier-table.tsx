@@ -20,6 +20,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/format";
 import { SupplierStatusBadge } from "./supplier-status-badge";
 import type { SupplierWithMeta } from "../types";
+import { TableErrorRow } from "@/components/layout/table-error-row";
 
 function formatDoc(doc: string | null | undefined) {
   if (!doc) return "—";
@@ -43,6 +44,9 @@ function formatPhone(phone: string | null | undefined) {
 interface Props {
   rows: SupplierWithMeta[];
   isLoading: boolean;
+  /** Falha ao carregar: mostra erro em vez de lista vazia. */
+  isError?: boolean;
+  onRetry?: () => void;
   total: number;
   page: number;
   pageSize: number;
@@ -55,6 +59,8 @@ interface Props {
 export function SupplierTable({
   rows,
   isLoading,
+  isError,
+  onRetry,
   total,
   page,
   pageSize,
@@ -92,6 +98,8 @@ export function SupplierTable({
                   ))}
                 </TableRow>
               ))
+            ) : isError ? (
+              <TableErrorRow colSpan={8} what="os fornecedores" onRetry={onRetry} />
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-16">

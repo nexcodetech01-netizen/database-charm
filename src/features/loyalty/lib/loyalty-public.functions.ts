@@ -17,7 +17,11 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const limited = checkRateLimit({ route: "loyalty:check-balance", max: 10, windowMs: 60_000 });
     if (!limited.ok) {
-      return { found: false, error: "Muitas consultas seguidas. Tenta de novo em instantes." };
+      return {
+        found: false as const,
+        reason: "rate_limited" as const,
+        error: "Muitas consultas seguidas. Tenta de novo em instantes.",
+      };
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -32,7 +36,7 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!collection) {
-      return { found: false as const };
+      return { found: false as const, reason: "store_not_found" as const };
     }
 
     const companyId = collection.company_id;
@@ -46,7 +50,7 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!customer) {
-      return { found: false as const };
+      return { found: false as const, reason: "customer_not_found" as const };
     }
 
     const { data: account } = await supabaseAdmin
@@ -62,7 +66,7 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!settings?.enabled) {
-      return { found: false as const };
+      return { found: false as const, reason: "program_disabled" as const };
     }
 
     const points = account?.points_balance ?? 0;
@@ -74,4 +78,32 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
       points,
       valueInReais,
     };
+  });
+
+/**
+ * Confere, ao abrir a página, se o link é de uma loja que existe e se o
+ * programa de pontos está ativo — para não mostrar o formulário de consulta
+ * num link errado.
+ */
+export const getLoyaltyStoreStatus = createServerFn({ method: "GET" })
+  .inputValidator((data: unknown) => z.object({ slug: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const limited = checkRateLimit({ route: "loyalty:store-status", max: 30, windowMs: 60_000 });
+    if (!limited.ok) return { status: "unknown" as const };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: collection, error } = await supabaseAdmin
+      .from("product_collections")
+      .select("company_id")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (error) return { status: "unknown" as const };
+    if (!collection) return { status: "store_not_found" as const };
+
+    const { data: settings } = await supabaseAdmin
+      .from("loyalty_settings")
+      .select("enabled")
+      .eq("company_id", collection.company_id)
+      .maybeSingle();
+    return { status: settings?.enabled ? ("ok" as const) : ("program_disabled" as const) };
   });

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomerForm, useCustomer } from "@/features/customers";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$customerId/editar")({
   beforeLoad: requirePermission("customers.view"),
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/clientes_/$customerId/edit
 function EditCustomerPage() {
   const { customerId } = Route.useParams();
   const { company } = Route.useRouteContext();
-  const { data: customer, isLoading } = useCustomer(customerId);
+  const { data: customer, isLoading, isError: loadError, refetch: retryLoad } = useCustomer(customerId);
 
   if (isLoading) {
     return (
@@ -22,6 +23,9 @@ function EditCustomerPage() {
         <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     );
+  }
+  if (loadError && !customer) {
+    return <LoadErrorPage what="este cliente" onRetry={() => void retryLoad()} />;
   }
   if (!customer) throw notFound();
 

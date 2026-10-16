@@ -8,6 +8,7 @@ import {
   useFiscalRealtime,
 } from "@/features/fiscal/v2/hooks/use-fiscal";
 import { FiscalDetails } from "@/features/fiscal/v2/components/fiscal-details";
+import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/fiscal/notas/$documentId")({
   beforeLoad: requirePermission("fiscal.view"),
@@ -36,6 +37,8 @@ function FiscalDocumentPage() {
     >
       {detail.isLoading ? (
         <ListSkeleton rows={4} />
+      ) : detail.isError && !detail.data ? (
+        <LoadErrorPage what="esta nota fiscal" onRetry={() => void detail.refetch()} />
       ) : detail.data ? (
         <FiscalDetails document={detail.data.document} events={detail.data.events} />
       ) : (
