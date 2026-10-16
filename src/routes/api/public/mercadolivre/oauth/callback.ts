@@ -111,7 +111,10 @@ export const Route = createFileRoute("/api/public/mercadolivre/oauth/callback")(
           providerError;
 
         const redirectBack = (params: Record<string, string>) => {
-          const target = new URL("/configuracoes/integracoes", url.origin);
+          // /configuracoes/integracoes não existe: as integrações ficam na
+          // Central de Configurações, seção "integracoes".
+          const target = new URL("/configuracoes", url.origin);
+          target.searchParams.set("section", "integracoes");
           for (const [k, v] of Object.entries(params)) target.searchParams.set(k, v);
           return new Response(null, {
             status: 302,

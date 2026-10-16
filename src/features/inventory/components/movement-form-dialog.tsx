@@ -47,6 +47,20 @@ const schema = z.object({
   reason: z.string().optional(),
   notes: z.string().optional(),
   movement_date: z.string().min(1),
+}).superRefine((v, ctx) => {
+  if (!Number.isFinite(v.quantity)) {
+    ctx.addIssue({ code: "custom", path: ["quantity"], message: "Informe a quantidade" });
+    return;
+  }
+  // Negativo só faz sentido no Ajuste ("use valores negativos para reduzir").
+  // Em Entrada/Saída/Reserva o sentido já vem do tipo.
+  if (v.type !== "adjustment" && v.quantity < 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["quantity"],
+      message: "Use número positivo. Para reduzir o saldo, escolha Saída ou Ajuste.",
+    });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -213,6 +227,7 @@ export function MovementFormDialog({
               <Input
                 type="number"
                 step="any"
+                min={type === "adjustment" ? undefined : 0}
                 {...form.register("quantity")}
               />
               {form.formState.errors.quantity && (

@@ -143,8 +143,12 @@ export function OpportunityFormDialog({
       lost_reason: values.status === "lost" ? values.lost_reason || null : null,
       description: values.description || null,
     };
-    await onSubmit(payload, editing?.id);
-    onOpenChange(false);
+    try {
+      await onSubmit(payload, editing?.id);
+      onOpenChange(false);
+    } catch {
+      // O aviso já foi mostrado por quem salvou; a janela fica aberta.
+    }
   });
 
   return (

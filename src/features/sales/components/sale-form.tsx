@@ -238,6 +238,10 @@ export function SaleForm({
   >([]);
   const [revalidatingStock, setRevalidatingStock] = useState(false);
   const stockValidationEpochRef = useRef(0);
+  // Trava contra clique duplo: vale do início do salvamento até o fim de
+  // TODAS as etapas (criar + marcar A Receber), não só da criação.
+  const submitLockRef = useRef(false);
+  const [finishing, setFinishing] = useState(false);
   const [returningToItems, setReturningToItems] = useState(false);
 
   // Pré-seleção de produto vindo por query string (?productId=...). Adiciona
@@ -706,6 +710,19 @@ export function SaleForm({
 
   async function submit(e: React.FormEvent, finalize: boolean) {
     e.preventDefault();
+    // A trava cobre também as conferências antes de salvar (estoque, caixa).
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
+    setFinishing(true);
+    try {
+      await submitInner(finalize);
+    } finally {
+      submitLockRef.current = false;
+      setFinishing(false);
+    }
+  }
+
+  async function submitInner(finalize: boolean) {
     const parsed = schema.safeParse({
       number: form.number,
     });
@@ -956,6 +973,7 @@ export function SaleForm({
 
 
 
+    let createdNowId: string | null = null;
     try {
       let savedId: string;
       let savedNumber: string | null;
@@ -977,6 +995,7 @@ export function SaleForm({
         const created = await createMut.mutateAsync({ ...payload, items });
         savedId = created?.id ?? "";
         savedNumber = created?.number ?? null;
+        createdNowId = savedId || null;
         // eslint-disable-next-line no-console
         console.info("[sale-form] COMMIT create", {
           sale_id: savedId,
@@ -1024,6 +1043,15 @@ export function SaleForm({
       const rawMessage = err instanceof Error ? err.message : String(err);
       // eslint-disable-next-line no-console
       console.error("[sale-form] ERRO save", { payload, items: items.length, err });
+      if (createdNowId && !isEdit) {
+        // A venda já foi criada; só a etapa seguinte falhou. Levamos para a
+        // venda criada, para ninguém clicar de novo e criar outra igual.
+        toast.error("A venda foi criada, mas a última etapa falhou", {
+          description: `Confira a venda antes de tentar de novo. ${rawMessage}`,
+        });
+        navigate({ to: "/vendas/$saleId", params: { saleId: createdNowId } });
+        return;
+      }
       toast.error("Não foi possível salvar a venda", {
         description: rawMessage,
 
@@ -1031,7 +1059,8 @@ export function SaleForm({
     }
   }
 
-  const submitting = createMut.isPending || updateMut.isPending;
+  const submitting =
+    finishing || createMut.isPending || updateMut.isPending || setStatusMut.isPending;
   const totalUnits = items.reduce((s, i) => s + (i.quantity || 0), 0);
 
   /**

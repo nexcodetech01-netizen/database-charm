@@ -33,6 +33,7 @@ import {
   type MarketingCampaign,
   type MarketingCampaignInsert,
 } from "../types";
+import { toast } from "sonner";
 
 const schema = z.object({
   name: z.string().min(2, "Informe o nome"),
@@ -117,8 +118,15 @@ export function CampaignFormDialog({
       conversions_count: values.conversions_count,
       scheduled_for: values.scheduled_for || null,
     };
-    await onSubmit(payload, editing?.id);
-    onOpenChange(false);
+    try {
+      await onSubmit(payload, editing?.id);
+      onOpenChange(false);
+    } catch (err) {
+      // Falhou: avisa e deixa a janela aberta para não perder o que foi digitado.
+      toast.error("Não foi possível salvar a campanha", {
+        description: err instanceof Error ? err.message : "Tente de novo em instantes.",
+      });
+    }
   });
 
   return (

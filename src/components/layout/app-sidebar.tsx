@@ -26,7 +26,6 @@ import {
   Zap,
   Layers,
   Banknote,
-  Star,
   Gift,
   ListChecks,
   History,
@@ -84,7 +83,6 @@ const groups: NavGroup[] = [
         children: [
           { title: "Todos os Produtos", url: ROUTES.products, icon: Package, status: "available", permission: "products.view" },
           { title: "Categorias", url: ROUTES.categories, icon: Layers, status: "available", permission: "products.view" },
-          { title: "Avaliações", url: ROUTES.productReviews, icon: Star, status: "available", permission: "products.view" },
         ]
       },
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
