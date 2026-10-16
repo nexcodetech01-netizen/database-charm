@@ -63,6 +63,10 @@ export interface PublicCollection extends CollectionVisibility {
   cover_url: string | null;
   status: CollectionStatus;
   company_name: string;
+  /** Cor principal da loja; null = visual neutro. */
+  brand_color?: string | null;
+  /** Logo da loja (URL assinada). */
+  logo_url?: string | null;
   installment_max: number | null;
   installment_min_amount?: number | null;
   card_fee_percent: number;
@@ -107,6 +111,10 @@ export interface PublicProductDetail extends CollectionVisibility {
     name: string;
   };
   company_name: string;
+  /** Cor principal da loja; null = visual neutro. */
+  brand_color?: string | null;
+  /** Logo da loja (URL assinada). */
+  logo_url?: string | null;
   installment_max: number | null;
   installment_min_amount?: number | null;
   card_fee_percent: number;

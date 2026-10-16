@@ -46,6 +46,7 @@ import { QuickViewDialog } from "@/features/catalog/components/quick-view-dialog
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { brandStyle } from "@/features/storefront/lib/brand";
 
 const PAGE_SIZE = 24;
 
@@ -333,7 +334,7 @@ function PublicCollectionPage() {
   if (currentPage > 1) forwardSearch.page = currentPage;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={brandStyle(data.brand_color)}>
       {isPreview && (
         <div className="border-b bg-amber-500/10 text-amber-900 dark:text-amber-200">
           <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2 text-xs font-medium">
@@ -355,11 +356,20 @@ function PublicCollectionPage() {
         <div className="mx-auto max-w-5xl px-4 py-12 relative">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div className="flex-1 space-y-4">
-              <div 
-                className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary tracking-[0.2em] uppercase"
-                style={{ fontFamily: 'Montserrat, sans-serif' }}
-              >
-                {data.company_name}
+              <div className="flex items-center gap-3">
+                {data.logo_url ? (
+                  <img
+                    src={data.logo_url}
+                    alt={data.company_name}
+                    className="h-10 w-10 rounded-full border border-border bg-white object-contain p-0.5"
+                  />
+                ) : null}
+                <div
+                  className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary tracking-[0.2em] uppercase"
+                  style={{ fontFamily: 'Montserrat, sans-serif' }}
+                >
+                  {data.company_name}
+                </div>
               </div>
               <h1 
                 className="text-4xl font-extrabold tracking-tight sm:text-6xl text-foreground"
@@ -890,7 +900,7 @@ function PublicCollectionPage() {
               <div className="h-px w-12 bg-border/40" />
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/50 border border-border/40 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <p className="font-bold tracking-widest uppercase text-[9px] text-foreground/70">Catálogo Premium · NexOS</p>
+                <p className="font-bold tracking-widest uppercase text-[9px] text-foreground/70">Catálogo {data.company_name}</p>
               </div>
               <div className="h-px w-12 bg-border/40" />
             </div>

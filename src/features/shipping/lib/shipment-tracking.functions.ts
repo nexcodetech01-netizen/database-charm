@@ -87,7 +87,7 @@ export const getShipmentByTrackingCode = createServerFn({ method: "GET" })
     const { data: shipment, error } = await supabaseAdmin
       .from("shipments")
       .select(
-        "tracking_code, carrier, service_name, status, recipient_name, recipient_city, recipient_state, estimated_delivery_days, created_at, order_reference",
+        "company_id, tracking_code, carrier, service_name, status, recipient_name, recipient_city, recipient_state, estimated_delivery_days, created_at, order_reference",
       )
       .eq("tracking_code", data.trackingCode.trim())
       .maybeSingle();
@@ -96,6 +96,12 @@ export const getShipmentByTrackingCode = createServerFn({ method: "GET" })
       console.error("[getShipmentByTrackingCode] Erro:", error);
       return null;
     }
+    if (!shipment) return null;
 
-    return shipment;
+    // A página de rastreio mostra a marca da loja que enviou (logo, nome,
+    // cor). Falha aqui não pode esconder o rastreio.
+    const { loadStoreBranding } = await import("@/features/storefront/lib/store-branding.server");
+    const store = await loadStoreBranding(supabaseAdmin, shipment.company_id).catch(() => null);
+    const { company_id: _companyId, ...publicFields } = shipment;
+    return { ...publicFields, store };
   });

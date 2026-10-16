@@ -43,6 +43,10 @@ export type CollectionPagePayload = {
   cover_url: string | null;
   status: string;
   company_name: string;
+  /** Cor principal da loja (Configurações › Empresa); null = neutro. */
+  brand_color: string | null;
+  /** Logo da loja (URL assinada); null = sem logo. */
+  logo_url: string | null;
   installment_max: number | null;
   installment_min_amount: number;
   card_fee_percent: number;
@@ -149,9 +153,16 @@ async function loadCollectionPagePayloadInner(params: {
   const [{ data: company }, { data: payCfg }, { data: cardCfg }, { data: items }] = await Promise.all([
     supabaseAdmin
       .from("companies")
-      .select("id, name, whatsapp, phone")
+      .select("id, name, whatsapp, phone, primary_color, logo_path")
       .eq("id", col.company_id)
-      .maybeSingle<{ id: string; name: string; whatsapp: string | null; phone: string | null }>(),
+      .maybeSingle<{
+        id: string;
+        name: string;
+        whatsapp: string | null;
+        phone: string | null;
+        primary_color: string | null;
+        logo_path: string | null;
+      }>(),
     supabaseAdmin
       .from("bella_pay_config")
       .select("credit_card_max_installments, connection_status")
@@ -204,6 +215,15 @@ async function loadCollectionPagePayloadInner(params: {
     if (p.category?.name) categoriesSet.add(p.category.name);
   });
 
+  // Logo da loja para o topo do catálogo (falha não derruba a página).
+  let logoUrl: string | null = null;
+  if (company?.logo_path) {
+    const { data: signedLogo } = await supabaseAdmin.storage
+      .from("product-images")
+      .createSignedUrl(company.logo_path, 60 * 60);
+    logoUrl = signedLogo?.signedUrl ?? null;
+  }
+
   const payload: CollectionPagePayload = {
     id: col.id,
     slug: col.slug,
@@ -212,6 +232,8 @@ async function loadCollectionPagePayloadInner(params: {
     cover_url: col.cover_url,
     status: col.status,
     company_name: company?.name ?? "",
+    brand_color: company?.primary_color ?? null,
+    logo_url: logoUrl,
         installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,
     installment_min_amount: Number(cardCfg?.min_installment_amount ?? 0),
     card_fee_percent: Number(cardCfg?.card_fee_percent ?? 2.88),

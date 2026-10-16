@@ -593,8 +593,9 @@ export function EmpresaSection() {
             <div>
               <CardTitle className="text-sm">Identidade visual</CardTitle>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Opcional. Usado pela Bella ao gerar materiais e por peças
-                impressas coloridas.
+                Opcional. A cor principal e a logo aparecem para os seus
+                clientes no catálogo, no rastreio e na página de pontos. Também
+                são usadas pela Bella ao gerar materiais e em peças impressas.
               </p>
             </div>
           </div>
