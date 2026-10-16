@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +15,16 @@ export function SignUpForm({ onSuccess }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const inFlightRef = useRef(false); // trava contra cliques rápidos
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (inFlightRef.current) return;
     if (password.length < 6) {
       toast.error("A senha precisa ter ao menos 6 caracteres.");
       return;
     }
+    inFlightRef.current = true;
     setLoading(true);
     try {
       await authService.signUp(email, password, fullName);
@@ -30,6 +33,7 @@ export function SignUpForm({ onSuccess }: Props) {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível cadastrar.");
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }

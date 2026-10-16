@@ -100,10 +100,19 @@ export const getLoyaltyStoreStatus = createServerFn({ method: "GET" })
     if (error) return { status: "unknown" as const };
     if (!collection) return { status: "store_not_found" as const };
 
-    const { data: settings } = await supabaseAdmin
-      .from("loyalty_settings")
-      .select("enabled")
-      .eq("company_id", collection.company_id)
-      .maybeSingle();
-    return { status: settings?.enabled ? ("ok" as const) : ("program_disabled" as const) };
+    const { loadStoreBranding } = await import("@/features/storefront/lib/store-branding.server");
+    const [{ data: settings }, branding] = await Promise.all([
+      supabaseAdmin
+        .from("loyalty_settings")
+        .select("enabled")
+        .eq("company_id", collection.company_id)
+        .maybeSingle(),
+      loadStoreBranding(supabaseAdmin, collection.company_id),
+    ]);
+
+    // Nome, logo e cor da loja, para o cliente saber de quem são os pontos.
+    return {
+      status: settings?.enabled ? ("ok" as const) : ("program_disabled" as const),
+      branding,
+    };
   });

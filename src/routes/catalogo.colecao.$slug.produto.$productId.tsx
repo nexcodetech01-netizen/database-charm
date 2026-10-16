@@ -38,6 +38,7 @@ import {
 } from "@/features/catalog/components/availability-badge";
 import { ProductLightbox } from "@/features/catalog/components/product-lightbox";
 import { FramedImage } from "@/components/media/framed-image";
+import { brandStyle } from "@/features/storefront/lib/brand";
 
 const productSearchSchema = z.object({
   preview: fallback(z.string(), "").default(""),
@@ -321,7 +322,7 @@ function PublicProductPage() {
   const showAvailabilityBadge = data.show_stock || availability === "presale";
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-28" style={brandStyle(data.brand_color)}>
       {/* Topbar */}
       <header className="sticky top-0 z-10 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-3">
