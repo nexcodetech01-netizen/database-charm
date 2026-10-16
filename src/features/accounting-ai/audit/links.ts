@@ -17,7 +17,7 @@ export const BELLA_AUDIT_LINKS: Record<AuditLinkId, AuditLink> = {
   abrir_tributario: {
     id: "abrir_tributario",
     label: "Abrir tributário",
-    href: "/fiscal/tributario",
+    href: "/financeiro/saude-fiscal",
   },
   abrir_relatorios: {
     id: "abrir_relatorios",

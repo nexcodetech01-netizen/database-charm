@@ -87,6 +87,10 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
     mutationFn: async (values: ConsignmentFormValues) => {
       if (selectedItems.length === 0) throw new Error('Selecione ao menos um produto');
       if (!companyId) throw new Error('Empresa não identificada. Tente recarregar a página.');
+      const bad = selectedItems.find(
+        (it) => !Number.isInteger(it.sent_quantity) || it.sent_quantity < 1,
+      );
+      if (bad) throw new Error('Confira as quantidades: cada produto precisa de pelo menos 1 unidade.');
       
       return ConsignmentService.createConsignment(
         {
@@ -179,7 +183,10 @@ export function CreateConsignmentDialog({ open, onOpenChange, companyId }: Props
 
   const updateItemQty = (id: string, qty: number) => {
     setSelectedItems(prev => prev.map(i => 
-      i.product_id === id ? { ...i, sent_quantity: Math.max(1, qty) } : i
+      // Campo apagado/inválido vira 1 — nunca NaN (o NaN passava no envio).
+      i.product_id === id
+        ? { ...i, sent_quantity: Number.isFinite(qty) ? Math.max(1, Math.floor(qty)) : 1 }
+        : i
     ));
   };
 

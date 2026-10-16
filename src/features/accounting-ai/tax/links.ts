@@ -7,17 +7,17 @@ export const BELLA_TAX_LINKS: Record<BellaTaxLinkId, BellaTaxLink> = {
   abrir_tributario: {
     id: "abrir_tributario",
     label: "Abrir tributário",
-    href: "/fiscal/tributario",
+    href: "/financeiro/saude-fiscal",
   },
   ver_apuracoes: {
     id: "ver_apuracoes",
     label: "Ver apurações",
-    href: "/fiscal/tributario",
+    href: "/financeiro/saude-fiscal",
   },
   ver_projecoes: {
     id: "ver_projecoes",
     label: "Ver projeções",
-    href: "/fiscal/tributario",
+    href: "/financeiro/saude-fiscal",
   },
   abrir_perfil_tributario: {
     id: "abrir_perfil_tributario",

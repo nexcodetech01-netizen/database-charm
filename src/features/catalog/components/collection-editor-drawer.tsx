@@ -170,7 +170,11 @@ export function CollectionEditorDrawer({
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`Remover ${prod.name} da coleção`}
+                        // Um clique por vez: evita remover/avisar em dobro.
+                        disabled={removeItem.isPending && removeItem.variables === it.id}
                         onClick={() => {
+                          if (removeItem.isPending) return;
                           const itemId = it.id;
                           const label = prod.name;
                           removeItem.mutate(itemId, {
@@ -182,6 +186,11 @@ export function CollectionEditorDrawer({
                                     collectionId: collection.id,
                                     productIds: [prod.id],
                                   }),
+                              });
+                            },
+                            onError: (err) => {
+                              toast.error(`Não foi possível remover “${label}”`, {
+                                description: err instanceof Error ? err.message : "Tente de novo.",
                               });
                             },
                           });

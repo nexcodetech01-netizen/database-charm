@@ -184,6 +184,7 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     const params = new URLSearchParams(window.location.search);
     const s = params.get("ml_status");
     if (!s) return;
+    const mlError = params.get("ml_error");
     
     params.delete("ml_status");
     params.delete("ml_error");
@@ -193,6 +194,10 @@ export function MercadoLivreConnectDialog({ open, onOpenChange, onStatusChange }
     if (s === "connected") {
       toast.success("Mercado Livre conectado com sucesso.");
       void refresh(true);
+    } else {
+      toast.error("Não foi possível conectar o Mercado Livre.", {
+        description: mlError ?? "Tente conectar de novo.",
+      });
     }
   }, [refresh]);
 

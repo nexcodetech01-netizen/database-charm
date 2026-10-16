@@ -294,14 +294,30 @@ function CrmPage() {
               setSelected(o);
               setSheetOpen(true);
             }}
-            onMove={(id: string, targetStageId: string) => {
+            onMove={async (id: string, targetStageId: string) => {
               const target = opps.filter((o) => o.stage_id === targetStageId).length;
-              move.mutate({ id, stageId: targetStageId, position: target });
               const stage = stages.find((s) => s.id === targetStageId);
-              if (stage?.is_won) {
-                close.mutate({ id, status: "won" });
-              } else if (stage?.is_lost) {
-                close.mutate({ id, status: "lost" });
+              const current = allOpps.find((o) => o.id === id);
+              // Em sequência: etapa e situação não podem ficar desencontradas.
+              try {
+                await move.mutateAsync({ id, stageId: targetStageId, position: target });
+                if (stage?.is_won) {
+                  await close.mutateAsync({ id, status: "won" });
+                } else if (stage?.is_lost) {
+                  await close.mutateAsync({ id, status: "lost" });
+                } else if (current && current.status !== "open") {
+                  // Saiu de Ganho/Perdido para uma etapa normal: reabre.
+                  await update.mutateAsync({
+                    id,
+                    patch: { status: "open", closed_at: null },
+                  });
+                }
+              } catch (err) {
+                toast.error("Não foi possível mover a oportunidade", {
+                  description:
+                    err instanceof Error ? err.message : "Atualize a página e tente de novo.",
+                });
+                void oppsQ.refetch();
               }
             }}
             onAddOpportunity={() => {
@@ -358,12 +374,20 @@ function CrmPage() {
         companyId={company.id}
         stages={stages}
         onSubmit={async (values, id) => {
-          if (id) {
-            await update.mutateAsync({ id, patch: values });
-            toast.success("Oportunidade atualizada");
-          } else {
-            await create.mutateAsync(values);
-            toast.success("Oportunidade criada");
+          try {
+            if (id) {
+              await update.mutateAsync({ id, patch: values });
+              toast.success("Oportunidade atualizada");
+            } else {
+              await create.mutateAsync(values);
+              toast.success("Oportunidade criada");
+            }
+          } catch (err) {
+            toast.error("Não foi possível salvar a oportunidade", {
+              description: err instanceof Error ? err.message : "Tente de novo em instantes.",
+            });
+            // Repassa o erro para a janela continuar aberta com o que foi digitado.
+            throw err;
           }
         }}
       />

@@ -248,6 +248,10 @@ function MarketingPage() {
                       onDelete={(c) =>
                         remove.mutate(c.id, {
                           onSuccess: () => toast.success("Campanha removida"),
+                          onError: (err) =>
+                            toast.error("Não foi possível remover a campanha", {
+                              description: err instanceof Error ? err.message : undefined,
+                            }),
                         })
                       }
                     />
