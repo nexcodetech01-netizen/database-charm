@@ -28,15 +28,18 @@ function FidelidadePage() {
   });
   // Em caso de dúvida (erro/limite), mostramos o formulário normalmente.
   const storeStatus = storeQ.data?.status;
+  const storeName =
+    storeQ.data && "storeName" in storeQ.data ? storeQ.data.storeName : null;
+  const logoUrl = storeQ.data && "logoUrl" in storeQ.data ? storeQ.data.logoUrl : null;
 
   const mutation = useMutation({
-    mutationFn: () => getBalanceFn({ data: { slug, phone } }),
+    mutationFn: (typed: string) => getBalanceFn({ data: { slug, phone: typed } }),
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!phone.trim()) return;
-    mutation.mutate();
+    mutation.mutate(phone.trim());
   }
 
   const result = mutation.data;
@@ -45,12 +48,24 @@ function FidelidadePage() {
     <div className="min-h-screen bg-[#161310] text-white">
       <div className="mx-auto max-w-lg px-4 py-10">
         <div className="mb-8 text-center">
-          <Gift className="mx-auto h-8 w-8 text-[#B392E0]" />
-          <h1 className="mt-3 text-lg font-bold uppercase tracking-widest text-[#B392E0]">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={storeName ?? "Logo da loja"}
+              className="mx-auto h-16 w-16 rounded-full bg-white object-contain p-1"
+            />
+          ) : (
+            <Gift className="mx-auto h-8 w-8 text-[#B392E0]" />
+          )}
+          {storeName ? (
+            <p className="mt-3 text-base font-semibold text-white">{storeName}</p>
+          ) : null}
+          <h1 className="mt-2 text-lg font-bold uppercase tracking-widest text-[#B392E0]">
             Meus pontos
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            Digite seu telefone (o mesmo usado nas suas compras) pra ver seus pontos.
+            Digite seu telefone com DDD (o mesmo usado nas suas compras
+            {storeName ? ` na ${storeName}` : ""}) para ver seus pontos.
           </p>
         </div>
 
@@ -119,10 +134,16 @@ function FidelidadePage() {
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-white/60">
-                    Não encontramos pontos pra esse telefone ainda. Faça uma compra pra começar a
-                    acumular!
-                  </p>
+                  <div className="space-y-2 text-sm text-white/60">
+                    <p className="font-medium text-white">
+                      Não achamos cadastro com o telefone {mutation.variables}
+                      {storeName ? ` na ${storeName}` : ""}.
+                    </p>
+                    <p>
+                      Confira se digitou certo, com DDD. Se o número está certo, é possível que
+                      a loja tenha cadastrado outro telefone — fale com ela para conferir.
+                    </p>
+                  </div>
                 )}
               </div>
             )}

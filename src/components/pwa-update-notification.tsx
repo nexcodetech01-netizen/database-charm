@@ -26,12 +26,10 @@ export function PWAUpdateNotification() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const isDevOrPreview =
-    mounted &&
-    (import.meta.env.DEV ||
-      /localhost|127\.0\.0\.1|preview--|id-preview--|lovableproject|beta\.lovable\.dev/.test(
-        window.location.hostname,
-      ));
+  // Botão de teste só no desenvolvimento local. Na pré-visualização do
+  // Lovable ele aparecia para quem testava e parecia "sistema inacabado".
+  // Para testar lá, use `__triggerPwaUpdate()` no console.
+  const isDevOrPreview = mounted && import.meta.env.DEV;
 
   useEffect(() => {
     if (typeof window === "undefined") return;

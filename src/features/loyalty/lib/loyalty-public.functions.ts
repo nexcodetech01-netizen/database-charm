@@ -100,10 +100,36 @@ export const getLoyaltyStoreStatus = createServerFn({ method: "GET" })
     if (error) return { status: "unknown" as const };
     if (!collection) return { status: "store_not_found" as const };
 
-    const { data: settings } = await supabaseAdmin
-      .from("loyalty_settings")
-      .select("enabled")
-      .eq("company_id", collection.company_id)
-      .maybeSingle();
-    return { status: settings?.enabled ? ("ok" as const) : ("program_disabled" as const) };
+    const [{ data: settings }, { data: company }] = await Promise.all([
+      supabaseAdmin
+        .from("loyalty_settings")
+        .select("enabled")
+        .eq("company_id", collection.company_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("companies")
+        .select("name, trade_name, logo_path")
+        .eq("id", collection.company_id)
+        .maybeSingle(),
+    ]);
+
+    // Nome e logo da loja, para o cliente saber de quem são os pontos.
+    const storeName =
+      (company as { trade_name?: string | null; name?: string | null } | null)?.trade_name?.trim() ||
+      company?.name ||
+      null;
+    let logoUrl: string | null = null;
+    const logoPath = (company as { logo_path?: string | null } | null)?.logo_path;
+    if (logoPath) {
+      const { data: signed } = await supabaseAdmin.storage
+        .from("product-images")
+        .createSignedUrl(logoPath, 60 * 60);
+      logoUrl = signed?.signedUrl ?? null;
+    }
+
+    return {
+      status: settings?.enabled ? ("ok" as const) : ("program_disabled" as const),
+      storeName,
+      logoUrl,
+    };
   });

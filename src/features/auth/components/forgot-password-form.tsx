@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,13 @@ interface Props {
 export function ForgotPasswordForm({ onBack }: Props) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const inFlightRef = useRef(false); // trava contra cliques rápidos
   const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setLoading(true);
     try {
       await authService.requestPasswordReset(email);
@@ -24,6 +27,7 @@ export function ForgotPasswordForm({ onBack }: Props) {
     } catch {
       toast.error("Não foi possível enviar o email de recuperação.");
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }

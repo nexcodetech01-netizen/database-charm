@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,13 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
   const [loading, setLoading] = useState(false);
   // Aviso fixo embaixo da senha (o toast some sozinho e dá para não ver).
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Trava síncrona: cliques rápidos chegam antes de o botão ficar desativado.
+  const inFlightRef = useRef(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setLoading(true);
     setErrorMsg(null);
     try {
@@ -35,8 +39,10 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
             ? "Sem conexão com o servidor. Verifique a internet e tente de novo."
             : "Não foi possível entrar. Confira email e senha e tente de novo.";
       setErrorMsg(msg);
-      toast.error(msg);
+      // id fixo: tentativas seguidas trocam o aviso em vez de empilhar.
+      toast.error(msg, { id: "signin-error" });
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }
