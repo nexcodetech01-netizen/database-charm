@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { BulkCostDialog } from "@/features/products/components/bulk-cost-dialog";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Package } from "lucide-react";
+import { Images, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BreadcrumbNav } from "@/components/layout";
 import { ActionToolbar, EntityHeader } from "@/components/design";
 import {
@@ -63,6 +64,11 @@ function ProductsPage() {
                         <BulkCostDialog companyId={company.id} />
             <BulkNcmDialog companyId={company.id} />
             <ImportCsvDialog companyId={company.id} />
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/produtos/fotos-em-lote">
+                <Images className="mr-1.5 h-4 w-4" /> Fotos em lote
+              </Link>
+            </Button>
           </ActionToolbar>
         }
       />

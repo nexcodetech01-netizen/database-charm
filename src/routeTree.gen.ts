@@ -85,6 +85,7 @@ import { Route as AuthenticatedInteligenciaComercialRecalcularPrecosRouteImport 
 import { Route as AuthenticatedInteligenciaComercialRevisaoPrecosRouteImport } from './routes/_authenticated/inteligencia-comercial.revisao-precos'
 import { Route as AuthenticatedInteligenciaComercialSimuladorRouteImport } from './routes/_authenticated/inteligencia-comercial.simulador'
 import { Route as AuthenticatedMercadolivreCallbackRouteImport } from './routes/_authenticated.mercadolivre.callback'
+import { Route as AuthenticatedProdutosFotosEmLoteRouteImport } from './routes/_authenticated/produtos_.fotos-em-lote'
 import { Route as AuthenticatedProdutosNovoRouteImport } from './routes/_authenticated/produtos_.novo'
 import { Route as AuthenticatedVendasSaleIdRouteImport } from './routes/_authenticated/vendas_.$saleId'
 import { Route as AuthenticatedVendasNovoRouteImport } from './routes/_authenticated/vendas_.novo'
@@ -541,6 +542,12 @@ const AuthenticatedMercadolivreCallbackRoute =
     path: '/mercadolivre/callback',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProdutosFotosEmLoteRoute =
+  AuthenticatedProdutosFotosEmLoteRouteImport.update({
+    id: '/produtos_/fotos-em-lote',
+    path: '/produtos/fotos-em-lote',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProdutosNovoRoute =
   AuthenticatedProdutosNovoRouteImport.update({
     id: '/produtos_/novo',
@@ -814,6 +821,7 @@ export interface FileRoutesByFullPath {
   '/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
   '/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
+  '/produtos/fotos-em-lote': typeof AuthenticatedProdutosFotosEmLoteRoute
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
@@ -924,6 +932,7 @@ export interface FileRoutesByTo {
   '/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
   '/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
+  '/produtos/fotos-em-lote': typeof AuthenticatedProdutosFotosEmLoteRoute
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
@@ -1037,6 +1046,7 @@ export interface FileRoutesById {
   '/_authenticated/inteligencia-comercial/revisao-precos': typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   '/_authenticated/inteligencia-comercial/simulador': typeof AuthenticatedInteligenciaComercialSimuladorRoute
   '/_authenticated/mercadolivre/callback': typeof AuthenticatedMercadolivreCallbackRoute
+  '/_authenticated/produtos_/fotos-em-lote': typeof AuthenticatedProdutosFotosEmLoteRoute
   '/_authenticated/produtos_/novo': typeof AuthenticatedProdutosNovoRoute
   '/_authenticated/vendas_/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/_authenticated/vendas_/novo': typeof AuthenticatedVendasNovoRoute
@@ -1150,6 +1160,7 @@ export interface FileRouteTypes {
     | '/inteligencia-comercial/revisao-precos'
     | '/inteligencia-comercial/simulador'
     | '/mercadolivre/callback'
+    | '/produtos/fotos-em-lote'
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
@@ -1260,6 +1271,7 @@ export interface FileRouteTypes {
     | '/inteligencia-comercial/revisao-precos'
     | '/inteligencia-comercial/simulador'
     | '/mercadolivre/callback'
+    | '/produtos/fotos-em-lote'
     | '/produtos/novo'
     | '/vendas/$saleId'
     | '/vendas/novo'
@@ -1372,6 +1384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inteligencia-comercial/revisao-precos'
     | '/_authenticated/inteligencia-comercial/simulador'
     | '/_authenticated/mercadolivre/callback'
+    | '/_authenticated/produtos_/fotos-em-lote'
     | '/_authenticated/produtos_/novo'
     | '/_authenticated/vendas_/$saleId'
     | '/_authenticated/vendas_/novo'
@@ -1978,6 +1991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMercadolivreCallbackRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/produtos_/fotos-em-lote': {
+      id: '/_authenticated/produtos_/fotos-em-lote'
+      path: '/produtos/fotos-em-lote'
+      fullPath: '/produtos/fotos-em-lote'
+      preLoaderRoute: typeof AuthenticatedProdutosFotosEmLoteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/produtos_/novo': {
       id: '/_authenticated/produtos_/novo'
       path: '/produtos/novo'
@@ -2426,6 +2446,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInteligenciaComercialRevisaoPrecosRoute: typeof AuthenticatedInteligenciaComercialRevisaoPrecosRoute
   AuthenticatedInteligenciaComercialSimuladorRoute: typeof AuthenticatedInteligenciaComercialSimuladorRoute
   AuthenticatedMercadolivreCallbackRoute: typeof AuthenticatedMercadolivreCallbackRoute
+  AuthenticatedProdutosFotosEmLoteRoute: typeof AuthenticatedProdutosFotosEmLoteRoute
   AuthenticatedProdutosNovoRoute: typeof AuthenticatedProdutosNovoRoute
   AuthenticatedVendasSaleIdRoute: typeof AuthenticatedVendasSaleIdRouteWithChildren
   AuthenticatedVendasNovoRoute: typeof AuthenticatedVendasNovoRoute
@@ -2510,6 +2531,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedInteligenciaComercialSimuladorRoute,
   AuthenticatedMercadolivreCallbackRoute:
     AuthenticatedMercadolivreCallbackRoute,
+  AuthenticatedProdutosFotosEmLoteRoute: AuthenticatedProdutosFotosEmLoteRoute,
   AuthenticatedProdutosNovoRoute: AuthenticatedProdutosNovoRoute,
   AuthenticatedVendasSaleIdRoute: AuthenticatedVendasSaleIdRouteWithChildren,
   AuthenticatedVendasNovoRoute: AuthenticatedVendasNovoRoute,
