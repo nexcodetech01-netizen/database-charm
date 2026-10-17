@@ -95,6 +95,11 @@ async function ensureProductsForItems(
           model: attrs.model,
           color: attrs.color,
           size: attrs.size,
+          // Mesmos padrões do cadastro manual: unidade, sem código de barras
+          // e à venda na loja física e no catálogo online.
+          unit: "UN",
+          barcode: "SEM GTIN",
+          sales_channels: ["loja_fisica", "catalog"],
           cost: Number(it.unit_price) || 0,
           // Preço de venda da revisão da importação; sem ele, fica igual ao
           // custo (e o produto aparece para revisar o preço).
