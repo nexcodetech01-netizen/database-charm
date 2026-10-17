@@ -7,6 +7,7 @@ import {
   type PdvSearchOption,
 } from "../lib/search-cache";
 import { usePdvCatalogIndex } from "./use-pdv-catalog-index";
+import { describeVariant } from "@/features/products/lib/product-identity";
 
 /**
  * Busca de produtos do PDV.
@@ -74,6 +75,7 @@ export function usePdvProductSearch(companyId: string, term: string) {
           sku: p.sku ?? null,
           barcode: (p as { barcode?: string | null }).barcode ?? null,
           reference: (p as { brand?: string | null }).brand ?? null,
+          variant: describeVariant(p as { model?: string | null; color?: string | null; size?: string | null }) || undefined,
           price: p.price != null ? Number(p.price) : null,
           cost: p.cost != null ? Number(p.cost) : null,
           stock: p.stock != null ? Number(p.stock) : null,

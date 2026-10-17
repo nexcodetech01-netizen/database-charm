@@ -5694,6 +5694,8 @@ export type Database = {
       }
       products: {
         Row: {
+          color: string | null
+          size: string | null
           barcode: string | null
           brand: string | null
           category_id: string | null
@@ -5740,6 +5742,8 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          color?: string | null
+          size?: string | null
           barcode?: string | null
           brand?: string | null
           category_id?: string | null
@@ -5786,6 +5790,8 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          color?: string | null
+          size?: string | null
           barcode?: string | null
           brand?: string | null
           category_id?: string | null

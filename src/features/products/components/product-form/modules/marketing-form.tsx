@@ -101,25 +101,6 @@ export function MarketingForm({
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="brand">Marca</Label>
-        <Input
-          id="brand"
-          placeholder="Ex: Nike, Samsung, Genérica"
-          value={form.brand}
-          onChange={(e) => setForm((s: any) => ({ ...s, brand: e.target.value }))}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="model">Modelo</Label>
-        <Input
-          id="model"
-          placeholder="Ex: Air Max, Galaxy S24"
-          value={form.model}
-          onChange={(e) => setForm((s: any) => ({ ...s, model: e.target.value }))}
-        />
-      </div>
     </div>
   );
 }
