@@ -1,6 +1,7 @@
 // ============= Lines 1-235 of 235 total lines =============
 
 import { authorizePreview } from "@/features/catalog/lib/preview-auth.server";
+import { cached } from "./short-cache.server";
 
 const BUCKET = "product-images";
 const SIGN_TTL = 60 * 60;
@@ -56,6 +57,19 @@ export type ProductPageResult =
  * de 2026-08-18.
  */
 export async function loadProductPagePayload(params: {
+  slug: string;
+  productId: string;
+  isPreview: boolean;
+}): Promise<ProductPageResult> {
+  if (params.isPreview) return loadProductPagePayloadInner(params);
+  return cached(
+    `prod:${params.slug}:${params.productId}`,
+    () => loadProductPagePayloadInner(params),
+    (r) => r.ok,
+  );
+}
+
+async function loadProductPagePayloadInner(params: {
   slug: string;
   productId: string;
   isPreview: boolean;
