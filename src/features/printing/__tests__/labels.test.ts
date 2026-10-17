@@ -20,6 +20,7 @@ describe("Etiquetas", () => {
   it("expõe os três layouts obrigatórios", () => {
     expect(Object.keys(LABEL_LAYOUTS).sort()).toEqual([
       "40x30",
+      "40x40",
       "50x30",
       "58x40",
     ]);
@@ -37,6 +38,18 @@ describe("Etiquetas", () => {
     expect(resolveBarcodeValue(item)).toBe("7891234567895");
     expect(resolveBarcodeValue({ ...item, barcode: null })).toBe("CAN-001");
     expect(resolveBarcodeValue({ name: "X" })).toBeNull();
+    // "SEM GTIN" não é código: usa o SKU.
+    expect(resolveBarcodeValue({ ...item, barcode: "SEM GTIN" })).toBe("CAN-001");
+  });
+
+  it("tag 40x40 mostra variação e tamanho", () => {
+    const html = renderLabelHtml(
+      { name: "Camiseta Nike", sku: "TG-0042", barcode: "SEM GTIN", price: 89.9, variant: "Just Do It · Azul", size: "M" },
+      LABEL_LAYOUTS["40x40"],
+    );
+    expect(html).toContain("Just Do It · Azul");
+    expect(html).toContain("<strong>M</strong>");
+    expect(html).not.toContain("sem código");
   });
 
   it("expande cópias com limites de 1 a 200", () => {

@@ -5,8 +5,9 @@
  * nenhum acesso a banco, nenhuma alteração de estoque ou preço.
  */
 import { renderCode128Svg, escapeXml } from "./barcode";
+import { hasRealBarcode } from "@/features/products/lib/barcode";
 
-export type LabelLayoutId = "40x30" | "50x30" | "58x40";
+export type LabelLayoutId = "40x30" | "40x40" | "50x30" | "58x40";
 
 export interface LabelLayout {
   id: LabelLayoutId;
@@ -32,6 +33,19 @@ export const LABEL_LAYOUTS: Record<LabelLayoutId, LabelLayout> = {
     namePt: 6.5,
     skuPt: 5.5,
     pricePt: 9,
+    supportsQrCode: false,
+  },
+  // Tag quadrada de roupa: nome, variação, tamanho em destaque, preço,
+  // código de barras do SKU.
+  "40x40": {
+    id: "40x40",
+    label: "40 × 40 mm (tag de roupa)",
+    widthMm: 40,
+    heightMm: 40,
+    barcodeHeightMm: 8,
+    namePt: 7,
+    skuPt: 5.5,
+    pricePt: 11,
     supportsQrCode: false,
   },
   "50x30": {
@@ -69,13 +83,22 @@ export interface LabelItem {
   sku?: string | null;
   barcode?: string | null;
   price?: number | null;
+  /** "Just Do It · Azul" — modelo/estampa e cor (opcional). */
+  variant?: string | null;
+  /** Tamanho da peça, mostrado em destaque (opcional). */
+  size?: string | null;
   /** Data URL do QR Code (opcional). */
   qrCodeDataUrl?: string | null;
 }
 
-/** Valor efetivo do código de barras: barcode > SKU. */
+/**
+ * Valor efetivo do código de barras: barcode real > SKU. Marcadores de
+ * "sem código" ("SEM GTIN", "ISENTO"...) não viram barras — antes a etiqueta
+ * imprimia o código de barras do texto "SEM GTIN".
+ */
 export function resolveBarcodeValue(item: LabelItem): string | null {
-  const value = (item.barcode || item.sku || "").trim();
+  const real = hasRealBarcode(item.barcode) ? (item.barcode ?? "").trim() : "";
+  const value = real || (item.sku ?? "").trim();
   return value ? value : null;
 }
 
@@ -114,8 +137,25 @@ export function renderLabelHtml(
       ? `<div class="label-price">${formatPriceBR(Number(item.price))}</div>`
       : "";
 
+  // Se o nome já traz estampa/cor (botão "Completar nome"), não repete.
+  const norm = (v: string) =>
+    v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+  const nameNorm = ` ${norm(item.name ?? "")} `;
+  const variantParts = (item.variant ?? "").split("·").map((p) => p.trim()).filter(Boolean);
+  const variantInName =
+    variantParts.length > 0 && variantParts.every((p) => nameNorm.includes(` ${norm(p)} `));
+  const variant = item.variant?.trim() && !variantInName
+    ? `<div class="label-variant">${escapeXml(item.variant.trim())}</div>`
+    : "";
+  const size = item.size?.trim()
+    ? `<div class="label-size">Tam. <strong>${escapeXml(item.size.trim())}</strong></div>`
+    : "";
+  const head = variant || size
+    ? `<div class="label-head"><div class="label-name">${escapeXml(item.name ?? "")}</div>${variant}${size}</div>`
+    : `<div class="label-name">${escapeXml(item.name ?? "")}</div>`;
+
   return `<div class="label label-${layout.id}">
-  <div class="label-name">${escapeXml(item.name ?? "")}</div>
+  ${head}
   ${barcode}
   <div class="label-foot">
     <div class="label-foot-text">
@@ -163,10 +203,16 @@ html, body { margin: 0; padding: 0; background: #fff; }
   justify-content: center;
   border: 1px dashed #000;
 }
+.label-head { min-width: 0; }
+.label-variant { font-size: ${layout.skuPt + 0.5}pt; line-height: 1.15; margin-top: 0.3mm; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.label-size { font-size: ${layout.skuPt + 1}pt; margin-top: 0.4mm; }
+.label-size strong { font-size: ${layout.pricePt}pt; }
 .label-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5mm; }
 .label-foot-text { min-width: 0; }
 .label-sku { font-family: monospace; font-size: ${layout.skuPt}pt; }
 .label-price { font-size: ${layout.pricePt}pt; font-weight: 700; }
+/* Na tag 40x40 o SKU já sai embaixo das barras: não repete no rodapé. */
+.label-40x40 .label-barcode:not(.label-barcode-empty) ~ .label-foot .label-sku { display: none; }
 .label-qr { width: ${layout.heightMm / 3}mm; height: ${layout.heightMm / 3}mm; }
 `.trim();
 }

@@ -357,6 +357,13 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
             sku: labelTarget.sku,
             barcode: labelTarget.barcode,
             price: Number(labelTarget.price),
+            // Estampa e cor numa linha; o tamanho vai em destaque.
+            variant:
+              describeVariant({
+                model: (labelTarget as { model?: string | null }).model,
+                color: (labelTarget as { color?: string | null }).color,
+              }) || null,
+            size: (labelTarget as { size?: string | null }).size ?? null,
           }}
         />
       ) : null}
