@@ -39,6 +39,7 @@ import {
 import { ProductLightbox } from "@/features/catalog/components/product-lightbox";
 import { FramedImage } from "@/components/media/framed-image";
 import { brandStyle } from "@/features/storefront/lib/brand";
+import { catalogImgProps } from "@/features/catalog/lib/catalog-image";
 
 const productSearchSchema = z.object({
   preview: fallback(z.string(), "").default(""),
@@ -357,7 +358,7 @@ function PublicProductPage() {
           aria-label={cover ? "Ampliar imagem" : "Sem imagem"}
         >
           <FramedImage
-            src={cover}
+            {...catalogImgProps(cover, 720, { eager: true })}
             alt={data.name}
             framing={data.images[activeImage] ?? data.images[0]}
             aspect="square"
@@ -387,7 +388,7 @@ function PublicProductPage() {
                 }`}
               >
                 <FramedImage
-                  src={img.url}
+                  {...catalogImgProps(img.url, 96)}
                   framing={img}
                   aspect="square"
                   rounded="sm"
@@ -457,9 +458,8 @@ function PublicProductPage() {
                     <div className="relative aspect-square w-full overflow-hidden bg-muted">
                       {r.cover_url ? (
                         <img
-                          src={r.cover_url}
+                          {...catalogImgProps(r.cover_url, 300)}
                           alt={r.name}
-                          loading="lazy"
                           className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         />
                       ) : (

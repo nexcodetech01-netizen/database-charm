@@ -1,6 +1,7 @@
 // ============= Lines 1-181 of 181 total lines =============
 
 import { authorizePreview } from "@/features/catalog/lib/preview-auth.server";
+import { cached } from "./short-cache.server";
 
 const BUCKET = "product-images";
 const SIGN_TTL = 60 * 60;
@@ -92,7 +93,12 @@ export async function loadCollectionPagePayload(params: {
   isPreview: boolean;
 }): Promise<CollectionPageResult> {
   try {
-    return await loadCollectionPagePayloadInner(params);
+    if (params.isPreview) return await loadCollectionPagePayloadInner(params);
+    return await cached(
+      `col:${params.slug}`,
+      () => loadCollectionPagePayloadInner(params),
+      (r) => r.ok,
+    );
   } catch (err) {
     // BUG-CATALOGO-500 (2026-08-27): a função inteira rodava sem try/catch —
     // qualquer exceção (banco, storage, config ausente) virava um 500 cru,

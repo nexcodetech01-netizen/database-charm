@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { brandStyle } from "@/features/storefront/lib/brand";
+import { catalogImgProps } from "@/features/catalog/lib/catalog-image";
 
 const PAGE_SIZE = 24;
 
@@ -359,7 +360,7 @@ function PublicCollectionPage() {
               <div className="flex items-center gap-3">
                 {data.logo_url ? (
                   <img
-                    src={data.logo_url}
+                    {...catalogImgProps(data.logo_url, 80, { eager: true })}
                     alt={data.company_name}
                     className="h-10 w-10 rounded-full border border-border bg-white object-contain p-0.5"
                   />
@@ -411,7 +412,7 @@ function PublicCollectionPage() {
         <div className="mx-auto max-w-5xl px-4 pt-4">
           <div className="overflow-hidden rounded-xl">
             <img
-              src={data.cover_url}
+              {...catalogImgProps(data.cover_url, 1024, { eager: true })}
               alt={data.name}
               className="aspect-[21/9] w-full object-cover"
             />
@@ -634,7 +635,7 @@ function PublicCollectionPage() {
                   : "grid-cols-1"
               )}
             >
-              {visible.map((p) => {
+              {visible.map((p, cardIndex) => {
                 const outOfStock = p.stock <= 0;
                 const cardPrice = calcPrecoCartao(p.price, {
                   cardFeePercent: data.card_fee_percent,
@@ -667,9 +668,8 @@ function PublicCollectionPage() {
                         >
                           {p.cover_url ? (
                             <img
-                              src={p.cover_url}
+                              {...catalogImgProps(p.cover_url, 320, { eager: cardIndex < 4 })}
                               alt={p.name}
-                              loading="lazy"
                               className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
                           ) : (
@@ -763,9 +763,8 @@ function PublicCollectionPage() {
                     >
                       {p.cover_url ? (
                         <img
-                          src={p.cover_url}
+                          {...catalogImgProps(p.cover_url, 400, { eager: cardIndex < 4 })}
                           alt={p.name}
-                          loading="lazy"
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (

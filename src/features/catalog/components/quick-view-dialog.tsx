@@ -17,6 +17,7 @@ import { getQuickViewProduct } from "../lib/quick-view.functions";
 import { FramedImage } from "@/components/media/framed-image";
 import { AvailabilityBadge, resolveAvailability } from "./availability-badge";
 import { useState } from "react";
+import { catalogImgProps } from "@/features/catalog/lib/catalog-image";
 
 interface QuickViewDialogProps {
   slug: string;
@@ -95,7 +96,11 @@ export function QuickViewDialog({
           <div className="grid h-full sm:grid-cols-2">
             <div className="relative bg-muted">
               <FramedImage
-                src={product.product.images[activeImage]?.url ?? product.product.images[0]?.url}
+                {...catalogImgProps(
+                  product.product.images[activeImage]?.url ?? product.product.images[0]?.url,
+                  560,
+                  { eager: true },
+                )}
                 alt={product.product.name}
                 aspect="square"
                 containerClassName="w-full h-full"
@@ -112,7 +117,7 @@ export function QuickViewDialog({
                         i === activeImage ? "border-primary" : "border-transparent"
                       } bg-background overflow-hidden`}
                     >
-                      <img src={img.url} className="w-full h-full object-cover" />
+                      <img {...catalogImgProps(img.url, 48)} alt="" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>

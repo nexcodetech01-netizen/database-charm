@@ -11,7 +11,7 @@ const BUCKET = "product-images";
  * continua acessível pela URL de objeto — por isso o consumidor deve tratar
  * `onError` caindo para a URL sem transformação quando necessário.
  */
-function withImageTransform(signedUrl: string, width: number): string {
+export function withImageTransform(signedUrl: string, width: number): string {
   if (!signedUrl || !signedUrl.includes("/object/sign/")) return signedUrl;
   const rendered = signedUrl.replace("/object/sign/", "/render/image/sign/");
   const sep = rendered.includes("?") ? "&" : "?";
