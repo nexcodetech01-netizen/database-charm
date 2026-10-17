@@ -101,6 +101,7 @@ export function QuickProductFormDialog({ companyId, open, onOpenChange, onCreate
         sku,
         barcode: NO_BARCODE,
         unit: "UN",
+        sales_channels: ["loja_fisica", "catalog"],
       } as any);
 
       toast.success(`"${name.trim()}" criado.`);

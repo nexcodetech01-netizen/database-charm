@@ -142,13 +142,15 @@ export class ProductService extends BaseService {
       price,
       cost,
       sku: input.sku?.trim() || null,
-      unit: input.unit ?? "un",
+      unit: input.unit ? input.unit.toUpperCase() : "UN",
       status: input.status ?? "active",
       category_id: input.categoryId ?? null,
       supplier_id: input.supplierId ?? null,
       description: input.description ?? null,
       min_stock: input.minStock ?? 0,
-      barcode,
+      // Sem código real: o marcador padrão do app (não entra no índice único).
+      barcode: barcode || "SEM GTIN",
+      sales_channels: ["loja_fisica", "catalog"],
     } as ProductInsert;
 
     const product = await this.repo.insert(payload);
