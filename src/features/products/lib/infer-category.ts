@@ -21,6 +21,19 @@ const RULES: Rule[] = [
   { category: "Bolsa Transversal", keywords: ["transversal", "crossbody", "tiracolo"] },
   { category: "Bolsa Shoulder", keywords: ["shoulder"] },
   { category: "Bolsa Baú", keywords: ["baú", "bau"] },
+  // Roupas antes de "Bolsa Social"/"Bolsa": "Camisa Social" não pode virar
+  // bolsa. Palavras ambíguas com bolsa (jeans, polo, meia, conjunto) ficam
+  // de fora de propósito ("Bolsa Jeans", "Bolsa Meia Lua").
+  {
+    category: "Vestuário",
+    keywords: [
+      "camiseta", "camisetas", "camisa", "camisas", "camisão", "regata", "blusa", "blusinha",
+      "bata", "cropped", "moletom", "blusão", "jaqueta", "casaco", "corta vento", "corta-vento",
+      "bermuda", "bermudas", "short", "shorts", "calça", "calca", "legging", "saia", "vestido",
+      "macacão", "macacao", "pijama", "cueca", "sutiã", "sutia", "biquíni", "biquini", "maiô",
+      "t-shirt", "tshirt", "suéter", "sueter", "cardigan", "colete", "kimono", "quimono",
+    ],
+  },
   { category: "Bolsa Social", keywords: ["social"] },
   { category: "Bolsa", keywords: ["bolsa", "bag"] },
   { category: "Relógio", keywords: ["relógio", "relogio", "watch"] },

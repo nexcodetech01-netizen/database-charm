@@ -32,6 +32,10 @@ async function ensureProductsForItems(
   items: PurchaseItemDraft[],
 ): Promise<PurchaseItemDraft[]> {
   const resolved: PurchaseItemDraft[] = [];
+  // Marcas já usadas pela empresa ajudam a separar marca/estampa/cor/tamanho
+  // do nome dos produtos novos (ver parse-product-attributes).
+  let companyBrands: string[] | null = null;
+  const { parseProductAttributes } = await import("@/features/products/lib/parse-product-attributes");
   for (const it of items) {
     if (it.product_id) {
       resolved.push(it);
@@ -65,6 +69,18 @@ async function ensureProductsForItems(
       );
       categoryId = null;
     }
+    if (companyBrands === null) {
+      const { data: brandRows } = await supabase
+        .from("products")
+        .select("brand")
+        .eq("company_id", companyId)
+        .not("brand", "is", null)
+        .limit(1000);
+      companyBrands = [
+        ...new Set((brandRows ?? []).map((b) => (b.brand ?? "").trim()).filter((b) => b && !/^gen[eé]ric/i.test(b))),
+      ];
+    }
+    const attrs = parseProductAttributes(name, companyBrands);
     let created: { id: string; sku: string | null } | null = null;
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const result = await supabase
@@ -75,6 +91,10 @@ async function ensureProductsForItems(
           sku,
           supplier_id: supplierId ?? null,
           category_id: categoryId,
+          brand: attrs.brand,
+          model: attrs.model,
+          color: attrs.color,
+          size: attrs.size,
           cost: Number(it.unit_price) || 0,
           price: Number(it.unit_price) || 0,
           use_category_margin: false,
