@@ -57,6 +57,13 @@ export function PurchaseImportReviewDialog({
   const [dismissedMatches, setDismissedMatches] = useState<Record<number, boolean>>({});
   // Categoria para aplicar em vários itens de uma vez (ex.: 38 camisetas).
   const [bulkCategory, setBulkCategory] = useState("");
+  // Preço de venda em lote: valor fixo ou margem % sobre o custo.
+  const [priceMode, setPriceMode] = useState<"fixed" | "markup">("fixed");
+  const [priceValue, setPriceValue] = useState("");
+  const [priceTarget, setPriceTarget] = useState("all");
+  const costOptions = [...new Set(items.filter((it) => !it.product_id).map((it) => roundCents(it.unit_price)))]
+    .filter((c) => c > 0)
+    .sort((a, b) => a - b);
 
   // Sincroniza estado interno quando initialItems mudar (abertura do dialog).
   //
@@ -228,6 +235,68 @@ export function PurchaseImportReviewDialog({
           </span>
         </div>
 
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          <span className="font-medium">Preço de venda:</span>
+          <select
+            value={priceMode}
+            onChange={(e) => setPriceMode(e.target.value as "fixed" | "markup")}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            aria-label="Tipo de preço"
+          >
+            <option value="fixed">Valor (R$)</option>
+            <option value="markup">Margem sobre o custo (%)</option>
+          </select>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="0.01"
+            value={priceValue}
+            onChange={(e) => setPriceValue(e.target.value)}
+            placeholder={priceMode === "fixed" ? "Ex.: 50,00" : "Ex.: 150"}
+            className="h-8 w-28 text-right text-sm tabular-nums"
+          />
+          <select
+            value={priceTarget}
+            onChange={(e) => setPriceTarget(e.target.value)}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            aria-label="Em quais itens"
+          >
+            <option value="all">em todos</option>
+            <option value="empty">só nos sem preço</option>
+            {costOptions.map((c) => (
+              <option key={c} value={`cost:${c}`}>
+                só custo {formatCurrency(c)}
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!(Number(priceValue) > 0)}
+            onClick={() => {
+              const v = Number(priceValue);
+              setItems((prev) =>
+                prev.map((it) => {
+                  if (it.product_id) return it;
+                  if (priceTarget === "empty" && it.sale_price) return it;
+                  if (priceTarget.startsWith("cost:") && roundCents(it.unit_price) !== Number(priceTarget.slice(5)))
+                    return it;
+                  const price =
+                    priceMode === "fixed" ? v : roundCents((Number(it.unit_price) || 0) * (1 + v / 100));
+                  return { ...it, sale_price: price };
+                }),
+              );
+            }}
+          >
+            Aplicar
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Vale para os produtos novos. Sem preço, o produto entra com o preço igual ao custo.
+          </span>
+        </div>
+
         <div className="flex-1 overflow-auto my-4 border rounded-md">
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
@@ -236,6 +305,7 @@ export function PurchaseImportReviewDialog({
                 <TableHead className="w-[140px]">Categoria</TableHead>
                 <TableHead className="w-[90px] text-right">Qtd. Real</TableHead>
                 <TableHead className="w-[120px] text-right">Custo Unit.</TableHead>
+                <TableHead className="w-[120px] text-right">Venda</TableHead>
                 <TableHead className="w-[120px] text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
@@ -368,6 +438,31 @@ export function PurchaseImportReviewDialog({
                       className="h-8 text-right tabular-nums"
                     />
                   </TableCell>
+                  <TableCell className="text-right">
+                    {it.product_id ? (
+                      <span className="text-xs text-muted-foreground">mantém</span>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={it.sale_price ?? ""}
+                        placeholder={String(it.unit_price ?? "")}
+                        onChange={(e) =>
+                          updateItem(idx, {
+                            sale_price: e.target.value === "" ? null : Number(e.target.value) || 0,
+                          })
+                        }
+                        className={
+                          "h-8 text-right tabular-nums" +
+                          (it.sale_price != null && it.sale_price > 0 && it.sale_price <= it.unit_price
+                            ? " border-amber-500"
+                            : "")
+                        }
+                        title="Preço de venda do produto novo"
+                      />
+                    )}
+                  </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
                     {formatCurrency(it.quantity * it.unit_price)}
                   </TableCell>
@@ -403,4 +498,8 @@ export function PurchaseImportReviewDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function roundCents(v: number | null | undefined): number {
+  return Math.round((Number(v) || 0) * 100) / 100;
 }
