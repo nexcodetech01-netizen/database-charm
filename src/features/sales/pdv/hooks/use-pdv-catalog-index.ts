@@ -16,6 +16,7 @@ import {
   type PdvCatalogIndex,
 } from "../lib/catalog-index";
 import type { PdvSearchOption } from "../lib/search-cache";
+import { describeVariant } from "@/features/products/lib/product-identity";
 
 /** Teto de segurança: catálogos maiores continuam usando a busca no servidor. */
 export const PDV_CATALOG_PREFETCH_LIMIT = 2000;
@@ -28,7 +29,7 @@ async function fetchPdvCatalog(
 ): Promise<PdvSearchOption[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,name,sku,barcode,brand,price,cost,stock,unit,image_url,cover_image_path")
+    .select("id,name,sku,barcode,brand,model,color,size,price,cost,stock,unit,image_url,cover_image_path")
     .eq("company_id", companyId)
     .eq("status", "active")
     .order("name")
@@ -113,5 +114,6 @@ function mapProduct(p: any): PdvSearchOption {
     image_url: p.image_url ?? null,
     cover_image_path: p.cover_image_path ?? null,
     brand: (p as { brand?: string | null }).brand ?? null,
+    variant: describeVariant(p as { model?: string | null; color?: string | null; size?: string | null }) || undefined,
   };
 }

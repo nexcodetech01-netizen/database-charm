@@ -92,7 +92,8 @@ const schema = z.object({
 
 type FormState = {
   name: string; sku: string; barcode: string; ncm: string; cest: string;
-  brand: string; model: string; description: string; category_id: string;
+  brand: string; model: string; color: string; size: string;
+  description: string; category_id: string;
   supplier_id: string; status: string; unit: string; sales_channels: string[];
   cost: string; freight: string; packaging: string; insurance: string;
   other_costs: string; margin: string; use_category_margin: boolean;
@@ -105,7 +106,7 @@ type FormState = {
 
 const empty: FormState = {
   name: "", sku: "", barcode: "SEM GTIN", ncm: "", cest: "",
-  brand: "Genérico", model: "Padrão", description: "", category_id: "",
+  brand: "", model: "", color: "", size: "", description: "", category_id: "",
   supplier_id: "", status: "active", unit: "UN", sales_channels: ["loja_fisica", "catalog"],
   cost: "0", freight: "0", packaging: "0", insurance: "0", other_costs: "0",
   margin: "", use_category_margin: true, price: "0", stock: "1", min_stock: "0",
@@ -120,6 +121,7 @@ function toState(p?: Product): FormState {
     ...empty,
     name: p.name, sku: p.sku ?? "", barcode: p.barcode ?? "", ncm: p.ncm ?? "",
     cest: (p as any).cest ?? "", brand: p.brand ?? "", model: (p as any).model ?? "",
+    color: (p as any).color ?? "", size: (p as any).size ?? "",
     description: p.description ?? "", category_id: p.category_id ?? "",
     supplier_id: p.supplier_id ?? "", status: p.status, unit: p.unit,
     sales_channels: (p as any).sales_channels ?? [], cost: String(p.cost),
@@ -759,6 +761,10 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       cest: normalizeCest(form.cest),
       brand: toTitleCasePtBr(form.brand),
       model: form.model.trim(),
+      color: toTitleCasePtBr(form.color.trim()) || null,
+      size: form.size.trim().toUpperCase() === "ÚNICO" || form.size.trim().toLowerCase() === "unico"
+        ? "Único"
+        : form.size.trim().toUpperCase() || null,
       description: form.description.trim(),
       category_id: form.category_id,
       supplier_id: form.supplier_id || null,
@@ -795,19 +801,25 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       const duplicate = await findDuplicateProduct(companyId, {
         name: payload.name,
         sku: payload.sku,
+        model: form.model,
+        color: form.color,
+        size: form.size,
       });
 
       if (duplicate) {
-        const field =
+        // Nome igual só avisa quando modelo, cor e tamanho também batem.
+        const what =
           duplicate.matchedBy === "sku"
-            ? "SKU"
-            : "nome";
+            ? "o mesmo SKU"
+            : "o mesmo nome, modelo, cor e tamanho";
         const confirmed =
           typeof window !== "undefined" &&
           window.confirm(
-            `Já existe um produto com o mesmo ${field} nessa empresa: "${duplicate.name}"` +
-              (duplicate.sku ? ` (SKU ${duplicate.sku})` : "") +
-              ". Criar mesmo assim um produto novo e separado?",
+            `Já existe um produto com ${what}: "${duplicate.name}"` +
+              (duplicate.variant ? ` (${duplicate.variant})` : "") +
+              (duplicate.sku ? ` — SKU ${duplicate.sku}` : "") +
+              ".\n\nSe for outra peça (estampa, cor ou tamanho diferente), preencha esses campos " +
+              "na aba Geral. Criar mesmo assim um produto novo e separado?",
           );
 
         if (!confirmed) return;

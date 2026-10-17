@@ -191,6 +191,9 @@ export function PDVSearch({
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">
                   {product.name}
+                  {product.variant ? (
+                    <span className="font-normal opacity-80"> · {product.variant}</span>
+                  ) : null}
                 </span>
                 <span className={cn(
                   "block text-xs",

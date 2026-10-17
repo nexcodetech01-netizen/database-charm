@@ -33,6 +33,7 @@ import { updateMercadoLivreItem, syncProductToMercadoLivre } from "@/lib/mercado
 import { useCardPriceConfig } from "@/features/payment-methods/hooks/use-card-price-config";
 import { calcPrecoCartao } from "@/lib/pricing/card-price";
 import { loadErrorText } from "@/components/layout/table-error-row";
+import { describeVariant } from "../lib/product-identity";
 
 type Row = Product & {
   category?: { id: string; name: string } | null;
@@ -145,7 +146,14 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
                 compact
               />
             </div>
-            {p.brand ? <p className="text-xs text-muted-foreground">{p.brand}</p> : null}
+            {(() => {
+              // Marca + variação (modelo · cor · tamanho) para diferenciar
+              // produtos de mesmo nome.
+              const sub = [p.brand, describeVariant(p as never)]
+                .filter((v) => v && String(v).trim())
+                .join(" · ");
+              return sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null;
+            })()}
           </>
         ),
       },

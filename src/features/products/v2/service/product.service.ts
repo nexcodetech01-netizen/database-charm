@@ -83,7 +83,10 @@ export class ProductService extends BaseService {
       barcode,
     });
 
-    if (duplicate) {
+    // Nome igual com várias variações (cor/tamanho/modelo) cadastradas e sem
+    // dizer qual: não dá para saber se é a mesma peça — cria um novo em vez
+    // de juntar com a errada.
+    if (duplicate && !(duplicate.matchedBy === "name" && duplicate.ambiguous)) {
       // Nunca sobrescreve descrição; price/cost só quando o novo valor > 0.
       const patch: Record<string, unknown> = {};
       if (inputPrice != null && inputPrice > 0) patch.price = inputPrice;

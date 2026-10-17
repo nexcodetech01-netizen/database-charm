@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { describeVariant } from "./product-identity";
 
 export interface ProductNameMatch {
   id: string;
@@ -8,6 +9,8 @@ export interface ProductNameMatch {
   stock: number | null;
   unit: string | null;
   cover_image_path: string | null;
+  /** "Swoosh · Azul · M" — para diferenciar produtos de mesmo nome. */
+  variant?: string;
 }
 
 /**
@@ -41,6 +44,18 @@ export async function findProductsByNameKey(
     return [];
   }
 
+  // Mesmo nome pode ser estampa/cor/tamanho diferente: buscamos a variação
+  // de cada um para a pessoa escolher o certo (sem isso, só falha o rótulo).
+  const ids = (data ?? []).map((p) => p.id);
+  const variants = new Map<string, string>();
+  if (ids.length > 0) {
+    const { data: attrs } = await supabase
+      .from("products")
+      .select("id, model, color, size")
+      .in("id", ids);
+    for (const a of attrs ?? []) variants.set(a.id, describeVariant(a));
+  }
+
   return (data ?? []).map((p) => ({
     id: p.id,
     name: p.name,
@@ -49,6 +64,7 @@ export async function findProductsByNameKey(
     stock: p.stock != null ? Number(p.stock) : null,
     unit: p.unit ?? null,
     cover_image_path: p.cover_image_path ?? null,
+    variant: variants.get(p.id) || undefined,
   }));
 }
 

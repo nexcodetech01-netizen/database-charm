@@ -7,7 +7,8 @@ import { Plus } from "lucide-react";
 import { RequiredLabel } from "@/components/ui/required-label";
 import { PRODUCT_STATUS_OPTIONS, PRODUCT_UNIT_OPTIONS, SALES_CHANNEL_OPTIONS } from "../../../types";
 import { useMemo } from "react";
-import { Smartphone, Globe } from "lucide-react";
+import { Smartphone, Globe, Wand2 } from "lucide-react";
+import { buildProductName, SIZE_SUGGESTIONS } from "../../../lib/product-identity";
 
 interface GeneralInfoFormProps {
   form: any;
@@ -74,6 +75,82 @@ export function GeneralInfoForm({
             className={errors.name ? "border-destructive ring-destructive" : ""}
           />
           {errors.name && <p className="text-xs text-destructive font-medium">{errors.name}</p>}
+        </div>
+
+        {/* Identidade da peça: o que diferencia duas "Camiseta Nike Azul". */}
+        <div className="rounded-xl border border-border/60 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">Identificação da peça</p>
+              <p className="text-xs text-muted-foreground">
+                Duas peças com o mesmo nome são produtos diferentes se o modelo, a cor ou o tamanho forem diferentes.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                setForm((s: any) => ({
+                  ...s,
+                  name: buildProductName({
+                    name: s.name,
+                    brand: s.brand,
+                    model: s.model,
+                    color: s.color,
+                    size: s.size,
+                  }),
+                }))
+              }
+            >
+              <Wand2 className="h-3.5 w-3.5" /> Completar nome
+            </Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="brand">Marca</Label>
+              <Input
+                id="brand"
+                placeholder="Ex: Nike"
+                value={form.brand}
+                onChange={(e) => setForm((s: any) => ({ ...s, brand: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="model">Modelo / estampa</Label>
+              <Input
+                id="model"
+                placeholder="Ex: Just Do It"
+                value={form.model}
+                onChange={(e) => setForm((s: any) => ({ ...s, model: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="color">Cor</Label>
+              <Input
+                id="color"
+                placeholder="Ex: Azul"
+                value={form.color ?? ""}
+                onChange={(e) => setForm((s: any) => ({ ...s, color: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="size">Tamanho</Label>
+              <Input
+                id="size"
+                placeholder="Ex: M"
+                list="product-size-suggestions"
+                value={form.size ?? ""}
+                onChange={(e) => setForm((s: any) => ({ ...s, size: e.target.value }))}
+              />
+              <datalist id="product-size-suggestions">
+                {SIZE_SUGGESTIONS.map((sz) => (
+                  <option key={sz} value={sz} />
+                ))}
+              </datalist>
+            </div>
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">Descrição</Label>

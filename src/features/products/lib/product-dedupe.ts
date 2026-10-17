@@ -3,19 +3,25 @@
  *
  * Regra única do NexOS: antes de criar um produto (formulário, importação de
  * PDF/Foto/XML ou Skills da Bella) verificamos se já existe um produto na
- * mesma empresa com o MESMO Nome OU SKU OU Código de Barras — comparação
- * case-insensitive e ignorando espaços extras.
+ * mesma empresa com o MESMO SKU OU Código de Barras OU a mesma identidade
+ * (nome + modelo + cor + tamanho) — comparação case-insensitive e ignorando
+ * espaços extras. Nome igual com cor/tamanho/modelo diferente NÃO é duplicado
+ * (ex.: duas "Camiseta Nike Azul" de estampas diferentes).
  *
  * Este módulo NÃO altera estoque: o saldo continua sendo movimentado
  * exclusivamente pelo motor oficial (`inventory_movements`).
  */
 import { supabase } from "@/integrations/supabase/client";
 import { hasRealBarcode, normalizeBarcode } from "./barcode";
+import { describeVariant, normalizeAttr, sameProductIdentity } from "./product-identity";
 
 export interface DuplicateCandidate {
   name?: string | null;
   sku?: string | null;
   barcode?: string | null;
+  model?: string | null;
+  color?: string | null;
+  size?: string | null;
 }
 
 export interface DuplicateProduct {
@@ -27,6 +33,14 @@ export interface DuplicateProduct {
   cost: number | null;
   status: string | null;
   matchedBy: "sku" | "barcode" | "name";
+  /** "Azul · M" do produto encontrado (vazio se não tiver). */
+  variant?: string;
+  /**
+   * Só para `matchedBy: "name"`: há mais de um produto com esse nome e
+   * variações diferentes, e o candidato não diz qual é — não dá para
+   * afirmar que é o mesmo (nunca mesclar automaticamente nesse caso).
+   */
+  ambiguous?: boolean;
 }
 
 export function formatBarcodeDuplicateMessage(
@@ -107,19 +121,41 @@ export async function findDuplicateProduct(
   if (checks.length === 0) return null;
 
   for (const check of checks) {
+    const isName = check.column === "name";
     let q = client
       .from("products")
-      .select("id, name, sku, barcode, price, cost, status")
+      .select(
+        isName
+          ? "id, name, sku, barcode, price, cost, status, model, color, size"
+          : "id, name, sku, barcode, price, cost, status",
+      )
       .eq("company_id", companyId)
       .ilike(check.column, check.value)
       .order("created_at", { ascending: true })
-      .limit(1);
+      .limit(isName ? 25 : 1);
 
     if (ignoreProductId) q = q.neq("id", ignoreProductId);
 
     const { data, error } = await q;
     if (error) return null;
-    const row = (data ?? [])[0];
+    let rows = (data ?? []) as Array<Record<string, any>>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    let ambiguous = false;
+    if (isName) {
+      // Nome igual não basta: modelo, cor e tamanho também precisam bater.
+      rows = rows.filter((row) =>
+        sameProductIdentity(
+          { name: row.name, model: row.model, color: row.color, size: row.size },
+          { name: candidate.name, model: candidate.model, color: candidate.color, size: candidate.size },
+        ),
+      );
+      const variants = new Set(
+        rows.map((row) =>
+          [row.model, row.color, row.size].map((v) => normalizeAttr(v)).join("|"),
+        ),
+      );
+      ambiguous = variants.size > 1;
+    }
+    const row = rows[0];
     if (row) {
       return {
         id: row.id,
@@ -130,6 +166,8 @@ export async function findDuplicateProduct(
         cost: row.cost ?? null,
         status: row.status ?? null,
         matchedBy: check.column,
+        variant: isName ? describeVariant(row) : undefined,
+        ambiguous: isName ? ambiguous : undefined,
       };
     }
   }

@@ -75,8 +75,10 @@ export function QuickProductFormDialog({ companyId, open, onOpenChange, onCreate
         typeof window !== "undefined" &&
         window.confirm(
           `Já existe um produto com o mesmo nome nessa empresa: "${duplicate.name}"` +
-            (duplicate.sku ? ` (SKU ${duplicate.sku})` : "") +
-            ". Criar mesmo assim um produto novo e separado?",
+            (duplicate.variant ? ` (${duplicate.variant})` : "") +
+            (duplicate.sku ? ` — SKU ${duplicate.sku}` : "") +
+            ". Se for outra peça (cor, tamanho ou estampa diferente), pode criar e depois " +
+            "preencher Cor e Tamanho no cadastro. Criar mesmo assim um produto novo e separado?",
         );
 
       if (!confirmed) return;

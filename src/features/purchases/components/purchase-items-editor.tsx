@@ -504,34 +504,40 @@ export function PurchaseItemsEditor({
                         {!it.product_id &&
                         manualMatches[idx]?.length > 0 &&
                         !dismissedMatches[idx] ? (
-                          <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                            <span className="min-w-0 flex-1 truncate">
-                              Já existe{" "}
-                              <strong className="font-semibold">
-                                {manualMatches[idx][0].name}
-                              </strong>
-                              {manualMatches[idx][0].sku
-                                ? ` (${manualMatches[idx][0].sku})`
-                                : ""}{" "}
-                              no catálogo — pode ser duplicata.
-                            </span>
-                            <button
-                              type="button"
-                              className="shrink-0 font-semibold underline underline-offset-2"
-                              onClick={() =>
-                                linkSuggestedProduct(idx, manualMatches[idx][0])
-                              }
-                            >
-                              Usar este
-                            </button>
-                            <button
-                              type="button"
-                              className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
-                              onClick={() => dismissMatch(idx)}
-                            >
-                              Ignorar
-                            </button>
+                          <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                            <div className="flex items-center gap-1.5">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                              <span className="min-w-0 flex-1">
+                                {manualMatches[idx].length > 1
+                                  ? `Já existem ${manualMatches[idx].length} produtos com esse nome. Se for um deles, escolha; se for outra peça, ignore.`
+                                  : "Já existe um produto com esse nome. Se for a mesma peça, use; se for outra (cor, tamanho ou estampa diferente), ignore."}
+                              </span>
+                              <button
+                                type="button"
+                                className="shrink-0 text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70"
+                                onClick={() => dismissMatch(idx)}
+                              >
+                                Ignorar
+                              </button>
+                            </div>
+                            <ul className="mt-0.5 space-y-0.5 pl-5">
+                              {manualMatches[idx].map((m) => (
+                                <li key={m.id} className="flex items-center gap-2">
+                                  <span className="min-w-0 flex-1 truncate">
+                                    <strong className="font-semibold">{m.name}</strong>
+                                    {m.variant ? ` · ${m.variant}` : ""}
+                                    {m.sku ? ` (${m.sku})` : ""}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="shrink-0 font-semibold underline underline-offset-2"
+                                    onClick={() => linkSuggestedProduct(idx, m)}
+                                  >
+                                    Usar este
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         ) : null}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">

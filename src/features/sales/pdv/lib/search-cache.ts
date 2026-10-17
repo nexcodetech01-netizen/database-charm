@@ -74,6 +74,8 @@ export type PdvSearchOption = PDVProductOption & {
   reference?: string | null;
   /** Marca — usada apenas para ranquear sugestões de venda casada. */
   brand?: string | null;
+  /** "Swoosh · Azul · M" — diferencia produtos de mesmo nome no PDV. */
+  variant?: string;
 };
 
 function eq(a: string | null | undefined, term: string): boolean {
