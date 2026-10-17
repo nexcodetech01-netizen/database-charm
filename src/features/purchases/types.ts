@@ -72,6 +72,12 @@ export interface PurchaseItemDraft {
    * ensureProductsForItems em purchases.service.ts.
    */
   category_name?: string | null;
+  /**
+   * Preço de venda definido na revisão da importação para o produto NOVO
+   * criado a partir deste item. Vazio = preço igual ao custo (comportamento
+   * antigo). Não altera produtos já existentes.
+   */
+  sale_price?: number | null;
 }
 
 export function computeItemTotal(item: {

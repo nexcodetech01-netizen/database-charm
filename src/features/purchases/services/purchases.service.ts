@@ -96,7 +96,12 @@ async function ensureProductsForItems(
           color: attrs.color,
           size: attrs.size,
           cost: Number(it.unit_price) || 0,
-          price: Number(it.unit_price) || 0,
+          // Preço de venda da revisão da importação; sem ele, fica igual ao
+          // custo (e o produto aparece para revisar o preço).
+          price:
+            it.sale_price != null && Number(it.sale_price) > 0
+              ? Number(it.sale_price)
+              : Number(it.unit_price) || 0,
           use_category_margin: false,
           stock: 0,
           status: "active",
