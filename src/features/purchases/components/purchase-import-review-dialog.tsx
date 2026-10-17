@@ -22,6 +22,7 @@ import { formatCurrency } from "@/lib/format";
 import type { PurchaseItemDraft } from "../types";
 import { useCategories } from "@/features/products/hooks/use-products";
 import { inferCategoryName } from "@/features/products/lib/infer-category";
+import { parseProductAttributes } from "@/features/products/lib/parse-product-attributes";
 import {
     findProductsByNameKey,
   findSimilarProducts,
@@ -54,6 +55,8 @@ export function PurchaseImportReviewDialog({
   // produtos duplicados no catálogo.
   const [matches, setMatches] = useState<Record<number, ProductNameMatch[]>>({});
   const [dismissedMatches, setDismissedMatches] = useState<Record<number, boolean>>({});
+  // Categoria para aplicar em vários itens de uma vez (ex.: 38 camisetas).
+  const [bulkCategory, setBulkCategory] = useState("");
 
   // Sincroniza estado interno quando initialItems mudar (abertura do dialog).
   //
@@ -181,6 +184,50 @@ export function PurchaseImportReviewDialog({
           ))}
         </datalist>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          <span className="font-medium">Categoria para vários itens:</span>
+          <Input
+            list="purchase-import-category-options"
+            value={bulkCategory}
+            onChange={(e) => setBulkCategory(e.target.value)}
+            placeholder="Ex.: Vestuário"
+            className="h-8 w-48 text-sm"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!bulkCategory.trim()}
+            onClick={() => {
+              const v = bulkCategory.trim();
+              setItems((prev) =>
+                prev.map((it) => (it.product_id ? it : { ...it, category_name: v })),
+              );
+            }}
+          >
+            Aplicar a todos
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={!bulkCategory.trim()}
+            onClick={() => {
+              const v = bulkCategory.trim();
+              setItems((prev) =>
+                prev.map((it) =>
+                  it.product_id || (it.category_name ?? "").trim() ? it : { ...it, category_name: v },
+                ),
+              );
+            }}
+          >
+            Só nos vazios
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Itens já vinculados a um produto existente não mudam.
+          </span>
+        </div>
+
         <div className="flex-1 overflow-auto my-4 border rounded-md">
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
@@ -203,6 +250,21 @@ export function PurchaseImportReviewDialog({
                       }
                       className="h-8 text-sm"
                     />
+                    {!it.product_id
+                      ? (() => {
+                          // Prévia do que o cadastro vai preencher sozinho.
+                          const a = parseProductAttributes(it.description ?? "");
+                          const parts = [
+                            a.brand && `Marca: ${a.brand}`,
+                            a.model && `Estampa: ${a.model}`,
+                            a.color && `Cor: ${a.color}`,
+                            a.size && `Tam.: ${a.size}`,
+                          ].filter(Boolean);
+                          return parts.length > 0 ? (
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">{parts.join(" · ")}</p>
+                          ) : null;
+                        })()
+                      : null}
                     {it.product_id ? (
                       <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
