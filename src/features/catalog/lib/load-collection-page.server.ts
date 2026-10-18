@@ -204,31 +204,48 @@ async function loadCollectionPagePayloadInner(params: {
       .order("position"),
   ]);
 
-  const products = (items ?? [])
+  // Só entra na vitrine: ativo, com estoque, no canal catálogo.
+  const candidates = (items ?? [])
     .map((it) => it.product as PublicItemProduct | null)
     .filter(
       (p): p is PublicItemProduct =>
         !!p && p.status === "active" && Number(p.stock) > 0 && (p as any).sales_channels?.includes("catalog"),
     );
 
-  // Galeria: quantas fotos cada peça tem e qual é a 2ª (ex.: costas).
-  const productIds = products.map((p) => p.id);
-  const secondPathById = new Map<string, string>();
-  const imageCountById = new Map<string, number>();
-  if (productIds.length > 0) {
+  // Galeria de cada peça, na ordem.
+  const candidateIds = candidates.map((p) => p.id);
+  const galleryById = new Map<string, string[]>();
+  if (candidateIds.length > 0) {
     const { data: gallery } = await supabaseAdmin
       .from("product_images")
       .select("product_id, path, position")
-      .in("product_id", productIds)
+      .in("product_id", candidateIds)
       .order("position");
     for (const g of gallery ?? []) {
+      if (!g.path) continue;
       const pid = g.product_id as string;
-      const prod = products.find((x) => x.id === pid);
-      imageCountById.set(pid, (imageCountById.get(pid) ?? 0) + 1);
-      if (!secondPathById.has(pid) && g.path && g.path !== prod?.cover_image_path) {
-        secondPathById.set(pid, g.path as string);
-      }
+      const list = galleryById.get(pid) ?? [];
+      list.push(g.path as string);
+      galleryById.set(pid, list);
     }
+  }
+
+  // ...e precisa ter foto. Sem capa definida, usa a 1ª foto da galeria.
+  const products = candidates
+    .map((p) => {
+      const cover = p.cover_image_path || galleryById.get(p.id)?.[0] || null;
+      return cover === p.cover_image_path ? p : { ...p, cover_image_path: cover };
+    })
+    .filter((p) => !!p.cover_image_path);
+
+  // Quantas fotos e qual é a 2ª (ex.: costas) para trocar no card.
+  const secondPathById = new Map<string, string>();
+  const imageCountById = new Map<string, number>();
+  for (const p of products) {
+    const all = new Set([p.cover_image_path!, ...(galleryById.get(p.id) ?? [])]);
+    imageCountById.set(p.id, all.size);
+    const second = [...all].find((x) => x !== p.cover_image_path);
+    if (second) secondPathById.set(p.id, second);
   }
 
   const paths = [
@@ -299,7 +316,7 @@ async function loadCollectionPagePayloadInner(params: {
       unit: p.unit,
       cover_url: p.cover_image_path ? (urlMap.get(p.cover_image_path) ?? null) : null,
       second_url: secondPathById.has(p.id) ? (urlMap.get(secondPathById.get(p.id)!) ?? null) : null,
-      image_count: Math.max(imageCountById.get(p.id) ?? 0, p.cover_image_path ? 1 : 0),
+      image_count: imageCountById.get(p.id) ?? 1,
       created_at: p.created_at ?? null,
       model: p.model ?? null,
       color: p.color ?? null,
