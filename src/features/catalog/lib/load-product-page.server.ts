@@ -8,6 +8,11 @@ const SIGN_TTL = 60 * 60;
 const DEFAULT_ENTRADA_PERCENT = 30;
 
 export type ProductPagePayload = {
+  model: string | null;
+  color: string | null;
+  size: string | null;
+  /** Mesma peça (marca, estampa e cor) em outros tamanhos, nesta coleção. */
+  sizes: { id: string; size: string; current: boolean }[];
   id: string;
   name: string;
   brand: string | null;
@@ -116,7 +121,7 @@ async function loadProductPagePayloadInner(params: {
     supabaseAdmin
       .from("products")
       .select(
-        "id, sku, name, brand, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type",
+        "id, sku, name, brand, model, color, size, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type",
       )
       .eq("id", params.productId)
       .eq("company_id", col.company_id)
@@ -247,6 +252,51 @@ async function loadProductPagePayloadInner(params: {
     cover_url: p.cover_image_path ? (relatedUrlMap.get(p.cover_image_path) ?? null) : null,
   }));
 
+  // Outros tamanhos da mesma peça (mesma marca, estampa e cor) nesta coleção.
+  type SizeRow = {
+    id: string;
+    size: string | null;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    status: string;
+    stock: number | string;
+    sales_channels: string[] | null;
+  };
+  const p0 = prod as unknown as { brand: string | null; model: string | null; color: string | null; size: string | null };
+  let sizes: { id: string; size: string; current: boolean }[] = [];
+  if (p0.size && p0.color) {
+    const { data: sib } = await supabaseAdmin
+      .from("product_collection_items")
+      .select("product:products!inner(id, size, brand, model, color, status, stock, sales_channels)")
+      .eq("collection_id", col.id)
+      .eq("product.color", p0.color);
+    const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+    const ORDER = ["PP", "P", "M", "G", "GG", "XG", "XGG", "EG", "EGG"];
+    const rank = (sz: string) => {
+      const i = ORDER.indexOf(sz.toUpperCase());
+      return i >= 0 ? i : 100 + (Number(sz) || 0);
+    };
+    const rows = (sib ?? [])
+      .map((it) => it.product as unknown as SizeRow | null)
+      .filter(
+        (x): x is SizeRow =>
+          !!x &&
+          !!x.size &&
+          x.status === "active" &&
+          Number(x.stock) > 0 &&
+          (x.sales_channels ?? []).includes("catalog") &&
+          norm(x.brand) === norm(p0.brand) &&
+          norm(x.model) === norm(p0.model),
+      );
+    const bySize = new Map<string, string>();
+    for (const x of rows) if (!bySize.has(x.size!.toUpperCase())) bySize.set(x.size!.toUpperCase(), x.id);
+    bySize.set(p0.size.toUpperCase(), prod.id);
+    sizes = [...bySize.entries()]
+      .sort((a, b) => rank(a[0]) - rank(b[0]))
+      .map(([size, id]) => ({ id, size, current: id === prod.id }));
+  }
+
   // Logo da loja para o topo do catálogo (falha não derruba a página).
   let logoUrl: string | null = null;
   if (company?.logo_path) {
@@ -283,6 +333,10 @@ async function loadProductPagePayloadInner(params: {
     show_stock: col.show_stock ?? true,
     show_brand: col.show_brand ?? true,
     related,
+    model: p0.model ?? null,
+    color: p0.color ?? null,
+    size: p0.size ?? null,
+    sizes,
   };
 
   return { ok: true, payload };

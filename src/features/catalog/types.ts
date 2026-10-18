@@ -50,6 +50,13 @@ export interface PublicCollectionProduct {
   stock: number;
   unit: string;
   cover_url: string | null;
+  /** 2ª foto da peça (ex.: costas). */
+  second_url?: string | null;
+  image_count?: number;
+  created_at?: string | null;
+  model?: string | null;
+  color?: string | null;
+  size?: string | null;
     installment_max?: number | null;
   /** Total no cartão a partir do qual pode parcelar (0 = sempre). */
   installment_min_amount?: number | null;
@@ -125,5 +132,10 @@ export interface PublicProductDetail extends CollectionVisibility {
   whatsapp_phone: string | null;
   entrada_percent: number;
   related: PublicRelatedProduct[];
+  model?: string | null;
+  color?: string | null;
+  size?: string | null;
+  /** Mesma peça (marca, estampa e cor) em outros tamanhos, nesta coleção. */
+  sizes?: { id: string; size: string; current: boolean }[];
 }
 

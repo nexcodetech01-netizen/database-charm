@@ -34,6 +34,10 @@ type PublicItemProduct = {
   unit: string;
   status: string;
   cover_image_path: string | null;
+  created_at?: string | null;
+  model?: string | null;
+  color?: string | null;
+  size?: string | null;
 };
 
 export type CollectionPagePayload = {
@@ -71,6 +75,13 @@ export type CollectionPagePayload = {
     stock: number;
     unit: string;
     cover_url: string | null;
+    /** 2ª foto (ex.: costas), para trocar ao tocar/passar o mouse. */
+    second_url: string | null;
+    image_count: number;
+    created_at: string | null;
+    model: string | null;
+    color: string | null;
+    size: string | null;
   }>;
   categories: string[];
 };
@@ -187,7 +198,7 @@ async function loadCollectionPagePayloadInner(params: {
     supabaseAdmin
       .from("product_collection_items")
       .select(
-        "position, product:products(id, sku, name, brand, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type, category:product_categories(id, name))",
+        "position, product:products(id, sku, name, brand, model, color, size, price, stock, unit, status, category_id, cover_image_path, image_url, created_at, updated_at, company_id, description, sales_channels, product_type, category:product_categories(id, name))",
       )
       .eq("collection_id", col.id)
       .order("position"),
@@ -200,7 +211,30 @@ async function loadCollectionPagePayloadInner(params: {
         !!p && p.status === "active" && Number(p.stock) > 0 && (p as any).sales_channels?.includes("catalog"),
     );
 
-  const paths = products.map((p) => p.cover_image_path).filter((p): p is string => !!p);
+  // Galeria: quantas fotos cada peça tem e qual é a 2ª (ex.: costas).
+  const productIds = products.map((p) => p.id);
+  const secondPathById = new Map<string, string>();
+  const imageCountById = new Map<string, number>();
+  if (productIds.length > 0) {
+    const { data: gallery } = await supabaseAdmin
+      .from("product_images")
+      .select("product_id, path, position")
+      .in("product_id", productIds)
+      .order("position");
+    for (const g of gallery ?? []) {
+      const pid = g.product_id as string;
+      const prod = products.find((x) => x.id === pid);
+      imageCountById.set(pid, (imageCountById.get(pid) ?? 0) + 1);
+      if (!secondPathById.has(pid) && g.path && g.path !== prod?.cover_image_path) {
+        secondPathById.set(pid, g.path as string);
+      }
+    }
+  }
+
+  const paths = [
+    ...products.map((p) => p.cover_image_path),
+    ...secondPathById.values(),
+  ].filter((p): p is string => !!p);
 
   let urlMap = new Map<string, string>();
   if (paths.length > 0) {
@@ -264,6 +298,12 @@ async function loadCollectionPagePayloadInner(params: {
       stock: Number(p.stock),
       unit: p.unit,
       cover_url: p.cover_image_path ? (urlMap.get(p.cover_image_path) ?? null) : null,
+      second_url: secondPathById.has(p.id) ? (urlMap.get(secondPathById.get(p.id)!) ?? null) : null,
+      image_count: Math.max(imageCountById.get(p.id) ?? 0, p.cover_image_path ? 1 : 0),
+      created_at: p.created_at ?? null,
+      model: p.model ?? null,
+      color: p.color ?? null,
+      size: p.size ?? null,
     })),
   };
 

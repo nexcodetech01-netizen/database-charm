@@ -118,7 +118,7 @@ import { Route as ApiPublicBellaPayQrChargeIdRouteImport } from './routes/api/pu
 import { Route as ApiPublicBellaPayWebhookTokenRouteImport } from './routes/api/public/bella-pay/webhook.$token'
 import { Route as ApiPublicMercadolivreOauthCallbackRouteImport } from './routes/api/public/mercadolivre/oauth/callback'
 import { Route as ApiPublicMetaOauthCallbackRouteImport } from './routes/api/public/meta.oauth.callback'
-import { Route as CatalogoColecaoSlugProdutoProductIdRouteImport } from './routes/catalogo.colecao.$slug.produto.$productId'
+import { Route as CatalogoColecaoSlugProdutoProductIdRouteImport } from './routes/catalogo.colecao.$slug_.produto.$productId'
 import { Route as ApiPublicCatalogSlugProductProductIdRouteImport } from './routes/api/public/catalog/$slug/product/$productId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -736,9 +736,9 @@ const ApiPublicMetaOauthCallbackRoute =
   } as any)
 const CatalogoColecaoSlugProdutoProductIdRoute =
   CatalogoColecaoSlugProdutoProductIdRouteImport.update({
-    id: '/produto/$productId',
-    path: '/produto/$productId',
-    getParentRoute: () => CatalogoColecaoSlugRoute,
+    id: '/catalogo/colecao/$slug_/produto/$productId',
+    path: '/catalogo/colecao/$slug/produto/$productId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCatalogSlugProductProductIdRoute =
   ApiPublicCatalogSlugProductProductIdRouteImport.update({
@@ -825,7 +825,7 @@ export interface FileRoutesByFullPath {
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
-  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
+  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRoute
   '/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/fiscal/': typeof AuthenticatedFiscalIndexRoute
   '/clientes/$customerId/editar': typeof AuthenticatedClientesCustomerIdEditarRoute
@@ -936,7 +936,7 @@ export interface FileRoutesByTo {
   '/produtos/novo': typeof AuthenticatedProdutosNovoRoute
   '/vendas/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/vendas/novo': typeof AuthenticatedVendasNovoRoute
-  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
+  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesIndexRoute
   '/fiscal': typeof AuthenticatedFiscalIndexRoute
   '/clientes/$customerId/editar': typeof AuthenticatedClientesCustomerIdEditarRoute
@@ -1050,7 +1050,7 @@ export interface FileRoutesById {
   '/_authenticated/produtos_/novo': typeof AuthenticatedProdutosNovoRoute
   '/_authenticated/vendas_/$saleId': typeof AuthenticatedVendasSaleIdRouteWithChildren
   '/_authenticated/vendas_/novo': typeof AuthenticatedVendasNovoRoute
-  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRouteWithChildren
+  '/catalogo/colecao/$slug': typeof CatalogoColecaoSlugRoute
   '/_authenticated/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/_authenticated/fiscal/': typeof AuthenticatedFiscalIndexRoute
   '/_authenticated/clientes_/$customerId/editar': typeof AuthenticatedClientesCustomerIdEditarRoute
@@ -1081,7 +1081,7 @@ export interface FileRoutesById {
   '/api/public/bella-pay/webhook/$token': typeof ApiPublicBellaPayWebhookTokenRoute
   '/api/public/mercadolivre/oauth/callback': typeof ApiPublicMercadolivreOauthCallbackRoute
   '/api/public/meta/oauth/callback': typeof ApiPublicMetaOauthCallbackRoute
-  '/catalogo/colecao/$slug/produto/$productId': typeof CatalogoColecaoSlugProdutoProductIdRoute
+  '/catalogo/colecao/$slug_/produto/$productId': typeof CatalogoColecaoSlugProdutoProductIdRoute
   '/api/public/catalog/$slug/product/$productId': typeof ApiPublicCatalogSlugProductProductIdRoute
 }
 export interface FileRouteTypes {
@@ -1419,7 +1419,7 @@ export interface FileRouteTypes {
     | '/api/public/bella-pay/webhook/$token'
     | '/api/public/mercadolivre/oauth/callback'
     | '/api/public/meta/oauth/callback'
-    | '/catalogo/colecao/$slug/produto/$productId'
+    | '/catalogo/colecao/$slug_/produto/$productId'
     | '/api/public/catalog/$slug/product/$productId'
   fileRoutesById: FileRoutesById
 }
@@ -1436,7 +1436,7 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   RastreioTrackingCodeRoute: typeof RastreioTrackingCodeRoute
   RastreioIndexRoute: typeof RastreioIndexRoute
-  CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRouteWithChildren
+  CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRoute
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
   ApiPublicJobsBellaDetectorsRoute: typeof ApiPublicJobsBellaDetectorsRoute
@@ -1455,6 +1455,7 @@ export interface RootRouteChildren {
   ApiPublicBellaPayWebhookTokenRoute: typeof ApiPublicBellaPayWebhookTokenRoute
   ApiPublicMercadolivreOauthCallbackRoute: typeof ApiPublicMercadolivreOauthCallbackRoute
   ApiPublicMetaOauthCallbackRoute: typeof ApiPublicMetaOauthCallbackRoute
+  CatalogoColecaoSlugProdutoProductIdRoute: typeof CatalogoColecaoSlugProdutoProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2222,12 +2223,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMetaOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalogo/colecao/$slug/produto/$productId': {
-      id: '/catalogo/colecao/$slug/produto/$productId'
-      path: '/produto/$productId'
+    '/catalogo/colecao/$slug_/produto/$productId': {
+      id: '/catalogo/colecao/$slug_/produto/$productId'
+      path: '/catalogo/colecao/$slug/produto/$productId'
       fullPath: '/catalogo/colecao/$slug/produto/$productId'
       preLoaderRoute: typeof CatalogoColecaoSlugProdutoProductIdRouteImport
-      parentRoute: typeof CatalogoColecaoSlugRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/catalog/$slug/product/$productId': {
       id: '/api/public/catalog/$slug/product/$productId'
@@ -2548,18 +2549,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface CatalogoColecaoSlugRouteChildren {
-  CatalogoColecaoSlugProdutoProductIdRoute: typeof CatalogoColecaoSlugProdutoProductIdRoute
-}
-
-const CatalogoColecaoSlugRouteChildren: CatalogoColecaoSlugRouteChildren = {
-  CatalogoColecaoSlugProdutoProductIdRoute:
-    CatalogoColecaoSlugProdutoProductIdRoute,
-}
-
-const CatalogoColecaoSlugRouteWithChildren =
-  CatalogoColecaoSlugRoute._addFileChildren(CatalogoColecaoSlugRouteChildren)
-
 interface ApiPublicCatalogSlugRouteChildren {
   ApiPublicCatalogSlugProductProductIdRoute: typeof ApiPublicCatalogSlugProductProductIdRoute
 }
@@ -2585,7 +2574,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   RastreioTrackingCodeRoute: RastreioTrackingCodeRoute,
   RastreioIndexRoute: RastreioIndexRoute,
-  CatalogoColecaoSlugRoute: CatalogoColecaoSlugRouteWithChildren,
+  CatalogoColecaoSlugRoute: CatalogoColecaoSlugRoute,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
   ApiPublicJobsBellaDetectorsRoute: ApiPublicJobsBellaDetectorsRoute,
@@ -2606,6 +2595,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMercadolivreOauthCallbackRoute:
     ApiPublicMercadolivreOauthCallbackRoute,
   ApiPublicMetaOauthCallbackRoute: ApiPublicMetaOauthCallbackRoute,
+  CatalogoColecaoSlugProdutoProductIdRoute:
+    CatalogoColecaoSlugProdutoProductIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
