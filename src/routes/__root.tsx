@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { isChunkLoadError, reloadForNewVersion } from "@/lib/chunk-recovery";
 import {
   Outlet,
   Link,
@@ -52,9 +53,12 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  // Tela de versão antiga (depois de um Publish): recarrega em vez de travar.
+  const staleVersion = isChunkLoadError(error);
   useEffect(() => {
+    if (staleVersion && reloadForNewVersion()) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, staleVersion]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
