@@ -3,6 +3,7 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { RoutePending } from "@/components/layout/route-pending";
 import { installNavTelemetry } from "@/lib/nav-telemetry";
+import { installChunkRecovery } from "@/lib/chunk-recovery";
 
 export const getRouter = () => {
   // Defaults evitam refetch em toda navegação. Sem staleTime,
@@ -39,8 +40,20 @@ export const getRouter = () => {
   // Telemetria de navegação — mede tempo até resolver e detecta fallback.
   if (typeof window !== "undefined") {
     installNavTelemetry(router);
+
+    // Sistema aberto antes de um Publish: ao trocar de menu, a tela nova
+    // não existe mais com o nome antigo. Recarrega direto no destino.
+    let pendingHref: string | undefined;
+    router.subscribe("onBeforeLoad", (ev) => {
+      pendingHref = ev?.toLocation?.href
+        ? `${window.location.origin}${ev.toLocation.href}`
+        : undefined;
+    });
+    router.subscribe("onResolved", () => {
+      pendingHref = undefined;
+    });
+    installChunkRecovery(() => pendingHref);
   }
 
   return router;
 };
-
