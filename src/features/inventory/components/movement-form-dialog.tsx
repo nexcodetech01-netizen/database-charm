@@ -29,7 +29,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,6 +130,14 @@ export function MovementFormDialog({
   const products = useProductsPicker(companyId, productQuery);
   const productId = form.watch("product_id");
   const selectedProduct = products.data?.find((p) => p.id === productId);
+
+  // Entrada em dobro: a peça já entrou por uma compra nos últimos dias e a
+  // pessoa vai lançar entrada manual de novo (caso real: bonés de 16/09).
+  const source = form.watch("source") || "manual";
+  const recentPurchase = useRecentPurchaseEntry(
+    companyId,
+    open && type === "in" && source === "manual" ? productId : "",
+  );
 
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -288,19 +296,76 @@ export function MovementFormDialog({
             <Textarea rows={3} {...form.register("notes")} placeholder="Opcional" />
           </div>
 
+          {recentPurchase.data ? (
+            <div
+              role="alert"
+              className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Essa peça já entrou pela compra</p>
+                <p className="text-muted-foreground">
+                  {formatQty(recentPurchase.data.quantity)} un. entraram pela compra{" "}
+                  {recentPurchase.data.reference_number ?? ""} em{" "}
+                  {new Date(recentPurchase.data.movement_date).toLocaleDateString("pt-BR")}. Se é a
+                  mesma peça, não precisa lançar de novo — o estoque já foi somado.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={create.isPending}>
               {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Registrar
+              {recentPurchase.data ? "Registrar mesmo assim" : "Registrar"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
+}
+
+/* ---------- Entrada em dobro ---------- */
+
+const RECENT_PURCHASE_DAYS = 7;
+
+function formatQty(v: number) {
+  return Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+}
+
+function useRecentPurchaseEntry(companyId: string, productId: string) {
+  return useQuery({
+    queryKey: ["inv-recent-purchase-entry", companyId, productId],
+    enabled: !!productId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const since = new Date(Date.now() - RECENT_PURCHASE_DAYS * 86_400_000).toISOString();
+      const { data, error } = await supabase
+        .from("inventory_movements")
+        .select("quantity, reference_number, movement_date")
+        .eq("company_id", companyId)
+        .eq("product_id", productId)
+        .eq("source", "purchase")
+        .eq("type", "in")
+        .gte("movement_date", since)
+        .order("movement_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      // Aviso é só ajuda: se a consulta falhar, não atrapalha o lançamento.
+      if (error) return null;
+      return data
+        ? {
+            quantity: Number(data.quantity),
+            reference_number: data.reference_number as string | null,
+            movement_date: data.movement_date as string,
+          }
+        : null;
+    },
+  });
 }
 
 /* ---------- Product picker helpers ---------- */
