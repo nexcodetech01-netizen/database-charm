@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
@@ -47,6 +47,7 @@ const productSearchSchema = z.object({
   marca: fallback(z.string(), "").default(""),
   disp: fallback(z.string(), "").default(""),
   ord: fallback(z.string(), "").default(""),
+  tam: fallback(z.string(), "").default(""),
   page: fallback(z.number().int(), 1).default(1),
 });
 
@@ -55,7 +56,7 @@ function truncate(text: string, max = 160): string {
   return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
 
-export const Route = createFileRoute("/catalogo/colecao/$slug/produto/$productId")({
+export const Route = createFileRoute("/catalogo/colecao/$slug_/produto/$productId")({
   validateSearch: zodValidator(productSearchSchema),
   loaderDeps: ({ search }) => ({ preview: search.preview === "1" }),
   loader: ({ params, deps }) =>
@@ -193,19 +194,21 @@ function buildWhatsAppLink(
   productName: string,
   price: number,
   url: string,
+  details: { color?: string | null; size?: string | null } = {},
 ): string {
+  // Cor e tamanho na mensagem: a loja já sabe qual peça é, sem perguntar.
   const message = [
-    "Olá!",
+    "Olá! Quero esta peça:",
     "",
-    "Tenho interesse neste produto:",
-    "",
-    `Nome: ${productName}`,
+    `*${productName}*`,
+    details.color ? `Cor: ${details.color}` : null,
+    details.size ? `Tamanho: ${details.size}` : null,
     `Preço: ${formatCurrency(price)}`,
     "",
-    `Link do produto: ${url}`,
-    "",
-    "Gostaria de mais informações.",
-  ].join("\n");
+    url,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
@@ -266,6 +269,7 @@ function PublicProductPage() {
   if (search.marca) collectionSearch.marca = search.marca;
   if (search.disp) collectionSearch.disp = search.disp;
   if (search.ord) collectionSearch.ord = search.ord;
+  if (search.tam) collectionSearch.tam = search.tam;
   if (search.page && search.page > 1) collectionSearch.page = search.page;
 
   if (isLoading) {
@@ -350,54 +354,15 @@ function PublicProductPage() {
 
 
       <main className="mx-auto max-w-xl px-4 pt-4">
-        {/* Galeria */}
-        <button
-          type="button"
-          onClick={() => cover && setLightboxOpen(true)}
-          className="group relative block w-full overflow-hidden rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={cover ? "Ampliar imagem" : "Sem imagem"}
-        >
-          <FramedImage
-            {...catalogImgProps(cover, 720, { eager: true })}
-            alt={data.name}
-            framing={data.images[activeImage] ?? data.images[0]}
-            aspect="square"
-            rounded="xl"
-            fallback={<Package className="h-14 w-14 text-muted-foreground" />}
-          />
-          {showAvailabilityBadge && (
-            <AvailabilityBadge
-              kind={availability}
-              className="absolute left-3 top-3"
-            />
-          )}
-        </button>
-        {data.images.length > 1 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {data.images.map((img, i) => (
-              <button
-                key={img.path}
-                type="button"
-                onClick={() => setActiveImage(i)}
-                onDoubleClick={() => {
-                  setActiveImage(i);
-                  setLightboxOpen(true);
-                }}
-                className={`w-16 shrink-0 rounded-md border-2 ${
-                  i === activeImage ? "border-primary" : "border-transparent"
-                }`}
-              >
-                <FramedImage
-                  {...catalogImgProps(img.url, 96)}
-                  framing={img}
-                  aspect="square"
-                  rounded="sm"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-
+        {/* Galeria: deslizar com o dedo (frente, costas, dobrada) */}
+        <ProductCarousel
+          images={data.images}
+          name={data.name}
+          active={activeImage}
+          onActiveChange={setActiveImage}
+          onOpen={() => setLightboxOpen(true)}
+          badge={null}
+        />
 
         {/* Info */}
         <section className="mt-5">
@@ -407,6 +372,49 @@ function PublicProductPage() {
             </div>
           )}
           <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{data.name}</h1>
+          {data.color || data.size ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {data.color ? (
+                <>
+                  Cor: <strong className="text-foreground">{data.color}</strong>
+                </>
+              ) : null}
+              {data.color && data.size ? " · " : null}
+              {data.size ? (
+                <>
+                  Tamanho: <strong className="text-foreground">{data.size}</strong>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          {data.sizes && data.sizes.length > 1 ? (
+            <div className="mt-3">
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">Tamanhos disponíveis</p>
+              <div className="flex flex-wrap gap-2">
+                {data.sizes.map((sz) =>
+                  sz.current ? (
+                    <span
+                      key={sz.id}
+                      aria-current="true"
+                      className="grid h-10 min-w-[44px] place-items-center rounded-xl border-2 border-primary px-3 text-sm font-bold"
+                    >
+                      {sz.size}
+                    </span>
+                  ) : (
+                    <Link
+                      key={sz.id}
+                      to="/catalogo/colecao/$slug/produto/$productId"
+                      params={{ slug: data.collection.slug, productId: sz.id }}
+                      search={collectionSearch}
+                      className="grid h-10 min-w-[44px] place-items-center rounded-xl border border-border px-3 text-sm hover:bg-muted"
+                    >
+                      {sz.size}
+                    </Link>
+                  ),
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-3 flex items-center gap-2">
             {data.show_price && (
@@ -553,12 +561,17 @@ function PrimaryCta({
       data.name,
       data.price,
       currentUrl,
+      { color: data.color, size: data.size },
     );
     return (
-      <Button asChild size="lg" className="w-full">
+      <Button
+        asChild
+        size="lg"
+        className="h-12 w-full rounded-xl bg-[#25D366] text-base font-bold text-white hover:bg-[#1fbe5b]"
+      >
         <a href={href} target="_blank" rel="noopener noreferrer">
           <MessageCircle className="mr-2 h-5 w-5" />
-          Comprar pelo WhatsApp
+          Quero esta no WhatsApp
         </a>
       </Button>
     );
@@ -702,5 +715,95 @@ function EntradaDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Fotos lado a lado com rolagem que "encaixa": desliza com o dedo no celular. */
+function ProductCarousel({
+  images,
+  name,
+  active,
+  onActiveChange,
+  onOpen,
+  badge,
+}: {
+  images: PublicProductDetail["images"];
+  name: string;
+  active: number;
+  onActiveChange: (i: number) => void;
+  onOpen: () => void;
+  badge: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  function goTo(i: number) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    onActiveChange(i);
+  }
+
+  if (images.length === 0) {
+    return (
+      <div className="relative grid aspect-square w-full place-items-center rounded-2xl bg-muted">
+        <Package className="h-14 w-14 text-muted-foreground" />
+        {badge}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          ref={ref}
+          className="flex snap-x snap-mandatory overflow-x-auto rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+            if (i !== active) onActiveChange(i);
+          }}
+        >
+          {images.map((img, i) => (
+            <button
+              key={img.path}
+              type="button"
+              className="w-full shrink-0 snap-center focus:outline-none"
+              onClick={onOpen}
+              aria-label={`Ampliar foto ${i + 1} de ${images.length}`}
+            >
+              <FramedImage
+                {...catalogImgProps(img.url, 720, { eager: i === 0 })}
+                alt={i === 0 ? name : ""}
+                framing={img}
+                aspect="square"
+                rounded="none"
+              />
+            </button>
+          ))}
+        </div>
+        {badge}
+        {images.length > 1 ? (
+          <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
+            {active + 1} / {images.length}
+          </span>
+        ) : null}
+      </div>
+      {images.length > 1 ? (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {images.map((img, i) => (
+            <button
+              key={img.path}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Ver foto ${i + 1}`}
+              className={`w-16 shrink-0 rounded-lg border-2 ${i === active ? "border-primary" : "border-transparent opacity-70"}`}
+            >
+              <FramedImage {...catalogImgProps(img.url, 96)} framing={img} aspect="square" rounded="sm" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
