@@ -170,6 +170,13 @@ export function GenericLabelPrintDialog({
     event.target.value = "";
   };
 
+  // DANFE continua no 4x6 de sempre (já imprime certo assim).
+  const zplSize = (block: DocumentBlock) => {
+    if (block.type !== "label") return {};
+    const { width, height, dpmm } = detectZPLDimensions(block.zpl || "");
+    return { width, height, dpmm };
+  };
+
   const handlePrintBlock = async (block: DocumentBlock) => {
     if (isPrinting) return;
     
@@ -187,7 +194,9 @@ export function GenericLabelPrintDialog({
             { strategy: "PDF", type: "LABEL", printerId: selectedPrinterId || undefined },
           )
         : await printManager.printAndWait(
-            { id: jobId, zpl: block.zpl },
+            // Converte no tamanho real da etiqueta (^PW/^LL): 10x15 de envio,
+            // 40x25 mm do Full... Sem isso ia sempre como 4x6".
+            { id: jobId, zpl: block.zpl, ...zplSize(block) },
             { strategy: "RAW", type: "LABEL", printerId: selectedPrinterId || undefined },
           );
 
