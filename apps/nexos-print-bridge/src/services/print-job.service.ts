@@ -260,8 +260,8 @@ try {
 
   /**
    * Imprime uma imagem (etiqueta já convertida pelo NexOS) pelo driver
-   * normal do Windows, em papel 100x150 mm, sem margem, ajustando a
-   * imagem à página sem distorcer.
+   * normal do Windows, com o papel do tamanho da etiqueta (envio 10x15,
+   * Full 40x25...), sem margem, ajustando a imagem sem distorcer.
    */
   private async printImage(job: PrintJob, tmpFile: string): Promise<void> {
     const raw: string | undefined = job.data?.data || job.data?.image;
@@ -284,8 +284,11 @@ try {
   $doc.PrinterSettings.PrinterName = $PrinterName
   if (-not $doc.PrinterSettings.IsValid) { throw "Impressora '$PrinterName' nao encontrada no Windows." }
   $doc.DocumentName = 'Etiqueta NexOS'
-  # 100 x 150 mm em centesimos de polegada
-  $doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('Etiqueta 100x150', 394, 591)
+  # Papel do tamanho da propria etiqueta: a imagem vem do Labelary a
+  # 8 pontos/mm (203 dpi). 10x15 cm de envio, 40x25 mm do Full etc.
+  $paperW = [int][Math]::Round($img.Width / 203.2 * 100)
+  $paperH = [int][Math]::Round($img.Height / 203.2 * 100)
+  $doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH)
   $doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
   $doc.OriginAtMargins = $false
   $doc.add_PrintPage({
