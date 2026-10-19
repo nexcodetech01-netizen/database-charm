@@ -39,7 +39,10 @@ export const printBridgeBrowser = {
           reader.readAsDataURL(blob);
         });
 
-        body.image = base64;
+        // O Bridge lê o conteúdo no campo "data" (o "image" era descartado
+        // e a etiqueta chegava vazia: "Job do tipo IMAGE sem conteúdo").
+        body.data = base64;
+        body.image = base64; // compatibilidade com Bridges antigos
       } else if (label.pdf) {
         console.info("POST /print/pdf");
         endpoint = '/print/pdf';
