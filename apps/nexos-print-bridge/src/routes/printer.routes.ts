@@ -75,6 +75,8 @@ export async function printerRoutes(fastify: FastifyInstance) {
     console.log('Body:', JSON.stringify(request.body, null, 2));
     
     try {
+      // Frontend antigo manda a imagem em "image"; o job lê "data".
+      if (request.body && request.body.image && !request.body.data) request.body.data = request.body.image;
       const result = printSchema.safeParse(request.body);
       if (!result.success) {
         console.error('Falha na validação Zod:', result.error);
