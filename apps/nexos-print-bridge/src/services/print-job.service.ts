@@ -45,7 +45,8 @@ export class PrintJobService {
       status: 'Pending',
       createdAt: new Date().toISOString(),
       attempts: 0,
-      maxAttempts: 3 // Requirement 5
+      // Imagem/PDF: 1 tentativa só — repetir já imprimiu etiqueta em dobro.
+      maxAttempts: jobData.type === 'IMAGE' || jobData.type === 'PDF' ? 1 : 3
     };
 
     this.queue.push(job);
@@ -136,6 +137,12 @@ export class PrintJobService {
     try {
       if (job.type === 'PDF') {
         await this.printPdf(job, tmpFile);
+      } else if (job.type === 'IMAGE') {
+        // Imagem vai pelo driver normal do Windows (igual à página de
+        // teste). Copiar os bytes do PNG direto pra impressora não imprime
+        // nada em térmica genérica (LABEL TERMICA / POS-9260-L) e ainda
+        // exigia a impressora compartilhada.
+        await this.printImage(job, tmpFile);
       } else {
         await this.printRaw(job, tmpFile);
       }
@@ -248,6 +255,73 @@ try {
       );
     } finally {
       await fs.promises.unlink(pdfPath).catch(() => {});
+    }
+  }
+
+  /**
+   * Imprime uma imagem (etiqueta já convertida pelo NexOS) pelo driver
+   * normal do Windows, em papel 100x150 mm, sem margem, ajustando a
+   * imagem à página sem distorcer.
+   */
+  private async printImage(job: PrintJob, tmpFile: string): Promise<void> {
+    const raw: string | undefined = job.data?.data || job.data?.image;
+    if (!raw) {
+      throw new Error('Job do tipo IMAGE sem conteúdo — nada pra imprimir.');
+    }
+    const imgPath = path.resolve(`${tmpFile}.png`);
+    const scriptPath = path.resolve(`${tmpFile}-image.ps1`);
+    await fs.promises.writeFile(imgPath, Buffer.from(raw.replace(/^data:.*;base64,/, ''), 'base64'));
+
+    const psScript = `
+param(
+  [string]$PrinterName,
+  [string]$ImagePath
+)
+try {
+  Add-Type -AssemblyName System.Drawing
+  $img = [System.Drawing.Image]::FromFile($ImagePath)
+  $doc = New-Object System.Drawing.Printing.PrintDocument
+  $doc.PrinterSettings.PrinterName = $PrinterName
+  if (-not $doc.PrinterSettings.IsValid) { throw "Impressora '$PrinterName' nao encontrada no Windows." }
+  $doc.DocumentName = 'Etiqueta NexOS'
+  # 100 x 150 mm em centesimos de polegada
+  $doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('Etiqueta 100x150', 394, 591)
+  $doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
+  $doc.OriginAtMargins = $false
+  $doc.add_PrintPage({
+    param($s, $e)
+    $b = $e.PageBounds
+    $ratio = [Math]::Min($b.Width / $img.Width, $b.Height / $img.Height)
+    $w = [int]($img.Width * $ratio)
+    $h = [int]($img.Height * $ratio)
+    $e.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+    $e.Graphics.DrawImage($img, 0, 0, $w, $h)
+    $e.HasMorePages = $false
+  })
+  $doc.Print()
+  $img.Dispose()
+  Write-Output "Etiqueta enviada para $PrinterName"
+} catch {
+  Write-Error $_.Exception.Message
+  exit 1
+}
+`;
+    await fs.promises.writeFile(scriptPath, psScript, 'utf8');
+
+    try {
+      const { stdout, stderr } = await execFileAsync(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-PrinterName', job.printer, '-ImagePath', imgPath],
+        { timeout: 25000, windowsHide: true },
+      );
+      if (stdout) logger.info(`PS Output: ${stdout.trim()}`);
+      if (stderr) logger.warn(`PS Error: ${stderr.trim()}`);
+    } catch (err: any) {
+      const detail = (err?.stderr || err?.message || String(err)).toString().trim();
+      throw new Error(`Falha ao imprimir a etiqueta em "${job.printer}": ${detail}`);
+    } finally {
+      fs.promises.unlink(scriptPath).catch(() => {});
+      fs.promises.unlink(imgPath).catch(() => {});
     }
   }
 
