@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { compressPhoto, MAX_ORIGINAL_MB } from "../lib/compress-photo";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
-const MAX_MB = 2;
 
 interface Props {
   /** URL da imagem principal já persistida (assinada), quando existir. */
@@ -48,18 +48,19 @@ export function ProductMainImagePicker({
 
   const openPicker = () => inputRef.current?.click();
 
-  const handleSelect = (files: FileList | null) => {
+  const handleSelect = async (files: FileList | null) => {
     const f = files?.[0];
     if (!f) return;
     if (!ACCEPTED.includes(f.type)) {
       toast.error("Formato inválido. Envie PNG, JPG ou WEBP.");
       return;
     }
-    if (f.size > MAX_MB * 1024 * 1024) {
-      toast.error(`Imagem excede ${MAX_MB} MB.`);
+    if (f.size > MAX_ORIGINAL_MB * 1024 * 1024) {
+      toast.error(`Imagem muito grande (máx. ${MAX_ORIGINAL_MB} MB).`);
       return;
     }
-    onFileChange(f);
+    // Foto grande não é mais recusada: é reduzida automaticamente.
+    onFileChange(await compressPhoto(f));
   };
 
   const handleRemove = async () => {
@@ -121,7 +122,7 @@ export function ProductMainImagePicker({
           ) : null}
         </div>
         <p className="text-xs text-muted-foreground">
-          PNG, JPG ou WEBP · até {MAX_MB} MB.
+          PNG, JPG ou WEBP · fotos grandes são reduzidas sozinhas.
         </p>
       </div>
 

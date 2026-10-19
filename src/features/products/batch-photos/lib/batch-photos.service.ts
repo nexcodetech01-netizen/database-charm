@@ -9,6 +9,13 @@ export interface PhotoCandidate {
   created_at: string;
   variant: string;
   hasPhoto: boolean;
+  photoCount: number;
+  categoryId: string | null;
+  categoryName: string | null;
+  brand: string | null;
+  color: string | null;
+  size: string | null;
+  stock: number;
 }
 
 /**
@@ -18,11 +25,13 @@ export interface PhotoCandidate {
 export async function listPhotoCandidates(companyId: string): Promise<PhotoCandidate[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, sku, created_at, model, color, size, cover_image_path, image_url, product_images(count)")
+    .select(
+      "id, name, sku, created_at, brand, model, color, size, stock, category_id, category:product_categories(name), cover_image_path, image_url, product_images(count)",
+    )
     .eq("company_id", companyId)
     .eq("status", "active")
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(2000);
   if (error) throw error;
   return (data ?? []).map((p) => {
     const count = Array.isArray(p.product_images)
@@ -35,39 +44,20 @@ export async function listPhotoCandidates(companyId: string): Promise<PhotoCandi
       created_at: p.created_at,
       variant: describeVariant(p),
       hasPhoto: count > 0 || !!p.cover_image_path || !!p.image_url,
+      photoCount: count,
+      categoryId: (p as { category_id?: string | null }).category_id ?? null,
+      categoryName:
+        ((p as { category?: { name?: string } | null }).category?.name as string | undefined) ?? null,
+      brand: (p as { brand?: string | null }).brand ?? null,
+      color: p.color ?? null,
+      size: p.size ?? null,
+      stock: Number((p as { stock?: number | string }).stock ?? 0),
     };
   });
 }
 
-const MAX_SIDE = 1600;
-
-/**
- * Deixa a foto leve para o catálogo (lado maior até 1600 px, WebP). Se o
- * navegador não conseguir, envia a original.
- */
-export async function compressPhoto(file: File): Promise<File> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    bitmap.close?.();
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/webp", 0.86),
-    );
-    if (!blob || blob.size >= file.size) return file;
-    const base = file.name.replace(/\.[^.]+$/, "");
-    return new File([blob], `${base}.webp`, { type: "image/webp", lastModified: file.lastModified });
-  } catch {
-    return file;
-  }
-}
+export { compressPhoto } from "../../lib/compress-photo";
+import { compressPhoto } from "../../lib/compress-photo";
 
 /**
  * Envia as fotos de UMA peça para o produto. A capa (coverIndex) vai

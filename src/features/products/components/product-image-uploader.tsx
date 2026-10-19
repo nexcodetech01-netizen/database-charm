@@ -9,13 +9,13 @@ import { productsKeys } from "../hooks/use-products";
 import { FramedImage, type Framing } from "@/components/media/framed-image";
 import { ImageFramingDialog } from "@/components/media/image-framing-dialog";
 import type { ProductImage } from "../types";
+import { compressPhoto, MAX_ORIGINAL_MB } from "../lib/compress-photo";
 
 interface Props {
   companyId: string;
   productId: string;
 }
 
-const MAX_MB = 5;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
 export function ProductImageUploader({ companyId, productId }: Props) {
@@ -41,11 +41,13 @@ export function ProductImageUploader({ companyId, productId }: Props) {
           toast.error(`Formato não suportado: ${file.name}`);
           continue;
         }
-        if (file.size > MAX_MB * 1024 * 1024) {
-          toast.error(`${file.name} excede ${MAX_MB}MB`);
+        if (file.size > MAX_ORIGINAL_MB * 1024 * 1024) {
+          toast.error(`${file.name} é muito grande (máx. ${MAX_ORIGINAL_MB} MB)`);
           continue;
         }
-        const path = await productImagesService.upload(companyId, productId, file);
+        // Reduz antes de enviar (foto do celular/ChatGPT passa de 2–5 MB).
+        const light = await compressPhoto(file);
+        const path = await productImagesService.upload(companyId, productId, light);
         const rec = (await productImagesService.createRecord(
           companyId,
           productId,
@@ -120,7 +122,7 @@ export function ProductImageUploader({ companyId, productId }: Props) {
         <div>
           <p className="text-sm font-medium">Arraste ou clique para enviar</p>
           <p className="text-xs text-muted-foreground">
-            JPG, PNG ou WEBP · até {MAX_MB}MB · múltiplos arquivos
+            JPG, PNG ou WEBP · fotos grandes são reduzidas sozinhas · múltiplos arquivos
           </p>
         </div>
         <input

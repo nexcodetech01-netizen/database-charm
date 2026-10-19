@@ -2,38 +2,50 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ImagePlus,
   Loader2,
+  Search,
+  SkipForward,
   Star,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { ErrorState } from "@/components/layout/state-views";
 import { cn } from "@/lib/utils";
-import { chunkPhotos, duplicatedAssignments, sortPhotos, suggestAssignments } from "../lib/batch-photos";
+import { moveItem } from "../lib/batch-photos";
 import {
   attachPhotosToProduct,
   listPhotoCandidates,
   type PhotoCandidate,
 } from "../lib/batch-photos.service";
+import { MAX_ORIGINAL_MB } from "../../lib/compress-photo";
+
+/*
+ * Fotos por peça (fila).
+ *
+ * A pessoa escolhe a categoria (ex.: Vestuário) e a tela mostra, uma por vez,
+ * as peças sem foto. Ela coloca as fotos DAQUELA peça e clica em "Salvar e
+ * próxima". Nada é adivinhado — a versão anterior juntava fotos pela ordem
+ * dos arquivos e sugeria qualquer produto sem foto (cabo, perfume...), o que
+ * misturava tudo.
+ */
 
 interface Photo {
   id: string;
@@ -41,271 +53,236 @@ interface Photo {
   url: string;
 }
 
-interface Group {
-  id: string;
-  photos: Photo[];
-  productId: string | null;
-  status: "pending" | "saving" | "done" | "error";
-  error?: string;
-}
-
-const NONE = "__none__";
+const ALL = "__all__";
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
-const MAX_MB = 15;
 
 let seq = 0;
-const uid = () => `g${Date.now().toString(36)}${(seq++).toString(36)}`;
+const uid = () => `p${Date.now().toString(36)}${(seq++).toString(36)}`;
+
+function normalize(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
 
 export function BatchPhotosWorkspace({ companyId }: { companyId: string }) {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [perItem, setPerItem] = useState(3);
-  const [coverIndex, setCoverIndex] = useState(0);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
 
   const candidatesQ = useQuery({
     queryKey: ["batch-photos-candidates", companyId],
     queryFn: () => listPhotoCandidates(companyId),
     enabled: !!companyId,
   });
-  const candidates = candidatesQ.data ?? [];
-  const withoutPhoto = useMemo(() => candidates.filter((c) => !c.hasPhoto), [candidates]);
-  const withPhoto = useMemo(() => candidates.filter((c) => c.hasPhoto), [candidates]);
-  const byId = useMemo(() => new Map(candidates.map((c) => [c.id, c])), [candidates]);
+  const candidates = useMemo(() => candidatesQ.data ?? [], [candidatesQ.data]);
 
-  // Libera as pré-visualizações ao sair da tela.
-  const groupsRef = useRef(groups);
-  groupsRef.current = groups;
-  useEffect(
-    () => () => groupsRef.current.forEach((g) => g.photos.forEach((p) => URL.revokeObjectURL(p.url))),
-    [],
-  );
+  // Categorias que existem entre os produtos; abre em "Vestuário" se houver.
+  const categories = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of candidates) if (c.categoryId && c.categoryName) map.set(c.categoryId, c.categoryName);
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  }, [candidates]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  useEffect(() => {
+    if (categoryId !== null || categories.length === 0) return;
+    const vest = categories.find(([, name]) => normalize(name).includes("vestuario"));
+    setCategoryId(vest ? vest[0] : ALL);
+  }, [categories, categoryId]);
 
-  function addFiles(list: FileList | null) {
+  const [onlyWithoutPhoto, setOnlyWithoutPhoto] = useState(true);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [search, setSearch] = useState("");
+  // Peças salvas/puladas nesta sessão (somem da fila "sem foto" na hora).
+  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
+
+  const queue = useMemo(() => {
+    const q = normalize(search.trim());
+    return candidates
+      .filter((c) => !categoryId || categoryId === ALL || c.categoryId === categoryId)
+      .filter((c) => !onlyWithoutPhoto || (!c.hasPhoto && !doneIds.has(c.id)) || doneIds.has(c.id))
+      .filter((c) => !onlyInStock || c.stock > 0)
+      .filter((c) => !q || normalize(`${c.name} ${c.sku ?? ""} ${c.variant}`).includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { numeric: true }));
+  }, [candidates, categoryId, onlyWithoutPhoto, onlyInStock, search, doneIds]);
+
+  const pendingCount = queue.filter((c) => !doneIds.has(c.id)).length;
+
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const current = queue.find((c) => c.id === currentId) ?? null;
+
+  // Sem peça escolhida (ou ela saiu da fila): vai para a primeira pendente.
+  useEffect(() => {
+    if (current) return;
+    const next = queue.find((c) => !doneIds.has(c.id) && !skippedIds.has(c.id)) ?? null;
+    setCurrentId(next?.id ?? null);
+  }, [queue, current, doneIds, skippedIds]);
+
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
+
+  function clearPhotos() {
+    photosRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+    setPhotos([]);
+    setCoverIndex(0);
+  }
+
+  function selectProduct(id: string) {
+    if (saving) return;
+    if (photos.length > 0 && id !== currentId) {
+      if (!window.confirm("As fotos colocadas nesta peça ainda não foram salvas. Trocar mesmo assim?")) return;
+    }
+    clearPhotos();
+    setCurrentId(id);
+  }
+
+  function addFiles(list: FileList | File[] | null) {
     if (!list || list.length === 0) return;
-    const valid: File[] = [];
+    const valid: Photo[] = [];
     for (const f of Array.from(list)) {
       if (!ACCEPTED.includes(f.type)) {
         toast.error(`Formato não suportado: ${f.name}`);
         continue;
       }
-      if (f.size > MAX_MB * 1024 * 1024) {
-        toast.error(`${f.name} passa de ${MAX_MB} MB`);
+      if (f.size > MAX_ORIGINAL_MB * 1024 * 1024) {
+        toast.error(`${f.name} é muito grande (máx. ${MAX_ORIGINAL_MB} MB)`);
         continue;
       }
-      valid.push(f);
+      valid.push({ id: uid(), file: f, url: URL.createObjectURL(f) });
     }
-    if (valid.length === 0) return;
-    const photos: Photo[] = sortPhotos(valid).map((file) => ({
-      id: uid(),
-      file,
-      url: URL.createObjectURL(file),
-    }));
-    setGroups((prev) => {
-      // Produtos já usados em grupos anteriores não são sugeridos de novo.
-      const used = new Set(prev.map((g) => g.productId).filter(Boolean) as string[]);
-      const chunks = chunkPhotos(photos, perItem);
-      const suggestions = suggestAssignments(
-        chunks.length,
-        withoutPhoto.filter((c) => !used.has(c.id)),
-      );
-      return [
-        ...prev,
-        ...chunks.map((ph, i) => ({
-          id: uid(),
-          photos: ph,
-          productId: suggestions[i],
-          status: "pending" as const,
-        })),
-      ];
+    if (valid.length > 0) setPhotos((prev) => [...prev, ...valid]);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => {
+      const p = prev[index];
+      if (p) URL.revokeObjectURL(p.url);
+      return prev.filter((_, i) => i !== index);
     });
-    if (inputRef.current) inputRef.current.value = "";
+    setCoverIndex((c) => (index === c ? 0 : index < c ? c - 1 : c));
   }
 
-  /** Move a foto uma casa; na ponta, passa para a peça vizinha. */
-  function movePhoto(gi: number, pi: number, dir: -1 | 1) {
-    setGroups((prev) => {
-      const next = prev.map((g) => ({ ...g, photos: [...g.photos] }));
-      const g = next[gi];
-      const target = pi + dir;
-      if (target >= 0 && target < g.photos.length) {
-        [g.photos[pi], g.photos[target]] = [g.photos[target], g.photos[pi]];
-        return next;
-      }
-      const [photo] = g.photos.splice(pi, 1);
-      if (dir === -1) {
-        if (gi === 0) return prev;
-        next[gi - 1].photos.push(photo);
-      } else if (gi === next.length - 1) {
-        next.push({ id: uid(), photos: [photo], productId: null, status: "pending" });
-      } else {
-        next[gi + 1].photos.unshift(photo);
-      }
-      return next.filter((x) => x.photos.length > 0);
-    });
+  function move(index: number, dir: -1 | 1) {
+    const to = index + dir;
+    setPhotos((prev) => moveItem(prev, index, to));
+    setCoverIndex((c) => (c === index ? to : c === to ? index : c));
   }
 
-  function removePhoto(gi: number, pi: number) {
-    setGroups((prev) => {
-      const next = prev.map((g) => ({ ...g, photos: [...g.photos] }));
-      const [photo] = next[gi].photos.splice(pi, 1);
-      if (photo) URL.revokeObjectURL(photo.url);
-      return next.filter((x) => x.photos.length > 0);
-    });
+  function goNext(fromId: string) {
+    const idx = queue.findIndex((c) => c.id === fromId);
+    const after = [...queue.slice(idx + 1), ...queue.slice(0, Math.max(0, idx))];
+    const next = after.find((c) => !doneIds.has(c.id) && c.id !== fromId && !skippedIds.has(c.id));
+    setCurrentId(next?.id ?? null);
   }
 
-  function removeGroup(gi: number) {
-    setGroups((prev) => {
-      prev[gi]?.photos.forEach((p) => URL.revokeObjectURL(p.url));
-      return prev.filter((_, i) => i !== gi);
-    });
-  }
-
-  function setProduct(gi: number, value: string) {
-    setGroups((prev) =>
-      prev.map((g, i) => (i === gi ? { ...g, productId: value === NONE ? null : value } : g)),
-    );
-  }
-
-  const duplicated = duplicatedAssignments(groups.map((g) => g.productId));
-  const pending = groups.filter((g) => g.status !== "done");
-  const ready = pending.filter((g) => g.productId);
-  const unassigned = pending.filter((g) => !g.productId).length;
-
-  async function saveAll() {
-    if (saving || ready.length === 0) return;
-    if (duplicated.size > 0) {
-      toast.error("Há produto escolhido em mais de uma peça. Corrija antes de salvar.");
-      return;
-    }
+  async function saveAndNext() {
+    if (!current || photos.length === 0 || saving) return;
     setSaving(true);
-    setProgress({ done: 0, total: ready.length });
-    let ok = 0;
-    for (const g of ready) {
-      setGroups((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: "saving", error: undefined } : x)));
-      try {
-        await attachPhotosToProduct({
-          companyId,
-          productId: g.productId!,
-          files: g.photos.map((p) => p.file),
-          coverIndex,
-        });
-        ok++;
-        setGroups((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: "done" } : x)));
-      } catch (err) {
-        setGroups((prev) =>
-          prev.map((x) =>
-            x.id === g.id
-              ? { ...x, status: "error", error: err instanceof Error ? err.message : "Falha no envio" }
-              : x,
-          ),
-        );
-      }
-      setProgress((p) => ({ ...p, done: p.done + 1 }));
+    try {
+      const n = await attachPhotosToProduct({
+        companyId,
+        productId: current.id,
+        files: photos.map((p) => p.file),
+        coverIndex,
+      });
+      toast.success(`${n} foto(s) salva(s) em ${current.name}`);
+      setDoneIds((prev) => new Set(prev).add(current.id));
+      clearPhotos();
+      goNext(current.id);
+      void qc.invalidateQueries({ queryKey: ["products"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar as fotos");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    await qc.invalidateQueries({ queryKey: ["products"] });
-    await qc.invalidateQueries({ queryKey: ["batch-photos-candidates", companyId] });
-    const failed = ready.length - ok;
-    if (failed === 0) toast.success(`Fotos salvas em ${ok} produto(s).`);
-    else toast.error(`${ok} salvo(s), ${failed} com erro. As com erro continuam na tela para tentar de novo.`);
   }
+
+  function skip() {
+    if (!current || saving) return;
+    if (photos.length > 0 && !window.confirm("Descartar as fotos colocadas e pular esta peça?")) return;
+    clearPhotos();
+    setSkippedIds((prev) => new Set(prev).add(current.id));
+    goNext(current.id);
+  }
+
+  // Colar (Ctrl+V) uma imagem copiada também funciona.
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const files = Array.from(e.clipboardData?.files ?? []);
+      if (files.length > 0) addFiles(files);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, []);
+
+  const doneCount = doneIds.size;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 p-4 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Button variant="ghost" size="sm" asChild className="-ml-2 mb-1">
-            <Link to="/produtos">
-              <ArrowLeft className="mr-1 h-4 w-4" /> Produtos
-            </Link>
-          </Button>
-          <h1 className="text-xl font-semibold tracking-tight">Fotos em lote</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Selecione as fotos prontas de várias peças de uma vez. O sistema junta as fotos de cada
-            peça e sugere o produto pela ordem do cadastro (os sem foto, do mais antigo para o mais novo).
-          </p>
-        </div>
+      <div>
+        <Link
+          to="/produtos"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Produtos
+        </Link>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Fotos por peça</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Escolha a categoria, coloque as fotos da peça que aparece e clique em{" "}
+          <strong>Salvar e próxima</strong>. Fotos grandes são reduzidas sozinhas.
+        </p>
       </div>
 
       <Card>
-        <CardContent className="grid gap-4 p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Como mandar</p>
-            <p className="text-xs text-muted-foreground">
-              Fotos na ordem de cada peça (ex.: dobrada, frente, costas). Se uma peça tiver menos fotos,
-              use as setas para passar a foto para a peça certa.
-            </p>
-          </div>
+        <CardContent className="grid gap-4 p-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_auto] sm:items-end">
           <div className="space-y-1.5">
-            <Label className="text-xs">Fotos por peça</Label>
-            <Select
-              value={String(perItem)}
-              onValueChange={(v) => {
-                setPerItem(Number(v));
-                if (coverIndex >= Number(v)) setCoverIndex(0);
-              }}
-              disabled={groups.length > 0}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
+            <Label>Categoria</Label>
+            <Select value={categoryId ?? ALL} onValueChange={(v) => setCategoryId(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 4].map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n} {n === 1 ? "foto" : "fotos"}
+                <SelectItem value={ALL}>Todas as categorias</SelectItem>
+                {categories.map(([id, name]) => (
+                  <SelectItem key={id} value={id}>
+                    {name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Capa do produto</Label>
-            <Select value={String(coverIndex)} onValueChange={(v) => setCoverIndex(Number(v))}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: perItem }, (_, i) => (
-                  <SelectItem key={i} value={String(i)}>
-                    {i + 1}ª foto da peça
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="bp-search">Buscar peça</Label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="bp-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Ex.: nike preta gg"
+                className="pl-8"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 text-sm">
+            <label className="flex items-center gap-2">
+              <Switch checked={onlyWithoutPhoto} onCheckedChange={setOnlyWithoutPhoto} />
+              Só sem foto
+            </label>
+            <label className="flex items-center gap-2">
+              <Switch checked={onlyInStock} onCheckedChange={setOnlyInStock} />
+              Só com estoque
+            </label>
           </div>
         </CardContent>
       </Card>
-
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          addFiles(e.dataTransfer.files);
-        }}
-        disabled={saving}
-        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-8 text-center transition-colors hover:bg-muted/50 disabled:opacity-60"
-      >
-        <ImagePlus className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
-        <span className="text-sm font-medium">
-          {groups.length === 0 ? "Escolher fotos" : "Adicionar mais fotos"}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          Toque para escolher ou arraste para cá · JPG, PNG ou WebP
-        </span>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPTED.join(",")}
-        multiple
-        className="hidden"
-        onChange={(e) => addFiles(e.target.files)}
-      />
 
       {candidatesQ.isError ? (
         <ErrorState
@@ -315,202 +292,235 @@ export function BatchPhotosWorkspace({ companyId }: { companyId: string }) {
         />
       ) : null}
 
-      {groups.length > 0 && !candidatesQ.isLoading && withoutPhoto.length < groups.length ? (
-        <p className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          Há {groups.length} peça(s) e {withoutPhoto.length} produto(s) sem foto. Cadastre os que
-          faltam ou escolha o produto manualmente.
-        </p>
+      {candidatesQ.isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando peças…
+        </div>
       ) : null}
 
-      <div className="space-y-3">
-        {groups.map((g, gi) => {
-          const product = g.productId ? byId.get(g.productId) : undefined;
-          const isDup = !!g.productId && duplicated.has(g.productId);
-          return (
-            <Card
-              key={g.id}
-              className={cn(
-                g.status === "done" && "border-emerald-500/50 bg-emerald-50/40 dark:bg-emerald-950/20",
-                g.status === "error" && "border-destructive/60",
-              )}
-            >
-              <CardContent className="space-y-3 p-3 sm:p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold">
-                    Peça {gi + 1}
-                    <span className="ml-2 font-normal text-muted-foreground">
-                      {g.photos.length} {g.photos.length === 1 ? "foto" : "fotos"}
-                    </span>
-                  </p>
-                  <div className="flex items-center gap-2 text-xs">
-                    {g.status === "saving" ? (
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Enviando…
-                      </span>
-                    ) : g.status === "done" ? (
-                      <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Salvo
-                      </span>
-                    ) : g.status === "error" ? (
-                      <span className="text-destructive">{g.error}</span>
-                    ) : null}
-                    {g.status !== "done" ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground"
-                        onClick={() => removeGroup(gi)}
-                        disabled={saving}
-                      >
-                        Remover peça
-                      </Button>
-                    ) : null}
+      {!candidatesQ.isLoading && !candidatesQ.isError ? (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* Peça atual */}
+          <Card className="order-1">
+            <CardContent className="space-y-4 p-4 sm:p-5">
+              {current ? (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Peça atual
+                      </p>
+                      <h2 className="mt-1 text-xl font-semibold leading-tight">{current.name}</h2>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {current.brand ? <Badge variant="secondary">{current.brand}</Badge> : null}
+                        {current.color ? <Badge variant="secondary">{current.color}</Badge> : null}
+                        {current.size ? (
+                          <Badge className="bg-primary text-primary-foreground">Tam. {current.size}</Badge>
+                        ) : null}
+                        {current.sku ? <Badge variant="outline">{current.sku}</Badge> : null}
+                        {current.hasPhoto && !doneIds.has(current.id) ? (
+                          <Badge variant="outline">Já tem {current.photoCount || 1} foto(s)</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {doneCount} feita(s) · {pendingCount} na fila
+                    </p>
                   </div>
-                </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {g.photos.map((p, pi) => (
-                    <div key={p.id} className="relative w-28 shrink-0 sm:w-32">
-                      <img
-                        src={p.url}
-                        alt={`Peça ${gi + 1}, foto ${pi + 1}`}
-                        className="aspect-square w-full rounded-lg border border-border object-cover"
-                      />
-                      {pi === Math.min(coverIndex, g.photos.length - 1) ? (
-                        <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                          <Star className="h-3 w-3" /> Capa
-                        </span>
-                      ) : null}
-                      {g.status !== "done" ? (
-                        <>
-                          <button
-                            type="button"
-                            aria-label="Tirar esta foto"
-                            className="absolute right-1 top-1 rounded-full bg-black/70 p-0.5 text-white hover:bg-black"
-                            onClick={() => removePhoto(gi, pi)}
-                            disabled={saving}
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(true);
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      addFiles(e.dataTransfer.files);
+                    }}
+                    className={cn(
+                      "flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors",
+                      dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/60 hover:bg-muted/40",
+                    )}
+                  >
+                    <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                    <span className="font-medium">Coloque as fotos desta peça</span>
+                    <span className="text-xs text-muted-foreground">
+                      Toque para escolher, arraste ou cole (Ctrl+V) · JPG, PNG ou WebP
+                    </span>
+                  </button>
+
+                  {photos.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {photos.map((p, i) => (
+                        <div key={p.id} className="space-y-1.5">
+                          <div
+                            className={cn(
+                              "relative aspect-square overflow-hidden rounded-lg border-2",
+                              i === coverIndex ? "border-primary" : "border-transparent",
+                            )}
                           >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                          <div className="mt-1 flex justify-between">
+                            <img src={p.url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setCoverIndex(i)}
+                              className={cn(
+                                "absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                i === coverIndex
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-black/55 text-white hover:bg-black/70",
+                              )}
+                              aria-label="Usar como capa"
+                            >
+                              <Star className="h-3 w-3" /> {i === coverIndex ? "Capa" : "Capa?"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePhoto(i)}
+                              className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                              aria-label="Remover foto"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between">
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              disabled={i === 0}
+                              onClick={() => move(i, -1)}
                               aria-label="Mover para a esquerda"
-                              onClick={() => movePhoto(gi, pi, -1)}
-                              disabled={saving || (gi === 0 && pi === 0)}
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="self-center text-[11px] text-muted-foreground">{pi + 1}ª</span>
+                            <span className="text-xs text-muted-foreground">{i + 1}ª</span>
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              disabled={i === photos.length - 1}
+                              onClick={() => move(i, 1)}
                               aria-label="Mover para a direita"
-                              onClick={() => movePhoto(gi, pi, 1)}
-                              disabled={saving}
                             >
                               <ChevronRight className="h-4 w-4" />
                             </Button>
                           </div>
-                        </>
-                      ) : null}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-
-                <div className="space-y-1">
-                  <Select
-                    value={g.productId ?? NONE}
-                    onValueChange={(v) => setProduct(gi, v)}
-                    disabled={saving || g.status === "done"}
-                  >
-                    <SelectTrigger className={cn("w-full", isDup && "border-destructive")}>
-                      <SelectValue placeholder="Escolha o produto" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      <SelectItem value={NONE}>Não ligar a nenhum produto</SelectItem>
-                      {withoutPhoto.length > 0 ? (
-                        <SelectGroup>
-                          <SelectLabel>Sem foto (ordem do cadastro)</SelectLabel>
-                          {[...withoutPhoto]
-                            .sort((a, b) => a.created_at.localeCompare(b.created_at))
-                            .map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {optionLabel(c)}
-                              </SelectItem>
-                            ))}
-                        </SelectGroup>
-                      ) : null}
-                      {withPhoto.length > 0 ? (
-                        <SelectGroup>
-                          <SelectLabel>Já têm foto (acrescentar)</SelectLabel>
-                          {withPhoto.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {optionLabel(c)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ) : null}
-                    </SelectContent>
-                  </Select>
-                  {isDup ? (
-                    <p className="text-xs text-destructive">Este produto foi escolhido em outra peça também.</p>
-                  ) : product?.hasPhoto && g.status !== "done" ? (
-                    <p className="text-xs text-muted-foreground">
-                      Este produto já tem foto: estas serão acrescentadas depois das atuais.
-                    </p>
                   ) : null}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
 
-      {groups.length > 0 ? (
-        <div className="sticky bottom-0 z-30 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 text-sm">
-              {saving ? (
-                <div className="space-y-1">
-                  <p>
-                    Enviando peça {Math.min(progress.done + 1, progress.total)} de {progress.total}…
-                  </p>
-                  <Progress value={(progress.done / Math.max(1, progress.total)) * 100} className="h-2" />
-                </div>
-              ) : pending.length === 0 ? (
-                <p className="text-emerald-700 dark:text-emerald-400">Tudo salvo.</p>
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button type="button" variant="outline" onClick={skip} disabled={saving}>
+                      <SkipForward className="mr-1.5 h-4 w-4" /> Pular esta peça
+                    </Button>
+                    <Button type="button" onClick={saveAndNext} disabled={saving || photos.length === 0}>
+                      {saving ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                      )}
+                      Salvar e próxima
+                    </Button>
+                  </div>
+                </>
               ) : (
-                <p className="text-muted-foreground">
-                  {ready.length} peça(s) prontas para salvar
-                  {unassigned > 0 ? ` · ${unassigned} sem produto (não serão salvas)` : ""}
-                </p>
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                  <p className="font-medium">
+                    {queue.length === 0 ? "Nenhuma peça nesta seleção" : "Fila concluída"}
+                  </p>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    {queue.length === 0
+                      ? "Troque a categoria ou desligue “Só sem foto” para ver mais peças."
+                      : `${doneCount} peça(s) com foto nesta sessão. Peças puladas continuam na lista ao lado.`}
+                  </p>
+                </div>
               )}
-            </div>
-            {pending.length === 0 ? (
-              <Button asChild>
-                <Link to="/produtos">Ver produtos</Link>
-              </Button>
-            ) : (
-              <Button onClick={() => void saveAll()} disabled={saving || ready.length === 0}>
-                {saving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-                Salvar fotos
-              </Button>
-            )}
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Fila */}
+          <Card className="order-2">
+            <CardContent className="p-2">
+              <p className="px-2 pb-2 pt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Fila ({queue.length})
+              </p>
+              <ul className="max-h-[60vh] space-y-0.5 overflow-y-auto">
+                {queue.map((c) => (
+                  <QueueItem
+                    key={c.id}
+                    item={c}
+                    active={c.id === currentId}
+                    done={doneIds.has(c.id)}
+                    skipped={skippedIds.has(c.id)}
+                    onClick={() => selectProduct(c.id)}
+                  />
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       ) : null}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED.join(",")}
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          addFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
 
-function optionLabel(c: PhotoCandidate): string {
-  return [c.name, c.variant, c.sku].filter(Boolean).join(" · ");
+function QueueItem({
+  item,
+  active,
+  done,
+  skipped,
+  onClick,
+}: {
+  item: PhotoCandidate;
+  active: boolean;
+  done: boolean;
+  skipped: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+          active ? "bg-primary/10 text-foreground" : "hover:bg-muted",
+          done && "opacity-60",
+        )}
+      >
+        <span className="mt-0.5 w-4 shrink-0">
+          {done ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : null}
+          {!done && skipped ? <SkipForward className="h-4 w-4 text-muted-foreground" /> : null}
+        </span>
+        <span className="min-w-0">
+          <span className="line-clamp-2 leading-snug">{item.name}</span>
+          {item.size || item.color ? (
+            <span className="text-xs text-muted-foreground">
+              {[item.color, item.size ? `Tam. ${item.size}` : null].filter(Boolean).join(" · ")}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    </li>
+  );
 }
