@@ -60,7 +60,7 @@ describe("Fotos por peça (fila)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Salvar e próxima/ }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
-    expect(attach.mock.calls[0][0]).toMatchObject({ productId: "c2", coverIndex: 0 });
+    expect((attach.mock.calls as unknown as unknown[][])[0][0]).toMatchObject({ productId: "c2", coverIndex: 0 });
     expect(await screen.findByRole("heading", { name: "Camiseta Nike — Preta GG" })).toBeTruthy();
   });
 });
