@@ -244,23 +244,40 @@ try {
   if (-not $doc.PrinterSettings.IsValid) { throw "Impressora '$PrinterName' nao encontrada no Windows." }
   $doc.DocumentName = 'Etiqueta NexOS'
   ${paperLine}
-  $doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH)
+  # Usa um tamanho de papel que o driver ja conhece (ex.: 100x150 / 4x6) quando
+  # existir - drivers termicos costumam ignorar tamanho personalizado.
+  $paper = $null
+  foreach ($ps in $doc.PrinterSettings.PaperSizes) {
+    if ([Math]::Abs($ps.Width - $paperW) -le 12 -and [Math]::Abs($ps.Height - $paperH) -le 12) { $paper = $ps; break }
+  }
+  if ($paper -eq $null) { $paper = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH) }
+  $doc.DefaultPageSettings.PaperSize = $paper
+  $doc.DefaultPageSettings.Landscape = $false
   $doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
   $doc.OriginAtMargins = $false
+  $script:info = ''
   $doc.add_PrintPage({
     param($s, $e)
-    $b = $e.PageBounds
-    $ratio = [Math]::Min($b.Width / $img.Width, $b.Height / $img.Height)
-    $w = [int]($img.Width * $ratio)
-    $h = [int]($img.Height * $ratio)
-    $x = [int](($b.Width - $w) / 2)
+    # Area que a impressora realmente imprime (desconta as margens fisicas),
+    # com 3% de folga para nada ficar cortado.
+    $v = $e.Graphics.VisibleClipBounds
+    $padX = $v.Width * 0.03
+    $padY = $v.Height * 0.03
+    $areaW = $v.Width - 2 * $padX
+    $areaH = $v.Height - 2 * $padY
+    $ratio = [Math]::Min($areaW / $img.Width, $areaH / $img.Height)
+    $w = $img.Width * $ratio
+    $h = $img.Height * $ratio
+    $x = $v.X + $padX + ($areaW - $w) / 2
+    $y = $v.Y + $padY
     $e.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $e.Graphics.DrawImage($img, $x, 0, $w, $h)
+    $e.Graphics.DrawImage($img, [single]$x, [single]$y, [single]$w, [single]$h)
     $e.HasMorePages = $false
+    $script:info = "papel=$($e.PageSettings.PaperSize.PaperName) $($e.PageBounds.Width)x$($e.PageBounds.Height) area=$([int]$v.Width)x$([int]$v.Height) desenho=$([int]$w)x$([int]$h)"
   })
   $doc.Print()
   $img.Dispose()
-  Write-Output "Etiqueta enviada para $PrinterName"
+  Write-Output "Etiqueta enviada para $PrinterName ($script:info)"
 } catch {
   Write-Error $_.Exception.Message
   exit 1
