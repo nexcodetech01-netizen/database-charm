@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CalendarClock, Check, MessageCircle } from "lucide-react";
@@ -102,11 +102,18 @@ function dueText(r: { due: string | null; days_late: number }): string {
 export function DailyFinanceSummaryDialog({ companyId }: { companyId: string }) {
   const [open, setOpen] = useState(false);
   const [shouldCheck] = useState(() => !!companyId && !alreadyShownToday(companyId));
+  // Abre no máximo UMA vez. Antes, qualquer movimentação no Financeiro
+  // recarregava o resumo (o "data" mudava) e a janela abria de novo, porque
+  // o dia só era marcado como visto ao fechar.
+  const openedRef = useRef(false);
   const { data } = useDailySummary(companyId, shouldCheck);
 
   useEffect(() => {
-    if (shouldCheck && data && hasAnythingDue(data)) setOpen(true);
-  }, [shouldCheck, data]);
+    if (openedRef.current || !shouldCheck || !data || !hasAnythingDue(data)) return;
+    openedRef.current = true;
+    markShown(companyId);
+    setOpen(true);
+  }, [shouldCheck, data, companyId]);
 
   function close() {
     markShown(companyId);
