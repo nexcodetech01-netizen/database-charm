@@ -261,10 +261,14 @@ try {
     # Area que a impressora realmente imprime (desconta as margens fisicas),
     # com 3% de folga para nada ficar cortado.
     $v = $e.Graphics.VisibleClipBounds
-    $padX = $v.Width * 0.03
-    $padY = $v.Height * 0.03
-    $areaW = $v.Width - 2 * $padX
-    $areaH = $v.Height - 2 * $padY
+    # Se o driver ignorar o tamanho e usar papel maior (A4), o desenho continua
+    # do tamanho da etiqueta, no canto de cima.
+    $vw = [Math]::Min($v.Width, $paperW)
+    $vh = [Math]::Min($v.Height, $paperH)
+    $padX = $vw * 0.03
+    $padY = $vh * 0.03
+    $areaW = $vw - 2 * $padX
+    $areaH = $vh - 2 * $padY
     $ratio = [Math]::Min($areaW / $img.Width, $areaH / $img.Height)
     $w = $img.Width * $ratio
     $h = $img.Height * $ratio
@@ -277,7 +281,8 @@ try {
   })
   $doc.Print()
   $img.Dispose()
-  Write-Output "Etiqueta enviada para $PrinterName ($script:info)"
+  $sizes = ($doc.PrinterSettings.PaperSizes | Select-Object -First 15 | ForEach-Object { "$($_.PaperName)=$($_.Width)x$($_.Height)" }) -join ', '
+  Write-Output "Etiqueta enviada para $PrinterName ($script:info) tamanhos do driver: $sizes"
 } catch {
   Write-Error $_.Exception.Message
   exit 1
@@ -421,8 +426,37 @@ export async function splitContentBlocks(png: Buffer): Promise<Buffer[]> {
     rowInk[y] = n;
   }
 
-  // Faixas de conteúdo separadas por >= 1% da altura em branco.
-  const gap = Math.max(4, Math.round(H * 0.01));
+  // Linha tracejada de "corte aqui" (fica colada na etiqueta na SuperFrete):
+  // linha fina, com muitos tracinhos atravessando a página, e branco logo
+  // acima e abaixo. Vira linha em branco para separar os blocos.
+  const segments = (y: number) => {
+    let segs = 0;
+    let inRun = false;
+    for (let x = 0; x < W; x++) {
+      const d = dark(x, y);
+      if (d && !inRun) segs++;
+      inRun = d;
+    }
+    return segs;
+  };
+  const isDashed = new Array(H).fill(false);
+  const near = Math.max(3, Math.round(H * 0.003));
+  for (let y = 0; y < H; y++) {
+    if (rowInk[y] < W * 0.1) continue; // tracejado atravessa boa parte da largura
+    let thick = 0;
+    while (y + thick < H && rowInk[y + thick] > 0 && thick <= near) thick++;
+    if (thick > near) continue; // grosso demais: é conteúdo
+    const above = y - 2 >= 0 ? rowInk[Math.max(0, y - 2)] : 0;
+    const below = y + thick + 1 < H ? rowInk[y + thick + 1] : 0;
+    if (above > 0 || below > 0) continue;
+    if (segments(y) < 15) continue; // linha contínua (borda) não é tracejado
+    for (let k = 0; k < thick; k++) isDashed[y + k] = true;
+    y += thick;
+  }
+  for (let y = 0; y < H; y++) if (isDashed[y]) rowInk[y] = 0;
+
+  // Faixas de conteúdo separadas por >= 0,4% da altura em branco.
+  const gap = Math.max(4, Math.round(H * 0.004));
   const bands: [number, number][] = [];
   let start = -1;
   let blank = 0;
