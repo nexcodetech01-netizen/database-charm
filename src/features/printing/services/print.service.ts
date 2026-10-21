@@ -225,6 +225,13 @@ export const printManager = {
       return { success: false, message: 'Conteúdo do documento vazio' };
     }
 
+    // Bridge desligado: em vez de dar erro, abre a impressão do navegador
+    // (etiqueta já no tamanho certo; é só escolher a térmica e Enter).
+    if (typeof window !== "undefined" && !(await printerService.checkHealth())) {
+      const { printInBrowser } = await import("./browser-print");
+      return printInBrowser(label);
+    }
+
     let jobId: string;
     try {
       jobId = await printQueue.enqueue(label, options);
