@@ -37,6 +37,11 @@ import { LoadingSurface } from "@/components/design";
 import { EmptyState } from "@/components/layout";
 import { MoneyValue } from "@/components/layout/money-value";
 import { cn } from "@/lib/utils";
+import {
+  PackagePresetBar,
+  WeightPicker,
+  type PackageValues,
+} from "@/features/shipping/components/package-presets";
 
 /** Chaves de localStorage — CEP de origem salvo e últimos destinos usados. */
 const SAVED_ORIGIN_CEP_KEY = "nexos:frete:cep-origem-salvo";
@@ -48,6 +53,21 @@ interface RecentQuote {
   timestamp: number;
   input: ShippingCalculatorInput;
   results: ShippingOption[];
+}
+
+/** "Ribeirão Preto · SP" a partir do CEP (ViaCEP). Falha = sem nome. */
+const cityCache = new Map<string, string | null>();
+async function lookupCity(cep: string): Promise<string | null> {
+  if (cityCache.has(cep)) return cityCache.get(cep) ?? null;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await res.json();
+    const city = data?.erro ? null : `${data.localidade} · ${data.uf}`;
+    cityCache.set(cep, city);
+    return city;
+  } catch {
+    return null;
+  }
 }
 
 export const Route = createFileRoute("/_authenticated/ferramentas/calculadora-frete")({
@@ -214,7 +234,7 @@ function ShippingCalculatorPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("name, cnpj, zip_code, address, address_number, complement, neighborhood, city, state, email, phone")
+        .select("name, cnpj, zip_code, address, address_number, complement, neighborhood, city, state, email, phone, whatsapp")
         .eq("id", companyId!)
         .maybeSingle();
       if (error) throw error;
@@ -227,7 +247,7 @@ function ShippingCalculatorPage() {
     mode: "onChange",
     defaultValues: {
       format: "3",
-      cep_origem: "01001-000",
+      cep_origem: "",
       cep_destino: "",
       peso_kg: "0.3",
       altura_cm: "2",
@@ -236,6 +256,54 @@ function ShippingCalculatorPage() {
       valor_declarado: "0",
     },
   });
+
+  // Origem: vem do CEP da empresa (ou do salvo neste aparelho) e fica num
+  // resumo compacto; "Alterar" abre o campo.
+  const [editOrigin, setEditOrigin] = useState(false);
+  const [originCity, setOriginCity] = useState<string | null>(null);
+  const [destCity, setDestCity] = useState<string | null>(null);
+  const cepOrigem = calcForm.watch("cep_origem") as string;
+  const cepDestino = calcForm.watch("cep_destino") as string;
+
+  useEffect(() => {
+    if (!companyData?.zip_code) return;
+    if (!calcForm.getValues("cep_origem")) {
+      calcForm.setValue("cep_origem", formatCep(companyData.zip_code));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyData?.zip_code]);
+
+  useEffect(() => {
+    const clean = String(cepOrigem ?? "").replace(/\D/g, "");
+    if (clean.length !== 8) {
+      setOriginCity(null);
+      return;
+    }
+    let alive = true;
+    lookupCity(clean).then((c) => alive && setOriginCity(c));
+    return () => {
+      alive = false;
+    };
+  }, [cepOrigem]);
+
+  useEffect(() => {
+    const clean = String(cepDestino ?? "").replace(/\D/g, "");
+    if (clean.length !== 8) {
+      setDestCity(null);
+      return;
+    }
+    let alive = true;
+    lookupCity(clean).then((c) => alive && setDestCity(c));
+    return () => {
+      alive = false;
+    };
+  }, [cepDestino]);
+
+  function applyPackage(v: PackageValues) {
+    (Object.keys(v) as (keyof PackageValues)[]).forEach((k) =>
+      calcForm.setValue(k, v[k], { shouldValidate: true, shouldDirty: true }),
+    );
+  }
 
   const labelForm = useForm<AddressInfo>({
     resolver: zodResolver(AddressSchema),
@@ -312,37 +380,39 @@ function ShippingCalculatorPage() {
     // e bloqueia com uma mensagem clara se o cadastro estiver
     // incompleto, em vez de mandar dado errado pra SuperFrete (que
     // gera dinheiro real gasto numa etiqueta com remetente furado).
-    if (
-      !companyData?.name ||
-      !companyData?.cnpj ||
-      !companyData?.address ||
-      !companyData?.zip_code ||
-      !companyData?.neighborhood ||
-      !companyData?.city ||
-      !companyData?.state ||
-      !companyData?.phone
-    ) {
-      toast.error(
-        "Complete o cadastro da sua empresa (nome, CNPJ, endereço completo e telefone) em Configurações antes de emitir etiquetas.",
-        { description: "O remetente da etiqueta é montado a partir desses dados." },
-      );
+    const senderPhone = companyData?.phone || companyData?.whatsapp || "";
+    const missing = [
+      !companyData?.name && "nome",
+      !companyData?.cnpj && "CNPJ",
+      !companyData?.zip_code && "CEP",
+      !companyData?.address && "endereço",
+      !companyData?.neighborhood && "bairro",
+      !companyData?.city && "cidade",
+      !companyData?.state && "estado",
+      !senderPhone && "telefone ou WhatsApp",
+    ].filter(Boolean) as string[];
+    if (!companyData || missing.length > 0) {
+      toast.error(`Falta no cadastro da empresa: ${missing.join(", ") || "dados da empresa"}.`, {
+        description:
+          "Preencha em Configurações → Empresa e recarregue esta página. O remetente da etiqueta sai desses dados.",
+      });
       return;
     }
 
     setIsLoading(true);
     try {
       const senderData: AddressInfo = {
-        name: companyData.name,
-        document: companyData.cnpj,
+        name: companyData.name ?? "",
+        document: companyData.cnpj ?? "",
         postal_code: companyData.zip_code || calcForm.getValues("cep_origem"),
-        address: companyData.address,
+        address: companyData.address ?? "",
         number: companyData.address_number || "S/N",
         complement: companyData.complement || undefined,
         district: companyData.neighborhood || "",
         city: companyData.city || "",
         state: companyData.state || "",
         email: companyData.email || "",
-        phone: companyData.phone || "",
+        phone: senderPhone,
       };
 
       const calcValues = calcForm.getValues();
@@ -433,6 +503,13 @@ function ShippingCalculatorPage() {
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Resultados do mais barato para o mais caro, com selos.
+  const sortedResults = [...(results ?? [])].sort((a, b) => a.preco - b.preco);
+  const cheapestId = sortedResults[0]?.id;
+  const fastestId = [...sortedResults].sort(
+    (a, b) => a.prazo_dias - b.prazo_dias || a.preco - b.preco,
+  )[0]?.id;
 
   if (labelResult) {
     return (
@@ -525,349 +602,306 @@ function ShippingCalculatorPage() {
         <div className="lg:col-span-5 space-y-6">
           {step === 1 ? (
             <Form {...calcForm}>
-            <div className="space-y-6">
-              <Card className="border-border bg-card shadow-sm overflow-hidden">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Origem
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <form onSubmit={calcForm.handleSubmit(onCalcSubmit)} className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="flex items-end gap-3">
-                        <FormField
-                          control={calcForm.control}
-                          name="cep_origem"
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">CEP de origem</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="00000-000" 
-                                  {...field} 
-                                  onChange={(e) => field.onChange(formatCep(e.target.value))}
-                                  className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50 transition-colors"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            className="h-10 px-3 bg-emerald-600/10 text-emerald-400 hover:bg-emerald-600/20 border border-emerald-600/20 rounded-lg transition-all"
-                            onClick={handleSaveOriginCep}
-                            title="Salvar CEP"
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            className="h-10 px-3 bg-muted/30 text-muted-foreground hover:bg-muted/50 border border-sidebar-border/40 rounded-lg transition-all"
-                            onClick={handleClearOriginCep}
-                            title="Limpar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={calcForm.control}
-                          name="format"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Formato</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-10 bg-background/60 border-sidebar-border/40">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="1">Caixa / Pacote</SelectItem>
-                                  <SelectItem value="2">Rolo / Cilindro</SelectItem>
-                                  <SelectItem value="3">Envelope</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={calcForm.control}
-                          name="peso_kg"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Peso (kg)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="0,3"
-                                  {...field}
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
-                                  className="h-10 bg-background/60 border-sidebar-border/40"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className={cn(
-                        "grid gap-4",
-                        calcForm.watch("format") === "3" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3"
-                      )}>
-
-                        <FormField
-                          control={calcForm.control}
-                          name="largura_cm"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Largura (cm)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="16"
-                                  {...field}
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
-                                  className="h-10 bg-background/60 border-sidebar-border/40"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-
-                          )}
-                        />
-                        <FormField
-                          control={calcForm.control}
-                          name="altura_cm"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Altura (cm)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="11"
-                                  {...field}
-                                  value={field.value ?? ""}
-                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
-                                  className="h-10 bg-background/60 border-sidebar-border/40"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-
-                          )}
-                        />
-                        {calcForm.watch("format") !== "3" && (
-                          <FormField
-                            control={calcForm.control}
-                            name="comprimento_cm"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Comprimento (cm)</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="20"
-                                    {...field}
-                                    value={field.value ?? ""}
-                                    onChange={(e) => field.onChange(formatNumeric(e.target.value))}
-                                    className="h-10 bg-background/60 border-sidebar-border/40"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-
-                            )}
-                          />
+              <form
+                onSubmit={calcForm.handleSubmit(onCalcSubmit)}
+                className="space-y-4 pb-24 lg:pb-0"
+              >
+                {/* Origem — resumo compacto */}
+                <div className="rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+                  {editOrigin ? (
+                    <div className="flex items-end gap-2">
+                      <FormField
+                        control={calcForm.control}
+                        name="cep_origem"
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">CEP de origem</FormLabel>
+                            <FormControl>
+                              <Input
+                                inputMode="numeric"
+                                placeholder="00000-000"
+                                {...field}
+                                onChange={(e) => field.onChange(formatCep(e.target.value))}
+                                className="h-10 bg-background/60"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
+                      />
+                      <Button type="button" size="sm" variant="secondary" className="h-10" onClick={() => { handleSaveOriginCep(); setEditOrigin(false); }} title="Salvar como padrão">
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" className="h-10" onClick={handleClearOriginCep} title="Limpar">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" className="h-10" onClick={() => setEditOrigin(false)}>
+                        OK
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-muted-foreground">Saindo de</span>
+                        <span className="truncate font-medium">
+                          {originCity ?? "—"} · {cepOrigem || "sem CEP"}
+                        </span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditOrigin(true)}
+                        className="shrink-0 text-xs font-medium text-primary hover:underline"
+                      >
+                        Alterar
+                      </button>
+                    </div>
+                  )}
+                  {!editOrigin && calcForm.formState.errors.cep_origem ? (
+                    <p className="mt-1 text-xs text-destructive">
+                      {String(calcForm.formState.errors.cep_origem.message ?? "CEP de origem inválido")}
+                    </p>
+                  ) : null}
+                </div>
 
-                      <Collapsible open={showExtras} onOpenChange={setShowExtras}>
-                        <CollapsibleTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            <span className="flex items-center gap-2">
-                              <Shield className="h-3.5 w-3.5" />
-                              Seguro, aviso e mão própria
-                            </span>
-                            <ChevronDown
-                              className={cn("h-4 w-4 transition-transform", showExtras && "rotate-180")}
+                {/* Pacote */}
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                      <Package className="h-4 w-4" />
+                      Pacote
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <PackagePresetBar
+                      companyId={companyId}
+                      current={{
+                        format: String(calcForm.watch("format") ?? "1"),
+                        peso_kg: String(calcForm.watch("peso_kg") ?? ""),
+                        altura_cm: String(calcForm.watch("altura_cm") ?? ""),
+                        largura_cm: String(calcForm.watch("largura_cm") ?? ""),
+                        comprimento_cm: String(calcForm.watch("comprimento_cm") ?? ""),
+                      }}
+                      onApply={applyPackage}
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={calcForm.control}
+                        name="format"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Formato</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-10 bg-background/60">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="1">Caixa / Pacote</SelectItem>
+                                <SelectItem value="2">Rolo / Cilindro</SelectItem>
+                                <SelectItem value="3">Envelope</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={calcForm.control}
+                        name="peso_kg"
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Peso</FormLabel>
+                            <WeightPicker
+                              value={String(field.value ?? "")}
+                              onChange={field.onChange}
+                              error={!!fieldState.error}
                             />
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="pt-2">
-                          <FormField
-                            control={calcForm.control}
-                            name="valor_declarado"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">Valor declarado / seguro (R$)</FormLabel>
-                                <FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      {(
+                        [
+                          ["altura_cm", "Altura", "2"],
+                          ["largura_cm", "Largura", "16"],
+                          ["comprimento_cm", "Comprim.", "20"],
+                        ] as const
+                      ).map(([name, label, ph]) => (
+                        <FormField
+                          key={name}
+                          control={calcForm.control}
+                          name={name}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">{label}</FormLabel>
+                              <FormControl>
+                                <div className="relative">
                                   <Input
-                                    placeholder="0,00"
+                                    inputMode="decimal"
+                                    placeholder={ph}
                                     {...field}
                                     value={field.value ?? ""}
                                     onChange={(e) => field.onChange(formatNumeric(e.target.value))}
-                                    className="h-10 bg-background/60 border-sidebar-border/40"
+                                    className="h-10 bg-background/60 pr-9"
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-
-                            )}
-                          />
-                        </CollapsibleContent>
-                      </Collapsible>
+                                  <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-muted-foreground">cm</span>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
                     </div>
-                  </form>
-                </CardContent>
-              </Card>
 
-              <Card className="border-border bg-card shadow-sm overflow-hidden">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Destino
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                <div className="rounded-xl bg-background/40 border border-border/40 overflow-hidden">
-                      <Tabs value={destTab} onValueChange={(v) => setDestTab(v as "novo" | "recentes")} className="w-full">
-                        <TabsList className="w-full justify-start h-12 bg-transparent rounded-none border-b border-sidebar-border/40 p-0">
-                          <TabsTrigger 
-                            value="novo" 
-                            className="h-full px-6 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#E5A855] text-xs uppercase font-bold tracking-wider"
-                          >
-                            Novo
-                          </TabsTrigger>
-                          <TabsTrigger 
-                            value="recentes" 
-                            disabled={recentDestCeps.length === 0 && recentQuotes.length === 0}
-                            className="h-full px-6 rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#E5A855] text-xs uppercase font-bold tracking-wider"
-                          >
-                            Recentes
-                          </TabsTrigger>
-                        </TabsList>
-                        
-                        <div className="p-5">
-                          <TabsContent value="novo" className="mt-0 space-y-4">
-                            <FormField
-                              control={calcForm.control}
-                              name="cep_destino"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex items-center justify-between mb-1.5">
-                                    <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground block">CEP de destino</FormLabel>
-                                    <a
-                                      href={`https://buscacepinter.correios.com.br/app/endereco/index.php`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#B392E0] hover:text-[#B392E0]/80 transition-colors"
-                                    >
-                                      <Search className="h-3 w-3" />
-                                      Pesquisar CEP
-                                    </a>
-                                  </div>
-                                  <FormControl>
-                                    <Input 
-                                      placeholder="00000-000" 
-                                      {...field} 
-                                      onChange={(e) => field.onChange(formatCep(e.target.value))}
-                                      className="h-10 bg-background/60 border-sidebar-border/40 focus:border-[#E5A855]/50"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                    <Collapsible open={showExtras} onOpenChange={setShowExtras}>
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-center gap-2 rounded-lg py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          <Shield className="h-3.5 w-3.5" />
+                          Seguro, aviso e mão própria
+                          <ChevronDown className={cn("h-4 w-4 transition-transform", showExtras && "rotate-180")} />
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <FormField
+                          control={calcForm.control}
+                          name="valor_declarado"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Valor declarado / seguro (R$)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  inputMode="decimal"
+                                  placeholder="0,00"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                  onChange={(e) => field.onChange(formatNumeric(e.target.value))}
+                                  className="h-10 bg-background/60"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </CardContent>
+                </Card>
+
+                {/* Destino */}
+                <Card className="border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                      <User className="h-4 w-4" />
+                      Destino
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={calcForm.control}
+                      name="cep_destino"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">CEP de destino</FormLabel>
+                            <a
+                              href="https://buscacepinter.correios.com.br/app/endereco/index.php"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-primary hover:underline"
+                            >
+                              <Search className="h-3 w-3" /> Não sei o CEP
+                            </a>
+                          </div>
+                          <FormControl>
+                            <Input
+                              inputMode="numeric"
+                              placeholder="00000-000"
+                              {...field}
+                              onChange={(e) => field.onChange(formatCep(e.target.value))}
+                              className="h-12 bg-background/60 text-lg font-semibold tracking-wider"
                             />
-                          </TabsContent>
-                          
-                          <TabsContent value="recentes" className="mt-0">
-                            <div className="space-y-4">
-                              {recentQuotes.length > 0 && (
-                                <div className="space-y-2">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Cotações Anteriores</p>
-                                  <div className="grid grid-cols-1 gap-2">
-                                    {recentQuotes.map((quote, idx) => (
-                                      <button
-                                        key={idx}
-                                        type="button"
-                                        className="flex flex-col gap-1 rounded-lg px-3 py-2 text-sm text-left hover:bg-sidebar/40 border border-sidebar-border/20 transition-all group"
-                                        onClick={() => applyRecentQuote(quote)}
-                                      >
-                                        <div className="flex justify-between items-center w-full">
-                                          <span className="font-bold text-[10px] text-primary">{quote.input.cep_destino}</span>
-                                          <span className="text-[9px] text-muted-foreground">{new Date(quote.timestamp).toLocaleDateString()}</span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 text-[9px] text-muted-foreground font-medium">
-                                          <span>{quote.input.peso_kg}kg</span>
-                                          <span>•</span>
-                                          <span>{quote.input.largura_cm}x{quote.input.altura_cm}x{quote.input.comprimento_cm}cm</span>
-                                          <span>•</span>
-                                          <span className="text-emerald-500">{quote.results.length} opções</span>
-                                        </div>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                          </FormControl>
+                          {destCity ? (
+                            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3" /> {destCity}
+                            </p>
+                          ) : null}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                              {recentDestCeps.length > 0 && (
-                                <div className="space-y-2">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">CEPs Frequentes</p>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {recentDestCeps.map((cep) => (
-                                      <button
-                                        key={cep}
-                                        type="button"
-                                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-left hover:bg-sidebar/40 border border-sidebar-border/20 transition-all group"
-                                        onClick={() => {
-                                          calcForm.setValue("cep_destino", cep);
-                                          setDestTab("novo");
-                                        }}
-                                      >
-                                        <MapPin className="h-3 w-3 text-muted-foreground group-hover:text-[#E5A855] transition-colors" />
-                                        <span className="font-medium">{cep}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </TabsContent>
+                    {recentDestCeps.length > 0 || recentQuotes.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Recentes</p>
+                        <div className="flex flex-wrap gap-2">
+                          {recentDestCeps.map((cep) => (
+                            <button
+                              key={cep}
+                              type="button"
+                              onClick={() => calcForm.setValue("cep_destino", cep, { shouldValidate: true })}
+                              className="rounded-full border border-border px-3 py-1 text-xs hover:border-primary/50"
+                            >
+                              {cep}
+                            </button>
+                          ))}
                         </div>
-                      </Tabs>
-                </div>
-              </CardContent>
-            </Card>
+                        {recentQuotes.length > 0 ? (
+                          <Collapsible>
+                            <CollapsibleTrigger className="text-xs text-muted-foreground hover:text-foreground">
+                              Ver cotações anteriores ({recentQuotes.length})
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2 space-y-1.5">
+                              {recentQuotes.map((quote, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => applyRecentQuote(quote)}
+                                  className="flex w-full items-center justify-between rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:bg-muted/40"
+                                >
+                                  <span className="font-medium">{quote.input.cep_destino}</span>
+                                  <span className="text-muted-foreground">
+                                    {String(quote.input.peso_kg)} kg · {quote.results.length} opções ·{" "}
+                                    {new Date(quote.timestamp).toLocaleDateString("pt-BR")}
+                                  </span>
+                                </button>
+                              ))}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
 
-            <Button
-              onClick={calcForm.handleSubmit(onCalcSubmit)}
-              disabled={isLoading}
-              className="w-full h-12 text-sm font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transition-all"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  COTANDO...
-                </>
-              ) : (
-                "Calcular frete"
-              )}
-            </Button>
-            </div>
+                <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl bg-emerald-600 text-sm font-bold uppercase tracking-widest text-white hover:bg-emerald-500"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cotando...
+                      </>
+                    ) : (
+                      <>
+                        <Calculator className="mr-2 h-4 w-4" /> Calcular frete
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
             </Form>
           ) : (
           <Card className="border-border bg-card shadow-sm overflow-hidden lg:sticky lg:top-8">
@@ -944,40 +978,58 @@ function ShippingCalculatorPage() {
                 </h3>
                 <Badge variant="outline" className="text-[10px]">{results.length} resultados</Badge>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {results.map((option, idx) => (
-                  <Card 
-                    key={idx} 
-                    className={cn(
-                      "overflow-hidden border-border transition-all cursor-pointer group hover:border-primary/50 hover:shadow-md bg-card/50",
-                      selectedOption?.id === option.id && "border-primary ring-1 ring-primary"
-                    )}
-                    onClick={() => handleSelectOption(option)}
-                  >
-                    <div className="bg-primary/5 px-4 py-2 border-b border-border/50 flex justify-between items-center">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                        {option.transportadora}
-                      </p>
-                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-base font-bold">{option.servico}</p>
-                          <p className="text-[11px] text-muted-foreground font-medium">
-                            Prazo: {option.prazo_dias} {option.prazo_dias === 1 ? 'dia útil' : 'dias úteis'}
-                          </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {sortedResults.map((option, idx) => {
+                  const isCheapest = option.id === cheapestId;
+                  const isFastest = option.id === fastestId;
+                  return (
+                    <Card
+                      key={`${option.id}-${idx}`}
+                      className={cn(
+                        "group cursor-pointer overflow-hidden border-border bg-card/50 transition-all hover:border-primary/50 hover:shadow-md",
+                        isCheapest && "border-emerald-500/50",
+                        selectedOption?.id === option.id && "border-primary ring-1 ring-primary",
+                      )}
+                      onClick={() => handleSelectOption(option)}
+                    >
+                      <CardContent className="space-y-3 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              {option.transportadora}
+                            </p>
+                            <p className="truncate text-base font-bold">{option.servico}</p>
+                          </div>
+                          <MoneyValue value={option.preco} className="shrink-0 text-2xl font-black text-primary" />
                         </div>
-                        <div className="text-right">
-                          <MoneyValue 
-                            value={option.preco} 
-                            className="text-lg font-black text-primary" 
-                          />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className="gap-1 text-[11px]">
+                            <Truck className="h-3 w-3" />
+                            {option.prazo_dias} {option.prazo_dias === 1 ? "dia útil" : "dias úteis"}
+                          </Badge>
+                          {isCheapest ? (
+                            <Badge className="bg-emerald-600 text-[11px] text-white hover:bg-emerald-600">Mais barato</Badge>
+                          ) : null}
+                          {isFastest ? (
+                            <Badge className="bg-sky-600 text-[11px] text-white hover:bg-sky-600">Mais rápido</Badge>
+                          ) : null}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="w-full"
+                          variant={isCheapest ? "default" : "outline"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectOption(option);
+                          }}
+                        >
+                          Emitir etiqueta
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
               {results.length === 0 && (
                 <EmptyState
