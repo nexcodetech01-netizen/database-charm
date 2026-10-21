@@ -153,108 +153,47 @@ export class PrintJobService {
     }
   }
 
+  /**
+   * PDF (ex.: etiqueta da SuperFrete). A SuperFrete manda a etiqueta e a
+   * declaração de conteúdo (DACE) numa folha grande, uma embaixo da outra.
+   * Imprimir a folha inteira na térmica saía ENORME e cortado (21/10/2026).
+   *
+   * Agora: cada página vira imagem, é recortada nos blocos de conteúdo
+   * (etiqueta, DACE...) separados pelos espaços em branco/linha tracejada, e
+   * cada bloco sai numa etiqueta 10x15 própria, ajustado sem distorcer.
+   * PDF que já é 10x15 (um bloco só) sai igual, ocupando a etiqueta.
+   */
   private async printPdf(job: PrintJob, tmpFile: string): Promise<void> {
-    const base64Raw = job.data?.data;
-    if (!base64Raw) {
+    const raw: string | undefined = job.data?.data || job.data?.pdf;
+    if (!raw) {
       throw new Error('PDF sem conteúdo (campo "data" vazio) — nada pra imprimir.');
     }
 
-    const cleanBase64 = base64Raw.replace(/^data:.*;base64,/, '');
+    let bytes: Buffer;
+    if (/^https?:\/\//i.test(raw)) {
+      const res = await fetch(raw);
+      if (!res.ok) throw new Error(`Não consegui baixar o PDF da etiqueta (HTTP ${res.status}).`);
+      bytes = Buffer.from(await res.arrayBuffer());
+    } else {
+      bytes = Buffer.from(raw.replace(/^data:.*;base64,/, ''), 'base64');
+    }
     const pdfPath = path.resolve(`${tmpFile}.pdf`);
-    await fs.promises.writeFile(pdfPath, Buffer.from(cleanBase64, 'base64'));
+    await fs.promises.writeFile(pdfPath, bytes);
 
-    // ABORDAGEM FASE 3.1: Conversão de PDF para Imagem (Server-side)
-    //
-    // Por que mudar? Impressoras térmicas genéricas ("LABEL TERMICA")
-    // frequentemente falham ao receber PDFs via SumatraPDF, mesmo com aspas
-    // corrigidas no nome. O driver do Windows para essas impressoras é
-    // simplificado e prefere receber dados rasterizados (imagem).
-    //
-    // Solução: Convertemos cada página do PDF em uma imagem PNG no próprio
-    // servidor e enviamos para a impressora usando o subsistema gráfico do
-    // Windows via PowerShell (Out-Printer), que garante a renderização
-    // correta pelo driver original.
     try {
-      logger.info(`Iniciando conversão de PDF para imagem para impressora: ${job.printer}`);
-      const counter = { pages: 0 };
-      
-      const document = await pdf(pdfPath, {
-        scale: 2.0 // Aumenta densidade para melhor leitura de código de barras
-      });
-
-      for await (const img of document) {
-        counter.pages++;
-        const imgPath = path.resolve(`${tmpFile}-page-${counter.pages}.png`);
-        await fs.promises.writeFile(imgPath, img);
-
-        try {
-          // ABORDAGEM FASE 3.2: Script .ps1 temporário para maior robustez
-          // Evita falhas de escape de string e permite capturar erros reais do $doc.Print()
-          const scriptPath = path.resolve(`${tmpFile}-print.ps1`);
-          const psScript = `
-param(
-  [string]$PrinterName,
-  [string]$ImagePath
-)
-try {
-  Add-Type -AssemblyName System.Drawing
-  $img = [System.Drawing.Image]::FromFile($ImagePath)
-  $doc = New-Object System.Drawing.Printing.PrintDocument
-  $doc.PrinterSettings.PrinterName = $PrinterName
-  $doc.add_PrintPage({
-    param($s, $e)
-    $e.Graphics.DrawImage($img, 0, 0)
-    $e.HasMorePages = $false
-  })
-  $doc.Print()
-  $img.Dispose()
-  Write-Output "Successfully sent to printer queue"
-} catch {
-  Write-Error $_.Exception.Message
-  exit 1
-}
-`;
-          await fs.promises.writeFile(scriptPath, psScript, 'utf8');
-
-          try {
-            const { stdout, stderr } = await execFileAsync('powershell.exe', [
-              '-NoProfile',
-              '-ExecutionPolicy',
-              'Bypass',
-              '-File',
-              scriptPath,
-              '-PrinterName',
-              job.printer,
-              '-ImagePath',
-              imgPath
-            ]);
-            
-            if (stdout) logger.info(`PS Output: ${stdout.trim()}`);
-            if (stderr) logger.warn(`PS Error: ${stderr.trim()}`);
-            
-            logger.info(`Página ${counter.pages} enviada para ${job.printer}`);
-          } finally {
-            // Limpa o script temporário
-            fs.promises.unlink(scriptPath).catch(() => {});
-          }
-        } finally {
-          // Limpa imagem temporária da página
-          fs.promises.unlink(imgPath).catch(() => {});
+      const document = await pdf(pdfPath, { scale: 3 });
+      let printed = 0;
+      for await (const pageImg of document) {
+        const blocks = await splitContentBlocks(pageImg as Buffer);
+        for (const block of blocks) {
+          printed++;
+          await this.printImageBuffer(job, block, `${tmpFile}-p${printed}`, 'label10x15');
         }
       }
-
-      if (counter.pages === 0) {
-        throw new Error('PDF processado mas nenhuma página foi gerada para impressão.');
-      }
-    } catch (err: any) {
-      const detail = err?.message || String(err);
-      logger.error(`Falha na impressão de PDF via imagem: ${detail}`);
-      throw new Error(
-        `Falha ao renderizar PDF para "${job.printer}": ${detail}. ` +
-        `Verifique se o driver da impressora está instalado corretamente no Windows.`
-      );
+      if (printed === 0) throw new Error('O PDF não tinha nada para imprimir.');
+      logger.info(`PDF impresso em ${printed} etiqueta(s) 10x15 em ${job.printer}`);
     } finally {
-      await fs.promises.unlink(pdfPath).catch(() => {});
+      fs.promises.unlink(pdfPath).catch(() => {});
     }
   }
 
@@ -268,9 +207,29 @@ try {
     if (!raw) {
       throw new Error('Job do tipo IMAGE sem conteúdo — nada pra imprimir.');
     }
+    const buf = Buffer.from(raw.replace(/^data:.*;base64,/, ''), 'base64');
+    await this.printImageBuffer(job, buf, tmpFile, 'fromImage');
+  }
+
+  /**
+   * paper:
+   *  - 'fromImage': papel do tamanho da imagem a 203 dpi (ZPL convertido).
+   *  - 'label10x15': papel 10x15 cm e a imagem ajustada dentro (PDF recortado).
+   */
+  private async printImageBuffer(
+    job: PrintJob,
+    image: Buffer,
+    tmpFile: string,
+    paper: 'fromImage' | 'label10x15',
+  ): Promise<void> {
     const imgPath = path.resolve(`${tmpFile}.png`);
     const scriptPath = path.resolve(`${tmpFile}-image.ps1`);
-    await fs.promises.writeFile(imgPath, Buffer.from(raw.replace(/^data:.*;base64,/, ''), 'base64'));
+    await fs.promises.writeFile(imgPath, image);
+
+    const paperLine =
+      paper === 'label10x15'
+        ? `$paperW = 394; $paperH = 591`
+        : `$paperW = [int][Math]::Round($img.Width / 203.2 * 100); $paperH = [int][Math]::Round($img.Height / 203.2 * 100)`;
 
     const psScript = `
 param(
@@ -284,10 +243,7 @@ try {
   $doc.PrinterSettings.PrinterName = $PrinterName
   if (-not $doc.PrinterSettings.IsValid) { throw "Impressora '$PrinterName' nao encontrada no Windows." }
   $doc.DocumentName = 'Etiqueta NexOS'
-  # Papel do tamanho da propria etiqueta: a imagem vem do Labelary a
-  # 8 pontos/mm (203 dpi). 10x15 cm de envio, 40x25 mm do Full etc.
-  $paperW = [int][Math]::Round($img.Width / 203.2 * 100)
-  $paperH = [int][Math]::Round($img.Height / 203.2 * 100)
+  ${paperLine}
   $doc.DefaultPageSettings.PaperSize = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH)
   $doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
   $doc.OriginAtMargins = $false
@@ -297,8 +253,9 @@ try {
     $ratio = [Math]::Min($b.Width / $img.Width, $b.Height / $img.Height)
     $w = [int]($img.Width * $ratio)
     $h = [int]($img.Height * $ratio)
-    $e.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
-    $e.Graphics.DrawImage($img, 0, 0, $w, $h)
+    $x = [int](($b.Width - $w) / 2)
+    $e.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $e.Graphics.DrawImage($img, $x, 0, $w, $h)
     $e.HasMorePages = $false
   })
   $doc.Print()
@@ -417,3 +374,88 @@ try {
 }
 
 export const printJobService = new PrintJobService();
+
+/**
+ * Recorta uma página (PNG) nos blocos de conteúdo empilhados: procura faixas
+ * de linhas em branco; blocos muito finos (linha tracejada de "corte aqui")
+ * são descartados; cada bloco é aparado nas laterais. Página com um bloco só
+ * volta inteira (aparada).
+ */
+export async function splitContentBlocks(png: Buffer): Promise<Buffer[]> {
+  const { createCanvas, loadImage } = await import('@napi-rs/canvas');
+  const img = await loadImage(png);
+  const W = img.width;
+  const H = img.height;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, W, H).data;
+
+  const dark = (x: number, y: number) => {
+    const i = (y * W + x) * 4;
+    return data[i] + data[i + 1] + data[i + 2] < 600; // não-branco
+  };
+  const rowInk: number[] = new Array(H).fill(0);
+  for (let y = 0; y < H; y++) {
+    let n = 0;
+    for (let x = 0; x < W; x += 2) if (dark(x, y)) n++;
+    rowInk[y] = n;
+  }
+
+  // Faixas de conteúdo separadas por >= 1% da altura em branco.
+  const gap = Math.max(4, Math.round(H * 0.01));
+  const bands: [number, number][] = [];
+  let start = -1;
+  let blank = 0;
+  for (let y = 0; y < H; y++) {
+    if (rowInk[y] > 0) {
+      if (start < 0) start = y;
+      blank = 0;
+    } else if (start >= 0) {
+      blank++;
+      if (blank >= gap) {
+        bands.push([start, y - blank]);
+        start = -1;
+        blank = 0;
+      }
+    }
+  }
+  if (start >= 0) bands.push([start, H - 1]);
+
+  // Linha tracejada / ruído: faixas muito baixas saem.
+  const minBand = Math.round(H * 0.04);
+  let blocks = bands.filter(([a, b]) => b - a >= minBand);
+  // Junta faixas vizinhas muito próximas que pertencem ao mesmo bloco? Não:
+  // a etiqueta tem moldura, então vem num bloco só.
+  if (blocks.length === 0) blocks = [[0, H - 1]];
+
+  const out: Buffer[] = [];
+  for (const [y0, y1] of blocks) {
+    let x0 = W;
+    let x1 = 0;
+    for (let y = y0; y <= y1; y += 2) {
+      for (let x = 0; x < W; x++) {
+        if (dark(x, y)) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+        }
+      }
+    }
+    if (x1 <= x0) continue;
+    const pad = Math.round(W * 0.01);
+    const cx = Math.max(0, x0 - pad);
+    const cy = Math.max(0, y0 - pad);
+    const cw = Math.min(W, x1 + pad) - cx;
+    const ch = Math.min(H, y1 + pad) - cy;
+    const crop = createCanvas(cw, ch);
+    const cctx = crop.getContext('2d');
+    cctx.fillStyle = '#fff';
+    cctx.fillRect(0, 0, cw, ch);
+    cctx.drawImage(canvas, cx, cy, cw, ch, 0, 0, cw, ch);
+    out.push(crop.toBuffer('image/png'));
+  }
+  return out;
+}
+
