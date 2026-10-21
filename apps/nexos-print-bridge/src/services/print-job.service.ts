@@ -250,8 +250,11 @@ try {
   foreach ($ps in $doc.PrinterSettings.PaperSizes) {
     if ([Math]::Abs($ps.Width - $paperW) -le 12 -and [Math]::Abs($ps.Height - $paperH) -le 12) { $paper = $ps; break }
   }
-  if ($paper -eq $null) { $paper = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH) }
-  $doc.DefaultPageSettings.PaperSize = $paper
+  # Sem tamanho igual na lista: para a etiqueta 10x15, fica o papel que ja
+  # esta configurado na impressora (Preferencias de impressao) - tamanho
+  # personalizado fazia alguns drivers cairem para A4 e puxar varias etiquetas.
+  if ($paper -eq $null -and '${paper}' -eq 'fromImage') { $paper = New-Object System.Drawing.Printing.PaperSize('Etiqueta NexOS', $paperW, $paperH) }
+  if ($paper -ne $null) { $doc.DefaultPageSettings.PaperSize = $paper }
   $doc.DefaultPageSettings.Landscape = $false
   $doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
   $doc.OriginAtMargins = $false
