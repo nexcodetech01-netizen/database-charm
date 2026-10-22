@@ -2,7 +2,6 @@ import { bellaEventEngine, type BellaEventEngine } from "./BellaEventEngine";
 import { comparePriority } from "./EventPriority";
 import type { BellaEvent } from "./BellaEvent";
 import type { BellaEventModule } from "./BellaEventTypes";
-import { saveNotification } from "./persistence.functions";
 
 export type RegistryAction = "created" | "updated" | "resolved" | "expired";
 
@@ -30,6 +29,11 @@ export class BellaEventRegistry {
   private listeners = new Set<RegistryListener>();
   private unsubscribe: (() => void) | null = null;
   private sweepTimer: ReturnType<typeof setInterval> | null = null;
+  private serverPersister: ((input: { companyId: string; eventType: string; title: string; message: string; referenceId: string | null; metadata?: any }) => Promise<unknown>) | null = null;
+
+  setServerPersister(fn: NonNullable<BellaEventRegistry["serverPersister"]>): void {
+    this.serverPersister = fn;
+  }
 
   constructor(
     private readonly engine: BellaEventEngine = bellaEventEngine,
@@ -143,18 +147,10 @@ export class BellaEventRegistry {
     // No NAVEGADOR (cliente), a persistência é feita via hook no componente Topbar.
     if (action === "created" && typeof window === "undefined") {
       const payload = event.payload as any;
-      saveNotification({
-        data: {
-          companyId: event.tenantId,
-          eventType: event.type,
-          title: event.title,
-          message: event.description,
-          referenceId: payload?.entityId || payload?.ticketId || null,
-          metadata: payload
-        }
-      }).catch((err: any) => {
-        console.warn("[BellaEventRegistry-Server] Falha na persistência:", err);
-      });
+      if (this.serverPersister) {
+        this.serverPersister({ companyId: event.tenantId, eventType: event.type, title: event.title, message: event.description, referenceId: payload?.entityId || payload?.ticketId || null, metadata: payload })
+          .catch((err: any) => console.warn("[BellaEventRegistry-Server] Falha na persistência:", err));
+      }
     }
 
     if (typeof console !== "undefined" && typeof console.debug === "function") {
