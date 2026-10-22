@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertCompanyAccess } from "@/lib/company-resolver.server";
 import { persistNotification, fetchUnreadNotifications, markNotificationAsRead, markNotificationAsReadByContent } from "./persistence.server";
 
 /**
@@ -32,6 +34,7 @@ import { persistNotification, fetchUnreadNotifications, markNotificationAsRead, 
  * Chamado pelo EventEngine/Registry para garantir durabilidade.
  */
 export const saveNotification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => z.object({
     companyId: z.string().uuid(),
     eventType: z.string(),
@@ -40,7 +43,8 @@ export const saveNotification = createServerFn({ method: "POST" })
     referenceId: z.string().optional().nullable(),
     metadata: z.record(z.any()).optional(),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCompanyAccess(context.supabase, context.userId, data.companyId);
     return persistNotification(data);
   });
 
@@ -48,11 +52,13 @@ export const saveNotification = createServerFn({ method: "POST" })
  * Busca notificações não lidas para a sessão atual.
  */
 export const getUnreadNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => z.object({
     companyId: z.string().uuid(),
     limit: z.number().optional().default(50),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCompanyAccess(context.supabase, context.userId, data.companyId);
     return fetchUnreadNotifications(data.companyId, data.limit);
   });
 
@@ -62,6 +68,7 @@ export const getUnreadNotifications = createServerFn({ method: "GET" })
  * e têm um id sintético que não bate com o id real do banco).
  */
 export const markNotificationReadFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => z.object({
     notificationId: z.string().uuid().optional(),
     companyId: z.string().uuid(),
@@ -71,7 +78,8 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
     (d) => !!d.notificationId || !!d.eventType,
     { message: "Informe notificationId OU eventType (com referenceId)." }
   ).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertCompanyAccess(context.supabase, context.userId, data.companyId);
     if (data.notificationId) {
       return markNotificationAsRead(data.notificationId, data.companyId);
     }

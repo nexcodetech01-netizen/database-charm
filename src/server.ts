@@ -1,4 +1,7 @@
 import "./lib/error-capture";
+import { bellaEventRegistry } from "@/features/bella-ai/events/BellaEventRegistry";
+import { persistNotification } from "@/features/bella-ai/events/persistence.server";
+bellaEventRegistry.setServerPersister(persistNotification);
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
