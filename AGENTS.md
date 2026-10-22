@@ -23,3 +23,4 @@
 - Keep statement parsing, matching and analysis as pure utilities in the bank-reconciliation feature, with PDF text extraction loaded in the browser; this separates review logic from persistence and browser-only PDF processing.
 - Keep bank reconciliation persistence in its browser-client service and reuse financeService for launches; this preserves existing RLS and settlement behavior without duplicating schema or financial workflows.
 - Export the bank reconciliation dialog through its feature entry point and keep statement review state inside the dialog; this allows finance screens to mount the workflow without duplicating review logic.
+- Bella notification server functions require login and company access; server-generated events persist through the persister injected in `src/server.ts`, because the event registry also runs in the browser and must not import server-only code.
