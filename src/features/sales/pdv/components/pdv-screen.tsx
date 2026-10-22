@@ -178,7 +178,8 @@ export function PDVScreen({
         type: "SALE_CREATED",
         sale: {
           id: sale.id,
-          number: pdv.state.number,
+          // Número definitivo gerado pelo banco (o do carrinho era provisório).
+          number: sale.number ?? pdv.state.number,
           total: pdv.totals.grand_total,
         },
       }),

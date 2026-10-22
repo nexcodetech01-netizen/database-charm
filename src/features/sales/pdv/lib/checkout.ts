@@ -39,7 +39,7 @@ export type PdvSaleCreateInput = ReturnType<typeof SaleEngine.buildPayload> & {
 };
 
 export type PdvSubmitResult =
-  | { ok: true; sale: { id: string } }
+  | { ok: true; sale: { id: string; number?: string | null } }
   | { ok: false; code: SaleCheck extends { ok: false } ? string : string; message: string };
 
 /**
@@ -51,7 +51,7 @@ export async function submitPdvSale(input: {
   state: SaleDraftState;
   companyId: string;
   cashSessionId: string | null;
-  create: (payload: PdvSaleCreateInput) => Promise<{ id: string }>;
+  create: (payload: PdvSaleCreateInput) => Promise<{ id: string; number?: string | null }>;
 }): Promise<PdvSubmitResult> {
   const check = validatePdvSale(input.state);
   if (!check.ok) return { ok: false, code: check.code, message: check.message };

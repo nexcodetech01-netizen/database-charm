@@ -6641,6 +6641,7 @@ export type Database = {
         Row: {
           bella_pay_ref: string | null
           cash_session_id: string | null
+          client_request_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -6669,6 +6670,7 @@ export type Database = {
         Insert: {
           bella_pay_ref?: string | null
           cash_session_id?: string | null
+          client_request_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
@@ -6697,6 +6699,7 @@ export type Database = {
         Update: {
           bella_pay_ref?: string | null
           cash_session_id?: string | null
+          client_request_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null

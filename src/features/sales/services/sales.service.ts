@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SALE_CLIENT_REQUEST_UNIQUE, SALE_NUMBER_UNIQUE } from "../lib/idempotency";
 import {
   machineFeeAmount,
   machineFeeKey,
@@ -695,63 +696,45 @@ export const salesService = {
       .select()
       .single();
 
-    // BUG-VENDA-DUPLICADA (2026-08-27): número de venda gerado uma única vez
-    // no navegador (nextPdvSaleNumber). Se a rede cair/trocar bem no momento
-    // do INSERT, o navegador pode não receber a confirmação mesmo a venda
-    // tendo sido gravada — e um reenvio (manual ou automático) com o MESMO
-    // número esbarra no constraint único "sales_company_id_number_key".
-    // Antes de tratar isso como erro, checamos se a venda já existe.
-    if (error?.code === "23505" && error.message?.includes("sales_company_id_number_key")) {
+    // AUDITORIA 4.1 (2026-10-22) — o número da venda agora é gerado NO BANCO
+    // (trigger `trg_zz_assign_sale_number`, formato VD-AAAAMMDD-0001), então
+    // números automáticos não colidem mais. Reenvio após queda de rede é
+    // reconhecido pela chave `client_request_id` (índice único por empresa),
+    // e NUNCA mais por "mesmo número + mesmo total" — essa heurística
+    // descartava em silêncio a segunda de duas vendas iguais no mesmo minuto.
+    if (error?.code === "23505" && error.message?.includes(SALE_CLIENT_REQUEST_UNIQUE)) {
       const { data: existing } = await supabase
         .from("sales")
         .select()
         .eq("company_id", headerPayload.company_id)
-        .eq("number", headerPayload.number)
-        .is("deleted_at", null)
+        .eq("client_request_id", headerPayload.client_request_id as string)
         .maybeSingle();
 
-      const sameTotal =
-        existing && Math.abs(Number(existing.grand_total) - Number(headerPayload.grand_total)) < 0.01;
-
-      if (existing && sameTotal) {
-        // Reenvio após instabilidade de rede: a venda original já existe e
-        // bate com o total esperado. Trata como sucesso — NÃO duplica.
-        // Se os itens já foram gravados na tentativa original, retorna
-        // direto: reinserir aqui duplicaria sale_items (e estoque/pagamento
-        // junto). Só segue o fluxo normal (que insere itens) se, por algum
-        // motivo raro, a venda foi criada mas os itens não chegaram a ser
-        // gravados na tentativa anterior.
+      if (existing) {
         const { count: existingItemsCount } = await supabase
           .from("sale_items")
           .select("id", { count: "exact", head: true })
           .eq("sale_id", existing.id);
-        log("RECUPERADO reenvio pós-queda de rede", {
+        log("RECUPERADO reenvio (mesma client_request_id)", {
           id: existing.id,
           number: existing.number,
           existingItemsCount,
         });
+        // Itens já gravados na tentativa original: devolve a venda existente
+        // (reinserir duplicaria itens, estoque e pagamento).
         if ((existingItemsCount ?? 0) > 0) {
           return existing as typeof created;
         }
+        // Raro: a venda foi criada mas os itens não — segue e grava os itens.
         created = existing as typeof created;
         error = null;
-      } else {
-        // Colisão real (duas vendas diferentes geraram o mesmo timestamp):
-        // tenta novamente uma única vez com um número alternativo.
-        const retryNumber = `${headerPayload.number}-${Math.floor(100 + Math.random() * 900)}`;
-        log("RETRY colisão real de número", { original: headerPayload.number, retryNumber });
-        const retry = await supabase
-          .from("sales")
-          .insert({
-            ...headerPayload,
-            number: retryNumber,
-            customer_id: headerPayload.customer_id || null,
-          })
-          .select()
-          .single();
-        created = retry.data;
-        error = retry.error;
       }
+    } else if (error?.code === "23505" && error.message?.includes(SALE_NUMBER_UNIQUE)) {
+      // Só acontece com número digitado manualmente (automáticos vêm do banco).
+      throw new Error(
+        `Já existe uma venda com o número "${headerPayload.number}". Use outro número ou deixe o padrão.`,
+        { cause: error },
+      );
     }
 
     if (error || !created) {
