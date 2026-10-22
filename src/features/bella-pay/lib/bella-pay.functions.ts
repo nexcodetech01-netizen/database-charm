@@ -24,13 +24,11 @@ export const testAsaasConnection = createServerFn({ method: "POST" })
     const { asaasFetch } = await import("./asaas.server");
     const { supabase } = context;
 
+    const { loadBellaPayConfigForUser } = await import("./credentials.server");
+
     let apiKey = data.apiKey;
     if (!apiKey) {
-      const { data: cfg } = await supabase
-        .from("bella_pay_config")
-        .select("api_key_sandbox, api_key_production")
-        .eq("company_id", data.companyId)
-        .maybeSingle();
+      const cfg = await loadBellaPayConfigForUser(context, data.companyId);
       apiKey =
         (data.environment === "production"
           ? cfg?.api_key_production
@@ -151,14 +149,8 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: cfg, error: cfgErr } = await supabase
-      .from("bella_pay_config")
-      .select("*")
-      .eq("company_id", data.companyId)
-      .select("*")
-
-      .maybeSingle();
-    if (cfgErr) throw cfgErr;
+    const { loadBellaPayConfigForUser } = await import("./credentials.server");
+    const cfg = await loadBellaPayConfigForUser(context, data.companyId);
     if (!cfg) throw new Error("Bella Pay não configurado.");
     const env = (cfg.environment as "sandbox" | "production") ?? "sandbox";
     const apiKey =
@@ -714,17 +706,14 @@ export const cancelAsaasCharge = createServerFn({ method: "POST" })
 
     const { data: charge, error } = await supabase
       .from("bella_pay_charges")
-      .select("*, bella_pay_config:company_id(*)")
+      .select("*")
       .eq("id", data.chargeId)
       .maybeSingle();
     if (error) throw error;
     if (!charge) throw new Error("Cobrança não encontrada.");
 
-    const { data: cfg } = await supabase
-      .from("bella_pay_config")
-      .select("*")
-      .eq("company_id", charge.company_id)
-      .maybeSingle();
+    const { loadBellaPayConfigForUser } = await import("./credentials.server");
+    const cfg = await loadBellaPayConfigForUser(context, charge.company_id);
     if (!cfg) throw new Error("Bella Pay não configurado.");
     const env = charge.environment as "sandbox" | "production";
     const apiKey =
@@ -771,11 +760,8 @@ export const refundAsaasCharge = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!charge) throw new Error("Cobrança não encontrada.");
 
-    const { data: cfg } = await supabase
-      .from("bella_pay_config")
-      .select("*")
-      .eq("company_id", charge.company_id)
-      .maybeSingle();
+    const { loadBellaPayConfigForUser } = await import("./credentials.server");
+    const cfg = await loadBellaPayConfigForUser(context, charge.company_id);
     if (!cfg) throw new Error("Bella Pay não configurado.");
 
     const env = charge.environment as "sandbox" | "production";
@@ -850,11 +836,8 @@ export const refreshPixQrCode = createServerFn({ method: "POST" })
       };
     }
 
-    const { data: cfg } = await supabase
-      .from("bella_pay_config")
-      .select("api_key_sandbox, api_key_production")
-      .eq("company_id", charge.company_id)
-      .maybeSingle();
+    const { loadBellaPayConfigForUser } = await import("./credentials.server");
+    const cfg = await loadBellaPayConfigForUser(context, charge.company_id);
     if (!cfg) throw new Error("Bella Pay não configurado.");
     const env = charge.environment as "sandbox" | "production";
     const apiKey =

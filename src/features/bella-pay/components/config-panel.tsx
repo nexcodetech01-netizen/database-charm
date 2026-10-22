@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   useBellaPayConfig,
+  useBellaPayKeyStatus,
   useSaveBellaPayConfig,
   useTestBellaPayConnection,
 } from "../hooks/use-bella-pay";
@@ -55,6 +56,7 @@ export function ConfigPanel({ companyId }: Props) {
   const { data: config, isLoading } = useBellaPayConfig(companyId);
   const save = useSaveBellaPayConfig(companyId);
   const test = useTestBellaPayConnection(companyId);
+  const { data: keyStatus } = useBellaPayKeyStatus(companyId);
 
   const [env, setEnv] = useState<BellaPayEnvironment>("sandbox");
   const [sandbox, setSandbox] = useState("");
@@ -78,8 +80,6 @@ export function ConfigPanel({ companyId }: Props) {
 
   useEffect(() => {
     if (config) {
-      setSandbox(config.api_key_sandbox ?? "");
-      setProduction(config.api_key_production ?? "");
       setEnv(config.environment);
       setAbsorbFee(Boolean(config.credit_card_absorb_fee));
       setFeePercent(String(config.credit_card_fee_percent ?? 0));
@@ -100,6 +100,10 @@ export function ConfigPanel({ companyId }: Props) {
   const activeKey = env === "production" ? production : sandbox;
   const setActiveKey = (v: string) =>
     env === "production" ? setProduction(v) : setSandbox(v);
+  // A chave salva nunca vem para o navegador: só sabemos se existe e os 4 últimos dígitos.
+  const savedMasked =
+    env === "production" ? keyStatus?.productionMasked : keyStatus?.sandboxMasked;
+  const hasSavedKey = Boolean(savedMasked);
 
 
   const webhookUrl = useMemo(() => {
@@ -113,11 +117,20 @@ export function ConfigPanel({ companyId }: Props) {
     : null;
 
   const handleSave = () =>
-    save.mutate({
-      apiKeySandbox: sandbox || null,
-      apiKeyProduction: production || null,
-      environment: env,
-    });
+    save.mutate(
+      {
+        // Só envia a chave se o usuário digitou uma nova; vazio = manter a atual.
+        apiKeySandbox: sandbox.trim() || undefined,
+        apiKeyProduction: production.trim() || undefined,
+        environment: env,
+      },
+      {
+        onSuccess: () => {
+          setSandbox("");
+          setProduction("");
+        },
+      },
+    );
 
   const handleSaveCard = () => {
     const percent = Number(feePercent.replace(",", "."));
@@ -149,7 +162,8 @@ export function ConfigPanel({ companyId }: Props) {
 
   const handleTest = () =>
     test.mutate({
-      apiKey: activeKey,
+      // Sem chave digitada, o servidor testa a chave já salva.
+      apiKey: activeKey.trim() || undefined,
       environment: env,
       persist: true,
     });
@@ -201,7 +215,13 @@ export function ConfigPanel({ companyId }: Props) {
                 id="api-key"
                 type={showKey ? "text" : "password"}
                 autoComplete="off"
-                placeholder={env === "production" ? "$aact_prod_..." : "$aact_..."}
+                placeholder={
+                  hasSavedKey
+                    ? "Digite para substituir a chave atual"
+                    : env === "production"
+                      ? "$aact_prod_..."
+                      : "$aact_..."
+                }
                 value={activeKey}
                 onChange={(e) => setActiveKey(e.target.value)}
                 className="pr-10 font-mono text-xs"
@@ -227,7 +247,10 @@ export function ConfigPanel({ companyId }: Props) {
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            A chave é armazenada de forma criptografada e nunca é exibida em logs.
+            {hasSavedKey
+              ? `Chave configurada: ${savedMasked}`
+              : "Nenhuma chave configurada."}{" "}
+            Por segurança, a chave salva nunca é exibida novamente.
           </p>
         </div>
       </StepCard>
@@ -243,7 +266,7 @@ export function ConfigPanel({ companyId }: Props) {
           <Button
             variant="outline"
             onClick={handleTest}
-            disabled={test.isPending || isLoading || !activeKey}
+            disabled={test.isPending || isLoading || (!activeKey && !hasSavedKey)}
             className="w-full sm:w-auto"
           >
             {test.isPending ? (

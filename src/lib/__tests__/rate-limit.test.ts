@@ -58,12 +58,31 @@ describe("checkRateLimit", () => {
     now.mockRestore();
   });
 
-  it("usa headers de proxy quando o IP direto não está disponível", () => {
+  it("prefere cf-connecting-ip (definido pela Cloudflare)", () => {
+    getRequestHeader.mockImplementation((name) =>
+      name === "cf-connecting-ip" ? "192.0.2.9" : undefined,
+    );
+    expect(checkRateLimit({ route: route(), max: 5 }).ip).toBe("192.0.2.9");
+  });
+
+  it("nunca confia em x-forwarded-for (forjável pelo cliente)", () => {
     getRequestIP.mockReturnValue(undefined);
     getRequestHeader.mockImplementation((name) =>
       name === "x-forwarded-for" ? "192.0.2.9, 10.0.0.1" : undefined,
     );
-    expect(checkRateLimit({ route: route(), max: 5 }).ip).toBe("192.0.2.9");
+    expect(checkRateLimit({ route: route(), max: 5 }).ip).toBe("unknown");
+  });
+
+  it("trocar x-forwarded-for não burla o limite", () => {
+    const opts = { route: route(), max: 1, windowMs: 60_000 };
+    getRequestHeader.mockImplementation((name) =>
+      name === "x-forwarded-for" ? "1.1.1.1" : undefined,
+    );
+    expect(checkRateLimit(opts).ok).toBe(true);
+    getRequestHeader.mockImplementation((name) =>
+      name === "x-forwarded-for" ? "2.2.2.2" : undefined,
+    );
+    expect(checkRateLimit(opts).ok).toBe(false);
   });
 
   it("cai para 'unknown' sem IP identificável", () => {

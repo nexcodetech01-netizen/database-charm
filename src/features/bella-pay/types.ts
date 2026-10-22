@@ -5,8 +5,9 @@ export type BellaPayBillingType = "PIX" | "CREDIT_CARD" | "UNDEFINED";
 export interface BellaPayConfig {
   id: string;
   company_id: string;
-  api_key_sandbox: string | null;
-  api_key_production: string | null;
+  /** Nunca vem do navegador — só o servidor lê a chave. */
+  api_key_sandbox?: string | null;
+  api_key_production?: string | null;
   environment: BellaPayEnvironment;
   connection_status: BellaPayConnectionStatus;
   connection_message: string | null;
