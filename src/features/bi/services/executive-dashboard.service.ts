@@ -1,3 +1,4 @@
+import { fetchAllRows, type PageableQuery } from "@/lib/supabase-fetch-all";
 import { supabase } from "@/integrations/supabase/client";
 import { daysBetween, labelDay, rangeToTimestamp } from "@/features/reports/utils/date-range";
 import type { DateRange } from "@/features/reports/types";
@@ -19,6 +20,11 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   transfer: "Transferência",
   boleto: "Boleto",
 };
+
+
+/** Paginação completa (corte silencioso de 1.000 linhas do PostgREST). */
+const allRows = <Q extends PageableQuery>(q: Q) =>
+  fetchAllRows(q).then((data) => ({ data, error: null as null }));
 
 export interface ExecKpis {
   revenueToday: number;
@@ -139,45 +145,55 @@ export const executiveDashboardService = {
       overdueChargesRes,
       openCashRes,
     ] = await Promise.all([
-      supabase
-        .from("sales")
-        .select("id, grand_total, status, sale_date, payment_method, installments, customer_id, created_by")
-        .eq("company_id", companyId)
-        .eq("status", "paid")
-        .gte("sale_date", range.from)
-        .lte("sale_date", range.to),
-      supabase
-        .from("sale_items")
-        .select(
-          "product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)",
-        )
-        .eq("sale.company_id", companyId)
-        .eq("sale.status", "paid")
-        .gte("sale.sale_date", range.from)
-        .lte("sale.sale_date", range.to),
-      supabase
-        .from("sales")
-        .select("grand_total, sale_date, payment_method, installments")
-        .eq("company_id", companyId)
-        .eq("status", "paid")
-        .gte("sale_date", monthStart)
-        .lte("sale_date", today),
-      supabase
-        .from("products")
-        .select("id, name, sku, stock, min_stock, cost, status")
-        .eq("company_id", companyId),
+      allRows(
+        supabase
+          .from("sales")
+          .select("id, grand_total, status, sale_date, payment_method, installments, customer_id, created_by")
+          .eq("company_id", companyId)
+          .eq("status", "paid")
+          .gte("sale_date", range.from)
+          .lte("sale_date", range.to),
+      ),
+      allRows(
+        supabase
+          .from("sale_items")
+          .select(
+            "product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)",
+          )
+          .eq("sale.company_id", companyId)
+          .eq("sale.status", "paid")
+          .gte("sale.sale_date", range.from)
+          .lte("sale.sale_date", range.to),
+      ),
+      allRows(
+        supabase
+          .from("sales")
+          .select("grand_total, sale_date, payment_method, installments")
+          .eq("company_id", companyId)
+          .eq("status", "paid")
+          .gte("sale_date", monthStart)
+          .lte("sale_date", today),
+      ),
+      allRows(
+        supabase
+          .from("products")
+          .select("id, name, sku, stock, min_stock, cost, status")
+          .eq("company_id", companyId),
+      ),
       supabase
         .from("customers")
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .gte("created_at", fromTs)
         .lte("created_at", toTs),
-      supabase
-        .from("financial_transactions")
-        .select("type, amount, status, transaction_date")
-        .eq("company_id", companyId)
-        .gte("transaction_date", range.from)
-        .lte("transaction_date", range.to),
+      allRows(
+        supabase
+          .from("financial_transactions")
+          .select("type, amount, status, transaction_date")
+          .eq("company_id", companyId)
+          .gte("transaction_date", range.from)
+          .lte("transaction_date", range.to),
+      ),
       supabase
         .from("financial_accounts")
         .select("current_balance, status")

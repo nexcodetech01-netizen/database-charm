@@ -1,3 +1,4 @@
+import { fetchAllRows, fetchInChunks } from "@/lib/supabase-fetch-all";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -70,34 +71,38 @@ export const REPORT_CATEGORIES: ReportCategory[] = [
 /* ---------------- helpers ---------------- */
 
 async function paidSalesInRange(companyId: string, range: { from: string; to: string }) {
-  const { data, error } = await supabase
-    .from("sales")
-    .select("id, number, sale_date, status, payment_method, grand_total, customer_id, created_by, paid_at")
-    .eq("company_id", companyId)
-    .eq("status", "paid")
-    .gte("sale_date", range.from)
-    .lte("sale_date", range.to);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("sales")
+      .select("id, number, sale_date, status, payment_method, grand_total, customer_id, created_by, paid_at")
+      .eq("company_id", companyId)
+      .eq("status", "paid")
+      .gte("sale_date", range.from)
+      .lte("sale_date", range.to),
+  );
   return data ?? [];
 }
 
 /* ---------------- loaders ---------------- */
 
 async function loadVendasPeriodo(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("sales")
-    .select("id, number, sale_date, status, payment_method, grand_total, customer_id, paid_at")
-    .eq("company_id", ctx.companyId)
-    .gte("sale_date", ctx.range.from)
-    .lte("sale_date", ctx.range.to)
-    .order("sale_date", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("sales")
+      .select("id, number, sale_date, status, payment_method, grand_total, customer_id, paid_at")
+      .eq("company_id", ctx.companyId)
+      .gte("sale_date", ctx.range.from)
+      .lte("sale_date", ctx.range.to)
+      .order("sale_date", { ascending: false }),
+  );
   const rows = data ?? [];
 
   const custIds = Array.from(new Set(rows.map((r) => r.customer_id).filter(Boolean) as string[]));
   const custMap = new Map<string, string>();
   if (custIds.length) {
-    const { data: cs } = await supabase.from("customers").select("id, name").in("id", custIds);
+    const cs = await fetchInChunks(custIds, (chunk) =>
+      supabase.from("customers").select("id, name").in("id", chunk),
+    );
     for (const c of cs ?? []) custMap.set(c.id, c.name);
   }
 
@@ -273,14 +278,15 @@ async function loadProdutosSemVenda(ctx: ReportContext): Promise<ReportResult> {
 /* ---------------- Financeiro ---------------- */
 
 async function loadContasReceber(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("financial_transactions")
-    .select("id, description, amount, due_date, status, transaction_date, category_id")
-    .eq("company_id", ctx.companyId)
-    .eq("type", "income")
-    .in("status", ["pending", "overdue"])
-    .order("due_date", { ascending: true });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("financial_transactions")
+      .select("id, description, amount, due_date, status, transaction_date, category_id")
+      .eq("company_id", ctx.companyId)
+      .eq("type", "income")
+      .in("status", ["pending", "overdue"])
+      .order("due_date", { ascending: true }),
+  );
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + num(r.amount), 0);
   return {
@@ -305,14 +311,15 @@ async function loadContasReceber(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadContasPagar(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("financial_transactions")
-    .select("id, description, amount, due_date, status, transaction_date")
-    .eq("company_id", ctx.companyId)
-    .eq("type", "expense")
-    .in("status", ["pending", "overdue"])
-    .order("due_date", { ascending: true });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("financial_transactions")
+      .select("id, description, amount, due_date, status, transaction_date")
+      .eq("company_id", ctx.companyId)
+      .eq("type", "expense")
+      .in("status", ["pending", "overdue"])
+      .order("due_date", { ascending: true }),
+  );
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + num(r.amount), 0);
   return {
@@ -355,16 +362,17 @@ async function loadFluxoCaixa(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadRecebimentos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("financial_transactions")
-    .select("id, description, amount, transaction_date, paid_at, account_id")
-    .eq("company_id", ctx.companyId)
-    .eq("type", "income")
-    .eq("status", "paid")
-    .gte("transaction_date", ctx.range.from)
-    .lte("transaction_date", ctx.range.to)
-    .order("transaction_date", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("financial_transactions")
+      .select("id, description, amount, transaction_date, paid_at, account_id")
+      .eq("company_id", ctx.companyId)
+      .eq("type", "income")
+      .eq("status", "paid")
+      .gte("transaction_date", ctx.range.from)
+      .lte("transaction_date", ctx.range.to)
+      .order("transaction_date", { ascending: false }),
+  );
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + num(r.amount), 0);
   return {
@@ -388,16 +396,17 @@ async function loadRecebimentos(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadPagamentos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("financial_transactions")
-    .select("id, description, amount, transaction_date, paid_at, account_id")
-    .eq("company_id", ctx.companyId)
-    .eq("type", "expense")
-    .eq("status", "paid")
-    .gte("transaction_date", ctx.range.from)
-    .lte("transaction_date", ctx.range.to)
-    .order("transaction_date", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("financial_transactions")
+      .select("id, description, amount, transaction_date, paid_at, account_id")
+      .eq("company_id", ctx.companyId)
+      .eq("type", "expense")
+      .eq("status", "paid")
+      .gte("transaction_date", ctx.range.from)
+      .lte("transaction_date", ctx.range.to)
+      .order("transaction_date", { ascending: false }),
+  );
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + num(r.amount), 0);
   return {
@@ -447,18 +456,19 @@ async function loadResultadoPeriodo(ctx: ReportContext): Promise<ReportResult> {
 /* ---------------- Estoque ---------------- */
 
 async function loadEstoqueAtual(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, stock, min_stock, cost, price, status")
-    .eq("company_id", ctx.companyId)
-    .neq("status", "inactive")
-    // FIX (2026-09-07): "Estoque atual" mostrava TODOS os produtos,
-    // inclusive com estoque zerado — sem filtro nenhum disponível na
-    // tela pra esconder o que já acabou. Um relatório de "estoque
-    // atual" só faz sentido mostrando o que existe de verdade agora.
-    .gt("stock", 0)
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, stock, min_stock, cost, price, status")
+      .eq("company_id", ctx.companyId)
+      .neq("status", "inactive")
+      // FIX (2026-09-07): "Estoque atual" mostrava TODOS os produtos,
+      // inclusive com estoque zerado — sem filtro nenhum disponível na
+      // tela pra esconder o que já acabou. Um relatório de "estoque
+      // atual" só faz sentido mostrando o que existe de verdade agora.
+      .gt("stock", 0)
+      .order("name"),
+  );
   const rows = (data ?? []).map((p) => ({
     ...p,
     value: num(p.stock) * num(p.cost),
@@ -484,12 +494,13 @@ async function loadEstoqueAtual(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadEstoqueCritico(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, stock, min_stock, status")
-    .eq("company_id", ctx.companyId)
-    .neq("status", "inactive");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, stock, min_stock, status")
+      .eq("company_id", ctx.companyId)
+      .neq("status", "inactive"),
+  );
   const rows = (data ?? []).filter(
     (p) => num(p.min_stock) > 0 && num(p.stock) <= num(p.min_stock),
   );
@@ -524,19 +535,22 @@ async function loadGiroEstoque(ctx: ReportContext): Promise<ReportResult> {
 
 async function loadInventario(ctx: ReportContext): Promise<ReportResult> {
   const { fromTs, toTs } = rangeToTimestamp(ctx.range);
-  const { data, error } = await supabase
-    .from("inventory_movements")
-    .select("id, product_id, type, quantity, movement_date, reason, notes")
-    .eq("company_id", ctx.companyId)
-    .gte("movement_date", fromTs)
-    .lte("movement_date", toTs)
-    .order("movement_date", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("inventory_movements")
+      .select("id, product_id, type, quantity, movement_date, reason, notes")
+      .eq("company_id", ctx.companyId)
+      .gte("movement_date", fromTs)
+      .lte("movement_date", toTs)
+      .order("movement_date", { ascending: false }),
+  );
   const rows = data ?? [];
   const ids = Array.from(new Set(rows.map((r) => r.product_id).filter(Boolean) as string[]));
   const nameMap = new Map<string, string>();
   if (ids.length) {
-    const { data: prods } = await supabase.from("products").select("id, name").in("id", ids);
+    const prods = await fetchInChunks(ids, (chunk) =>
+      supabase.from("products").select("id, name").in("id", chunk),
+    );
     for (const p of prods ?? []) nameMap.set(p.id, p.name);
   }
   return {
@@ -553,16 +567,19 @@ async function loadInventario(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadValorEstoque(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, category_id, stock, cost")
-    .eq("company_id", ctx.companyId)
-    .neq("status", "inactive");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, category_id, stock, cost")
+      .eq("company_id", ctx.companyId)
+      .neq("status", "inactive"),
+  );
   const catIds = Array.from(new Set((data ?? []).map((p) => p.category_id).filter(Boolean) as string[]));
   const catMap = new Map<string, string>();
   if (catIds.length) {
-    const { data: cats } = await supabase.from("product_categories").select("id, name").in("id", catIds);
+    const cats = await fetchInChunks(catIds, (chunk) =>
+      supabase.from("product_categories").select("id, name").in("id", chunk),
+    );
     for (const c of cats ?? []) catMap.set(c.id, c.name);
   }
   const rows = (data ?? []).map((p) => ({
@@ -601,12 +618,13 @@ async function loadSemMovimentacao(ctx: ReportContext): Promise<ReportResult> {
 /* ---------------- Produtos ---------------- */
 
 async function loadCadastroProdutos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, barcode, brand, category_id, supplier_id, price, cost, stock, status")
-    .eq("company_id", ctx.companyId)
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, barcode, brand, category_id, supplier_id, price, cost, stock, status")
+      .eq("company_id", ctx.companyId)
+      .order("name"),
+  );
   const rows = data ?? [];
   return {
     kpis: [
@@ -663,13 +681,14 @@ async function loadCurvaABC(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadMargens(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, price, cost, margin")
-    .eq("company_id", ctx.companyId)
-    .neq("status", "inactive")
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, price, cost, margin")
+      .eq("company_id", ctx.companyId)
+      .neq("status", "inactive")
+      .order("name"),
+  );
   const rows = (data ?? []).map((p) => {
     const price = num(p.price);
     const cost = num(p.cost);
@@ -701,13 +720,14 @@ async function loadMargens(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadCustos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, sku, cost, freight, insurance, other_costs, stock")
-    .eq("company_id", ctx.companyId)
-    .neq("status", "inactive")
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select("id, name, sku, cost, freight, insurance, other_costs, stock")
+      .eq("company_id", ctx.companyId)
+      .neq("status", "inactive")
+      .order("name"),
+  );
   const rows = (data ?? []).map((p) => ({
     ...p,
     totalCost: num(p.cost) + num(p.freight) + num(p.insurance) + num(p.other_costs),
@@ -771,13 +791,14 @@ async function loadPoliticasPreco(ctx: ReportContext): Promise<ReportResult> {
 /* ---------------- Clientes ---------------- */
 
 async function loadClientesAtivos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, email, phone, segment, city, state, last_interaction_at, created_at")
-    .eq("company_id", ctx.companyId)
-    .eq("status", "active")
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("customers")
+      .select("id, name, email, phone, segment, city, state, last_interaction_at, created_at")
+      .eq("company_id", ctx.companyId)
+      .eq("status", "active")
+      .order("name"),
+  );
   const rows = data ?? [];
   return {
     kpis: [{ label: "Clientes ativos", value: formatNumber(rows.length) }],
@@ -796,13 +817,14 @@ async function loadClientesAtivos(ctx: ReportContext): Promise<ReportResult> {
 async function loadClientesInativos(ctx: ReportContext): Promise<ReportResult> {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 90);
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, email, phone, last_interaction_at, created_at")
-    .eq("company_id", ctx.companyId)
-    .or(`last_interaction_at.is.null,last_interaction_at.lt.${cutoff.toISOString()}`)
-    .order("name");
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("customers")
+      .select("id, name, email, phone, last_interaction_at, created_at")
+      .eq("company_id", ctx.companyId)
+      .or(`last_interaction_at.is.null,last_interaction_at.lt.${cutoff.toISOString()}`)
+      .order("name"),
+  );
   const rows = data ?? [];
   return {
     kpis: [{ label: "Inativos (>90 dias)", value: formatNumber(rows.length) }],
@@ -819,14 +841,15 @@ async function loadClientesInativos(ctx: ReportContext): Promise<ReportResult> {
 
 async function loadClientesNovos(ctx: ReportContext): Promise<ReportResult> {
   const { fromTs, toTs } = rangeToTimestamp(ctx.range);
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, email, phone, lead_source, created_at")
-    .eq("company_id", ctx.companyId)
-    .gte("created_at", fromTs)
-    .lte("created_at", toTs)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("customers")
+      .select("id, name, email, phone, lead_source, created_at")
+      .eq("company_id", ctx.companyId)
+      .gte("created_at", fromTs)
+      .lte("created_at", toTs)
+      .order("created_at", { ascending: false }),
+  );
   const rows = data ?? [];
   return {
     kpis: [{ label: "Novos no período", value: formatNumber(rows.length) }],
@@ -842,12 +865,13 @@ async function loadClientesNovos(ctx: ReportContext): Promise<ReportResult> {
 }
 
 async function loadAniversariantes(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, birth_date, phone, whatsapp")
-    .eq("company_id", ctx.companyId)
-    .not("birth_date", "is", null);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("customers")
+      .select("id, name, birth_date, phone, whatsapp")
+      .eq("company_id", ctx.companyId)
+      .not("birth_date", "is", null),
+  );
   const from = new Date(`${ctx.range.from}T00:00:00`);
   const to = new Date(`${ctx.range.to}T23:59:59`);
   const rows = (data ?? [])
@@ -897,19 +921,22 @@ async function loadClientesVIP(ctx: ReportContext): Promise<ReportResult> {
 /* ---------------- Compras ---------------- */
 
 async function loadComprasPeriodo(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("purchases")
-    .select("id, number, supplier_id, purchase_date, status, grand_total")
-    .eq("company_id", ctx.companyId)
-    .gte("purchase_date", ctx.range.from)
-    .lte("purchase_date", ctx.range.to)
-    .order("purchase_date", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("purchases")
+      .select("id, number, supplier_id, purchase_date, status, grand_total")
+      .eq("company_id", ctx.companyId)
+      .gte("purchase_date", ctx.range.from)
+      .lte("purchase_date", ctx.range.to)
+      .order("purchase_date", { ascending: false }),
+  );
   const rows = data ?? [];
   const supIds = Array.from(new Set(rows.map((r) => r.supplier_id).filter(Boolean) as string[]));
   const supMap = new Map<string, string>();
   if (supIds.length) {
-    const { data: sup } = await supabase.from("product_suppliers").select("id, name").in("id", supIds);
+    const sup = await fetchInChunks(supIds, (chunk) =>
+      supabase.from("product_suppliers").select("id, name").in("id", chunk),
+    );
     for (const s of sup ?? []) supMap.set(s.id, s.name);
   }
   const total = rows.reduce((s, r) => s + num(r.grand_total), 0);
@@ -963,16 +990,19 @@ async function loadProdutosComprados(ctx: ReportContext): Promise<ReportResult> 
   if (ids.length === 0) {
     return { columns: [{ key: "name", label: "Produto" }], rows: [] };
   }
-  const { data: items, error } = await supabase
-    .from("purchase_items")
-    .select("product_id, description, quantity, unit_price, total")
-    .in("purchase_id", ids);
-  if (error) throw error;
+  const items = await fetchAllRows(
+    supabase
+      .from("purchase_items")
+      .select("product_id, description, quantity, unit_price, total")
+      .in("purchase_id", ids),
+  );
   const rows = items ?? [];
   const productIds = Array.from(new Set(rows.map((r) => r.product_id).filter(Boolean) as string[]));
   const nameMap = new Map<string, string>();
   if (productIds.length) {
-    const { data: prods } = await supabase.from("products").select("id, name").in("id", productIds);
+    const prods = await fetchInChunks(productIds, (chunk) =>
+      supabase.from("products").select("id, name").in("id", chunk),
+    );
     for (const p of prods ?? []) nameMap.set(p.id, p.name);
   }
   const totalQty = rows.reduce((s, r) => s + num(r.quantity), 0);
@@ -994,18 +1024,21 @@ async function loadProdutosComprados(ctx: ReportContext): Promise<ReportResult> 
 }
 
 async function loadPedidosPendentes(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("purchases")
-    .select("id, number, supplier_id, purchase_date, expected_delivery_date, status, grand_total")
-    .eq("company_id", ctx.companyId)
-    .in("status", ["draft", "pending"])
-    .order("expected_delivery_date", { ascending: true });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("purchases")
+      .select("id, number, supplier_id, purchase_date, expected_delivery_date, status, grand_total")
+      .eq("company_id", ctx.companyId)
+      .in("status", ["draft", "pending"])
+      .order("expected_delivery_date", { ascending: true }),
+  );
   const rows = data ?? [];
   const supIds = Array.from(new Set(rows.map((r) => r.supplier_id).filter(Boolean) as string[]));
   const supMap = new Map<string, string>();
   if (supIds.length) {
-    const { data: sup } = await supabase.from("product_suppliers").select("id, name").in("id", supIds);
+    const sup = await fetchInChunks(supIds, (chunk) =>
+      supabase.from("product_suppliers").select("id, name").in("id", chunk),
+    );
     for (const s of sup ?? []) supMap.set(s.id, s.name);
   }
   return {
@@ -1055,15 +1088,16 @@ async function loadCaixaSessoes(ctx: ReportContext, opts?: { status?: "open" | "
 
 async function loadCaixaMovimentos(ctx: ReportContext, type: "cash_in" | "cash_out"): Promise<ReportResult> {
   const { fromTs, toTs } = rangeToTimestamp(ctx.range);
-  const { data, error } = await supabase
-    .from("cash_movements")
-    .select("id, session_id, type, amount, reason, note, created_at")
-    .eq("company_id", ctx.companyId)
-    .eq("type", type)
-    .gte("created_at", fromTs)
-    .lte("created_at", toTs)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("cash_movements")
+      .select("id, session_id, type, amount, reason, note, created_at")
+      .eq("company_id", ctx.companyId)
+      .eq("type", type)
+      .gte("created_at", fromTs)
+      .lte("created_at", toTs)
+      .order("created_at", { ascending: false }),
+  );
   const rows = data ?? [];
   const total = rows.reduce((s, r) => s + num(r.amount), 0);
   return {
@@ -1117,7 +1151,9 @@ async function loadBellaPayCharges(
   const custIds = Array.from(new Set(rows.map((r) => r.customer_id).filter(Boolean) as string[]));
   const custMap = new Map<string, string>();
   if (custIds.length) {
-    const { data: cs } = await supabase.from("customers").select("id, name").in("id", custIds);
+    const cs = await fetchInChunks(custIds, (chunk) =>
+      supabase.from("customers").select("id, name").in("id", chunk),
+    );
     for (const c of cs ?? []) custMap.set(c.id, c.name);
   }
   const total = rows.reduce((s, r) => s + num(r.value), 0);
@@ -1167,11 +1203,12 @@ interface CredAccRow {
 }
 
 async function fetchCreditAccounts(companyId: string) {
-  const { data, error } = await supabase
-    .from("credit_accounts")
-    .select("id, sale_id, customer_id, status, original_amount, down_payment, paid_amount, balance, due_date, opened_at, customers(name), sales(number)")
-    .eq("company_id", companyId);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("credit_accounts")
+      .select("id, sale_id, customer_id, status, original_amount, down_payment, paid_amount, balance, due_date, opened_at, customers(name), sales(number)")
+      .eq("company_id", companyId),
+  );
   return (data ?? []) as unknown as CredAccRow[];
 }
 
@@ -1204,13 +1241,14 @@ async function loadCrediarioAbertos(ctx: ReportContext): Promise<ReportResult> {
 
 async function loadCrediarioAtrasados(ctx: ReportContext): Promise<ReportResult> {
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await supabase
-    .from("credit_installments")
-    .select("id, account_id, installment_number, due_date, amount, paid_amount, status, credit_accounts!inner(company_id, sale_id, customer_id, customers(name), sales(number))")
-    .eq("credit_accounts.company_id", ctx.companyId)
-    .in("status", ["pending", "partially_paid", "overdue"])
-    .lt("due_date", today);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("credit_installments")
+      .select("id, account_id, installment_number, due_date, amount, paid_amount, status, credit_accounts!inner(company_id, sale_id, customer_id, customers(name), sales(number))")
+      .eq("credit_accounts.company_id", ctx.companyId)
+      .in("status", ["pending", "partially_paid", "overdue"])
+      .lt("due_date", today),
+  );
   const rows = (data ?? []) as unknown as Array<{
     id: string; installment_number: number; due_date: string;
     amount: number | string; paid_amount: number | string; status: string;
@@ -1238,14 +1276,15 @@ async function loadCrediarioAtrasados(ctx: ReportContext): Promise<ReportResult>
 }
 
 async function loadCrediarioParcelas(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("credit_installments")
-    .select("id, installment_number, due_date, amount, paid_amount, status, credit_accounts!inner(company_id, sales(number), customers(name))")
-    .eq("credit_accounts.company_id", ctx.companyId)
-    .gte("due_date", ctx.range.from)
-    .lte("due_date", ctx.range.to)
-    .order("due_date", { ascending: true });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("credit_installments")
+      .select("id, installment_number, due_date, amount, paid_amount, status, credit_accounts!inner(company_id, sales(number), customers(name))")
+      .eq("credit_accounts.company_id", ctx.companyId)
+      .gte("due_date", ctx.range.from)
+      .lte("due_date", ctx.range.to)
+      .order("due_date", { ascending: true }),
+  );
   const rows = (data ?? []) as unknown as Array<{
     id: string; installment_number: number; due_date: string;
     amount: number | string; paid_amount: number | string; status: string;
@@ -1274,14 +1313,15 @@ async function loadCrediarioParcelas(ctx: ReportContext): Promise<ReportResult> 
 }
 
 async function loadCrediarioRecebimentos(ctx: ReportContext): Promise<ReportResult> {
-  const { data, error } = await supabase
-    .from("credit_payments")
-    .select("id, amount, payment_method, paid_at, notes, credit_accounts!inner(company_id, sales(number), customers(name))")
-    .eq("credit_accounts.company_id", ctx.companyId)
-    .gte("paid_at", ctx.range.from)
-    .lte("paid_at", ctx.range.to)
-    .order("paid_at", { ascending: false });
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("credit_payments")
+      .select("id, amount, payment_method, paid_at, notes, credit_accounts!inner(company_id, sales(number), customers(name))")
+      .eq("credit_accounts.company_id", ctx.companyId)
+      .gte("paid_at", ctx.range.from)
+      .lte("paid_at", ctx.range.to)
+      .order("paid_at", { ascending: false }),
+  );
   const rows = (data ?? []) as unknown as Array<{
     id: string; amount: number | string; payment_method: string | null; paid_at: string | null; notes: string | null;
     credit_accounts: { sales?: { number: string | null } | null; customers?: { name: string | null } | null };
