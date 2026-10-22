@@ -5694,13 +5694,12 @@ export type Database = {
       }
       products: {
         Row: {
-          color: string | null
-          size: string | null
           barcode: string | null
           brand: string | null
           category_id: string | null
           cest: string | null
           channel_pricing_settings: Json
+          color: string | null
           company_id: string
           cost: number
           cover_image_path: string | null
@@ -5729,6 +5728,7 @@ export type Database = {
           product_type: Database["public"]["Enums"]["product_type"] | null
           sales_channel: string | null
           sales_channels: string[] | null
+          size: string | null
           sku: string | null
           status: string
           stock: number
@@ -5742,13 +5742,12 @@ export type Database = {
           width: number | null
         }
         Insert: {
-          color?: string | null
-          size?: string | null
           barcode?: string | null
           brand?: string | null
           category_id?: string | null
           cest?: string | null
           channel_pricing_settings?: Json
+          color?: string | null
           company_id: string
           cost?: number
           cover_image_path?: string | null
@@ -5777,6 +5776,7 @@ export type Database = {
           product_type?: Database["public"]["Enums"]["product_type"] | null
           sales_channel?: string | null
           sales_channels?: string[] | null
+          size?: string | null
           sku?: string | null
           status?: string
           stock?: number
@@ -5790,13 +5790,12 @@ export type Database = {
           width?: number | null
         }
         Update: {
-          color?: string | null
-          size?: string | null
           barcode?: string | null
           brand?: string | null
           category_id?: string | null
           cest?: string | null
           channel_pricing_settings?: Json
+          color?: string | null
           company_id?: string
           cost?: number
           cover_image_path?: string | null
@@ -5825,6 +5824,7 @@ export type Database = {
           product_type?: Database["public"]["Enums"]["product_type"] | null
           sales_channel?: string | null
           sales_channels?: string[] | null
+          size?: string | null
           sku?: string | null
           status?: string
           stock?: number
@@ -6916,6 +6916,50 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_package_presets: {
+        Row: {
+          company_id: string
+          created_at: string
+          format: string
+          height_cm: number
+          id: string
+          length_cm: number
+          name: string
+          weight_kg: number
+          width_cm: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          format?: string
+          height_cm: number
+          id?: string
+          length_cm: number
+          name: string
+          weight_kg: number
+          width_cm: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          format?: string
+          height_cm?: number
+          id?: string
+          length_cm?: number
+          name?: string
+          weight_kg?: number
+          width_cm?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_package_presets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -8049,6 +8093,7 @@ export type Database = {
           category_id: string | null
           cest: string | null
           channel_pricing_settings: Json
+          color: string | null
           company_id: string
           cost: number
           cover_image_path: string | null
@@ -8077,6 +8122,7 @@ export type Database = {
           product_type: Database["public"]["Enums"]["product_type"] | null
           sales_channel: string | null
           sales_channels: string[] | null
+          size: string | null
           sku: string | null
           status: string
           stock: number
@@ -8280,7 +8326,12 @@ export type Database = {
           name_key: string
         }[]
       }
+      product_attr_key: { Args: { _value: string }; Returns: string }
       product_core_name: { Args: { _name: string }; Returns: string }
+      product_identity_key: {
+        Args: { _color: string; _model: string; _name: string; _size: string }
+        Returns: string
+      }
       product_name_key: { Args: { _name: string }; Returns: string }
       products_inventory_metrics: {
         Args: { _company_id: string }
@@ -8476,6 +8527,7 @@ export type Database = {
           category_id: string | null
           cest: string | null
           channel_pricing_settings: Json
+          color: string | null
           company_id: string
           cost: number
           cover_image_path: string | null
@@ -8504,6 +8556,7 @@ export type Database = {
           product_type: Database["public"]["Enums"]["product_type"] | null
           sales_channel: string | null
           sales_channels: string[] | null
+          size: string | null
           sku: string | null
           status: string
           stock: number
