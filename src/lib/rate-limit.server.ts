@@ -29,17 +29,18 @@ export interface RateLimitResult {
 }
 
 function resolveIp(): string {
+  // `cf-connecting-ip` é definido pela Cloudflare e o cliente não consegue
+  // forjar. NUNCA confiar em `x-forwarded-for`: o primeiro valor vem do
+  // próprio cliente, e trocá-lo a cada requisição burlava o limite.
   try {
-    const ip = getRequestIP({ xForwardedFor: true });
-    if (ip) return ip;
+    const cf = getRequestHeader("cf-connecting-ip");
+    if (cf) return cf.trim();
   } catch {
     /* fallthrough */
   }
   try {
-    const cf = getRequestHeader("cf-connecting-ip");
-    if (cf) return cf;
-    const xff = getRequestHeader("x-forwarded-for");
-    if (xff) return xff.split(",")[0]!.trim();
+    const ip = getRequestIP();
+    if (ip) return ip;
   } catch {
     /* noop */
   }

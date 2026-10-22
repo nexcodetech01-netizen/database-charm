@@ -44,7 +44,24 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         return new Response("Forbidden", { status: 403 });
       },
       POST: async ({ request }) => {
-        // 1) Lê o corpo bruto imediatamente para logar tudo que a Meta enviar.
+        // 1) Rate limit ANTES de ler o corpo.
+        const limited = enforceRateLimit({
+          route: "whatsapp:webhook-event",
+          max: 300,
+          windowMs: 60_000,
+        });
+        if (limited) return limited;
+
+        // 2) Fail-closed: sem META_APP_SECRET não há como provar que o evento
+        //    veio da Meta, então nada é processado (antes aceitava qualquer POST).
+        const appSecret = process.env.META_APP_SECRET;
+        if (!appSecret) {
+          console.error(
+            "[whatsapp.webhook] CRÍTICO: META_APP_SECRET ausente — evento recusado (fail-closed).",
+          );
+          return new Response("Webhook not configured", { status: 503 });
+        }
+
         const signature = request.headers.get("x-hub-signature-256");
         const raw = await request.text();
 
@@ -54,39 +71,36 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         } catch {
           parsedForLog = raw;
         }
-        console.log("PAYLOAD RECEBIDO DA META:", JSON.stringify(parsedForLog));
 
         try {
-          // 2) Rate limit + verificação de assinatura (antes de qualquer persistência).
-          const limited = enforceRateLimit({
-            route: "whatsapp:webhook-event",
-            max: 300,
-            windowMs: 60_000,
-          });
-          if (limited) return limited;
+          // 2.1) Verificação de assinatura (HMAC SHA-256) — obrigatória.
+          if (!signature?.startsWith("sha256=")) {
+            console.error("[whatsapp.webhook] Assinatura ausente.");
+            return new Response("Missing signature", { status: 401 });
+          }
 
-          // 2.1) Verificação de assinatura (HMAC SHA-256)
-          const appSecret = process.env.META_APP_SECRET;
-          
-          if (!appSecret) {
-            console.warn(
-              "[whatsapp.webhook] AVISO: META_APP_SECRET ausente — ignorando verificação HMAC (segurança reduzida)",
+          const expected = "sha256=" + createHmac("sha256", appSecret).update(raw).digest("hex");
+          const a = Buffer.from(signature);
+          const b = Buffer.from(expected);
+
+          if (a.length !== b.length || !timingSafeEqual(a, b)) {
+            console.error("[whatsapp.webhook] Assinatura inválida detectada.");
+            return new Response("Invalid signature", { status: 401 });
+          }
+
+          // Log só com metadados — nunca o conteúdo (telefone/texto do cliente, LGPD).
+          {
+            const p = parsedForLog as { object?: unknown; entry?: Array<{ changes?: Array<{ value?: { messages?: unknown[]; statuses?: unknown[] } }> }> } | null;
+            const value = p?.entry?.[0]?.changes?.[0]?.value;
+            console.log(
+              "[whatsapp.webhook] evento recebido",
+              JSON.stringify({
+                object: typeof p?.object === "string" ? p.object : null,
+                entryCount: Array.isArray(p?.entry) ? p.entry.length : 0,
+                hasMessages: Array.isArray(value?.messages) && value.messages.length > 0,
+                hasStatuses: Array.isArray(value?.statuses) && value.statuses.length > 0,
+              }),
             );
-          } else {
-            // Se o secret existe, a verificação é OBRIGATÓRIA
-            if (!signature?.startsWith("sha256=")) {
-              console.error("[whatsapp.webhook] Assinatura ausente, mas META_APP_SECRET configurado.");
-              return new Response("Missing signature", { status: 401 });
-            }
-            
-            const expected = "sha256=" + createHmac("sha256", appSecret).update(raw).digest("hex");
-            const a = Buffer.from(signature);
-            const b = Buffer.from(expected);
-            
-            if (a.length !== b.length || !timingSafeEqual(a, b)) {
-              console.error("[whatsapp.webhook] Assinatura inválida detectada.");
-              return new Response("Invalid signature", { status: 401 });
-            }
           }
 
           // 3) Persiste payload bruto (AWAIT — sem fire-and-forget).

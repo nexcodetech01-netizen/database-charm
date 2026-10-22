@@ -180,11 +180,17 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
         });
       } else {
         // Buscamos EXATAMENTE nas colunas api_key_sandbox e api_key_production da tabela bella_pay_config
-        const { data: asaasCfg, error: cfgError } = await supabase
-          .from("bella_pay_config")
-          .select("api_key_production, api_key_sandbox, environment")
-          .eq("company_id", companyId)
-          .maybeSingle();
+        // Chaves só são lidas no servidor (service role), após checar o vínculo.
+        let asaasCfg: { api_key_production: string | null; api_key_sandbox: string | null; environment: string | null } | null = null;
+        let cfgError: { message: string } | null = null;
+        try {
+          const { loadBellaPayConfigForUser } = await import(
+            "@/features/bella-pay/lib/credentials.server"
+          );
+          asaasCfg = await loadBellaPayConfigForUser({ supabase, userId }, companyId);
+        } catch (e) {
+          cfgError = { message: e instanceof Error ? e.message : String(e) };
+        }
 
         if (cfgError) {
           console.error("[Diagnostics] Error querying bella_pay_config:", cfgError);

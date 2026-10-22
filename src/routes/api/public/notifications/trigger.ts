@@ -3,6 +3,7 @@ import { z } from "zod";
 import { emitAgentEvent } from "@/features/bella-ai/agent/infrastructure/event-bus";
 import { makeSecurityContext } from "@/features/bella-ai/agent/infrastructure/context";
 import { formatCurrency } from "@/lib/format";
+import { extractJobCredential, timingSafeEqual } from "@/lib/job-auth.server";
 
 const NotificationPayloadSchema = z.object({
   type: z.literal("catalog.order.received"),
@@ -21,11 +22,11 @@ export const Route = createFileRoute("/api/public/notifications/trigger")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authHeader = request.headers.get("Authorization");
         const secret = process.env.NEXOS_N8N_WEBHOOK_SECRET;
+        const provided = extractJobCredential(request);
 
-        // 1. Autenticação
-        if (!secret || authHeader !== `Bearer ${secret}`) {
+        // 1. Autenticação (comparação em tempo constante)
+        if (!secret || !provided || !timingSafeEqual(provided, secret)) {
           return new Response(
             JSON.stringify({ error: "Unauthorized" }),
             { status: 401, headers: { "Content-Type": "application/json" } }

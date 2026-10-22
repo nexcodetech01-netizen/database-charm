@@ -74,7 +74,9 @@ export const getLoyaltyBalanceByPhone = createServerFn({ method: "GET" })
 
     return {
       found: true as const,
-      customerName: customer.name,
+      // Consulta pública por telefone: devolve só o primeiro nome (LGPD —
+      // evita enumerar nomes completos de clientes a partir de telefones).
+      customerName: String(customer.name ?? "").trim().split(/\s+/)[0] ?? "",
       points,
       valueInReais,
     };

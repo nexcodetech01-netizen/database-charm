@@ -24,42 +24,18 @@ interface AuthedContext {
 }
 
 async function assertAdmin(ctx: AuthedContext, companyId: string) {
-  const { supabase, userId } = ctx;
-  const { data: owned } = await supabase
-    .from("companies")
-    .select("id")
-    .eq("id", companyId)
-    .eq("owner_id", userId)
-    .maybeSingle();
-  if (owned) return;
-
-  const { data: adminRow } = await supabase
-    .from("user_roles")
-    .select("role_id, roles!inner(name)")
-    .eq("user_id", userId)
-    .eq("company_id", companyId)
-    .in("roles.name", ["admin", "owner"])
-    .maybeSingle();
-  if (!adminRow) {
-    throw new Error("Apenas administradores podem executar testes do Asaas.");
-  }
+  const { assertBellaPayAdmin } = await import("./credentials.server");
+  await assertBellaPayAdmin(ctx as never, companyId);
 }
 
 async function resolveCreds(
-  supabase: AuthedContext["supabase"],
+  ctx: AuthedContext,
   companyId: string,
 ): Promise<{ apiKey: string; env: Env }> {
-  const { data: cfg } = await supabase
-    .from("bella_pay_config")
-    .select("environment, api_key_sandbox, api_key_production")
-    .eq("company_id", companyId)
-    .maybeSingle<{
-      environment: Env | null;
-      api_key_sandbox: string | null;
-      api_key_production: string | null;
-    }>();
+  const { loadBellaPayConfigForUser } = await import("./credentials.server");
+  const cfg = await loadBellaPayConfigForUser(ctx as never, companyId);
   if (!cfg) throw new Error("Bella Pay não configurado para esta empresa.");
-  const env: Env = cfg.environment ?? "sandbox";
+  const env: Env = (cfg.environment as Env | null) ?? "sandbox";
   const apiKey =
     env === "production" ? cfg.api_key_production : cfg.api_key_sandbox;
   if (!apiKey) throw new Error(`Chave da API (${env}) não configurada.`);
@@ -160,7 +136,7 @@ export const testCreateCustomer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as AuthedContext, data.companyId);
-    const { apiKey, env } = await resolveCreds(context.supabase, data.companyId);
+    const { apiKey, env } = await resolveCreds(context as AuthedContext, data.companyId);
     return callAsaas(apiKey, env, "POST", "/customers", {
       name: data.name,
       cpfCnpj: data.cpfCnpj.replace(/\D/g, ""),
@@ -186,7 +162,7 @@ export const testCreateCharge = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context as AuthedContext, data.companyId);
-    const { apiKey, env } = await resolveCreds(context.supabase, data.companyId);
+    const { apiKey, env } = await resolveCreds(context as AuthedContext, data.companyId);
     const res = await callAsaas(apiKey, env, "POST", "/payments", {
       customer: data.customerId,
       billingType: data.billingType,
@@ -218,7 +194,7 @@ export const testGetCharge = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string; chargeId: string }) => input)
   .handler(async ({ data, context }) => {
     await assertAdmin(context as AuthedContext, data.companyId);
-    const { apiKey, env } = await resolveCreds(context.supabase, data.companyId);
+    const { apiKey, env } = await resolveCreds(context as AuthedContext, data.companyId);
     return callAsaas(apiKey, env, "GET", `/payments/${data.chargeId}`);
   });
 
@@ -230,7 +206,7 @@ export const testSimulateReceive = createServerFn({ method: "POST" })
   .inputValidator((input: { companyId: string; chargeId: string }) => input)
   .handler(async ({ data, context }) => {
     await assertAdmin(context as AuthedContext, data.companyId);
-    const { apiKey, env } = await resolveCreds(context.supabase, data.companyId);
+    const { apiKey, env } = await resolveCreds(context as AuthedContext, data.companyId);
     if (env !== "sandbox") {
       return {
         ok: false,

@@ -7,23 +7,30 @@ import type {
   BellaPayMetrics,
 } from "../types";
 
+/**
+ * Colunas que o navegador pode ler. As chaves do Asaas (`api_key_*`) ficam de
+ * fora de propósito: só o servidor as lê (ver lib/credentials.server.ts).
+ */
+const BELLA_PAY_CONFIG_COLUMNS =
+  "id, company_id, environment, connection_status, connection_message, last_tested_at, credit_card_absorb_fee, credit_card_fee_percent, credit_card_max_installments, default_account_id, webhook_token, created_at, updated_at";
+
 export const bellaPayService = {
   async getConfig(companyId: string): Promise<BellaPayConfig | null> {
     const { data, error } = await supabase
       .from("bella_pay_config")
-      .select("*")
+      .select(BELLA_PAY_CONFIG_COLUMNS)
       .eq("company_id", companyId)
-      .select("*")
-
       .maybeSingle();
     if (error) throw error;
     return data as BellaPayConfig | null;
   },
 
+  /**
+   * Grava a configuração (exceto as chaves do Asaas, que são gravadas pela
+   * server function `saveBellaPayApiKeys`).
+   */
   async upsertConfig(input: {
     companyId: string;
-    apiKeySandbox?: string | null;
-    apiKeyProduction?: string | null;
     environment: BellaPayEnvironment;
     creditCardAbsorbFee?: boolean;
     creditCardFeePercent?: number;
@@ -33,10 +40,6 @@ export const bellaPayService = {
     const patch = {
       company_id: input.companyId,
       environment: input.environment,
-      ...(input.apiKeySandbox !== undefined ? { api_key_sandbox: input.apiKeySandbox } : {}),
-      ...(input.apiKeyProduction !== undefined
-        ? { api_key_production: input.apiKeyProduction }
-        : {}),
       ...(input.creditCardAbsorbFee !== undefined
         ? { credit_card_absorb_fee: input.creditCardAbsorbFee }
         : {}),
@@ -51,28 +54,16 @@ export const bellaPayService = {
         : {}),
     };
 
-    console.log("[bellaPayService] upsertConfig starting", {
-      companyId: patch.company_id,
-      environment: patch.environment,
-      hasSandbox: !!patch.api_key_sandbox,
-      hasProduction: !!patch.api_key_production
-    });
-
     const { data, error } = await supabase
       .from("bella_pay_config")
       .upsert(patch, { onConflict: "company_id" })
-      .select()
+      .select(BELLA_PAY_CONFIG_COLUMNS)
       .single();
 
     if (error) {
-      console.error("[bellaPayService] upsertConfig error", error);
+      console.error("[bellaPayService] upsertConfig error", error.message);
       throw error;
     }
-
-    console.log("[bellaPayService] upsertConfig success", {
-      id: data.id,
-      companyId: data.company_id
-    });
     return data as BellaPayConfig;
   },
 

@@ -46,7 +46,16 @@ export interface WhatsAppValidationResult {
 
 export const getWhatsAppStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<WhatsAppStatusResult> => {
+  .handler(async ({ context }): Promise<WhatsAppStatusResult> => {
+    // O verify token do webhook é da PLATAFORMA (não de uma empresa): só quem
+    // administra a plataforma (e-mail listado em PLATFORM_ADMIN_EMAILS) vê o valor.
+    const adminEmails = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const userEmail = String((context.claims as { email?: unknown })?.email ?? "").toLowerCase();
+    const isPlatformAdmin = userEmail !== "" && adminEmails.includes(userEmail);
+
     const names: WhatsAppSecretName[] = [
       "META_APP_ID",
       "META_APP_SECRET",
@@ -80,7 +89,9 @@ export const getWhatsAppStatus = createServerFn({ method: "GET" })
       webhookVerifyTokenConfigured: Boolean(
         process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN,
       ),
-      webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? null,
+      webhookVerifyToken: isPlatformAdmin
+        ? (process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? null)
+        : null,
     };
   });
 
@@ -154,43 +165,8 @@ export const validateWhatsAppConnection = createServerFn({ method: "POST" })
     }
   });
 
-/**
- * Dispara um template do WhatsApp Business Cloud API.
- *
- * Fluxo típico: cobrança criada, agendamento confirmado, ordem paga, etc.
- * O template precisa estar APROVADO no Meta Business Manager — a chamada
- * a esta função retorna `{ ok: false, error }` até lá.
- */
-export const sendWhatsAppTemplate = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      companyId: string;
-      to: string;
-      templateName: string;
-      languageCode?: string;
-      variables?: Array<string | number>;
-    }) => input,
-  )
-  .handler(async ({ data, context }) => {
-    const { sendWhatsAppTemplateRaw, recordWhatsAppOutboundEvent } =
-      await import("./whatsapp.server");
-    const result = await sendWhatsAppTemplateRaw({
-      to: data.to,
-      templateName: data.templateName,
-      languageCode: data.languageCode,
-      variables: data.variables,
-    });
-    await recordWhatsAppOutboundEvent(context.supabase, {
-      companyId: data.companyId,
-      waMessageId: result.waMessageId,
-      status: result.ok ? "sent" : "failed",
-    });
-    return {
-      ok: result.ok,
-      waMessageId: result.waMessageId,
-      to: result.to,
-      error: result.error,
-      status: result.status ?? null,
-    };
-  });
+// `sendWhatsAppTemplate` (server function) foi removida por segurança
+// (auditoria 2026-10-22): nenhuma tela a usava e ela permitia que qualquer
+// usuário logado disparasse templates para qualquer número com o WhatsApp da
+// plataforma. Envios internos usam `sendWhatsAppTemplateRaw` (whatsapp.server.ts)
+// direto no servidor.
