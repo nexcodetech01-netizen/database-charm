@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createIdempotencyKeeper, saleFingerprint } from "../lib/idempotency";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link, useLocation } from "@tanstack/react-router";
 import {
@@ -190,6 +191,9 @@ export function SaleForm({
   const location = useLocation();
   const queryClient = useQueryClient();
   const createMut = useCreateSale();
+  // Auditoria 4.1 — chave anti-duplicata: a mesma enquanto o conteúdo da venda
+  // não mudar (reenvio após queda de rede não duplica); nova a cada venda.
+  const idempotencyRef = useRef(createIdempotencyKeeper());
   const updateMut = useUpdateSale();
   const setStatusMut = useSetSaleStatus();
   const isEdit = !!sale;
@@ -456,6 +460,7 @@ export function SaleForm({
 
     // 3) Remove o rascunho local (localStorage).
     draft.discard();
+    idempotencyRef.current.reset();
 
     // 4) Reseta o estado em memória para o estado "nova venda vazia".
     setItems([]);
@@ -992,7 +997,21 @@ export function SaleForm({
           items: items.length,
           finalize,
         });
-        const created = await createMut.mutateAsync({ ...payload, items });
+        const clientRequestId = idempotencyRef.current.keyFor(
+          saleFingerprint({
+            customerId: payload.customer_id ?? null,
+            paymentMethod: payload.payment_method ?? null,
+            discount: Number(payload.discount ?? 0),
+            shipping: Number(payload.shipping ?? 0),
+            items,
+          }),
+        );
+        const created = await createMut.mutateAsync({
+          ...payload,
+          client_request_id: clientRequestId,
+          items,
+        });
+        idempotencyRef.current.reset();
         savedId = created?.id ?? "";
         savedNumber = created?.number ?? null;
         createdNowId = savedId || null;
