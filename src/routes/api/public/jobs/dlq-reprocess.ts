@@ -52,6 +52,24 @@ export const Route = createFileRoute("/api/public/jobs/dlq-reprocess")({
                 if (outcome.status >= 400 || outcome.deadLetter) {
                   throw new Error(outcome.body);
                 }
+              } else if (entry.source === "whatsapp" && entry.topic !== "batch") {
+                const { reprocessWhatsAppDeadLetter } = await import(
+                  "@/features/whatsapp/inbound/webhook-processor.server"
+                );
+                const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+                await reprocessWhatsAppDeadLetter(entry.payload, { db: supabaseAdmin });
+              } else if (entry.source === "whatsapp" && entry.topic === "batch") {
+                // POST inteiro que falhou antes de ser separado em eventos.
+                const { extractWhatsAppEvents } = await import(
+                  "@/features/whatsapp/inbound/webhook-events"
+                );
+                const { reprocessWhatsAppDeadLetter } = await import(
+                  "@/features/whatsapp/inbound/webhook-processor.server"
+                );
+                const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+                for (const event of extractWhatsAppEvents(entry.payload)) {
+                  await reprocessWhatsAppDeadLetter(event, { db: supabaseAdmin });
+                }
               } else {
                 // Sem handler específico: marca como falha definitiva após as
                 // tentativas, evitando reprocessamento infinito.
