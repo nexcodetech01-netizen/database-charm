@@ -8018,6 +8018,10 @@ export type Database = {
           sales_count: number
         }[]
       }
+      create_sale_with_items: {
+        Args: { _header: Json; _items: Json }
+        Returns: Database["public"]["Tables"]["sales"]["Row"]
+      }
       delete_sale: { Args: { _sale_id: string }; Returns: boolean }
       ensure_sale_receivable: {
         Args: { _sale_id: string }

@@ -7,7 +7,7 @@ import {
 } from "../lib/settlement-account";
 import { supabase } from "@/integrations/supabase/client";
 import { updateRow } from "@/services/supabase.service";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Database, Json, Tables } from "@/integrations/supabase/types";
 import type {
   SaleInsert,
   SaleItemDraft,
@@ -39,6 +39,15 @@ function getSupabaseErrorMessage(error: unknown) {
     if (typeof message === "string" && message.trim().length > 0) return message;
   }
   return "Não foi possível cancelar a venda.";
+}
+
+type SalesRow = Database["public"]["Tables"]["sales"]["Row"];
+
+/** A função ainda não existe no banco (migration pendente) → usar fluxo antigo. */
+function isMissingRpcError(err: { code?: string; message?: string } | null): boolean {
+  if (!err) return false;
+  if (err.code === "PGRST202" || err.code === "42883") return true;
+  return /create_sale_with_items/i.test(err.message ?? "") && /could not find|does not exist/i.test(err.message ?? "");
 }
 
 function buildItemRow(it: SaleItemDraft, saleId: string, idx: number) {
@@ -686,6 +695,44 @@ export const salesService = {
 
     const headerPayload = { ...header, ...totals };
     log("PAYLOAD sales", headerPayload);
+
+    // AUDITORIA 4.1 (parte 3) — venda + itens numa ÚNICA transação no banco
+    // (RPC `create_sale_with_items`): ou grava tudo, ou nada. Se a função
+    // ainda não existir no banco (migration não aplicada), cai no fluxo
+    // antigo logo abaixo, sem quebrar.
+    {
+      const itemRows = items.map((it, idx) => {
+        const { sale_id: _saleId, ...row } = buildItemRow(it, "", idx);
+        void _saleId;
+        return row;
+      });
+      const { data: atomic, error: rpcErr } = await supabase.rpc("create_sale_with_items", {
+        _header: { ...headerPayload, customer_id: headerPayload.customer_id || null } as Json,
+        _items: itemRows as unknown as Json,
+      });
+      if (!rpcErr && atomic) {
+        const sale = atomic as unknown as SalesRow;
+        log("COMMIT atômico", { sale_id: sale.id, number: sale.number, items: itemRows.length });
+        return sale;
+      }
+      if (rpcErr && !isMissingRpcError(rpcErr)) {
+        // eslint-disable-next-line no-console
+        console.error(`[${trace}] ERRO create_sale_with_items`, {
+          code: rpcErr.code,
+          message: rpcErr.message,
+          details: rpcErr.details,
+          hint: rpcErr.hint,
+        });
+        if (rpcErr.code === "23505" && rpcErr.message?.includes(SALE_NUMBER_UNIQUE)) {
+          throw new Error(
+            `Já existe uma venda com o número "${headerPayload.number}". Use outro número ou deixe o padrão.`,
+            { cause: rpcErr },
+          );
+        }
+        throw new Error(getSupabaseErrorMessage(rpcErr), { cause: rpcErr });
+      }
+      log("FALLBACK fluxo antigo (RPC indisponível)", { code: rpcErr?.code });
+    }
 
     let { data: created, error } = await supabase
       .from("sales")
