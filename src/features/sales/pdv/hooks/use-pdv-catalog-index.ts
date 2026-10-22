@@ -100,6 +100,11 @@ export function usePdvCatalogIndex(
   };
 }
 
+/** Converte uma linha de `products` no formato do catálogo do PDV. */
+export function mapPdvProduct(p: any): PdvSearchOption {
+  return mapProduct(p);
+}
+
 function mapProduct(p: any): PdvSearchOption {
   return {
     id: p.id,
