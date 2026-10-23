@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/supabase-fetch-all";
 import { supabase } from "@/integrations/supabase/client";
 import { companyDayStartUtc, companyEndOfDay } from "@/lib/time/company-day";
 import {
@@ -63,14 +64,15 @@ async function fetchPaidSalesInRange(
   companyId: string,
   range: DateRange,
 ) {
-  const { data, error } = await supabase
-    .from("sales")
-    .select("id, grand_total, customer_id, sale_date, status, payment_method, installments")
-    .eq("company_id", companyId)
-    .eq("status", "paid")
-    .gte("sale_date", range.from)
-    .lte("sale_date", range.to);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("sales")
+      .select("id, grand_total, customer_id, sale_date, status, payment_method, installments")
+      .eq("company_id", companyId)
+      .eq("status", "paid")
+      .gte("sale_date", range.from)
+      .lte("sale_date", range.to),
+  );
   return data ?? [];
 }
 
@@ -78,46 +80,50 @@ async function fetchPaidSaleItems(
   companyId: string,
   range: DateRange,
 ) {
-  const { data, error } = await supabase
-    .from("sale_items")
-    .select(
-      "id, product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)",
-    )
-    .eq("sale.company_id", companyId)
-    .eq("sale.status", "paid")
-    .gte("sale.sale_date", range.from)
-    .lte("sale.sale_date", range.to);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("sale_items")
+      .select(
+        "id, product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)",
+      )
+      .eq("sale.company_id", companyId)
+      .eq("sale.status", "paid")
+      .gte("sale.sale_date", range.from)
+      .lte("sale.sale_date", range.to),
+  );
   return data ?? [];
 }
 
 /** Products index (for filtering, cost/margin & category resolution). */
 async function fetchProductsIndex(companyId: string) {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      "id, name, sku, stock, min_stock, cost, price, status, category_id, supplier_id, created_at",
-    )
-    .eq("company_id", companyId);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("products")
+      .select(
+        "id, name, sku, stock, min_stock, cost, price, status, category_id, supplier_id, created_at",
+      )
+      .eq("company_id", companyId),
+  );
   return data ?? [];
 }
 
 async function fetchCategoriesIndex(companyId: string) {
-  const { data, error } = await supabase
-    .from("product_categories")
-    .select("id, name")
-    .eq("company_id", companyId);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("product_categories")
+      .select("id, name")
+      .eq("company_id", companyId),
+  );
   return data ?? [];
 }
 
 async function fetchSuppliersIndex(companyId: string) {
-  const { data, error } = await supabase
-    .from("product_suppliers")
-    .select("id, name")
-    .eq("company_id", companyId);
-  if (error) throw error;
+  const data = await fetchAllRows(
+    supabase
+      .from("product_suppliers")
+      .select("id, name")
+      .eq("company_id", companyId),
+  );
   return data ?? [];
 }
 
@@ -382,16 +388,17 @@ export const executivePanelService = {
     const d60From = shiftDate(today, -60);
     const d90From = shiftDate(today, -90);
 
-    const { data: recentItems, error: riErr } = await supabase
-      .from("sale_items")
-      .select(
-        "product_id, sale:sales!inner(company_id, sale_date, status)",
-      )
-      .eq("sale.company_id", companyId)
-      .eq("sale.status", "paid")
-      .gte("sale.sale_date", d90From)
-      .lte("sale.sale_date", today);
-    if (riErr) throw riErr;
+    const recentItems = await fetchAllRows(
+      supabase
+        .from("sale_items")
+        .select(
+          "product_id, sale:sales!inner(company_id, sale_date, status)",
+        )
+        .eq("sale.company_id", companyId)
+        .eq("sale.status", "paid")
+        .gte("sale.sale_date", d90From)
+        .lte("sale.sale_date", today),
+    );
 
     const lastSaleByProduct = new Map<string, string>();
     for (const r of recentItems ?? []) {
@@ -452,13 +459,14 @@ export const executivePanelService = {
       avgDailyOut > 0 ? Math.round(invUnits / avgDailyOut) : null;
 
     const { fromTs, toTs } = rangeToTimestamp(range);
-    const { data: moves, error: mErr } = await supabase
-      .from("inventory_movements")
-      .select("product_id, type, quantity, movement_date")
-      .eq("company_id", companyId)
-      .gte("movement_date", fromTs)
-      .lte("movement_date", toTs);
-    if (mErr) throw mErr;
+    const moves = await fetchAllRows(
+      supabase
+        .from("inventory_movements")
+        .select("product_id, type, quantity, movement_date")
+        .eq("company_id", companyId)
+        .gte("movement_date", fromTs)
+        .lte("movement_date", toTs),
+    );
 
     let outUnits = 0;
     for (const m of moves ?? []) {
@@ -493,13 +501,14 @@ export const executivePanelService = {
     };
 
     /* --------------------------- Finance ---------------------------- */
-    const { data: finRows, error: fErr } = await supabase
-      .from("financial_transactions")
-      .select("type, amount, transaction_date, status")
-      .eq("company_id", companyId)
-      .gte("transaction_date", range.from)
-      .lte("transaction_date", range.to);
-    if (fErr) throw fErr;
+    const finRows = await fetchAllRows(
+      supabase
+        .from("financial_transactions")
+        .select("type, amount, transaction_date, status")
+        .eq("company_id", companyId)
+        .gte("transaction_date", range.from)
+        .lte("transaction_date", range.to),
+    );
 
     let income = 0;
     let expense = 0;
@@ -711,14 +720,15 @@ export const executivePanelService = {
       metric: "revenue" | "profit" | "count",
     ): Promise<BiDailyPoint[]> => {
       const from = shiftDate(today, -(days - 1));
-      const { data, error } = await supabase
-        .from("sales")
-        .select("sale_date, grand_total")
-        .eq("company_id", companyId)
-        .eq("status", "paid")
-        .gte("sale_date", from)
-        .lte("sale_date", today);
-      if (error) throw error;
+      const data = await fetchAllRows(
+        supabase
+          .from("sales")
+          .select("sale_date, grand_total")
+          .eq("company_id", companyId)
+          .eq("status", "paid")
+          .gte("sale_date", from)
+          .lte("sale_date", today),
+      );
 
       const map = new Map<string, { revenue: number; count: number }>();
       const list = daysBetween(from, today);
@@ -734,16 +744,17 @@ export const executivePanelService = {
       // Profit requires items -> cost lookup (single extra query for 30d)
       let profitByDate = new Map<string, number>();
       if (metric === "profit") {
-        const { data: items, error: iErr } = await supabase
-          .from("sale_items")
-          .select(
-            "product_id, quantity, total, sale:sales!inner(sale_date, company_id, status)",
-          )
-          .eq("sale.company_id", companyId)
-          .eq("sale.status", "paid")
-          .gte("sale.sale_date", from)
-          .lte("sale.sale_date", today);
-        if (iErr) throw iErr;
+        const items = await fetchAllRows(
+          supabase
+            .from("sale_items")
+            .select(
+              "product_id, quantity, total, sale:sales!inner(sale_date, company_id, status)",
+            )
+            .eq("sale.company_id", companyId)
+            .eq("sale.status", "paid")
+            .gte("sale.sale_date", from)
+            .lte("sale.sale_date", today),
+        );
         for (const it of items ?? []) {
           const s = (it as { sale?: { sale_date?: string } | null }).sale;
           const key = s?.sale_date ? String(s.sale_date) : null;
@@ -811,20 +822,21 @@ export const executivePanelService = {
       // proportionally is complex — approximate by summing per-customer scoped
       // item revenue using product_id -> sale relationship. To keep simple and
       // correct, fetch sale_id per scoped item:
-      const { data: scopedWithSale, error: swErr } = await supabase
-        .from("sale_items")
-        .select(
-          "total, sale:sales!inner(id, customer_id, company_id, sale_date, status)",
-        )
-        .eq("sale.company_id", companyId)
-        .eq("sale.status", "paid")
-        .gte("sale.sale_date", range.from)
-        .lte("sale.sale_date", range.to)
-        .in(
-          "product_id",
-          scopedProducts.map((p) => p.id),
-        );
-      if (swErr) throw swErr;
+      const scopedWithSale = await fetchAllRows(
+        supabase
+          .from("sale_items")
+          .select(
+            "total, sale:sales!inner(id, customer_id, company_id, sale_date, status)",
+          )
+          .eq("sale.company_id", companyId)
+          .eq("sale.status", "paid")
+          .gte("sale.sale_date", range.from)
+          .lte("sale.sale_date", range.to)
+          .in(
+            "product_id",
+            scopedProducts.map((p) => p.id),
+          ),
+      );
       for (const r of scopedWithSale ?? []) {
         const s = (
           r as {

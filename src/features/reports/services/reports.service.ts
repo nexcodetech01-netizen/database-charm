@@ -12,81 +12,88 @@ import type {
 } from "../types";
 import { daysBetween, labelDay, rangeToTimestamp } from "../utils/date-range";
 import { paymentMethodsService, sumNetRevenue } from "@/features/payment-methods";
+import { fetchAllRows, fetchInChunks } from "@/lib/supabase-fetch-all";
+
+// AUDITORIA 2026-10-22 — o PostgREST devolve no máximo 1.000 linhas por
+// consulta e corta o resto sem avisar. Todas as consultas cujo resultado é
+// SOMADO aqui passam por `fetchAllRows` (paginação completa), e as buscas
+// `.in("id", [...])` por `fetchInChunks` (lotes, para não estourar a URL).
 
 const num = (v: unknown) => (typeof v === "number" ? v : v == null ? 0 : Number(v) || 0);
 
 async function fetchSalesInRange(companyId: string, range: DateRange) {
-  const { data, error } = await applyDataScope(
-    supabase
-      .from("sales")
-      .select("id, number, sale_date, status, payment_method, installments, grand_total, customer_id, paid_at")
-      .eq("company_id", companyId)
-      .gte("sale_date", range.from)
-      .lte("sale_date", range.to),
-  ).order("sale_date", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return fetchAllRows(
+    applyDataScope(
+      supabase
+        .from("sales")
+        .select("id, number, sale_date, status, payment_method, installments, grand_total, customer_id, paid_at")
+        .eq("company_id", companyId)
+        .gte("sale_date", range.from)
+        .lte("sale_date", range.to),
+    ).order("sale_date", { ascending: false }),
+  );
 }
 
 async function fetchPaidSaleItems(companyId: string, range: DateRange) {
   // sale_items joined via sales (paid, in range)
-  const { data, error } = await supabase
-    .from("sale_items")
-    .select("id, product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)")
-    .eq("sale.company_id", companyId)
-    .eq("sale.status", "paid")
-    .gte("sale.sale_date", range.from)
-    .lte("sale.sale_date", range.to);
-  if (error) throw error;
-  return data ?? [];
+  return fetchAllRows(
+    supabase
+      .from("sale_items")
+      .select("id, product_id, quantity, unit_price, total, sale:sales!inner(company_id, sale_date, status)")
+      .eq("sale.company_id", companyId)
+      .eq("sale.status", "paid")
+      .gte("sale.sale_date", range.from)
+      .lte("sale.sale_date", range.to),
+  );
 }
 
 export const reportsService = {
   async executive(companyId: string, range: DateRange): Promise<ExecutiveMetrics> {
-    const [sales, items, productsAgg, customersAgg, finance] = await Promise.all([
-      applyDataScope(
-        supabase
-          .from("sales")
-          .select("id, grand_total, status")
-          .eq("company_id", companyId)
-          .eq("status", "paid")
-          .gte("sale_date", range.from)
-          .lte("sale_date", range.to),
+    const [salesRows, items, productRows, customersAgg, financeRows] = await Promise.all([
+      fetchAllRows(
+        applyDataScope(
+          supabase
+            .from("sales")
+            .select("id, grand_total, status")
+            .eq("company_id", companyId)
+            .eq("status", "paid")
+            .gte("sale_date", range.from)
+            .lte("sale_date", range.to),
+        ),
       ),
       fetchPaidSaleItems(companyId, range),
-      supabase
-        .from("products")
-        .select("stock, cost, price")
-        .eq("company_id", companyId)
-        .neq("status", "inactive"),
+      fetchAllRows(
+        supabase
+          .from("products")
+          .select("id, stock, cost, price")
+          .eq("company_id", companyId)
+          .neq("status", "inactive"),
+      ),
       supabase
         .from("customers")
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("status", "active"),
-      supabase
-        .from("financial_transactions")
-        .select("type, amount, status")
-        .eq("company_id", companyId)
-        .in("status", ["pending", "overdue"]),
+      fetchAllRows(
+        supabase
+          .from("financial_transactions")
+          .select("id, type, amount, status")
+          .eq("company_id", companyId)
+          .in("status", ["pending", "overdue"]),
+      ),
     ]);
-    if (sales.error) throw sales.error;
-    if (productsAgg.error) throw productsAgg.error;
     if (customersAgg.error) throw customersAgg.error;
-    if (finance.error) throw finance.error;
 
-    const totalRevenue = (sales.data ?? []).reduce((s, r) => s + num(r.grand_total), 0);
+    const totalRevenue = salesRows.reduce((s, r) => s + num(r.grand_total), 0);
 
     let cogs = 0;
     const productIds = Array.from(new Set(items.map((i) => i.product_id).filter(Boolean) as string[]));
     let costMap = new Map<string, number>();
     if (productIds.length) {
-      const { data: prods, error: perr } = await supabase
-        .from("products")
-        .select("id, cost")
-        .in("id", productIds);
-      if (perr) throw perr;
-      costMap = new Map((prods ?? []).map((p) => [p.id, num(p.cost)]));
+      const prods = await fetchInChunks(productIds, (chunk) =>
+        supabase.from("products").select("id, cost").in("id", chunk),
+      );
+      costMap = new Map(prods.map((p) => [p.id, num(p.cost)]));
     }
     let productsSold = 0;
     for (const it of items) {
@@ -94,14 +101,14 @@ export const reportsService = {
       if (it.product_id) cogs += num(it.quantity) * (costMap.get(it.product_id) ?? 0);
     }
 
-    const inventoryValue = (productsAgg.data ?? []).reduce(
+    const inventoryValue = productRows.reduce(
       (s, p) => s + num(p.stock) * num(p.cost),
       0,
     );
 
     let receivable = 0;
     let payable = 0;
-    for (const t of finance.data ?? []) {
+    for (const t of financeRows) {
       if (t.type === "income") receivable += num(t.amount);
       else if (t.type === "expense") payable += num(t.amount);
     }
@@ -109,7 +116,7 @@ export const reportsService = {
     return {
       totalRevenue,
       grossProfit: totalRevenue - cogs,
-      totalSales: (sales.data ?? []).length,
+      totalSales: salesRows.length,
       productsSold,
       activeCustomers: customersAgg.count ?? 0,
       inventoryValue,
@@ -154,14 +161,16 @@ export const reportsService = {
     const dd = String(today.getDate()).padStart(2, "0");
     const monthStart = `${yyyy}-${mm}-01`;
     const dayStr = `${yyyy}-${mm}-${dd}`;
-    const { data: monthData } = await applyDataScope(
-      supabase
-        .from("sales")
-        .select("sale_date, grand_total, payment_method, installments")
-        .eq("company_id", companyId)
-        .eq("status", "paid")
-        .gte("sale_date", monthStart)
-        .lte("sale_date", dayStr),
+    const monthData = await fetchAllRows(
+      applyDataScope(
+        supabase
+          .from("sales")
+          .select("id, sale_date, grand_total, payment_method, installments")
+          .eq("company_id", companyId)
+          .eq("status", "paid")
+          .gte("sale_date", monthStart)
+          .lte("sale_date", dayStr),
+      ),
     );
     const revenueMonth = (monthData ?? []).reduce((s, r) => s + num(r.grand_total), 0);
     const revenueToday = (monthData ?? [])
@@ -193,10 +202,19 @@ export const reportsService = {
         status: s.status ?? "",
       }));
 
-    const csIds = Array.from(new Set(paid.map((s) => s.customer_id).filter(Boolean) as string[]));
+    // Só os clientes do top 10 (antes buscava todos os clientes do período).
+    const csIds = Array.from(
+      new Set(
+        topSales
+          .map((t) => paid.find((s) => s.id === t.id)?.customer_id)
+          .filter(Boolean) as string[],
+      ),
+    );
     if (csIds.length) {
-      const { data: cs } = await supabase.from("customers").select("id, name").in("id", csIds);
-      const cm = new Map((cs ?? []).map((c) => [c.id, c.name]));
+      const cs = await fetchInChunks(csIds, (chunk) =>
+        supabase.from("customers").select("id, name").in("id", chunk),
+      );
+      const cm = new Map(cs.map((c) => [c.id, c.name]));
       for (const t of topSales) {
         const src = paid.find((s) => s.id === t.id);
         t.customer = src?.customer_id ? (cm.get(src.customer_id) ?? null) : null;
@@ -224,14 +242,14 @@ export const reportsService = {
   },
 
   async finance(companyId: string, range: DateRange): Promise<FinanceReport> {
-    const { data, error } = await supabase
-      .from("financial_transactions")
-      .select("id, type, amount, transaction_date, status, category_id")
-      .eq("company_id", companyId)
-      .gte("transaction_date", range.from)
-      .lte("transaction_date", range.to);
-    if (error) throw error;
-    const rows = data ?? [];
+    const rows = await fetchAllRows(
+      supabase
+        .from("financial_transactions")
+        .select("id, type, amount, transaction_date, status, category_id")
+        .eq("company_id", companyId)
+        .gte("transaction_date", range.from)
+        .lte("transaction_date", range.to),
+    );
 
     let income = 0;
     let expense = 0;
@@ -270,11 +288,10 @@ export const reportsService = {
     const catIds = Array.from(new Set(rows.map((r) => r.category_id).filter(Boolean) as string[]));
     let catNames = new Map<string, string>();
     if (catIds.length) {
-      const { data: cats } = await supabase
-        .from("financial_categories")
-        .select("id, name")
-        .in("id", catIds);
-      catNames = new Map((cats ?? []).map((c) => [c.id, c.name]));
+      const cats = await fetchInChunks(catIds, (chunk) =>
+        supabase.from("financial_categories").select("id, name").in("id", chunk),
+      );
+      catNames = new Map(cats.map((c) => [c.id, c.name]));
     }
     const catMap = new Map<string, { income: number; expense: number }>();
     for (const r of rows) {
@@ -296,12 +313,12 @@ export const reportsService = {
   },
 
   async inventory(companyId: string, range: DateRange): Promise<InventoryReport> {
-    const { data: products, error } = await supabase
-      .from("products")
-      .select("id, name, sku, stock, min_stock, cost")
-      .eq("company_id", companyId);
-    if (error) throw error;
-    const list = products ?? [];
+    const list = await fetchAllRows(
+      supabase
+        .from("products")
+        .select("id, name, sku, stock, min_stock, cost")
+        .eq("company_id", companyId),
+    );
 
     const inventoryValue = list.reduce((s, p) => s + num(p.stock) * num(p.cost), 0);
     const totalUnits = list.reduce((s, p) => s + num(p.stock), 0);
@@ -313,17 +330,18 @@ export const reportsService = {
 
     // movements in range
     const { fromTs, toTs } = rangeToTimestamp(range);
-    const { data: moves, error: merr } = await supabase
-      .from("inventory_movements")
-      .select("product_id, type, quantity, movement_date")
-      .eq("company_id", companyId)
-      .gte("movement_date", fromTs)
-      .lte("movement_date", toTs);
-    if (merr) throw merr;
+    const moves = await fetchAllRows(
+      supabase
+        .from("inventory_movements")
+        .select("id, product_id, type, quantity, movement_date")
+        .eq("company_id", companyId)
+        .gte("movement_date", fromTs)
+        .lte("movement_date", toTs),
+    );
 
     const movByProduct = new Map<string, { movements: number; outUnits: number }>();
     let totalOut = 0;
-    for (const m of moves ?? []) {
+    for (const m of moves) {
       if (!m.product_id) continue;
       const b = movByProduct.get(m.product_id) ?? { movements: 0, outUnits: 0 };
       b.movements += 1;
@@ -367,14 +385,14 @@ export const reportsService = {
   },
 
   async purchases(companyId: string, range: DateRange): Promise<PurchasesReport> {
-    const { data, error } = await supabase
-      .from("purchases")
-      .select("id, supplier_id, purchase_date, status, grand_total")
-      .eq("company_id", companyId)
-      .gte("purchase_date", range.from)
-      .lte("purchase_date", range.to);
-    if (error) throw error;
-    const rows = data ?? [];
+    const rows = await fetchAllRows(
+      supabase
+        .from("purchases")
+        .select("id, supplier_id, purchase_date, status, grand_total")
+        .eq("company_id", companyId)
+        .gte("purchase_date", range.from)
+        .lte("purchase_date", range.to),
+    );
 
     const total = rows.reduce((s, r) => s + num(r.grand_total), 0);
     const received = rows.filter((r) => r.status === "received").length;
@@ -394,8 +412,10 @@ export const reportsService = {
     const supIds = Array.from(new Set(rows.map((r) => r.supplier_id).filter(Boolean) as string[]));
     const supNames = new Map<string, string>();
     if (supIds.length) {
-      const { data: sup } = await supabase.from("product_suppliers").select("id, name").in("id", supIds);
-      for (const s of sup ?? []) supNames.set(s.id, s.name);
+      const sup = await fetchInChunks(supIds, (chunk) =>
+        supabase.from("product_suppliers").select("id, name").in("id", chunk),
+      );
+      for (const s of sup) supNames.set(s.id, s.name);
     }
     const supAgg = new Map<string, { total: number; count: number }>();
     for (const r of rows) {
@@ -436,8 +456,10 @@ export const reportsService = {
     const ids = Array.from(agg.keys());
     const nameMap = new Map<string, { name: string; sku: string | null }>();
     if (ids.length) {
-      const { data } = await supabase.from("products").select("id, name, sku").in("id", ids);
-      for (const p of data ?? []) nameMap.set(p.id, { name: p.name, sku: p.sku });
+      const prods = await fetchInChunks(ids, (chunk) =>
+        supabase.from("products").select("id, name, sku").in("id", chunk),
+      );
+      for (const p of prods) nameMap.set(p.id, { name: p.name, sku: p.sku });
     }
     const rows = Array.from(agg, ([id, v]) => ({
       id,
@@ -468,45 +490,49 @@ export const reportsService = {
   async customers(companyId: string, range: DateRange): Promise<CustomersReport> {
     const { fromTs, toTs } = rangeToTimestamp(range);
 
-    const [totalRes, activeRes, newRes, salesRes] = await Promise.all([
+    const [totalRes, activeRes, newRows, salesRows] = await Promise.all([
       supabase.from("customers").select("id", { count: "exact", head: true }).eq("company_id", companyId),
       supabase
         .from("customers")
         .select("id", { count: "exact", head: true })
         .eq("company_id", companyId)
         .eq("status", "active"),
-      supabase
-        .from("customers")
-        .select("id, name, created_at")
-        .eq("company_id", companyId)
-        .gte("created_at", fromTs)
-        .lte("created_at", toTs),
-      applyDataScope(
+      fetchAllRows(
         supabase
-          .from("sales")
-          .select("customer_id, grand_total, status")
+          .from("customers")
+          .select("id, name, created_at")
           .eq("company_id", companyId)
-          .eq("status", "paid")
-          .gte("sale_date", range.from)
-          .lte("sale_date", range.to),
+          .gte("created_at", fromTs)
+          .lte("created_at", toTs),
+      ),
+      fetchAllRows(
+        applyDataScope(
+          supabase
+            .from("sales")
+            .select("id, customer_id, grand_total, status")
+            .eq("company_id", companyId)
+            .eq("status", "paid")
+            .gte("sale_date", range.from)
+            .lte("sale_date", range.to),
+        ),
       ),
     ]);
     if (totalRes.error) throw totalRes.error;
     if (activeRes.error) throw activeRes.error;
-    if (newRes.error) throw newRes.error;
-    if (salesRes.error) throw salesRes.error;
 
     // recurring: customers with >1 paid sale (all time)
-    const { data: allSales } = await applyDataScope(
-      supabase
-        .from("sales")
-        .select("customer_id")
-        .eq("company_id", companyId)
-        .eq("status", "paid")
-        .not("customer_id", "is", null),
+    const allSales = await fetchAllRows(
+      applyDataScope(
+        supabase
+          .from("sales")
+          .select("id, customer_id")
+          .eq("company_id", companyId)
+          .eq("status", "paid")
+          .not("customer_id", "is", null),
+      ),
     );
     const countByCustomer = new Map<string, number>();
-    for (const s of allSales ?? []) {
+    for (const s of allSales) {
       if (!s.customer_id) continue;
       countByCustomer.set(s.customer_id, (countByCustomer.get(s.customer_id) ?? 0) + 1);
     }
@@ -524,7 +550,7 @@ export const reportsService = {
     // daily new customers
     const days = daysBetween(range.from, range.to);
     const dayMap = new Map(days.map((d) => [d, 0]));
-    for (const c of newRes.data ?? []) {
+    for (const c of newRows) {
       const k = String(c.created_at).slice(0, 10);
       if (dayMap.has(k)) dayMap.set(k, (dayMap.get(k) ?? 0) + 1);
     }
@@ -532,18 +558,24 @@ export const reportsService = {
 
     // top customers by revenue in range
     const revByCust = new Map<string, { revenue: number; purchases: number }>();
-    for (const s of salesRes.data ?? []) {
+    for (const s of salesRows) {
       if (!s.customer_id) continue;
       const b = revByCust.get(s.customer_id) ?? { revenue: 0, purchases: 0 };
       b.revenue += num(s.grand_total);
       b.purchases += 1;
       revByCust.set(s.customer_id, b);
     }
-    const topIds = Array.from(revByCust.keys());
+    // Só busca nomes do top 10 (antes buscava todos os clientes do período).
+    const topIds = Array.from(revByCust, ([id, v]) => ({ id, revenue: v.revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10)
+      .map((x) => x.id);
     const nameMap = new Map<string, string>();
     if (topIds.length) {
-      const { data } = await supabase.from("customers").select("id, name").in("id", topIds);
-      for (const c of data ?? []) nameMap.set(c.id, c.name);
+      const cs = await fetchInChunks(topIds, (chunk) =>
+        supabase.from("customers").select("id, name").in("id", chunk),
+      );
+      for (const c of cs) nameMap.set(c.id, c.name);
     }
     const topCustomers = Array.from(revByCust, ([id, v]) => ({
       id,
@@ -558,7 +590,7 @@ export const reportsService = {
       metrics: {
         total: totalRes.count ?? 0,
         active: activeRes.count ?? 0,
-        newInRange: (newRes.data ?? []).length,
+        newInRange: newRows.length,
         recurring,
         inactive: inactive ?? 0,
       },
