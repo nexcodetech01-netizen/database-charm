@@ -821,7 +821,9 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       );
 
       if (!res.success || !res.processedImages[0]) {
-        throw new Error("Falha ao processar imagem");
+        throw new Error(
+          ("message" in res && res.message) || "Falha ao processar imagem",
+        );
       }
 
       // Em um cenário real, o processamento de imagem salvaria no storage e retornaria um novo path ou sobrescreveria.
