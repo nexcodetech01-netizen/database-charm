@@ -162,7 +162,8 @@ export async function handleWhatsAppInboundPayload({ db, msg, status, tenant, st
   }
 
   // Logs de Auditoria para o Problema do [PEDIDO-CATALOGO]
-  console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, phone=${msg.phone}, text=${JSON.stringify(msg.text)}`);
+  // Sem telefone/texto no log (LGPD) — só identificadores.
+  console.log(`[AUDIT] MESSAGE_RECEIVED: id=${msg.waMessageId}, type=${msg.type ?? "?"}`);
 
   const isCatalogOrderMessage = msg.text.trim().startsWith("[PEDIDO-CATALOGO]");
     const websiteOrder = isCatalogOrderMessage ? parseWebsiteCatalogOrder(msg.text) : null;

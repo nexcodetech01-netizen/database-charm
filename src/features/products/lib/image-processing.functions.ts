@@ -20,50 +20,23 @@ export const processProductImages = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    console.log(`[AI Image Processor] Processing ${data.images.length} images (Multiview: ${!!data.enableMultiview})...`);
-    
-    // Simula latência de IA (Remoção de fundo + Upscaling + Otimização de Cores)
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-
-    const processed = data.images.map((img) => {
-      // Mock de URL processada: adicionamos um parâmetro para simular uma imagem nova/tratada
-      // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
-      // Na vida real, o worker retornaria uma URL de bucket ou CDN com o fundo removido.
-      // Para o mock, usamos uma URL de placeholder que indica "fundo removido" visualmente.
-      const processedUrl = `https://images.placeholders.dev/?width=800&height=800&text=AI+Processed+Background+Removed&bgColor=%23ffffff&textColor=%23000000`;
-
-
-      return {
-        ...img,
-        processedUrl,
-        status: "success" as const,
-        appliedEffect: img.isMain ? "pure_white_background" : "neutral_studio_setting",
-        upscaled: true,
-        colorOptimized: true,
-      };
-    });
-
-    // Geração Automática de Ângulos (Multiview Generation)
-    // Se tivermos apenas 1 imagem e for a principal, geramos variações para preencher slots 2, 3 e 4.
-    if (data.enableMultiview && data.images.length === 1 && data.images[0].isMain) {
-      const mainImg = data.images[0];
-      const variations = ["perspective_left", "perspective_right", "close_up"].map((angle, idx) => ({
-        id: `gen_${mainImg.id}_${idx}`,
-        url: mainImg.url, // Referência à imagem base
-        processedUrl: `https://images.placeholders.dev/?width=800&height=800&text=AI+Angle+${angle}+Generated&bgColor=%23ffffff&textColor=%23000000`, // Simulação da variação gerada
-        isMain: false,
-        status: "success" as const,
-        appliedEffect: "neutral_studio_setting",
-        isGenerated: true,
-        angle,
-        upscaled: true,
-        colorOptimized: true,
-      }));
-      processed.push(...variations);
-    }
-
+    // HONESTIDADE (auditoria 2026-10-22): não existe processamento de imagem
+    // por IA conectado. A versão anterior devolvia URLs de PLACEHOLDER
+    // ("AI Processed Background Removed") como se fossem as fotos tratadas —
+    // a tela mostrava "sucesso" e trocava a foto do produto por uma imagem
+    // genérica. Até existir um provedor real, a função informa que o recurso
+    // não está disponível e nunca altera as fotos.
+    void data;
     return {
-      success: true,
-      processedImages: processed,
+      success: false as const,
+      message: "Tratamento de imagem por IA ainda não está disponível. A foto original foi mantida.",
+      processedImages: [] as Array<{
+        id: string;
+        url: string;
+        isMain: boolean;
+        processedUrl?: string;
+        status: "success";
+        isGenerated?: boolean;
+      }>,
     };
   });

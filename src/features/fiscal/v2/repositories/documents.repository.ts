@@ -128,9 +128,13 @@ export class DocumentsRepository {
     return data.signedUrl;
   }
 
-  /** Download bruto de um artefato XML; `null` quando indisponível. */
+  /**
+   * Download bruto de um artefato XML; `null` quando indisponível.
+   * (Corrigido 2026-10-22: usava o bucket "fiscal_artifacts", que não existe —
+   * o upload grava em "fiscal-artifacts" — e todo download voltava null.)
+   */
   async downloadXmlArtifact(path: string): Promise<ArrayBuffer | null> {
-    const { data, error } = await this.supabase.storage.from("fiscal_artifacts").download(path);
+    const { data, error } = await this.supabase.storage.from("fiscal-artifacts").download(path);
     if (error || !data) return null;
     return data.arrayBuffer();
   }

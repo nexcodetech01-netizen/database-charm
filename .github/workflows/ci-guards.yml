@@ -24,14 +24,12 @@ jobs:
           #
           # Exceções conhecidas (TODO: mover para *.server.ts):
           #   - fiscal/v2/repositories/certificate.repository.ts
-          #   - bella-ai/agent/execution-log.ts
           rg -nP \
             --glob '!**/*.server.ts' --glob '!src/routes/api/**' \
             --glob '!docs/**' --glob '!.github/**' \
             --glob '!**/*.test.ts' --glob '!**/*.test.tsx' \
             --glob '!**/__tests__/**' --glob '!**/*.mock.ts' \
             --glob '!src/features/fiscal/v2/repositories/certificate.repository.ts' \
-            --glob '!src/features/bella-ai/agent/execution-log.ts' \
             '(\bsupabaseAdmin\s*[\.\(])|from\s+["'"'"'][^"'"'"']*supabase/client\.server' src/ > /tmp/admin-usage.txt
           rc=$?
           if [ "$rc" -gt 1 ]; then
