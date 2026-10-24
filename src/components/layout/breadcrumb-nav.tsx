@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Home } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,11 @@ const LABELS: Record<string, string> = {
   fiscal: "Fiscal",
   notas: "Notas Fiscais",
   configuracao: "Configuração",
+  comercial: "Comercial",
+  "inbox-whatsapp": "Inbox WhatsApp",
+  "lista-interesse": "Lista de interesse",
+  "inteligencia-comercial": "Inteligência comercial",
+  whatsapp: "WhatsApp",
 };
 
 function labelFor(segment: string) {
@@ -43,6 +48,12 @@ function labelFor(segment: string) {
 
 export function BreadcrumbNav({ className }: { className?: string }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
+  // Só vira link o trecho que é uma página de verdade. Ex.: em
+  // /comercial/inbox-whatsapp, "Comercial" não tem página própria — antes
+  // era link e levava ao 404 (bug 2026-10-24).
+  const routesByPath = router.routesByPath as unknown as Record<string, unknown>;
+  const hasPage = (href: string) => Boolean(routesByPath[href] ?? routesByPath[`${href}/`]);
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0) return null;
@@ -50,7 +61,12 @@ export function BreadcrumbNav({ className }: { className?: string }) {
 
   const crumbs = segments.map((seg, i) => {
     const href = "/" + segments.slice(0, i + 1).join("/");
-    return { href, label: labelFor(seg), isLast: i === segments.length - 1 };
+    return {
+      href,
+      label: labelFor(seg),
+      isLast: i === segments.length - 1,
+      linkable: hasPage(href),
+    };
   });
 
   return (
@@ -75,6 +91,8 @@ export function BreadcrumbNav({ className }: { className?: string }) {
             <span className="font-medium text-foreground" aria-current="page">
               {c.label}
             </span>
+          ) : !c.linkable ? (
+            <span className="px-1 py-0.5">{c.label}</span>
           ) : (
             <Link
               to={c.href}
