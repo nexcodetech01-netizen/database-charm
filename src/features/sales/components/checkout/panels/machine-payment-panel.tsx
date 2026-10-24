@@ -2,6 +2,7 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { calcParcela } from "@/lib/pricing/card-price";
+import { machineFeeAmount } from "@/features/sales/lib/settlement-account";
 import { SummaryLine } from "../summary-line";
 
 export interface MachineFee {
@@ -33,7 +34,7 @@ export const MachinePaymentPanel = memo(function MachinePaymentPanel({
   installments = 1,
   onInstallmentsChange,
 }: MachinePaymentPanelProps) {
-  const feeValue = fee ? Math.round(amount * fee.percent + fee.fixed * 100) / 100 : 0;
+  const feeValue = fee ? machineFeeAmount(amount, { fee_percent: fee.percent, fee_fixed: fee.fixed }) : 0;
   const net = Math.max(0, amount - feeValue);
   const showInstallments = !!installmentOptions && installmentOptions.length > 0;
 

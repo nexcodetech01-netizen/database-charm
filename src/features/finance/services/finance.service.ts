@@ -842,7 +842,10 @@ export const financeService = {
     const { data, error } = await (client.rpc as any)("finance_overview", { _company_id: companyId });
     if (error) {
       const missing = error.code === "PGRST202" || /finance_overview/.test(error.message ?? "");
-      if (missing) return this.overviewLegacy(companyId, client);
+      // 42501: chamada server-side (Bella) com cliente de serviço não tem
+      // auth.uid(); a leitura direta continua protegida por RLS para usuários.
+      const noUserSession = error.code === "42501";
+      if (missing || noUserSession) return this.overviewLegacy(companyId, client);
       throw error;
     }
     const r = (data ?? {}) as Record<string, any>;
