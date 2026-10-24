@@ -35,6 +35,22 @@ export async function persistNotification(data: {
     return existing; // Ignora duplicidade
   }
 
+  // Pedido do catálogo é único por pedido (reference_id = id do pedido): se a
+  // notificação já existiu — inclusive já LIDA — nunca recria. Sem isso, um
+  // reenvio do mesmo pedido "ressuscitava" a notificação que a pessoa já tinha
+  // marcado como lida (bug 2026-10-24).
+  if (data.eventType === "catalog.order.received" && refId) {
+    const { data: everSeen } = await (supabaseAdmin as any)
+      .from("notifications")
+      .select("id, status")
+      .eq("company_id", data.companyId)
+      .eq("event_type", data.eventType)
+      .eq("reference_id", refId)
+      .limit(1)
+      .maybeSingle();
+    if (everSeen) return everSeen;
+  }
+
   const { data: inserted, error } = await (supabaseAdmin as any)
     .from("notifications")
     .insert({

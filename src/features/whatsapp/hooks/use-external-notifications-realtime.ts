@@ -120,15 +120,28 @@ export function useExternalNotificationsRealtime(
       emitEvent(event, isHistorical);
     };
 
-    // 2. Consulta inicial para não perder notificações enquanto offline
+    // 2. Consulta de segurança SÓ para a janela de conexão do canal.
+    //
+    // BUG CORRIGIDO (2026-10-24): esta consulta relia os 10 últimos pedidos do
+    // n8n a CADA carregamento de página e os emitia como novos. Se o pedido já
+    // tinha sido marcado como lido, a notificação era recriada — o "Novo pedido
+    // do catálogo" voltava toda vez que a página atualizava.
+    //
+    // Pedidos que chegaram com o app fechado NÃO dependem disto: o servidor já
+    // persiste a notificação (persister em src/server.ts) e o sino a carrega na
+    // hidratação, respeitando o que foi marcado como lido. Aqui buscamos apenas
+    // o que chegou desde a montagem do hook (com 60 s de folga), para cobrir a
+    // janela até o canal Realtime ficar SUBSCRIBED.
+    const mountedAt = new Date(Date.now() - 60_000).toISOString();
     const fetchRecentExternalEvents = async () => {
-      addLog('[EXT-NOTIF]', `historical query started`);
+      addLog('[EXT-NOTIF]', `connection-gap query started`);
       const { data, error } = await supabase
         .from("whatsapp_message_events")
         .select("*")
         .eq("company_id", companyId)
         .eq("status", "processed")
         .like("wa_message_id", "n8n-%")
+        .gte("sent_at", mountedAt)
         .order("sent_at", { ascending: false })
         .limit(10);
 
@@ -141,8 +154,6 @@ export function useExternalNotificationsRealtime(
         [...data].reverse().forEach(row => processExternalEvent(row, true));
       }
     };
-
-    void fetchRecentExternalEvents();
 
     // 3. Realtime subscription
     // Agora só depende de `companyId` — não é mais derrubada e recriada
