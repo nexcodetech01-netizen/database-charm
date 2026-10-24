@@ -5861,102 +5861,6 @@ export type Database = {
           },
         ]
       }
-      products_backup_cost_audit_geral_20260802: {
-        Row: {
-          backed_up_at: string
-          company_id: string | null
-          cost: number | null
-          freight: number | null
-          id: string | null
-          name: string | null
-          sku: string | null
-        }
-        Insert: {
-          backed_up_at?: string
-          company_id?: string | null
-          cost?: number | null
-          freight?: number | null
-          id?: string | null
-          name?: string | null
-          sku?: string | null
-        }
-        Update: {
-          backed_up_at?: string
-          company_id?: string | null
-          cost?: number | null
-          freight?: number | null
-          id?: string | null
-          name?: string | null
-          sku?: string | null
-        }
-        Relationships: []
-      }
-      products_backup_cost_freight_20260802: {
-        Row: {
-          backed_up_at: string
-          company_id: string | null
-          cost: number | null
-          freight: number | null
-          id: string
-          name: string | null
-          price: number | null
-          sku: string | null
-        }
-        Insert: {
-          backed_up_at?: string
-          company_id?: string | null
-          cost?: number | null
-          freight?: number | null
-          id: string
-          name?: string | null
-          price?: number | null
-          sku?: string | null
-        }
-        Update: {
-          backed_up_at?: string
-          company_id?: string | null
-          cost?: number | null
-          freight?: number | null
-          id?: string
-          name?: string | null
-          price?: number | null
-          sku?: string | null
-        }
-        Relationships: []
-      }
-      products_backup_costs_20260802: {
-        Row: {
-          backed_up_at: string | null
-          company_id: string | null
-          freight: number | null
-          insurance: number | null
-          other_costs: number | null
-          packaging: number | null
-          price: number | null
-          product_id: string | null
-        }
-        Insert: {
-          backed_up_at?: string | null
-          company_id?: string | null
-          freight?: number | null
-          insurance?: number | null
-          other_costs?: number | null
-          packaging?: number | null
-          price?: number | null
-          product_id?: string | null
-        }
-        Update: {
-          backed_up_at?: string | null
-          company_id?: string | null
-          freight?: number | null
-          insurance?: number | null
-          other_costs?: number | null
-          packaging?: number | null
-          price?: number | null
-          product_id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -6489,6 +6393,35 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_number_counters: {
+        Row: {
+          company_id: string
+          day: string
+          last_value: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          day: string
+          last_value?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          day?: string
+          last_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_number_counters_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -7862,6 +7795,7 @@ export type Database = {
         Returns: {
           bella_pay_ref: string | null
           cash_session_id: string | null
+          client_request_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -8005,6 +7939,44 @@ export type Database = {
       }
       create_credit_sale: { Args: { _input: Json }; Returns: Json }
       create_sale_return: { Args: { _input: Json }; Returns: Json }
+      create_sale_with_items: {
+        Args: { _header: Json; _items: Json }
+        Returns: {
+          bella_pay_ref: string | null
+          cash_session_id: string | null
+          client_request_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deleted_at: string | null
+          discount: number
+          due_date: string | null
+          finance_ref: string | null
+          grand_total: number
+          id: string
+          installments: number | null
+          is_test: boolean
+          items_total: number
+          notes: string | null
+          number: string
+          paid_at: string | null
+          payment_confirmed_at: string | null
+          payment_method: string | null
+          sale_date: string
+          shipping: number
+          status: string
+          stock_applied: boolean
+          stock_reversed: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sales"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       credit_resolve_account: {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
@@ -8017,10 +7989,6 @@ export type Database = {
           net_received: number
           sales_count: number
         }[]
-      }
-      create_sale_with_items: {
-        Args: { _header: Json; _items: Json }
-        Returns: Database["public"]["Tables"]["sales"]["Row"]
       }
       delete_sale: { Args: { _sale_id: string }; Returns: boolean }
       ensure_sale_receivable: {
@@ -8317,6 +8285,7 @@ export type Database = {
         Returns: Json
       }
       nexos_jobs_status: { Args: never; Returns: Json }
+      next_sale_number: { Args: { _company_id: string }; Returns: string }
       preview_duplicate_categories: {
         Args: { _company_id: string }
         Returns: Json
@@ -8365,10 +8334,6 @@ export type Database = {
       project_tax_scenarios: {
         Args: { _company_id: string; _competence: string; _growth?: number[] }
         Returns: Json
-      }
-      recalculate_product_v2_price: {
-        Args: { _product_id: string }
-        Returns: undefined
       }
       receive_credit_payment: { Args: { _input: Json }; Returns: Json }
       receive_purchase: {
@@ -8681,6 +8646,16 @@ export type Database = {
         Returns: boolean
       }
       user_owns_company: { Args: { _company_id: string }; Returns: boolean }
+      whatsapp_last_messages: {
+        Args: { _conversation_ids: string[] }
+        Returns: {
+          conversation_id: string
+          created_at: string
+          direction: string
+          provider: string
+          text: string
+        }[]
+      }
     }
     Enums: {
       interest_channel:
