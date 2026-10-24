@@ -115,6 +115,43 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
 
   useEffect(() => {
     if (!companyId) return;
+
+    // PERF (2026-10-24): cada mensagem da Bella gera vários eventos seguidos
+    // (mensagem recebida, resposta, atualização da conversa…). Antes, CADA
+    // evento recarregava lista + métricas + conversa aberta na hora — 3 a 5
+    // recargas completas por mensagem. Agora as rajadas são agrupadas:
+    //  - conversa aberta: recarrega após 300 ms (rápido para o operador);
+    //  - lista: após 800 ms;
+    //  - métricas: no máximo a cada 10 s.
+    const pendingDetails = new Set<string>();
+    let detailTimer: ReturnType<typeof setTimeout> | null = null;
+    let listTimer: ReturnType<typeof setTimeout> | null = null;
+    let metricsTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleDetail = (id: string) => {
+      pendingDetails.add(id);
+      if (detailTimer) return;
+      detailTimer = setTimeout(() => {
+        detailTimer = null;
+        for (const d of pendingDetails) qc.invalidateQueries({ queryKey: KEY.detail(d) });
+        pendingDetails.clear();
+      }, 300);
+    };
+    const scheduleList = () => {
+      if (listTimer) clearTimeout(listTimer);
+      listTimer = setTimeout(() => {
+        listTimer = null;
+        qc.invalidateQueries({ queryKey: KEY.list(companyId) });
+      }, 800);
+    };
+    const scheduleMetrics = () => {
+      if (metricsTimer) return;
+      metricsTimer = setTimeout(() => {
+        metricsTimer = null;
+        qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
+      }, 10_000);
+    };
+
     const channel = supabase
       .channel(`wa-console-${companyId}`)
       .on(
@@ -123,13 +160,13 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
           event: "*",
           schema: "public",
           table: "whatsapp_conversations",
-          filter: companyId ? `company_id=eq.${companyId}` : undefined,
+          filter: `company_id=eq.${companyId}`,
         },
         (payload) => {
-          qc.invalidateQueries({ queryKey: KEY.list(companyId) });
-          qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
+          scheduleList();
+          scheduleMetrics();
           const id = (payload.new as { id?: string } | null)?.id || (payload.old as { id?: string } | null)?.id;
-          if (id) qc.invalidateQueries({ queryKey: KEY.detail(id) });
+          if (id) scheduleDetail(id);
         },
       )
       .on(
@@ -138,40 +175,36 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
           event: "INSERT",
           schema: "public",
           table: "whatsapp_messages",
-          filter: companyId ? `company_id=eq.${companyId}` : undefined,
+          filter: `company_id=eq.${companyId}`,
         },
         async (payload) => {
-          qc.invalidateQueries({ queryKey: KEY.list(companyId) });
-          qc.invalidateQueries({ queryKey: KEY.metrics(companyId) });
-          const msg = payload.new as any;
+          scheduleList();
+          scheduleMetrics();
+          const msg = payload.new as {
+            conversation_id?: string;
+            direction?: string;
+            sender?: string;
+            text?: string | null;
+          };
           if (msg.conversation_id) {
-            qc.invalidateQueries({ queryKey: KEY.detail(msg.conversation_id) });
-            
-            // Notificação apenas para mensagens recebidas (inbound) ou que não sejam do operador
-            if ((msg.direction === "inbound" || msg.sender !== "operator") && onNewInboundRef.current) {
-              // Busca os dados da conversa para pegar o nome do contato
+            scheduleDetail(msg.conversation_id);
+
+            // Notificação apenas para mensagens recebidas (inbound).
+            if (msg.direction === "inbound" && onNewInboundRef.current) {
+              // Uma consulta só (antes eram duas em sequência, e a segunda
+              // pedia a coluna `name`, que não existe — o nome nunca aparecia).
               const { data: conv } = await supabase
                 .from("whatsapp_conversations")
-                .select("id, contact_id")
-                .eq("id", msg.conversation_id as string)
-                .single();
+                .select("id, contact:whatsapp_contacts ( profile_name )")
+                .eq("id", msg.conversation_id)
+                .maybeSingle();
+              const contact = (conv as { contact?: { profile_name?: string | null } | null } | null)
+                ?.contact;
 
-              let contactName = "Cliente";
-              
-              const contactId = (conv as any)?.contact_id;
-              if (contactId) {
-                const { data: contact } = await supabase
-                  .from("whatsapp_contacts")
-                  .select("name")
-                  .eq("id", contactId as string)
-                  .single();
-                if ((contact as any)?.name) contactName = (contact as any).name;
-              }
-              
               onNewInboundRef.current({
-                conversation_id: msg.conversation_id as string,
+                conversation_id: msg.conversation_id,
                 text: msg.text || "",
-                contact_name: contactName,
+                contact_name: contact?.profile_name || "Cliente",
               });
             }
           }
@@ -179,6 +212,9 @@ export function useConsoleRealtime(companyId: string | null, onNewInbound?: (mes
       )
       .subscribe();
     return () => {
+      if (detailTimer) clearTimeout(detailTimer);
+      if (listTimer) clearTimeout(listTimer);
+      if (metricsTimer) clearTimeout(metricsTimer);
       supabase.removeChannel(channel);
     };
     // onNewInbound é intencionalmente omitido: usamos onNewInboundRef para

@@ -144,16 +144,38 @@ export const listConversations = createServerFn({ method: "POST" })
     const list = (rows ?? []) as any[];
     if (list.length === 0) return [];
 
-    // Última mensagem por conversa em lote (para preview + timestamp).
+    // Última mensagem por conversa (preview + timestamp).
+    // PERF (2026-10-24): antes buscava TODAS as mensagens das 100 conversas
+    // (milhares de linhas, cortadas em 1.000 pelo PostgREST) só para pegar a
+    // última de cada uma. Agora: 1 linha por conversa via RPC indexada.
     const ids = list.map((r) => r.id as string);
-    const { data: lastMsgs } = await db
-      .from("whatsapp_messages")
-      .select("conversation_id, text, created_at, direction, provider")
-      .in("conversation_id", ids)
-      .order("created_at", { ascending: false });
     const lastByConv = new Map<string, any>();
-    for (const m of (lastMsgs ?? []) as any[]) {
-      if (!lastByConv.has(m.conversation_id)) lastByConv.set(m.conversation_id, m);
+    const rpc = (context.supabase as unknown as {
+      rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string; message?: string } | null }>;
+    }).rpc;
+    const { data: lastRows, error: lastErr } = await rpc.call(
+      context.supabase,
+      "whatsapp_last_messages",
+      { _conversation_ids: ids },
+    );
+    if (!lastErr) {
+      for (const m of (lastRows ?? []) as any[]) lastByConv.set(m.conversation_id, m);
+    } else {
+      // Função ainda não criada no banco: fallback por conversa (1 linha cada).
+      const results = await Promise.all(
+        ids.map((id) =>
+          db
+            .from("whatsapp_messages")
+            .select("conversation_id, text, created_at, direction, provider")
+            .eq("conversation_id", id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ),
+      );
+      for (const r of results as Array<{ data: any }>) {
+        if (r?.data) lastByConv.set(r.data.conversation_id, r.data);
+      }
     }
 
     return list.map((r) => {
@@ -210,14 +232,18 @@ export const getConversation = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) return null;
 
-    const { data: msgs } = await db
+    // BUG (corrigido 2026-10-24): ordenava crescente + limit, então conversas
+    // com mais de 300 mensagens mostravam as 300 MAIS ANTIGAS e nunca as novas.
+    // Agora busca as mais recentes e reordena para exibição cronológica.
+    const { data: latestMsgs } = await db
       .from("whatsapp_messages")
       .select(
         "id, conversation_id, direction, text, status, error, provider, skill_id, processing_ms, wa_message_id, created_at",
       )
       .eq("conversation_id", data.conversationId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(data.limit ?? 300);
+    const msgs = ((latestMsgs ?? []) as any[]).slice().reverse();
 
     return {
       id: row.id,
@@ -264,17 +290,25 @@ export const getConsoleMetrics = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ companyId: uuid }).parse(input))
   .handler(async ({ data, context }): Promise<ConversationMetrics> => {
     const db = context.supabase as unknown as { from: (t: string) => any };
-    const { data: convs } = await db
-      .from("whatsapp_conversations")
-      .select("id, status")
-      .eq("company_id", data.companyId);
-
-    const rows = (convs ?? []) as { id: string; status: string | null }[];
-    const total = rows.length;
-    const open = rows.filter((r) => (r.status ?? "open") === "open").length;
-    const bella = rows.filter((r) => r.status === "bella").length;
-    const human = rows.filter((r) => r.status === "human").length;
-    const resolved = rows.filter((r) => r.status === "resolved").length;
+    // PERF + correção (2026-10-24): antes baixava todas as conversas para
+    // contar no servidor (e o PostgREST cortava em 1.000 linhas, errando os
+    // números). Agora: contagens no banco, sem trafegar linhas.
+    const countBy = async (status: string | null) => {
+      let q = db
+        .from("whatsapp_conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", data.companyId);
+      if (status) q = q.eq("status", status);
+      const { count } = await q;
+      return Number(count ?? 0);
+    };
+    const [total, open, bella, human, resolved] = await Promise.all([
+      countBy(null),
+      countBy("open"),
+      countBy("bella"),
+      countBy("human"),
+      countBy("resolved"),
+    ]);
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
