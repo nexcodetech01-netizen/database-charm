@@ -9,6 +9,8 @@ import { useAuth } from "@/providers/auth-provider";
 import { NexosLogo } from "@/components/brand/nexos-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { publicAppOrigin } from "@/lib/public-app-url";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInviteByToken, acceptInvite } from "@/features/settings/lib/invites.functions";
@@ -59,7 +61,6 @@ function InvitePage() {
       window.localStorage.setItem("nexos:pending-invite-token", token);
     }
   }, [token, invite, emailMismatch]);
-
 
   useEffect(() => {
     if (invite?.valid && invite.name && !name) setName(invite.name);
@@ -113,7 +114,7 @@ function InvitePage() {
         password,
         options: {
           data: { full_name: name || null },
-          emailRedirectTo: `${window.location.origin}/invite/${token}`,
+          emailRedirectTo: `${publicAppOrigin()}/invite/${token}`,
         },
       });
       if (error) {
@@ -199,7 +200,6 @@ function InvitePage() {
               >
                 Sair e continuar
               </Button>
-
             </CardContent>
           </Card>
         ) : acceptMutation.isPending || acceptMutation.isSuccess ? (
@@ -292,9 +292,8 @@ function SignUpOrSignInTabs(props: {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Senha</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={props.password}
               onChange={(e) => props.setPassword(e.target.value)}
               minLength={6}
@@ -303,9 +302,8 @@ function SignUpOrSignInTabs(props: {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirm">Confirmar senha</Label>
-            <Input
+            <PasswordInput
               id="confirm"
-              type="password"
               value={props.confirm}
               onChange={(e) => props.setConfirm(e.target.value)}
               minLength={6}
@@ -329,9 +327,8 @@ function SignUpOrSignInTabs(props: {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password2">Senha</Label>
-            <Input
+            <PasswordInput
               id="password2"
-              type="password"
               value={props.password}
               onChange={(e) => props.setPassword(e.target.value)}
               required

@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { authService } from "../services/auth.service";
@@ -64,9 +65,8 @@ export function SignUpForm({ onSuccess }: Props) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="signup-password">Senha</Label>
-        <Input
+        <PasswordInput
           id="signup-password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={6}
