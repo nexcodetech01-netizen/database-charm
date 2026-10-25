@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { publicAppOrigin } from "@/lib/public-app-url";
 
 export const authService = {
   async signIn(email: string, password: string) {
@@ -11,7 +12,7 @@ export const authService = {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${publicAppOrigin()}/`,
         data: { full_name: fullName },
       },
     });
@@ -20,7 +21,7 @@ export const authService = {
 
   async requestPasswordReset(email: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${publicAppOrigin()}/reset-password`,
     });
     if (error) throw error;
   },

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { authService } from "@/features/auth";
@@ -60,9 +60,8 @@ function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="new-password">Nova senha</Label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               required
               minLength={6}
               value={password}
@@ -71,9 +70,8 @@ function ResetPasswordPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirmar senha</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               required
               minLength={6}
               value={confirm}

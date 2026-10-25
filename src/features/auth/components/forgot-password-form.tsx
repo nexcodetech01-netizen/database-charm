@@ -36,7 +36,8 @@ export function ForgotPasswordForm({ onBack }: Props) {
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Se existe uma conta com <span className="font-medium text-foreground">{email}</span>, você receberá um link para redefinir a senha.
+          Se existe uma conta com <span className="font-medium text-foreground">{email}</span>, você
+          receberá um link para redefinir a senha.
         </p>
         <Button variant="outline" className="w-full" onClick={onBack}>
           Voltar para o login
