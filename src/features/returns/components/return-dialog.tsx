@@ -31,6 +31,8 @@ interface Props {
   saleItems: SaleItem[];
   paymentMethod: string | null;
   hasBellaPayCharge: boolean;
+  /** Desconto geral da venda: o reembolso é o valor pago, rateado. */
+  saleDiscount?: number;
 }
 
 interface RowState {
@@ -47,6 +49,7 @@ export function ReturnDialog({
   saleItems,
   paymentMethod,
   hasBellaPayCharge,
+  saleDiscount = 0,
 }: Props) {
   const { data: returnedMap } = useReturnedQuantities(saleId);
   const { mutateAsync, isPending } = useCreateReturn();
@@ -71,16 +74,23 @@ export function ReturnDialog({
     return Math.max(0, Number(item.quantity) - returned);
   };
 
+  // Mesma conta do banco (create_sale_return): valor pago por unidade.
+  const linesTotal = saleItems.reduce((sum, it) => sum + Number(it.total || 0), 0);
+  const factor = linesTotal > 0 ? Math.max(0, linesTotal - Number(saleDiscount || 0)) / linesTotal : 1;
+  const paidUnit = (it: SaleItem) =>
+    (Number(it.quantity) > 0 ? Number(it.total) / Number(it.quantity) : Number(it.unit_price)) * factor;
+
   const totalValue = useMemo(() => {
     let total = 0;
     for (const it of saleItems) {
       const st = merged[it.id];
       if (!st?.selected) continue;
       const qty = Number(st.quantity.replace(",", ".")) || 0;
-      total += qty * Number(it.unit_price);
+      total += qty * paidUnit(it);
     }
-    return total;
-  }, [saleItems, merged]);
+    return Math.round(total * 100) / 100;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saleItems, merged, factor]);
 
   const anySelected = saleItems.some((it) => merged[it.id]?.selected);
 
@@ -162,7 +172,7 @@ export function ReturnDialog({
               const st = merged[it.id];
               const avail = availableFor(it);
               const qty = Number((st.quantity || "").replace(",", ".")) || 0;
-              const sub = qty * Number(it.unit_price);
+              const sub = qty * paidUnit(it);
               const disabled = avail <= 0;
               return (
                 <div
