@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CatalogStatsCard } from "./catalog-stats-card";
 import {
   Card,
   CardContent,
@@ -73,6 +74,7 @@ export function CatalogWorkspace({ companyId }: Props) {
   return (
     <div className="space-y-4">
       <CatalogBellaHint companyId={companyId} onOpen={openNew} />
+      <CatalogStatsCard companyId={companyId} />
 
       <Card>
         <CardHeader className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">

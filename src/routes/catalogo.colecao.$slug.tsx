@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCatalogTheme } from "@/features/catalog/hooks/use-catalog-theme";
+import { trackCatalog } from "@/features/catalog/lib/track-catalog";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -213,6 +214,11 @@ function PublicCollectionPage() {
       !(err instanceof CollectionNotFoundError) && failureCount < 1,
   });
   useCatalogTheme(data?.catalog_theme);
+  // Métrica: uma visita por coleção carregada (servidor ignora repetição).
+  const dataId = data?.id;
+  useEffect(() => {
+    if (dataId) trackCatalog("collection_view", { slug, preview: isPreview });
+  }, [dataId, slug, isPreview]);
 
   const [q, setQ] = useState(search.q);
 
@@ -509,6 +515,7 @@ function PublicCollectionPage() {
           href={whatsHref}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackCatalog("whatsapp_click", { slug, preview: isPreview })}
           className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-black/20 transition-transform active:scale-95"
         >
           <MessageCircle className="h-5 w-5" /> WhatsApp
