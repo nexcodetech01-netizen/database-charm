@@ -1020,6 +1020,8 @@ function SaleWorkspace({
         saleNumber={sale.number ?? sale.id.slice(0, 8)}
         saleItems={sale.items}
         saleCustomerId={sale.customer_id ?? null}
+        saleDiscount={Number(sale.discount ?? 0)}
+        saleStoreCreditUsed={Number((sale as { store_credit_used?: number | null }).store_credit_used ?? 0)}
       />
 
       <ReturnDialog
@@ -1031,6 +1033,7 @@ function SaleWorkspace({
         saleItems={sale.items}
         paymentMethod={sale.payment_method}
         hasBellaPayCharge={false}
+        saleDiscount={Number(sale.discount ?? 0)}
       />
 
       {checkoutOpen ? (

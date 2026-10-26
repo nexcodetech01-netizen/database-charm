@@ -28,6 +28,10 @@ interface Props {
   saleItems: SaleItem[];
   /** Cliente da venda; sem cliente, o diálogo pede para escolher. */
   saleCustomerId: string | null;
+  /** Desconto geral da venda (rateado entre as peças no valor do vale). */
+  saleDiscount?: number;
+  /** Parte do desconto que foi vale-troca: volta para o vale na troca. */
+  saleStoreCreditUsed?: number;
 }
 
 interface RowState {
@@ -47,6 +51,8 @@ export function ExchangeDialog({
   saleNumber,
   saleItems,
   saleCustomerId,
+  saleDiscount = 0,
+  saleStoreCreditUsed = 0,
 }: Props) {
   const { data: returnedMap } = useReturnedQuantities(saleId);
   const { mutateAsync, isPending } = useCreateExchange();
@@ -58,10 +64,19 @@ export function ExchangeDialog({
     const returned = returnedMap?.get(item.id) ?? 0;
     return Math.max(0, Number(item.quantity) - returned);
   };
+  // Valor que a cliente PAGOU pela peça: preço da linha menos a parte
+  // dela no desconto geral da venda (mesma conta do banco).
+  const itemsTotal = saleItems.reduce((sum, it) => sum + Number(it.total || 0), 0);
+  const realDiscount = Math.max(0, Number(saleDiscount || 0) - Number(saleStoreCreditUsed || 0));
+  const factor = itemsTotal > 0 ? Math.max(0, itemsTotal - realDiscount) / itemsTotal : 1;
   const unitValue = (item: SaleItem) =>
-    Number(item.quantity) > 0
-      ? Number(item.total) / Number(item.quantity)
-      : Number(item.unit_price);
+    Math.round(
+      (Number(item.quantity) > 0
+        ? Number(item.total) / Number(item.quantity)
+        : Number(item.unit_price)) *
+        factor *
+        100,
+    ) / 100;
   const qtyOf = (id: string) => Number((rows[id]?.quantity ?? "").replace(",", ".")) || 0;
 
   const credit = useMemo(
