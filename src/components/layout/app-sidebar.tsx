@@ -47,6 +47,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { NexosLogo } from "@/components/brand/nexos-logo";
 import { useMobileNav } from "./mobile-nav-context";
+import { useEnabledModules, type ModuleKey } from "@/features/modules";
 
 
 type ModuleStatus = "available" | "in_progress" | "coming_soon";
@@ -58,6 +59,8 @@ type NavItem = {
   status: ModuleStatus;
   /** Permission code (view) required to see this item. Omit for always-visible. */
   permission?: string;
+  /** Módulo opcional (Configurações › Módulos); desligado = some do menu. */
+  module?: ModuleKey;
   /** Submenu visual (UX apenas) — herda a rota própria de cada filho. */
   children?: NavItem[];
 };
@@ -88,9 +91,9 @@ const groups: NavGroup[] = [
       { title: "Estoque", url: ROUTES.inventory, icon: Boxes, status: "available", permission: "inventory.view" },
       { title: "Compras", url: ROUTES.purchases, icon: ShoppingCart, status: "available", permission: "purchases.view" },
       { title: "Fornecedores", url: ROUTES.suppliers, icon: Truck, status: "available", permission: "suppliers.view" },
-      { title: "Lista de compras", url: ROUTES.shoppingList, icon: ListChecks, status: "available", permission: "products.view" },
-      { title: "Consignações", url: ROUTES.consignments, icon: Layers, status: "available", permission: "sales.view" },
-      { title: "Revendedores", url: ROUTES.resellers, icon: Users, status: "available", permission: "customers.view" },
+      { title: "Lista de compras", url: ROUTES.shoppingList, icon: ListChecks, status: "available", permission: "products.view", module: "lista_compras" },
+      { title: "Consignações", url: ROUTES.consignments, icon: Layers, status: "available", permission: "sales.view", module: "consignacao" },
+      { title: "Revendedores", url: ROUTES.resellers, icon: Users, status: "available", permission: "customers.view", module: "consignacao" },
     ],
   },
 
@@ -100,23 +103,23 @@ const groups: NavGroup[] = [
     items: [
       { title: "Financeiro", url: ROUTES.finance, icon: Wallet, status: "available", permission: "finance.view" },
       { title: "Caixa", url: ROUTES.cash, icon: Banknote, status: "available", permission: "finance.view" },
-      { title: "Histórico de alterações", url: ROUTES.history, icon: History, status: "available", permission: "audit.view" },
-      { title: "Fiscal", url: ROUTES.fiscal, icon: FileCheck, status: "available", permission: "fiscal.view" },
-      { title: "Saúde Fiscal", url: ROUTES.fiscalHealth, icon: HeartPulse, status: "available", permission: "fiscal.view" },
-      { title: "Recalcular Preços", url: ROUTES.commercialRecalculate, icon: Calculator, status: "available", permission: "products.view" },
+      { title: "Histórico de alterações", url: ROUTES.history, icon: History, status: "available", permission: "audit.view", module: "avancado" },
+      { title: "Fiscal", url: ROUTES.fiscal, icon: FileCheck, status: "available", permission: "fiscal.view", module: "fiscal" },
+      { title: "Saúde Fiscal", url: ROUTES.fiscalHealth, icon: HeartPulse, status: "available", permission: "fiscal.view", module: "fiscal" },
+      { title: "Recalcular Preços", url: ROUTES.commercialRecalculate, icon: Calculator, status: "available", permission: "products.view", module: "avancado" },
     ],
   },
   {
     label: "Inteligência",
     items: [
-      { title: "WhatsApp", url: ROUTES.whatsapp, icon: MessageCircle, status: "available" },
-      { title: "Inbox WhatsApp", url: ROUTES.commercialInbox, icon: Inbox, status: "available", permission: "sales.view" },
-      { title: "Lista de Interesse", url: ROUTES.commercialInterests, icon: HeartHandshake, status: "available", permission: "sales.view" },
-      { title: "Bella IA", url: ROUTES.bella, icon: Sparkles, status: "available", permission: "bella_ia.view" },
-      { title: "Bella Contadora", url: ROUTES.bellaAccountant, icon: Calculator, status: "available", permission: "reports.view" },
-      { title: "Conhecimento Bella", url: ROUTES.bellaKnowledge, icon: BookOpen, status: "available", permission: "bella_ia.view" },
-      { title: "Marketing", url: ROUTES.marketing, icon: Megaphone, status: "available", permission: "marketing.view" },
-      { title: "Fidelidade", url: ROUTES.loyalty, icon: Gift, status: "available", permission: "sales.view" },
+      { title: "WhatsApp", url: ROUTES.whatsapp, icon: MessageCircle, status: "available", module: "whatsapp" },
+      { title: "Inbox WhatsApp", url: ROUTES.commercialInbox, icon: Inbox, status: "available", permission: "sales.view", module: "whatsapp" },
+      { title: "Lista de Interesse", url: ROUTES.commercialInterests, icon: HeartHandshake, status: "available", permission: "sales.view", module: "whatsapp" },
+      { title: "Bella IA", url: ROUTES.bella, icon: Sparkles, status: "available", permission: "bella_ia.view", module: "bella" },
+      { title: "Bella Contadora", url: ROUTES.bellaAccountant, icon: Calculator, status: "available", permission: "reports.view", module: "bella" },
+      { title: "Conhecimento Bella", url: ROUTES.bellaKnowledge, icon: BookOpen, status: "available", permission: "bella_ia.view", module: "bella" },
+      { title: "Marketing", url: ROUTES.marketing, icon: Megaphone, status: "available", permission: "marketing.view", module: "marketing" },
+      { title: "Fidelidade", url: ROUTES.loyalty, icon: Gift, status: "available", permission: "sales.view", module: "fidelidade" },
     ],
   },
   {
@@ -124,7 +127,7 @@ const groups: NavGroup[] = [
     items: [
       { title: "Frete", url: ROUTES.shippingCalculator, icon: Truck, status: "available", permission: "reports.view" },
       { title: "Relatórios", url: ROUTES.reports, icon: BarChart3, status: "available", permission: "reports.view" },
-      { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view" },
+      { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view", module: "avancado" },
       { title: "Configurações", url: ROUTES.settings, icon: Settings, status: "available", permission: "settings.view" },
     ],
   },
@@ -139,6 +142,7 @@ export function AppSidebar() {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const { has, isLoading: permsLoading } = usePermissions();
   const { open: mobileOpen, setOpen: setMobileOpen } = useMobileNav();
+  const { isEnabled: isModuleEnabled } = useEnabledModules();
   /** Indicador visual (sessão) de notificações críticas da Bella Contadora. */
   const bellaCritical = useBellaCriticalCount();
 
@@ -150,6 +154,7 @@ export function AppSidebar() {
   // o container. Se um item aparecer no desktop e não no mobile (ou vice-versa),
   // a causa NÃO está aqui; investigue montagem do provider ou breakpoints.
   const canSee = (item: NavItem) => {
+    if (item.module && !isModuleEnabled(item.module)) return false;
     if (permsLoading) return true;
     if (!item.permission) return true;
     return has(item.permission);

@@ -14,6 +14,7 @@ import {
   Smartphone,
   Wand2,
   Printer,
+  LayoutGrid,
 } from "lucide-react";
 import type { SettingsSectionDefinition } from "./types";
 import { EmpresaSection } from "./sections/empresa-section";
@@ -31,9 +32,22 @@ import { PaymentMethodsSection } from "@/features/payment-methods";
 import { PwaSection } from "./sections/pwa-section";
 import { SkuCleanupSection } from "./sections/sku-cleanup-section";
 import { PrintSettingsSection } from "@/features/printing";
+import { ModulosSection } from "./sections/modulos-section";
 
 
 export const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
+  {
+    id: "modulos",
+    title: "Módulos",
+    description: "Escolha o que aparece no menu.",
+    hint: "Desligar um módulo só esconde do menu; nenhum dado é apagado.",
+    whenToUse: "Para deixar o menu só com o que a sua loja usa.",
+    icon: LayoutGrid,
+    group: "Sistema",
+    component: ModulosSection,
+    searchTerms: ["modulos", "menu", "esconder", "ocultar", "simplificar", "enxuto", "ligar", "desligar"],
+    badge: { label: "Novo", tone: "new" },
+  },
   {
     id: "empresa",
     title: "Empresa",
