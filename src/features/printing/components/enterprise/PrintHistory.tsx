@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -20,13 +20,18 @@ interface PrintHistoryProps {
 }
 
 export function PrintHistory({ jobs, onReprint }: PrintHistoryProps) {
-  const getStatusIcon = (status: PrintJob['status']) => {
+  const getStatusIcon = (status: PrintJob["status"]) => {
     switch (status) {
-      case 'COMPLETED': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-      case 'FAILED': return <XCircle className="h-4 w-4 text-destructive" />;
-      case 'PROCESSING': return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-      case 'PENDING': return <Clock className="h-4 w-4 text-slate-400" />;
-      default: return null;
+      case "COMPLETED":
+        return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+      case "FAILED":
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      case "PROCESSING":
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case "PENDING":
+        return <Clock className="h-4 w-4 text-slate-400" />;
+      default:
+        return null;
     }
   };
 
@@ -68,12 +73,12 @@ export function PrintHistory({ jobs, onReprint }: PrintHistoryProps) {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8"
                     onClick={() => onReprint?.(job)}
-                    disabled={job.status === 'PROCESSING'}
+                    disabled={job.status === "PROCESSING"}
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                   </Button>

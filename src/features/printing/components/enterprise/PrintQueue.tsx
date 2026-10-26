@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PrintJob } from "../../types/printing.types";
@@ -33,7 +33,7 @@ export function PrintQueue({ queue }: PrintQueueProps) {
                       Processando Job #{job.id}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      Prioridade: {job.options.priority || 'MEDIUM'}
+                      Prioridade: {job.options.priority || "MEDIUM"}
                     </div>
                   </div>
                 </div>

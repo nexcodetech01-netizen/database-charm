@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, Copy, Printer, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { getPrintBridge } from "../../services/print-bridge.registry";
 
@@ -10,6 +11,7 @@ type Health = {
   status?: string;
   version?: string;
   printers?: number | unknown[];
+  printersCount?: number;
 };
 
 const BRIDGE_DIR = String.raw`%USERPROFILE%\OneDrive\Desktop\NexOS\Projeto NexOS\apps\nexos-print-bridge`;
@@ -40,6 +42,12 @@ export function PrintBridgeStatus() {
   const online = health?.status === "online";
   const loading = health === null;
 
+  // Ao ligar, atualiza as listas de impressoras das outras telas/campos.
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (online) void qc.invalidateQueries({ queryKey: ["printers"] });
+  }, [online, qc]);
+
   // Desligado: confere a cada 10 s, para virar verde sozinho quando ligar.
   useEffect(() => {
     void check();
@@ -47,9 +55,9 @@ export function PrintBridgeStatus() {
     return () => clearInterval(id);
   }, [check, online]);
 
-  const printerCount = Array.isArray(health?.printers)
-    ? health.printers.length
-    : Number(health?.printers ?? 0);
+  const printerCount =
+    health?.printersCount ??
+    (Array.isArray(health?.printers) ? health.printers.length : Number(health?.printers ?? 0));
 
   return (
     <Card>
