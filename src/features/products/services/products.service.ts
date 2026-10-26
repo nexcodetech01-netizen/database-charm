@@ -93,6 +93,9 @@ function calculateKitStock(composition: any[], parentId?: string) {
   return computeKitBottleneck(Array.from(uniqueComponentsMap.values()) as any);
 }
 
+/** Máximo de resultados de uma busca na tela de Produtos. */
+const SEARCH_LIMIT = 200;
+
 export const productsService = {
   async list(companyId: string, filters: ProductListFilters) {
     try {
@@ -101,15 +104,19 @@ export const productsService = {
         .select(LIST_SELECT, { count: "exact" })
         .eq("company_id", companyId);
 
-      // Aplicação condicional de filtros
+      // Busca: o banco devolve os produtos já em ordem de relevância
+      // (search_products_unaccent). Antes o limite era só a página atual e os
+      // outros filtros vinham depois — com 60 bolsas, aparecia só a 1ª página
+      // e o total ficava errado. Agora busca até 200 e pagina aqui.
+      let rankedIds: string[] | null = null;
       if (filters.search?.trim()) {
         const { data: searchResults, error: searchError } = await supabase.rpc(
           "search_products_unaccent",
           {
             search_term: filters.search.trim(),
             company_id_param: companyId,
-            limit_param: filters.pageSize * filters.page, // Garantir o range
-             include_inactive: filters.includeInactive ?? false,
+            limit_param: SEARCH_LIMIT,
+            include_inactive: filters.includeInactive || !!filters.status,
           },
         );
 
@@ -117,17 +124,12 @@ export const productsService = {
           console.error("Erro na busca unaccent:", searchError);
           // Fallback para a busca legada se falhar
           q = applyProductSearch(q, filters.search);
-        } else if (searchResults) {
-          const ids = searchResults.map((p: any) => p.id);
-          if (ids.length > 0) {
-            q = q.in("id", ids);
-          } else {
-            // Nenhum resultado
-            q = q.eq("id", "00000000-0000-0000-0000-000000000000");
-          }
+        } else {
+          rankedIds = (searchResults ?? []).map((p: { id: string }) => p.id);
+          if (rankedIds.length === 0) return { rows: [], total: 0 };
+          q = q.in("id", rankedIds);
         }
       }
-
 
       if (filters.categoryId && filters.categoryId !== "all") {
         q = q.eq("category_id", filters.categoryId);
@@ -154,11 +156,12 @@ export const productsService = {
       }
       // "low" é tratado via filter client-side abaixo
 
-      q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
-
       const from = (filters.page - 1) * filters.pageSize;
       const to = from + filters.pageSize - 1;
-      q = q.range(from, to);
+      if (!rankedIds) {
+        q = q.order(filters.sortBy, { ascending: filters.sortDir === "asc" });
+        q = q.range(from, to);
+      }
 
       const { data, error, count } = await q;
       if (error) {
@@ -175,6 +178,13 @@ export const productsService = {
     if (filters.stock === "low") {
       rows = rows.filter((r) => Number(r.stock) <= Number(r.min_stock));
     }
+
+      if (rankedIds) {
+        // Mais relevante primeiro; paginação feita aqui.
+        const rank = new Map(rankedIds.map((id, i) => [id, i]));
+        rows.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+        return { rows: rows.slice(from, to + 1), total: rows.length };
+      }
 
       return { rows, total: count ?? 0 };
     } catch (error) {
