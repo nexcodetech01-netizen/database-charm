@@ -1540,6 +1540,61 @@ export type Database = {
           },
         ]
       }
+      catalog_events: {
+        Row: {
+          collection_id: string | null
+          company_id: string
+          created_at: string
+          event_type: string
+          id: number
+          product_id: string | null
+          referrer: string | null
+          visitor_id: string
+        }
+        Insert: {
+          collection_id?: string | null
+          company_id: string
+          created_at?: string
+          event_type: string
+          id?: never
+          product_id?: string | null
+          referrer?: string | null
+          visitor_id: string
+        }
+        Update: {
+          collection_id?: string | null
+          company_id?: string
+          created_at?: string
+          event_type?: string
+          id?: never
+          product_id?: string | null
+          referrer?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_events_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "product_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_pricing_policies: {
         Row: {
           category_id: string
@@ -1589,6 +1644,7 @@ export type Database = {
           address: string | null
           address_number: string | null
           card_machine_account_id: string | null
+          catalog_theme: string
           city: string | null
           cnpj: string | null
           complement: string | null
@@ -1598,6 +1654,7 @@ export type Database = {
           default_other_costs: number
           default_packaging: number
           email: string | null
+          enabled_modules: Json
           id: string
           ie: string | null
           im: string | null
@@ -1629,6 +1686,7 @@ export type Database = {
           address?: string | null
           address_number?: string | null
           card_machine_account_id?: string | null
+          catalog_theme?: string
           city?: string | null
           cnpj?: string | null
           complement?: string | null
@@ -1638,6 +1696,7 @@ export type Database = {
           default_other_costs?: number
           default_packaging?: number
           email?: string | null
+          enabled_modules?: Json
           id?: string
           ie?: string | null
           im?: string | null
@@ -1669,6 +1728,7 @@ export type Database = {
           address?: string | null
           address_number?: string | null
           card_machine_account_id?: string | null
+          catalog_theme?: string
           city?: string | null
           cnpj?: string | null
           complement?: string | null
@@ -1678,6 +1738,7 @@ export type Database = {
           default_other_costs?: number
           default_packaging?: number
           email?: string | null
+          enabled_modules?: Json
           id?: string
           ie?: string | null
           im?: string | null
@@ -7828,6 +7889,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      catalog_stats: {
+        Args: { _company_id: string; _days?: number }
+        Returns: Json
+      }
       category_name_key: { Args: { _name: string }; Returns: string }
       close_cash_session: {
         Args: {
@@ -8548,6 +8613,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      search_term_singular: { Args: { w: string }; Returns: string }
       set_account_initial_balance: {
         Args: { _account_id: string; _initial_balance: number }
         Returns: undefined
