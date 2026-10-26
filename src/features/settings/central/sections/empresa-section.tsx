@@ -611,6 +611,14 @@ export function EmpresaSection() {
             value={form.secondary_color}
             onChange={(v) => set("secondary_color", v)}
           />
+          <CatalogThemeField
+            companyId={companyId}
+            value={
+              (companyQ.data as { catalog_theme?: string | null } | null)?.catalog_theme === "dark"
+                ? "dark"
+                : "light"
+            }
+          />
         </CardContent>
       </Card>
 
@@ -675,6 +683,73 @@ function ColorField({
           placeholder="#3b82f6"
         />
       </div>
+    </div>
+  );
+}
+
+
+/** Fundo do catálogo público: claro ou escuro (ex.: preto com dourado). */
+function CatalogThemeField({
+  companyId,
+  value,
+}: {
+  companyId: string | null | undefined;
+  value: "light" | "dark";
+}) {
+  const qc = useQueryClient();
+  const save = useMutation({
+    mutationFn: async (theme: "light" | "dark") => {
+      if (!companyId) throw new Error("Empresa não encontrada");
+      const { error } = await supabase
+        .from("companies")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ catalog_theme: theme } as any)
+        .eq("id", companyId);
+      if (error) {
+        if (/catalog_theme/i.test(error.message)) {
+          throw new Error("Falta rodar o SQL do tema do catálogo no Supabase.");
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Tema do catálogo atualizado");
+      qc.invalidateQueries({ queryKey: ["settings", "company"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+  });
+
+  const options = [
+    { id: "light" as const, label: "Claro", hint: "Fundo branco", swatch: "bg-white" },
+    { id: "dark" as const, label: "Escuro", hint: "Fundo preto", swatch: "bg-neutral-950" },
+  ];
+
+  return (
+    <div className="space-y-2 sm:col-span-2">
+      <Label>Fundo do catálogo</Label>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            disabled={save.isPending}
+            aria-pressed={value === o.id}
+            onClick={() => value !== o.id && save.mutate(o.id)}
+            className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+              value === o.id ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/50"
+            }`}
+          >
+            <span className={`h-8 w-8 shrink-0 rounded-md border ${o.swatch}`} />
+            <span>
+              <span className="block text-sm font-medium">{o.label}</span>
+              <span className="block text-xs text-muted-foreground">{o.hint}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Escuro combina com logos douradas ou claras. Vale na hora para o catálogo.
+      </p>
     </div>
   );
 }
