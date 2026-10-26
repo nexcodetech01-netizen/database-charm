@@ -102,6 +102,7 @@ import { Route as AuthenticatedProdutosProductIdEditarRouteImport } from './rout
 import { Route as AuthenticatedVendasSaleIdEditarRouteImport } from './routes/_authenticated/vendas_.$saleId.editar'
 import { Route as ApiPublicCatalogSlugRouteImport } from './routes/api/public/catalog/$slug'
 import { Route as ApiPublicCatalogEntradaRouteImport } from './routes/api/public/catalog/entrada'
+import { Route as ApiPublicCatalogTrackRouteImport } from './routes/api/public/catalog/track'
 import { Route as ApiPublicJobsBellaDetectorsRouteImport } from './routes/api/public/jobs/bella-detectors'
 import { Route as ApiPublicJobsDlqReprocessRouteImport } from './routes/api/public/jobs/dlq-reprocess'
 import { Route as ApiPublicJobsEntradaFollowupRouteImport } from './routes/api/public/jobs/entrada-followup'
@@ -640,6 +641,11 @@ const ApiPublicCatalogEntradaRoute = ApiPublicCatalogEntradaRouteImport.update({
   path: '/api/public/catalog/entrada',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCatalogTrackRoute = ApiPublicCatalogTrackRouteImport.update({
+  id: '/api/public/catalog/track',
+  path: '/api/public/catalog/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsBellaDetectorsRoute =
   ApiPublicJobsBellaDetectorsRouteImport.update({
     id: '/api/public/jobs/bella-detectors',
@@ -838,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/vendas/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
+  '/api/public/catalog/track': typeof ApiPublicCatalogTrackRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
@@ -949,6 +956,7 @@ export interface FileRoutesByTo {
   '/vendas/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
+  '/api/public/catalog/track': typeof ApiPublicCatalogTrackRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
@@ -1063,6 +1071,7 @@ export interface FileRoutesById {
   '/_authenticated/vendas_/$saleId/editar': typeof AuthenticatedVendasSaleIdEditarRoute
   '/api/public/catalog/$slug': typeof ApiPublicCatalogSlugRouteWithChildren
   '/api/public/catalog/entrada': typeof ApiPublicCatalogEntradaRoute
+  '/api/public/catalog/track': typeof ApiPublicCatalogTrackRoute
   '/api/public/jobs/bella-detectors': typeof ApiPublicJobsBellaDetectorsRoute
   '/api/public/jobs/dlq-reprocess': typeof ApiPublicJobsDlqReprocessRoute
   '/api/public/jobs/entrada-followup': typeof ApiPublicJobsEntradaFollowupRoute
@@ -1177,6 +1186,7 @@ export interface FileRouteTypes {
     | '/vendas/$saleId/editar'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
+    | '/api/public/catalog/track'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/entrada-followup'
@@ -1288,6 +1298,7 @@ export interface FileRouteTypes {
     | '/vendas/$saleId/editar'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
+    | '/api/public/catalog/track'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/entrada-followup'
@@ -1401,6 +1412,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendas_/$saleId/editar'
     | '/api/public/catalog/$slug'
     | '/api/public/catalog/entrada'
+    | '/api/public/catalog/track'
     | '/api/public/jobs/bella-detectors'
     | '/api/public/jobs/dlq-reprocess'
     | '/api/public/jobs/entrada-followup'
@@ -1439,6 +1451,7 @@ export interface RootRouteChildren {
   CatalogoColecaoSlugRoute: typeof CatalogoColecaoSlugRoute
   ApiPublicCatalogSlugRoute: typeof ApiPublicCatalogSlugRouteWithChildren
   ApiPublicCatalogEntradaRoute: typeof ApiPublicCatalogEntradaRoute
+  ApiPublicCatalogTrackRoute: typeof ApiPublicCatalogTrackRoute
   ApiPublicJobsBellaDetectorsRoute: typeof ApiPublicJobsBellaDetectorsRoute
   ApiPublicJobsDlqReprocessRoute: typeof ApiPublicJobsDlqReprocessRoute
   ApiPublicJobsEntradaFollowupRoute: typeof ApiPublicJobsEntradaFollowupRoute
@@ -2111,6 +2124,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCatalogEntradaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/catalog/track': {
+      id: '/api/public/catalog/track'
+      path: '/api/public/catalog/track'
+      fullPath: '/api/public/catalog/track'
+      preLoaderRoute: typeof ApiPublicCatalogTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/bella-detectors': {
       id: '/api/public/jobs/bella-detectors'
       path: '/api/public/jobs/bella-detectors'
@@ -2577,6 +2597,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogoColecaoSlugRoute: CatalogoColecaoSlugRoute,
   ApiPublicCatalogSlugRoute: ApiPublicCatalogSlugRouteWithChildren,
   ApiPublicCatalogEntradaRoute: ApiPublicCatalogEntradaRoute,
+  ApiPublicCatalogTrackRoute: ApiPublicCatalogTrackRoute,
   ApiPublicJobsBellaDetectorsRoute: ApiPublicJobsBellaDetectorsRoute,
   ApiPublicJobsDlqReprocessRoute: ApiPublicJobsDlqReprocessRoute,
   ApiPublicJobsEntradaFollowupRoute: ApiPublicJobsEntradaFollowupRoute,

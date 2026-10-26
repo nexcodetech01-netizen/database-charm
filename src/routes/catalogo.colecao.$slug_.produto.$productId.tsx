@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCatalogTheme } from "@/features/catalog/hooks/use-catalog-theme";
+import { trackCatalog } from "@/features/catalog/lib/track-catalog";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
@@ -224,6 +225,11 @@ function PublicProductPage() {
     retry: 1,
   });
   useCatalogTheme(data?.catalog_theme);
+  // Métrica: peça vista (servidor ignora repetição em 30 min).
+  const loadedId = data?.id;
+  useEffect(() => {
+    if (loadedId) trackCatalog("product_view", { slug, productId: loadedId, preview: isPreview });
+  }, [loadedId, slug, isPreview]);
 
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -571,7 +577,18 @@ function PrimaryCta({
         size="lg"
         className="h-12 w-full rounded-xl bg-[#25D366] text-base font-bold text-white hover:bg-[#1fbe5b]"
       >
-        <a href={href} target="_blank" rel="noopener noreferrer">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            trackCatalog("whatsapp_click", {
+              slug: data.collection.slug,
+              productId: data.id,
+              preview: typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1",
+            })
+          }
+        >
           <MessageCircle className="mr-2 h-5 w-5" />
           Quero esta no WhatsApp
         </a>
