@@ -22,6 +22,7 @@ import {
   Percent,
   DollarSign,
   RotateCcw,
+  Repeat,
   Ban,
   CopyPlus,
   PlayCircle,
@@ -92,6 +93,7 @@ import {
 
 import { ReceiptDialog } from "@/features/sales/components/receipt-dialog";
 import { ReturnDialog, ReturnsList } from "@/features/returns";
+import { ExchangeDialog } from "@/features/store-credit";
 import { useCustomer } from "@/features/customers/hooks/use-customers";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { CreditAccountPanel, useCreditDetailBySale } from "@/features/credit";
@@ -193,6 +195,7 @@ function SaleWorkspace({
 }) {
   const [copied, setCopied] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [exchangeOpen, setExchangeOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -415,9 +418,14 @@ function SaleWorkspace({
 
 
       {canReturn ? (
-        <Button variant="outline" size="sm" onClick={() => setReturnOpen(true)}>
-          <RotateCcw className="mr-1.5 h-4 w-4" /> Devolver
-        </Button>
+        <>
+          <Button variant="outline" size="sm" onClick={() => setExchangeOpen(true)}>
+            <Repeat className="mr-1.5 h-4 w-4" /> Trocar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setReturnOpen(true)}>
+            <RotateCcw className="mr-1.5 h-4 w-4" /> Devolver
+          </Button>
+        </>
       ) : null}
 
       <DropdownMenu>
@@ -1003,6 +1011,16 @@ function SaleWorkspace({
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ExchangeDialog
+        open={exchangeOpen}
+        onOpenChange={setExchangeOpen}
+        companyId={companyId}
+        saleId={sale.id}
+        saleNumber={sale.number ?? sale.id.slice(0, 8)}
+        saleItems={sale.items}
+        saleCustomerId={sale.customer_id ?? null}
+      />
 
       <ReturnDialog
         open={returnOpen}

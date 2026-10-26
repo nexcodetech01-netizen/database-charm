@@ -17,6 +17,11 @@ export interface SaleDraftState {
   /** Status corrente do formulário (usado quando não é finalização). */
   status: string;
   discount: number;
+  /**
+   * Vale-troca da cliente usado nesta venda. Abate do total como o
+   * desconto, mas fica fora da política de descontos.
+   */
+  storeCredit?: number;
   shipping: number;
   notes: string;
   items: SaleItemDraft[];
@@ -69,4 +74,6 @@ export interface SalePersistencePayload {
   shipping: number;
   notes: string | null;
   cash_session_id: string | null;
+  /** Parte do `discount` que é vale-troca (só enviado quando > 0). */
+  store_credit_used?: number;
 }

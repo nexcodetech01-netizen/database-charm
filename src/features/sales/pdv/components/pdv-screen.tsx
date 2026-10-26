@@ -26,6 +26,7 @@ import { useDiscountPolicy } from "../../lib/discounts";
 import { usePDV } from "../hooks/use-pdv";
 import { usePdvCash } from "../hooks/use-pdv-cash";
 import { usePdvCheckout } from "../hooks/use-pdv-checkout";
+import { PdvStoreCredit, storeCreditService } from "@/features/store-credit";
 import { PDVHeader } from "./pdv-header";
 import { PDVCart } from "./pdv-cart";
 import { PDVWorkspace } from "./pdv-workspace";
@@ -173,16 +174,30 @@ export function PDVScreen({
   const checkout = usePdvCheckout({
     companyId,
     cashSessionId: session?.id ?? null,
-    onSuccess: (sale) =>
-      dispatchSession({
-        type: "SALE_CREATED",
-        sale: {
-          id: sale.id,
-          // Número definitivo gerado pelo banco (o do carrinho era provisório).
-          number: sale.number ?? pdv.state.number,
-          total: pdv.totals.grand_total,
-        },
-      }),
+    onSuccess: async (sale) => {
+      const created = {
+        id: sale.id,
+        // Número definitivo gerado pelo banco (o do carrinho era provisório).
+        number: sale.number ?? pdv.state.number,
+        total: pdv.totals.grand_total,
+      };
+      // Vale-troca cobriu tudo: não há o que cobrar, conclui direto.
+      if (pdv.totals.grand_total <= 0.009 && (pdv.state.storeCredit ?? 0) > 0) {
+        try {
+          await storeCreditService.paySaleWithCredit(sale.id);
+          dispatchSession({ type: "SALE_CREATED", sale: created });
+          dispatchSession({ type: "SALE_RECEIVED", paymentMethod: "other" });
+          dispatchSession({ type: "CLOSE_CHECKOUT" });
+          toast.success("Venda paga com vale-troca");
+          return;
+        } catch (e) {
+          toast.error("Não foi possível concluir com o vale-troca", {
+            description: e instanceof Error ? e.message : undefined,
+          });
+        }
+      }
+      dispatchSession({ type: "SALE_CREATED", sale: created });
+    },
   });
 
   // NFC-e (Sprint 2.10): emissão automática após o recebimento, delegada
@@ -579,6 +594,13 @@ export function PDVScreen({
                 onChange={pdv.setCustomer}
               />
             </Suspense>
+            <PdvStoreCredit
+              customerId={pdv.state.customerId}
+              totalBeforeCredit={pdv.totals.grand_total + (pdv.state.storeCredit ?? 0)}
+              value={pdv.state.storeCredit ?? 0}
+              onChange={pdv.setStoreCredit}
+              readOnly={cartLocked}
+            />
             <PDVSummary
               companyId={companyId}
               items={pdv.state.items}
@@ -635,7 +657,7 @@ export function PDVScreen({
             customerId={pdv.state.customerId}
             amount={(pendingSale ?? completed)!.total}
             subtotal={pdv.totals.items_total}
-            discount={pdv.state.discount}
+            discount={pdv.state.discount + (pdv.state.storeCredit ?? 0)}
             pdvCashItems={pdvCashItems}
             onPaid={(info) =>
               handlePaid((pendingSale ?? completed)!.id, info?.method)
