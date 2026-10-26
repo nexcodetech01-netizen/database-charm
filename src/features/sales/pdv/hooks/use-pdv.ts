@@ -30,6 +30,8 @@ export type UsePDV = {
   removeItem: (uiKey: string) => void;
   setItemQuantity: (uiKey: string, quantity: number) => void;
   setDiscount: (value: number) => void;
+  /** Valor do vale-troca da cliente a abater nesta venda (0 = não usar). */
+  setStoreCredit: (value: number) => void;
   setCustomer: (customerId: string) => void;
   setItemPrice: (uiKey: string, price: number, reason?: string) => void;
   setItemDiscount: (uiKey: string, discount: number) => void;
@@ -109,6 +111,10 @@ export function usePDV(companyId: string): UsePDV {
     dispatch({ type: "SET_DISCOUNT", value });
   }, []);
 
+  const setStoreCredit = useCallback((value: number) => {
+    dispatch({ type: "SET_STORE_CREDIT", value });
+  }, []);
+
   const setCustomer = useCallback((customerId: string) => {
     dispatch({ type: "SET_CUSTOMER", value: customerId });
   }, []);
@@ -160,6 +166,7 @@ export function usePDV(companyId: string): UsePDV {
     removeItem,
     setItemQuantity,
     setDiscount: setDiscountValue,
+    setStoreCredit,
     setCustomer,
     setItemPrice,
     setItemDiscount,

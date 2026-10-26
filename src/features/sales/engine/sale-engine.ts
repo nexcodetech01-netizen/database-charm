@@ -37,7 +37,8 @@ import type {
 
 export function computeSaleTotals(state: SaleDraftState): SaleTotals {
   return computeTotals(state.items, {
-    discount: state.discount || 0,
+    // Vale-troca abate do total como desconto.
+    discount: (state.discount || 0) + (state.storeCredit || 0),
     shipping: state.shipping || 0,
   });
 }
@@ -192,10 +193,13 @@ export function buildSalePayload(
     sale_date: "",
     payment_method: state.paymentMethod || null,
     status: resolveSaleStatus(state, ctx, inputPaidAmount),
-    discount: state.discount || 0,
+    discount: (state.discount || 0) + (state.storeCredit || 0),
     shipping: state.shipping || 0,
     notes: state.notes.trim() || null,
     cash_session_id: ctx.cashSessionId,
+    ...(state.storeCredit && state.storeCredit > 0
+      ? { store_credit_used: Math.round(state.storeCredit * 100) / 100 }
+      : {}),
   };
 }
 

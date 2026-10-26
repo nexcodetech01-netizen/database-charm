@@ -16,6 +16,7 @@ export type SaleAction =
   | { type: "SET_PAYMENT_METHOD"; value: string }
   | { type: "SET_STATUS"; value: string }
   | { type: "SET_DISCOUNT"; value: number }
+  | { type: "SET_STORE_CREDIT"; value: number }
   | { type: "SET_SHIPPING"; value: number }
   | { type: "SET_NOTES"; value: string }
   | { type: "SET_ITEMS"; items: SaleItemDraft[] }
@@ -53,13 +54,20 @@ export function saleReducer(
     case "SET_NUMBER":
       return { ...state, number: action.value };
     case "SET_CUSTOMER":
-      return { ...state, customerId: action.value };
+      // Vale-troca é da cliente: trocou a cliente, deixa de usar.
+      return {
+        ...state,
+        customerId: action.value,
+        storeCredit: action.value === state.customerId ? state.storeCredit : 0,
+      };
     case "SET_PAYMENT_METHOD":
       return { ...state, paymentMethod: action.value };
     case "SET_STATUS":
       return { ...state, status: action.value };
     case "SET_DISCOUNT":
       return { ...state, discount: Number(action.value) || 0 };
+    case "SET_STORE_CREDIT":
+      return { ...state, storeCredit: Math.max(0, Number(action.value) || 0) };
     case "SET_SHIPPING":
       return { ...state, shipping: Number(action.value) || 0 };
     case "SET_NOTES":

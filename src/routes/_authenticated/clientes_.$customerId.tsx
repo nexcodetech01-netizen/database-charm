@@ -36,6 +36,7 @@ import {
   useCustomer,
 } from "@/features/customers";
 import { CustomerCreditCard } from "@/features/credit";
+import { StoreCreditCard } from "@/features/store-credit";
 import { LoadErrorPage } from "@/components/layout/state-views";
 
 export const Route = createFileRoute("/_authenticated/clientes_/$customerId")({
@@ -188,6 +189,7 @@ function CustomerDetailPage() {
         <TabsContent value="overview" className="mt-4">
           <div className="space-y-4">
             <CustomerCreditCard customerId={customerId} />
+            <StoreCreditCard customerId={customerId} />
             <Customer360Panel customerId={customerId} />
           </div>
         </TabsContent>
