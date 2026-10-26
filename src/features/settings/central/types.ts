@@ -16,7 +16,8 @@ export type SettingsSectionId =
   | "meios-pagamento"
   | "diagnostico"
   | "sku-cleanup"
-  | "pwa";
+  | "pwa"
+  | "modulos";
 
 
 export type SettingsGroup = "Conta" | "Canais" | "Sistema";
