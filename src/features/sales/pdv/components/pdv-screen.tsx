@@ -26,6 +26,8 @@ import { useDiscountPolicy } from "../../lib/discounts";
 import { usePDV } from "../hooks/use-pdv";
 import { usePdvCash } from "../hooks/use-pdv-cash";
 import { usePdvCheckout } from "../hooks/use-pdv-checkout";
+import { supabase } from "@/integrations/supabase/client";
+import { salesService } from "../../services/sales.service";
 import { PdvStoreCredit, storeCreditService } from "@/features/store-credit";
 import { PDVHeader } from "./pdv-header";
 import { PDVCart } from "./pdv-cart";
@@ -287,10 +289,36 @@ export function PDVScreen({
    * Cancelar venda em andamento — mesma ação já existente de limpar o
    * carrinho (nenhuma venda foi gravada ainda). UX apenas.
    */
+  /**
+   * Checkout aberto e fechado sem pagar deixa a venda gravada como
+   * rascunho. Ao finalizar de novo (ou cancelar), esse rascunho vai para a
+   * lixeira — antes ele ficava sobrando na lista de vendas. Só apaga se
+   * ainda estiver em rascunho (um PIX pago depois não é tocado).
+   */
+  async function discardAbandonedDraft() {
+    if (!lastSale || completed) return;
+    try {
+      const { data } = await supabase
+        .from("sales")
+        .select("status")
+        .eq("id", lastSale.id)
+        .maybeSingle();
+      if (data?.status === "draft") await salesService.remove(lastSale.id);
+    } catch {
+      /* não impede seguir com a venda */
+    }
+  }
+
+  async function finalizeSale() {
+    await discardAbandonedDraft();
+    checkout.finalize(pdv.state);
+  }
+
   function handleCancelSale() {
     if (typeof window !== "undefined" && !window.confirm("Cancelar a venda?")) {
       return;
     }
+    void discardAbandonedDraft();
     pdv.clear();
     setActiveKey(null);
     focus.focusSearch();
@@ -382,7 +410,7 @@ export function PDVScreen({
     if (!pdv.state.customerId) {
       setCheckoutConfirmationOpen(true);
     } else {
-      checkout.finalize(pdv.state);
+      void finalizeSale();
     }
   };
 
@@ -755,7 +783,7 @@ export function PDVScreen({
               </AlertDialogCancel>
               <AlertDialogAction onClick={() => {
                 setCheckoutConfirmationOpen(false);
-                checkout.finalize(pdv.state);
+                void finalizeSale();
               }}>
                 Continuar assim
               </AlertDialogAction>
