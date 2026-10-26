@@ -74,6 +74,8 @@ export interface PublicCollection extends CollectionVisibility {
   brand_color?: string | null;
   /** Logo da loja (URL assinada). */
   logo_url?: string | null;
+  /** Tema do catálogo escolhido pela loja (claro/escuro). */
+  catalog_theme?: "light" | "dark";
   installment_max: number | null;
   installment_min_amount?: number | null;
   card_fee_percent: number;
@@ -122,6 +124,8 @@ export interface PublicProductDetail extends CollectionVisibility {
   brand_color?: string | null;
   /** Logo da loja (URL assinada). */
   logo_url?: string | null;
+  /** Tema do catálogo escolhido pela loja (claro/escuro). */
+  catalog_theme?: "light" | "dark";
   installment_max: number | null;
   installment_min_amount?: number | null;
   card_fee_percent: number;

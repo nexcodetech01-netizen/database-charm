@@ -2,6 +2,7 @@
 
 import { authorizePreview } from "@/features/catalog/lib/preview-auth.server";
 import { cached } from "./short-cache.server";
+import { loadCatalogTheme, type CatalogTheme } from "./catalog-theme";
 
 const BUCKET = "product-images";
 const SIGN_TTL = 60 * 60;
@@ -27,6 +28,8 @@ export type ProductPagePayload = {
   brand_color: string | null;
   /** Logo da loja (URL assinada); null = sem logo. */
   logo_url: string | null;
+  /** Tema do catálogo escolhido pela loja. */
+  catalog_theme: CatalogTheme;
   installment_max: number | null;
   installment_min_amount: number;
   card_fee_percent: number;
@@ -133,11 +136,12 @@ async function loadProductPagePayloadInner(params: {
       .order("position"),
     supabaseAdmin
       .from("companies")
-      .select("id, name, whatsapp, phone, primary_color, logo_path")
+      .select("id, name, trade_name, whatsapp, phone, primary_color, logo_path")
       .eq("id", col.company_id)
       .maybeSingle<{
         id: string;
         name: string;
+        trade_name: string | null;
         whatsapp: string | null;
         phone: string | null;
         primary_color: string | null;
@@ -316,7 +320,8 @@ async function loadProductPagePayloadInner(params: {
     unit: prod.unit,
     images: outImages,
     collection: { id: col.id, slug: col.slug, name: col.name },
-    company_name: company?.name ?? "",
+    company_name: company?.trade_name?.trim() || company?.name || "",
+    catalog_theme: await loadCatalogTheme(supabaseAdmin, col.company_id),
     brand_color: company?.primary_color ?? null,
     logo_url: logoUrl,
         installment_max: cardCfg?.max_installments ?? payCfg?.credit_card_max_installments ?? 3,

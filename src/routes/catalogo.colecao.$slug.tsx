@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCatalogTheme } from "@/features/catalog/hooks/use-catalog-theme";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -211,6 +212,7 @@ function PublicCollectionPage() {
     retry: (failureCount, err) =>
       !(err instanceof CollectionNotFoundError) && failureCount < 1,
   });
+  useCatalogTheme(data?.catalog_theme);
 
   const [q, setQ] = useState(search.q);
 
@@ -311,7 +313,7 @@ function PublicCollectionPage() {
       : null;
 
   return (
-    <div className="min-h-screen bg-background pb-24" style={brandStyle(data.brand_color)}>
+    <div className={`${data.catalog_theme === "dark" ? "dark " : ""}min-h-screen bg-background pb-24`} style={brandStyle(data.brand_color)}>
       {isPreview && (
         <div className="border-b bg-amber-500/10 text-amber-900 dark:text-amber-200">
           <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2 text-xs font-medium">
@@ -332,7 +334,7 @@ function PublicCollectionPage() {
               <img
                 {...catalogImgProps(data.logo_url, 80, { eager: true })}
                 alt={data.company_name}
-                className="h-10 w-10 shrink-0 rounded-full border border-border bg-white object-contain p-0.5"
+                className="h-10 w-10 shrink-0 rounded-full border border-border bg-white object-contain dark:bg-background p-0.5"
               />
             ) : (
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">

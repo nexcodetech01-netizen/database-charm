@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useCatalogTheme } from "@/features/catalog/hooks/use-catalog-theme";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
@@ -222,6 +223,7 @@ function PublicProductPage() {
     staleTime: 60_000,
     retry: 1,
   });
+  useCatalogTheme(data?.catalog_theme);
 
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -327,7 +329,7 @@ function PublicProductPage() {
   const showAvailabilityBadge = data.show_stock || availability === "presale";
 
   return (
-    <div className="min-h-screen bg-background pb-28" style={brandStyle(data.brand_color)}>
+    <div className={`${data.catalog_theme === "dark" ? "dark " : ""}min-h-screen bg-background pb-28`} style={brandStyle(data.brand_color)}>
       {/* Topbar */}
       <header className="sticky top-0 z-10 border-b bg-card/90 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-3">
