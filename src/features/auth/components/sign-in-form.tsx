@@ -38,7 +38,9 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
           ? "Email ou senha incorretos."
           : raw.includes("fetch") || raw.includes("network")
             ? "Sem conexão com o servidor. Verifique a internet e tente de novo."
-            : "Não foi possível entrar. Confira email e senha e tente de novo.";
+            : raw.includes("rate limit") || raw.includes("too many")
+              ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo."
+              : `Não foi possível entrar (${err instanceof Error ? err.message : "erro desconhecido"}).`;
       setErrorMsg(msg);
       // id fixo: tentativas seguidas trocam o aviso em vez de empilhar.
       toast.error(msg, { id: "signin-error" });
