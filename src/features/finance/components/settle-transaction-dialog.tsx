@@ -248,11 +248,24 @@ export function SettleTransactionDialog({
       // ela fechar como paga. Antes ficava só na observação da baixa e a
       // venda ficava "parcialmente paga" para sempre (Renata, Pato).
       if (!isPartial && discountAmount > 0 && transaction.source === "sale" && transaction.reference_id) {
-        const { error: discountError } = await (supabase.rpc as any)("apply_sale_settlement_discount", {
-          _transaction_id: transaction.id,
-          _discount: discountAmount,
-        });
-        if (discountError) throw new Error(discountError.message);
+        // Lê o valor ATUAL do título: se uma tentativa anterior já aplicou o
+        // desconto (ex.: cancelou o "abrir caixa" e confirmou de novo), não
+        // desconta outra vez — só falta a diferença que ainda existir.
+        const { data: fresh, error: freshError } = await supabase
+          .from("financial_transactions")
+          .select("amount")
+          .eq("id", transaction.id)
+          .maybeSingle();
+        if (freshError) throw new Error(freshError.message);
+        const pendingDiscount =
+          Math.round((Number(fresh?.amount ?? 0) - settledAmount) * 100) / 100;
+        if (pendingDiscount > 0.009) {
+          const { error: discountError } = await (supabase.rpc as any)("apply_sale_settlement_discount", {
+            _transaction_id: transaction.id,
+            _discount: pendingDiscount,
+          });
+          if (discountError) throw new Error(discountError.message);
+        }
       }
 
       const result = await runWithCashGuard(() =>

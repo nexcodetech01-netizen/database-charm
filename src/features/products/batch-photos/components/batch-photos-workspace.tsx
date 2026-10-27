@@ -110,7 +110,11 @@ export function BatchPhotosWorkspace({ companyId }: { companyId: string }) {
   const pendingCount = queue.filter((c) => !doneIds.has(c.id)).length;
 
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const current = queue.find((c) => c.id === currentId) ?? null;
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  // Com fotos ainda não salvas, a peça fica "presa": mudar filtro/busca não
+  // troca de peça (antes as fotos iam parar em outro produto ao salvar).
+  const pinned = photos.length > 0 ? (candidates.find((c) => c.id === currentId) ?? null) : null;
+  const current = pinned ?? queue.find((c) => c.id === currentId) ?? null;
 
   // Sem peça escolhida (ou ela saiu da fila): vai para a primeira pendente.
   useEffect(() => {
@@ -119,7 +123,6 @@ export function BatchPhotosWorkspace({ companyId }: { companyId: string }) {
     setCurrentId(next?.id ?? null);
   }, [queue, current, doneIds, skippedIds]);
 
-  const [photos, setPhotos] = useState<Photo[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
