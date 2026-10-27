@@ -36,3 +36,4 @@ export {
   type LabelLayoutId,
 } from "./lib/labels";
 export { encodeCode128, renderCode128Svg } from "./lib/barcode";
+export { BulkLabelDialog } from "./components/bulk-label-dialog";
