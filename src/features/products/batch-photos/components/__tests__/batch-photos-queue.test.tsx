@@ -63,4 +63,18 @@ describe("Fotos por peça (fila)", () => {
     expect((attach.mock.calls as unknown as unknown[][])[0][0]).toMatchObject({ productId: "c2", coverIndex: 0 });
     expect(await screen.findByRole("heading", { name: "Camiseta Nike — Preta GG" })).toBeTruthy();
   });
+
+  it("com fotos não salvas, mudar a busca não troca a peça", async () => {
+    attach.mockClear();
+    await renderWs();
+    expect(await screen.findByRole("heading", { name: "Camiseta Lacoste — Verde G" })).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(["a"], "f.png", { type: "image/png" })] } });
+    // Busca que tira a Lacoste da fila.
+    fireEvent.change(screen.getByLabelText("Buscar peça"), { target: { value: "Nike" } });
+    expect(screen.getByRole("heading", { name: "Camiseta Lacoste — Verde G" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Salvar e próxima/ }));
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect((attach.mock.calls as unknown as unknown[][])[0][0]).toMatchObject({ productId: "c2" });
+  });
 });
