@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import { Images, Package, Tags } from "lucide-react";
 import { BulkLabelDialog } from "@/features/printing";
+import { OptimizePhotosDialog } from "@/features/products/components/optimize-photos-dialog";
 import { Button } from "@/components/ui/button";
 import { BreadcrumbNav } from "@/components/layout";
 import { ActionToolbar, EntityHeader } from "@/components/design";
@@ -66,6 +67,7 @@ function ProductsPage() {
                         <BulkCostDialog companyId={company.id} />
             <BulkNcmDialog companyId={company.id} />
             <ImportCsvDialog companyId={company.id} />
+            <OptimizePhotosDialog companyId={company.id} />
             <Button size="sm" variant="outline" onClick={() => setLabelsOpen(true)}>
               <Tags className="mr-1.5 h-4 w-4" /> Etiquetas em lote
             </Button>

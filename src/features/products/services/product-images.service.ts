@@ -1,31 +1,67 @@
 import { supabase } from "@/integrations/supabase/client";
+import {
+  VARIANT_WIDTHS,
+  isVariantPath,
+  makeVariant,
+  pickVariant,
+  variantPath,
+} from "../lib/image-variants";
 
 const BUCKET = "product-images";
 
 /**
- * Converte uma URL assinada de objeto na variante servida pelo endpoint de
- * transformação de imagem do Supabase (mesmo token), pedindo largura fixa,
- * qualidade reduzida e formato automático (WebP quando suportado).
- *
- * Se a transformação não estiver habilitada no projeto, a imagem original
- * continua acessível pela URL de objeto — por isso o consumidor deve tratar
- * `onError` caindo para a URL sem transformação quando necessário.
+ * Fotos de produto (27/10/2026): link PÚBLICO e fixo (fica em cache no
+ * navegador e na CDN) e versões leves prontas (ver lib/image-variants).
+ * Antes eram links assinados (sem cache) e a "transformação" do Supabase,
+ * que não existe no plano gratuito — toda lista baixava a foto original.
  */
-export function withImageTransform(signedUrl: string, width: number): string {
-  if (!signedUrl || !signedUrl.includes("/object/sign/")) return signedUrl;
-  const rendered = signedUrl.replace("/object/sign/", "/render/image/sign/");
-  const sep = rendered.includes("?") ? "&" : "?";
-  return `${rendered}${sep}width=${width}&resize=contain&quality=70`;
+const PUBLIC_MARK = `/object/public/${BUCKET}/`;
+/** Fotos não mudam de conteúdo no mesmo caminho: cache longo. */
+const LONG_CACHE = "31536000";
+
+/**
+ * Pede a versão leve (400/1200 px) de uma URL pública de foto. Se a versão
+ * ainda não existir, o `onError` da imagem volta para a original
+ * (withoutImageTransform). URLs de outros tipos voltam como estão.
+ */
+export function withImageTransform(url: string, width: number): string {
+  if (!url || !url.includes(PUBLIC_MARK)) return url;
+  const [base, query] = url.split("?");
+  if (isVariantPath(base)) return url;
+  const v = pickVariant(width);
+  if (!v) return url;
+  return `${variantPath(base, v)}${query ? `?${query}` : ""}`;
 }
 
-/** Reverte a URL transformada para a URL do objeto original (fallback). */
+/** Volta da versão leve para a foto original (fallback do onError). */
 export function withoutImageTransform(url: string): string {
-  if (!url.includes("/render/image/sign/")) return url;
-  const [base, query = ""] = url.split("?");
-  const params = new URLSearchParams(query);
-  const token = params.get("token");
-  const objectUrl = base.replace("/render/image/sign/", "/object/sign/");
-  return token ? `${objectUrl}?token=${token}` : objectUrl;
+  if (!url) return url;
+  const [base, query] = url.split("?");
+  const original = base.replace(/\.w\d+\.webp$/, "");
+  return original === base ? url : `${original}${query ? `?${query}` : ""}`;
+}
+
+export function productImagePublicUrl(path: string): string {
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/** Envia as versões leves de uma foto (falha não impede nada). */
+export async function uploadImageVariants(path: string, source: Blob): Promise<boolean> {
+  let ok = true;
+  for (const w of VARIANT_WIDTHS) {
+    const blob = await makeVariant(source, w);
+    if (!blob) {
+      ok = false;
+      continue;
+    }
+    const { error } = await supabase.storage.from(BUCKET).upload(variantPath(path, w), blob, {
+      upsert: true,
+      contentType: "image/webp",
+      cacheControl: LONG_CACHE,
+    });
+    if (error) ok = false;
+  }
+  return ok;
 }
 
 export const productImagesService = {
@@ -38,8 +74,9 @@ export const productImagesService = {
       .slice(2, 8)}.${ext}`;
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { upsert: false, cacheControl: "3600" });
+      .upload(path, file, { upsert: false, cacheControl: LONG_CACHE });
     if (error) throw error;
+    await uploadImageVariants(path, file).catch(() => false);
     return path;
   },
 
@@ -65,10 +102,7 @@ export const productImagesService = {
     return this.createRecord(companyId, productId, path, 0);
   },
 
-  async updateFraming(
-    id: string,
-    framing: { focal_x: number; focal_y: number; zoom: number },
-  ) {
+  async updateFraming(id: string, framing: { focal_x: number; focal_y: number; zoom: number }) {
     const { data, error } = await supabase
       .from("product_images")
       .update({
@@ -82,7 +116,6 @@ export const productImagesService = {
     if (error) throw error;
     return data;
   },
-
 
   async list(productId: string) {
     const { data, error } = await supabase
@@ -100,36 +133,23 @@ export const productImagesService = {
     if (error) throw error;
   },
 
-  async signedUrl(path: string, expiresIn = 3600, width?: number): Promise<string> {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(path, expiresIn);
-    if (error) throw error;
-    return width ? withImageTransform(data.signedUrl, width) : data.signedUrl;
+  /**
+   * Link da foto. Mantém o nome antigo ("signed"), mas devolve o link
+   * PÚBLICO e fixo (cacheável). Com `width`, aponta para a versão leve.
+   */
+  async signedUrl(path: string, _expiresIn = 3600, width?: number): Promise<string> {
+    const url = productImagePublicUrl(path);
+    return width ? withImageTransform(url, width) : url;
   },
 
-  /**
-   * Assina URLs em lote. Quando `width` é informado, a URL aponta para o
-   * endpoint de transformação do Storage (redimensionamento + WebP automático
-   * conforme o Accept do navegador) — reduz drasticamente o egress em listagens.
-   */
   async signedUrls(
     paths: string[],
-    expiresIn = 3600,
+    _expiresIn = 3600,
     width?: number,
   ): Promise<{ path: string; signedUrl: string }[]> {
-    if (paths.length === 0) return [];
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrls(paths, expiresIn);
-    if (error) throw error;
-    return (data ?? [])
-      .filter((d) => d.signedUrl)
-      .map((d) => ({
-        path: d.path ?? "",
-        signedUrl: width
-          ? withImageTransform(d.signedUrl as string, width)
-          : (d.signedUrl as string),
-      }));
+    return paths.filter(Boolean).map((path) => {
+      const url = productImagePublicUrl(path);
+      return { path, signedUrl: width ? withImageTransform(url, width) : url };
+    });
   },
 };

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { applyProductSearch } from "@/features/products/lib/product-search";
+import { isVariantRetry } from "@/lib/image-variant-fallback";
 import { productImagesService } from "@/features/products/services/product-images.service";
 
 import { formatCurrency } from "@/lib/format";
@@ -113,7 +114,7 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
 
       const token = ++activeSignRef.current;
       try {
-        const signed = await productImagesService.signedUrls(paths);
+        const signed = await productImagesService.signedUrls(paths, 3600, 400);
         if (token !== activeSignRef.current) return; // busca mais nova venceu
         const next: Record<string, string> = {};
         for (const s of signed) {
@@ -262,7 +263,8 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
                               alt={p.name}
                               loading="lazy"
                               className="h-full w-full object-cover"
-                              onError={() =>
+                              onError={(e) =>
+                              isVariantRetry(e.currentTarget) ||
                                 setBrokenImages((prev) => ({ ...prev, [img]: true }))
                               }
                             />
@@ -360,7 +362,8 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
                           alt=""
                           loading="lazy"
                           className="mt-0.5 h-10 w-10 shrink-0 rounded-md border border-border object-cover"
-                          onError={() =>
+                          onError={(e) =>
+                              isVariantRetry(e.currentTarget) ||
                             setBrokenImages((prev) => ({
                               ...prev,
                               [it.image_url as string]: true,

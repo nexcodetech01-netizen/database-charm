@@ -5,7 +5,6 @@ import { cached } from "./short-cache.server";
 import { loadCatalogTheme, type CatalogTheme } from "./catalog-theme";
 
 const BUCKET = "product-images";
-const SIGN_TTL = 60 * 60;
 const DEFAULT_ENTRADA_PERCENT = 30;
 
 export type ProductPagePayload = {
@@ -174,7 +173,7 @@ async function loadProductPagePayloadInner(params: {
 
   let urlMap = new Map<string, string>();
   if (allPaths.length > 0) {
-    const { data: signed } = await supabaseAdmin.storage.from(BUCKET).createSignedUrls(allPaths, SIGN_TTL);
+    const signed = allPaths.map((path) => ({ path, signedUrl: supabaseAdmin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl }));
     urlMap = new Map((signed ?? []).filter((s) => s.signedUrl).map((s) => [s.path as string, s.signedUrl as string]));
   }
 
@@ -242,7 +241,7 @@ async function loadProductPagePayloadInner(params: {
   const relatedPaths = relatedRaw.map((p) => p.cover_image_path).filter((p): p is string => !!p);
   let relatedUrlMap = new Map<string, string>();
   if (relatedPaths.length > 0) {
-    const { data: signed } = await supabaseAdmin.storage.from(BUCKET).createSignedUrls(relatedPaths, SIGN_TTL);
+    const signed = relatedPaths.map((path) => ({ path, signedUrl: supabaseAdmin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl }));
     relatedUrlMap = new Map(
       (signed ?? []).filter((s) => s.signedUrl).map((s) => [s.path as string, s.signedUrl as string]),
     );

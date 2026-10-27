@@ -19,6 +19,7 @@ import {
   findProductsByNameKey,
   type ProductNameMatch,
 } from "@/features/products/lib/product-matching";
+import { isVariantRetry } from "@/lib/image-variant-fallback";
 import { productImagesService } from "@/features/products/services/product-images.service";
 
 import { formatCurrency } from "@/lib/format";
@@ -116,7 +117,7 @@ export function PurchaseItemsEditor({
 
       const token = ++activeSignRef.current;
       try {
-        const signed = await productImagesService.signedUrls(paths);
+        const signed = await productImagesService.signedUrls(paths, 3600, 400);
         if (token !== activeSignRef.current) return;
         const next: Record<string, string> = {};
         for (const image of signed) {
@@ -390,7 +391,8 @@ export function PurchaseItemsEditor({
                             alt={p.name}
                             loading="lazy"
                             className="h-full w-full object-cover"
-                            onError={() =>
+                            onError={(e) =>
+                              isVariantRetry(e.currentTarget) ||
                               setBrokenImages((previous) => ({ ...previous, [img]: true }))
                             }
                           />
@@ -464,7 +466,8 @@ export function PurchaseItemsEditor({
                           alt=""
                           loading="lazy"
                           className="mt-0.5 h-9 w-9 shrink-0 rounded border border-border object-cover"
-                          onError={() => {
+                          onError={(e) => {
+                            if (isVariantRetry(e.currentTarget)) return;
                             const imageUrl = it.image_url;
                             if (!imageUrl) return;
                             setBrokenImages((previous) => ({
