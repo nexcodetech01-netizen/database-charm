@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { BulkCostDialog } from "@/features/products/components/bulk-cost-dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Images, Package } from "lucide-react";
+import { Images, Package, Tags } from "lucide-react";
+import { BulkLabelDialog } from "@/features/printing";
 import { Button } from "@/components/ui/button";
 import { BreadcrumbNav } from "@/components/layout";
 import { ActionToolbar, EntityHeader } from "@/components/design";
@@ -41,6 +42,7 @@ function ProductsPage() {
   const { company } = Route.useRouteContext();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<ProductListFilters>(DEFAULT);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
   const effective = useMemo(
     () => ({ ...filters, search: debouncedSearch }),
@@ -64,6 +66,9 @@ function ProductsPage() {
                         <BulkCostDialog companyId={company.id} />
             <BulkNcmDialog companyId={company.id} />
             <ImportCsvDialog companyId={company.id} />
+            <Button size="sm" variant="outline" onClick={() => setLabelsOpen(true)}>
+              <Tags className="mr-1.5 h-4 w-4" /> Etiquetas em lote
+            </Button>
             <Button size="sm" variant="outline" asChild>
               <Link to="/produtos/fotos-em-lote">
                 <Images className="mr-1.5 h-4 w-4" /> Fotos em lote
@@ -97,6 +102,8 @@ function ProductsPage() {
       />
       
       <NcmClassificationDashboard companyId={company.id} />
+
+      <BulkLabelDialog open={labelsOpen} onOpenChange={setLabelsOpen} companyId={company.id} />
     </div>
   );
 }

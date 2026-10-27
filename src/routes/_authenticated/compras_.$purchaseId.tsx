@@ -10,8 +10,11 @@ import {
   PackageCheck,
   RefreshCw,
   Loader2,
+  Tags,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { BulkLabelDialog } from "@/features/printing";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,6 +47,7 @@ function PurchaseDetailPage() {
 function PurchaseDetails() {
   const { purchaseId } = Route.useParams();
   const { data: purchase, isLoading, isError: loadError, refetch: retryLoad } = usePurchase(purchaseId);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const setStatus = useSetPurchaseStatus();
   const reprocess = useReprocessPurchaseReceipt();
 
@@ -128,6 +132,11 @@ function PurchaseDetails() {
                 <RefreshCw className="mr-1.5 h-4 w-4" />
               )}
               Reprocessar recebimento
+            </Button>
+          ) : null}
+          {purchase.items.some((it) => it.product_id) ? (
+            <Button variant="outline" onClick={() => setLabelsOpen(true)}>
+              <Tags className="mr-1.5 h-4 w-4" /> Etiquetas
             </Button>
           ) : null}
           <Button asChild>
@@ -295,6 +304,16 @@ function PurchaseDetails() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <BulkLabelDialog
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+        companyId={purchase.company_id}
+        title={`Etiquetas da compra ${purchase.number ?? ""}`.trim()}
+        initial={purchase.items
+          .filter((it) => it.product_id)
+          .map((it) => ({ productId: it.product_id as string, quantity: Number(it.quantity) }))}
+      />
     </div>
   );
 }
