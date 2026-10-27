@@ -4,6 +4,7 @@ import { routeTree } from "./routeTree.gen";
 import { RoutePending } from "@/components/layout/route-pending";
 import { installNavTelemetry } from "@/lib/nav-telemetry";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
+import { installImageVariantFallback } from "@/lib/image-variant-fallback";
 
 export const getRouter = () => {
   // Defaults evitam refetch em toda navegação. Sem staleTime,
@@ -53,6 +54,7 @@ export const getRouter = () => {
       pendingHref = undefined;
     });
     installChunkRecovery(() => pendingHref);
+    installImageVariantFallback();
   }
 
   return router;

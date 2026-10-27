@@ -149,7 +149,7 @@ async function loadPricingData(companyId: string): Promise<ProductRow[]> {
   const urlByPath = new Map<string, string>();
   if (paths.length > 0) {
     try {
-      const signed = await productImagesService.signedUrls(paths, 3600);
+      const signed = await productImagesService.signedUrls(paths, 3600, 400);
       for (const s of signed) urlByPath.set(s.path, s.signedUrl);
     } catch {
       /* ignore image errors */

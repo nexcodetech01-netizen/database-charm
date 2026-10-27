@@ -70,7 +70,7 @@ export function ProductPickerDialog({
 
   const { data: signed = [] } = useQuery({
     queryKey: ["signed-urls", ...paths],
-    queryFn: () => productImagesService.signedUrls(paths),
+    queryFn: () => productImagesService.signedUrls(paths, 3600, 400),
     enabled: paths.length > 0,
     staleTime: 30 * 60 * 1000,
   });

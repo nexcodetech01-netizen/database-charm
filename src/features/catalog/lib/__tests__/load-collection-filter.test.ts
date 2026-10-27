@@ -96,6 +96,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
           data: paths.map((p) => ({ path: p, signedUrl: `https://x/${p}` })),
         }),
         createSignedUrl: async () => ({ data: null }),
+        getPublicUrl: (p: string) => ({ data: { publicUrl: `https://x/${p}` } }),
       }),
     },
   },
