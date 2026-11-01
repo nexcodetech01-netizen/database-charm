@@ -14,7 +14,15 @@ import { RequireOpenCashDialog } from "../components/require-open-cash-dialog";
  * e, ao abrir com sucesso, reexecuta automaticamente a operação original.
  */
 export function isCashClosedError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  // Erros do Supabase chegam como objeto { message }, não como Error.
+  const message =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : typeof (err as { message?: unknown } | null)?.message === "string"
+          ? String((err as { message: string }).message)
+          : "";
   return /CAIXA_FECHADO|caixa aberto|abrir o caixa/i.test(message);
 }
 
