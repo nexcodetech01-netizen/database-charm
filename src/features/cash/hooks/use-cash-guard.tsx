@@ -36,7 +36,19 @@ export function useCashGuard({ companyId, accountName }: Options) {
   const { user } = useAuth();
   const [promptOpen, setPromptOpen] = useState(false);
   const [openSessionOpen, setOpenSessionOpen] = useState(false);
-  const pendingRef = useRef<null | (() => Promise<unknown>)>(null);
+  // Operação esperando o caixa abrir. `resolve` devolve o resultado para
+  // quem chamou runWithCashGuard — assim a tela que pediu (ex.: recebimento)
+  // mostra o sucesso e fecha, em vez de ficar aberta e permitir repetir.
+  const pendingRef = useRef<null | {
+    action: () => Promise<unknown>;
+    resolve?: (value: unknown) => void;
+  }>(null);
+
+  const settlePending = useCallback((value: unknown) => {
+    const p = pendingRef.current;
+    pendingRef.current = null;
+    p?.resolve?.(value);
+  }, []);
 
   const operatorName =
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "Operador";
@@ -47,23 +59,28 @@ export function useCashGuard({ companyId, accountName }: Options) {
    */
   const runWithCashGuard = useCallback(
     async <T,>(action: () => Promise<T>, opts?: { preCheck?: boolean }): Promise<T | undefined> => {
+      const waitForCash = () =>
+        new Promise<T | undefined>((resolve) => {
+          pendingRef.current = {
+            action: action as () => Promise<unknown>,
+            resolve: resolve as (value: unknown) => void,
+          };
+          setPromptOpen(true);
+        });
+
       // Verificação prévia (usada quando a operação não é idempotente):
       // evita executar metade do fluxo antes de o motor recusar.
       if (opts?.preCheck && user?.id) {
         const session = await cashService.getOpenSession(companyId);
-        if (!session) {
-          pendingRef.current = () => action();
-          setPromptOpen(true);
-          return undefined;
-        }
+        if (!session) return waitForCash();
       }
       try {
         return await action();
       } catch (err) {
         if (!isCashClosedError(err)) throw err;
-        pendingRef.current = action as () => Promise<unknown>;
-        setPromptOpen(true);
-        return undefined;
+        // Só devolve quando o caixa for aberto e a operação concluir (ou
+        // undefined se a pessoa desistir).
+        return waitForCash();
       }
     },
     [companyId, user?.id],
@@ -71,14 +88,14 @@ export function useCashGuard({ companyId, accountName }: Options) {
 
   /** Abre o fluxo de caixa manualmente e retoma `action` depois. */
   const requestOpenCash = useCallback((action: () => Promise<unknown> | void) => {
-    pendingRef.current = async () => action();
+    pendingRef.current = { action: async () => action() };
     setPromptOpen(true);
   }, []);
 
   const cancel = useCallback(() => {
-    pendingRef.current = null;
     setPromptOpen(false);
-  }, []);
+    settlePending(undefined);
+  }, [settlePending]);
 
   const confirmOpenCash = useCallback(() => {
     setPromptOpen(false);
@@ -86,18 +103,32 @@ export function useCashGuard({ companyId, accountName }: Options) {
   }, []);
 
   const retryPending = useCallback(async () => {
-    const action = pendingRef.current;
+    const p = pendingRef.current;
     pendingRef.current = null;
     setOpenSessionOpen(false);
-    if (!action) return;
+    if (!p) return;
     try {
-      await action();
+      const result = await p.action();
+      p.resolve?.(result);
     } catch (err) {
       toast.error("Não foi possível concluir a operação", {
         description: err instanceof Error ? err.message : undefined,
       });
+      p.resolve?.(undefined);
     }
   }, []);
+
+  // Fechou a janela de abrir caixa sem abrir: desiste da operação.
+  const handleOpenSessionChange = useCallback(
+    (v: boolean) => {
+      setOpenSessionOpen(v);
+      // Ao abrir com sucesso a janela fecha e logo em seguida chama
+      // onOpened (retryPending), que assume a operação. Só desiste se,
+      // depois disso, ninguém tiver assumido.
+      if (!v) setTimeout(() => settlePending(undefined), 0);
+    },
+    [settlePending],
+  );
 
   const cashGuardDialog = (
     <>
@@ -110,7 +141,7 @@ export function useCashGuard({ companyId, accountName }: Options) {
       {user?.id ? (
         <OpenSessionDialog
           open={openSessionOpen}
-          onOpenChange={setOpenSessionOpen}
+          onOpenChange={handleOpenSessionChange}
           companyId={companyId}
           operatorId={user.id}
           operatorName={operatorName}
