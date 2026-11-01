@@ -334,7 +334,7 @@ export const salesService = {
         .select(`
           id, number, sale_date, grand_total, status, customer_id, 
           payment_method, notes, items_total, discount, shipping, 
-          created_at, deleted_at, cash_session_id
+          created_at, deleted_at, cash_session_id, paid_at
         `)
         .in("id", ordered);
       if (pErr) throw pErr;
@@ -349,7 +349,7 @@ export const salesService = {
           .select(`
             id, number, sale_date, grand_total, status, customer_id, 
             payment_method, notes, items_total, discount, shipping, 
-            created_at, deleted_at, cash_session_id
+            created_at, deleted_at, cash_session_id, paid_at
           `, { count: "exact" })
           .eq("company_id", companyId),
       )
@@ -413,7 +413,11 @@ export const salesService = {
         ...r,
         customer_name: customerId ? (customerMap.get(customerId) ?? null) : null,
         items_count: counts.get(id) ?? 0,
-        settlement_paid_at: paidMap.get(id) ?? null,
+        // Crediário e vale-troca não têm título "sale" pago: usa a data de
+        // pagamento gravada na venda (antes aparecia "Pendente" em venda paga).
+        settlement_paid_at:
+          paidMap.get(id) ??
+          (r.status === "paid" ? ((r as { paid_at?: string | null }).paid_at ?? null) : null),
         remaining_amount: remainingMap.has(id) ? remainingMap.get(id)! : null,
         next_due_date: dueMap.get(id) ?? null,
         is_credit: creditSet.has(id),
