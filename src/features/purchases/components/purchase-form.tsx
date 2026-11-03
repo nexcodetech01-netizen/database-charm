@@ -811,6 +811,9 @@ export function describeSaveError(err: unknown): string {
   if (err && typeof err === "object") {
     const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
     const msg = typeof e.message === "string" ? e.message : "";
+    if (String(e.code) === "23505" && /purchases_company_id_number_key/.test(msg)) {
+      return "Já existe uma compra com este número. Abra a lista de Compras: ela pode já ter sido criada numa tentativa anterior. Se for outra compra, troque o número.";
+    }
     if (/row-level security|permission denied/i.test(msg)) {
       return "O banco não permitiu salvar esta alteração (sem permissão ou compra já recebida).";
     }

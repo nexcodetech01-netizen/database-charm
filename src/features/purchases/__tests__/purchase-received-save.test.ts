@@ -77,3 +77,14 @@ describe("salvar compra recebida", () => {
     expect(describeSaveError(null)).toMatch(/desconhecido/);
   });
 });
+
+describe("número de compra repetido", () => {
+  it("explica o erro em português", () => {
+    expect(
+      describeSaveError({
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "purchases_company_id_number_key"',
+      }),
+    ).toMatch(/Já existe uma compra com este número/);
+  });
+});
