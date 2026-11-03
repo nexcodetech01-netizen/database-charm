@@ -338,7 +338,7 @@ export function PurchaseForm({ companyId, purchase }: Props) {
     } catch (err) {
       console.error("[PurchaseForm.submit] Erro:", err);
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : "Erro desconhecido. Tente novamente.",
+        description: describeSaveError(err),
       });
     }
 
@@ -803,4 +803,21 @@ function FooterCell({
       </span>
     </div>
   );
+}
+
+/** Texto do erro para a tela; o Supabase devolve objetos, não Error. */
+export function describeSaveError(err: unknown): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const msg = typeof e.message === "string" ? e.message : "";
+    if (/row-level security|permission denied/i.test(msg)) {
+      return "O banco não permitiu salvar esta alteração (sem permissão ou compra já recebida).";
+    }
+    const parts = [msg, typeof e.details === "string" ? e.details : "", typeof e.hint === "string" ? e.hint : ""]
+      .filter(Boolean);
+    if (parts.length) return parts.join(" — ") + (e.code ? ` (código ${String(e.code)})` : "");
+  }
+  if (typeof err === "string" && err) return err;
+  return "Erro desconhecido. Tente novamente.";
 }

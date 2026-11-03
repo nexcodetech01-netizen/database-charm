@@ -409,6 +409,10 @@ export const purchasesService = {
     // deixaria a compra e o estoque real dessincronizados silenciosamente,
     // sem nenhum aviso — por isso bloqueamos aqui, na camada de serviço,
     // como segunda linha de defesa além do bloqueio na tela.
+    // Compra recebida com os mesmos itens: não regrava os itens. O banco
+    // (RLS) não deixa apagar/inserir itens de compra recebida, e apagar +
+    // inserir de novo duplicaria as peças. Só o cabeçalho é salvo.
+    let keepPersistedItems = false;
     if (rawItems) {
       const { data: currentStatus, error: statusErr } = await supabase
         .from("purchases")
@@ -428,12 +432,13 @@ export const purchasesService = {
             "Esta compra já foi recebida e o estoque já foi aplicado — os itens não podem mais ser editados. Use um ajuste de estoque para corrigir quantidades.",
           );
         }
+        keepPersistedItems = true;
       }
     }
 
     // Resolve produtos auto-criados apenas quando itens vieram no update.
     let items: PurchaseItemDraft[] | undefined = rawItems;
-    if (rawItems && rawItems.some((it) => !it.product_id)) {
+    if (rawItems && !keepPersistedItems && rawItems.some((it) => !it.product_id)) {
       const { data: existing, error: exErr } = await supabase
         .from("purchases")
         .select("company_id,supplier_id")
@@ -482,7 +487,7 @@ export const purchasesService = {
       ...totalsPatch,
     };
 
-    if (items) {
+    if (items && !keepPersistedItems) {
       const { error: delErr } = await supabase
         .from("purchase_items")
         .delete()
