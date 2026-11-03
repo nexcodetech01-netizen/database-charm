@@ -1,3 +1,4 @@
+import { describeSaveError } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
@@ -86,7 +87,7 @@ function PurchasesPage() {
       }
     } catch (e) {
       toast.error("Não foi possível atualizar o status", {
-        description: e instanceof Error ? e.message : undefined,
+        description: describeSaveError(e),
       });
     }
   }
@@ -98,7 +99,7 @@ function PurchasesPage() {
       toast.success("Compra excluída");
     } catch (e) {
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: describeSaveError(e),
       });
     }
   }

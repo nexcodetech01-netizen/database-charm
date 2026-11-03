@@ -1,3 +1,4 @@
+import { describeSaveError } from "@/lib/describe-error";
 import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
 import {
@@ -60,7 +61,7 @@ function PurchaseDetails() {
       });
     } catch (err) {
       toast.error("Não foi possível marcar como recebida", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        description: describeSaveError(err),
       });
     }
   }
@@ -74,7 +75,7 @@ function PurchaseDetails() {
       });
     } catch (err) {
       toast.error("Não foi possível reprocessar", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        description: describeSaveError(err),
       });
     }
   }
