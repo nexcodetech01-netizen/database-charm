@@ -32,10 +32,24 @@ import {
 interface ImportCsvDialogProps {
   companyId: string;
   onImported?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ImportCsvDialog({ companyId, onImported }: ImportCsvDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ImportCsvDialog({
+  companyId,
+  onImported,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+}: ImportCsvDialogProps) {
+  const [innerOpen, setInnerOpen] = useState(false);
+  // Aberto de fora (menu "Mais ações"): sem botão próprio.
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => {
+    if (!controlled) setInnerOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [rows, setRows] = useState<ParsedProductRow[]>([]);
   const [issues, setIssues] = useState<CsvIssue[]>([]);
   const [importing, setImporting] = useState(false);
@@ -108,12 +122,14 @@ export function ImportCsvDialog({ companyId, onImported }: ImportCsvDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Upload className="mr-2 h-4 w-4" />
-          Importar CSV
-        </Button>
-      </DialogTrigger>
+      {controlled ? null : (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Importar CSV
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Importar produtos (CSV)</DialogTitle>

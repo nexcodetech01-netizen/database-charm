@@ -22,8 +22,23 @@ import {
  * catálogo) e recomprime originais pesadas. Pode rodar de novo sem
  * problema — só mexe no que falta.
  */
-export function OptimizePhotosDialog({ companyId }: { companyId: string }) {
-  const [open, setOpen] = useState(false);
+export function OptimizePhotosDialog({
+  companyId,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+}: {
+  companyId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [innerOpen, setInnerOpen] = useState(false);
+  // Aberto de fora (menu "Mais ações"): sem botão próprio.
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => {
+    if (!controlled) setInnerOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [stage, setStage] = useState<"idle" | "counting" | "running" | "done" | "error">("idle");
   const [progress, setProgress] = useState<OptimizeProgress | null>(null);
   const [message, setMessage] = useState("");
@@ -54,11 +69,13 @@ export function OptimizePhotosDialog({ companyId }: { companyId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !running && setOpen(v)}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <ImageDown className="mr-1.5 h-4 w-4" /> Otimizar fotos
-        </Button>
-      </DialogTrigger>
+      {controlled ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline">
+            <ImageDown className="mr-1.5 h-4 w-4" /> Otimizar fotos
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Otimizar fotos</DialogTitle>
