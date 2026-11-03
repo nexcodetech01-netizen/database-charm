@@ -363,23 +363,32 @@ export const purchasesService = {
 
     if (error) throw error;
 
-    if (items.length > 0) {
-      const rows = items.map((it, idx) => ({
-        purchase_id: created.id,
-        product_id: it.product_id,
-        description: it.description,
-        quantity: it.quantity,
-        unit_price: it.unit_price,
-        discount: it.discount,
-        total: computeItemTotal(it),
-        position: idx,
-      }));
-      const { error: ierr } = await supabase.from("purchase_items").insert(rows);
-      if (ierr) throw ierr;
-    }
+    // Se algo falhar depois do cabeçalho, desfaz a compra recém-criada
+    // (ainda rascunho): senão ela fica pela metade e a próxima tentativa
+    // esbarra no número repetido.
+    try {
+      if (items.length > 0) {
+        const rows = items.map((it, idx) => ({
+          purchase_id: created.id,
+          product_id: it.product_id,
+          description: it.description,
+          quantity: it.quantity,
+          unit_price: it.unit_price,
+          discount: it.discount,
+          total: computeItemTotal(it),
+          position: idx,
+        }));
+        const { error: ierr } = await supabase.from("purchase_items").insert(rows);
+        if (ierr) throw ierr;
+      }
 
-    if (requestedStatus !== "draft") {
-      return purchasesService.setStatus(created.id, requestedStatus);
+      if (requestedStatus !== "draft") {
+        return await purchasesService.setStatus(created.id, requestedStatus);
+      }
+    } catch (err) {
+      await supabase.from("purchase_items").delete().eq("purchase_id", created.id);
+      await supabase.from("purchases").delete().eq("id", created.id);
+      throw err;
     }
 
     return created;
