@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { BulkCostDialog } from "@/features/products/components/bulk-cost-dialog";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Images, Package, Tags } from "lucide-react";
+import { Calculator, ImageDown, Images, Package, Sparkles, Tags, Upload } from "lucide-react";
 import { BulkLabelDialog } from "@/features/printing";
 import { OptimizePhotosDialog } from "@/features/products/components/optimize-photos-dialog";
 import { GridCreateDialog } from "@/features/products/components/grid-create-dialog";
@@ -45,6 +45,12 @@ function ProductsPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<ProductListFilters>(DEFAULT);
   const [labelsOpen, setLabelsOpen] = useState(false);
+  // Ferramentas de uso raro ficam no menu "Mais ações".
+  const [tool, setTool] = useState<"costs" | "ncm" | "csv" | "photos" | null>(null);
+  const toolProps = (id: NonNullable<typeof tool>) => ({
+    open: tool === id,
+    onOpenChange: (v: boolean) => setTool(v ? id : null),
+  });
   const debouncedSearch = useDebouncedValue(filters.search, 300);
   const effective = useMemo(
     () => ({ ...filters, search: debouncedSearch }),
@@ -64,19 +70,21 @@ function ProductsPage() {
           <ActionToolbar
             createLabel="Novo produto"
             onCreate={() => navigate({ to: "/produtos/novo" })}
+            moreActions={[
+              { label: "Preencher custos", icon: Calculator, onSelect: () => setTool("costs") },
+              { label: "Preencher NCM", icon: Sparkles, onSelect: () => setTool("ncm") },
+              { label: "Importar CSV", icon: Upload, onSelect: () => setTool("csv") },
+              { label: "Otimizar fotos", icon: ImageDown, onSelect: () => setTool("photos") },
+              {
+                label: "Fotos em lote",
+                icon: Images,
+                onSelect: () => navigate({ to: "/produtos/fotos-em-lote" }),
+              },
+            ]}
           >
-                        <BulkCostDialog companyId={company.id} />
-            <BulkNcmDialog companyId={company.id} />
-            <ImportCsvDialog companyId={company.id} />
             <GridCreateDialog companyId={company.id} />
-            <OptimizePhotosDialog companyId={company.id} />
             <Button size="sm" variant="outline" onClick={() => setLabelsOpen(true)}>
               <Tags className="mr-1.5 h-4 w-4" /> Etiquetas em lote
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/produtos/fotos-em-lote">
-                <Images className="mr-1.5 h-4 w-4" /> Fotos em lote
-              </Link>
             </Button>
           </ActionToolbar>
         }
@@ -106,6 +114,11 @@ function ProductsPage() {
       />
       
       <NcmClassificationDashboard companyId={company.id} />
+
+      <BulkCostDialog companyId={company.id} {...toolProps("costs")} />
+      <BulkNcmDialog companyId={company.id} {...toolProps("ncm")} />
+      <ImportCsvDialog companyId={company.id} {...toolProps("csv")} />
+      <OptimizePhotosDialog companyId={company.id} {...toolProps("photos")} />
 
       <BulkLabelDialog open={labelsOpen} onOpenChange={setLabelsOpen} companyId={company.id} />
     </div>

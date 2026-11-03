@@ -153,7 +153,7 @@ export function ActionToolbar({
               aria-label="Mais ações"
               data-testid="action-toolbar-more"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="mr-1.5 h-4 w-4" /> Mais
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

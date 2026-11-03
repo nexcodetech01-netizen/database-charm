@@ -35,9 +35,24 @@ const missingCostKey = (companyId: string) => ["products", "missing-cost", compa
  * um embaixo do outro. Opcionalmente corrige as vendas já feitas desses
  * produtos (RPC set_product_costs), para o fechamento dos meses passados.
  */
-export function BulkCostDialog({ companyId }: { companyId: string }) {
+export function BulkCostDialog({
+  companyId,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+}: {
+  companyId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  // Aberto de fora (menu "Mais ações"): sem botão próprio.
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => {
+    if (!controlled) setInnerOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [costs, setCosts] = useState<Record<string, string>>({});
   const [backfill, setBackfill] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -117,11 +132,13 @@ export function BulkCostDialog({ companyId }: { companyId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Calculator className="mr-1.5 h-4 w-4" /> Preencher custos
-        </Button>
-      </DialogTrigger>
+      {controlled ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline">
+            <Calculator className="mr-1.5 h-4 w-4" /> Preencher custos
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Produtos sem custo</DialogTitle>

@@ -28,13 +28,27 @@ import { formatNcm } from "../lib/fiscal-suggestions";
 interface Props {
   companyId: string;
   label?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 type Phase = "idle" | "scanning" | "preview" | "applying" | "done";
 
-export function BulkNcmDialog({ companyId, label }: Props) {
+export function BulkNcmDialog({
+  companyId,
+  label,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+}: Props) {
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  // Aberto de fora (menu "Mais ações"): sem botão próprio.
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (v: boolean) => {
+    if (!controlled) setInnerOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [scan, setScan] = useState<BulkNcmScan | null>(null);
@@ -103,11 +117,13 @@ export function BulkNcmDialog({ companyId, label }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Sparkles className="mr-1.5 h-4 w-4" /> {label || "Preencher NCM"}
-        </Button>
-      </DialogTrigger>
+      {controlled ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline">
+            <Sparkles className="mr-1.5 h-4 w-4" /> {label || "Preencher NCM"}
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
