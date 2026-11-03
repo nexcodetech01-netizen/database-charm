@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -170,7 +169,7 @@ export function PurchaseImportReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+      <DialogContent className="flex h-[95vh] max-w-6xl flex-col gap-3">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -191,7 +190,7 @@ export function PurchaseImportReviewDialog({
           ))}
         </datalist>
 
-        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-sm">
           <span className="font-medium">Categoria para vários itens:</span>
           <Input
             list="purchase-import-category-options"
@@ -230,12 +229,12 @@ export function PurchaseImportReviewDialog({
           >
             Só nos vazios
           </Button>
-          <span className="text-xs text-muted-foreground">
+          <span className="hidden text-xs text-muted-foreground xl:inline">
             Itens já vinculados a um produto existente não mudam.
           </span>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-sm">
           <span className="font-medium">Preço de venda:</span>
           <select
             value={priceMode}
@@ -292,12 +291,12 @@ export function PurchaseImportReviewDialog({
           >
             Aplicar
           </Button>
-          <span className="text-xs text-muted-foreground">
+          <span className="hidden text-xs text-muted-foreground xl:inline">
             Vale para os produtos novos. Sem preço, o produto entra com o preço igual ao custo.
           </span>
         </div>
 
-        <div className="flex-1 overflow-auto my-4 border rounded-md">
+        <div className="min-h-[280px] flex-1 overflow-auto rounded-md border">
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
@@ -472,29 +471,24 @@ export function PurchaseImportReviewDialog({
           </Table>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg mb-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <AlertCircle className="h-4 w-4" />
+        {/* Rodapé compacto: deixa o espaço para a lista de produtos. */}
+        <div className="flex flex-wrap items-center gap-3 border-t pt-3">
+          <p className="flex min-w-0 flex-1 items-start gap-1.5 text-xs text-muted-foreground">
+            <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0" />
             <span>
-              Kits e pacotes foram fracionados automaticamente pela IA. Categoria
-              em branco vira "Outros" — categoria nova digitada aqui é criada
-              automaticamente ao confirmar.
+              Kits e pacotes foram fracionados pela IA. Categoria em branco vira "Outros";
+              categoria nova é criada ao confirmar.
             </span>
-          </div>
+          </p>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground uppercase font-semibold">Total Extraído</p>
-            <p className="text-2xl font-bold text-primary">{formatCurrency(grandTotal)}</p>
+            <p className="text-[10px] font-semibold uppercase text-muted-foreground">Total extraído</p>
+            <p className="text-lg font-bold leading-tight text-primary">{formatCurrency(grandTotal)}</p>
           </div>
-        </div>
-
-        <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Descartar
           </Button>
-          <Button onClick={() => onConfirm(items)}>
-            Confirmar e Preencher Compra
-          </Button>
-        </DialogFooter>
+          <Button onClick={() => onConfirm(items)}>Confirmar e Preencher Compra</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
