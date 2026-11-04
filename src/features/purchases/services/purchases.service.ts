@@ -30,6 +30,8 @@ async function ensureProductsForItems(
   companyId: string,
   supplierId: string | null | undefined,
   items: PurchaseItemDraft[],
+  /** Recebe o id de cada produto criado aqui (para desfazer se der erro). */
+  createdIds?: string[],
 ): Promise<PurchaseItemDraft[]> {
   const resolved: PurchaseItemDraft[] = [];
   // Marcas já usadas pela empresa ajudam a separar marca/estampa/cor/tamanho
@@ -123,6 +125,7 @@ async function ensureProductsForItems(
       sku = bumpSkuSuffix(sku);
     }
     if (!created) throw new Error(`Não foi possível gerar um SKU único para "${name}".`);
+    createdIds?.push(created.id);
     resolved.push({
       ...it,
       product_id: created.id,
@@ -330,43 +333,40 @@ export const purchasesService = {
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
     }
     const { items: rawItems, ...header } = input;
-    // Cria produtos automaticamente para linhas sem product_id (importação /
-    // linha manual) antes de calcular totais e persistir.
-    const items = await ensureProductsForItems(
-      String(header.company_id),
-      (header as { supplier_id?: string | null }).supplier_id ?? null,
-      rawItems,
-    );
-    const totals = computeTotals(items, {
-      discount: Number(header.discount ?? 0),
-      shipping: Number(header.shipping ?? 0),
-      insurance: Number(header.insurance ?? 0),
-      other_costs: Number(header.other_costs ?? 0),
-    });
-
-    // O gatilho que dá entrada no estoque (apply_purchase_to_inventory) é
-    // "AFTER UPDATE OF status" — ele só dispara numa TRANSIÇÃO de status via
-    // UPDATE, nunca num INSERT. Se a compra já nascer com status "received"
-    // (ex.: importar um pedido já recebido e salvar direto como Recebida),
-    // o trigger nunca roda e o estoque fica travado em 0 pra sempre — sem
-    // nenhum erro visível. Por isso criamos sempre como rascunho aqui, e se
-    // o status pedido for outro, aplicamos DEPOIS pelo mesmo caminho da tela
-    // de detalhe (setStatus/RPC receive_purchase), que faz a transição via
-    // UPDATE de verdade e dispara o trigger corretamente.
-    const requestedStatus = String((header as { status?: string }).status ?? "draft");
-
-    const { data: created, error } = await supabase
-      .from("purchases")
-      .insert({ ...header, ...totals, status: "draft" })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Se algo falhar depois do cabeçalho, desfaz a compra recém-criada
-    // (ainda rascunho): senão ela fica pela metade e a próxima tentativa
-    // esbarra no número repetido.
+    // Produtos e compra criados nesta tentativa: se algo falhar, tudo é
+    // desfeito. Antes, cada tentativa com erro deixava cópias das peças
+    // (estoque 0) e a compra pela metade.
+    const createdProductIds: string[] = [];
+    let createdPurchaseId: string | null = null;
     try {
+      // Cria produtos automaticamente para linhas sem product_id (importação /
+      // linha manual) antes de calcular totais e persistir.
+      const items = await ensureProductsForItems(
+        String(header.company_id),
+        (header as { supplier_id?: string | null }).supplier_id ?? null,
+        rawItems,
+        createdProductIds,
+      );
+      const totals = computeTotals(items, {
+        discount: Number(header.discount ?? 0),
+        shipping: Number(header.shipping ?? 0),
+        insurance: Number(header.insurance ?? 0),
+        other_costs: Number(header.other_costs ?? 0),
+      });
+
+      // O gatilho de estoque (apply_purchase_to_inventory) só dispara numa
+      // TRANSIÇÃO de status via UPDATE. Por isso a compra nasce rascunho e
+      // o status pedido é aplicado depois, por setStatus.
+      const requestedStatus = String((header as { status?: string }).status ?? "draft");
+
+      const { data: created, error } = await supabase
+        .from("purchases")
+        .insert({ ...header, ...totals, status: "draft" })
+        .select()
+        .single();
+      if (error) throw error;
+      createdPurchaseId = created.id;
+
       if (items.length > 0) {
         const rows = items.map((it, idx) => ({
           purchase_id: created.id,
@@ -385,13 +385,17 @@ export const purchasesService = {
       if (requestedStatus !== "draft") {
         return await purchasesService.setStatus(created.id, requestedStatus);
       }
+      return created;
     } catch (err) {
-      await supabase.from("purchase_items").delete().eq("purchase_id", created.id);
-      await supabase.from("purchases").delete().eq("id", created.id);
+      if (createdPurchaseId) {
+        await supabase.from("purchase_items").delete().eq("purchase_id", createdPurchaseId);
+        await supabase.from("purchases").delete().eq("id", createdPurchaseId);
+      }
+      if (createdProductIds.length > 0) {
+        await supabase.from("products").delete().in("id", createdProductIds);
+      }
       throw err;
     }
-
-    return created;
   },
 
   async update(
