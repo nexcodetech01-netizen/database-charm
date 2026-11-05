@@ -1,3 +1,4 @@
+import { SystemHealthBanner } from "@/features/system-health";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import {
@@ -267,6 +268,8 @@ function DashboardPage() {
         SPACING_TOKENS.relaxed.stack,
       )}
     >
+      <SystemHealthBanner companyId={company.id} />
+
       {/* 1 — EntityHeader */}
       <EntityHeader
         icon={BarChart3}

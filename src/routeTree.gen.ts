@@ -51,6 +51,7 @@ import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedRevendedoresRouteImport } from './routes/_authenticated/revendedores'
 import { Route as AuthenticatedSaudePlataformaRouteImport } from './routes/_authenticated/saude-plataforma'
+import { Route as AuthenticatedSaudeSistemaRouteImport } from './routes/_authenticated/saude-sistema'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as FidelidadeSlugRouteImport } from './routes/fidelidade.$slug'
@@ -343,6 +344,12 @@ const AuthenticatedSaudePlataformaRoute =
   AuthenticatedSaudePlataformaRouteImport.update({
     id: '/saude-plataforma',
     path: '/saude-plataforma',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSaudeSistemaRoute =
+  AuthenticatedSaudeSistemaRouteImport.update({
+    id: '/saude-sistema',
+    path: '/saude-sistema',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendasRoute = AuthenticatedVendasRouteImport.update({
@@ -795,6 +802,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/revendedores': typeof AuthenticatedRevendedoresRoute
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
+  '/saude-sistema': typeof AuthenticatedSaudeSistemaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/fidelidade/$slug': typeof FidelidadeSlugRoute
@@ -908,6 +916,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/revendedores': typeof AuthenticatedRevendedoresRoute
   '/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
+  '/saude-sistema': typeof AuthenticatedSaudeSistemaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/fidelidade/$slug': typeof FidelidadeSlugRoute
@@ -1022,6 +1031,7 @@ export interface FileRoutesById {
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/revendedores': typeof AuthenticatedRevendedoresRoute
   '/_authenticated/saude-plataforma': typeof AuthenticatedSaudePlataformaRoute
+  '/_authenticated/saude-sistema': typeof AuthenticatedSaudeSistemaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/fidelidade/$slug': typeof FidelidadeSlugRoute
@@ -1137,6 +1147,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/revendedores'
     | '/saude-plataforma'
+    | '/saude-sistema'
     | '/vendas'
     | '/whatsapp'
     | '/fidelidade/$slug'
@@ -1250,6 +1261,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/revendedores'
     | '/saude-plataforma'
+    | '/saude-sistema'
     | '/vendas'
     | '/whatsapp'
     | '/fidelidade/$slug'
@@ -1363,6 +1375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios'
     | '/_authenticated/revendedores'
     | '/_authenticated/saude-plataforma'
+    | '/_authenticated/saude-sistema'
     | '/_authenticated/vendas'
     | '/_authenticated/whatsapp'
     | '/fidelidade/$slug'
@@ -1765,6 +1778,13 @@ declare module '@tanstack/react-router' {
       path: '/saude-plataforma'
       fullPath: '/saude-plataforma'
       preLoaderRoute: typeof AuthenticatedSaudePlataformaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/saude-sistema': {
+      id: '/_authenticated/saude-sistema'
+      path: '/saude-sistema'
+      fullPath: '/saude-sistema'
+      preLoaderRoute: typeof AuthenticatedSaudeSistemaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendas': {
@@ -2444,6 +2464,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedRevendedoresRoute: typeof AuthenticatedRevendedoresRoute
   AuthenticatedSaudePlataformaRoute: typeof AuthenticatedSaudePlataformaRoute
+  AuthenticatedSaudeSistemaRoute: typeof AuthenticatedSaudeSistemaRoute
   AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedBellaContadoraFechamentoMensalRoute: typeof AuthenticatedBellaContadoraFechamentoMensalRoute
@@ -2513,6 +2534,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedRevendedoresRoute: AuthenticatedRevendedoresRoute,
   AuthenticatedSaudePlataformaRoute: AuthenticatedSaudePlataformaRoute,
+  AuthenticatedSaudeSistemaRoute: AuthenticatedSaudeSistemaRoute,
   AuthenticatedVendasRoute: AuthenticatedVendasRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedBellaContadoraFechamentoMensalRoute:
