@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Repeat } from "lucide-react";
 import {
   Dialog,
@@ -58,7 +58,12 @@ export function ExchangeDialog({
   const { mutateAsync, isPending } = useCreateExchange();
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [reason, setReason] = useState("Não serviu");
-  const [customerId, setCustomerId] = useState("");
+  // Quem vai usar o vale: por padrão quem comprou; pode ser quem ganhou
+  // o presente (vários presentes de pessoas diferentes somam no mesmo vale).
+  const [customerId, setCustomerId] = useState(saleCustomerId ?? "");
+  useEffect(() => {
+    if (open) setCustomerId(saleCustomerId ?? "");
+  }, [open, saleCustomerId]);
 
   const availableFor = (item: SaleItem) => {
     const returned = returnedMap?.get(item.id) ?? 0;
@@ -89,10 +94,9 @@ export function ExchangeDialog({
     [saleItems, rows],
   );
 
-  const needsCustomer = !saleCustomerId;
   const valid =
     credit > 0 &&
-    (!needsCustomer || !!customerId) &&
+    !!customerId &&
     saleItems.every(
       (it) => !rows[it.id]?.selected || (qtyOf(it.id) > 0 && qtyOf(it.id) <= availableFor(it)),
     );
@@ -111,12 +115,12 @@ export function ExchangeDialog({
       await mutateAsync({
         companyId,
         saleId,
-        customerId: needsCustomer ? customerId : null,
+        customerId: customerId || null,
         reason: reason.trim() || "Troca",
         items,
       });
       setRows({});
-      setCustomerId("");
+      setCustomerId(saleCustomerId ?? "");
       onOpenChange(false);
     } catch {
       /* toast no hook */
@@ -191,21 +195,17 @@ export function ExchangeDialog({
             })}
           </div>
 
-          {needsCustomer ? (
-            <div className="space-y-1.5">
-              <Label>
-                Cliente <span className="text-destructive">*</span>
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                A venda foi sem cliente. Escolha quem vai ficar com o vale-troca.
-              </p>
-              <PDVCustomerSelect
-                companyId={companyId}
-                value={customerId}
-                onChange={setCustomerId}
-              />
-            </div>
-          ) : null}
+          <div className="space-y-1.5">
+            <Label>
+              Quem vai usar o vale <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {saleCustomerId
+                ? "Já vem quem comprou. Se foi presente, troque para quem ganhou: vales de presentes diferentes somam no nome dela."
+                : "A venda foi sem cliente. Escolha quem vai ficar com o vale-troca."}
+            </p>
+            <PDVCustomerSelect companyId={companyId} value={customerId} onChange={setCustomerId} />
+          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="exchange-reason">Motivo</Label>
