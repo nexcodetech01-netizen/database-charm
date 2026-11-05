@@ -53,6 +53,7 @@ BEGIN
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.system_health_part_stock(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_health_part_stock(uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.system_health_part_money(_company_id uuid)
 RETURNS TABLE(code text, severity text, title text, detail text,
@@ -98,6 +99,7 @@ BEGIN
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.system_health_part_money(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_health_part_money(uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.system_health_part_credit(_company_id uuid)
 RETURNS TABLE(code text, severity text, title text, detail text,
@@ -132,6 +134,7 @@ BEGIN
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.system_health_part_credit(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_health_part_credit(uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.system_health_part_records(_company_id uuid)
 RETURNS TABLE(code text, severity text, title text, detail text,
@@ -174,6 +177,7 @@ BEGIN
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.system_health_part_records(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_health_part_records(uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.system_health_part_summary(_company_id uuid)
 RETURNS TABLE(code text, severity text, title text, detail text,
@@ -207,6 +211,7 @@ BEGIN
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.system_health_part_summary(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.system_health_part_summary(uuid) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.system_health_checks(_company_id uuid)
 RETURNS TABLE(code text, severity text, title text, detail text,
