@@ -43,6 +43,7 @@ export const ROUTES = {
   processes: "/processamentos",
   documents: "/documentos",
   platformHealth: "/saude-plataforma",
+  systemHealth: "/saude-sistema",
   whatsapp: "/whatsapp",
   commercialInbox: "/comercial/inbox-whatsapp",
   commercialInterests: "/comercial/lista-interesse",

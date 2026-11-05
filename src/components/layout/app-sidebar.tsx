@@ -127,6 +127,7 @@ const groups: NavGroup[] = [
     items: [
       { title: "Frete", url: ROUTES.shippingCalculator, icon: Truck, status: "available", permission: "reports.view" },
       { title: "Relatórios", url: ROUTES.reports, icon: BarChart3, status: "available", permission: "reports.view" },
+      { title: "Saúde do sistema", url: ROUTES.systemHealth, icon: HeartPulse, status: "available", permission: "settings.view" },
       { title: "Saúde da Plataforma", url: ROUTES.platformHealth, icon: Activity, status: "available", permission: "settings.view", module: "avancado" },
       { title: "Configurações", url: ROUTES.settings, icon: Settings, status: "available", permission: "settings.view" },
     ],
