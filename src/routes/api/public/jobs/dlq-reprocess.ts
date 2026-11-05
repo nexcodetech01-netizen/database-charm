@@ -52,6 +52,10 @@ export const Route = createFileRoute("/api/public/jobs/dlq-reprocess")({
                 if (outcome.status >= 400 || outcome.deadLetter) {
                   throw new Error(outcome.body);
                 }
+              } else if (entry.source === "mercadolivre" && entry.topic === "reconcile") {
+                // A conciliação do ML roda de hora em hora e reprocessa o
+                // período inteiro sozinha: a falha antiga não precisa de
+                // reenvio — fica resolvida (se o erro voltar, nasce outra).
               } else if (entry.source === "whatsapp" && entry.topic !== "batch") {
                 const { reprocessWhatsAppDeadLetter } = await import(
                   "@/features/whatsapp/inbound/webhook-processor.server"
