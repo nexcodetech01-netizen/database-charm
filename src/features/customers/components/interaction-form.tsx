@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -44,7 +45,7 @@ export function InteractionForm({ companyId, customerId }: Props) {
       setContent("");
       setType("note");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao registrar");
+      toast.error(errorText(err, "Falha ao registrar"));
     }
   };
 

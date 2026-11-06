@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -533,7 +534,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       }
     } catch (err) {
       console.error("[handleSuggestFromPhoto]", err);
-      toast.error(err instanceof Error ? err.message : "Erro ao analisar a foto");
+      toast.error(errorText(err, "Erro ao analisar a foto"));
     } finally {
       setSuggestingFromPhoto(false);
     }
@@ -565,7 +566,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       await qc.invalidateQueries({ queryKey: productsKeys.images(product.id) });
       toast.success("Foto principal removida");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao remover a foto principal");
+      toast.error(errorText(err, "Erro ao remover a foto principal"));
     } finally {
       setRemovingMainImage(false);
     }

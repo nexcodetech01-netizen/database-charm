@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -416,7 +417,7 @@ export function CheckoutDialog({
       }
     } catch (e) {
       toast.error("Não foi possível processar a venda", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     } finally {
       setOpeningSettle(false);
@@ -444,7 +445,7 @@ export function CheckoutDialog({
       openCompletedDialog();
     } catch (e) {
       toast.error("Baixa registrada, mas o status da venda não foi atualizado", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

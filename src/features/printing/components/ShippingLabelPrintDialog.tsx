@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
@@ -354,7 +355,7 @@ export function ShippingLabelPrintDialog({
       }
     } catch (error) {
       console.error("[PrintDialog] Erro na execução da impressão:", error);
-      toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro"));
+      toast.error("Falha ao imprimir: " + (errorText(error, "Erro")));
     } finally {
       setIsPrinting(false);
     }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -71,7 +72,7 @@ export function OpportunityDetailSheet({
       toast.success("Observação registrada");
     } catch (e) {
       toast.error("Não foi possível salvar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

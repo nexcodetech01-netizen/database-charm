@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
@@ -250,7 +251,7 @@ function MarketingPage() {
                           onSuccess: () => toast.success("Campanha removida"),
                           onError: (err) =>
                             toast.error("Não foi possível remover a campanha", {
-                              description: err instanceof Error ? err.message : undefined,
+                              description: errorText(err),
                             }),
                         })
                       }

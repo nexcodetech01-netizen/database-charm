@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ShippingCalculatorSchema, ShippingOption, GenerateLabelSchema, LabelResult } from "../types";
@@ -13,7 +14,7 @@ export const calculateShipping = createServerFn({ method: "POST" })
     try {
       return await calculateSuperfreteShipping(data);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao calcular frete";
+      const message = errorText(error, "Erro ao calcular frete");
       console.error("[calculateShipping] Erro ao calcular frete:", error);
       throw new Error(message);
     }
@@ -41,7 +42,7 @@ export const generateLabel = createServerFn({ method: "POST" })
     try {
       return await generateSuperfreteLabel(data);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao emitir etiqueta";
+      const message = errorText(error, "Erro ao emitir etiqueta");
       console.error("[generateLabel] Erro ao gerar etiqueta:", error);
       throw new Error(message);
     }

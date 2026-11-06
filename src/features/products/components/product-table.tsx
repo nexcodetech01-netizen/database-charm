@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -76,7 +77,7 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
       await updateMlItem({ data: { productId, status } });
       toast.success(status === "active" ? "Anúncio reativado" : "Anúncio pausado");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar anúncio");
+      toast.error(errorText(err, "Falha ao atualizar anúncio"));
     } finally {
       setIsUpdatingMl(null);
     }
@@ -88,7 +89,7 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
       await syncMlItem({ data: { productId } });
       toast.success("Preço e estoque sincronizados com o ML");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao sincronizar");
+      toast.error(errorText(err, "Falha ao sincronizar"));
     } finally {
       setIsUpdatingMl(null);
     }
@@ -365,7 +366,7 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
                       await updateProduct.mutateAsync({ id: p.id, input: { status: "active" } });
                       toast.success("Produto ativado");
                     } catch (err) {
-                      toast.error(err instanceof Error ? err.message : "Falha ao ativar produto");
+                      toast.error(errorText(err, "Falha ao ativar produto"));
                     }
                   }}
                 >
@@ -440,7 +441,7 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
                   setDeactivateTarget(null);
                 } catch (err) {
                   toast.error(
-                    err instanceof Error ? err.message : "Falha ao inativar produto",
+                    errorText(err, "Falha ao inativar produto"),
                   );
                 }
               }}

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, FileText, MessageCircle, Plus, Printer, X } from "lucide-react";
 import { toast } from "sonner";
@@ -156,7 +157,7 @@ export function ReceiptDialog(props: Props) {
       }
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao preparar mensagem.",
+        errorText(err, "Falha ao preparar mensagem."),
       );
     } finally {
       setWaLoading(false);

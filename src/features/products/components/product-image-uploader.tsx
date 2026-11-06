@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useRef, useState } from "react";
 import { Upload, X, ImageIcon, Loader2, Crop } from "lucide-react";
 import { toast } from "sonner";
@@ -67,7 +68,7 @@ export function ProductImageUploader({ companyId, productId }: Props) {
         setFramingImage(createdOrder[0]);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha no upload");
+      toast.error(errorText(err, "Falha no upload"));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -79,7 +80,7 @@ export function ProductImageUploader({ companyId, productId }: Props) {
       await productImagesService.remove(id, path);
       await qc.invalidateQueries({ queryKey: productsKeys.images(productId) });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao remover");
+      toast.error(errorText(err, "Falha ao remover"));
     }
   };
 
@@ -97,7 +98,7 @@ export function ProductImageUploader({ companyId, productId }: Props) {
       toast.success("Enquadramento salvo");
       setFramingImage(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar");
+      toast.error(errorText(err, "Falha ao salvar"));
     } finally {
       setFramingSaving(false);
     }

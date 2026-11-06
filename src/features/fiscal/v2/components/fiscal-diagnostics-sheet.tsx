@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2, ChevronRight, Loader2, XCircle } from "lucide-react";
@@ -62,7 +63,7 @@ export function FiscalDiagnosticsSheet({ open, onOpenChange }: Props) {
       map[r.status](r.message);
       provider.refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao testar conexão.");
+      toast.error(errorText(err, "Falha ao testar conexão."));
     } finally {
       setTesting(false);
     }

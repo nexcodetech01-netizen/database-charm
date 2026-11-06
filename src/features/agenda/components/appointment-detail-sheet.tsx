@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarClock, MapPin, User, Trash2, Pencil } from "lucide-react";
@@ -61,7 +62,7 @@ export function AppointmentDetailSheet({ appointment, open, onOpenChange, onEdit
       toast.success("Status atualizado");
     } catch (e) {
       toast.error("Não foi possível atualizar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -75,7 +76,7 @@ export function AppointmentDetailSheet({ appointment, open, onOpenChange, onEdit
       onOpenChange(false);
     } catch (e) {
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/format";
@@ -38,6 +39,6 @@ export function useCreateExchange() {
         description: `Saldo da cliente: ${formatCurrency(res.balance)}`,
       });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar a troca."),
+    onError: (e) => toast.error(errorText(e, "Erro ao registrar a troca.")),
   });
 }

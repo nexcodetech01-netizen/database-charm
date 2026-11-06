@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +40,7 @@ export function PendingCashReconciliations({ items, openSession }: Props) {
       await resolvePending.mutateAsync(item.id);
       toast.success("Devolução registrada no caixa.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível registrar a devolução.");
+      toast.error(errorText(error, "Não foi possível registrar a devolução."));
     }
   }
 

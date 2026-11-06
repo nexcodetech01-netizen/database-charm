@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import {
   Sheet,
@@ -190,7 +191,7 @@ export function CollectionEditorDrawer({
                             },
                             onError: (err) => {
                               toast.error(`Não foi possível remover “${label}”`, {
-                                description: err instanceof Error ? err.message : "Tente de novo.",
+                                description: errorText(err, "Tente de novo."),
                               });
                             },
                           });

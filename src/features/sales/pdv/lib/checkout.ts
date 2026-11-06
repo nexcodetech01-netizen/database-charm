@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * PDV — Finalização da venda (Sprint 2.4).
  *
@@ -71,7 +72,7 @@ export async function submitPdvSale(input: {
       ok: false,
       code: "persist_failed",
       message:
-        err instanceof Error ? err.message : "Não foi possível gravar a venda.",
+        errorText(err, "Não foi possível gravar a venda."),
     };
   }
 }

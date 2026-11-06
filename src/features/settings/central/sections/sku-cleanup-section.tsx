@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -75,7 +76,7 @@ export function SkuCleanupSection() {
       setRows(res.rows);
       toast.success(`${res.total} produto(s) legado(s) encontrado(s).`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha na análise.");
+      toast.error(errorText(err, "Falha na análise."));
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ export function SkuCleanupSection() {
       });
       auditQ.refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao renomear.");
+      toast.error(errorText(err, "Falha ao renomear."));
     } finally {
       setApplying(false);
     }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import {
   useCallback,
   useEffect,
@@ -194,7 +195,7 @@ export function PDVScreen({
           return;
         } catch (e) {
           toast.error("Não foi possível concluir com o vale-troca", {
-            description: e instanceof Error ? e.message : undefined,
+            description: errorText(e),
           });
         }
       }

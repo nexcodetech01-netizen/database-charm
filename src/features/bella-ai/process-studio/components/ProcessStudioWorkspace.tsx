@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * ProcessStudioWorkspace — editor visual do Bella Process Studio.
  *
@@ -193,7 +194,7 @@ export function ProcessStudioWorkspace({
       const res = actions.publish(selected.id);
       toast.success(`Publicado como ${res.workflowId}.`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao publicar.");
+      toast.error(errorText(err, "Falha ao publicar."));
     }
   }
 

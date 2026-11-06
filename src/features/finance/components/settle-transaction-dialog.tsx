@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -237,7 +238,7 @@ export function SettleTransactionDialog({
         });
       } catch (err) {
         toast.error("Não foi possível registrar o pagamento", {
-          description: err instanceof Error ? err.message : undefined,
+          description: errorText(err),
         });
       }
       return;
@@ -306,7 +307,7 @@ export function SettleTransactionDialog({
       });
     } catch (err) {
       toast.error("Não foi possível registrar a baixa", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

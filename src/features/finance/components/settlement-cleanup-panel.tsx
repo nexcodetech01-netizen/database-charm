@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,7 +91,7 @@ export function SettlementCleanupPanel({ companyId }: Props) {
       setTarget(null);
     } catch (err) {
       toast.error("Não foi possível regularizar a baixa", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

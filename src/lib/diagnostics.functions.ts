@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * System Diagnostics — Health Check server function.
  * Read-only checks: no external side effects (no messages, no charges).
@@ -48,7 +49,7 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
           : "Leitura autorizada.",
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      const msg = errorText(err, "Erro desconhecido");
       checks.push({
         id: "db-connection",
         category: "Banco de Dados",
@@ -114,7 +115,7 @@ export const runSystemDiagnostics = createServerFn({ method: "POST" })
         category: "Storage",
         label: "Acesso ao bucket",
         status: "error",
-        message: err instanceof Error ? err.message : "Erro ao listar buckets.",
+        message: errorText(err, "Erro ao listar buckets."),
       });
     }
 

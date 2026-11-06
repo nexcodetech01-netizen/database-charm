@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -90,7 +91,7 @@ export function CloseSessionDialog({ open, onOpenChange, session, onClosed }: Pr
       toast.success("Caixa fechado.");
       onClosed(res.session.id);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao fechar caixa.");
+      toast.error(errorText(err, "Falha ao fechar caixa."));
     }
   }
 

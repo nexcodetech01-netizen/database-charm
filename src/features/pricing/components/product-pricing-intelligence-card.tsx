@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * ProductPricingIntelligenceCard
  * ==============================
@@ -75,7 +76,7 @@ export function ProductPricingIntelligenceCard({ companyId, productId, productQu
       await qc.invalidateQueries({ queryKey: ["products"] });
     },
     onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Falha ao aplicar preço");
+      toast.error(errorText(err, "Falha ao aplicar preço"));
     },
   });
 
@@ -272,7 +273,7 @@ function MetricTile({
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 export function friendlyPricingMessage(err: unknown): string {
-  const raw = err instanceof Error ? err.message : "";
+  const raw = errorText(err, "");
   if (!raw) return "Nenhuma política comercial configurada.";
   if (/CompanyPolicy/i.test(raw) || /Company.*not found/i.test(raw)) {
     return "Nenhuma política comercial configurada para esta empresa.";

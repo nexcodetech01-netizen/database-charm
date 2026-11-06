@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export function SignUpForm({ onSuccess }: Props) {
       toast.success("Conta criada! Confira seu email para confirmar.");
       onSuccess();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível cadastrar.");
+      toast.error(errorText(err, "Não foi possível cadastrar."));
     } finally {
       inFlightRef.current = false;
       setLoading(false);

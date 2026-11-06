@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * PriceReviewWorkspace — UX-006 · Central de Revisão de Preços
  * ============================================================
@@ -338,7 +339,7 @@ export function PriceReviewWorkspace({ companyId }: Props) {
                   {
                     productId: item.productId,
                     name: item.name,
-                    error: err instanceof Error ? err.message : "Erro desconhecido",
+                    error: errorText(err, "Erro desconhecido"),
                   },
                 ],
               }

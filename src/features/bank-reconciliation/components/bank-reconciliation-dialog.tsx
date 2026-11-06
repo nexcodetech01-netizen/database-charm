@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeftRight, CheckCircle2, ChevronDown, FileUp, Loader2, Trash2, Undo2 } from "lucide-react";
@@ -140,7 +141,7 @@ export function BankReconciliationDialog({
       setFromDay(start);
       await loadData(start, st);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível ler o extrato.");
+      toast.error(errorText(e, "Não foi possível ler o extrato."));
     } finally {
       setLoading(false);
     }
@@ -189,7 +190,7 @@ export function BankReconciliationDialog({
       await saveLine(item, "ignored");
       await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao ignorar.");
+      toast.error(errorText(e, "Erro ao ignorar."));
     } finally {
       setBusyId(null);
     }
@@ -213,7 +214,7 @@ export function BankReconciliationDialog({
       toast.success("Lançamento excluído.");
       await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível excluir.");
+      toast.error(errorText(e, "Não foi possível excluir."));
     } finally {
       setBusyId(null);
     }
@@ -234,7 +235,7 @@ export function BankReconciliationDialog({
       } catch (e) {
         toast.error(
           `O lançamento foi tirado desta conta, mas não consegui dar baixa na outra: ${
-            e instanceof Error ? e.message : ""
+            errorText(e, "")
           }. Ele ficou em aberto no Financeiro — dê a baixa por lá.`,
         );
         throw e;
@@ -245,7 +246,7 @@ export function BankReconciliationDialog({
       await refresh();
     } catch (e) {
       if (!(e instanceof Error && e.message.includes("tirado desta conta"))) {
-        toast.error(e instanceof Error ? e.message : "Não foi possível mover.");
+        toast.error(errorText(e, "Não foi possível mover."));
       }
     } finally {
       setBusyId(null);
@@ -278,7 +279,7 @@ export function BankReconciliationDialog({
       toast.success("Ajuste lançado.");
       await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível lançar o ajuste.");
+      toast.error(errorText(e, "Não foi possível lançar o ajuste."));
     } finally {
       setLoading(false);
     }
@@ -298,7 +299,7 @@ export function BankReconciliationDialog({
       onOpenChange(false);
       reset();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível salvar.");
+      toast.error(errorText(e, "Não foi possível salvar."));
     }
   }
 

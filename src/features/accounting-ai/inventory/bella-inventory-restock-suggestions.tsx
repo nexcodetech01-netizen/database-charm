@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
@@ -63,7 +64,7 @@ export function BellaInventoryRestockSuggestions({
       }
     } catch (err) {
       toast.error("Não foi possível criar o pedido de compra", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

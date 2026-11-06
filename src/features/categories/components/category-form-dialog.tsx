@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
@@ -117,7 +118,7 @@ export function CategoryFormDialog({
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        description: errorText(err, "Tente novamente."),
       });
     }
   }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * Skill: sale.products_sold
  * "Quantos perfumes vendi esse mês?" — unidades vendidas por nome/categoria
@@ -44,7 +45,7 @@ export const saleProductsSoldSkill = defineBaseSkill({
       });
     } catch (err) {
       return skillResult.error(
-        `Não consegui consultar as vendas: ${err instanceof Error ? err.message : "erro desconhecido"}`,
+        `Não consegui consultar as vendas: ${errorText(err, "erro desconhecido")}`,
       );
     }
     const rows = ((data ?? []) as ProductSoldRow[]).map((r) => ({

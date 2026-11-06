@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { toast } from "sonner";
@@ -40,7 +41,7 @@ export function CategoriesPanel({ companyId }: { companyId: string }) {
       toast.success("Categoria excluída");
     } catch (err) {
       toast.error("Não foi possível excluir", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

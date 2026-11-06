@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * Server functions do Bella Knowledge Hub.
  *
@@ -140,7 +141,7 @@ async function reindexInternal(
       .eq("id", documentId);
     return { chunkCount: chunks.length };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Erro ao indexar.";
+    const msg = errorText(err, "Erro ao indexar.");
     await supabase
       .from("knowledge_documents")
       .update({ index_status: "error", index_error: msg })

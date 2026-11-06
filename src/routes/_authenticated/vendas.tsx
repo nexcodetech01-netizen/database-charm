@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useFinanceOverview } from "@/features/finance/hooks/use-finance";
 import {
@@ -167,7 +168,7 @@ function SalesPage() {
       setSettleTx(tx);
     } catch (e) {
       toast.error("Não foi possível abrir a baixa financeira", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -257,7 +258,7 @@ function SalesPage() {
       toast.success(`Venda ${s.number} ${label}`);
     } catch (e) {
       toast.error("Não foi possível atualizar o status", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -290,7 +291,7 @@ function SalesPage() {
       // trg_guard_sale_soft_delete: venda com pagamento, caixa ou crediário.
       if (isCheckViolation(e) && s.status !== "cancelled") {
         toast.error("Esta venda não pode ser excluída", {
-          description: e instanceof Error ? e.message : undefined,
+          description: errorText(e),
           action: {
             label: "Cancelar venda",
             onClick: () => void handleStatus(s, "cancelled", "cancelada"),
@@ -299,7 +300,7 @@ function SalesPage() {
         return;
       }
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

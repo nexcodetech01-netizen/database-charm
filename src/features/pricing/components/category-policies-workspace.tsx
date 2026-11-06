@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * CategoryPoliciesWorkspace — UX-002 (Commercial Experience)
  * ==========================================================
@@ -219,7 +220,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
       await qc.invalidateQueries({ queryKey: ["pricing", "inputs"] });
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar a política automática"),
+      toast.error(errorText(err, "Falha ao atualizar a política automática")),
   });
 
   const rows = overview.data?.rows ?? [];
@@ -290,7 +291,7 @@ export function CategoryPoliciesWorkspace({ companyId }: { companyId: string }) 
       await qc.invalidateQueries({ queryKey: ["pricing", "category-auto-policy", companyId] });
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : "Falha ao salvar";
+      const msg = errorText(err, "Falha ao salvar");
       toast.error(msg);
     },
   });

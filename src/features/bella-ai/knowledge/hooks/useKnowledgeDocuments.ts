@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { KnowledgeManager } from "../KnowledgeManager";
@@ -26,7 +27,7 @@ export function useKnowledgeDocuments() {
       invalidate();
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao indexar."),
+      toast.error(errorText(err, "Falha ao indexar.")),
   });
 
   const reindex = useMutation({
@@ -37,7 +38,7 @@ export function useKnowledgeDocuments() {
       invalidate();
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao reindexar."),
+      toast.error(errorText(err, "Falha ao reindexar.")),
   });
 
   const remove = useMutation({
@@ -48,7 +49,7 @@ export function useKnowledgeDocuments() {
       invalidate();
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao remover."),
+      toast.error(errorText(err, "Falha ao remover.")),
   });
 
   const setStatus = useMutation({
@@ -56,7 +57,7 @@ export function useKnowledgeDocuments() {
       KnowledgeManager.setStatus(args.id, args.status),
     onSuccess: invalidate,
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar status."),
+      toast.error(errorText(err, "Falha ao atualizar status.")),
   });
 
   return { list, upload, reindex, remove, setStatus };

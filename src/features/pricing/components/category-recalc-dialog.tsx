@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * CategoryRecalcDialog — recálculo OPT-IN de preços por categoria
  * ================================================================
@@ -80,7 +81,7 @@ export function CategoryRecalcDialog({
       onOpenChange(false);
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao aplicar recálculo"),
+      toast.error(errorText(err, "Falha ao aplicar recálculo")),
   });
 
   return (

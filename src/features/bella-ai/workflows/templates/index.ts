@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * Templates iniciais do Bella Workflow Engine.
  *
@@ -42,7 +43,7 @@ export function registerBellaWorkflowTemplates(): {
     } catch (err) {
       skipped.push({
         workflowId: def.workflowId,
-        reason: err instanceof Error ? err.message : "erro desconhecido",
+        reason: errorText(err, "erro desconhecido"),
       });
     }
   }

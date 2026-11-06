@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * PriceRecalculationWorkspace — Ferramenta "Recalcular Preços"
  * ============================================================
@@ -293,7 +294,7 @@ export function PriceRecalculationWorkspace({ companyId }: Props) {
                   {
                     productId: it.productId,
                     name: it.name,
-                    error: err instanceof Error ? err.message : "Erro desconhecido",
+                    error: errorText(err, "Erro desconhecido"),
                   },
                 ],
               }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -56,7 +57,7 @@ function CustomersPage() {
       toast.success(`"${c.name}" arquivado`);
     } catch (e) {
       toast.error("Não foi possível arquivar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -66,7 +67,7 @@ function CustomersPage() {
       toast.success(`"${c.name}" restaurado`);
     } catch (e) {
       toast.error("Não foi possível restaurar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -77,7 +78,7 @@ function CustomersPage() {
       toast.success("Cliente excluído");
     } catch (e) {
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

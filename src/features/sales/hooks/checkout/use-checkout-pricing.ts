@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,7 +156,7 @@ export function useCheckoutPricing({
       return true;
     } catch (error) {
       toast.error(PRICING_ERROR, {
-        description: error instanceof Error ? error.message : undefined,
+        description: errorText(error),
       });
       return false;
     }
@@ -176,7 +177,7 @@ export function useCheckoutPricing({
     if (lastAppliedKeyRef.current === pricingKey()) return;
     void applyPricing().catch((error: unknown) => {
       toast.error(PRICING_ERROR, {
-        description: error instanceof Error ? error.message : undefined,
+        description: errorText(error),
       });
     });
     // Reage somente à escolha de pagamento/parcelas e à disponibilidade

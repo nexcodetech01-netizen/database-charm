@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -57,7 +58,7 @@ export const testAsaasConnection = createServerFn({ method: "POST" })
       }
       return { ok: true as const, message: "Conexão bem-sucedida." };
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha ao conectar.";
+      const message = errorText(err, "Falha ao conectar.");
       if (data.persist) {
         await supabase
           .from("bella_pay_config")
@@ -790,7 +791,7 @@ export const refundAsaasCharge = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         message:
-          err instanceof Error ? err.message : "Falha ao estornar cobrança.",
+          errorText(err, "Falha ao estornar cobrança."),
       };
     }
   });

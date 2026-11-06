@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * Console WhatsApp — server functions.
  * Todas as chamadas passam pelo `requireSupabaseAuth`, então a RLS
@@ -108,7 +109,7 @@ export const createConversation = createServerFn({ method: "POST" })
           .eq("id", conv.id);
       }
     } catch (err) {
-      templateError = err instanceof Error ? err.message : "Falha ao enviar template.";
+      templateError = errorText(err, "Falha ao enviar template.");
     }
 
     return {

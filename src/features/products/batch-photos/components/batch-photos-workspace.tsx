@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -201,7 +202,7 @@ export function BatchPhotosWorkspace({ companyId }: { companyId: string }) {
       goNext(current.id);
       void qc.invalidateQueries({ queryKey: ["products"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar as fotos");
+      toast.error(errorText(err, "Não foi possível salvar as fotos"));
     } finally {
       setSaving(false);
     }

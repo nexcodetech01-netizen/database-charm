@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -176,7 +177,7 @@ export function EmpresaSection() {
       qc.invalidateQueries({ queryKey: ["company"] });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+      toast.error(errorText(err, "Falha ao salvar")),
   });
 
   const set = <K extends keyof CompanyForm>(k: K, v: string) => {
@@ -202,7 +203,7 @@ export function EmpresaSection() {
       qc.invalidateQueries({ queryKey: ["settings", "company"] });
       qc.invalidateQueries({ queryKey: ["company"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha no upload");
+      toast.error(errorText(err, "Falha no upload"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -264,12 +265,12 @@ export function EmpresaSection() {
             qc.invalidateQueries({ queryKey: ["company"] });
             toast.success("Logo restaurada");
           } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Falha ao restaurar logo");
+            toast.error(errorText(err, "Falha ao restaurar logo"));
           }
         },
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao remover");
+      toast.error(errorText(err, "Falha ao remover"));
     } finally {
       setUploading(false);
     }
@@ -716,7 +717,7 @@ function CatalogThemeField({
       toast.success("Tema do catálogo atualizado");
       qc.invalidateQueries({ queryKey: ["settings", "company"] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+    onError: (err) => toast.error(errorText(err, "Falha ao salvar")),
   });
 
   const options = [

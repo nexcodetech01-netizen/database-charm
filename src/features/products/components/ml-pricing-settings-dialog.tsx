@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -49,7 +50,7 @@ export function MercadoLivrePricingSettingsDialog({ open, onOpenChange }: Props)
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar configurações");
+      toast.error(errorText(err, "Erro ao salvar configurações"));
     }
   });
 

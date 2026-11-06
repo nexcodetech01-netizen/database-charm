@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -107,7 +108,7 @@ export function CategoryFormDialog({
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

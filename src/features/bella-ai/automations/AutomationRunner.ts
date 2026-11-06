@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * AutomationRunner
  *
@@ -87,7 +88,7 @@ export const AutomationRunner = {
           skillId: def.skillId,
           label,
           ok: false,
-          message: err instanceof Error ? err.message : "Falha inesperada.",
+          message: errorText(err, "Falha inesperada."),
         });
         hasError = true;
       }

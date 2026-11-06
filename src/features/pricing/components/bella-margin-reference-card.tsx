@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * BellaMarginReferenceCard — módulo CONSULTIVO
  * ============================================
@@ -89,7 +90,7 @@ export function BellaMarginReferenceCard({ companyId, categoryName, onApply }: P
       await qc.invalidateQueries({ queryKey });
     },
     onError: (err: unknown) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar a referência"),
+      toast.error(errorText(err, "Falha ao salvar a referência")),
   });
 
   if (!categoryName?.trim()) return null;

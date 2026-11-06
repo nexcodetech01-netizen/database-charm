@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * Chat Router — orquestra a execução das skills do plano.
  * Não implementa cálculo nem acesso direto a dados: apenas invoca
@@ -44,7 +45,7 @@ export async function executePlan(
         ok: false,
         text: "",
         data: null,
-        error: err instanceof Error ? err.message : "Falha ao consultar os dados.",
+        error: errorText(err, "Falha ao consultar os dados."),
       });
     }
   }

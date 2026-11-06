@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * BaseSkill — pipeline canônico de execução de Skill.
  *
@@ -144,7 +145,7 @@ export function defineBaseSkill<S extends ZodObject<ZodRawShape>, TData>(
       try {
         result = await spec.handler(parsed.data, ctx);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Falha inesperada.";
+        const message = errorText(err, "Falha inesperada.");
         metrics.counter("bella.skill.error", baseTags);
         log.error("skill.handler_exception", {
           requestId: ctx.request.requestId,

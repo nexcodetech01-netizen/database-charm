@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,7 +125,7 @@ export function CampaignFormDialog({
     } catch (err) {
       // Falhou: avisa e deixa a janela aberta para não perder o que foi digitado.
       toast.error("Não foi possível salvar a campanha", {
-        description: err instanceof Error ? err.message : "Tente de novo em instantes.",
+        description: errorText(err, "Tente de novo em instantes."),
       });
     }
   });

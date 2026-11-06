@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -123,7 +124,7 @@ export function BulkCostDialog({
       ]);
     } catch (err) {
       toast.error("Não foi possível salvar os custos", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     } finally {
       setSaving(false);

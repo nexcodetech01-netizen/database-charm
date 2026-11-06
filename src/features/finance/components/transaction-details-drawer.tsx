@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -139,7 +140,7 @@ export function TransactionDetailsDrawer({
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível atualizar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -159,7 +160,7 @@ export function TransactionDetailsDrawer({
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível estornar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
   }
 
@@ -184,7 +185,7 @@ export function TransactionDetailsDrawer({
       toast.success("Movimentação duplicada");
     } catch (err) {
       toast.error("Não foi possível duplicar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

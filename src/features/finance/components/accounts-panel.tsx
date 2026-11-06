@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Landmark, Wallet, Smartphone } from "lucide-react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ export function AccountsPanel({ companyId }: { companyId: string }) {
       toast.success("Conta excluída");
     } catch (err) {
       toast.error("Não foi possível excluir", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

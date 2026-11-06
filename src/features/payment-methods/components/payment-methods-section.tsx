@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, CreditCard, Loader2, Save } from "lucide-react";
@@ -101,7 +102,7 @@ export function PaymentMethodsSection() {
       qc.invalidateQueries({ queryKey: paymentMethodsKeys.byCompany(companyId) });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+      toast.error(errorText(err, "Falha ao salvar")),
   });
 
   const patch = (id: string, mut: (r: Row) => Row) =>
@@ -226,7 +227,7 @@ export function PaymentMethodsSection() {
                     toast.success("Preço no cartão atualizado");
                   },
                   onError: (error) =>
-                    toast.error(error instanceof Error ? error.message : "Falha ao salvar"),
+                    toast.error(errorText(error, "Falha ao salvar")),
                 })
               }
             >

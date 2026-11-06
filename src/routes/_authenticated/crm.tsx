@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
@@ -315,7 +316,7 @@ function CrmPage() {
               } catch (err) {
                 toast.error("Não foi possível mover a oportunidade", {
                   description:
-                    err instanceof Error ? err.message : "Atualize a página e tente de novo.",
+                    errorText(err, "Atualize a página e tente de novo."),
                 });
                 void oppsQ.refetch();
               }
@@ -384,7 +385,7 @@ function CrmPage() {
             }
           } catch (err) {
             toast.error("Não foi possível salvar a oportunidade", {
-              description: err instanceof Error ? err.message : "Tente de novo em instantes.",
+              description: errorText(err, "Tente de novo em instantes."),
             });
             // Repassa o erro para a janela continuar aberta com o que foi digitado.
             throw err;

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, PlayCircle, RefreshCw, ShieldCheck } from "lucide-react";
@@ -72,7 +73,7 @@ export function InventoryReconciliationWorkspace({ companyId }: { companyId: str
         await history.refetch();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha na reconciliação.");
+      toast.error(errorText(e, "Falha na reconciliação."));
     }
   }
 
@@ -98,7 +99,7 @@ export function InventoryReconciliationWorkspace({ companyId }: { companyId: str
                 {
                   onSuccess: () => toast.success("Política de custo atualizada."),
                   onError: (e) =>
-                    toast.error(e instanceof Error ? e.message : "Falha ao salvar."),
+                    toast.error(errorText(e, "Falha ao salvar.")),
                 },
               )
             }

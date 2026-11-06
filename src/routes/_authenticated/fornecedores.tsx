@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
@@ -56,7 +57,7 @@ function SuppliersPage() {
       toast.success(`"${s.name}" arquivado`);
     } catch (e) {
       toast.error("Não foi possível arquivar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -66,7 +67,7 @@ function SuppliersPage() {
       toast.success(`"${s.name}" restaurado`);
     } catch (e) {
       toast.error("Não foi possível restaurar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -82,7 +83,7 @@ function SuppliersPage() {
       toast.success("Fornecedor excluído");
     } catch (e) {
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

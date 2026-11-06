@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -163,7 +164,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
         toast.success(`Movimentação ${label} e valor estornado.`);
       } catch (err) {
         toast.error("Não foi possível cancelar", {
-          description: err instanceof Error ? err.message : undefined,
+          description: errorText(err),
         });
       }
       return;
@@ -174,7 +175,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
       toast.success(`Movimentação ${label}`);
     } catch (err) {
       toast.error("Não foi possível atualizar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -185,7 +186,7 @@ export function TransactionsPanel({ companyId }: { companyId: string }) {
       toast.success("Movimentação excluída");
     } catch (err) {
       toast.error("Não foi possível excluir", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }

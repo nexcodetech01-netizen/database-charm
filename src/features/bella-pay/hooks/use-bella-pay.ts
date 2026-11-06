@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -74,7 +75,7 @@ export function useSaveBellaPayConfig(companyId: string) {
       qc.invalidateQueries({ queryKey: ["bella-pay", "key-status", companyId] });
       toast.success("Configuração salva.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
+    onError: (e) => toast.error(errorText(e, "Erro ao salvar.")),
   });
 }
 
@@ -93,7 +94,7 @@ export function useTestBellaPayConnection(companyId: string) {
       if (res.ok) toast.success(res.message);
       else toast.error(res.message);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao testar."),
+    onError: (e) => toast.error(errorText(e, "Erro ao testar.")),
   });
 }
 
@@ -115,7 +116,7 @@ export function useCreateAsaasCharge(companyId: string) {
       qc.invalidateQueries({ queryKey: ["bella-pay", "metrics", companyId] });
       toast.success("Cobrança gerada com sucesso.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao gerar cobrança."),
+    onError: (e) => toast.error(errorText(e, "Erro ao gerar cobrança.")),
   });
 }
 
@@ -130,6 +131,6 @@ export function useCancelAsaasCharge(companyId: string) {
       qc.invalidateQueries({ queryKey: ["bella-pay", "metrics", companyId] });
       toast.success("Cobrança cancelada.");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao cancelar."),
+    onError: (e) => toast.error(errorText(e, "Erro ao cancelar.")),
   });
 }

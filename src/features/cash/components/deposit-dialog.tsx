@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -105,7 +106,7 @@ export function DepositDialog({ open, onOpenChange, session, companyId }: Props)
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível registrar o depósito", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     } finally {
       setSaving(false);

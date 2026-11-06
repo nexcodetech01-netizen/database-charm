@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -85,7 +86,7 @@ export function MovementDialog({
       setNote("");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao registrar.");
+      toast.error(errorText(err, "Falha ao registrar."));
     }
   }
 

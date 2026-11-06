@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
@@ -137,7 +138,7 @@ function ShoppingListPage() {
       setCategory("");
     } catch (err) {
       toast.error("Não foi possível adicionar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -166,7 +167,7 @@ function ShoppingListPage() {
       setEditingId(null);
     } catch (err) {
       toast.error("Não foi possível atualizar os detalhes", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -264,7 +265,7 @@ function ShoppingListPage() {
       await toggleMut.mutateAsync({ id, checked: !current });
     } catch (err) {
       toast.error("Não foi possível atualizar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -274,7 +275,7 @@ function ShoppingListPage() {
       await removeMut.mutateAsync(id);
     } catch (err) {
       toast.error("Não foi possível remover", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
@@ -287,7 +288,7 @@ function ShoppingListPage() {
       toast.success("Itens comprados removidos da lista");
     } catch (err) {
       toast.error("Não foi possível limpar", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     }
   }
