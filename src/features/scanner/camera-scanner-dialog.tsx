@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { cameraErrorMessage, createCodeDebouncer } from "./lib/debounce";
 
 /** Biblioteca de leitura, só para aparelhos sem leitor nativo (ex.: iPhone). */
-const ZXING_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm";
-const ZXING_LIB_URL = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/+esm";
+// Arquivo local (public/vendor): não depende de site externo no celular.
+const ZXING_URL = "/vendor/zxing-0.21.3.min.js";
 const FORMATS = ["code_128", "ean_13", "ean_8", "upc_a", "upc_e", "code_39", "qr_code"];
 
 type Detector = { detect: (src: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
@@ -66,6 +66,8 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
   const [error, setError] = useState<string | null>(null);
   const [lastCode, setLastCode] = useState<string | null>(null);
   const [count, setCount] = useState(0);
+  const [engine, setEngine] = useState<string>("");
+  const [frameInfo, setFrameInfo] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
@@ -77,6 +79,8 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
     setError(null);
     setLastCode(null);
     setCount(0);
+    setEngine("");
+    setFrameInfo("");
 
     const handle = (raw: string) => {
       if (stopped || !accept(raw)) return;
@@ -118,23 +122,110 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
         video.srcObject = stream;
         await video.play().catch(() => undefined);
 
+        const zxingFallback = async () => {
+          const m = (await import(/* @vite-ignore */ ZXING_URL)) as {
+            BrowserMultiFormatReader: new (hints?: Map<unknown, unknown>) => {
+              decodeFromCanvas: (canvas: HTMLCanvasElement) => { getText: () => string };
+            };
+            DecodeHintType: Record<string, unknown>;
+            BarcodeFormat: Record<string, unknown>;
+          };
+          if (stopped) return;
+          // "Tentar com mais esforço" e só os formatos das etiquetas.
+          const hints = new Map<unknown, unknown>();
+          hints.set(m.DecodeHintType.TRY_HARDER, true);
+          hints.set(m.DecodeHintType.POSSIBLE_FORMATS, [
+            m.BarcodeFormat.QR_CODE,
+            m.BarcodeFormat.CODE_128,
+            m.BarcodeFormat.EAN_13,
+            m.BarcodeFormat.EAN_8,
+            m.BarcodeFormat.UPC_A,
+            m.BarcodeFormat.CODE_39,
+          ]);
+          const reader = new m.BrowserMultiFormatReader(hints);
+          setEngine("zxing");
+          setStatus("reading");
+          // Lê quadro a quadro num canvas (no iPhone o leitor por <video>
+          // ficava parado esperando um evento que já tinha passado).
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          let useCrop = false;
+          let frames = 0;
+          const tick = () => {
+            if (stopped) return;
+            try {
+              const vw = video.videoWidth;
+              const vh = video.videoHeight;
+              if (ctx && vw > 0 && vh > 0) {
+                // Alterna: quadro inteiro (reduzido) e o centro ampliado,
+                // para a etiqueta pequena no meio da imagem ter detalhe.
+                let sx = 0;
+                let sy = 0;
+                let sw = vw;
+                let sh = vh;
+                if (useCrop) {
+                  sw = Math.round(vw * 0.6);
+                  sh = Math.round(vh * 0.6);
+                  sx = Math.round((vw - sw) / 2);
+                  sy = Math.round((vh - sh) / 2);
+                }
+                useCrop = !useCrop;
+                const scale = Math.min(1, 1000 / sw);
+                canvas.width = Math.round(sw * scale);
+                canvas.height = Math.round(sh * scale);
+                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                frames += 1;
+                if (frames % 10 === 0) setFrameInfo(`${frames} quadros · ${vw}×${vh}`);
+                const result = reader.decodeFromCanvas(canvas);
+                if (result) handle(result.getText());
+              } else {
+                setFrameInfo("vídeo ainda sem imagem");
+              }
+            } catch (e) {
+              const name = (e as { name?: string })?.name ?? "";
+              // NotFoundException = nada no quadro (normal). Outros: mostra.
+              if (name && !/NotFound|Checksum|Format/i.test(name)) {
+                setFrameInfo(`erro: ${name} ${String((e as Error)?.message ?? "").slice(0, 60)}`);
+              }
+            }
+            timer = setTimeout(tick, 120);
+          };
+          tick();
+        };
+
+        // iPhone/iPad: o leitor nativo do Safari não é confiável; usa ZXing.
+        const ua = navigator.userAgent;
+        const isIOS =
+          /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
         const Native = (window as unknown as { BarcodeDetector?: DetectorCtor }).BarcodeDetector;
         let formats: string[] = [];
-        if (Native?.getSupportedFormats) {
-          formats = (await Native.getSupportedFormats()).filter((f) => FORMATS.includes(f));
+        if (!isIOS && Native?.getSupportedFormats) {
+          formats = (await Native.getSupportedFormats().catch(() => [])).filter((f) => FORMATS.includes(f));
         }
-        if (Native && formats.includes("code_128")) {
+        if (!isIOS && Native && formats.includes("qr_code")) {
           const detector = new Native({ formats });
+          setEngine("nativo");
           setStatus("reading");
+          let failures = 0;
           const loop = async () => {
             if (stopped) return;
             try {
               if (video.readyState >= 2) {
                 const found = await detector.detect(video);
+                failures = 0;
                 if (found[0]?.rawValue) handle(found[0].rawValue);
               }
             } catch {
-              /* quadro ruim: tenta no próximo */
+              // Leitor nativo falhando seguido: troca para o ZXing.
+              failures += 1;
+              if (failures >= 5) {
+                void zxingFallback().catch((err) => {
+                  if (stopped) return;
+                  setStatus("error");
+                  setError(cameraErrorMessage(err));
+                });
+                return;
+              }
             }
             timer = setTimeout(loop, 200);
           };
@@ -142,71 +233,7 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
           return;
         }
 
-        const [mod, lib] = (await Promise.all([
-          import(/* @vite-ignore */ ZXING_URL),
-          import(/* @vite-ignore */ ZXING_LIB_URL),
-        ])) as [
-          {
-          BrowserMultiFormatReader: new (hints?: Map<unknown, unknown>, opts?: { delayBetweenScanAttempts?: number }) => {
-            decodeFromCanvas: (canvas: HTMLCanvasElement) => { getText: () => string };
-          };
-          },
-          {
-            DecodeHintType: Record<string, unknown>;
-            BarcodeFormat: Record<string, unknown>;
-          },
-        ];
-        if (stopped) return;
-        // "Tentar com mais esforço" e só os formatos das etiquetas.
-        const hints = new Map<unknown, unknown>();
-        hints.set(lib.DecodeHintType.TRY_HARDER, true);
-        hints.set(lib.DecodeHintType.POSSIBLE_FORMATS, [
-          lib.BarcodeFormat.QR_CODE,
-          lib.BarcodeFormat.CODE_128,
-          lib.BarcodeFormat.EAN_13,
-          lib.BarcodeFormat.EAN_8,
-          lib.BarcodeFormat.UPC_A,
-          lib.BarcodeFormat.CODE_39,
-        ]);
-        const reader = new mod.BrowserMultiFormatReader(hints);
-        setStatus("reading");
-        // Lê quadro a quadro num canvas. (decodeFromVideoElement espera o
-        // evento "canplay", que no iPhone já passou: ficava parado sem ler.)
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        let useCrop = false;
-        const tick = () => {
-          if (stopped) return;
-          try {
-            const vw = video.videoWidth;
-            const vh = video.videoHeight;
-            if (ctx && vw > 0 && vh > 0) {
-              // Alterna: quadro inteiro (reduzido) e o centro em tamanho real,
-              // para a etiqueta pequena no meio da imagem ter detalhe.
-              let sx = 0;
-              let sy = 0;
-              let sw = vw;
-              let sh = vh;
-              if (useCrop) {
-                sw = Math.round(vw * 0.6);
-                sh = Math.round(vh * 0.6);
-                sx = Math.round((vw - sw) / 2);
-                sy = Math.round((vh - sh) / 2);
-              }
-              useCrop = !useCrop;
-              const scale = Math.min(1, 1000 / sw);
-              canvas.width = Math.round(sw * scale);
-              canvas.height = Math.round(sh * scale);
-              ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-              const result = reader.decodeFromCanvas(canvas);
-              if (result) handle(result.getText());
-            }
-          } catch {
-            /* nada no quadro: tenta no próximo */
-          }
-          timer = setTimeout(tick, 120);
-        };
-        tick();
+        await zxingFallback();
       } catch (err) {
         if (stopped) return;
         setStatus("error");
@@ -252,6 +279,13 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             Lido: <span className="font-mono">{lastCode}</span>
             {continuous && count > 1 ? <span className="text-muted-foreground">({count} leituras)</span> : null}
+          </p>
+        ) : null}
+
+        {status === "reading" ? (
+          <p className="text-[11px] text-muted-foreground">
+            Leitor: {engine}
+            {frameInfo ? ` · ${frameInfo}` : ""}
           </p>
         ) : null}
 
