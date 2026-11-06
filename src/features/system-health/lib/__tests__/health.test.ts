@@ -30,6 +30,6 @@ describe("saúde do sistema", () => {
     expect(issueLink(mk({ ref_type: "sale", ref_id: "s1" }))).toBe("/vendas/s1");
     expect(issueLink(mk({ ref_type: "page", ref_id: null, ref_label: "/vendas" }))).toBe("/vendas");
     expect(issueLink(mk({ ref_type: "page", ref_id: null, ref_label: "x" }))).toBeNull();
-    expect(issueLink(mk({ ref_type: "account", ref_id: "a" }))).toBe("/financeiro");
+    expect(issueLink(mk({ ref_type: "account", ref_id: "a" }))).toBe("/financeiro?conciliar=1");
   });
 });

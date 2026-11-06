@@ -53,7 +53,7 @@ export function issueLink(issue: HealthIssue): string | null {
     case "customer":
       return id ? `/clientes/${id}` : null;
     case "account":
-      return "/financeiro";
+      return "/financeiro?conciliar=1";
     case "integration":
       return "/saude-plataforma";
     case "page":
