@@ -72,7 +72,6 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
     let stopped = false;
     let stream: MediaStream | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let zxingControls: { stop: () => void } | null = null;
     const accept = createCodeDebouncer(2500);
     setStatus("starting");
     setError(null);
@@ -149,10 +148,7 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
         ])) as [
           {
           BrowserMultiFormatReader: new (hints?: Map<unknown, unknown>, opts?: { delayBetweenScanAttempts?: number }) => {
-            decodeFromVideoElement: (
-              el: HTMLVideoElement,
-              cb: (result: { getText: () => string } | undefined) => void,
-            ) => Promise<{ stop: () => void }>;
+            decodeFromCanvas: (canvas: HTMLCanvasElement) => { getText: () => string };
           };
           },
           {
@@ -172,11 +168,45 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
           lib.BarcodeFormat.UPC_A,
           lib.BarcodeFormat.CODE_39,
         ]);
-        const reader = new mod.BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
+        const reader = new mod.BrowserMultiFormatReader(hints);
         setStatus("reading");
-        zxingControls = await reader.decodeFromVideoElement(video, (result) => {
-          if (result) handle(result.getText());
-        });
+        // Lê quadro a quadro num canvas. (decodeFromVideoElement espera o
+        // evento "canplay", que no iPhone já passou: ficava parado sem ler.)
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        let useCrop = false;
+        const tick = () => {
+          if (stopped) return;
+          try {
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            if (ctx && vw > 0 && vh > 0) {
+              // Alterna: quadro inteiro (reduzido) e o centro em tamanho real,
+              // para a etiqueta pequena no meio da imagem ter detalhe.
+              let sx = 0;
+              let sy = 0;
+              let sw = vw;
+              let sh = vh;
+              if (useCrop) {
+                sw = Math.round(vw * 0.6);
+                sh = Math.round(vh * 0.6);
+                sx = Math.round((vw - sw) / 2);
+                sy = Math.round((vh - sh) / 2);
+              }
+              useCrop = !useCrop;
+              const scale = Math.min(1, 1000 / sw);
+              canvas.width = Math.round(sw * scale);
+              canvas.height = Math.round(sh * scale);
+              ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+              const result = reader.decodeFromCanvas(canvas);
+              if (result) handle(result.getText());
+            }
+          } catch {
+            /* nada no quadro: tenta no próximo */
+          }
+          timer = setTimeout(tick, 120);
+        };
+        tick();
       } catch (err) {
         if (stopped) return;
         setStatus("error");
@@ -187,11 +217,6 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
     return () => {
       stopped = true;
       if (timer) clearTimeout(timer);
-      try {
-        zxingControls?.stop();
-      } catch {
-        /* já parado */
-      }
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [open, continuous, onOpenChange]);
