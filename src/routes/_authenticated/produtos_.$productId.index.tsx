@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { FramedImage } from "@/components/media/framed-image";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
@@ -150,7 +151,7 @@ function ProductDetailPage() {
       toast.success("Produto excluído");
     } catch (err) {
       setIsDeleting(false);
-      toast.error(err instanceof Error ? err.message : "Falha ao excluir");
+      toast.error(errorText(err, "Falha ao excluir"));
     }
   };
 
@@ -246,7 +247,7 @@ function ProductDetailPage() {
                   toast.success("Anúncio pausado no Mercado Livre");
                 } catch (e) {
                   toast.error("Não foi possível pausar o anúncio", {
-                    description: e instanceof Error ? e.message : undefined,
+                    description: errorText(e),
                   });
                 } finally {
                   setMlActionPending(null);
@@ -268,7 +269,7 @@ function ProductDetailPage() {
                   toast.success("Anúncio reativado no Mercado Livre");
                 } catch (e) {
                   toast.error("Não foi possível reativar o anúncio", {
-                    description: e instanceof Error ? e.message : undefined,
+                    description: errorText(e),
                   });
                 } finally {
                   setMlActionPending(null);
@@ -824,7 +825,7 @@ function ProductDetailPage() {
                     setUnlinkConfirmOpen(false);
                   } catch (err) {
                     toast.error("Não foi possível limpar o vínculo", {
-                      description: err instanceof Error ? err.message : undefined,
+                      description: errorText(err),
                     });
                   } finally {
                     setMlActionPending(null);

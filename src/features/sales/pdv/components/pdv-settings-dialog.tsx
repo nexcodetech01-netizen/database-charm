@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { Settings2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ export function PDVSettingsDialog({ companyId }: { companyId: string }) {
     },
     onError: (err) => {
       toast.error("Erro ao salvar configuração", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     },
   });

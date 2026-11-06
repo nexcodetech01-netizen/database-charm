@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Grid3x3, Loader2, Plus, Trash2 } from "lucide-react";
@@ -188,7 +189,7 @@ export function GridCreateDialog({ companyId }: { companyId: string }) {
       setOpen(false);
     } catch (e) {
       toast.error("Parou no meio do cadastro", {
-        description: `${createdSoFar} produto(s) já foram criados. ${e instanceof Error ? e.message : ""}`,
+        description: `${createdSoFar} produto(s) já foram criados. ${errorText(e, "")}`,
       });
     } finally {
       setSaving(false);

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Loader2, Sparkles } from "lucide-react";
@@ -34,7 +35,7 @@ function ResetPasswordPage() {
       toast.success("Senha atualizada com sucesso.");
       navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível atualizar a senha.");
+      toast.error(errorText(err, "Não foi possível atualizar a senha."));
     } finally {
       setLoading(false);
     }

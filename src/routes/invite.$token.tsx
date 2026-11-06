@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -133,7 +134,7 @@ function InvitePage() {
       await new Promise((r) => setTimeout(r, 400));
       acceptMutation.mutate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível criar a conta.");
+      toast.error(errorText(err, "Não foi possível criar a conta."));
     } finally {
       setAccepting(false);
     }
@@ -152,7 +153,7 @@ function InvitePage() {
       await new Promise((r) => setTimeout(r, 200));
       acceptMutation.mutate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível entrar.");
+      toast.error(errorText(err, "Não foi possível entrar."));
     } finally {
       setAccepting(false);
     }

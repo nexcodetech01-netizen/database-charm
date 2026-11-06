@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -470,7 +471,7 @@ export const productsService = {
       const normalizedError = isBarcodeUniqueViolation(err)
         ? new Error(formatBarcodeDuplicateMessage(String(safeInputWithoutComp.barcode ?? "informado")))
         : err;
-      const msg = normalizedError instanceof Error ? normalizedError.message : "Erro desconhecido";
+      const msg = errorText(normalizedError, "Erro desconhecido");
       toast.error(`Falha ao salvar: ${msg}`);
       throw normalizedError;
     }

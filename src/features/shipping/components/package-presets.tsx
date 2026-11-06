@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Package, Pencil, Plus, X } from "lucide-react";
@@ -144,7 +145,7 @@ export function PackagePresetBar({
       setName("");
       await qc.invalidateQueries({ queryKey: presetsKey(companyId) });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Não foi possível salvar o pacote."),
+    onError: (e) => toast.error(errorText(e, "Não foi possível salvar o pacote.")),
   });
 
   const remove = useMutation({
@@ -174,7 +175,7 @@ export function PackagePresetBar({
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: presetsKey(companyId) }),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Não foi possível apagar."),
+    onError: (e) => toast.error(errorText(e, "Não foi possível apagar.")),
   });
 
   return (

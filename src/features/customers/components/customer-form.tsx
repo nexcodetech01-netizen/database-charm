@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useRef, useState } from "react";
 import { useEntityForm } from "@/hooks/use-entity-form";
 import { useDraft } from "@/hooks/use-draft";
@@ -246,7 +247,7 @@ export function CustomerForm({ companyId, customer, onSaved, onCancel }: Props) 
       }
 
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar");
+      toast.error(errorText(err, "Falha ao salvar"));
     }
   };
 

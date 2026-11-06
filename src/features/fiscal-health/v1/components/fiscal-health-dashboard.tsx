@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { AlertCircle, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,7 +47,7 @@ export function FiscalHealthDashboard() {
   if (error || !data) {
     return (
       <div className="rounded-2xl border border-border/60 bg-card p-6 text-sm text-muted-foreground">
-        Não foi possível carregar a saúde fiscal. {error instanceof Error ? error.message : ""}
+        Não foi possível carregar a saúde fiscal. {errorText(error, "")}
       </div>
     );
   }

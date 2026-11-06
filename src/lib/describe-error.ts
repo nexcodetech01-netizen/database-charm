@@ -17,3 +17,17 @@ export function describeSaveError(err: unknown): string {
   if (typeof err === "string" && err) return err;
   return "Erro desconhecido. Tente novamente.";
 }
+
+const UNKNOWN = "Erro desconhecido. Tente novamente.";
+
+/**
+ * Motivo do erro para a tela, com um texto padrão quando não há motivo.
+ * Troca o antigo `err instanceof Error ? err.message : "..."`, que escondia
+ * os erros do Supabase (objetos, não Error).
+ */
+export function errorText(err: unknown): string | undefined;
+export function errorText(err: unknown, fallback: string): string;
+export function errorText(err: unknown, fallback?: string): string | undefined {
+  const msg = describeSaveError(err);
+  return msg === UNKNOWN ? fallback : msg;
+}

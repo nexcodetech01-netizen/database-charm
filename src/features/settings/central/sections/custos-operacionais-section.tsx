@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ export function CustosOperacionaisSection() {
       qc.invalidateQueries({ queryKey: operationalDefaultsKey(companyId) });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+      toast.error(errorText(err, "Falha ao salvar")),
   });
 
   const set = <K extends keyof OperationalForm>(k: K, v: string) => {

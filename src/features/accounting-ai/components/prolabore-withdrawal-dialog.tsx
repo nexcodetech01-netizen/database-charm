@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -104,7 +105,7 @@ export function ProlaboreWithdrawalDialog({ companyId, advice, open, onOpenChang
       }
     } catch (err) {
       toast.error("Não foi possível registrar a retirada.", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     } finally {
       setSubmitting(false);

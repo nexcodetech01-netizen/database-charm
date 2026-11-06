@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export function SignInForm({ onSuccess, onForgotPassword }: Props) {
             ? "Sem conexão com o servidor. Verifique a internet e tente de novo."
             : raw.includes("rate limit") || raw.includes("too many")
               ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo."
-              : `Não foi possível entrar (${err instanceof Error ? err.message : "erro desconhecido"}).`;
+              : `Não foi possível entrar (${errorText(err, "erro desconhecido")}).`;
       setErrorMsg(msg);
       // id fixo: tentativas seguidas trocam o aviso em vez de empilhar.
       toast.error(msg, { id: "signin-error" });

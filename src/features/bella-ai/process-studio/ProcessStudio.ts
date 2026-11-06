@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * ProcessStudio — Facade do módulo.
  *
@@ -150,7 +151,7 @@ class ProcessStudioImpl {
       BellaWorkflowRegistry.register(compiled.definition);
     } catch (err) {
       throw new Error(
-        `Falha ao registrar workflow: ${err instanceof Error ? err.message : "erro"}`,
+        `Falha ao registrar workflow: ${errorText(err, "erro")}`,
       );
     }
     this.bucket(companyId).flows.set(flowId, bumped);

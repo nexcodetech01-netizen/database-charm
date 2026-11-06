@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -113,7 +114,7 @@ export function InterestForm({
       setForm((prev) => ({ ...prev, customerName: "", phone: "", notes: "", customerId: "" }));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Não foi possível registrar o interesse.",
+        errorText(error, "Não foi possível registrar o interesse."),
       );
     }
   };

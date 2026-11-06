@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -180,7 +181,7 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
       toast.success(`${items.length} etiqueta(s) enviada(s) para impressão.`);
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível imprimir.");
+      toast.error(errorText(e, "Não foi possível imprimir."));
     } finally {
       setPrinting(false);
     }

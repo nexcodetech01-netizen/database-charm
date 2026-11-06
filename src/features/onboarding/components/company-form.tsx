@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,7 @@ export function CompanyForm({ userId, onDone, initial }: Props) {
       toast.success("Empresa cadastrada!");
       onDone();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
+      toast.error(errorText(err, "Não foi possível salvar."));
     } finally {
       setLoading(false);
     }

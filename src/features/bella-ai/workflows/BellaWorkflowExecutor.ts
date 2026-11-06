@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * BellaWorkflowExecutor — executa exatamente UM Step por vez.
  *
@@ -82,7 +83,7 @@ export class BellaWorkflowExecutor {
         step,
         idx,
         startedAt,
-        err instanceof Error ? err.message : "Falha ao construir payload do Step.",
+        errorText(err, "Falha ao construir payload do Step."),
       );
     }
 
@@ -100,7 +101,7 @@ export class BellaWorkflowExecutor {
         step,
         idx,
         startedAt,
-        err instanceof Error ? err.message : "Falha inesperada na execução da Skill.",
+        errorText(err, "Falha inesperada na execução da Skill."),
       );
     }
 

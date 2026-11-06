@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -116,7 +117,7 @@ export function QuickProductFormDialog({ companyId, open, onOpenChange, onCreate
       onOpenChange(false);
     } catch (err) {
       toast.error("Não foi possível criar o produto.", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     } finally {
       setSubmitting(false);

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -58,7 +59,7 @@ export function OpenSessionDialog({
       onOpenChange(false);
       onOpened?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao abrir caixa.");
+      toast.error(errorText(err, "Falha ao abrir caixa."));
     }
   }
 

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -635,7 +636,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       }
     } catch (err) {
       if (!opts?.auto) {
-        toast.error(err instanceof Error ? err.message : "Falha ao buscar categoria");
+        toast.error(errorText(err, "Falha ao buscar categoria"));
       }
     } finally {
       setIsSuggesting(false);
@@ -1072,7 +1073,7 @@ function PublishToMercadoLivreDialogContent({ product, open, onOpenChange }: Pro
       toast.success("Sugestão de IA gerada! Revise na prévia abaixo.");
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Falha ao gerar descrição");
+      toast.error(errorText(err, "Falha ao gerar descrição"));
     },
   });
 

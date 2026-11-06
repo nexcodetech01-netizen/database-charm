@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { KnowledgeManager } from "../KnowledgeManager";
@@ -15,7 +16,7 @@ export function useKnowledgeSearch() {
       setResult(r);
       return r;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha na busca.");
+      toast.error(errorText(err, "Falha na busca."));
       return null;
     } finally {
       setLoading(false);

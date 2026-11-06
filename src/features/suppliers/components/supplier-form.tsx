@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -229,7 +230,7 @@ export function SupplierForm({
       }
     } catch (err) {
       toast.error("Não foi possível salvar", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        description: errorText(err, "Tente novamente."),
       });
     }
   }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState, useMemo } from "react";
 import { Send, StickyNote, MessageCircle, MessageSquarePlus, AlertCircle, ShieldAlert, Paperclip, Smile, Zap as ZapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -110,7 +111,7 @@ export function ConversationView({
       }
       setText("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao enviar.");
+      toast.error(errorText(err, "Falha ao enviar."));
     }
   };
 
@@ -134,13 +135,13 @@ export function ConversationView({
         onAssume={() =>
           mutations.assume.mutate(conv.id, {
             onSuccess: () => toast.success("Conversa assumida."),
-            onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao assumir."),
+            onError: (e) => toast.error(errorText(e, "Falha ao assumir.")),
           })
         }
         onReturn={() =>
           mutations.returnToBella.mutate(conv.id, {
             onSuccess: () => toast.success("Devolvido para a Bella."),
-            onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao devolver."),
+            onError: (e) => toast.error(errorText(e, "Falha ao devolver.")),
           })
         }
         onArchive={() =>
@@ -162,7 +163,7 @@ export function ConversationView({
               onDeleted?.(conv.id);
             },
             onError: (e) =>
-              toast.error(e instanceof Error ? e.message : "Falha ao excluir a conversa."),
+              toast.error(errorText(e, "Falha ao excluir a conversa.")),
           })
         }
         busy={busy}

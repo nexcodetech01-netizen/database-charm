@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -310,7 +311,7 @@ function ValidationStep({
       map[r.status](r.message);
       provider.refetch();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Falha ao testar conexão.";
+      const msg = errorText(err, "Falha ao testar conexão.");
       setResult({ status: "error", message: msg });
       toast.error(msg);
     } finally {

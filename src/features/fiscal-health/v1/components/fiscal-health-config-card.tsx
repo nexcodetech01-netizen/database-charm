@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function FiscalHealthConfigCard() {
       });
       toast.success("Configuração de saúde fiscal atualizada.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar configuração.");
+      toast.error(errorText(err, "Falha ao salvar configuração."));
     }
   }
 

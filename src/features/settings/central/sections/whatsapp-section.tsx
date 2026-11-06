@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, ExternalLink, Save, Lock, Phone, Loader2 } from "lucide-react";
@@ -235,7 +236,7 @@ function CompanyPhoneNumberIdCard() {
       qc.invalidateQueries({ queryKey: ["whatsapp", "connection-status"] });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar"),
+      toast.error(errorText(err, "Falha ao salvar")),
   });
 
   return (

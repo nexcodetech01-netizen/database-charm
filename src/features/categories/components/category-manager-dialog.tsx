@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -112,7 +113,7 @@ export function CategoryManagerDialog({ open, onOpenChange, companyId, onCreated
       toast.success(`"${name}" atualizada`);
     } catch (e) {
       toast.error("Não foi possível salvar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -138,7 +139,7 @@ export function CategoryManagerDialog({ open, onOpenChange, companyId, onCreated
       if (created?.id) onCreated?.(created.id);
     } catch (e) {
       toast.error("Não foi possível criar a categoria", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }
@@ -153,7 +154,7 @@ export function CategoryManagerDialog({ open, onOpenChange, companyId, onCreated
       setToDelete(null);
     } catch (e) {
       toast.error("Não foi possível excluir", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     } finally {
       setDeleting(false);

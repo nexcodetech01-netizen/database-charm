@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -62,7 +63,7 @@ export function useCreateReturn() {
           await returnsService.updateRefundStatus(
             ret.id,
             "failed",
-            err instanceof Error ? err.message : "Falha no gateway.",
+            errorText(err, "Falha no gateway."),
           );
         }
       }
@@ -78,6 +79,6 @@ export function useCreateReturn() {
       toast.success(`Devolução ${ret.number} registrada.`);
     },
     onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Erro ao registrar devolução."),
+      toast.error(errorText(e, "Erro ao registrar devolução.")),
   });
 }

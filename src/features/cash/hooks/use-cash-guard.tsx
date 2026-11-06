@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
@@ -112,7 +113,7 @@ export function useCashGuard({ companyId, accountName }: Options) {
       p.resolve?.(result);
     } catch (err) {
       toast.error("Não foi possível concluir a operação", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
       p.resolve?.(undefined);
     }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -222,7 +223,7 @@ export function AppointmentFormDialog({
       onOpenChange(false);
     } catch (e) {
       toast.error("Não foi possível salvar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

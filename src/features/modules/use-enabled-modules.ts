@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +52,7 @@ export function useEnabledModules() {
     onSuccess: (next) => {
       qc.setQueryData(key(companyId), { modules: next, ready: true });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Não foi possível salvar."),
+    onError: (e) => toast.error(errorText(e, "Não foi possível salvar.")),
   });
 
   return {

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { LabelData, LabelaryAudit } from "../types/printing.types";
 
@@ -185,7 +186,7 @@ async function fetchWithRetry(label: LabelData, format: LabelFormat): Promise<Bl
         durationMs: Date.now() - startedAt,
         status: lastAudit?.status ?? 0,
         statusText: lastAudit?.statusText ?? "Failed",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: errorText(error, "Unknown error"),
         timestamp: new Date().toISOString(),
         cacheHit: false,
         retries: attempt,

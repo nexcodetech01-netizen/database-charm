@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * PricingSimulatorWorkspace — UX-004 (Commercial Experience)
  * ==========================================================
@@ -461,7 +462,7 @@ function ResultsPanel({
           <SkeletonResult />
         ) : error ? (
           <p className="text-sm text-destructive">
-            {error instanceof Error ? error.message : "Falha ao simular."}
+            {errorText(error, "Falha ao simular.")}
           </p>
         ) : !result ? (
           <EmptyResult />

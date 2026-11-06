@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -50,7 +51,7 @@ export function CloudApiConfigCard() {
       }
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Erro ao validar"),
+      toast.error(errorText(err, "Erro ao validar")),
   });
 
   const status = statusQuery.data;

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -165,7 +166,7 @@ export function MovementFormDialog({
       onCompleted?.();
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao registrar");
+      toast.error(errorText(err, "Erro ao registrar"));
     }
   });
 

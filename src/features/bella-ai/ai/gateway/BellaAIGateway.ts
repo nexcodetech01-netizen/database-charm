@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * BellaAIGateway — único ponto autorizado a conversar com modelos de IA.
  *
@@ -224,7 +225,7 @@ async function safeHealth(provider: AIProvider): Promise<AIProviderHealth> {
     return {
       provider: provider.id,
       ok: false,
-      message: err instanceof Error ? err.message : "healthCheck falhou",
+      message: errorText(err, "healthCheck falhou"),
     };
   }
 }

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * ExtensionManager — orquestra install/enable/disable/update/uninstall
  * e expõe a API de registro à extensão. Ponto único de entrada do SDK.
@@ -85,7 +86,7 @@ class ExtensionManagerImpl {
       this.appendLog(id, "info", "enable", "extensão habilitada.");
       await this.bus.emit("onEnable", { extensionId: id });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "erro ao habilitar";
+      const message = errorText(err, "erro ao habilitar");
       record.status = "failed";
       record.lastError = message;
       this.appendLog(id, "error", "enable", message);

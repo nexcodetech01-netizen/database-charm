@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import React, { useState, useRef, useCallback } from "react";
 import {
   Dialog,
@@ -207,7 +208,7 @@ export function GenericLabelPrintDialog({
       toast.success(`Impressão enviada com sucesso: ${block.title}`);
     } catch (error) {
       console.error("[GenericPrint] Erro na execução da impressão:", error);
-      toast.error("Falha ao imprimir: " + (error instanceof Error ? error.message : "Erro"));
+      toast.error("Falha ao imprimir: " + (errorText(error, "Erro")));
     } finally {
       setIsPrinting(false);
     }

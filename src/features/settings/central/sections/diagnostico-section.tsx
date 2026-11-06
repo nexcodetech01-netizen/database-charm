@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -54,7 +55,7 @@ export function DiagnosticoSection() {
       setResult(res);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao executar diagnóstico",
+        errorText(err, "Falha ao executar diagnóstico"),
       );
     } finally {
       setRunning(false);

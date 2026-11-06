@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText, Printer, Package, Loader2, Table as TableIcon } from "lucide-react";
@@ -672,7 +673,7 @@ export function ProductCatalogWorkspace({
       }
     } catch (err) {
       console.error("[Precificação PDF] Falha:", err);
-      const message = err instanceof Error ? err.message : "Erro desconhecido ao gerar o PDF.";
+      const message = errorText(err, "Erro desconhecido ao gerar o PDF.");
       toast.error("Não foi possível gerar o PDF", { description: message });
     } finally {
       setGenerating(false);

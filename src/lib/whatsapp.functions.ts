@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * WhatsApp Business Cloud API — server functions.
  *
@@ -160,7 +161,7 @@ export const validateWhatsAppConnection = createServerFn({ method: "POST" })
     } catch (err) {
       return {
         ...empty,
-        error: err instanceof Error ? err.message : "Erro desconhecido",
+        error: errorText(err, "Erro desconhecido"),
       };
     }
   });

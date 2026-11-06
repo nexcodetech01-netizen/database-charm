@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { ImageDown, Loader2 } from "lucide-react";
 import {
@@ -58,7 +59,7 @@ export function OptimizePhotosDialog({
       setProgress(final);
       setStage("done");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Erro desconhecido");
+      setMessage(errorText(e, "Erro desconhecido"));
       setStage("error");
     }
   }

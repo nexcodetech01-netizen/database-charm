@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useState } from "react";
 import { AlertTriangle, Merge, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ function DuplicateGroupCard({ group }: { group: DuplicateGroupRow }) {
       });
     } catch (e) {
       toast.error("Não foi possível unificar", {
-        description: e instanceof Error ? e.message : undefined,
+        description: errorText(e),
       });
     }
   }

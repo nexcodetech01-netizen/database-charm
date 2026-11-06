@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * ProductCostBreakdown
  * ====================
@@ -184,7 +185,7 @@ export function ProductCostBreakdown({ productId, product, canEdit = true }: Pro
       setDirty(false);
       toast.success("Preço e margem atualizados");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar preço");
+      toast.error(errorText(err, "Falha ao salvar preço"));
     }
   };
 

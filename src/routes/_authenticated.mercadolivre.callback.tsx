@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -88,7 +89,7 @@ function MercadoLivreCallbackPage() {
         }, 800);
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        const message = err instanceof Error ? err.message : "Erro desconhecido.";
+        const message = errorText(err, "Erro desconhecido.");
         setStatus("error");
         setErrorMsg(message);
         toast.error("Não foi possível conectar sua conta do Mercado Livre.", {

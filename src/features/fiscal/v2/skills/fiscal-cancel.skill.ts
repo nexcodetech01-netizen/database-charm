@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { defineBaseSkill } from "@/features/bella-ai/agent/infrastructure/base-skill";
 import { skillResult } from "@/features/bella-ai/skills/types";
 import { fiscalCancelSchema } from "../schemas";
@@ -19,7 +20,7 @@ export const fiscalCancelSkill = defineBaseSkill({
       const doc = await svc.cancel(input.documentId, input.reason);
       return skillResult.success(`NF-e cancelada · protocolo ${doc.protocol ?? "-"}.`, { document: doc });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha ao cancelar NF-e.";
+      const message = errorText(err, "Falha ao cancelar NF-e.");
       return skillResult.error(message);
     }
   },

@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * BellaSkillRegistry
  *
@@ -120,7 +121,7 @@ class BellaSkillRegistryImpl {
       }
       return await skill.execute(payload, ctx);
     } catch (err) {
-      return skillResult.error(err instanceof Error ? err.message : "Falha na execução.");
+      return skillResult.error(errorText(err, "Falha na execução."));
     }
   }
 }

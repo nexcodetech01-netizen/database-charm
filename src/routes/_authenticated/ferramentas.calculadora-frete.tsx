@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -110,7 +111,7 @@ function ShippingCalculatorPage() {
       }
     } catch (err) {
       toast.error("Não foi possível imprimir.", {
-        description: err instanceof Error ? err.message : undefined,
+        description: errorText(err),
       });
     } finally {
       setPrinting(false);

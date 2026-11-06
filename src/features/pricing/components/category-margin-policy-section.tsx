@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * CategoryCommercialPolicySection
  * ===============================
@@ -106,7 +107,7 @@ export function CategoryMarginPolicySection({ companyId }: Props) {
       });
       toast.success("Política comercial atualizada");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar política");
+      toast.error(errorText(err, "Falha ao salvar política"));
     }
   };
 

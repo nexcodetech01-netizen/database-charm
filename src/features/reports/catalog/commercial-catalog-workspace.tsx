@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText, Loader2, Sparkles } from "lucide-react";
@@ -602,7 +603,7 @@ export function CommercialCatalogWorkspace({
     } catch (err) {
       console.error("[Catálogo Comercial] Falha:", err);
       const message =
-        err instanceof Error ? err.message : "Erro desconhecido ao gerar o PDF.";
+        errorText(err, "Erro desconhecido ao gerar o PDF.");
       toast.error("Não foi possível gerar o PDF", { description: message, duration: 8000 });
       setProgress({ value: 0, label: "" });
     } finally {

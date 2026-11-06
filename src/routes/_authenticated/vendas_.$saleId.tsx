@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
@@ -252,7 +253,7 @@ function SaleWorkspace({
       setCancelOpen(false);
       setCancelReason("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível cancelar a venda.");
+      toast.error(errorText(e, "Não foi possível cancelar a venda."));
     }
   }
 
@@ -275,7 +276,7 @@ function SaleWorkspace({
       setMlPrintOpen(true);
     } catch (error) {
       console.error("Erro ao buscar etiqueta ML:", error);
-      toast.error("Falha ao buscar etiqueta: " + (error instanceof Error ? error.message : "Indisponível"));
+      toast.error("Falha ao buscar etiqueta: " + (errorText(error, "Indisponível")));
     } finally {
       setIsFetchingLabel(false);
     }
@@ -1147,7 +1148,7 @@ function SaleWorkspace({
               setEditPaymentOpen(false);
             } catch (e) {
               toast.error("Não foi possível atualizar", {
-                description: e instanceof Error ? e.message : undefined,
+                description: errorText(e),
               });
             }
           }}

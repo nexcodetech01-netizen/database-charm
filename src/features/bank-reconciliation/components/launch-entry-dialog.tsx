@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -131,7 +132,7 @@ export function LaunchEntryDialog({
       toast.success("Lançado.");
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível lançar.");
+      toast.error(errorText(e, "Não foi possível lançar."));
     } finally {
       setSaving(false);
     }

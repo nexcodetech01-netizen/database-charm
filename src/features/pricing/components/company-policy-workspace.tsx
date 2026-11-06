@@ -1,3 +1,4 @@
+import { errorText } from "@/lib/describe-error";
 /**
  * CompanyPolicyWorkspace — UX-001 (Commercial Experience)
  * =======================================================
@@ -310,7 +311,7 @@ export function CompanyPolicyWorkspace({ companyId }: { companyId: string }) {
       qc.invalidateQueries({ queryKey });
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : "Falha ao salvar";
+      const msg = errorText(err, "Falha ao salvar");
       toast.error(msg);
     },
   });
