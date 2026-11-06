@@ -164,6 +164,9 @@ export function GridCreateDialog({ companyId }: { companyId: string }) {
             setProgress("Lançando a compra…");
             return purchasesService.create(p as never);
           },
+          deleteProducts: async (ids) => {
+            await supabase.from("products").delete().in("id", ids);
+          },
           resolveSupplier,
           buildName: buildProductName,
           describe: describeVariant,

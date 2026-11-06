@@ -108,6 +108,8 @@ export interface GridCreateDeps {
   generateSku: (fullName: string, categoryId: string) => Promise<string | null>;
   createProduct: (p: Record<string, unknown>) => Promise<{ id: string }>;
   createPurchase: (p: Record<string, unknown>) => Promise<unknown>;
+  /** Desfaz os produtos criados nesta tentativa se algo falhar depois. */
+  deleteProducts?: (ids: string[]) => Promise<void>;
   resolveSupplier: () => Promise<string | null>;
   buildName: (p: { name: string; brand?: string; color?: string; size?: string }) => string;
   describe: (p: { model?: string; color?: string; size?: string }) => string;
@@ -142,9 +144,11 @@ export async function runGridCreate(
   }[] = [];
   let createdCount = 0;
   let reused = 0;
+  const createdIds: string[] = [];
   const total = gridSummary(input.groups, 0).products;
   let done = 0;
 
+  try {
   for (const g of input.groups) {
     const cost = parseMoney(g.cost);
     const price = parseMoney(g.price);
@@ -199,6 +203,7 @@ export async function runGridCreate(
         stock: input.withPurchase ? 0 : qty,
       });
       createdCount++;
+      createdIds.push(product.id);
       items.push({
         product_id: product.id,
         description,
@@ -230,4 +235,12 @@ export async function runGridCreate(
     });
   }
   return { createdCount, reused, purchaseNumber };
+  } catch (err) {
+    // Tudo ou nada: sem isto, uma falha na compra deixava as peças
+    // cadastradas e a próxima tentativa criava cópias.
+    if (createdIds.length > 0 && deps.deleteProducts) {
+      await deps.deleteProducts(createdIds).catch(() => undefined);
+    }
+    throw err;
+  }
 }
