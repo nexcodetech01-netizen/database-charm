@@ -129,7 +129,8 @@ export function PDVSearch({
         focused && !disabled ? "border-blue-600/60 ring-1 ring-blue-600/30" : "border-slate-700/50",
       )}
     >
-      <div className="relative">
+      <div className="flex items-stretch">
+      <div className="relative min-w-0 flex-1">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
           aria-hidden="true"
@@ -145,21 +146,8 @@ export function PDVSearch({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Pesquisar produto • Código • SKU • Nome"
-          className="h-11 border-0 pl-9 pr-40 text-base font-medium shadow-none focus-visible:ring-0"
+          className="h-11 border-0 pl-9 pr-3 text-base font-medium shadow-none focus-visible:ring-0 sm:pr-36"
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          onClick={() => setCameraOpen(true)}
-          className="absolute right-1 top-1/2 h-9 -translate-y-1/2 gap-1.5 px-2 text-slate-300 sm:right-28"
-          aria-label="Ler código pela câmera"
-          title="Ler código pela câmera"
-        >
-          <Camera className="h-4 w-4" />
-          <span className="hidden sm:inline">Câmera</span>
-        </Button>
         <span
           aria-live="polite"
           className={cn(
@@ -170,6 +158,18 @@ export function PDVSearch({
           <ScanLine className="h-3.5 w-3.5" aria-hidden="true" />
           {focused && !disabled ? "Scanner pronto" : "ENTER adiciona"}
         </span>
+      </div>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setCameraOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 border-l border-slate-700/60 px-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-white disabled:opacity-50"
+          aria-label="Ler código pela câmera"
+          title="Ler código pela câmera"
+        >
+          <Camera className="h-4 w-4" />
+          <span className="hidden md:inline">Câmera</span>
+        </button>
       </div>
 
 
