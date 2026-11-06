@@ -114,7 +114,11 @@ function ProductDetailPage() {
   const qc = useQueryClient();
 
   const orderedImages = (product?.images ?? []).slice().sort((a, b) => a.position - b.position);
-  const imagePaths = orderedImages.map((i) => i.path);
+  // Sem galeria, usa a foto de capa (a lista de Produtos já mostra ela;
+  // antes o detalhe ficava sem foto).
+  const coverPath = (product as { cover_image_path?: string | null } | undefined)?.cover_image_path;
+  const imagePaths =
+    orderedImages.length > 0 ? orderedImages.map((i) => i.path) : coverPath ? [coverPath] : [];
   const { data: signed = [] } = useSignedImageUrls(imagePaths);
   const cover = signed[0]?.signedUrl;
   const coverImage = orderedImages[0] ?? null;
