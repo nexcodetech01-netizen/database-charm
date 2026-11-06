@@ -64,7 +64,12 @@ export function SystemHealthList({ issues }: { issues: HealthIssue[] }) {
                   return href ? (
                     <Link
                       key={`${it.code}-${it.ref_id ?? it.ref_label ?? i}`}
-                      to={href as never}
+                      to={href.split("?")[0] as never}
+                      search={
+                        (href.includes("?")
+                          ? Object.fromEntries(new URLSearchParams(href.split("?")[1]))
+                          : undefined) as never
+                      }
                       className="block hover:bg-muted/50"
                     >
                       {body}

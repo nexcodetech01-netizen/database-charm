@@ -79,9 +79,11 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
     ],
   }),
   beforeLoad: requirePermission("finance.view"),
-  validateSearch: (search: Record<string, unknown>): { tab?: FinanceTab } => {
+  validateSearch: (search: Record<string, unknown>): { tab?: FinanceTab; conciliar?: boolean } => {
     const raw = typeof search.tab === "string" ? search.tab : undefined;
     return {
+      // ?conciliar=1 abre direto a conferência com o extrato (link da Saúde do sistema).
+      conciliar: search.conciliar === 1 || search.conciliar === "1" || search.conciliar === true ? true : undefined,
       tab: (FINANCE_TABS as readonly string[]).includes(raw ?? "")
         ? (raw as FinanceTab)
         : undefined,
@@ -92,12 +94,12 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
 
 function FinancePage() {
   const { company } = Route.useRouteContext();
-  const { tab: initialTab } = Route.useSearch();
+  const { tab: initialTab, conciliar } = Route.useSearch();
   const { data, isLoading } = useFinanceOverview(company.id);
   const { data: accounts } = useAccounts(company.id);
   const [txOpen, setTxOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
-  const [statementOpen, setStatementOpen] = useState(false);
+  const [statementOpen, setStatementOpen] = useState(!!conciliar);
   const [txType, setTxType] = useState<TransactionType>("income");
   const [tab, setTab] = useState<FinanceTab>(initialTab ?? "summary");
 
@@ -123,8 +125,8 @@ function FinancePage() {
       <Separator orientation="vertical" className="hidden h-6 sm:block" />
       <div className="flex flex-wrap items-center gap-2">
         <DailyFinanceSummaryButton companyId={company.id} />
-        <Button size="sm" variant="ghost" onClick={() => setStatementOpen(true)}>
-          <FileCheck2 className="mr-1.5 h-4 w-4" /> Conciliar extrato
+        <Button size="sm" variant="outline" onClick={() => setStatementOpen(true)}>
+          <FileCheck2 className="mr-1.5 h-4 w-4" /> Conferir com o extrato do banco
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="mr-1.5 h-4 w-4" /> Transferência
