@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchInChunks } from "@/lib/supabase-fetch-all";
 import { describeVariant } from "@/features/products/lib/product-identity";
 import {
   LABEL_LAYOUT_LIST,
@@ -107,9 +108,14 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
     let cancelled = false;
     void (async () => {
       const ids = [...new Set(initial.map((i) => i.productId))];
-      const { data } = await supabase.from("products").select(COLS).in("id", ids);
+      // Muitos produtos (seleção da lista): busca em partes, a URL tem limite.
+      const data = await fetchInChunks(ids, (chunk) =>
+        supabase.from("products").select(COLS).in("id", chunk),
+      ).catch(() => [] as unknown[]);
       if (cancelled) return;
-      const byId = new Map((data ?? []).map((p) => [p.id, p as unknown as ProductRow]));
+      const byId = new Map(
+        (data as unknown as ProductRow[]).map((p) => [p.id, p] as const),
+      );
       const qty = new Map<string, number>();
       for (const i of initial)
         qty.set(i.productId, (qty.get(i.productId) ?? 0) + Number(i.quantity || 0));

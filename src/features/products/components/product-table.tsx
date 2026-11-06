@@ -1,3 +1,4 @@
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,9 +52,14 @@ interface Props {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  /** Caixinhas para selecionar produtos (ex.: imprimir etiquetas). */
+  selection?: {
+    isSelected: (id: string) => boolean;
+    toggle: (rows: Row[], checked: boolean) => void;
+  };
 }
 
-export function ProductTable({ companyId, rows, isLoading, isError, onRetry, total, page, pageSize, onPageChange }: Props) {
+export function ProductTable({ companyId, rows, isLoading, isError, onRetry, total, page, pageSize, onPageChange, selection }: Props) {
   const [publishTarget, setPublishTarget] = useState<Product | null>(null);
   const [deactivateTarget, setDeactivateTarget] = useState<Product | null>(null);
   const [labelTarget, setLabelTarget] = useState<Product | null>(null);
@@ -107,8 +113,35 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
     [signed],
   );
 
+  const allOnPage = rows.length > 0 && !!selection && rows.every((r) => selection.isSelected(r.id));
+  const someOnPage = !!selection && rows.some((r) => selection.isSelected(r.id));
+
   const columns: DataTableColumn<Row>[] = useMemo(
     () => [
+      ...(selection
+        ? [
+            {
+              id: "select",
+              width: "w-[40px]",
+              header: (
+                <Checkbox
+                  aria-label="Selecionar todos da página"
+                  checked={allOnPage ? true : someOnPage ? "indeterminate" : false}
+                  onCheckedChange={(v) => selection.toggle(rows, !!v)}
+                />
+              ),
+              cell: (p: Row) => (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    aria-label={`Selecionar ${p.name}`}
+                    checked={selection.isSelected(p.id)}
+                    onCheckedChange={(v) => selection.toggle([p], !!v)}
+                  />
+                </div>
+              ),
+            } satisfies DataTableColumn<Row>,
+          ]
+        : []),
       {
         id: "photo",
         header: "Foto",
@@ -230,7 +263,7 @@ export function ProductTable({ companyId, rows, isLoading, isError, onRetry, tot
         cell: (p) => <ProductStatusBadge status={p.status} />,
       },
     ],
-    [urlByPath, cardConfigQ.data],
+    [urlByPath, cardConfigQ.data, selection, rows, allOnPage, someOnPage],
   );
 
   return (

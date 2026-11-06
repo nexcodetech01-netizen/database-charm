@@ -1,8 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BulkCostDialog } from "@/features/products/components/bulk-cost-dialog";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { requirePermission } from "@/features/rbac";
-import { Calculator, ImageDown, Images, Package, Sparkles, Tags, Upload } from "lucide-react";
+import { Calculator, ImageDown, Images, Loader2, Package, Printer, Sparkles, Tags, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import { productsService } from "@/features/products/services/products.service";
+import {
+  labelsFromSelection,
+  toggleIds,
+  type LabelSelection,
+} from "@/features/products/lib/label-selection";
 import { BulkLabelDialog } from "@/features/printing";
 import { OptimizePhotosDialog } from "@/features/products/components/optimize-photos-dialog";
 import { GridCreateDialog } from "@/features/products/components/grid-create-dialog";
@@ -58,6 +65,35 @@ function ProductsPage() {
   );
   const { data, isLoading, isError, refetch } = useProductsList(company.id, effective);
 
+  // Seleção para etiquetas: vale entre páginas; trocar o filtro limpa.
+  const [selected, setSelected] = useState<LabelSelection>(new Map());
+  const [selectingAll, setSelectingAll] = useState(false);
+  const [printSel, setPrintSel] = useState<{ productId: string; quantity: number }[] | null>(null);
+  const filterKey = JSON.stringify({ ...effective, page: 0 });
+  useEffect(() => {
+    setSelected(new Map());
+  }, [filterKey]);
+  const rowsOnPage = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const pageAllSelected = rowsOnPage.length > 0 && rowsOnPage.every((r) => selected.has(r.id));
+  const summary = labelsFromSelection(selected);
+
+  async function selectAllFiltered() {
+    setSelectingAll(true);
+    try {
+      const all = await productsService.list(company.id, {
+        ...effective,
+        page: 1,
+        pageSize: Math.min(Math.max(total, 1), 500),
+      });
+      setSelected((prev) => toggleIds(prev, all.rows, true));
+    } catch {
+      toast.error("Não foi possível selecionar todos. Tente de novo.");
+    } finally {
+      setSelectingAll(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
       <BreadcrumbNav />
@@ -101,7 +137,37 @@ function ProductsPage() {
         onReset={() => setFilters(DEFAULT)}
       />
 
+      {selected.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+          <span>
+            <strong>{selected.size}</strong> produto(s) selecionado(s) ·{" "}
+            <strong>{summary.labels}</strong> etiqueta(s)
+            {summary.withoutStock > 0 ? (
+              <span className="text-muted-foreground"> · {summary.withoutStock} sem estoque ficam de fora</span>
+            ) : null}
+          </span>
+          {pageAllSelected && total > selected.size ? (
+            <Button size="sm" variant="link" className="h-auto p-0" disabled={selectingAll} onClick={() => void selectAllFiltered()}>
+              {selectingAll ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+              Selecionar todos os {Math.min(total, 500)} do filtro
+            </Button>
+          ) : null}
+          <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Map())}>
+              <X className="mr-1.5 h-4 w-4" /> Limpar
+            </Button>
+            <Button size="sm" disabled={summary.labels === 0} onClick={() => setPrintSel(summary.initial)}>
+              <Printer className="mr-1.5 h-4 w-4" /> Imprimir etiquetas
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <ProductTable
+        selection={{
+          isSelected: (id) => selected.has(id),
+          toggle: (rows, checked) => setSelected((prev) => toggleIds(prev, rows, checked)),
+        }}
         companyId={company.id}
         rows={data?.rows ?? []}
         total={data?.total ?? 0}
@@ -121,6 +187,15 @@ function ProductsPage() {
       <OptimizePhotosDialog companyId={company.id} {...toolProps("photos")} />
 
       <BulkLabelDialog open={labelsOpen} onOpenChange={setLabelsOpen} companyId={company.id} />
+      <BulkLabelDialog
+        open={printSel !== null}
+        onOpenChange={(v) => {
+          if (!v) setPrintSel(null);
+        }}
+        companyId={company.id}
+        initial={printSel ?? []}
+        title="Etiquetas dos selecionados"
+      />
     </div>
   );
 }
