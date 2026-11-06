@@ -25,6 +25,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { fetchInChunks } from "@/lib/supabase-fetch-all";
 import { describeVariant } from "@/features/products/lib/product-identity";
+import { hasRealBarcode } from "@/features/products/lib/barcode";
 import {
   LABEL_LAYOUT_LIST,
   buildLabelsDocument,
@@ -189,7 +190,7 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="grid-cols-1 overflow-hidden sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Tags className="h-4 w-4" /> {title ?? "Etiquetas em lote"}
@@ -199,7 +200,7 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -247,9 +248,16 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
                   className="flex items-center gap-2 border-b px-3 py-2 last:border-b-0"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{l.product.name}</p>
+                    <p className="line-clamp-2 break-words text-sm" title={l.product.name}>
+                      {l.product.name}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {l.product.barcode || l.product.sku || "sem código"}
+                      {[
+                        l.product.sku,
+                        hasRealBarcode(l.product.barcode) ? l.product.barcode : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "sem código"}
                     </p>
                   </div>
                   <Button
