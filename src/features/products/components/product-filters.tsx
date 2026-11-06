@@ -1,4 +1,6 @@
-import { Search, X } from "lucide-react";
+import { useState } from "react";
+import { Camera, Search, X } from "lucide-react";
+import { CameraScannerDialog } from "@/features/scanner/camera-scanner-dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,7 @@ interface Props {
 }
 
 export function ProductFilters({ companyId, filters, onChange, onReset }: Props) {
+  const [cameraOpen, setCameraOpen] = useState(false);
   const { data: categories = [] } = useCategories(companyId);
   const { data: suppliers = [] } = useSuppliers(companyId);
 
@@ -40,7 +43,23 @@ export function ProductFilters({ companyId, filters, onChange, onReset }: Props)
           placeholder="Buscar por nome, SKU ou código de barras..."
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value, page: 1 })}
-          className="pl-9"
+          className="pl-9 pr-12"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+          onClick={() => setCameraOpen(true)}
+          aria-label="Buscar pelo código com a câmera"
+          title="Buscar pelo código com a câmera"
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
+        <CameraScannerDialog
+          open={cameraOpen}
+          onOpenChange={setCameraOpen}
+          onCode={(code) => onChange({ search: code, page: 1 })}
         />
       </div>
 

@@ -1,4 +1,6 @@
-import { Repeat } from "lucide-react";
+import { Printer, Repeat } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { printStoreCreditVoucher } from "../lib/print-voucher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -12,7 +14,14 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 /** Saldo e extrato do vale-troca da cliente (Cliente 360). */
-export function StoreCreditCard({ customerId }: { customerId: string }) {
+export function StoreCreditCard({
+  customerId,
+  companyId,
+}: {
+  customerId: string;
+  /** Com a empresa, mostra "Imprimir vale" quando há saldo. */
+  companyId?: string;
+}) {
   const balance = useStoreCreditBalance(customerId);
   const entries = useStoreCreditEntries(customerId);
 
@@ -44,6 +53,23 @@ export function StoreCreditCard({ customerId }: { customerId: string }) {
           {formatCurrency(balance.data)}
         </span>
       </div>
+      {companyId && balance.data > 0 ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() =>
+            void printStoreCreditVoucher({
+              companyId,
+              customerId,
+              credit: 0,
+              balance: Number(balance.data ?? 0),
+            })
+          }
+        >
+          <Printer className="mr-1.5 h-4 w-4" /> Imprimir vale
+        </Button>
+      ) : null}
       {list.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
           Sem trocas. O vale aparece aqui quando você usar &quot;Trocar&quot; numa venda dela.

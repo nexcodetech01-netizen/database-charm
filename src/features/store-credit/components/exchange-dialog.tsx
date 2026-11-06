@@ -18,6 +18,7 @@ import { useReturnedQuantities } from "@/features/returns";
 import { PDVCustomerSelect } from "@/features/sales/pdv/components/pdv-customer-select";
 import type { SaleItem } from "@/features/sales/types";
 import { useCreateExchange } from "../hooks/use-store-credit";
+import { printStoreCreditVoucher } from "../lib/print-voucher";
 
 interface Props {
   open: boolean;
@@ -58,6 +59,7 @@ export function ExchangeDialog({
   const { mutateAsync, isPending } = useCreateExchange();
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [reason, setReason] = useState("Não serviu");
+  const [printVoucher, setPrintVoucher] = useState(true);
   // Quem vai usar o vale: por padrão quem comprou; pode ser quem ganhou
   // o presente (vários presentes de pessoas diferentes somam no mesmo vale).
   const [customerId, setCustomerId] = useState(saleCustomerId ?? "");
@@ -112,7 +114,7 @@ export function ExchangeDialog({
         quantity: qtyOf(it.id),
       }));
     try {
-      await mutateAsync({
+      const res = await mutateAsync({
         companyId,
         saleId,
         customerId: customerId || null,
@@ -122,6 +124,15 @@ export function ExchangeDialog({
       setRows({});
       setCustomerId(saleCustomerId ?? "");
       onOpenChange(false);
+      if (printVoucher && res?.customer_id) {
+        void printStoreCreditVoucher({
+          companyId,
+          customerId: res.customer_id,
+          credit: Number(res.credit ?? 0),
+          balance: Number(res.balance ?? 0),
+          origin: `Troca da venda ${saleNumber}`,
+        }).catch(() => undefined);
+      }
     } catch {
       /* toast no hook */
     }
@@ -216,6 +227,11 @@ export function ExchangeDialog({
               placeholder="Ex.: não serviu, cor, presente"
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={printVoucher} onCheckedChange={(v) => setPrintVoucher(!!v)} />
+            Imprimir o vale-troca para entregar
+          </label>
 
           <Alert>
             <AlertDescription className="space-y-1 text-sm">

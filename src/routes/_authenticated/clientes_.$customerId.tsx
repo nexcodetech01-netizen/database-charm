@@ -189,7 +189,7 @@ function CustomerDetailPage() {
         <TabsContent value="overview" className="mt-4">
           <div className="space-y-4">
             <CustomerCreditCard customerId={customerId} />
-            <StoreCreditCard customerId={customerId} />
+            <StoreCreditCard customerId={customerId} companyId={company.id} />
             <Customer360Panel customerId={customerId} />
           </div>
         </TabsContent>

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import type { KeyboardEvent } from "react";
-import { ScanLine, Search } from "lucide-react";
+import { Camera, ScanLine, Search } from "lucide-react";
+import { CameraScannerDialog } from "@/features/scanner/camera-scanner-dialog";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export function PDVSearch({
   const { options, isSearching, lookup } = usePdvProductSearch(companyId, value);
   const [isAdding, setAdding] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const addingRef = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -143,8 +145,21 @@ export function PDVSearch({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Pesquisar produto • Código • SKU • Nome"
-          className="h-11 border-0 pl-9 pr-32 text-base font-medium shadow-none focus-visible:ring-0"
+          className="h-11 border-0 pl-9 pr-40 text-base font-medium shadow-none focus-visible:ring-0"
         />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={disabled}
+          onClick={() => setCameraOpen(true)}
+          className="absolute right-1 top-1/2 h-9 -translate-y-1/2 gap-1.5 px-2 text-slate-300 sm:right-28"
+          aria-label="Ler código pela câmera"
+          title="Ler código pela câmera"
+        >
+          <Camera className="h-4 w-4" />
+          <span className="hidden sm:inline">Câmera</span>
+        </Button>
         <span
           aria-live="polite"
           className={cn(
@@ -210,6 +225,13 @@ export function PDVSearch({
           ))}
         </div>
       )}
+      <CameraScannerDialog
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        continuous
+        title="Ler peças pela câmera"
+        onCode={(code) => commit(code)}
+      />
     </div>
   );
 }

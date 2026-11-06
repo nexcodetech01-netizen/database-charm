@@ -58,7 +58,8 @@ export function ReceivePaymentDialog({
   onPaid,
 }: Props) {
   const [amountStr, setAmountStr] = useState<string>("");
-  const [method, setMethod] = useState<string>("cash");
+  // Quase todo recebimento é Pix: começa em Pix (dinheiro foi o erro comum).
+  const [method, setMethod] = useState<string>("pix_manual");
   const [paidAt, setPaidAt] = useState<string>(() => companyDayKey(new Date()));
   const [notes, setNotes] = useState<string>("");
 
@@ -67,7 +68,7 @@ export function ReceivePaymentDialog({
   useEffect(() => {
     if (open) {
       setAmountStr(balance > 0 ? balance.toFixed(2).replace(".", ",") : "");
-      setMethod("cash");
+      setMethod("pix_manual");
       setPaidAt(companyDayKey(new Date()));
       setNotes("");
     }
