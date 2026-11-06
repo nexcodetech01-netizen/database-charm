@@ -110,3 +110,21 @@ describe("Etiquetas", () => {
     expect(doc.split('class="label label-40x30"').length - 1).toBe(3);
   });
 });
+
+describe("nome na etiqueta", () => {
+  it("tira ' — Creme Gg' do nome quando cor e tamanho saem nas outras linhas", async () => {
+    const { renderLabelHtml, resolveLabelLayout } = await import("../lib/labels");
+    const html = renderLabelHtml(
+      { name: "Camiseta Masculina Peruana Pima Estampada Gucci — Creme Gg", variant: "Creme", size: "GG", sku: "CAM-1", barcode: null, price: 64.9 },
+      resolveLabelLayout("40x40"),
+    );
+    expect(html).toContain(">Camiseta Masculina Peruana Pima Estampada Gucci<");
+    expect(html).toContain("Creme");
+    expect(html).toContain("<strong>GG</strong>");
+  });
+  it("mantém o nome quando o trecho final não é cor/tamanho", async () => {
+    const { stripVariantSuffix } = await import("../lib/labels");
+    const n = (v: string) => v.toLowerCase();
+    expect(stripVariantSuffix("Bolsa — Edição Limitada", ["Preta", "U"], n)).toBe("Bolsa — Edição Limitada");
+  });
+});

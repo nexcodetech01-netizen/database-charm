@@ -116,6 +116,21 @@ function formatPriceBR(value: number): string {
 }
 
 /** HTML de uma etiqueta individual. */
+/** Tira do nome o trecho final " — cor tamanho" quando ele já sai nas outras linhas. */
+export function stripVariantSuffix(
+  name: string,
+  parts: (string | null | undefined)[],
+  norm: (v: string) => string,
+): string {
+  const i = name.lastIndexOf(" — ");
+  if (i <= 0) return name;
+  const tail = norm(name.slice(i + 3));
+  if (!tail) return name;
+  const known = ` ${parts.map((p) => norm((p ?? "").replace(/·/g, " "))).join(" ")} `;
+  const words = tail.split(" ").filter(Boolean);
+  return words.every((w) => known.includes(` ${w} `)) ? name.slice(0, i).trim() : name;
+}
+
 export function renderLabelHtml(
   item: LabelItem,
   layout: LabelLayout,
@@ -140,7 +155,10 @@ export function renderLabelHtml(
   // Se o nome já traz estampa/cor (botão "Completar nome"), não repete.
   const norm = (v: string) =>
     v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-  const nameNorm = ` ${norm(item.name ?? "")} `;
+  // "Camiseta … Gucci — Creme Gg": a parte depois do "—" é cor/tamanho, que
+  // já saem nas linhas de baixo. Tira do nome para caber em 2 linhas.
+  const displayName = stripVariantSuffix(item.name ?? "", [item.variant, item.size], norm);
+  const nameNorm = ` ${norm(displayName)} `;
   const variantParts = (item.variant ?? "").split("·").map((p) => p.trim()).filter(Boolean);
   const variantInName =
     variantParts.length > 0 && variantParts.every((p) => nameNorm.includes(` ${norm(p)} `));
@@ -151,8 +169,8 @@ export function renderLabelHtml(
     ? `<div class="label-size">Tam. <strong>${escapeXml(item.size.trim())}</strong></div>`
     : "";
   const head = variant || size
-    ? `<div class="label-head"><div class="label-name">${escapeXml(item.name ?? "")}</div>${variant}${size}</div>`
-    : `<div class="label-name">${escapeXml(item.name ?? "")}</div>`;
+    ? `<div class="label-head"><div class="label-name">${escapeXml(displayName)}</div>${variant}${size}</div>`
+    : `<div class="label-name">${escapeXml(displayName)}</div>`;
 
   return `<div class="label label-${layout.id}">
   ${head}
@@ -191,7 +209,11 @@ html, body { margin: 0; padding: 0; background: #fff; }
   font-size: ${layout.namePt}pt;
   font-weight: 700;
   line-height: 1.15;
-  max-height: ${layout.namePt * 2.6}pt;
+  /* No máximo 2 linhas inteiras (antes cortava a 3ª no meio). */
+  max-height: ${(layout.namePt * 2.3).toFixed(1)}pt;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .label-barcode { height: ${layout.barcodeHeightMm}mm; }
