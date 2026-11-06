@@ -95,6 +95,8 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
   const { prefs, save } = usePrintPreferences(companyId);
   const [layoutId, setLayoutId] = useState<string | null>(null);
   const layout = resolveLabelLayout(layoutId ?? prefs.labelLayout);
+  const [codeSel, setCodeSel] = useState<"qr" | "barcode" | null>(null);
+  const code = codeSel ?? prefs.labelCode;
   const [lines, setLines] = useState<Line[]>([]);
   const [search, setSearch] = useState("");
   const [printing, setPrinting] = useState(false);
@@ -177,8 +179,9 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
     if (items.length === 0) return;
     setPrinting(true);
     try {
-      await printHtmlDocument(buildLabelsDocument(items, layout, { title: title ?? "Etiquetas" }));
-      if (layout.id !== prefs.labelLayout) save({ ...prefs, labelLayout: layout.id });
+      await printHtmlDocument(buildLabelsDocument(items, layout, { title: title ?? "Etiquetas", code }));
+      if (layout.id !== prefs.labelLayout || code !== prefs.labelCode)
+        save({ ...prefs, labelLayout: layout.id, labelCode: code });
       toast.success(`${items.length} etiqueta(s) enviada(s) para impressão.`);
       onOpenChange(false);
     } catch (e) {
@@ -303,7 +306,19 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
             )}
           </div>
 
-          <div className="flex items-end justify-between gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="w-40 space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Código</Label>
+              <Select value={code} onValueChange={(v) => setCodeSel(v as "qr" | "barcode")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="qr">QR (câmera do celular)</SelectItem>
+                  <SelectItem value="barcode">Barras (leitor USB)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="w-40 space-y-1.5">
               <Label className="text-xs text-muted-foreground">Tamanho da etiqueta</Label>
               <Select value={layout.id} onValueChange={setLayoutId}>

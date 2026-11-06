@@ -26,6 +26,8 @@ export interface PrintPreferences {
   preferEscPos: boolean;
   /** Layout padrão de etiquetas. */
   labelLayout: string;
+  /** Código na etiqueta: QR (câmera do celular) ou barras (leitor USB). */
+  labelCode: "qr" | "barcode";
 }
 
 export const DEFAULT_PRINT_PREFERENCES: PrintPreferences = {
@@ -38,6 +40,7 @@ export const DEFAULT_PRINT_PREFERENCES: PrintPreferences = {
   autoPrintAfterSale: false,
   preferEscPos: false,
   labelLayout: "50x30",
+  labelCode: "qr",
 };
 
 const KEY = (companyId: string) => `nexos:print-prefs:${companyId}`;
@@ -69,6 +72,7 @@ export function normalizePrintPreferences(
     autoPrintAfterSale: !!merged.autoPrintAfterSale,
     preferEscPos: !!merged.preferEscPos,
     labelLayout: String(merged.labelLayout || DEFAULT_PRINT_PREFERENCES.labelLayout),
+    labelCode: merged.labelCode === "barcode" ? "barcode" : "qr",
   };
 }
 

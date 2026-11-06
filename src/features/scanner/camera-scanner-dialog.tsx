@@ -13,6 +13,7 @@ import { cameraErrorMessage, createCodeDebouncer } from "./lib/debounce";
 
 /** Biblioteca de leitura, só para aparelhos sem leitor nativo (ex.: iPhone). */
 const ZXING_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm";
+const ZXING_LIB_URL = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/+esm";
 const FORMATS = ["code_128", "ean_13", "ean_8", "upc_a", "upc_e", "code_39", "qr_code"];
 
 type Detector = { detect: (src: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
@@ -93,10 +94,25 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
         if (!navigator.mediaDevices?.getUserMedia) {
           throw Object.assign(new Error("sem câmera"), { name: "NotFoundError" });
         }
+        // Resolução alta + foco contínuo: barras finas (etiqueta 40 mm)
+        // não são lidas na resolução padrão (640×480).
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         });
+        try {
+          const track = stream.getVideoTracks()[0];
+          const caps = (track.getCapabilities?.() ?? {}) as { focusMode?: string[] };
+          if (caps.focusMode?.includes("continuous")) {
+            await track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] });
+          }
+        } catch {
+          /* sem controle de foco: segue */
+        }
         if (stopped) return;
         const video = videoRef.current;
         if (!video) return;
@@ -127,16 +143,36 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
           return;
         }
 
-        const mod = (await import(/* @vite-ignore */ ZXING_URL)) as {
-          BrowserMultiFormatReader: new () => {
+        const [mod, lib] = (await Promise.all([
+          import(/* @vite-ignore */ ZXING_URL),
+          import(/* @vite-ignore */ ZXING_LIB_URL),
+        ])) as [
+          {
+          BrowserMultiFormatReader: new (hints?: Map<unknown, unknown>, opts?: { delayBetweenScanAttempts?: number }) => {
             decodeFromVideoElement: (
               el: HTMLVideoElement,
               cb: (result: { getText: () => string } | undefined) => void,
             ) => Promise<{ stop: () => void }>;
           };
-        };
+          },
+          {
+            DecodeHintType: Record<string, unknown>;
+            BarcodeFormat: Record<string, unknown>;
+          },
+        ];
         if (stopped) return;
-        const reader = new mod.BrowserMultiFormatReader();
+        // "Tentar com mais esforço" e só os formatos das etiquetas.
+        const hints = new Map<unknown, unknown>();
+        hints.set(lib.DecodeHintType.TRY_HARDER, true);
+        hints.set(lib.DecodeHintType.POSSIBLE_FORMATS, [
+          lib.BarcodeFormat.QR_CODE,
+          lib.BarcodeFormat.CODE_128,
+          lib.BarcodeFormat.EAN_13,
+          lib.BarcodeFormat.EAN_8,
+          lib.BarcodeFormat.UPC_A,
+          lib.BarcodeFormat.CODE_39,
+        ]);
+        const reader = new mod.BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
         setStatus("reading");
         zxingControls = await reader.decodeFromVideoElement(video, (result) => {
           if (result) handle(result.getText());
@@ -168,13 +204,13 @@ export function CameraScannerDialog({ open, onOpenChange, onCode, continuous, ti
             <Camera className="h-4 w-4" /> {title ?? "Ler código pela câmera"}
           </DialogTitle>
           <DialogDescription>
-            Aponte a câmera para o código de barras da etiqueta, a uns 15 cm. Com boa luz é mais
-            rápido.
+            Aponte para o QR Code (ou o código de barras) da etiqueta, a uns 10–15 cm, com boa luz.
+            Etiquetas com QR são lidas bem mais rápido pelo celular.
           </DialogDescription>
         </DialogHeader>
 
         <div className="relative overflow-hidden rounded-lg bg-black">
-          <video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline />
+          <video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline autoPlay />
           {status === "reading" ? (
             <div className="pointer-events-none absolute inset-x-8 top-1/2 h-0.5 -translate-y-1/2 bg-red-500/80" />
           ) : null}

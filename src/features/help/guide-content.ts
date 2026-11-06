@@ -141,6 +141,10 @@ Use **um jeito só** por nota. Usar dois cria as peças em dobro.
 | Algumas peças escolhidas | Produtos › **Etiquetas em lote** › busque e adicione | Você escolhe (− / +) |
 | Uma peça | Abra o produto › **Etiqueta** | 1 |
 
+**Código na etiqueta:** escolha **QR (câmera do celular)** se você lê as peças com o celular, ou **Barras (leitor USB)** se tiver leitor. O sistema guarda a escolha.
+
+**Etiqueta 40 × 40 (tag de roupa):** na impressora (Preferências de impressão › Page Set) o tamanho tem que ser **40x40**. Para etiqueta de frete, volte para **94mm × 150mm**.
+
 Na lista de Produtos, a caixinha do topo marca a página. Com mais produtos no filtro, use **Selecionar todos os X do filtro** (até 500). Peças com estoque 0 ficam de fora.
 
 **Programa de impressão desligado?** No cartão **Programa de impressão**, o botão **Como ligar** mostra os dois comandos para colar no Prompt de Comando.`,

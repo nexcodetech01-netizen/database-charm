@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 /**
  * Etiquetas de produto (Sprint 4.0) — camada PURA.
  *
@@ -8,6 +9,23 @@ import { renderCode128Svg, escapeXml } from "./barcode";
 import { hasRealBarcode } from "@/features/products/lib/barcode";
 
 export type LabelLayoutId = "40x30" | "40x40" | "50x30" | "58x40";
+
+/** Código impresso: barras (leitor USB) ou QR (câmera do celular). */
+export type LabelCodeMode = "barcode" | "qr";
+
+/** QR Code em SVG (síncrono), com 1 módulo de margem. */
+export function renderQrSvg(text: string): string {
+  const qr = QRCode.create(text, { errorCorrectionLevel: "M" });
+  const size = qr.modules.size;
+  const total = size + 2;
+  let path = "";
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (qr.modules.get(x, y)) path += `M${x + 1} ${y + 1}h1v1h-1z`;
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
+}
 
 export interface LabelLayout {
   id: LabelLayoutId;
@@ -134,7 +152,7 @@ export function stripVariantSuffix(
 export function renderLabelHtml(
   item: LabelItem,
   layout: LabelLayout,
-  options: { showQrCode?: boolean } = {},
+  options: { showQrCode?: boolean; code?: LabelCodeMode } = {},
 ): string {
   const barcodeValue = resolveBarcodeValue(item);
   const barcode = barcodeValue
@@ -171,6 +189,19 @@ export function renderLabelHtml(
   const head = variant || size
     ? `<div class="label-head"><div class="label-name">${escapeXml(displayName)}</div>${variant}${size}</div>`
     : `<div class="label-name">${escapeXml(displayName)}</div>`;
+
+  if (options.code === "qr" && barcodeValue) {
+    return `<div class="label label-${layout.id} label-mode-qr">
+  ${head}
+  <div class="label-qrrow">
+    <div class="label-qrcode">${renderQrSvg(barcodeValue)}</div>
+    <div class="label-foot-text">
+      <div class="label-sku">${escapeXml(item.sku ?? barcodeValue)}</div>
+      ${price}
+    </div>
+  </div>
+</div>`;
+  }
 
   return `<div class="label label-${layout.id}">
   ${head}
@@ -236,6 +267,11 @@ html, body { margin: 0; padding: 0; background: #fff; }
 /* Na tag 40x40 o SKU já sai embaixo das barras: não repete no rodapé. */
 .label-40x40 .label-barcode:not(.label-barcode-empty) ~ .label-foot .label-sku { display: none; }
 .label-qr { width: ${layout.heightMm / 3}mm; height: ${layout.heightMm / 3}mm; }
+.label-qrrow { display: flex; align-items: flex-end; gap: 2mm; }
+.label-qrcode { flex: none; width: ${Math.min(layout.heightMm * 0.45, 18).toFixed(1)}mm; height: ${Math.min(layout.heightMm * 0.45, 18).toFixed(1)}mm; }
+.label-qrcode svg { display: block; width: 100%; height: 100%; }
+.label-mode-qr .label-foot-text { flex: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5mm; }
+.label-mode-qr .label-sku { white-space: nowrap; font-size: ${Math.max(layout.skuPt - 0.5, 4.5)}pt; }
 `.trim();
 }
 
@@ -243,7 +279,7 @@ html, body { margin: 0; padding: 0; background: #fff; }
 export function buildLabelsDocument(
   items: LabelItem[],
   layout: LabelLayout,
-  options: { showQrCode?: boolean; title?: string } = {},
+  options: { showQrCode?: boolean; title?: string; code?: LabelCodeMode } = {},
 ): string {
   const body = items.map((it) => renderLabelHtml(it, layout, options)).join("\n");
   return `<!doctype html>

@@ -50,22 +50,25 @@ export function LabelPrintDialog({ open, onOpenChange, companyId, item }: Props)
   const [showQrCode, setShowQrCode] = useState(false);
 
   const layout = resolveLabelLayout(layoutId ?? prefs.labelLayout);
+  const [codeSel, setCodeSel] = useState<"qr" | "barcode" | null>(null);
+  const code = codeSel ?? prefs.labelCode;
 
   const previewHtml = useMemo(
     () =>
-      `<style>${buildLabelCss(layout)}</style>${renderLabelHtml(item, layout, { showQrCode })}`,
-    [item, layout, showQrCode],
+      `<style>${buildLabelCss(layout)}</style>${renderLabelHtml(item, layout, { showQrCode, code })}`,
+    [item, layout, showQrCode, code],
   );
 
   async function handlePrint() {
     const items = expandLabelCopies(item, copies);
     const html = buildLabelsDocument(items, layout, {
       showQrCode,
+      code,
       title: `Etiquetas — ${item.name}`,
     });
     await printHtmlDocument(html);
-    if (companyId && layout.id !== prefs.labelLayout) {
-      save({ ...prefs, labelLayout: layout.id });
+    if (companyId && (layout.id !== prefs.labelLayout || code !== prefs.labelCode)) {
+      save({ ...prefs, labelLayout: layout.id, labelCode: code });
     }
     toast.success(`${items.length} etiqueta(s) enviada(s) para impressão.`);
     onOpenChange(false);
@@ -113,7 +116,20 @@ export function LabelPrintDialog({ open, onOpenChange, companyId, item }: Props)
             </div>
           </div>
 
-          {layout.supportsQrCode && item.qrCodeDataUrl ? (
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Código</Label>
+            <Select value={code} onValueChange={(v) => setCodeSel(v as "qr" | "barcode")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="qr">QR (câmera do celular)</SelectItem>
+                <SelectItem value="barcode">Barras (leitor USB)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {code === "barcode" && layout.supportsQrCode && item.qrCodeDataUrl ? (
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={showQrCode}
