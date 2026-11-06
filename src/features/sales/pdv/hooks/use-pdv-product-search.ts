@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyProductSearch } from "@/features/products/lib/product-search";
@@ -69,7 +70,7 @@ export function usePdvProductSearch(companyId: string, term: string) {
           return [];
         }
 
-        const mapped: PdvSearchOption[] = (data ?? []).map((p) => ({
+        const mapped: PdvSearchOption[] = preferExactCodeMatch(data ?? [], rawTerm).map((p) => ({
           id: p.id,
           name: p.name,
           sku: p.sku ?? null,

@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -89,7 +90,7 @@ export function PurchaseItemsEditor({
       }
 
 
-      const mapped: ProductOption[] = (data ?? []).map((p) => ({
+      const mapped: ProductOption[] = preferExactCodeMatch(data ?? [], query).map((p) => ({
           id: p.id,
           name: p.name,
           sku: p.sku,

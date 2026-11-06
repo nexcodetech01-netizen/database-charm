@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -137,7 +138,7 @@ export function CommandPalette({ companyId }: { companyId: string }) {
           limit_param: 5,
         });
         if (result.error) throw result.error;
-        return result.data ?? [];
+        return preferExactCodeMatch(result.data ?? [], term);
       };
 
       const searchSales = async () => {

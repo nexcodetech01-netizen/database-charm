@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Search, Package, AlertTriangle, Lock, ScanBarcode, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ export function SaleItemsEditor({ companyId, items, onChange, enabled = true }: 
       }
 
 
-      const mapped: ProductOption[] = (data ?? []).map((p) => {
+      const mapped: ProductOption[] = preferExactCodeMatch(data ?? [], query).map((p) => {
         const cat = (p as {
           category?: {
             min_margin_pct?: number | null;

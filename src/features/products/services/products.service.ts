@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,7 +126,10 @@ export const productsService = {
           // Fallback para a busca legada se falhar
           q = applyProductSearch(q, filters.search);
         } else {
-          rankedIds = (searchResults ?? []).map((p: { id: string }) => p.id);
+          rankedIds = preferExactCodeMatch(
+            (searchResults ?? []) as { id: string; sku?: string | null; barcode?: string | null }[],
+            filters.search,
+          ).map((p) => p.id);
           if (rankedIds.length === 0) return { rows: [], total: 0 };
           q = q.in("id", rankedIds);
         }
