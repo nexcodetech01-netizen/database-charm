@@ -27,7 +27,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     body: `Toda venda passa pelo **PDV**, com o caixa aberto. O estoque baixa sozinho quando a venda é paga ou vai para o crediário.
 
 1. **Cliente:** escolha a cliente (ou ➕ Novo). Crediário e vale-troca exigem cliente.
-2. **Peças:** busque pelo nome ou bipe o código. Digitando o código exato (SKU ou código de barras), aparece só aquela peça.
+2. **Peças:** busque pelo nome, digite o código ou toque em **Câmera** e aponte para a etiqueta. A câmera fica aberta para ler uma peça atrás da outra; toque em **Concluir** no fim. Digitando o código exato (SKU ou código de barras), aparece só aquela peça.
 3. **Desconto:** no item (preço do item) ou na venda toda.
 4. **Finalizar:** escolha a forma de pagamento.
 
@@ -54,6 +54,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     - Peça nova mais cara: ela paga só a diferença.
     - Peça nova mais barata: o resto fica de saldo para depois.
 
+Ao confirmar, o **vale-troca sai impresso** para entregar (desmarque "Imprimir o vale-troca" se não quiser). Para reimprimir o saldo depois: abra a cliente › cartão **Vale-troca** › **Imprimir vale**.
+
 **Troca de presente (quem ganhou vem trocar)**
 
 1. Na Troca, em **Quem vai usar o vale**, troque para **quem ganhou o presente** (➕ Novo, se não tiver cadastro).
@@ -74,7 +76,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
 **Registrar um recebimento**
 
 1. Abra a cliente ou a venda e clique em **Registrar recebimento**.
-2. Digite o valor e escolha a **forma certa**:
+2. Digite o valor e confira a **forma** (já vem **Pix**):
     - **Pix** → entra no Banco PJ.
     - **Dinheiro** → entra no Caixa. Precisa do caixa aberto.
 3. Confirme. Quando a última parcela é paga, a venda vira **Paga** sozinha.
@@ -96,7 +98,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
 2. Uma **linha** por peça: marca, cor, tamanho, quantidade. **+ Linha** repete a marca e a cor de cima.
 3. **Lançar a compra junto** cria a compra (fornecedor, frete, data). Veja **Compras**.
 
-**Buscar:** pelo nome (aceita erro de digitação) ou pelo código exato, que mostra só aquela peça.
+**Buscar:** pelo nome (aceita erro de digitação), pelo código exato (mostra só aquela peça) ou pela **câmera** (ícone ao lado da busca).
 
 **Foto:** no cadastro do produto, ou várias de uma vez em **Mais › Fotos em lote**.
 
@@ -169,7 +171,7 @@ O **Dinheiro esperado** = troco inicial + dinheiro recebido + suprimentos − sa
 | Caixa Principal (Dinheiro) | Dinheiro contado na gaveta |
 | InfinitePay (maquininha) | Saldo no app da InfinitePay |
 
-**Toda semana:** compare o saldo de cada conta com o lugar real. Se não bater, a Saúde do sistema ajuda a achar.
+**Toda semana:** Financeiro › **Conferir com o extrato do banco**. Escolha a conta, envie o PDF do extrato do Nubank e confira: o sistema marca o que bate e oferece lançar o que falta ou mover o que está na conta errada. Para baixar o PDF: app do Nubank › conta PJ › Extrato › compartilhar › PDF.
 
 **Lançamentos que mais dão diferença**
 
@@ -192,7 +194,7 @@ O **Dinheiro esperado** = troco inicial + dinheiro recebido + suprimentos − sa
 | Estoque negativo | Saiu mais peça do que entrou | Conte a peça e faça um ajuste de estoque |
 | Venda não baixou o estoque | A peça saiu da loja, mas continua no estoque | Peça ajuda com o número da venda |
 | Compra recebida sem entrada no estoque | A compra está recebida, mas as peças não entraram | Peça ajuda antes de mexer |
-| Saldo da conta não bate | Algum lançamento está na conta errada ou faltando | Compare com o extrato |
+| Saldo da conta não bate | Algum lançamento está na conta errada ou faltando | Clique no aviso: abre a conferência com o extrato |
 | Vale-troca de venda cancelada | A cliente ficou com vale de uma venda que foi cancelada | Anular o vale |
 | Produto cadastrado mais de uma vez | Mesmo nome, estampa, cor e tamanho | Mesma peça: juntar. Diferentes: preencher a estampa |
 | Falha na integração | Mercado Livre ou outra integração deu erro | Se for nova, peça ajuda |
@@ -213,7 +215,8 @@ Depois de corrigir, clique em **Conferir de novo**.`,
 | Mensagem de erro ao salvar | Não clique de novo. Mande um print da mensagem |
 | Não consigo entrar | Confira e-mail e senha (o olhinho mostra a senha) ou use **Esqueci minha senha** |
 | Etiqueta não sai na térmica | Ligue o programa de impressão (veja **Etiquetas**) |
-| Sistema fora do ar / limite do Supabase | Confira o plano no painel do Supabase |`,
+| Sistema fora do ar / limite do Supabase | Confira o plano no painel do Supabase |
+| A câmera não abre | Permita a câmera para o site (cadeado na barra de endereço) e feche outros apps que usam a câmera |`,
   },
 ];
 
