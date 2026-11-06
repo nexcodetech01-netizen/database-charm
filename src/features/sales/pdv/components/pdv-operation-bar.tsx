@@ -76,7 +76,8 @@ export const PDVOperationBar = memo(function PDVOperationBar({
 }: Props) {
   return (
     <header className="rounded-xl border bg-card px-3 py-2 shadow-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      {/* Celular: busca numa linha só dela, caixa embaixo. */}
+      <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
         <PDVSearch
           companyId={companyId}
           value={search}
@@ -85,7 +86,7 @@ export const PDVOperationBar = memo(function PDVOperationBar({
           onClear={onClearSearch}
           disabled={stage !== "cart"}
         />
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
           <span
             className={cn(
               "hidden rounded-full border px-2.5 py-1 text-[11px] font-medium sm:inline-block",
