@@ -1,3 +1,4 @@
+import { preferExactCodeMatch } from "@/features/products/lib/exact-code";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Minus, Plus, Printer, Search, Tags, X } from "lucide-react";
@@ -139,7 +140,7 @@ export function BulkLabelDialog({ open, onOpenChange, companyId, initial, title 
         limit_param: 8,
       });
       if (error) throw error;
-      return (data ?? []) as unknown as ProductRow[];
+      return preferExactCodeMatch((data ?? []) as unknown as ProductRow[], term);
     },
   });
 
