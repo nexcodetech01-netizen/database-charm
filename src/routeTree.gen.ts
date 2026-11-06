@@ -19,6 +19,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAcessoNegadoRouteImport } from './routes/_authenticated/acesso-negado'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedAutomacoesRouteImport } from './routes/_authenticated/automacoes'
 import { Route as AuthenticatedBellaRouteImport } from './routes/_authenticated/bella'
 import { Route as AuthenticatedBellaAgentDebugRouteImport } from './routes/_authenticated/bella-agent-debug'
@@ -171,6 +172,11 @@ const AuthenticatedAcessoNegadoRoute =
 const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAutomacoesRoute = AuthenticatedAutomacoesRouteImport.update({
@@ -770,6 +776,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/acesso-negado': typeof AuthenticatedAcessoNegadoRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/automacoes': typeof AuthenticatedAutomacoesRoute
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
@@ -884,6 +891,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/acesso-negado': typeof AuthenticatedAcessoNegadoRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/automacoes': typeof AuthenticatedAutomacoesRoute
   '/bella': typeof AuthenticatedBellaRoute
   '/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
@@ -999,6 +1007,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/acesso-negado': typeof AuthenticatedAcessoNegadoRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/automacoes': typeof AuthenticatedAutomacoesRoute
   '/_authenticated/bella': typeof AuthenticatedBellaRoute
   '/_authenticated/bella-agent-debug': typeof AuthenticatedBellaAgentDebugRoute
@@ -1115,6 +1124,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/acesso-negado'
     | '/agenda'
+    | '/ajuda'
     | '/automacoes'
     | '/bella'
     | '/bella-agent-debug'
@@ -1229,6 +1239,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/acesso-negado'
     | '/agenda'
+    | '/ajuda'
     | '/automacoes'
     | '/bella'
     | '/bella-agent-debug'
@@ -1343,6 +1354,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/acesso-negado'
     | '/_authenticated/agenda'
+    | '/_authenticated/ajuda'
     | '/_authenticated/automacoes'
     | '/_authenticated/bella'
     | '/_authenticated/bella-agent-debug'
@@ -1554,6 +1566,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/automacoes': {
@@ -2432,6 +2451,7 @@ const AuthenticatedVendasSaleIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcessoNegadoRoute: typeof AuthenticatedAcessoNegadoRoute
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedAutomacoesRoute: typeof AuthenticatedAutomacoesRoute
   AuthenticatedBellaRoute: typeof AuthenticatedBellaRoute
   AuthenticatedBellaAgentDebugRoute: typeof AuthenticatedBellaAgentDebugRoute
@@ -2502,6 +2522,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcessoNegadoRoute: AuthenticatedAcessoNegadoRoute,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedAutomacoesRoute: AuthenticatedAutomacoesRoute,
   AuthenticatedBellaRoute: AuthenticatedBellaRoute,
   AuthenticatedBellaAgentDebugRoute: AuthenticatedBellaAgentDebugRoute,
