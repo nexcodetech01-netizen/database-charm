@@ -87,7 +87,7 @@ describe("cadastro em grade", () => {
 });
 
 import { vi } from "vitest";
-import { runGridCreate, type GridCreateDeps } from "../grid-create";
+import { emptyRow, runGridCreate, type GridCreateDeps } from "../grid-create";
 import { buildProductName, describeVariant } from "../product-identity";
 
 function deps(existing: Record<string, string> = {}) {
@@ -178,5 +178,42 @@ describe("runGridCreate", () => {
     expect(createProduct).toHaveBeenCalledTimes(1);
     const items = (createPurchase.mock.calls[0][0] as { items: { product_id: string }[] }).items;
     expect(items.map((i) => i.product_id)).toContain("old-1");
+  });
+});
+
+describe("runGridCreate · tudo ou nada", () => {
+  it("apaga as peças criadas se lançar a compra falhar", async () => {
+    const deleted: string[][] = [];
+    let n = 0;
+    const g = {
+      ...emptyGroup(),
+      name: "Camiseta",
+      cost: "10",
+      price: "20",
+      rows: [
+        { ...emptyRow(), brand: "A", color: "Preta", size: "M", quantity: "1" },
+        { ...emptyRow(), brand: "B", color: "Branca", size: "G", quantity: "2" },
+      ],
+    };
+    await expect(
+      runGridCreate(
+        { companyId: "c", groups: [g], withPurchase: true, shipping: 0, purchaseDate: "2026-11-05", purchaseNumber: "PC-1" },
+        {
+          findExisting: async () => null,
+          generateSku: async () => null,
+          createProduct: async () => ({ id: `p${++n}` }),
+          createPurchase: async () => {
+            throw new Error("falhou");
+          },
+          deleteProducts: async (ids) => {
+            deleted.push(ids);
+          },
+          resolveSupplier: async () => "s",
+          buildName: ({ name, brand }) => `${name} ${brand ?? ""}`.trim(),
+          describe: () => "",
+        },
+      ),
+    ).rejects.toThrow("falhou");
+    expect(deleted).toEqual([["p1", "p2"]]);
   });
 });

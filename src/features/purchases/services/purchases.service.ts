@@ -501,6 +501,14 @@ export const purchasesService = {
     };
 
     if (items && !keepPersistedItems) {
+      // Guarda os itens atuais: se a gravação dos novos falhar, eles voltam
+      // (antes a compra ficava sem nenhuma peça).
+      const { data: previousItems, error: prevErr } = await supabase
+        .from("purchase_items")
+        .select("purchase_id,product_id,description,quantity,unit_price,discount,total,position")
+        .eq("purchase_id", id);
+      if (prevErr) throw prevErr;
+
       const { error: delErr } = await supabase
         .from("purchase_items")
         .delete()
@@ -519,7 +527,12 @@ export const purchasesService = {
           position: idx,
         }));
         const { error: ierr } = await supabase.from("purchase_items").insert(rows);
-        if (ierr) throw ierr;
+        if (ierr) {
+          if (previousItems && previousItems.length > 0) {
+            await supabase.from("purchase_items").insert(previousItems);
+          }
+          throw ierr;
+        }
       }
     }
 
