@@ -97,6 +97,10 @@ export function saleReducer(
                 ...it,
                 unit_price: action.price,
                 original_unit_price: it.original_unit_price ?? it.unit_price,
+                // Novo preço é o valor final do item: zera desconto/acréscimo
+                // antigos (antes um desconto de 100% deixava o item em R$ 0).
+                discount: 0,
+                addition: 0,
               }
             : it,
         ),

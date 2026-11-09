@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { BRLCurrencyInput } from "@/components/ui/brl-currency-input";
 import { formatCurrency } from "@/lib/format";
 import type { SaleItemDraft } from "../../types";
 
@@ -42,15 +43,23 @@ export function PDVItemPriceDialog({ item, open, onOpenChange, onConfirm }: Pric
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="new-price">Novo preço</Label>
-            <Input
+            <Label htmlFor="new-price">Novo preço (unitário)</Label>
+            <BRLCurrencyInput
               id="new-price"
-              type="number"
-              step="0.01"
               value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
+              onValueChange={setPrice}
+              onFocus={(e) => e.currentTarget.select()}
               autoFocus
             />
+            {(item.discount || 0) > 0 || (item.addition || 0) > 0 ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Este item tem
+                {(item.discount || 0) > 0 ? ` desconto de ${formatCurrency(item.discount || 0)}` : ""}
+                {(item.discount || 0) > 0 && (item.addition || 0) > 0 ? " e" : ""}
+                {(item.addition || 0) > 0 ? ` acréscimo de ${formatCurrency(item.addition || 0)}` : ""}.
+                Ao aplicar o novo preço, ele é zerado e o item fica com o valor digitado.
+              </p>
+            ) : null}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="price-reason">Motivo (opcional)</Label>
@@ -155,14 +164,25 @@ export function PDVItemDiscountDialog({ item, open, onOpenChange, onConfirm, typ
 
           <div className="grid gap-2">
             <Label htmlFor="discount-input">Valor do {isDiscount ? "desconto" : "acréscimo"}</Label>
-            <Input
-              id="discount-input"
-              type="number"
-              step={mode === "value" ? "0.01" : "0.1"}
-              value={inputValue}
-              onChange={(e) => setInputValue(Number(e.target.value))}
-              autoFocus
-            />
+            {mode === "value" ? (
+              <BRLCurrencyInput
+                id="discount-input"
+                value={inputValue}
+                onValueChange={setInputValue}
+                onFocus={(e) => e.currentTarget.select()}
+                autoFocus
+              />
+            ) : (
+              <Input
+                id="discount-input"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={inputValue}
+                onChange={(e) => setInputValue(Number(e.target.value.replace(",", ".")) || 0)}
+                autoFocus
+              />
+            )}
           </div>
 
           <div className="rounded-lg bg-muted/50 p-4 space-y-2 text-sm">
