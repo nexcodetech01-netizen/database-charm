@@ -16,7 +16,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import { CheckCircle2, AlertCircle, AlertTriangle, Check, ChevronsUpDown } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import type { PurchaseItemDraft } from "../types";
 import { useCategories } from "@/features/products/hooks/use-products";
@@ -47,6 +57,16 @@ export function PurchaseImportReviewDialog({
 }: Props) {
   const [items, setItems] = useState<PurchaseItemDraft[]>(initialItems);
   const { data: existingCategories = [] } = useCategories(companyId);
+  // Nomes das categorias existentes + as já usadas nesta revisão (inclusive as
+  // novas digitadas), sem repetir, pra o combobox oferecer todas.
+  const categoryNames = [
+    ...new Set(
+      [
+        ...existingCategories.map((c) => c.name),
+        ...items.map((it) => (it.category_name ?? "").trim()),
+      ].filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
   // Sugestão de produto existente pra cada item importado (por nome
   // normalizado) — mesma checagem da linha manual do editor de itens (ver
   // purchase-items-editor.tsx), aqui rodada em lote na abertura do dialog.
@@ -301,7 +321,7 @@ export function PurchaseImportReviewDialog({
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
                 <TableHead className="min-w-[280px]">Produto / Descrição</TableHead>
-                <TableHead className="w-[140px]">Categoria</TableHead>
+                <TableHead className="w-[190px]">Categoria</TableHead>
                 <TableHead className="w-[90px] text-right">Qtd. Real</TableHead>
                 <TableHead className="w-[120px] text-right">Custo Unit.</TableHead>
                 <TableHead className="w-[120px] text-right">Venda</TableHead>
@@ -407,14 +427,15 @@ export function PurchaseImportReviewDialog({
                     ) : null}
                   </TableCell>
                   <TableCell>
-                    <Input
-                      list="purchase-import-category-options"
+                    {/* Combobox em vez de <input list>: o datalist nativo filtra
+                        as sugestões pelo texto já preenchido (a categoria vem
+                        pré-inferida), então só aparecia a própria categoria e
+                        parecia travado. Aqui a lista sempre mostra todas as
+                        categorias e ainda dá pra criar uma nova digitando. */}
+                    <CategoryCombobox
                       value={it.category_name ?? ""}
-                      placeholder="Categoria"
-                      onChange={(e) =>
-                        updateItem(idx, { category_name: e.target.value })
-                      }
-                      className="h-8 text-sm"
+                      options={categoryNames}
+                      onChange={(name) => updateItem(idx, { category_name: name })}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -496,4 +517,92 @@ export function PurchaseImportReviewDialog({
 
 function roundCents(v: number | null | undefined): number {
   return Math.round((Number(v) || 0) * 100) / 100;
+}
+
+/** Seletor de categoria: lista todas as existentes e permite criar uma nova. */
+function CategoryCombobox({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const typed = search.trim();
+  const exists = options.some((o) => o.toLowerCase() === typed.toLowerCase());
+
+  function pick(name: string) {
+    onChange(name);
+    setOpen(false);
+  }
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setSearch("");
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-8 w-full justify-between px-2 text-sm font-normal"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value || "Categoria"}
+          </span>
+          <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[260px] p-0" align="start">
+        <Command>
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder="Buscar ou criar categoria…"
+          />
+          {/* stopPropagation no wheel: dentro de um Dialog do Radix a rolagem
+              do mouse em popovers é bloqueada, e a lista não rolava. */}
+          <CommandList onWheel={(e) => e.stopPropagation()}>
+            <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+            <CommandGroup>
+              {typed && !exists ? (
+                <CommandItem forceMount value={`__nova__${typed}`} onSelect={() => pick(typed)}>
+                  Criar categoria "{typed}"
+                </CommandItem>
+              ) : null}
+              {options.map((name) => (
+                <CommandItem key={name} value={name} onSelect={() => pick(name)}>
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      name.toLowerCase() === value.trim().toLowerCase() ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {name}
+                </CommandItem>
+              ))}
+              {value ? (
+                <CommandItem
+                  forceMount
+                  value="__limpar__"
+                  className="text-muted-foreground"
+                  onSelect={() => pick("")}
+                >
+                  Limpar (vira "Outros")
+                </CommandItem>
+              ) : null}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
