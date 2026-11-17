@@ -2601,6 +2601,74 @@ export type Database = {
           },
         ]
       }
+      customer_store_credit_entries: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          kind: string
+          notes: string | null
+          return_id: string | null
+          sale_id: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          kind: string
+          notes?: string | null
+          return_id?: string | null
+          sale_id?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          return_id?: string | null
+          sale_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_store_credit_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_store_credit_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_store_credit_entries_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "sale_returns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_store_credit_entries_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -6659,6 +6727,7 @@ export type Database = {
           status: string
           stock_applied: boolean
           stock_reversed: boolean
+          store_credit_used: number
           updated_at: string
         }
         Insert: {
@@ -6688,6 +6757,7 @@ export type Database = {
           status?: string
           stock_applied?: boolean
           stock_reversed?: boolean
+          store_credit_used?: number
           updated_at?: string
         }
         Update: {
@@ -6717,6 +6787,7 @@ export type Database = {
           status?: string
           stock_applied?: boolean
           stock_reversed?: boolean
+          store_credit_used?: number
           updated_at?: string
         }
         Relationships: [
@@ -7880,6 +7951,7 @@ export type Database = {
           status: string
           stock_applied: boolean
           stock_reversed: boolean
+          store_credit_used: number
           updated_at: string
         }
         SetofOptions: {
@@ -8003,6 +8075,7 @@ export type Database = {
         }[]
       }
       create_credit_sale: { Args: { _input: Json }; Returns: Json }
+      create_sale_exchange: { Args: { _input: Json }; Returns: Json }
       create_sale_return: { Args: { _input: Json }; Returns: Json }
       create_sale_with_items: {
         Args: { _header: Json; _items: Json }
@@ -8033,6 +8106,7 @@ export type Database = {
           status: string
           stock_applied: boolean
           stock_reversed: boolean
+          store_credit_used: number
           updated_at: string
         }
         SetofOptions: {
@@ -8045,6 +8119,10 @@ export type Database = {
       credit_resolve_account: {
         Args: { _account_id?: string; _company_id: string; _method: string }
         Returns: string
+      }
+      customer_store_credit_balance: {
+        Args: { _customer_id: string }
+        Returns: number
       }
       daily_finance_summary: { Args: { _company_id: string }; Returns: Json }
       dashboard_revenue_between: {
@@ -8351,6 +8429,45 @@ export type Database = {
       }
       nexos_jobs_status: { Args: never; Returns: Json }
       next_sale_number: { Args: { _company_id: string }; Returns: string }
+      pay_sale_with_store_credit: {
+        Args: { _sale_id: string }
+        Returns: {
+          bella_pay_ref: string | null
+          cash_session_id: string | null
+          client_request_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deleted_at: string | null
+          discount: number
+          due_date: string | null
+          finance_ref: string | null
+          grand_total: number
+          id: string
+          installments: number | null
+          is_test: boolean
+          items_total: number
+          notes: string | null
+          number: string
+          paid_at: string | null
+          payment_confirmed_at: string | null
+          payment_method: string | null
+          sale_date: string
+          shipping: number
+          status: string
+          stock_applied: boolean
+          stock_reversed: boolean
+          store_credit_used: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sales"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       preview_duplicate_categories: {
         Args: { _company_id: string }
         Returns: Json
@@ -8693,6 +8810,87 @@ export type Database = {
       sync_sale_payment_status: {
         Args: { _sale_id: string }
         Returns: undefined
+      }
+      system_health_checks: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      system_health_part_credit: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      system_health_part_money: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      system_health_part_records: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      system_health_part_stock: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      system_health_part_summary: {
+        Args: { _company_id: string }
+        Returns: {
+          code: string
+          detail: string
+          ref_id: string
+          ref_label: string
+          ref_type: string
+          severity: string
+          title: string
+        }[]
+      }
+      top_selling_products: {
+        Args: { _company_id: string; _days?: number; _limit?: number }
+        Returns: {
+          name: string
+          product_id: string
+          quantity: number
+          revenue: number
+        }[]
       }
       transfer_between_accounts: {
         Args: {
