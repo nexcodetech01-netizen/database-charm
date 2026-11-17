@@ -33,6 +33,25 @@ async function ensureProductsForItems(
   /** Recebe o id de cada produto criado aqui (para desfazer se der erro). */
   createdIds?: string[],
 ): Promise<PurchaseItemDraft[]> {
+  // Validate once before any product/category creation, including later items.
+  let validatedSupplierId = supplierId ?? null;
+  const createsProducts = items.some((it) => !it.product_id && (it.description ?? "").trim());
+  if (createsProducts && validatedSupplierId !== null) {
+    const invalidSupplierMessage = `Fornecedor inválido (${validatedSupplierId}): não encontrado ou não pertence à empresa da compra.`;
+    if (!z.string().uuid().safeParse(validatedSupplierId).success) {
+      throw new Error(invalidSupplierMessage);
+    }
+    const { data: supplier, error: supplierError } = await supabase
+      .from("product_suppliers")
+      .select("id")
+      .eq("id", validatedSupplierId)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (supplierError) throw supplierError;
+    if (!supplier) throw new Error(invalidSupplierMessage);
+    validatedSupplierId = supplier.id;
+  }
+
   const resolved: PurchaseItemDraft[] = [];
   // Marcas já usadas pela empresa ajudam a separar marca/estampa/cor/tamanho
   // do nome dos produtos novos (ver parse-product-attributes).
@@ -91,7 +110,7 @@ async function ensureProductsForItems(
           company_id: companyId,
           name,
           sku,
-          supplier_id: supplierId ?? null,
+          supplier_id: validatedSupplierId,
           category_id: categoryId,
           brand: attrs.brand,
           model: attrs.model,
