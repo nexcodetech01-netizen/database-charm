@@ -28,6 +28,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toTitleCasePtBr } from "@/lib/text-format";
 import { formatCurrency } from "@/lib/format";
 import { normalizeCest, normalizeNcm } from "../../lib/fiscal-suggestions";
+import { resolveProductSupplierId } from "../../lib/supplier-selection";
 import { hasRealBarcode, normalizeBarcode } from "../../lib/barcode";
 import { generateNextSku, isSkuTaken } from "../../lib/sku-generator";
 import {
@@ -650,6 +651,14 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
       return toast.error("Verifique os campos obrigatórios");
     }
 
+    let supplierId: string | null;
+    try {
+      supplierId = await resolveProductSupplierId(companyId, form.supplier_id);
+    } catch (error) {
+      setTab("geral");
+      return toast.error(errorText(error));
+    }
+
     const normalizedBarcode = normalizeBarcode(form.barcode) ?? "";
     const originalBarcode = normalizeBarcode(product?.barcode) ?? "";
     const barcodeChanged = !isEdit || normalizedBarcode !== originalBarcode;
@@ -768,7 +777,7 @@ export function ProductForm({ companyId, product, duplicateOf, initialPrice }: P
         : form.size.trim().toUpperCase() || null,
       description: form.description.trim(),
       category_id: form.category_id,
-      supplier_id: form.supplier_id || null,
+      supplier_id: supplierId,
       status: form.status as any,
       unit: form.unit,
       price: finalPrice,

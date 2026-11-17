@@ -28,3 +28,5 @@
 - [x] Criar serviço e diálogo de lançamento da conciliação sem alterar banco ou tipos gerados
 - [x] Criar o diálogo principal de conciliação fornecido e ativar a exportação de BankReconciliationDialog sem alterar banco
 - [x] Adicionar Conciliar extrato às ações do Financeiro e conectar o diálogo sem alterar banco
+- [x] Localizar a referência reportada a implementAttachedRequirements (ausente no código atual)
+- [x] Validar fornecedor selecionado no cadastro antes de salvar, preservando NULL e IDs reais sem alterar banco
